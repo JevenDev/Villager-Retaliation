@@ -2,78 +2,65 @@
 
 ## 1.0.0-beta.12 - Unreleased
 
+Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quests, skill-trade restocking, and datapack authoring cleanup. It is also a manual datapack-retargeting release: beta.11 packs should keep targeting the beta.11 wiki snapshot until they have been reviewed against the beta.12 pack surface.
+
 ### Added
 
-- Added persistent villager social profiles with generated Knowledge, Guts, Proficiency, Kindness, and Charm attributes.
-- Added profession-biased profile generation, stable per-villager profile seeds, saved profile data, and parent-profile blending hooks for inherited villager traits.
-- Added a Profile page to the villager interaction screen with a social-attribute chart, rank labels, localized attribute descriptions, and hover tooltips that show exact scores.
-- Added profile request/sync networking and a client-side profile cache so interaction screens can display server-generated villager profiles.
-- Added debug commands for villager and wandering trader profiles: get, reroll, set attribute, and export.
-- Added villager profile data to dialogue context helpers so dialogue logic can react to high social attributes.
-- Added temporary villager mood states for Neutral, Content, Grateful, Afraid, Angry, Suspicious, Grieving, Protective, Hopeful, Stressed, Proud, and Lonely.
-- Added beta.12 dialogue filters for temporary moods and social attributes: `mood`, `moods`, `min_mood_intensity`, `requires_high_*`, and exact `min_*` / `max_*` attribute ranges.
-- Added beta.12 normal-dialogue `conditions` blocks for compound line logic, including memory, family, relationship, and recruitment-memory checks.
-- Added `conditions` support to dialogue options, so option visibility can use the same compound family and relationship checks as normal dialogue lines.
-- Added normal dialogue line `priority`, `category`, and `text_key` fields for explicit selection tiers, debug grouping, and localized text indirection.
-- Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` to make dialogue selection and datapack reload warnings, including invalid condition schemas and planned beta.13 dialogue-field deprecations, easier to inspect in-game.
-- Added built-in dialogue data validation and datapack-builder wiki snapshot checks to catch schema/docs drift during development, including deep validation for beta.12 `conditions` blocks.
-- Added beta.12 datapack builder and website wiki support while keeping the beta.11 wiki snapshot separate for beta.11 pack authors.
-- Added a downloadable beta.12 dialogue folder template at `example-packs/dialogue-folder-template/`, plus a Datapack Generator `Preset` picker for choosing between the editable starter pack and the full folderized template.
-- Added quest lifecycle controls for conditional active states, quest expiration by time or conditions, and one-shot quest forced-dialogue triggers.
-- Added trade-refresh buttons to villager trade slots so players can ask a villager to replace a specific trade on the next Minecraft day when an eligible skill-trade replacement exists.
-- Added data-driven forced dialogue for trade-refresh results, including accepted, already-pending, unavailable, and not-ready responses with reputation-specific option replies.
-- Added trade-refresh ready follow-up dialogue with `trade_refresh.ready` message lines and `trade_refresh.ready_options` forced-dialogue options, including placeholders for restocked trade summaries.
-- Ready trade-refresh requests now trigger the ready follow-up when the player gets close to the villager, applying the refreshed trades before the player opens the trade menu so the order-status dialogue option does not linger after completion.
-- Multiple nearby villagers with ready trade-refresh requests can now step into the forced ready dialogue one at a time using `trade_refresh.ready_interjection`, keeping trade menus closed until the queued ready conversations resolve. Ready trade requests can also awkwardly interrupt container-theft confrontations with `trade_refresh.ready_theft_interjection`, and additional theft witnesses can back up the first accusation with `container_theft.backup_interjection`, including stolen-item quantity and repeat-theft placeholders.
-- Shared forced-dialogue interjections now support second/third speaker message-key fallbacks, `container_opened.backup_interjection` witness lines, session retargeting, and participant tracking so multi-villager interruptions replace the active locked conversation cleanly instead of closing and reopening it.
-- Added recruitment left-behind follow-up dialogue with a dedicated talk option and biome-aware memory filtering through `recruitment_memory_biome` / `recruitment_memory_biomes`.
-- Added selectable Skills-page detail cards with expanded localized skill descriptions and an in-tooltip click hint for deeper skill info.
-- Added persistent per-villager last-seen day memory for each player, plus absence-aware opening dialogue that can reference day gaps with `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}` placeholders.
+- Added persistent villager profiles with Social Attributes (Knowledge, Guts, Proficiency, Kindness, and Charm), skill data, profession-aware generation, profile/skill sync payloads, client caches, and Profile/Skills pages in the interaction screen.
+- Added profile and skill debug commands under `/villagerretaliation profile ...` and `/villagerretaliation skill ...`.
+- Added temporary villager moods and Social Attribute dialogue filters for normal dialogue lines: `mood`, `moods`, `min_mood_intensity`, `requires_high_*`, and exact `min_*` / `max_*` score ranges.
+- Added data-driven quests with `quest_action` dialogue options, start/remind/turn-in/abandon actions, quest progress tracking, target/proof checks, rewards, notifications, active/expiration rules, and quest-triggered tracker or forced-dialogue actions.
+- Added individual trade-slot refresh requests for skill-generated villager trades. Random refreshes mature on the next Minecraft day and can open data-driven ready follow-up/interjection dialogue before the trade menu opens.
+- Added high-reputation Special Orders for directly requesting targetable skill-trade definitions, including wait times, cooldowns, extra costs, up to three active requests per villager/player, status dialogue, and ready-order fulfillment.
+- Added beta.12 dialogue authoring features: `conditions` blocks on normal dialogue lines and options, line `priority`, line `category`, and `text_key` message indirection.
+- Added path-aware folderized dialogue loading under `dialogue/<locale>/...`, including typed `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` folders, optional `type` in option files, profession defaults from paths, and namespaced custom profession paths.
+- Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` for in-game dialogue and datapack debugging.
+- Added beta.12 Datapack Generator support for the new target, folderized dialogue import/export, versioned wiki snapshots, and the downloadable dialogue folder template.
+- Added persistent per-villager/per-player last-seen memory with absence-aware opening dialogue placeholders: `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}`.
+- Added recruitment left-behind follow-up dialogue and biome filters through `recruitment_memory_biome` / `recruitment_memory_biomes`.
 
 ### Changed
 
 - Promoted the development version from `1.0.0-beta.11` to `1.0.0-beta.12`.
-- Social Attributes now lightly affect mood transitions, reputation recovery, retaliation decisions, and gossip spread when the matching config toggles are enabled.
-- The datapack builder no longer offers beta.11 to beta.12 conversion. The beta.12 target is a manual retargeting boundary, not a marker-only migration.
-- Trade refresh replacement selection compares full result stacks instead of only item types, so variants such as different enchanted books can appear while exact duplicate refreshed trades are still avoided when possible.
-- Special Order selection rows now show concise trade names while wait and cooldown details are delivered through the data-driven confirmation and queued dialogue lines.
-- Special Order selection rows now include result counts when greater than one, distinguishing entries such as Empty Map from 2x Empty Map.
-- Special Order selection rows now collapse requestable definitions with the same result item by keeping the higher-count result, such as preferring 2x Empty Map over Empty Map.
-- Special Order confirmation, queued, cooldown, and limit dialogue now receives singular/plural placeholders so built-in lines say `day`/`days` and `request`/`requests` naturally.
-- Clicking `Place Special Order` now plays a randomized data-driven follow-up response before the queued-order dialogue opens.
-- Special Order cooldown now starts when the request is accepted, preventing the same player from immediately placing another Special Order with that villager.
-- Special Order status choices now remain in the forced-dialogue flow when selected from the `Ask about orders` menu.
-- `Ask about orders` now opens its dynamic status choices by updating the existing dialogue screen instead of replacing the client screen.
-- Trade refresh `What do you need?` replies now explain the specific blocker, such as missing replacement stock, full Special Order slots, cooldown, or missing payment.
-- Random trade-refresh requests now share the same three-active-request cap as Special Orders and use matching request-limit dialogue.
-- Trade refresh blocker responses reached from an existing forced-dialogue menu now update that menu in place, or fall back to villager chat if no option set is available.
-- Regular completed trades now add `0.5` primary profession skill progress by default instead of `0.1`, giving one visible skill point every two trades.
-- Special Orders now treat `min_rank` as the skill unlock and ignore `max_rank`, letting high-skill villagers fulfill earlier catalog requests and duplicate items they already stock.
-- Forced conversation request validation now keeps active forced-dialogue sessions attached to their villager target while forced-session distance and availability rules are still met.
-- Forced-dialogue response templates now merge session-scoped replacements with option/payment-specific replacements, so follow-up responses can keep trade-refresh, theft, and interjection placeholders after the active session advances.
+- Built-in dialogue resources now use the beta.12 folderized layout under `dialogue/<locale>/global`, `groups`, and `professions/<profession>` instead of the previous large bundle-style authoring shape.
+- Built-in normal dialogue lines and family/relationship options now use `conditions` where practical while keeping the beta.11 helper fields as compatibility inputs.
+- Normal dialogue selection now applies explicit `priority` tiers before weighted random selection. Existing packs keep the default `priority: 0`.
+- The Datapack Generator version selector is now a target selector only. The beta.12 target no longer attempts beta.11-to-beta.12 conversion.
+- Regular completed trades now add `0.5` primary profession skill progress by default instead of `0.1`.
+- Trade-refresh and Special Order messaging now runs through data-driven forced-dialogue/status branches with clearer blocker responses, order status choices, singular/plural placeholders, and shared active-request limits.
+- Trade-refresh replacement selection compares full result stacks instead of only item types, so variants such as different enchanted books can appear while exact duplicate refreshed trades are still avoided when possible.
+- Special Order selection now collapses duplicate result items by keeping the higher-count result and shows concise trade names with result counts when needed.
+- Forced-dialogue sessions now preserve session-scoped placeholders and keep active sessions attached to the speaking villager while distance and availability rules still pass.
+- Ready trade-refresh and Special Order follow-ups now apply before the trade menu opens, and multiple nearby ready requests can resolve through one-at-a-time interjections.
+- First-conversation and first-village opening lines now respect persisted seen-memory after world leave/join cycles.
 - The default diamond-sword proximity forced-dialogue witness radius was reduced from 8 blocks to 4 blocks.
-- The built-in Lost Civilization quest now keeps `Abandon quest` inside the active quest conversation, directly above `Never mind`, instead of exposing a separate top-level abandon option.
-- Built-in container-theft leave outcomes now default to response arrays (`responses`, `success_responses`, `failure_responses`) for more varied short reactions.
-- Built-in normal dialogue lines now use beta.12 `conditions` for migrated memory, family, relationship, and recruitment filters.
-- Built-in family and relationship dialogue options now use beta.12 `conditions`.
-- Built-in dialogue resources are now split into folderized topic files under `dialogue/<locale>/global`, `groups`, and `professions/<profession>`. Profession story biome dialogue and recruitment-left-behind biome follow-ups are grouped by biome type, such as cold, hot/dry, ocean/river, Nether, and End files.
-- The datapack builder can now author, import, preserve, preview, and export typed beta.12 dialogue files such as `options/00_greeting.json` and `lines/00_greeting.json`, including typed option files that omit `type: "dialogue_option"`.
-- The datapack builder now infers namespaced custom profession defaults from typed dialogue paths such as `professions/examplemod/alchemist/lines/...json`, matching the runtime path behavior.
-- Normal dialogue line selection now applies explicit `priority` tiers before weighted random selection. Existing packs keep the default `priority: 0`.
-- The schema docs and Datapack Generator now distinguish canonical field names from compatibility aliases across player-item filters, item hand-ins, equipment filters, notification world text style, and forced-dialogue triggers.
-- First-conversation opening lines now avoid replaying for villagers that already have persisted last-seen memory of the player, even after world leave/join cycles.
-- First-village opening lines now also respect persisted seen-memory, so villagers in the same village stop greeting returning players as brand-new arrivals after world leave/join cycles.
-
-### Planned Beta.13 Deprecations
-
-- Flat normal dialogue line memory, family, relationship, recruitment, container-theft, gear-report, and retaliation helper fields still load in beta.12 as compatibility inputs, but are planned for beta.13 deprecation in favor of `conditions`. The beta.12 folderized dialogue rewrite does not remove these fields; it makes `conditions` the maintained authoring shape. Affected line fields: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
-- Flat dialogue option family and relationship helper fields still load in beta.12 as compatibility inputs, but are planned for beta.13 deprecation in favor of `conditions`. Built-in beta.12 options now use `conditions`, and the builder/runtime diagnostics mark these helper fields when imported packs still use them.
+- The built-in Lost Civilization quest now keeps `Abandon quest` inside the active quest conversation instead of exposing a separate top-level abandon option.
 
 ### Fixed
 
-- Special Order selection now shows the active-order limit dialogue as soon as a player tries to place a fourth active order with the same villager, and the cap is hard-clamped to three even if config data is stale.
-- Multiple ready random refreshes now all fulfill in one pass when they were accepted earlier; they still prefer replacement results not already present in the offer list, but fall back to duplicates as long as the slot is not recycling the same exact result.
-- Disabled vanilla villager trade-preview hand behavior so nearby players holding emeralds or other trade costs no longer cause displayed trade results to replace, duplicate, or drop held villager items.
+- Fixed Special Order active-request limits so the fourth request shows the limit dialogue immediately and the cap is hard-clamped to three.
+- Fixed multiple ready random refreshes so all accepted ready refreshes can fulfill in one pass instead of leaving completed requests behind.
+- Fixed vanilla villager trade-preview hand behavior causing nearby players holding trade costs to replace, duplicate, or drop held villager items.
+
+### Removed
+
+- Removed the Datapack Generator's beta.11-to-beta.12 Convert workflow. Beta.12 is a manual retargeting boundary, not a marker-only migration.
+- No beta.12 runtime JSON fields, triggers, or placeholders are removed solely because of the folderized dialogue layout.
+
+### Migration Notes For Pack Authors
+
+- Keep existing beta.11 datapacks on `villagerretaliation.pack_version: "1.0.0-beta.11"` until you have manually reviewed dialogue, forced dialogue, notifications, quests, and skill trades against the beta.12 wiki.
+- Do not migrate by only changing `villagerretaliation.pack_version` to `1.0.0-beta.12`. The marker selects the editor/runtime target; it does not reorganize dialogue files, audit ids, update compatibility fields, or validate new beta.12 behavior.
+- Prefer new beta.12 dialogue packs under `data/villagerretaliation/dialogue/<locale>/global`, `groups`, or `professions/<profession>`, using typed folders such as `options`, `lines`, `messages`, `openings`, `closings`, and `pacify`.
+- Treat `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` as reserved section folder names below `dialogue/<locale>/`.
+- Split old monolithic dialogue files by ownership and purpose. Keep bundle files only when several related entries are easier to maintain together.
+- Review intentional overrides carefully: Minecraft resource replacement still happens by exact resource path before Villager Retaliation merges entries, so copying an old built-in monolith can replace more beta.12 content than intended.
+- Use `conditions` for new memory, family, relationship, recruitment, quest, and event-gated dialogue. The older flat helper fields still load in beta.12 but are planned for beta.13 deprecation.
+- Use `priority` when one matched line should reliably win, and use `weight` only to tune random odds inside the same priority tier.
+- Use `text_key` when translators should replace message text without copying the full line filters.
+- For skill-trade packs, use `request.targetable: true` plus request metadata only for trades that should appear as Special Orders. The queued order stores the trade definition id, so later cost/result/config changes affect future fulfillment.
+- For trade-refresh dialogue overrides, review the `trade_refresh.*` message keys and forced-dialogue entries in the beta.12 wiki instead of copying beta.11 dialogue files forward.
+- See [Pack Format Changes](wiki/Pack-Format-Changes.md), [Dialogue JSON](wiki/Dialogue.md), [Forced Dialogue JSON](wiki/Forced-Dialogue.md), [Skill Trades](wiki/Skill-Trades.md), and [Quests](wiki/Quests.md) for the full pack-facing migration surface.
 
 ## 1.0.0-beta.11-hotfix.1 - 2026-05-26
 
