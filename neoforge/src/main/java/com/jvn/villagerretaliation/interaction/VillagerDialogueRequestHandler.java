@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
+import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
@@ -150,6 +151,10 @@ public final class VillagerDialogueRequestHandler {
             DialogueOptionDefinition dialogueOption,
             VillagerInteractionTracker.InteractionState interactionState) {
         DialogueRequestType requestType = dialogueOption.requestType();
+        Optional<VillagerDialogueService.DialogueResult> treeResult = DialogueTreeService.handleDialogueOption(context, dialogueOption);
+        if (treeResult.isPresent()) {
+            return treeResult.get();
+        }
         if (requestType == DialogueRequestType.GIFT_PREFERENCES) {
             return VillagerGiftKnowledgeService
                     .discoverFromGiftQuestion(context)

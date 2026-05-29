@@ -78,9 +78,15 @@ Selection is entry-first: filters and `chance` are checked, `weight` chooses a m
 
 ## Quests
 
-Quest files live in `data/<namespace>/quests/`. They combine advancement-like `criteria` with explicit offer, target, reward, and dialogue sections. Dialogue options can run quest actions through `quest_action` and show/hide with `conditions` using `type: "quest"`.
+Quest files live in `data/<namespace>/quests/`. They combine advancement-like `criteria` with explicit offer, target, and reward sections. Dialogue trees run quest actions and show or hide entries with `conditions` using `type: "quest"`.
 
 See [Quest JSON](Quests.md) for the first supported quest schema and the built-in `Tales of a Lost Civilization` pattern.
+
+## Dialogue Trees
+
+Dialogue tree files live in `data/<namespace>/dialogue_trees/<locale>/`. Use them for authored branching scenes, quest offers, reminders, turn-ins, and future questline chapters. Ambient reusable villager lines still live in `data/villagerretaliation/dialogue/<locale>/`.
+
+See [Dialogue Tree JSON](Dialogue-Trees.md) for entries, nodes, responses, actions, and quest action status lines.
 
 ## Common Professions
 

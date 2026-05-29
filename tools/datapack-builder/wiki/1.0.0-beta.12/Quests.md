@@ -6,7 +6,7 @@ Quests live under:
 data/<namespace>/quests/<quest_id>.json
 ```
 
-Each quest is one JSON file with a stable `id`, an advancement-like `criteria` block for author clarity, and explicit runtime sections for offer rules, target tracking, rewards, and dialogue.
+Each quest is one JSON file with a stable `id`, an advancement-like `criteria` block for author clarity, and explicit runtime sections for offer rules, target tracking, and rewards. Put authored quest conversations in [Dialogue Tree JSON](Dialogue-Trees.md), where entries can start, remind, and turn in the quest.
 
 ## Minimal Shape
 
@@ -40,36 +40,54 @@ Each quest is one JSON file with a stable `id`, an advancement-like `criteria` b
     "gossip_reputation": 8,
     "memory": "player_completed_quest",
     "loot": "example:quest/lost_civilization"
-  },
-  "dialogue": {
-    "start": ["Travel {direction} toward {target_x}, {target_z}. Bring back {proof_item}."],
-    "reminder": ["Find the center of {target}, then return with {proof_item}."],
-    "turn_in": ["You found it. This village will remember that."]
   }
 }
 ```
 
-## Dialogue Options
+## Dialogue Trees
 
-Normal dialogue options trigger quest actions with `quest_action`:
+Quest conversations should be authored as dialogue trees under `data/<namespace>/dialogue_trees/<locale>/`. A tree can expose several entries for different quest states:
 
 ```json
 {
-  "id": "example.lost_civilization.offer",
-  "label": "Lost Civilization",
-  "type": "dialogue_option",
-  "request": "story",
-  "conditions": [
-    { "type": "quest", "quest": "example:tales_of_a_lost_civilization", "state": "available" }
-  ],
-  "quest_action": {
-    "quest": "example:tales_of_a_lost_civilization",
-    "action": "start"
+  "entries": [
+    {
+      "id": "offer",
+      "label": "Lost Civilization",
+      "profession": "minecraft:cartographer",
+      "conditions": [
+        { "type": "quest", "quest": "example:tales_of_a_lost_civilization", "state": "available" }
+      ],
+      "start": "offer"
+    },
+    {
+      "id": "turn_in",
+      "label": "Lost Civilization",
+      "profession": "minecraft:cartographer",
+      "conditions": [
+        { "type": "quest", "quest": "example:tales_of_a_lost_civilization", "state": "ready" }
+      ],
+      "start": "turn_in"
+    }
+  ]
+}
+```
+
+Inside tree nodes, run the quest with an action:
+
+```json
+{
+  "type": "quest",
+  "quest": "example:tales_of_a_lost_civilization",
+  "action": "start",
+  "lines": {
+    "started": ["Travel {direction} toward {target_x}, {target_z}. Bring back {proof_item}."],
+    "locate_failed": ["The map table is quiet today."]
   }
 }
 ```
 
-Supported actions are `start`, `remind`, and `turn_in`. Pair them with quest states:
+Supported quest actions are `start`, `remind`, and `turn_in`. Pair entries with quest states:
 
 ```text
 available

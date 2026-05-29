@@ -76,21 +76,45 @@ public final class VillagerQuestService {
             return Optional.empty();
         }
 
-        QuestDefinition definition = VillagerQuestResources.quest(context.level().getServer(), questAction.questId()).orElse(null);
+        return performAction(context, questAction.questId(), questAction.action())
+                .map(QuestActionOutcome::dialogueResult);
+    }
+
+    public static Optional<QuestActionOutcome> performAction(
+            DialogueContext context,
+            ResourceLocation questId,
+            DialogueQuestAction.Action action) {
+        if (questId == null || action == null || action == DialogueQuestAction.Action.NONE) {
+            return Optional.empty();
+        }
+
+        QuestDefinition definition = VillagerQuestResources.quest(context.level().getServer(), questId).orElse(null);
         if (definition == null) {
             return Optional.of(result(
-                    "quest_missing_" + questAction.questId(),
+                    "missing",
+                    "quest_missing_" + questId,
                     "I cannot find the notes for that quest.",
                     Map.of()));
         }
 
-        return Optional.of(switch (questAction.action()) {
+        return Optional.of(switch (action) {
             case START -> startQuest(context, definition);
             case REMIND -> remindQuest(context, definition);
             case TURN_IN -> turnInQuest(context, definition);
-            case NONE -> result("quest_no_action", "", Map.of());
+            case NONE -> result("none", "quest_no_action", "", Map.of());
         });
     }
+
+    public static Map<String, String> replacementsFor(DialogueContext context, ResourceLocation questId) {
+        QuestDefinition definition = VillagerQuestResources.quest(context.level().getServer(), questId).orElse(null);
+        if (definition == null) {
+            return Map.of();
+        }
+        VillagerQuestSavedData.QuestProgress progress =
+                VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), questId);
+        return replacements(context, definition, progress);
+    }
+
 
     public static void onPlayerTick(ServerPlayer player) {
         if (!(player.level() instanceof ServerLevel level)
@@ -130,11 +154,12 @@ public final class VillagerQuestService {
         return isReadyToTurnIn(context, definition, progress);
     }
 
-    private static VillagerDialogueService.DialogueResult startQuest(DialogueContext context, QuestDefinition definition) {
+    private static QuestActionOutcome startQuest(DialogueContext context, QuestDefinition definition) {
         VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
         VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
         if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.COMPLETED) {
             return result(
+                    "already_completed",
                     lineId(definition, "already_completed"),
                     definition.dialogue().selectAlreadyCompleted(context.random()),
                     replacements(context, definition, progress));
@@ -144,6 +169,7 @@ public final class VillagerQuestService {
         }
         if (!definition.offer().matches(context)) {
             return result(
+                    "unavailable",
                     lineId(definition, "unavailable"),
                     definition.dialogue().selectUnavailable(context.random()),
                     replacements(context, definition, progress));
@@ -152,6 +178,7 @@ public final class VillagerQuestService {
         LocatedTarget target = locateTarget(context.level(), context.villager().blockPosition(), definition).orElse(null);
         if (target == null) {
             return result(
+                    "locate_failed",
                     lineId(definition, "locate_failed"),
                     definition.dialogue().selectLocateFailed(context.random()),
                     replacements(context, definition, progress));
@@ -166,43 +193,49 @@ public final class VillagerQuestService {
         rememberQuestStoryHint(context, definition, target.pos());
 
         return result(
+                "started",
                 lineId(definition, "start"),
                 definition.dialogue().selectStart(context.random()),
                 replacements(context, definition, started));
     }
 
-    private static VillagerDialogueService.DialogueResult remindQuest(DialogueContext context, QuestDefinition definition) {
+    private static QuestActionOutcome remindQuest(DialogueContext context, QuestDefinition definition) {
         VillagerQuestSavedData.QuestProgress progress =
                 VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), definition.id());
         if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
             return result(
+                    "unavailable",
                     lineId(definition, "unavailable"),
                     definition.dialogue().selectUnavailable(context.random()),
                     replacements(context, definition, progress));
         }
         return result(
+                "reminder",
                 lineId(definition, "reminder"),
                 definition.dialogue().selectReminder(context.random()),
                 replacements(context, definition, progress));
     }
 
-    private static VillagerDialogueService.DialogueResult turnInQuest(DialogueContext context, QuestDefinition definition) {
+    private static QuestActionOutcome turnInQuest(DialogueContext context, QuestDefinition definition) {
         VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
         VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
         if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
             return result(
+                    "unavailable",
                     lineId(definition, "unavailable"),
                     definition.dialogue().selectUnavailable(context.random()),
                     replacements(context, definition, progress));
         }
         if (!progress.visitedTarget()) {
             return result(
+                    "missing_target",
                     lineId(definition, "missing_target"),
                     definition.dialogue().selectMissingTarget(context.random()),
                     replacements(context, definition, progress));
         }
         if (!hasRequiredProof(context.player(), definition)) {
             return result(
+                    "missing_proof",
                     lineId(definition, "missing_proof"),
                     definition.dialogue().selectMissingProof(context.random()),
                     replacements(context, definition, progress));
@@ -214,6 +247,7 @@ public final class VillagerQuestService {
         awardRewards(context, definition);
 
         return result(
+                "completed",
                 lineId(definition, "turn_in"),
                 definition.dialogue().selectTurnIn(context.random()),
                 replacements(context, definition, progress));
@@ -394,14 +428,17 @@ public final class VillagerQuestService {
         );
     }
 
-    private static VillagerDialogueService.DialogueResult result(
+    private static QuestActionOutcome result(
+            String status,
             String lineId,
             String template,
             Map<String, String> replacements) {
         String text = VillagerDialogueResources.resolveTemplate(template, replacements);
-        return new VillagerDialogueService.DialogueResult(
+        return new QuestActionOutcome(
+                status,
                 lineId,
-                text
+                text,
+                replacements
         );
     }
 
@@ -480,5 +517,21 @@ public final class VillagerQuestService {
     }
 
     private record LocatedTarget(BlockPos pos) {
+    }
+
+    public record QuestActionOutcome(
+            String status,
+            String lineId,
+            String text,
+            Map<String, String> replacements) {
+        public QuestActionOutcome {
+            status = status == null ? "" : status;
+            text = text == null ? "" : text;
+            replacements = replacements == null ? Map.of() : Map.copyOf(replacements);
+        }
+
+        public VillagerDialogueService.DialogueResult dialogueResult() {
+            return new VillagerDialogueService.DialogueResult(this.lineId, this.text);
+        }
     }
 }

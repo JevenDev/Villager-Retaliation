@@ -1,6 +1,8 @@
 # Dialogue JSON
 
-Dialogue JSON controls conversation choices, villager replies, one-off messages, opening lines, closing lines, and pacification responses.
+Dialogue JSON controls ambient conversation choices, villager replies, one-off messages, opening lines, closing lines, and pacification responses.
+
+For authored branching scenes such as quest offers, quest turn-ins, and narrative conversations, use [Dialogue Tree JSON](Dialogue-Trees.md). Dialogue trees keep one scene in one file and can run quest, reward, reputation, memory, and loot actions.
 
 For event-driven locked conversations such as a villager catching the player stealing from a chest, see [Forced Dialogue JSON](Forced-Dialogue.md). Forced dialogue uses a separate datapack path and does not add normal Talk menu options.
 
@@ -26,6 +28,8 @@ Shared group files, such as `groups/smiths/lines/repairs.json`, are just normal 
 Use your own folders and file names for addon dialogue. Minecraft still replaces resources by exact path before Villager Retaliation reads them, so a datapack file with the same path as a built-in file overrides that built-in file. Prefer adding a new file with stable entry ids, or overriding one entry by reusing its `id`, instead of copying a whole built-in file.
 
 Dialogue files translate villager speech and keyed dialogue messages. They do not translate the client GUI around the conversation, such as Talk, Trade, Gift, Gender, Mood, Family Tree, or generated relationship rows. Put those strings in a resource-pack language file; see [Localization Guide](Localization.md).
+
+Dialogue files are best for reusable ambient lines. Dialogue trees are best when the player should see response choices that lead to follow-up nodes.
 
 Files are read in sorted resource-location order. A file with top-level `"replace": true` clears previously loaded dialogue options, lines, messages, openings, closings, and pacify lines for that locale pool, then adds its own entries. Use this only when a pack intentionally wants to replace the loaded dialogue pool instead of adding to it.
 
@@ -265,7 +269,6 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `min_reputation` | integer | none | Minimum exact reputation value with this villager. |
 | `max_reputation` | integer | none | Maximum exact reputation value with this villager. |
 | `conditions` | array | none | Beta.12+. Compound condition blocks for option visibility. Prefer this for new family and relationship option checks. |
-| `quest_action` | object | none | Starts, reminds, or turns in a loaded quest when this option is selected. Use with `conditions` quest states so only the correct option is visible. |
 | `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
 | `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `min_player_item_durability` | integer | none | Minimum remaining durability on the matched player item. Alias: `min_held_item_durability`. |

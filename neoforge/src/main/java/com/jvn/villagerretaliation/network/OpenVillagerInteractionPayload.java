@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.DialogueTreeReference;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
@@ -109,6 +110,7 @@ public record OpenVillagerInteractionPayload(
                     null,
                     DialogueEntryMetadata.EMPTY,
                     DialogueQuestAction.EMPTY,
+                    DialogueTreeReference.EMPTY,
                     buffer.readUtf(128),
                     buffer.readEnum(DialogueRequestType.class),
                     true,

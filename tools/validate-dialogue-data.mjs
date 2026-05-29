@@ -7,6 +7,7 @@ const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
 
 const roots = {
   dialogue: "neoforge/src/main/resources/data/villagerretaliation/dialogue/en_us",
+  dialogueTrees: "neoforge/src/main/resources/data/villagerretaliation/dialogue_trees/en_us",
   forcedDialogue: "neoforge/src/main/resources/data/villagerretaliation/forced_dialogue",
   notifications: "neoforge/src/main/resources/data/villagerretaliation/notifications/en_us",
   quests: "neoforge/src/main/resources/data/villagerretaliation/quests"
@@ -284,6 +285,9 @@ const relationshipStates = new Set([
 const recruitmentScenarios = new Set(["betrayed", "injured", "left_behind"]);
 const weatherStates = new Set(["clear", "rain", "thunder"]);
 const timesOfDay = new Set(["morning", "afternoon", "evening", "night"]);
+const dialogueTreeActionTypes = new Set(["quest", "xp", "experience", "reputation", "gossip", "gossip_reputation", "memory", "village_memory", "loot", "give_loot", "loot_table"]);
+const dialogueTreeActionKeys = new Set(["type", "kind", "quest", "quest_id", "action", "quest_action", "amount", "value", "loot", "loot_table", "memory", "memory_event", "tag", "lines"]);
+const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim"]);
 
 const knownPlaceholders = new Set([
   "active_order_word",
@@ -382,6 +386,7 @@ const knownPlaceholders = new Set([
   "payment_items",
   "payment_stack",
   "player",
+  "profession",
   "proof_item",
   "player_item",
   "player_item_damage",
@@ -399,6 +404,8 @@ const knownPlaceholders = new Set([
   "previous_villager",
   "quest",
   "quest_id",
+  "reputation",
+  "reputation_level",
   "relative",
   "relative_possessive",
   "restocked_summary",
@@ -476,6 +483,8 @@ for (const [kind, relativeRoot] of Object.entries(roots)) {
     checkPlaceholders(file, data);
     if (kind === "dialogue") {
       checkDialogue(file, data);
+    } else if (kind === "dialogueTrees") {
+      checkDialogueTree(file, data);
     } else if (kind === "forcedDialogue") {
       checkForcedDialogue(file, data);
     } else if (kind === "notifications") {
@@ -550,6 +559,104 @@ function checkDialogue(file, data) {
       }
     }
     checkConditions(file, line, `lines[${index}]`);
+  }
+}
+
+function checkDialogueTree(file, data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    errors.push(`${relative(file)}: dialogue tree root must be an object.`);
+    return;
+  }
+
+  const entries = Array.isArray(data.entries) ? data.entries : [];
+  checkIds(file, entries, "dialogue tree entry");
+  for (const [index, entry] of entries.entries()) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      errors.push(`${relative(file)}: entries[${index}] must be an object.`);
+      continue;
+    }
+    checkConditions(file, entry, `entries[${index}]`);
+    checkStringList(file, entry, `entries[${index}]`, ["profession", "professions"], "profession id");
+  }
+
+  const nodes = dialogueTreeNodes(data.nodes);
+  if (nodes.length === 0) {
+    errors.push(`${relative(file)}: dialogue tree must define nodes.`);
+    return;
+  }
+
+  const nodeIds = new Set(nodes.map((node) => node.id).filter(Boolean));
+  checkIds(file, nodes, "dialogue tree node");
+  for (const node of nodes) {
+    const location = node.location;
+    checkDialogueTreeActions(file, node.actions, `${location}.actions`);
+    if (Array.isArray(node.responses)) {
+      checkIds(file, node.responses, "dialogue tree response");
+      for (const [responseIndex, response] of node.responses.entries()) {
+        const responseLocation = `${location}.responses[${responseIndex}]`;
+        if (!response || typeof response !== "object" || Array.isArray(response)) {
+          errors.push(`${relative(file)}: ${responseLocation} must be an object.`);
+          continue;
+        }
+        checkConditions(file, response, responseLocation);
+        checkDialogueTreeActions(file, response.actions, `${responseLocation}.actions`);
+        if (typeof response.next === "string" && response.next.trim() && !nodeIds.has(response.next)) {
+          errors.push(`${relative(file)}: ${responseLocation}.next references unknown node "${response.next}".`);
+        }
+        if (typeof response.next_node === "string" && response.next_node.trim() && !nodeIds.has(response.next_node)) {
+          errors.push(`${relative(file)}: ${responseLocation}.next_node references unknown node "${response.next_node}".`);
+        }
+      }
+    } else if (node.responses !== undefined) {
+      errors.push(`${relative(file)}: ${location}.responses must be an array.`);
+    }
+  }
+}
+
+function dialogueTreeNodes(nodes) {
+  if (!nodes || typeof nodes !== "object") {
+    return [];
+  }
+  if (Array.isArray(nodes)) {
+    return nodes
+      .filter((node) => node && typeof node === "object" && !Array.isArray(node))
+      .map((node, index) => ({ ...node, id: node.id ?? `node_${index}`, location: `nodes[${index}]` }));
+  }
+  return Object.entries(nodes)
+    .filter(([, node]) => node && typeof node === "object" && !Array.isArray(node))
+    .map(([id, node]) => ({ ...node, id: node.id ?? id, location: `nodes.${id}` }));
+}
+
+function checkDialogueTreeActions(file, actions, location) {
+  if (actions === undefined) {
+    return;
+  }
+  if (!Array.isArray(actions)) {
+    errors.push(`${relative(file)}: ${location} must be an array.`);
+    return;
+  }
+  for (const [index, action] of actions.entries()) {
+    const actionLocation = `${location}[${index}]`;
+    if (!action || typeof action !== "object" || Array.isArray(action)) {
+      errors.push(`${relative(file)}: ${actionLocation} must be an object.`);
+      continue;
+    }
+    for (const key of Object.keys(action)) {
+      if (!dialogueTreeActionKeys.has(key)) {
+        errors.push(`${relative(file)}: ${actionLocation}.${key} is not a supported dialogue action field.`);
+      }
+    }
+    const type = normalizedString(action.type ?? action.kind ?? (action.quest ? "quest" : ""));
+    if (!dialogueTreeActionTypes.has(type)) {
+      errors.push(`${relative(file)}: ${actionLocation}.type must be one of ${[...dialogueTreeActionTypes].join(", ")}.`);
+    }
+    if (type === "quest") {
+      checkStringList(file, action, actionLocation, ["quest", "quest_id"], "quest id");
+      checkStringValues(file, action, actionLocation, ["action", "quest_action"], dialogueTreeQuestActions, "quest action", { requireAny: true });
+    }
+    if (action.lines !== undefined && (!action.lines || typeof action.lines !== "object" || Array.isArray(action.lines))) {
+      errors.push(`${relative(file)}: ${actionLocation}.lines must be an object keyed by action status.`);
+    }
   }
 }
 

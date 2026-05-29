@@ -267,10 +267,18 @@ public final class VillagerDialogueResources {
     }
 
     public static List<DialogueOptionDefinition> dialogueOptions(DialogueContext context, DialogueDisposition disposition) {
-        return load(context.level().getServer(), context.locale()).options().stream()
+        Optional<List<DialogueOptionDefinition>> activeTreeOptions = DialogueTreeService.activeOptions(context);
+        if (activeTreeOptions.isPresent()) {
+            return activeTreeOptions.get();
+        }
+
+        List<DialogueOptionDefinition> options = new ArrayList<>(load(context.level().getServer(), context.locale()).options().stream()
                 .filter(option -> option.matches(context, disposition))
                 .sorted(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id))
-                .toList();
+                .toList());
+        options.addAll(DialogueTreeResources.entryOptions(context, disposition));
+        options.sort(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id));
+        return List.copyOf(options);
     }
 
     public static Optional<DialogueOptionDefinition> dialogueOption(DialogueContext context, String optionId) {
@@ -729,6 +737,7 @@ public final class VillagerDialogueResources {
                     location,
                     DialogueEntryMetadata.read(location, "dialogue option", context, entry),
                     DialogueQuestAction.read(location, context, entry),
+                    DialogueTreeReference.EMPTY,
                     label,
                     requestType.get(),
                     showForAdults,
