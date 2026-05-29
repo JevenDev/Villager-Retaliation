@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
@@ -22,7 +23,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
-        DialogueCondition.Weather, DialogueCondition.Time {
+        DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.Weather, DialogueCondition.Time {
 
     boolean matches(DialogueContext context);
 
@@ -67,6 +68,8 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             case "villager_age" -> Optional.of(readVillagerAge(condition));
             case "social_attribute", "attribute", "stat" -> readSocialAttribute(location, context, condition);
             case "skill" -> readSkill(location, context, condition);
+            case "villager_level", "trade_level" -> readVillagerLevel(location, context, condition);
+            case "quest" -> readQuest(location, context, condition);
             case "weather" -> readWeather(condition);
             case "time", "time_of_day" -> readTime(condition);
             default -> {
@@ -245,6 +248,46 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
                 maxRank));
     }
 
+    private static Optional<DialogueCondition> readVillagerLevel(ResourceLocation location, String context, JsonObject condition) {
+        Set<Integer> levels = new java.util.LinkedHashSet<>();
+        for (String value : readStringList(condition, "level")) {
+            readVillagerLevelValue(value).ifPresent(levels::add);
+        }
+        for (String value : readStringList(condition, "levels")) {
+            readVillagerLevelValue(value).ifPresent(levels::add);
+        }
+        Integer min = readVillagerLevelBound(condition, "min");
+        if (min == null) {
+            min = readVillagerLevelBound(condition, "min_level");
+        }
+        Integer max = readVillagerLevelBound(condition, "max");
+        if (max == null) {
+            max = readVillagerLevelBound(condition, "max_level");
+        }
+        if (levels.isEmpty() && min == null && max == null) {
+            warnInvalid(location, context, "villager_level condition must define level, levels, min, or max.");
+            return Optional.empty();
+        }
+        return Optional.of(new VillagerLevel(Set.copyOf(levels), min, max));
+    }
+
+    private static Optional<DialogueCondition> readQuest(ResourceLocation location, String context, JsonObject condition) {
+        ResourceLocation questId = null;
+        for (String key : List.of("quest", "quest_id", "id")) {
+            String value = readString(condition, key);
+            if (!value.isBlank()) {
+                questId = ResourceLocation.tryParse(value);
+                break;
+            }
+        }
+        if (questId == null) {
+            warnInvalid(location, context, "quest condition must define quest or quest_id.");
+            return Optional.empty();
+        }
+        Set<String> states = readNormalizedStrings(condition, "state", "states");
+        return Optional.of(new Quest(questId, states));
+    }
+
     private static Optional<DialogueCondition> readWeather(JsonObject condition) {
         EnumSet<DialogueContext.WeatherState> states = EnumSet.noneOf(DialogueContext.WeatherState.class);
         for (String value : readStringList(condition, "state")) {
@@ -373,6 +416,32 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     private static boolean readBoolean(JsonObject entry, String key, boolean fallback) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
+    }
+
+    private static Integer readVillagerLevelBound(JsonObject entry, String key) {
+        String value = readString(entry, key);
+        return value.isBlank() ? null : readVillagerLevelValue(value).orElse(null);
+    }
+
+    private static Optional<Integer> readVillagerLevelValue(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "novice" -> Optional.of(1);
+            case "apprentice" -> Optional.of(2);
+            case "journeyman" -> Optional.of(3);
+            case "expert" -> Optional.of(4);
+            case "master" -> Optional.of(5);
+            default -> {
+                try {
+                    yield Optional.of(Math.max(1, Math.min(5, Integer.parseInt(normalized))));
+                } catch (NumberFormatException ignored) {
+                    yield Optional.empty();
+                }
+            }
+        };
     }
 
     private static <E extends Enum<E>> Optional<E> readEnum(String value, Class<E> enumClass) {
@@ -668,6 +737,37 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         @Override
         public int specificityScore() {
             return 4;
+        }
+    }
+
+    record VillagerLevel(Set<Integer> levels, Integer minLevel, Integer maxLevel) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            int level = context.villager().getVillagerData().getLevel();
+            if (!this.levels.isEmpty() && !this.levels.contains(level)) {
+                return false;
+            }
+            if (this.minLevel != null && level < this.minLevel) {
+                return false;
+            }
+            return this.maxLevel == null || level <= this.maxLevel;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 3;
+        }
+    }
+
+    record Quest(ResourceLocation questId, Set<String> states) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            return VillagerQuestService.matchesState(context, this.questId, this.states);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 8;
         }
     }
 

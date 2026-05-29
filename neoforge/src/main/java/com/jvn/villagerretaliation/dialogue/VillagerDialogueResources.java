@@ -44,6 +44,7 @@ public final class VillagerDialogueResources {
     private static final Set<String> OPTION_KEYS = Set.of(
             "id", "label", "type", "request", "order", "professions", "dispositions",
             "metadata", "topic", "tags", "questline", "questline_id", "quest", "quest_id", "stage", "chapter", "notes", "author_notes",
+            "quest_action",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
             "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
@@ -727,6 +728,7 @@ public final class VillagerDialogueResources {
                     resolvedId,
                     location,
                     DialogueEntryMetadata.read(location, "dialogue option", context, entry),
+                    DialogueQuestAction.read(location, context, entry),
                     label,
                     requestType.get(),
                     showForAdults,

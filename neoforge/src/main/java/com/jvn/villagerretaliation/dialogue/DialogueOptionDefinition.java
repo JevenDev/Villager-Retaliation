@@ -12,6 +12,7 @@ public record DialogueOptionDefinition(
         String id,
         ResourceLocation source,
         DialogueEntryMetadata metadata,
+        DialogueQuestAction questAction,
         String label,
         DialogueRequestType requestType,
         boolean showForAdults,
@@ -66,6 +67,7 @@ public record DialogueOptionDefinition(
 
     public DialogueOptionDefinition {
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
+        questAction = questAction == null ? DialogueQuestAction.EMPTY : questAction;
         conditions = conditions == null ? List.of() : List.copyOf(conditions);
     }
 
@@ -211,6 +213,7 @@ public record DialogueOptionDefinition(
                 id,
                 null,
                 DialogueEntryMetadata.EMPTY,
+                DialogueQuestAction.EMPTY,
                 label,
                 requestType,
                 true,

@@ -8,7 +8,8 @@ const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
 const roots = {
   dialogue: "neoforge/src/main/resources/data/villagerretaliation/dialogue/en_us",
   forcedDialogue: "neoforge/src/main/resources/data/villagerretaliation/forced_dialogue",
-  notifications: "neoforge/src/main/resources/data/villagerretaliation/notifications/en_us"
+  notifications: "neoforge/src/main/resources/data/villagerretaliation/notifications/en_us",
+  quests: "neoforge/src/main/resources/data/villagerretaliation/quests"
 };
 
 const legacyLineFields = new Set([
@@ -92,6 +93,9 @@ const conditionTypes = new Set([
   "attribute",
   "stat",
   "skill",
+  "villager_level",
+  "trade_level",
+  "quest",
   "weather",
   "time",
   "time_of_day"
@@ -127,6 +131,9 @@ const conditionKeys = {
   attribute: new Set(["type", "attribute", "attributes", "stat", "stats", "min", "max"]),
   stat: new Set(["type", "attribute", "attributes", "stat", "stats", "min", "max"]),
   skill: new Set(["type", "skill", "skills", "min", "max", "min_rank", "max_rank"]),
+  villager_level: new Set(["type", "level", "levels", "min", "min_level", "max", "max_level"]),
+  trade_level: new Set(["type", "level", "levels", "min", "min_level", "max", "max_level"]),
+  quest: new Set(["type", "quest", "quest_id", "id", "state", "states"]),
   weather: new Set(["type", "state", "states", "weather", "weathers"]),
   time: new Set(["type", "value", "values", "time", "times"]),
   time_of_day: new Set(["type", "value", "values", "time", "times"])
@@ -182,6 +189,24 @@ const villagerSkills = new Set([
   "survival"
 ]);
 const skillRanks = new Set(["novice", "apprentice", "skilled", "expert", "master"]);
+const villagerLevels = new Set(["novice", "apprentice", "journeyman", "expert", "master", "1", "2", "3", "4", "5"]);
+const questStates = new Set([
+  "available",
+  "not_started",
+  "locked",
+  "active",
+  "started",
+  "in_progress",
+  "incomplete",
+  "ready",
+  "turn_in",
+  "turnin",
+  "completeable",
+  "completable",
+  "completed",
+  "complete",
+  "not_completed"
+]);
 const memoryKinds = new Set([
   "recent_broken_bed",
   "recent_direct_hit",
@@ -215,6 +240,7 @@ const memoryTags = new Set([
   "player_gave_disliked_gift",
   "player_gave_hated_gift",
   "player_container_theft",
+  "player_completed_quest",
   "villager_retaliation_started"
 ]);
 const memorySources = new Set(["any", "self", "this_villager", "villager", "other", "other_villager", "another_villager"]);
@@ -330,6 +356,7 @@ const knownPlaceholders = new Set([
   "held_item_id",
   "held_item_max_durability",
   "held_item_slot",
+  "has_proof",
   "interrupted_villager",
   "item",
   "item_count",
@@ -355,6 +382,7 @@ const knownPlaceholders = new Set([
   "payment_items",
   "payment_stack",
   "player",
+  "proof_item",
   "player_item",
   "player_item_damage",
   "player_item_durability",
@@ -369,6 +397,8 @@ const knownPlaceholders = new Set([
   "prior_container_thefts",
   "prior_retaliations",
   "previous_villager",
+  "quest",
+  "quest_id",
   "relative",
   "relative_possessive",
   "restocked_summary",
@@ -400,6 +430,8 @@ const knownPlaceholders = new Set([
   "target_kind",
   "target_name",
   "target_type",
+  "target_x",
+  "target_z",
   "tested_villager",
   "theft_witness",
   "theft_witness_possessive",
@@ -413,6 +445,7 @@ const knownPlaceholders = new Set([
   "victim",
   "victim_name",
   "victim_profession",
+  "visited_target",
   "villager",
   "villager_name",
   "villager_possessive",
@@ -753,6 +786,11 @@ function checkCondition(file, condition, location) {
     checkOptionalInteger(file, condition, location, "min", { min: 1, max: 100 });
     checkOptionalInteger(file, condition, location, "max", { min: 1, max: 100 });
     checkStringValues(file, condition, location, ["min_rank", "max_rank"], skillRanks, "villager skill rank");
+  } else if (type === "villager_level" || type === "trade_level") {
+    checkStringValues(file, condition, location, ["level", "levels", "min", "min_level", "max", "max_level"], villagerLevels, "villager trade level");
+  } else if (type === "quest") {
+    checkStringList(file, condition, location, ["quest", "quest_id", "id"], "quest id");
+    checkStringValues(file, condition, location, ["state", "states"], questStates, "quest state", { requireAny: true });
   } else if (type === "weather") {
     checkStringValues(file, condition, location, ["state", "states", "weather", "weathers"], weatherStates, "weather state", { requireAny: true });
   } else if (type === "time" || type === "time_of_day") {

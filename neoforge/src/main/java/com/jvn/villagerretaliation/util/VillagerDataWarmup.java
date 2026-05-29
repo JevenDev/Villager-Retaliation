@@ -9,6 +9,8 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.interaction.VillagerGiftResources;
 import com.jvn.villagerretaliation.loot.ProfessionLootResources;
 import com.jvn.villagerretaliation.notification.VillagerNotificationResources;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.trade.SkillTradeResources;
@@ -32,10 +34,12 @@ public final class VillagerDataWarmup {
         ForcedDialogueResources.warm(server);
         BiomeStoryResources.warm(server);
         DangerousStructureStoryResources.warm(server);
+        VillagerQuestResources.warm(server);
         VillagerPresetNameRegistry.warm(server);
         VillagerInteractionSavedData.get(server.overworld());
         VillagerReputationSavedData.get(server.overworld());
         VillagerSocialGraphSavedData.get(server.overworld());
+        VillagerQuestSavedData.get(server.overworld());
     }
 
     public static void clearCaches() {
@@ -54,6 +58,7 @@ public final class VillagerDataWarmup {
         ForcedDialogueResources.clearCache();
         BiomeStoryResources.clearCache();
         DangerousStructureStoryResources.clearCache();
+        VillagerQuestResources.clearCache();
         VillagerPresetNameRegistry.clearCache();
         VillageMembership.clearCache();
         VillagerRetaliationVillagerWeapons.clearCache();

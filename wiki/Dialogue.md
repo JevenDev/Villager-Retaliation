@@ -265,6 +265,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `min_reputation` | integer | none | Minimum exact reputation value with this villager. |
 | `max_reputation` | integer | none | Maximum exact reputation value with this villager. |
 | `conditions` | array | none | Beta.12+. Compound condition blocks for option visibility. Prefer this for new family and relationship option checks. |
+| `quest_action` | object | none | Starts, reminds, or turns in a loaded quest when this option is selected. Use with `conditions` quest states so only the correct option is visible. |
 | `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
 | `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `min_player_item_durability` | integer | none | Minimum remaining durability on the matched player item. Alias: `min_held_item_durability`. |
@@ -576,6 +577,8 @@ Condition blocks support:
 | `villager_age` | `baby`, `adult` | Matches the speaker's age. |
 | `social_attribute` / `stat` | `attribute`, `attributes`, `stat`, `stats`, `min`, `max` | Matches villager profile Social Attribute scores from 1-100. Attribute values are `knowledge`, `guts`, `proficiency`, `kindness`, and `charm`; `intellect` and `intelligence` are aliases for `knowledge`. If several attributes are listed, any one matching attribute passes. |
 | `skill` | `skill`, `skills`, `min`, `max`, `min_rank`, `max_rank` | Matches villager skill scores from 1-100 or ranks `novice`, `apprentice`, `skilled`, `expert`, and `master`. If several skills are listed, any one matching skill passes. Use `all_of` if several skills must match at once. |
+| `villager_level` / `trade_level` | `level`, `levels`, `min`, `max` | Matches the vanilla villager trade level. Values can be `novice`, `apprentice`, `journeyman`, `expert`, `master`, or `1`-`5`. |
+| `quest` | `quest`, `quest_id`, `state`, `states` | Matches a loaded quest state. Useful states are `available`, `not_started`, `in_progress`, `ready`, `completed`, and `not_completed`. |
 | `weather` | `state`, `states`, `weather`, `weathers` | Uses `clear`, `rain`, or `thunder`. |
 | `time` / `time_of_day` | `value`, `values`, `time`, `times` | Uses `morning`, `afternoon`, `evening`, or `night`. |
 

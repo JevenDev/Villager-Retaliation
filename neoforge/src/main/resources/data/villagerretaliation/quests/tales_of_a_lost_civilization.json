@@ -1,0 +1,94 @@
+{
+  "id": "villagerretaliation:tales_of_a_lost_civilization",
+  "display": {
+    "title": "Tales of a Lost Civilization",
+    "description": "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard."
+  },
+  "questline": "lost_civilization",
+  "offer": {
+    "profession": "minecraft:cartographer",
+    "min_villager_level": "journeyman",
+    "skills": [
+      {
+        "skill": "cartography",
+        "min": 50
+      }
+    ]
+  },
+  "target": {
+    "structure": "minecraft:ancient_city",
+    "pieces": [
+      "ancient_city/city_center/city_center_1",
+      "ancient_city/city_center/city_center_2",
+      "ancient_city/city_center/city_center_3"
+    ],
+    "search_radius": 256,
+    "discovery_radius": 128,
+    "proof_item": "minecraft:echo_shard"
+  },
+  "criteria": {
+    "visit_city_center": {
+      "trigger": "villagerretaliation:structure_piece",
+      "structure": "minecraft:ancient_city",
+      "pieces": [
+        "ancient_city/city_center/city_center_1",
+        "ancient_city/city_center/city_center_2",
+        "ancient_city/city_center/city_center_3"
+      ]
+    },
+    "echo_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "item": "minecraft:echo_shard"
+    }
+  },
+  "requirements": [
+    [
+      "visit_city_center",
+      "echo_shard"
+    ]
+  ],
+  "rewards": {
+    "experience": 350,
+    "reputation": 18,
+    "gossip_reputation": 8,
+    "memory": "player_completed_quest",
+    "loot": "villagerretaliation:quest/tales_of_a_lost_civilization"
+  },
+  "dialogue": {
+    "start": [
+      "There are old maps that refuse to stay still. One points {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. If you truly want the story, find the heart of {target} and bring back {proof_item}.",
+      "I have copied this mark three times, and every copy crawls back to the same place: {target_x}, {target_z}, {direction} of us. Go carefully. The center of {target} is the part that matters, and {proof_item} will prove you reached it.",
+      "You are interested. Good. Then listen closely: travel {direction}, about {distance} blocks, toward {target_x}, {target_z}. Stand in the city center, not just the outskirts, and return with {proof_item}."
+    ],
+    "reminder": [
+      "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
+      "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+      "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
+    ],
+    "turn_in": [
+      "So the stories were not just ink after all. Keep what you learned close, and let the village know you walked where silence keeps records.",
+      "You found the center and brought proof. That is more than a map can do. This village will remember your name beside that lost place.",
+      "An Echo Shard from the heart of {target}. I believe you. Some stories should be paid for before they are repeated."
+    ],
+    "already_completed": [
+      "That lost city has already given us its answer.",
+      "We have that tale now. I am still deciding how much of it should be spoken aloud."
+    ],
+    "unavailable": [
+      "Not yet. This story needs a steadier hand with maps.",
+      "There are marks I do not show until I trust the reading, and the reader."
+    ],
+    "missing_target": [
+      "That shard alone is not enough. You need to stand in the central heart of {target}, not only its halls.",
+      "The proof is half the story. The other half is the place itself: the city center near {target_x}, {target_z}."
+    ],
+    "missing_proof": [
+      "You saw the place, then. Bring me {proof_item}, and I can call the tale complete.",
+      "The journey needs a token. Find {proof_item} in those depths and bring it back."
+    ],
+    "locate_failed": [
+      "The map table is quiet today. I cannot find a clean mark for that city.",
+      "I can feel the old road under the ink, but not clearly enough to send you there."
+    ]
+  }
+}

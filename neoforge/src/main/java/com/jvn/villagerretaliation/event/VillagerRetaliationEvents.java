@@ -22,6 +22,7 @@ import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
@@ -183,6 +184,7 @@ public final class VillagerRetaliationEvents {
         if (entity instanceof ServerPlayer player) {
             VillagerReputationAdvancements.onPlayerTick(player);
             VillagerRecruitmentService.onPlayerTick(player);
+            VillagerQuestService.onPlayerTick(player);
             return;
         }
         if (entity instanceof Villager villager) {

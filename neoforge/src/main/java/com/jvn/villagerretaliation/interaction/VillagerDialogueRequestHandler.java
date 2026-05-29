@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
@@ -196,6 +197,10 @@ public final class VillagerDialogueRequestHandler {
                             "share_story_missing",
                             VillagerDialogueResources.message(context, "share_story.missing").orElse("")
                     ));
+        }
+        Optional<VillagerDialogueService.DialogueResult> questResult = VillagerQuestService.handleDialogueOption(context, dialogueOption);
+        if (questResult.isPresent()) {
+            return questResult.get();
         }
         return VillagerDialogueService.select(
                 context,

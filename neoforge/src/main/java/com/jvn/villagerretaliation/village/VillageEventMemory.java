@@ -452,6 +452,7 @@ public final class VillageEventMemory {
         PLAYER_GAVE_DISLIKED_GIFT,
         PLAYER_GAVE_HATED_GIFT,
         PLAYER_CONTAINER_THEFT,
+        PLAYER_COMPLETED_QUEST,
         VILLAGER_RETALIATION_STARTED
     }
 

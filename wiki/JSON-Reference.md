@@ -76,6 +76,12 @@ Normal dialogue `lines`, keyed dialogue `messages`, `openings`, `closings`, `pac
 
 Selection is entry-first: filters and `chance` are checked, `weight` chooses a matching entry, and then one value from `lines` is selected at random. If you collapse several old entries into one `lines` entry, set the new `weight` to the old total when you want the same overall odds.
 
+## Quests
+
+Quest files live in `data/<namespace>/quests/`. They combine advancement-like `criteria` with explicit offer, target, reward, and dialogue sections. Dialogue options can run quest actions through `quest_action` and show/hide with `conditions` using `type: "quest"`.
+
+See [Quest JSON](Quests.md) for the first supported quest schema and the built-in `Tales of a Lost Civilization` pattern.
+
 ## Common Professions
 
 Use lowercase ids. `minecraft:` is optional for vanilla professions.

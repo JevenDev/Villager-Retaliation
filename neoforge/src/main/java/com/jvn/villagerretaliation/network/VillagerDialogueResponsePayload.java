@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.network;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -76,6 +77,7 @@ public record VillagerDialogueResponsePayload(
                     buffer.readUtf(128),
                     null,
                     DialogueEntryMetadata.EMPTY,
+                    DialogueQuestAction.EMPTY,
                     buffer.readUtf(128),
                     buffer.readEnum(DialogueRequestType.class),
                     true,
