@@ -46,6 +46,8 @@ public final class VillagerReputationNotificationOverlay {
     private static final int VILLAGER_HIRED_TEXT_COLOR = 0xFF55AAFF;
     private static final int VILLAGER_FIRED_TEXT_COLOR = 0xFFFFAA55;
     private static final int VILLAGER_DEATH_TEXT_COLOR = 0xFFFF5555;
+    private static final int QUEST_TEXT_COLOR = 0xFFFFD166;
+    private static final int QUEST_STRIPE_COLOR = 0xFFFFD166;
     private static final int SHADOW_COLOR = 0xB0000000;
     private static final int ENTRY_LIFETIME_TICKS = 82;
     private static final int FADE_IN_TICKS = 8;
@@ -232,12 +234,17 @@ public final class VillagerReputationNotificationOverlay {
 
     private static void renderEntry(GuiGraphics graphics, Font font, NotificationEntry entry, int x, int y, int width, float alpha) {
         int background = VillagerClientUiUtil.withAlphaRound(BACKGROUND_COLOR, alpha);
-        int stripe = VillagerClientUiUtil.withAlphaRound(STRIPE_COLOR, alpha);
+        int stripe = VillagerClientUiUtil.withAlphaRound(
+                entry.kind == VillagerReputationNoticeKind.QUEST ? QUEST_STRIPE_COLOR : STRIPE_COLOR,
+                alpha);
         int shadow = VillagerClientUiUtil.withAlphaRound(SHADOW_COLOR, alpha);
         int textColor = VillagerClientUiUtil.withAlphaRound(textColor(entry), alpha);
 
         graphics.fill(x, y, x + width, y + ENTRY_HEIGHT, background);
         graphics.fill(x, y, x + 2, y + ENTRY_HEIGHT, stripe);
+        if (entry.kind == VillagerReputationNoticeKind.QUEST) {
+            graphics.fill(x + 4, y + ENTRY_HEIGHT - 2, x + width - 4, y + ENTRY_HEIGHT - 1, stripe);
+        }
         graphics.fill(x, y + ENTRY_HEIGHT, x + width, y + ENTRY_HEIGHT + 1, shadow);
 
         graphics.pose().pushPose();
@@ -263,6 +270,7 @@ public final class VillagerReputationNotificationOverlay {
             case VILLAGER_HIRED -> VILLAGER_HIRED_TEXT_COLOR;
             case VILLAGER_FIRED -> VILLAGER_FIRED_TEXT_COLOR;
             case VILLAGER_DEATH -> VILLAGER_DEATH_TEXT_COLOR;
+            case QUEST -> QUEST_TEXT_COLOR;
             default -> TEXT_COLOR;
         };
     }
@@ -279,6 +287,7 @@ public final class VillagerReputationNotificationOverlay {
             case VILLAGER_HIRED -> ChatFormatting.AQUA;
             case VILLAGER_FIRED -> ChatFormatting.GOLD;
             case VILLAGER_DEATH -> ChatFormatting.RED;
+            case QUEST -> ChatFormatting.GOLD;
             default -> ChatFormatting.GRAY;
         };
     }

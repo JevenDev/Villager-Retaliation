@@ -37,6 +37,36 @@
       "color": "#55AAFF"
     },
     {
+      "trigger": "quest.started",
+      "text": "Quest started: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    },
+    {
+      "trigger": "quest.updated",
+      "text": "Quest updated: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    },
+    {
+      "trigger": "quest.location_reached",
+      "text": "Quest location reached: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    },
+    {
+      "trigger": "quest.completed",
+      "text": "Quest completed: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    },
+    {
+      "trigger": "quest.abandoned",
+      "text": "Quest abandoned: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    },
+    {
       "trigger": "recruitment.follow_start",
       "text": "{villager} is following you.",
       "kind": "villager_following",

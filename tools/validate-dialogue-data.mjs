@@ -206,6 +206,12 @@ const questStates = new Set([
   "completable",
   "completed",
   "complete",
+  "abandoned",
+  "dropped",
+  "consumed",
+  "removed",
+  "removed_forever",
+  "unavailable",
   "not_completed"
 ]);
 const memoryKinds = new Set([
@@ -287,7 +293,7 @@ const weatherStates = new Set(["clear", "rain", "thunder"]);
 const timesOfDay = new Set(["morning", "afternoon", "evening", "night"]);
 const dialogueTreeActionTypes = new Set(["quest", "xp", "experience", "reputation", "gossip", "gossip_reputation", "memory", "village_memory", "loot", "give_loot", "loot_table"]);
 const dialogueTreeActionKeys = new Set(["type", "kind", "quest", "quest_id", "action", "quest_action", "amount", "value", "loot", "loot_table", "memory", "memory_event", "tag", "lines"]);
-const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim"]);
+const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove"]);
 
 const knownPlaceholders = new Set([
   "active_order_word",

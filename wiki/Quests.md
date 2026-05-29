@@ -6,121 +6,75 @@ Quests live under:
 data/<namespace>/quests/<quest_id>.json
 ```
 
-Each quest is one JSON file with a stable `id`, an advancement-like `criteria` block for author clarity, and explicit runtime sections for offer rules, target tracking, and rewards. Put authored quest conversations in [Dialogue Tree JSON](Dialogue-Trees.md), where entries can start, remind, and turn in the quest.
+Each quest owns its objective rules, lifecycle limits, rewards, and optional tracker text. Branching offer, reminder, turn-in, and abandon conversations should live in matching [Dialogue Tree JSON](Dialogue-Trees.md) files.
 
-## Minimal Shape
+## Lifecycle Rules
+
+Use `rules` to control whether a player can retake or farm a quest.
+
+| Field | Type | Default | Purpose |
+| --- | --- | --- | --- |
+| `repeatable` | boolean | `false` | Allows a completed quest to be accepted again when limits and cooldowns allow it. |
+| `locked_to_villager` | boolean | `true` | Active quest reminder, turn-in, and abandon actions must happen with the villager who started it. |
+| `cross_villager_compatible` | boolean | `false` | If `false`, prior starts/completions/abandons are tied to the original villager and cannot be immediately bypassed with another villager. |
+| `max_starts` | integer | `1`, or unlimited when repeatable | Maximum times this player may start the quest. Use `0` for unlimited starts. |
+| `max_completions` | integer | `1`, or unlimited when repeatable | Maximum times this player may complete the quest. Use `0` for unlimited completions. |
+| `completion_cooldown_ticks` / `_seconds` / `_days` | duration | `0` | Wait after completion before a repeatable quest can be accepted again. |
+| `abandonment` | enum | `allow_repickup` | `remove_forever`, `allow_repickup`, or `cooldown`. |
+| `abandonment_cooldown_ticks` / `_seconds` / `_days` | duration | `0` | Wait after abandoning before the quest can be accepted again. |
+| `consume_on_completion` | boolean | `false` | Marks the quest permanently consumed after completion. |
+| `consume_on_abandonment` | boolean | `false` | Marks the quest permanently consumed after abandonment. |
+
+Example:
 
 ```json
 {
-  "id": "example:tales_of_a_lost_civilization",
-  "display": {
+  "rules": {
+    "repeatable": false,
+    "locked_to_villager": true,
+    "cross_villager_compatible": false,
+    "max_starts": 0,
+    "max_completions": 1,
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 1,
+    "consume_on_completion": true
+  }
+}
+```
+
+## Tracker Text
+
+Use `tracker` to define the middle-left quest tracker copy. The runtime chooses a current step key such as `travel`, `proof`, or `return`, then resolves placeholders in that step.
+
+```json
+{
+  "tracker": {
     "title": "Tales of a Lost Civilization",
-    "description": "Find an Ancient City center and bring back proof."
-  },
-  "questline": "lost_civilization",
-  "offer": {
-    "profession": "minecraft:cartographer",
-    "min_villager_level": "journeyman",
-    "skills": [{ "skill": "cartography", "min": 50 }]
-  },
-  "target": {
-    "structure": "minecraft:ancient_city",
-    "pieces": [
-      "ancient_city/city_center/city_center_1",
-      "ancient_city/city_center/city_center_2",
-      "ancient_city/city_center/city_center_3"
-    ],
-    "search_radius": 256,
-    "discovery_radius": 128,
-    "proof_item": "minecraft:echo_shard"
-  },
-  "rewards": {
-    "experience": 350,
-    "reputation": 18,
-    "gossip_reputation": 8,
-    "memory": "player_completed_quest",
-    "loot": "example:quest/lost_civilization"
-  }
-}
-```
-
-## Dialogue Trees
-
-Quest conversations should be authored as dialogue trees under `data/<namespace>/dialogue_trees/<locale>/`. A tree can expose several entries for different quest states:
-
-```json
-{
-  "entries": [
-    {
-      "id": "offer",
-      "label": "Lost Civilization",
-      "profession": "minecraft:cartographer",
-      "conditions": [
-        { "type": "quest", "quest": "example:tales_of_a_lost_civilization", "state": "available" }
-      ],
-      "start": "offer"
+    "metadata": {
+      "source": "Cartographer commission"
     },
-    {
-      "id": "turn_in",
-      "label": "Lost Civilization",
-      "profession": "minecraft:cartographer",
-      "conditions": [
-        { "type": "quest", "quest": "example:tales_of_a_lost_civilization", "state": "ready" }
-      ],
-      "start": "turn_in"
+    "steps": {
+      "travel": {
+        "text": "Reach the Ancient City center near {target_x}, {target_z}.",
+        "show_progress": true,
+        "progress": 0.25,
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        }
+      },
+      "proof": {
+        "text": "Recover {proof_item} as proof of the journey.",
+        "show_progress": true,
+        "progress": 0.66
+      },
+      "return": {
+        "text": "Return to the cartographer with {proof_item}.",
+        "show_progress": true,
+        "progress": 1.0
+      }
     }
-  ]
-}
-```
-
-Inside tree nodes, run the quest with an action:
-
-```json
-{
-  "type": "quest",
-  "quest": "example:tales_of_a_lost_civilization",
-  "action": "start",
-  "lines": {
-    "started": ["Travel {direction} toward {target_x}, {target_z}. Bring back {proof_item}."],
-    "locate_failed": ["The map table is quiet today."]
   }
 }
 ```
 
-Supported quest actions are `start`, `remind`, and `turn_in`. Pair entries with quest states:
-
-```text
-available
-not_started
-in_progress
-ready
-completed
-not_completed
-```
-
-## Runtime Notes
-
-- `target.structure` is located through Minecraft's structure search, then stored in player quest progress.
-- `target.pieces` checks the actual structure piece the player stands in. Omit it when any piece of the structure should count.
-- `proof_item` must be in the player's inventory at turn-in time.
-- `reputation` changes the returning cartographer's relationship with the player.
-- `gossip_reputation` spreads a smaller reputation change through villager gossip.
-- `memory` creates a village event memory, so later dialogue can reference the completed quest with `player_completed_quest`.
-- `loot` points at a normal loot table under `data/<namespace>/loot_table/`.
-
-## Quest Dialogue Placeholders
-
-Quest dialogue supports:
-
-```text
-{quest}
-{quest_id}
-{target}
-{target_x}
-{target_z}
-{direction}
-{distance}
-{proof_item}
-{visited_target}
-{has_proof}
-```
+Tracker text supports `{quest}`, `{quest_id}`, `{target}`, `{target_x}`, `{target_z}`, `{direction}`, `{distance}`, `{proof_item}`, `{visited_target}`, and `{has_proof}`.

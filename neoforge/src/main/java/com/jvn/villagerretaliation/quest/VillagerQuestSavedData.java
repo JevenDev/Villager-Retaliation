@@ -27,10 +27,15 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_STARTED_VILLAGER = "StartedVillager";
     private static final String TAG_STARTED_TIME = "StartedGameTime";
     private static final String TAG_COMPLETED_TIME = "CompletedGameTime";
+    private static final String TAG_ABANDONED_TIME = "AbandonedGameTime";
     private static final String TAG_VISITED_TARGET = "VisitedTarget";
     private static final String TAG_HAS_PROOF = "HasProof";
     private static final String TAG_TARGET_DIMENSION = "TargetDimension";
     private static final String TAG_TARGET_POS = "TargetPos";
+    private static final String TAG_START_COUNT = "StartCount";
+    private static final String TAG_COMPLETION_COUNT = "CompletionCount";
+    private static final String TAG_ABANDON_COUNT = "AbandonCount";
+    private static final String TAG_CONSUMED_REASON = "ConsumedReason";
 
     private final Map<UUID, Map<ResourceLocation, QuestProgress>> entries = new HashMap<>();
 
@@ -103,7 +108,9 @@ public class VillagerQuestSavedData extends SavedData {
     public enum QuestState {
         NOT_STARTED,
         ACTIVE,
-        COMPLETED;
+        COMPLETED,
+        ABANDONED,
+        CONSUMED;
 
         public static QuestState byName(String value) {
             if (value == null || value.isBlank()) {
@@ -122,10 +129,15 @@ public class VillagerQuestSavedData extends SavedData {
         private UUID startedVillagerId;
         private long startedGameTime;
         private long completedGameTime;
+        private long abandonedGameTime;
         private boolean visitedTarget;
         private boolean hasProof;
         private ResourceKey<Level> targetDimension;
         private BlockPos targetPos;
+        private int startCount;
+        private int completionCount;
+        private int abandonCount;
+        private String consumedReason = "";
 
         private static QuestProgress load(CompoundTag tag) {
             QuestProgress progress = new QuestProgress();
@@ -135,8 +147,13 @@ public class VillagerQuestSavedData extends SavedData {
             }
             progress.startedGameTime = tag.getLong(TAG_STARTED_TIME);
             progress.completedGameTime = tag.getLong(TAG_COMPLETED_TIME);
+            progress.abandonedGameTime = tag.getLong(TAG_ABANDONED_TIME);
             progress.visitedTarget = tag.getBoolean(TAG_VISITED_TARGET);
             progress.hasProof = tag.getBoolean(TAG_HAS_PROOF);
+            progress.startCount = tag.getInt(TAG_START_COUNT);
+            progress.completionCount = tag.getInt(TAG_COMPLETION_COUNT);
+            progress.abandonCount = tag.getInt(TAG_ABANDON_COUNT);
+            progress.consumedReason = tag.getString(TAG_CONSUMED_REASON);
             ResourceLocation dimensionId = ResourceLocation.tryParse(tag.getString(TAG_TARGET_DIMENSION));
             if (dimensionId != null) {
                 progress.targetDimension = ResourceKey.create(Registries.DIMENSION, dimensionId);
@@ -156,8 +173,13 @@ public class VillagerQuestSavedData extends SavedData {
             }
             tag.putLong(TAG_STARTED_TIME, this.startedGameTime);
             tag.putLong(TAG_COMPLETED_TIME, this.completedGameTime);
+            tag.putLong(TAG_ABANDONED_TIME, this.abandonedGameTime);
             tag.putBoolean(TAG_VISITED_TARGET, this.visitedTarget);
             tag.putBoolean(TAG_HAS_PROOF, this.hasProof);
+            tag.putInt(TAG_START_COUNT, this.startCount);
+            tag.putInt(TAG_COMPLETION_COUNT, this.completionCount);
+            tag.putInt(TAG_ABANDON_COUNT, this.abandonCount);
+            tag.putString(TAG_CONSUMED_REASON, this.consumedReason);
             if (this.targetDimension != null) {
                 tag.putString(TAG_TARGET_DIMENSION, this.targetDimension.location().toString());
             }
@@ -187,6 +209,10 @@ public class VillagerQuestSavedData extends SavedData {
             return this.completedGameTime;
         }
 
+        public long abandonedGameTime() {
+            return this.abandonedGameTime;
+        }
+
         public boolean visitedTarget() {
             return this.visitedTarget;
         }
@@ -203,6 +229,22 @@ public class VillagerQuestSavedData extends SavedData {
             return this.targetPos;
         }
 
+        public int startCount() {
+            return this.startCount;
+        }
+
+        public int completionCount() {
+            return this.completionCount;
+        }
+
+        public int abandonCount() {
+            return this.abandonCount;
+        }
+
+        public String consumedReason() {
+            return this.consumedReason;
+        }
+
         public void start(UUID villagerId, ResourceKey<Level> dimension, BlockPos pos, long gameTime) {
             this.state = QuestState.ACTIVE;
             this.startedVillagerId = villagerId;
@@ -210,13 +252,29 @@ public class VillagerQuestSavedData extends SavedData {
             this.targetPos = pos == null ? null : pos.immutable();
             this.startedGameTime = gameTime;
             this.completedGameTime = 0L;
+            this.abandonedGameTime = 0L;
             this.visitedTarget = false;
             this.hasProof = false;
+            this.consumedReason = "";
+            this.startCount++;
         }
 
-        public void complete(long gameTime) {
-            this.state = QuestState.COMPLETED;
+        public void complete(long gameTime, boolean consume) {
+            this.state = consume ? QuestState.CONSUMED : QuestState.COMPLETED;
             this.completedGameTime = gameTime;
+            this.completionCount++;
+            this.consumedReason = consume ? "completion" : "";
+        }
+
+        public void abandon(long gameTime, boolean consume) {
+            this.state = consume ? QuestState.CONSUMED : QuestState.ABANDONED;
+            this.abandonedGameTime = gameTime;
+            this.abandonCount++;
+            this.visitedTarget = false;
+            this.hasProof = false;
+            this.targetDimension = null;
+            this.targetPos = null;
+            this.consumedReason = consume ? "abandonment" : "";
         }
 
         public boolean markVisitedTarget() {

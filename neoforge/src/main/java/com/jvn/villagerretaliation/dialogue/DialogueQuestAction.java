@@ -57,7 +57,8 @@ public record DialogueQuestAction(ResourceLocation questId, Action action) {
         NONE,
         START,
         REMIND,
-        TURN_IN;
+        TURN_IN,
+        ABANDON;
 
         public static Action bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
@@ -65,6 +66,7 @@ public record DialogueQuestAction(ResourceLocation questId, Action action) {
                 case "start", "accept", "begin" -> START;
                 case "remind", "reminder", "details" -> REMIND;
                 case "turn_in", "turnin", "complete", "claim" -> TURN_IN;
+                case "abandon", "drop", "cancel", "remove" -> ABANDON;
                 default -> NONE;
             };
         }

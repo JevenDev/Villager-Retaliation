@@ -22,6 +22,8 @@ Entries can use `text` for one output or `lines` for several equal variations. F
 }
 ```
 
+Quest HUD triggers use the `quest` notice kind and support quest placeholders such as `{quest}`, `{quest_id}`, `{target}`, `{proof_item}`, `{target_x}`, `{target_z}`, `{direction}`, and `{distance}` when the trigger is sent from quest dialogue. Built-in quest triggers are `quest.started`, `quest.updated`, `quest.location_reached`, `quest.completed`, and `quest.abandoned`.
+
 ## Dropdown Examples
 
 Each dropdown includes a minimal notification and an expanded version with useful filters, styling, or placeholders.

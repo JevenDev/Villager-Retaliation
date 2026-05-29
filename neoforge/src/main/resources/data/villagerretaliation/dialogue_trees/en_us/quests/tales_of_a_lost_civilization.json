@@ -66,6 +66,22 @@
         }
       ],
       "start": "turn_in"
+    },
+    {
+      "id": "abandon",
+      "label": "Abandon Lost Civilization",
+      "request": "story",
+      "order": 19,
+      "profession": "minecraft:cartographer",
+      "show_for_babies": false,
+      "conditions": [
+        {
+          "type": "quest",
+          "quest": "villagerretaliation:tales_of_a_lost_civilization",
+          "state": "active"
+        }
+      ],
+      "start": "abandon_confirm"
     }
   ],
   "nodes": {
@@ -195,6 +211,59 @@
       "lines": [
         "Then keep it safe until you are ready to let the village remember with you.",
         "No need to force the words. Bring them back when they have settled."
+      ],
+      "end": true
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Folding this map means the trail goes cold for a while. Are you sure?",
+        "I can put the old mark away, but I will not pretend the place stops waiting."
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Put the map away.",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest.",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "quest": "villagerretaliation:tales_of_a_lost_civilization",
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "Then I will fold the route away. If the old city keeps calling, come back and we can mark it again.",
+              "Done. The map rests for now."
+            ],
+            "abandoned_cooldown": [
+              "Then I will fold the route away for a day. Give the ink time to dry before asking me to mark it again.",
+              "Done. I can revisit the mark later, once the map has settled."
+            ],
+            "abandoned_forever": [
+              "Then I will close the ledger on this one.",
+              "Done. I will not offer that trail again."
+            ],
+            "unavailable": [
+              "That map is not in your hands right now.",
+              "There is no active trail here for me to fold away."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "abandon_cancel": {
+      "lines": [
+        "Good. A folded map remembers less than a carried one.",
+        "Then keep the mark. Some stories punish hesitation, but this one rewards care."
       ],
       "end": true
     }

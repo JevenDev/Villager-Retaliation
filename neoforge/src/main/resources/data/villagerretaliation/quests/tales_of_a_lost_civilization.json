@@ -26,6 +26,49 @@
     "discovery_radius": 128,
     "proof_item": "minecraft:echo_shard"
   },
+  "rules": {
+    "repeatable": false,
+    "locked_to_villager": true,
+    "cross_villager_compatible": false,
+    "max_starts": 0,
+    "max_completions": 1,
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 1,
+    "consume_on_completion": true,
+    "consume_on_abandonment": false
+  },
+  "tracker": {
+    "title": "Tales of a Lost Civilization",
+    "metadata": {
+      "source": "Cartographer commission"
+    },
+    "steps": {
+      "travel": {
+        "text": "Reach the Ancient City center near {target_x}, {target_z}.",
+        "show_progress": true,
+        "progress": 0.25,
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        }
+      },
+      "proof": {
+        "text": "Recover {proof_item} as proof of the journey.",
+        "show_progress": true,
+        "progress": 0.66,
+        "metadata": {
+          "hint": "City center visited"
+        }
+      },
+      "return": {
+        "text": "Return to the cartographer with {proof_item}.",
+        "show_progress": true,
+        "progress": 1.0,
+        "metadata": {
+          "hint": "Ready to turn in"
+        }
+      }
+    }
+  },
   "criteria": {
     "visit_city_center": {
       "trigger": "villagerretaliation:structure_piece",

@@ -11,5 +11,6 @@ public enum VillagerReputationNoticeKind {
     VILLAGER_DISMISSED,
     VILLAGER_HIRED,
     VILLAGER_FIRED,
-    VILLAGER_DEATH
+    VILLAGER_DEATH,
+    QUEST
 }

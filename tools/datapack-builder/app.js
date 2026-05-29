@@ -55,6 +55,11 @@ const CONSTANTS = {
     "dialogue.insult.negative",
     "dialogue.map.found",
     "dialogue.rumor.found",
+    "quest.started",
+    "quest.updated",
+    "quest.location_reached",
+    "quest.completed",
+    "quest.abandoned",
     "recruitment.follow_start",
     "recruitment.follow_stop",
     "recruitment.hired",
@@ -118,7 +123,8 @@ const CONSTANTS = {
     "villager_dismissed",
     "villager_hired",
     "villager_fired",
-    "villager_death"
+    "villager_death",
+    "quest"
   ],
   worldTextKinds: ["alert", "murmur", "positive", "negative", "trade", "dialogue", "sleep"],
   eventTags: [

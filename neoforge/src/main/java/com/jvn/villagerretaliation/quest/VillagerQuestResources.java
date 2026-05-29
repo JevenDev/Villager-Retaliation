@@ -130,6 +130,8 @@ public final class VillagerQuestResources {
                 parent,
                 readOffer(location, root),
                 readTarget(root),
+                readRules(root),
+                readTracker(root),
                 readRewards(root),
                 readDialogue(root)
         );
@@ -261,6 +263,103 @@ public final class VillagerQuestResources {
                         .orElse(null),
                 readMemoryEvent(rewards)
         );
+    }
+
+    private static QuestDefinition.Rules readRules(JsonObject root) {
+        JsonObject rules = DatapackJsonReader.readObject(root, "rules");
+        if (rules == null) {
+            return QuestDefinition.Rules.DEFAULT;
+        }
+
+        boolean repeatable = DatapackJsonReader.readBoolean(rules, "repeatable", false);
+        int maxStarts = Math.max(0, DatapackJsonReader.readInt(rules, "max_starts", repeatable ? 0 : 1));
+        int maxCompletions = Math.max(0, DatapackJsonReader.readInt(rules, "max_completions", repeatable ? 0 : 1));
+        return new QuestDefinition.Rules(
+                repeatable,
+                DatapackJsonReader.readBoolean(rules, "locked_to_villager", true),
+                DatapackJsonReader.readBoolean(rules, "cross_villager_compatible", false),
+                maxStarts,
+                maxCompletions,
+                readDurationTicks(rules, "completion_cooldown", 0L),
+                QuestDefinition.AbandonmentMode.bySerializedName(
+                        DatapackJsonReader.readString(rules, "abandonment", "abandonment_policy", "drop_policy")),
+                readDurationTicks(rules, "abandonment_cooldown", 0L),
+                DatapackJsonReader.readBoolean(rules, "consume_on_completion", false),
+                DatapackJsonReader.readBoolean(rules, "consume_on_abandonment", false)
+        );
+    }
+
+    private static long readDurationTicks(JsonObject object, String baseName, long fallback) {
+        Long ticks = readNullableLong(object, baseName + "_ticks");
+        if (ticks != null) {
+            return Math.max(0L, ticks);
+        }
+        Long days = readNullableLong(object, baseName + "_days");
+        if (days != null) {
+            return Math.max(0L, days * 24000L);
+        }
+        Long seconds = readNullableLong(object, baseName + "_seconds");
+        if (seconds != null) {
+            return Math.max(0L, seconds * 20L);
+        }
+        return fallback;
+    }
+
+    private static Long readNullableLong(JsonObject object, String key) {
+        JsonElement element = object.get(key);
+        if (element == null || !element.isJsonPrimitive()) {
+            return null;
+        }
+        try {
+            return element.getAsLong();
+        } catch (NumberFormatException | UnsupportedOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static QuestDefinition.Tracker readTracker(JsonObject root) {
+        JsonObject tracker = DatapackJsonReader.readObject(root, "tracker");
+        if (tracker == null) {
+            return QuestDefinition.Tracker.EMPTY;
+        }
+
+        Map<String, QuestDefinition.Step> steps = new LinkedHashMap<>();
+        JsonObject stepsObject = DatapackJsonReader.readObject(tracker, "steps");
+        if (stepsObject != null) {
+            for (Map.Entry<String, JsonElement> entry : stepsObject.entrySet()) {
+                if (entry.getValue().isJsonObject()) {
+                    steps.put(entry.getKey(), readTrackerStep(entry.getValue().getAsJsonObject()));
+                }
+            }
+        }
+
+        return new QuestDefinition.Tracker(
+                DatapackJsonReader.readString(tracker, "title"),
+                steps,
+                readStringMap(DatapackJsonReader.readObject(tracker, "metadata"))
+        );
+    }
+
+    private static QuestDefinition.Step readTrackerStep(JsonObject step) {
+        return new QuestDefinition.Step(
+                DatapackJsonReader.readString(step, "text", "label", "objective"),
+                DatapackJsonReader.readBoolean(step, "show_progress", "showProgress", true),
+                (float) DatapackJsonReader.readDouble(step, "progress", -1.0D),
+                readStringMap(DatapackJsonReader.readObject(step, "metadata"))
+        );
+    }
+
+    private static Map<String, String> readStringMap(JsonObject object) {
+        if (object == null) {
+            return Map.of();
+        }
+        Map<String, String> values = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            if (entry.getValue().isJsonPrimitive()) {
+                values.put(entry.getKey(), entry.getValue().getAsString());
+            }
+        }
+        return Map.copyOf(values);
     }
 
     private static VillageEventMemory.EventTag readMemoryEvent(JsonObject rewards) {

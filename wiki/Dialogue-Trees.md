@@ -92,14 +92,14 @@ Supported action types:
 
 | Type | Fields |
 | --- | --- |
-| `quest` | `quest`, `action`: `start`, `remind`, or `turn_in`; optional status-keyed `lines`. |
+| `quest` | `quest`, `action`: `start`, `remind`, `turn_in`, or `abandon`; optional status-keyed `lines`. |
 | `experience` / `xp` | `amount` |
 | `reputation` | `amount` |
 | `gossip` / `gossip_reputation` | `amount` |
 | `memory` / `village_memory` | `memory` or `tag` |
 | `loot` / `give_loot` | `loot` or `loot_table` |
 
-Quest actions return a status such as `started`, `reminder`, `completed`, `missing_target`, `missing_proof`, `unavailable`, `already_completed`, or `locate_failed`. When an action defines `lines`, the matching status selects the spoken line.
+Quest actions return a status such as `started`, `reminder`, `completed`, `missing_target`, `missing_proof`, `abandoned`, `abandoned_cooldown`, `abandoned_forever`, `unavailable`, `already_completed`, or `locate_failed`. When an action defines `lines`, the matching status selects the spoken line.
 
 ## Placeholders
 

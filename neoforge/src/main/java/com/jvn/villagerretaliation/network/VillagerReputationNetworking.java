@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "10";
+    private static final String PROTOCOL_VERSION = "11";
 
     private VillagerReputationNetworking() {
     }
@@ -91,6 +91,12 @@ public final class VillagerReputationNetworking {
                 VillagerTradeRefreshStatePayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.trade.VillagerTradeRefreshButtons",
                 "acceptState"
+        );
+        network.safePlayToClientThreaded(
+                QuestTrackerSyncPayload.TYPE,
+                QuestTrackerSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay",
+                "accept"
         );
         network.playToServer(
                 VillagerReputationRequestPayload.TYPE,

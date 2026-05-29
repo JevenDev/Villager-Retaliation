@@ -193,6 +193,7 @@ villager_dismissed
 villager_hired
 villager_fired
 villager_death
+quest
 ```
 
 ## World Text Kinds
@@ -221,6 +222,7 @@ The built-in notification file uses these trigger families:
 | Gift world text | `gift.high_reputation`, `gift.world.liked`, `gift.world.neutral`, `gift.world.disliked` |
 | Dialogue | `dialogue.greeting`, `dialogue.question`, `dialogue.cooldown`, `dialogue.joke.positive`, `dialogue.insult.negative` |
 | Discovery | `dialogue.map.found`, `dialogue.rumor.found` |
+| Quests | `quest.started`, `quest.updated`, `quest.location_reached`, `quest.completed`, `quest.abandoned` |
 | Recruitment | `recruitment.follow_start`, `recruitment.follow_stop`, `recruitment.hired`, `recruitment.fired`, `recruitment.follower_death`, `recruitment.hired_death`, `recruitment.betrayed_follower_death` |
 | Reputation tiers | `reputation.tier.<level>.improved`, `reputation.tier.<level>.worsened` |
 | Ambient | `ambient.murmur`, `ambient.player_item`, `ambient.sleep_breathing`, `ambient.sleep_murmur` |

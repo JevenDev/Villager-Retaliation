@@ -19,6 +19,8 @@ public record QuestDefinition(
         ResourceLocation parent,
         Offer offer,
         Target target,
+        Rules rules,
+        Tracker tracker,
         Rewards rewards,
         Dialogue dialogue
 ) {
@@ -28,6 +30,8 @@ public record QuestDefinition(
         questline = questline == null ? "" : questline;
         offer = offer == null ? Offer.any() : offer;
         target = target == null ? Target.EMPTY : target;
+        rules = rules == null ? Rules.DEFAULT : rules;
+        tracker = tracker == null ? Tracker.EMPTY : tracker;
         rewards = rewards == null ? Rewards.EMPTY : rewards;
         dialogue = dialogue == null ? Dialogue.EMPTY : dialogue;
     }
@@ -95,6 +99,80 @@ public record QuestDefinition(
             VillageEventMemory.EventTag memoryEvent
     ) {
         public static final Rewards EMPTY = new Rewards(0, 0, 0, null, null);
+    }
+
+    public record Rules(
+            boolean repeatable,
+            boolean lockedToVillager,
+            boolean crossVillagerCompatible,
+            int maxStarts,
+            int maxCompletions,
+            long completionCooldownTicks,
+            AbandonmentMode abandonment,
+            long abandonmentCooldownTicks,
+            boolean consumeOnCompletion,
+            boolean consumeOnAbandonment
+    ) {
+        public static final Rules DEFAULT = new Rules(false, true, false, 1, 1, 0L, AbandonmentMode.ALLOW_REPICKUP, 0L, false, false);
+
+        public Rules {
+            maxStarts = Math.max(0, maxStarts);
+            maxCompletions = Math.max(0, maxCompletions);
+            completionCooldownTicks = Math.max(0L, completionCooldownTicks);
+            abandonment = abandonment == null ? AbandonmentMode.ALLOW_REPICKUP : abandonment;
+            abandonmentCooldownTicks = Math.max(0L, abandonmentCooldownTicks);
+        }
+    }
+
+    public enum AbandonmentMode {
+        REMOVE_FOREVER,
+        ALLOW_REPICKUP,
+        COOLDOWN;
+
+        public static AbandonmentMode bySerializedName(String value) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
+            return switch (normalized) {
+                case "remove_forever", "permanent", "consume", "consumed" -> REMOVE_FOREVER;
+                case "cooldown", "cooldown_based", "after_cooldown" -> COOLDOWN;
+                default -> ALLOW_REPICKUP;
+            };
+        }
+    }
+
+    public record Tracker(
+            String title,
+            java.util.Map<String, Step> steps,
+            java.util.Map<String, String> metadata
+    ) {
+        public static final Tracker EMPTY = new Tracker("", java.util.Map.of(), java.util.Map.of());
+
+        public Tracker {
+            title = title == null ? "" : title;
+            steps = steps == null ? java.util.Map.of() : java.util.Map.copyOf(steps);
+            metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
+        }
+
+        public Step step(String key, Step fallback) {
+            if (key == null || key.isBlank()) {
+                return fallback;
+            }
+            return this.steps.getOrDefault(key, fallback);
+        }
+    }
+
+    public record Step(
+            String text,
+            boolean showProgress,
+            float progress,
+            java.util.Map<String, String> metadata
+    ) {
+        public static final Step EMPTY = new Step("", false, 0.0F, java.util.Map.of());
+
+        public Step {
+            text = text == null ? "" : text;
+            progress = Math.max(0.0F, Math.min(1.0F, progress));
+            metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
+        }
     }
 
     public record Dialogue(
