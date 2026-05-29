@@ -13,7 +13,14 @@
       "lines": [
         "I came back to my work. That feels smaller than victory and better than a monument.",
         "The village sounds normal again, which is how I know I am still <shake>shaking</shake>.",
-        "I survived. Now I get to do chores, which is a strange kind of mercy."
+        "I survived. Now I get to do chores, which is a strange kind of mercy.",
+        "My hands went back to work before the rest of me stopped remembering the fight.",
+        "I keep hearing ordinary sounds and flinching like they mean something worse.",
+        "The danger passed, but my nerves did not get the message.",
+        "I am grateful to be tired from work instead of <italic>running</italic>.",
+        "Everything looks the same as before, except I know how quickly it can change.",
+        "I made it home. That sentence feels heavier than it should.",
+        "The village is still standing, and so am I. For today, that is <pulse>enough</pulse>."
       ],
       "weight": 26
     },
@@ -31,7 +38,14 @@
       "lines": [
         "It fits into ordinary work better than I expected. That is a compliment.",
         "Good gear does not feel heroic. It feels like one less thing waiting to go wrong.",
-        "I kept it close. Around here, useful gifts become habits."
+        "I kept it close. Around here, useful gifts become habits.",
+        "It did not get in the way, and that matters more than people think.",
+        "I trust gear that lets me do my work without thinking about it.",
+        "It held up to mud, weather, and my very ordinary complaints.",
+        "Nothing fancy. Nothing foolish. Just <bold>useful</bold>.",
+        "If something survives a day of real work, I start to respect it.",
+        "It felt sturdy in the quiet moments and better in the loud ones.",
+        "Whoever made this understood that practical things still need to be <pulse>dependable</pulse>."
       ],
       "weight": 28
     },
@@ -53,7 +67,14 @@
       "lines": [
         "You helped keep tomorrow ordinary. That is not a small thing.",
         "The village still has chores because you helped it survive long enough to need them.",
-        "I heard the fighting. Then I heard doors opening again. <pulse>Thank you.</pulse>"
+        "I heard the fighting. Then I heard doors opening again. <pulse>Thank you.</pulse>",
+        "You stood where danger wanted to enter, and that will be remembered.",
+        "Because of you, people woke up to work instead of grief.",
+        "A quiet morning after violence feels like a gift. You helped give us that.",
+        "The village may not say it loudly, but it is breathing easier because of you.",
+        "You protected more than walls. You protected the small routines inside them.",
+        "I saw fear leave people’s faces slowly after the fighting stopped.",
+        "You made safety feel possible again. Around here, that is <bold>everything</bold>."
       ],
       "weight": 34
     },
@@ -71,7 +92,14 @@
       "lines": [
         "I woke up wanting to work again. That is how I knew I was back.",
         "My hands remembered their trade before my thoughts stopped <shake>trembling</shake>.",
-        "You gave me a morning I did not think I would see."
+        "You gave me a morning I did not think I would see.",
+        "I remember hunger first, then pain, then your help cutting through it.",
+        "The world came back slowly. Work, faces, names, then <pulse>me</pulse>.",
+        "I still feel pieces of what happened, but they no longer own me.",
+        "You returned me to my hands, my trade, and my people.",
+        "I was almost only teeth and hunger. You helped me become someone again.",
+        "The first tool I held afterward felt heavier than usual, but it was mine.",
+        "I owe you more than thanks, but thanks is where my voice can start."
       ],
       "weight": 30
     },
@@ -89,7 +117,14 @@
       "lines": [
         "An apology is a repair. Do not hand me a tool you will not use.",
         "I can respect a crack that admits it is a crack. Now prove it will not spread.",
-        "Words are the first patch. <bold>Behavior</bold> is the stitching."
+        "Words are the first patch. <bold>Behavior</bold> is the stitching.",
+        "I have fixed enough broken things to know the first patch is never the last.",
+        "If you mean it, let your actions do the heavier work.",
+        "A clean apology is good. A changed habit is better.",
+        "You made the dent. Now show me you know how to stop swinging.",
+        "I will hear the words, but I will watch the seams.",
+        "Do not polish guilt and call it repair.",
+        "Say it, then prove it. That is how trust gets <pulse>rebuilt</pulse>."
       ],
       "weight": 30
     },
@@ -108,7 +143,14 @@
       "lines": [
         "I hear you. The village will need more than hearing.",
         "Apologies are seeds. We will see what <pulse>grows</pulse>.",
-        "I want to believe you. Help make that less foolish."
+        "I want to believe you. Help make that less foolish.",
+        "Words can open the door, but they do not sweep the floor.",
+        "If you are sorry, let tomorrow look different from yesterday.",
+        "The village has heard apologies before. It trusts patterns more.",
+        "I will not throw your words away, but I will not live inside them either.",
+        "A sorry heart still needs steady hands.",
+        "Do better quietly, and people will notice <italic>eventually</italic>.",
+        "This can be a beginning, but only if you stop treating it like an ending."
       ],
       "weight": 30
     },
@@ -126,7 +168,14 @@
       "lines": [
         "A new little voice joined us. Even the work sounded softer for a while.",
         "There is a baby in the village now. Everyone pretends not to smile and fails.",
-        "New life makes the whole place count its <pulse>blessings</pulse> out loud."
+        "New life makes the whole place count its <pulse>blessings</pulse> out loud.",
+        "The village feels warmer today, even in the drafty corners.",
+        "A baby changes the sound of a place before they can even speak.",
+        "Everyone suddenly remembers how gentle their hands can be.",
+        "There is one more reason to keep the doors strong and the hearths lit.",
+        "The chores felt lighter after the news, though nobody admitted it.",
+        "A tiny life arrived, and somehow the whole village stood a little taller.",
+        "Hope came wrapped in small hands and a very loud <jump>cry</jump>."
       ],
       "weight": 34
     },
@@ -145,7 +194,14 @@
       "lines": [
         "Night came too close. We will be checking latches before sunset for a while.",
         "The dark tested the village and found us awake enough.",
-        "I heard the thing outside before I saw it. That is the part sleep <shake>remembers</shake>."
+        "I heard the thing outside before I saw it. That is the part sleep <shake>remembers</shake>.",
+        "Every shadow near the door looked guilty after that.",
+        "The village got quiet in that sharp way, when everyone is listening too hard.",
+        "We made it through, but the night left fingerprints.",
+        "I will not trust a peaceful sunset for a few days.",
+        "There are sounds you only need to hear once to remember forever.",
+        "The attack ended, but the dark still feels a little <pulse>closer</pulse>.",
+        "Tonight, every door will be checked twice and every window will earn a second look."
       ],
       "weight": 36
     },
@@ -168,7 +224,14 @@
       "lines": [
         "You helped chase danger from our doors. Ordinary work feels possible again.",
         "The village saw you stand with us. That sort of thing travels faster than gossip.",
-        "Because of you, today still has chores instead of <italic>funerals</italic>."
+        "Because of you, today still has chores instead of <italic>funerals</italic>.",
+        "You gave people time to breathe before they had to be brave again.",
+        "The fields, pens, hooks, and stones are still ours because you helped hold the line.",
+        "There are thanks that sound too small, but we give them anyway.",
+        "You did not have to make our trouble yours. You did.",
+        "The village remembers who runs toward danger when others run from it.",
+        "I saw people open their doors after the fighting and look for you first.",
+        "You helped keep this place alive. That is not a favor. That is <bold>honor</bold>."
       ],
       "weight": 40
     },
@@ -190,7 +253,14 @@
       "lines": [
         "You fought during the raid. Some debts are too large for emeralds.",
         "I saw you answer the bell. <bold>That matters here.</bold>",
-        "When raiders came, you did not treat us like someone else's problem."
+        "When raiders came, you did not treat us like someone else's problem.",
+        "You stood with the village when the banners came over the hill.",
+        "The bell called for courage, and you answered before it finished ringing.",
+        "Raiders remember resistance. Villages remember who gave it.",
+        "You put yourself between us and ruin. That will not be forgotten quickly.",
+        "There was a moment when everything could have broken. You helped keep it whole.",
+        "The village survived the raid with your name tied to the story.",
+        "Some people run from the sound of the bell. You ran toward it."
       ],
       "weight": 42
     },
@@ -209,7 +279,14 @@
       "lines": [
         "Fire makes every bucket feel too small until the smoke thins.",
         "We checked walls, roofs, hands, and tempers. Fire leaves marks on all of them.",
-        "A village learns the value of water very quickly when flame gets ideas."
+        "A village learns the value of water very quickly when flame gets ideas.",
+        "The smoke cleared, but everyone is still looking at their roofs differently.",
+        "Flames do not care what took years to build.",
+        "We moved fast because fire moves faster.",
+        "I can still smell it. Wood, smoke, panic, and wet ash.",
+        "The village survived, but the fire made sure we <shake>noticed</shake>.",
+        "Every bucket passed from hand to hand felt too light and too late.",
+        "We will rebuild what burned, but nobody forgets the sound of a wall catching fire."
       ],
       "weight": 36
     },
@@ -230,7 +307,14 @@
       "lines": [
         "The weather had teeth today. We kept close to doors and counted heads twice.",
         "Storms make the village smaller for a while. Smaller can be safer.",
-        "I do not mind weather with manners. That was not weather with manners."
+        "I do not mind weather with manners. That was not weather with manners.",
+        "The sky made its point loudly enough for everyone to understand.",
+        "We brought animals close, shut what could be shut, and hoped the roofs remembered their purpose.",
+        "Bad weather has a way of making every chore urgent at once.",
+        "The storm passed, but it left everyone speaking a little softer.",
+        "I heard the wind hit the walls and decided not to argue with it.",
+        "There was a moment when the whole village seemed to <shake>hold its breath</shake>.",
+        "When the weather gets cruel, even a familiar road can feel far away."
       ],
       "weight": 32
     },
@@ -253,7 +337,14 @@
       "lines": [
         "Taking from a village chest is not clever. It is loud in a way locks cannot show.",
         "We remember what was taken, and we remember who made us count.",
-        "Trust is stored in ordinary places too. Chests, mostly."
+        "Trust is stored in ordinary places too. Chests, mostly.",
+        "A missing item can weigh more than a full crate when trust goes with it.",
+        "You may have opened a chest, but what you damaged was larger.",
+        "The village notices when its corners stop feeling safe.",
+        "People count their things differently after theft. They count each other differently too.",
+        "Stealing from a chest is stealing from the hands that filled it.",
+        "What was taken matters. What it made us feel matters <bold>more</bold>.",
+        "A lock can be replaced. The feeling behind it takes longer."
       ],
       "weight": 42
     },
@@ -272,7 +363,14 @@
       "lines": [
         "Someone was hurt. The village has been listening differently since.",
         "After an attack, even familiar footsteps need a moment to become familiar again.",
-        "We are still here, but the day is not as soft as it was."
+        "We are still here, but the day is not as soft as it was.",
+        "People keep their voices low after harm comes close.",
+        "The wound was not only on the one who was struck.",
+        "You can feel it in the square. Everyone is pretending not to look over their shoulder.",
+        "A village changes shape after someone is attacked, even if the buildings stay the same.",
+        "The fear moved through us faster than the news did.",
+        "We are tending the hurt and watching the doors. Both feel necessary.",
+        "The village will settle again, but not before this <pulse>echo</pulse> fades."
       ],
       "weight": 36
     }

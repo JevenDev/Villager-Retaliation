@@ -10,7 +10,13 @@
         "Don't leave me in the Mushroom Fields. Strange and harmless-looking is still strange.",
         "The Mushroom Fields felt too <wavy>quiet and too odd</wavy> once I had to wait there alone.",
         "I stood in the Mushroom Fields wondering whether I was more bothered by the silence or the giant mushrooms.",
-        "If you vanish in the Mushroom Fields, I am left surrounded by oddities and no reassurance at all."
+        "If you vanish in the Mushroom Fields, I am left surrounded by oddities and no reassurance at all.",
+        "The place was peaceful, yes, but peaceful does not always mean comfortable.",
+        "Those mushrooms made the whole field feel like it belonged to something else.",
+        "Please do not leave me somewhere that looks safe in the strangest possible way.",
+        "The Mushroom Fields were quiet enough that my own thoughts started sounding too loud.",
+        "I kept looking around, waiting for the oddness to turn into danger.",
+        "I was alone in a place that felt harmless, unfamiliar, and not nearly as comforting as it should have."
       ],
       "conditions": [
         {
@@ -32,7 +38,13 @@
         "Don't leave me out in the Plains. Open land means anything can see me coming.",
         "The Plains are far too exposed to be standing around in alone.",
         "I waited in the Plains wishing for even one proper place to take cover.",
-        "If you vanish in the Plains, I am left under open sky with nowhere to disappear."
+        "If you vanish in the Plains, I am left under open sky with nowhere to disappear.",
+        "There was so much space around me that none of it felt useful.",
+        "I kept watching the horizon, hoping you would appear before something else did.",
+        "Please do not leave me somewhere open enough to make me feel like a target.",
+        "The Plains looked simple, but simple does not mean safe.",
+        "Every movement in the grass made me turn my head.",
+        "I was alone under a wide sky, wishing the ground offered more than distance."
       ],
       "conditions": [
         {
@@ -54,7 +66,13 @@
         "Don't leave me in the Sunflower Plains. Cheerful flowers do not count as cover.",
         "The Sunflower Plains are bright, open, and far too easy to be spotted in.",
         "I waited in the Sunflower Plains wishing those flowers hid me better than they do.",
-        "If you vanish in the Sunflower Plains, I am left staring through petals for danger."
+        "If you vanish in the Sunflower Plains, I am left staring through petals for danger.",
+        "The sunflowers kept facing the light while I kept looking for you.",
+        "It is hard to feel protected by flowers that barely hide my knees.",
+        "Please do not leave me somewhere bright enough for everything to see me.",
+        "The Sunflower Plains looked happy, which made being abandoned there feel almost insulting.",
+        "I kept watching the yellow heads sway and hoping nothing moved behind them.",
+        "I was alone in all that open brightness, feeling much less cheerful than the flowers."
       ],
       "conditions": [
         {

@@ -9,9 +9,16 @@
       ],
       "show_for_babies": false,
       "lines": [
-        "No workstation means I notice things. People underestimate the unemployed at their own peril.",
+        "No workstation means I notice things. People underestimate the unemployed at their own <bold>peril</bold>.",
         "Some jobs use tools. Mine seems to be hearing every <wavy>rumor</wavy> before lunch.",
-        "I am between callings, which is a polite way to say the village has not decided what to blame me for yet."
+        "I am between callings, which is a polite way to say the village has not decided what to <shake>blame</shake> me for yet.",
+        "Everyone asks what I do. I ask why they are all in such a <jump>hurry</jump>.",
+        "A workstation gives you a job. Not having one gives you a view of <italic>everyone else's</italic>.",
+        "I may not have a profession, but I have <bold>opinions</bold>, and somehow those take up more time.",
+        "People with jobs are always busy. People without jobs are always being <pulse>watched</pulse>.",
+        "I am not idle. I am <italic>observing inefficiently</italic>.",
+        "The village keeps waiting for me to become useful. I keep waiting for the village to lower its <shake>standards</shake>.",
+        "No tools, no counter, no schedule. Just me, the street, and a <wavy>suspicious</wavy> amount of free time."
       ],
       "weight": 18
     },
@@ -26,9 +33,16 @@
         "reputation_changed"
       ],
       "lines": [
-        "People are talking about you differently. I am very good at hearing that sort of thing.",
+        "People are talking about you differently. I am <bold>very</bold> good at hearing that sort of thing.",
         "Something <pulse>shifted</pulse>. Same street, different looks.",
-        "You changed the village's mind a little. That is harder than moving a bed."
+        "You changed the village's mind a little. That is harder than moving a <shake>bed</shake>.",
+        "The way people glance at you is different now. I notice <italic>glances</italic>. I have time.",
+        "Your name came up today, and nobody said it the <wavy>usual way</wavy>.",
+        "The village has adjusted its opinion. Villages do that <pulse>slowly</pulse>, then all at once.",
+        "I do not know what you did, but the air around your name has <pulse>changed</pulse>.",
+        "People are either <color:green>softer</color> about you or <color:red>sharper</color>. Hard to tell yet, but it is not the same.",
+        "You should know the <wavy>gossip</wavy> moved. I followed it for a while.",
+        "Around here, reputation changes one <italic>whispered sentence</italic> at a time."
       ],
       "weight": 30
     }
