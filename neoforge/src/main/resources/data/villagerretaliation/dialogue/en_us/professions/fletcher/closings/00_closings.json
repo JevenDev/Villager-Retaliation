@@ -1,12 +1,19 @@
 {
-  "closings": [
-    {
-      "id": "fletcher_closing",
-      "lines": [
-        "Back to balancing arrows true, then.",
-        "Back to arrows before the work notices I stopped.",
-        "I have shaft to tend and daylight to spend."
-      ]
-    }
-  ]
+    "closings": [
+        {
+            "id": "fletcher_closing",
+            "lines": [
+                "<pulse>Back</pulse> to feathers and shafts before that pile grows legs.",
+                "I have <pulse>arrows</pulse> to trim and fletch before the night gets away from me.",
+                "I should true up those bundles before anyone tries to use them.",
+                "The rack is waiting for me, and it has no patience at all.",
+                "I promised another batch by first bell.",
+                "I need to check the heads for cracks before they leave my hands.",
+                "There is a bowstring that needs replacing before noon.",
+                "<pulse>Back</pulse> to the workshop. Every shaft needs to fly straight.",
+                "My tools are right where I left them, asking for attention.",
+                "I will be back before long, so long as the air stays quiet."
+            ]
+        }
+    ]
 }

@@ -1,12 +1,19 @@
 {
-  "closings": [
-    {
-      "id": "librarian_closing",
-      "lines": [
-        "Back to keeping records and stories straight, then.",
-        "Back to records before the work notices I stopped.",
-        "I have page to tend and daylight to spend."
-      ]
-    }
-  ]
+    "closings": [
+        {
+            "id": "librarian_closing",
+            "lines": [
+                "<pulse>Back</pulse> to shelving before someone comes looking for a book I moved.",
+                "I should return to the catalog and tidy up those notes.",
+                "There are pages that need stitching before they come loose.",
+                "<pulse>Back</pulse> to the back stacks. A missing index will not find itself.",
+                "I have stories to file and a new entry to write down.",
+                "The quiet at the desk is where I can think properly.",
+                "I promised to mend a binding before the sun sets.",
+                "I will be back where the ink dries slower than gossip spreads.",
+                "Some records still need correcting before they confuse someone else.",
+                "The library is calling me back now."
+            ]
+        }
+    ]
 }

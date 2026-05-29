@@ -1,12 +1,19 @@
 {
-  "closings": [
-    {
-      "id": "nitwit_closing",
-      "lines": [
-        "Back to finding odd jobs and stranger thoughts, then.",
-        "Back to odd jobs before the work notices I stopped.",
-        "I have thought to tend and daylight to spend."
-      ]
-    }
-  ]
+    "closings": [
+        {
+            "id": "nitwit_closing",
+            "lines": [
+                "<pulse>Back</pulse> to odd jobs before my ideas wander off without me.",
+                "I should go find a small task and make it look neat.",
+                "There is a strange little fix I wanted to try.",
+                "I have a list of silly-useful ideas, and one of them might work.",
+                "I promised to help someone carry something awkward today.",
+                "<pulse>Back</pulse> to sorting scraps into something useful.",
+                "Maybe I will see if that squeaky hinge wants my opinion.",
+                "I am not much for plans, but I can still do the next thing.",
+                "I will be by the crossroads if anything needs trying.",
+                "I will come back once I have chased down another odd thought."
+            ]
+        }
+    ]
 }

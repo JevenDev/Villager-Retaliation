@@ -55,7 +55,7 @@
       "lines": [
         "{gift_item} buckled? Fine. {alternative_gift} should hold better.",
         "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ]

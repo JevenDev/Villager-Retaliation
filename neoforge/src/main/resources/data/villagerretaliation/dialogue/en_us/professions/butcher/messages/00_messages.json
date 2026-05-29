@@ -55,7 +55,7 @@
       "lines": [
         "{gift_item} went over badly? Then trim your losses and try {alternative_gift}.",
         "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ]

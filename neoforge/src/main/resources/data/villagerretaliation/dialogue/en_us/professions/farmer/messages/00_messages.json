@@ -55,7 +55,7 @@
       "lines": [
         "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.",
         "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ]

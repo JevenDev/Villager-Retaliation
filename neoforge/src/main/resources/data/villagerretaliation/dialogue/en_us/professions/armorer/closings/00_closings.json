@@ -1,12 +1,19 @@
 {
-  "closings": [
-    {
-      "id": "armorer_closing",
-      "lines": [
-        "Back to fitting mail and shields, then.",
-        "Back to armor before the work notices I stopped.",
-        "I have plate to tend and daylight to spend."
-      ]
-    }
-  ]
+    "closings": [
+        {
+            "id": "armorer_closing",
+            "lines": [
+                "I should get back before that <pulse>plate</pulse> cools wrong.",
+                "That cuirass will not fit itself, and the <pulse>hammer</pulse> is still warm.",
+                "The smithy will be wondering where I wandered off to.",
+                "I have straps to tighten and buckles to argue with.",
+                "Someone is expecting their mail patched before nightfall.",
+                "I promised to finish a cracked helm before dusk.",
+                "Best I get back before somebody walks around in loose armor.",
+                "I have tools to oil and steel to settle.",
+                "The forge is still <pulse>warm</pulse>. Shame to waste good heat.",
+                "You will know where to find me. I will be near the anvil."
+            ]
+        }
+    ]
 }

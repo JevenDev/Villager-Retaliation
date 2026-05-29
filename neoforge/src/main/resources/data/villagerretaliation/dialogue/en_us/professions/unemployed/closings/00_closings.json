@@ -1,12 +1,19 @@
 {
-  "closings": [
-    {
-      "id": "unemployed_closing",
-      "lines": [
-        "Back to looking useful before anyone notices, then.",
-        "Back to looking useful before the work notices I stopped.",
-        "I have chance to tend and daylight to spend."
-      ]
-    }
-  ]
+    "closings": [
+        {
+            "id": "unemployed_closing",
+            "lines": [
+                "<pulse>Back</pulse> to finding a small task I can finish properly.",
+                "I should look around and lend a hand where I can.",
+                "There are always chores worth doing, even without being asked.",
+                "I will go see if anyone needs help before evening.",
+                "<pulse>Back</pulse> to making today useful however I can.",
+                "I still need to bring a few things in from the yard.",
+                "There is always something nearby that needs sweeping or mending.",
+                "I will be back once I have done someone a proper little favor.",
+                "Helping one person is still helping the village.",
+                "I will stay busy for now and make the day count."
+            ]
+        }
+    ]
 }

@@ -5,24 +5,44 @@
       "lines": [
         "I can vouch for {player}. Keep the {container} tidy and take only what you truly need.",
         "{player} has earned some trust here. I will allow it this time.",
-        "Let them look. They have helped this village enough to be asked for care, not suspicion."
+        "Let them look. They have helped this village enough to deserve care before suspicion.",
+        "I know {player}. They have done enough good here for me to speak up.",
+        "This time, let them check the {container}. Carefully.",
+        "{player} has earned more trust than most who pass through here.",
+        "I will stand for them. Just do not make a mess of the {container}.",
+        "Let it be. I trust {player} to take only what is needed.",
+        "They have helped us before. Give them room, but keep it honest.",
+        "I will <pulse>vouch</pulse> for {player}. Treat the {container} with care."
       ]
     },
     {
       "key": "container_opened.vouch.deny",
       "lines": [
         "Not this time, {player}. Close the {container} and ask before reaching.",
-        "I trust you more than most, but not with this chest today.",
-        "No. Even friends ask before opening village stores."
+        "I trust you more than most, but not with this {container} today.",
+        "No. Even friends ask before opening village stores.",
+        "Trust does not mean every lid opens without permission.",
+        "You have standing here, but the {container} still belongs to the village.",
+        "Close it for now. This is not yours to sort through.",
+        "I am not calling you a thief. I am telling you to ask first.",
+        "Not today. Some boundaries stay firm, even for familiar hands.",
+        "Step back from the {container}. We can talk before anyone reaches further.",
+        "I trust you enough to say this plainly: <pulse>close it</pulse>."
       ]
     },
     {
       "key": "container_opened.vouch.royalty",
       "lines": [
-        "Do not disrespect our ruler. If {player} needs the {container}, they can take from it.",
+        "Do not disrespect our ruler. If {player} needs the {container}, let them take from it.",
         "Stand down. {player} has carried this village farther than any chest ever could.",
-        "If our liege opens the {container}, then the village has already given its trust.",
-        "Let them look. Royal hands have earned more than suspicion at a village chest."
+        "If our liege opens the {container}, the village has already given its trust.",
+        "Let them look. Royal hands have earned more than suspicion at a village chest.",
+        "{player} has earned the village's faith. Do not meet that with petty doubt.",
+        "The {container} serves the village, and so has {player}. Let them pass.",
+        "If {player} has need of it, then we should listen before we object.",
+        "This is not theft. This is trust given where trust was earned.",
+        "Step aside. The village does not question its liege over every latch.",
+        "Our liege has the village's <pulse>trust</pulse>. Let the {container} open."
       ]
     },
     {
@@ -31,7 +51,13 @@
         "If {previous_villager} vouches for you, then I will stand down. Keep the {container} tidy.",
         "All right, {player}. {previous_villager} has spoken for you. Do not make them regret it.",
         "Fine. I trust {previous_villager}'s word here. Treat the {container} with care.",
-        "Then take only what you need, {player}. {previous_villager}'s trust carries weight."
+        "Then take only what you need, {player}. {previous_villager}'s trust carries weight.",
+        "If {previous_villager} trusts you with this, I will not argue it further.",
+        "All right. The {container} stays open, but your hands stay honest.",
+        "I will accept {previous_villager}'s word. Do not test it.",
+        "Then go carefully. Their trust is not yours to waste.",
+        "If they are willing to stand for you, I will step back.",
+        "{previous_villager}'s word is enough for now. Keep the {container} <pulse>tidy</pulse>."
       ]
     },
     {
@@ -40,19 +66,28 @@
         "As you say. The {container} is open to our liege.",
         "I will not stand in your way, {player}. Take what the village can offer.",
         "Forgive me, my liege. I will step aside.",
-        "Then the village yields the {container}. Use it as you need."
+        "Then the village yields the {container}. Use it as you need.",
+        "Of course. I spoke too quickly.",
+        "The {container} is yours to inspect, my liege.",
+        "I will not question what the village has already entrusted to you.",
+        "Take what is needed. The village stands behind you.",
+        "I understand. I will step back from the {container}.",
+        "As you wish. The village's <pulse>trust</pulse> is with you."
       ]
     },
     {
       "key": "container_theft.backup_interjection",
       "lines": [
-        "Yeah, <aqua>{previous_villager}</aqua> is right. I saw you take {stolen_item_reference} too.",
+        "Yes, <aqua>{previous_villager}</aqua> is right. I saw you take {stolen_item_reference} too.",
         "I saw {stolen_item_pronoun} too, <purple>{player}</purple>. {stolen_count} {stolen_count_word} came from {stolen_container}.",
-        "<aqua>{previous_villager}</aqua> is not the only one who noticed. Put {stolen_stack} <bold>back</bold>.",
+        "<aqua>{previous_villager}</aqua> is not the only one who noticed. Put {stolen_stack} <pulse>back</pulse>.",
         "I was there too. Do not pretend {stolen_items} walked out on their own.",
         "Back them up? Gladly. I saw you take {stolen_stack}.",
         "I have seen this {witnessed_container_thefts} {container_theft_time_word} now. Put {stolen_item_pronoun} back.",
-        "You were caught {container_theft_again_phrase}, and this time I saw {stolen_count} {stolen_count_word} leave {stolen_container}."
+        "You were caught {container_theft_again_phrase}, and this time I saw {stolen_count} {stolen_count_word} leave {stolen_container}.",
+        "More than one pair of eyes saw what happened at that {stolen_container}.",
+        "You can argue with one witness. It gets harder with two.",
+        "<shake>Do not lie</shake> about what half the village saw."
       ]
     },
     {
@@ -60,8 +95,14 @@
       "lines": [
         "<aqua>{previous_villager}</aqua> is not exaggerating. I saw {stolen_stack} leave {stolen_container} too.",
         "I saw it too: {stolen_item_reference} came out of {stolen_container} in your hands.",
-        "I was close enough to see it. <bold>Return</bold> {stolen_stack}, <purple>{player}</purple>.",
-        "One voice is easy to argue with. Two of us saw what happened."
+        "I was close enough to see it. <pulse>Return</pulse> {stolen_stack}, <purple>{player}</purple>.",
+        "One voice is easy to argue with. Two of us saw what happened.",
+        "That {stolen_container} did not empty itself.",
+        "You had {stolen_stack} in your hands. I know what I saw.",
+        "Do not make <aqua>{previous_villager}</aqua> stand alone on this. I saw it too.",
+        "The village is watching, <purple>{player}</purple>. Put it back.",
+        "This is not confusion. This is one witness backing another.",
+        "Return {stolen_stack} before this gets <shake>worse</shake>."
       ]
     },
     {
@@ -70,7 +111,13 @@
         "I saw it too, <purple>{player}</purple>. Put {stolen_item_pronoun} back.",
         "More than one of us saw the same <shake>theft</shake>. Return {stolen_stack}.",
         "I was watching as well. I saw {stolen_items} leave {stolen_container}.",
-        "Nobody here is guessing. {stolen_count} {stolen_count_word} came out with you."
+        "Nobody here is guessing. {stolen_count} {stolen_count_word} came out with you.",
+        "That makes another witness, and I am not staying quiet.",
+        "You can stop pretending now. We saw enough.",
+        "The {stolen_container} opened, and {stolen_stack} left with you.",
+        "This is not a misunderstanding, not with this many eyes on it.",
+        "Put {stolen_item_pronoun} back before the whole square knows.",
+        "<shake>Enough.</shake> Return what you took."
       ]
     },
     {
@@ -80,25 +127,42 @@
         "I saw the lid open too. <pulse>Step back</pulse> from {container} and ask first.",
         "That is not just <aqua>{previous_villager}</aqua>'s concern. The {container} belongs to the village.",
         "I am saying the same thing: close {container} and speak before touching village stores.",
-        "You have more than one witness, <purple>{player}</purple>. Step away from {container}."
+        "You have more than one witness, <purple>{player}</purple>. Step away from {container}.",
+        "Village stores are not open just because a lid can move.",
+        "If you need something, ask. Do not simply reach.",
+        "The {container} is not yours to search without permission.",
+        "Back away from the {container}. This does not need to become a theft report.",
+        "Close it now, before suspicion starts <pulse>settling in</pulse>."
       ]
     },
     {
       "key": "container_opened.backup_interjection.second",
       "lines": [
-        "<aqua>{previous_villager}</aqua> saw it, and so did I. <bold>Close</bold> {container}.",
+        "<aqua>{previous_villager}</aqua> saw it, and so did I. <pulse>Close</pulse> {container}.",
         "I saw it too. Village stores are not open shelves.",
         "I was watching too, <purple>{player}</purple>. Step back from {container} and ask.",
-        "It is not just one complaint. That {container} belongs to the village."
+        "It is not just one complaint. That {container} belongs to the village.",
+        "Two witnesses should be enough to make this simple.",
+        "Close the {container}. Ask first if you need something.",
+        "You are not being singled out. You are being seen.",
+        "The village keeps stores for everyone, not for quiet hands.",
+        "Do not make this harder than it needs to be.",
+        "Step away from {container}, <purple>{player}</purple>. <shake>Now.</shake>"
       ]
     },
     {
       "key": "container_opened.backup_interjection.third",
       "lines": [
-        "Same boundary from me: close {container} and ask first.",
+        "Same boundary from me, close {container} and ask first.",
         "More than one of us is <pulse>watching</pulse> now, <purple>{player}</purple>. Step away from {container}.",
         "I saw enough. That {container} still is not yours to search.",
-        "No one is piling on for sport. Village stores need permission."
+        "No one is piling on for sport. Village stores need permission.",
+        "The answer is still no, even with more voices saying it.",
+        "Close it before this becomes a worse conversation.",
+        "You have heard the boundary. Respect it.",
+        "The village is not guessing anymore. Step back.",
+        "If you need supplies, ask like the rest of us.",
+        "That {container} stays closed unless the village says otherwise."
       ]
     }
   ]

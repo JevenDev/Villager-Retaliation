@@ -1,12 +1,19 @@
 {
-  "closings": [
-    {
-      "id": "fisherman_closing",
-      "lines": [
-        "Back to reading water and weather, then.",
-        "Back to fishing before the work notices I stopped.",
-        "I have line to tend and daylight to spend."
-      ]
-    }
-  ]
+    "closings": [
+        {
+            "id": "fisherman_closing",
+            "lines": [
+                "I should get back to reading the water before the weather turns.",
+                "Best I return to my net and line before the evening tide shifts.",
+                "The current has been tugging strange today. I ought to check it.",
+                "There is a knot in one of my lines that will only get worse if I ignore it.",
+                "I need to ready the bait bucket before dawn sneaks up on me.",
+                "<pulse>Back</pulse> to the traps and boatside knots.",
+                "The river keeps its secrets unless you give it your full attention.",
+                "I promised myself I would patch that ripped net before the week is out.",
+                "It is getting late. I should head back to the shore.",
+                "I will be out there again when the moon sits higher."
+            ]
+        }
+    ]
 }

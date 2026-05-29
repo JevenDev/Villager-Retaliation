@@ -42,7 +42,7 @@
       "lines": [
         "Wrong pattern. Pick up {alternative_gift} and leave {gift_item} out of it.",
         "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {

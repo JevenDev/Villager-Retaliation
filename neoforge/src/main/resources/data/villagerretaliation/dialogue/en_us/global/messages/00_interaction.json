@@ -3,17 +3,31 @@
     {
       "key": "interaction.follow_stay",
       "lines": [
-        "I'll stay here.",
+        "I will stay here.",
         "I will <pulse>stay here</pulse>.",
-        "This is where I am staying."
+        "This is where I am staying.",
+        "I will hold this spot for now.",
+        "I am staying put. Safer that way.",
+        "I will wait here until you come back.",
+        "Here is fine. I can manage from here.",
+        "I will not wander off.",
+        "I will stay where the ground feels familiar.",
+        "Go on. I will be <pulse>right here</pulse>."
       ]
     },
     {
       "key": "interaction.follow_start",
       "lines": [
-        "All right. I'll follow you.",
+        "All right. I will follow you.",
         "All right. I will <pulse>come with you</pulse>.",
-        "Fine. I am following."
+        "Fine. I am following.",
+        "Lead the way. I will keep close.",
+        "I will come along, but do not move too fast.",
+        "All right. I am trusting your path.",
+        "I will follow. Try not to lose me.",
+        "Stay where I can see you, and I will come.",
+        "I am with you. For now.",
+        "All right. Let us go before I think too hard about it."
       ]
     },
     {
@@ -22,7 +36,14 @@
       "lines": [
         "Been {days_since_seen} {day_or_days} since I saw you. What brings you <pulse>back</pulse>?",
         "I have not seen you since {days_since_seen_phrase}. What do you need today?",
-        "You have been gone a while. {days_since_seen} {day_or_days}, by my count."
+        "You have been gone a while. {days_since_seen} {day_or_days}, by my count.",
+        "You disappeared for {days_since_seen} {day_or_days}. The village noticed.",
+        "Back again, are you? It has been {days_since_seen_phrase}.",
+        "I was starting to wonder if the road had kept you.",
+        "It has been {days_since_seen} {day_or_days}. Long enough for people to ask.",
+        "You have been away a while. Did the world treat you kindly?",
+        "There you are. The paths brought you <pulse>back</pulse> after all.",
+        "I remember faces, and yours has been missing since {days_since_seen_phrase}."
       ],
       "weight": 34
     },
@@ -32,7 +53,14 @@
       "lines": [
         "I have not seen you since {days_since_seen_phrase}. Were you exploring?",
         "You were gone for {days_since_seen} {day_or_days}. Did you see anything <jump>neat</jump>?",
-        "Hey, you are back. It has been {days_since_seen} {day_or_days}."
+        "Hey, you are back. It has been {days_since_seen} {day_or_days}.",
+        "You were gone a long time. I counted wrong, but it felt long.",
+        "<jump>You came back!</jump> Did you bring a story?",
+        "Were you somewhere far away, or just somewhere I could not see?",
+        "I wondered where you went. Then I forgot. Then I remembered again.",
+        "Did the road have puddles? I need to know.",
+        "You were gone since {days_since_seen_phrase}. That is a lot of sleeps.",
+        "Hi again! Did anything exciting chase you?"
       ],
       "weight": 34
     },
@@ -41,40 +69,75 @@
       "lines": [
         "I <shake>trusted</shake> you.",
         "You asked me to follow you, not fear you.",
-        "You made following you feel foolish."
+        "You made following you feel foolish.",
+        "I thought you meant to keep me safe.",
+        "That is not what trust is for.",
+        "I followed your steps, and you made me regret it.",
+        "Do not ask me to forget what happened on that road.",
+        "You turned a path into a warning.",
+        "I should not have had to fear the person I followed.",
+        "<shake>I trusted you.</shake> Remember that."
       ],
       "weight": 20
     },
     {
       "key": "interaction.refuse_despised",
       "lines": [
-        "I'm done talking. Stay away.",
-        "<bold>No.</bold> Stay away from me.",
-        "I am done talking to you."
+        "I am done talking. Stay away.",
+        "<shake>No.</shake> Stay away from me.",
+        "I am done talking to you.",
+        "Do not come closer.",
+        "There is nothing here for you.",
+        "You have worn out the last of my patience.",
+        "Leave me be.",
+        "I will not pretend this is a conversation.",
+        "Go bother someone who has not learned better.",
+        "<shake>Stay away.</shake> I mean it."
       ]
     },
     {
       "key": "interaction.refuse_angry",
       "lines": [
-        "I'm too angry to talk.",
+        "I am too angry to talk.",
         "I am too <shake>angry</shake> for words right now.",
-        "Not now. I am still angry."
+        "Not now. I am still angry.",
+        "Give me space before I say something sharper.",
+        "I need time before this becomes a conversation.",
+        "No. Not while my temper is still hot.",
+        "I heard you. I am not ready to answer.",
+        "Come back when my hands stop shaking.",
+        "Anger is all I have ready right now.",
+        "Not now. Let the <shake>anger</shake> settle first."
       ]
     },
     {
       "key": "interaction.busy",
       "lines": [
-        "I'm busy right now.",
+        "I am busy right now.",
         "I have something else to do right now.",
-        "Not now. I am busy."
+        "Not now. I am busy.",
+        "I have work waiting on me.",
+        "This will have to wait.",
+        "My hands are full at the moment.",
+        "Ask me again when I am not in the middle of something.",
+        "I cannot stop for this right now.",
+        "The day is already tugging at my sleeves.",
+        "Not now. The work will not finish itself."
       ]
     },
     {
       "key": "interaction.unavailable",
       "lines": [
-        "I'm no longer available.",
+        "I am no longer available.",
         "I cannot do this anymore.",
-        "I am not available now."
+        "I am not available now.",
+        "This is not something I can do right now.",
+        "I have to step away from this.",
+        "That moment has passed.",
+        "I cannot help with that now.",
+        "You will need to ask another time.",
+        "I am done with this for now.",
+        "No. I am not available for that anymore."
       ]
     },
     {
@@ -82,7 +145,14 @@
       "lines": [
         "The conversation has ended.",
         "That conversation is over.",
-        "We are finished talking."
+        "We are finished talking.",
+        "There is nothing more to say right now.",
+        "That is the end of it.",
+        "We can stop here.",
+        "This talk is done.",
+        "No more words for now.",
+        "The matter is closed.",
+        "We are finished here."
       ]
     },
     {
@@ -90,7 +160,14 @@
       "lines": [
         "I am not sure how to answer that.",
         "I do not know what to say to that.",
-        "That question has no answer I can give."
+        "That question has no answer I can give.",
+        "You have lost me there.",
+        "I do not understand what you are asking.",
+        "That does not fit any answer I have.",
+        "I need a clearer question than that.",
+        "I am drawing a blank.",
+        "Whatever that means, I do not have words for it.",
+        "I cannot make sense of that right now."
       ]
     },
     {
@@ -98,15 +175,29 @@
       "lines": [
         "I cannot trade right now.",
         "Trading is not possible right now.",
-        "I cannot open trades right now."
+        "I cannot open trades right now.",
+        "No trades for the moment.",
+        "My trades are not ready.",
+        "I am not able to trade at this time.",
+        "The market will have to wait.",
+        "I cannot do business right now.",
+        "Come back later if you want to trade.",
+        "Not now. Trading is <pulse>closed</pulse> for me."
       ]
     },
     {
       "key": "interaction.refuse_trade",
       "lines": [
         "I refuse to trade with you.",
-        "<bold>No trade.</bold> Not with you.",
-        "I will not trade with you."
+        "<shake>No trade.</shake> Not with you.",
+        "I will not trade with you.",
+        "My goods are not for your hands.",
+        "No. I do not trust you enough to trade.",
+        "You will get no business from me.",
+        "Find another trader, if one will have you.",
+        "I am keeping my stock where it is.",
+        "Trading requires trust. We do not have that.",
+        "Not with you. Not today."
       ]
     },
     {
@@ -114,15 +205,29 @@
       "lines": [
         "I cannot show you that right now.",
         "I cannot show you my things right now.",
-        "My inventory is <bold>not yours</bold> to see right now."
+        "My inventory is <pulse>not yours</pulse> to see right now.",
+        "No. My belongings stay with me.",
+        "I am not opening my things for you.",
+        "That is private enough to stay closed.",
+        "You do not need to see what I carry.",
+        "I am keeping my pockets to myself.",
+        "Not right now. My things are staying put.",
+        "Trust comes before open pockets."
       ]
     },
     {
       "key": "interaction.not_trusted_enough",
       "lines": [
-        "I don't know you well enough for that.",
+        "I do not know you well enough for that.",
         "I do not <pulse>trust</pulse> you enough for that.",
-        "We are not close enough for that."
+        "We are not close enough for that.",
+        "That takes more trust than we have.",
+        "You are asking for more than I can give you.",
+        "Maybe someday. Not now.",
+        "We are not there yet.",
+        "You have not earned that kind of answer from me.",
+        "That is for people I know better.",
+        "Trust grows slowly. This is too soon."
       ]
     },
     {
@@ -130,7 +235,14 @@
       "lines": [
         "I cannot accept gifts right now.",
         "I cannot take gifts right now.",
-        "Not now. I cannot accept that."
+        "Not now. I cannot accept that.",
+        "Keep it for now. I am not taking gifts.",
+        "This is not a good time for gifts.",
+        "I appreciate the thought, but not right now.",
+        "My hands are not open for that today.",
+        "Try another time, perhaps.",
+        "I cannot receive that at the moment.",
+        "No gifts right now. The timing is wrong."
       ]
     },
     {
@@ -138,7 +250,14 @@
       "lines": [
         "Keep your distance.",
         "<shake>Stay back.</shake>",
-        "Do not come closer."
+        "Do not come closer.",
+        "That is close enough.",
+        "Take one step back.",
+        "I need space.",
+        "Stay where I can see you.",
+        "Do not crowd me.",
+        "Back up. Slowly.",
+        "<shake>Give me room.</shake>"
       ]
     },
     {
@@ -147,7 +266,14 @@
       "lines": [
         "I should ask a <pulse>grown-up</pulse> before taking that.",
         "I should ask someone older first.",
-        "I am not supposed to take that without asking."
+        "I am not supposed to take that without asking.",
+        "I need to check with a grown-up.",
+        "I do not know if I am allowed to have that.",
+        "Someone older should say yes first.",
+        "I want to, but I should ask.",
+        "My grown-up would want to know about this.",
+        "I am little, so I have to ask first.",
+        "Hold on. I need a <pulse>grown-up</pulse> answer."
       ]
     },
     {
@@ -155,7 +281,14 @@
       "lines": [
         "I cannot accept that.",
         "That is not something I can take.",
-        "I cannot accept that as a gift."
+        "I cannot accept that as a gift.",
+        "That does not work as a gift.",
+        "No, I cannot take that from you.",
+        "That is not the kind of thing I can receive.",
+        "I do not know what you expect me to do with that.",
+        "That is not suitable for me.",
+        "Try offering something else.",
+        "No. That gift does not fit."
       ]
     },
     {
@@ -163,7 +296,14 @@
       "lines": [
         "There is nothing there.",
         "Your hand is <wavy>empty</wavy>.",
-        "There is nothing for me to take."
+        "There is nothing for me to take.",
+        "You are offering air.",
+        "I cannot accept nothing, thoughtful as it may be.",
+        "Your hand seems to have misplaced the gift.",
+        "There is no gift there.",
+        "I see the gesture. I do not see the item.",
+        "Empty hands make very light presents.",
+        "Bring something first, then we can talk."
       ]
     },
     {
@@ -173,7 +313,12 @@
         "I cannot carry anything else right now. <italic>Really.</italic>",
         "My hands are full enough already.",
         "I do not have room for that right now.",
-        "Keep that for now. I have nowhere to put it."
+        "Keep that for now. I have nowhere to put it.",
+        "I would take it, but my pockets disagree.",
+        "Not unless you know where I can grow another pocket.",
+        "I am already carrying too much.",
+        "That gift will have to wait. I am full up.",
+        "My inventory is <pulse>packed</pulse> right now."
       ]
     },
     {
@@ -181,7 +326,14 @@
       "lines": [
         "I cannot help right now.",
         "I cannot go with you right now.",
-        "I am not able to help with that."
+        "I am not able to help with that.",
+        "I cannot leave at the moment.",
+        "Now is not the time for me to follow.",
+        "I have to stay here.",
+        "I am needed where I am.",
+        "I cannot join you right now.",
+        "Ask me another time, maybe.",
+        "No. I cannot come with you today."
       ]
     },
     {
@@ -189,7 +341,14 @@
       "lines": [
         "I cannot be hired yet.",
         "I cannot be hired right now.",
-        "Hiring me is not possible yet."
+        "Hiring me is not possible yet.",
+        "I am not available for hire.",
+        "That arrangement is not ready.",
+        "No, I cannot take work from you right now.",
+        "You cannot hire me at the moment.",
+        "I am not taking that kind of work yet.",
+        "Come back when hiring is actually possible.",
+        "For now, that offer has nowhere to land."
       ]
     },
     {
@@ -198,7 +357,14 @@
       "lines": [
         "I do not know how to trade yet.",
         "I am too young to trade.",
-        "I do not have trades. I am <jump>little</jump>."
+        "I do not have trades. I am <jump>little</jump>.",
+        "I only know how to trade snacks with other kids.",
+        "Grown-ups do the trading. I do the watching.",
+        "I am not old enough for that yet.",
+        "I do not have a stall or anything.",
+        "I can count some things, but not trade things.",
+        "Ask someone taller. They know prices.",
+        "I am still learning what emeralds are for."
       ]
     },
     {
@@ -206,15 +372,29 @@
       "lines": [
         "I have no trades available.",
         "There is nothing I can trade.",
-        "No trades are available from me."
+        "No trades are available from me.",
+        "I have nothing on offer right now.",
+        "My trading list is empty.",
+        "Nothing to sell today.",
+        "I cannot offer you a deal.",
+        "No goods, no prices, no trade.",
+        "Come back another time if you are looking for trades.",
+        "The trade table is empty for now."
       ]
     },
     {
       "key": "dialogue.fallback",
       "lines": [
-        "They stare at you, unsure what to say.",
-        "They look for words and do not find any.",
-        "They pause, uncertain what answer would fit."
+        "<i>They stare at you, unsure what to say.</i>",
+        "<i>They look for words and do not find any.</i>",
+        "<i>They pause, uncertain what answer would fit.</i>",
+        "<i>They glance away, searching for a response.</i>",
+        "<i>They open their mouth, then think better of it.</i>",
+        "<i>They seem caught between several answers and choose none.</i>",
+        "<i>They give you a blank look.</i>",
+        "<i>They hesitate, then stay quiet.</i>",
+        "<i>They look at you like the words got lost on the way out.</i>",
+        "<i>They fall silent.</i>"
       ]
     }
   ]

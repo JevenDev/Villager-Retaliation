@@ -12,7 +12,14 @@
       "lines": [
         "I still remember that {attack_weapon}. Conversations get colder after that.",
         "It is hard to speak plainly while remembering that {attack_weapon}.",
-        "That {attack_weapon} stayed in my memory longer than the bruise did."
+        "That {attack_weapon} stayed in my memory longer than the bruise did.",
+        "You may be done with that moment, but I am not.",
+        "Trust does not stand as close after a hit like that.",
+        "I hear your words, but I remember your hands.",
+        "That {attack_weapon} made a simple conversation feel less simple.",
+        "I am trying to answer you without forgetting why I am careful.",
+        "Some wounds fade faster than the caution they leave behind.",
+        "If I seem distant, that {attack_weapon} is part of the reason."
       ],
       "weight": 96,
       "conditions": [
@@ -29,7 +36,14 @@
       "lines": [
         "The bell has been quiet today. I would like to keep it that way.",
         "Quiet bells are good bells. Let us not give this one a reason.",
-        "Today has been calm so far. I am protective of that."
+        "Today has been calm so far. I am protective of that.",
+        "A quiet morning is worth guarding.",
+        "No alarms yet today. I am hoping it stays that simple.",
+        "The square feels steady today. That is a welcome thing.",
+        "If the bell stays silent, I will call that a good day.",
+        "Peace has been keeping its voice down. I appreciate that.",
+        "The village is breathing easy for now.",
+        "A calm day can be rare enough to treat kindly."
       ]
     },
     {
@@ -39,7 +53,14 @@
       "lines": [
         "I know an emerald joke, but it costs extra if you want the good part.",
         "My emerald joke has a discount if you laugh quickly.",
-        "I know a joke about emeralds, but the punchline appreciates payment plans."
+        "I know a joke about emeralds, but the punchline appreciates payment plans.",
+        "Why did the emerald cross the square? Better trade value on the other side.",
+        "I had an emerald joke, but a trader bought it before I could finish.",
+        "An emerald walked into the market and immediately became everyone's best friend.",
+        "I would tell you a cheap emerald joke, but those are all out of stock.",
+        "The best emerald jokes are rare, green, and somehow overpriced.",
+        "I polished this joke myself. That is why it costs more.",
+        "If you do not laugh, I can offer store credit."
       ]
     },
     {
@@ -49,7 +70,14 @@
       "lines": [
         "You walk like the path owes you an apology.",
         "You move like even the road is tired of you.",
-        "The path did nothing wrong, yet you still walk like it owes you."
+        "The path did nothing wrong, yet you still walk like it owes you.",
+        "You have the confidence of someone who has never met a good idea.",
+        "I have seen fences with better direction than you.",
+        "You bring the mood down like rain through a bad roof.",
+        "Even the mud seems eager to let you pass.",
+        "You make silence look like the wiser choice.",
+        "If trouble had footsteps, I imagine they would sound like yours.",
+        "You carry yourself like a warning sign with legs."
       ]
     },
     {
@@ -71,4 +99,4 @@
       "weight": 186
     }
   ]
-}
+}.

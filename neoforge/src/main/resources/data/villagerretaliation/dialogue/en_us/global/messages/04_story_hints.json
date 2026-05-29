@@ -5,7 +5,14 @@
       "lines": [
         "I caught <wavy>wind</wavy> of different land {vague_direction}. Could be worth a walk.",
         "There is talk of different land {vague_direction}. Worth checking, maybe.",
-        "Someone mentioned strange terrain {vague_direction}. Could be nothing, could be a road."
+        "Someone mentioned strange terrain {vague_direction}. Could be nothing, could be a road.",
+        "Travelers have been talking about land changing somewhere {vague_direction}.",
+        "The paths {vague_direction} may lead somewhere different than the fields around here.",
+        "I heard the land shifts its face {vague_direction}. Might be worth seeing for yourself.",
+        "There may be unusual ground {vague_direction}, if the talk is more than tavern smoke.",
+        "Someone swore the grass, trees, or stone changes {vague_direction}. I would not ignore that.",
+        "If you are looking for somewhere new, start {vague_direction}. The rumors point that way.",
+        "There is a <wavy>rumor</wavy> of stranger land {vague_direction}. Rumors like that sometimes have feet."
       ]
     },
     {
@@ -13,7 +20,14 @@
       "lines": [
         "I caught wind of {target_article} {vague_direction}.",
         "I heard about {target_article} {vague_direction}.",
-        "There may be {target_article} somewhere {vague_direction}."
+        "There may be {target_article} somewhere {vague_direction}.",
+        "Travelers keep placing {target_article} {vague_direction}.",
+        "If the rumor is right, {target_article} lies somewhere {vague_direction}.",
+        "There is talk of {target_article} out {vague_direction}.",
+        "You may find {target_article} if you head {vague_direction} and keep your eyes open.",
+        "Someone came through saying {target_article} waits {vague_direction}.",
+        "{target_article} has been mentioned more than once, always somewhere {vague_direction}.",
+        "If you want a lead, follow the talk of {target_article} {vague_direction}."
       ]
     },
     {
@@ -21,7 +35,14 @@
       "lines": [
         "I caught wind of {target_article} about {distance} {direction}.",
         "{target_article} should be about {distance} {direction}, if the rumor is honest.",
-        "Try looking about {distance} {direction} for {target_article}."
+        "Try looking about {distance} {direction} for {target_article}.",
+        "The talk puts {target_article} roughly {distance} {direction}.",
+        "If you walk about {distance} {direction}, you may find {target_article}.",
+        "{target_article} is said to be about {distance} {direction}.",
+        "Head {direction} for about {distance}. That should put you near {target_article}.",
+        "I would start looking for {target_article} around {distance} {direction}.",
+        "The directions I heard were clear enough: {distance} {direction} for {target_article}.",
+        "About {distance} {direction}, if the rumor has not wandered too far from the truth."
       ]
     },
     {
@@ -29,7 +50,14 @@
       "lines": [
         "I keep hearing <wavy>stories</wavy> about {target_article} somewhere {vague_direction}{vertical}.",
         "Stories place {target_article} somewhere {vague_direction}{vertical}.",
-        "I heard {target_article} might be {vague_direction}{vertical}."
+        "I heard {target_article} might be {vague_direction}{vertical}.",
+        "Travelers keep whispering about {target_article} {vague_direction}{vertical}.",
+        "There is talk of {target_article} somewhere {vague_direction}{vertical}, though stories like to stretch.",
+        "If you are chasing rumors, {target_article} may be waiting {vague_direction}{vertical}.",
+        "Someone claimed {target_article} sits {vague_direction}{vertical}. I cannot promise they were sober.",
+        "The road gossip keeps pointing toward {target_article} {vague_direction}{vertical}.",
+        "{target_article} may be out there {vague_direction}{vertical}, if the stories have bones under them.",
+        "I would not call it certain, but {target_article} keeps coming up when people mention {vague_direction}{vertical}."
       ]
     },
     {
@@ -37,7 +65,14 @@
       "lines": [
         "I keep hearing about {target_article} around {distance} {direction}{vertical}.",
         "{target_article} should sit around {distance} {direction}{vertical}.",
-        "If the story is right, {target_article} is about {distance} {direction}{vertical}."
+        "If the story is right, {target_article} is about {distance} {direction}{vertical}.",
+        "The rumor puts {target_article} roughly {distance} {direction}{vertical}.",
+        "Try searching about {distance} {direction}{vertical} for {target_article}.",
+        "Head {direction} for about {distance}{vertical}. That should bring you near {target_article}.",
+        "I would start around {distance} {direction}{vertical} if you want {target_article}.",
+        "The details I heard were {distance} {direction}{vertical}, give or take a little fear.",
+        "{target_article} is said to be close to {distance} {direction}{vertical}.",
+        "About {distance} {direction}{vertical}. That is where the story points."
       ]
     },
     {
@@ -45,7 +80,14 @@
       "lines": [
         "Here. I marked {target_article} on this <color:gold>map</color>. It should sit about {distance} {direction}{vertical}.",
         "I marked {target_article}; look about {distance} {direction}{vertical}.",
-        "This map should lead toward {target_article}, about {distance} {direction}{vertical}."
+        "This map should lead toward {target_article}, about {distance} {direction}{vertical}.",
+        "Take this <color:gold>map</color>. It points toward {target_article}, roughly {distance} {direction}{vertical}.",
+        "{target_article} is marked here. Follow the map about {distance} {direction}{vertical}.",
+        "I put the mark where the rumor points: {distance} {direction}{vertical}.",
+        "This should save you some wandering. {target_article} is marked about {distance} {direction}{vertical}.",
+        "The <color:gold>map</color> is yours. Use it to find {target_article}.",
+        "I marked the route as best I could. Look for {target_article} around {distance} {direction}{vertical}.",
+        "Here. Let the <color:gold>map</color> do some of the remembering for you."
       ]
     },
     {
@@ -53,7 +95,14 @@
       "lines": [
         "Bring me news after you walk the place I mentioned.",
         "Walk the place first. Then bring me the story.",
-        "Find the mark, then we will talk about what it means."
+        "Find the mark, then we will talk about what it means.",
+        "I need your eyes on the place before I can make sense of the rumor.",
+        "Go see it for yourself first. Stories improve with footprints.",
+        "Return after you have reached the place I pointed you toward.",
+        "The rumor needs proof before we dress it up as truth.",
+        "Find it first. Then I will believe the story has weight.",
+        "Bring back what you saw, not just what you hoped was there.",
+        "Go put the rumor under your boots, then come back."
       ]
     },
     {
@@ -61,7 +110,14 @@
       "lines": [
         "I am not sure which story you mean.",
         "That story is not clear enough for me to follow.",
-        "I cannot place that story yet."
+        "I cannot place that story yet.",
+        "You will need to give me more than that.",
+        "That sounds like a story with half the road missing.",
+        "I do not know where to put that tale.",
+        "The thread is too loose. Tell it clearer.",
+        "I cannot follow a story that has no shape yet.",
+        "That one is slipping through my hands. Start again.",
+        "I need a clearer story before I can answer."
       ]
     },
     {
@@ -69,7 +125,14 @@
       "lines": [
         "So {target_article} was really there. Good. A rumor is lighter once it has footprints under it.",
         "You reached {target_article}? Then the old talk had a road in it after all.",
-        "Good. {target_article} is more than rumor now."
+        "Good. {target_article} is more than rumor now.",
+        "Then the land was as strange as they said. That is useful to know.",
+        "You found {target_article}. I will pass that on with fewer maybes.",
+        "A place becomes more real once someone we know has stood there.",
+        "So the rumor had roots. I am glad you found them.",
+        "{target_article}, confirmed. That makes the map in my head a little less foggy.",
+        "Good. Now when people speak of {target_article}, I can say someone actually reached it.",
+        "You brought the rumor back with dirt on its boots. That is the best kind."
       ],
       "weight": 46
     },
@@ -80,7 +143,12 @@
         "{target_article}, truly? Then the road between here and there matters now.",
         "Another village at {target_article}. That is not a landmark, that is people.",
         "Good. If {target_article} is real, then so are its doors, its fields, and its worries.",
-        "You reached {target_article}. I hope they greeted you better than the wilderness did."
+        "You reached {target_article}. I hope they greeted you better than the wilderness did.",
+        "A village is never just a mark on a map. It is meals, names, and locked doors.",
+        "Then we are not as alone out here as some people like to think.",
+        "{target_article} means more than distance now. It means neighbors.",
+        "I will remember that road. Villages should know where other villages stand.",
+        "You found people, not just a place. That makes the story <pulse>matter</pulse>."
       ],
       "weight": 108
     },
@@ -91,7 +159,12 @@
         "So {target_article} was not just campfire talk. Careful with places that outlive their builders.",
         "You found {target_article}. I suppose old stone still knows how to call travelers in.",
         "{target_article}. Hm. Some thresholds should be crossed with one foot ready to leave.",
-        "Then the tale about {target_article} had teeth after all. I am glad they did not close on you."
+        "Then the tale about {target_article} had teeth after all. I am glad they did not close on you.",
+        "Temples keep silence for a reason. I hope you listened before stepping too far.",
+        "Old places do not need to move to be dangerous.",
+        "{target_article} is real, then. That makes the old stories feel heavier.",
+        "I respect old stone most when it is far away from me.",
+        "You came back from {target_article}. That is the important part."
       ],
       "weight": 108
     },
@@ -102,7 +175,12 @@
         "{target_article}, found. There are houses that shelter folk, and houses that watch them.",
         "You came back from {target_article}. That alone says the rumor deserved respect.",
         "So {target_article} stands where they said. Some doors are better confirmed from outside.",
-        "{target_article}. I will remember that name with the kind of caution it deserves."
+        "{target_article}. I will remember that name with the kind of caution it deserves.",
+        "A house that large and that wrong is not a home. It is a warning.",
+        "I hope you did not linger near those windows.",
+        "{target_article} is real, then. That makes the woods around it feel colder.",
+        "Some roofs do not mean safety. That one sounds like proof.",
+        "You found it and left it behind. That may be the wisest part of the story."
       ],
       "weight": 108
     },
@@ -113,7 +191,12 @@
         "You found {target_article}? The sea hides things, but apparently not from you.",
         "{target_article}, confirmed. I do not trust water that keeps architecture.",
         "Then the rumor sank deep and stayed true. That is rare.",
-        "You reached {target_article}. I hope the water let you leave with all your thoughts intact."
+        "You reached {target_article}. I hope the water let you leave with all your thoughts intact.",
+        "Stone under water feels like something the world meant to forget.",
+        "The sea keeps secrets, but you pried one loose.",
+        "{target_article} is real, then. I will think twice before trusting calm water.",
+        "I hope you had air enough and sense enough down there.",
+        "A place like that makes the <wavy>ocean</wavy> feel less empty and more watchful."
       ],
       "weight": 108
     },
@@ -124,7 +207,12 @@
         "{target_article}, then. The ground remembers every hand that tried to hollow it out.",
         "You found {target_article}. Listen twice before trusting old supports.",
         "So the beams were real. Places like {target_article} always sound tired.",
-        "{target_article}. That is a road made by people who forgot roads should see daylight."
+        "{target_article}. That is a road made by people who forgot roads should see daylight.",
+        "Old mines do not sleep. They creak and wait.",
+        "I hope you watched the ceiling as much as the path.",
+        "{target_article} is real, then. That makes the ground below us feel busier.",
+        "Some tunnels keep working long after the miners leave.",
+        "You came back from {target_article}. Good. Not every tunnel gives people back."
       ],
       "weight": 108
     },
@@ -135,7 +223,12 @@
         "You came back from {target_article}. Speak softly. Even memory might echo down there.",
         "{target_article}, confirmed. That is not a discovery I would celebrate loudly.",
         "So the deep rumor was true. Some truths are best carried carefully.",
-        "You found {target_article}. I hope you left more silence there than you took."
+        "You found {target_article}. I hope you left more silence there than you took.",
+        "That place sounds like the kind of dark that listens back.",
+        "Do not make a campfire tale of {target_article}. Some stories wake things.",
+        "You returned from that depth. I would call that fortunate before I called it brave.",
+        "{target_article} is real. Then quiet has a shape, and it is down there.",
+        "Carry that name gently. Some places deserve <pulse>silence</pulse> more than songs."
       ],
       "weight": 108
     },
@@ -146,7 +239,12 @@
         "You found {target_article}. Some stone does not mark a place; it marks a question.",
         "{target_article}, confirmed. I wonder how long it has been waiting for footsteps.",
         "So the path led to {target_article}. That sounds less like a destination than a warning.",
-        "You reached {target_article}. Some roads go outward. That one pulls down."
+        "You reached {target_article}. Some roads go outward. That one pulls down.",
+        "There are places that feel built for someone expected to arrive too late.",
+        "{target_article} is real, then. I do not like how important that sounds.",
+        "A stronghold is a strange thing to find and a stranger thing to need.",
+        "If the stone felt like it was watching you, I would not be surprised.",
+        "You found a door under the world. Step carefully if you go back."
       ],
       "weight": 108
     },
@@ -157,7 +255,12 @@
         "{target_article}, real enough to find and harsh enough to remember.",
         "You confirmed {target_article}. Some places make even a rumor smell of smoke.",
         "So {target_article} was there. Good. I prefer knowing where the dangerous roads start.",
-        "You came back from {target_article}. I would call that lucky, skilled, or both."
+        "You came back from {target_article}. I would call that lucky, skilled, or both.",
+        "Anything tied to that heat deserves caution before curiosity.",
+        "The Nether has a way of making distance feel angry.",
+        "{target_article} is real, then. I hope you did not breathe too deeply there.",
+        "Some roads should be marked less for travel and more for warning.",
+        "You returned from the smoke and heat. That alone is worth noting."
       ],
       "weight": 108
     },
@@ -168,7 +271,12 @@
         "You found {target_article}. Then we know which horizon to mistrust.",
         "{target_article}, confirmed. Towers are louder than they look.",
         "So the patrol stories were true. Best to know where trouble keeps a roof.",
-        "You reached {target_article}. I hope they saw less of you than you saw of them."
+        "You reached {target_article}. I hope they saw less of you than you saw of them.",
+        "An outpost means trouble has a place to sleep.",
+        "{target_article} is real, then. We will keep sharper eyes that way.",
+        "That kind of tower does not stand for decoration.",
+        "Good. Knowing where danger waits is better than meeting it by surprise.",
+        "I will remember that direction with <pulse>caution</pulse>."
       ],
       "weight": 108
     },
@@ -179,7 +287,12 @@
         "{target_article}, then. Broken places still know how to keep secrets.",
         "You confirmed {target_article}. The past is never quite as empty as it pretends.",
         "So {target_article} was real. I wonder what story broke there first.",
-        "You reached {target_article}. Some places are leftovers, but not harmless ones."
+        "You reached {target_article}. Some places are leftovers, but not harmless ones.",
+        "A ruin is just a story that lost its roof.",
+        "{target_article} may be broken, but that does not mean it is finished.",
+        "Old stones keep old names, even when no one speaks them anymore.",
+        "You found what remains. Sometimes remains are enough to worry over.",
+        "{target_article} is real, then. The past still has <wavy>edges</wavy>."
       ],
       "weight": 108
     },
@@ -190,7 +303,12 @@
         "You found {target_article}. Whoever built it trusted challenge more than comfort.",
         "{target_article}, confirmed. A place like that does not invite travelers. It measures them.",
         "So the tale of {target_article} was true. I hope you brought back more than bruises.",
-        "You reached {target_article}. I would call that brave, but brave and foolish share a fence."
+        "You reached {target_article}. I would call that brave, but brave and foolish share a fence.",
+        "A chamber made for trials does not sound like a place that welcomes mistakes.",
+        "{target_article} is real, then. I hope you respected its teeth.",
+        "Some places do not hide danger. They arrange it.",
+        "You came back from {target_article}. That means the place tested you and did not keep you.",
+        "If you go again, carry caution like a shield."
       ],
       "weight": 108
     },
@@ -201,7 +319,12 @@
         "{target_article}, confirmed. I will pass that along with fewer maybes.",
         "You reached {target_article}. A place is different once someone here has seen it.",
         "So the rumor had bones under it. Good to know.",
-        "{target_article}. I will remember the name with a little more certainty now."
+        "{target_article}. I will remember the name with a little more certainty now.",
+        "Then the tale was not just smoke after all.",
+        "Good. Now {target_article} has a place in our knowing, not just our guessing.",
+        "You brought back proof, and proof is heavier than rumor.",
+        "{target_article} is real. That makes the road to it matter.",
+        "I will mark that story as <pulse>true enough</pulse> for now."
       ],
       "weight": 108
     },
@@ -210,7 +333,14 @@
       "lines": [
         "You found the place I mentioned. Good. I will remember that.",
         "Good. {target_article} is more than rumor now.",
-        "So {target_article} was real. That makes the story heavier."
+        "So {target_article} was real. That makes the story heavier.",
+        "You put feet under the rumor. That helps.",
+        "I am glad you came back with an answer.",
+        "A story changes once someone has stood inside it.",
+        "Now we know the tale had more than smoke behind it.",
+        "You confirmed it. I will speak of it with less doubt now.",
+        "{target_article} is real, then. Good to know, and better to know from someone who returned.",
+        "The rumor has weight now. I will <pulse>remember</pulse>."
       ]
     }
   ]
