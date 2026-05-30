@@ -24,8 +24,8 @@ public abstract class QuestItemHeldGlowMixin {
     @Final
     private ItemRenderer itemRenderer;
 
-    @Inject(method = "renderItem", at = @At("TAIL"))
-    private void villagerretaliation$renderQuestItemOutline(
+    @Inject(method = "renderItem", at = @At("HEAD"))
+    private void villagerretaliation$renderQuestItemOutlineUnderlay(
             LivingEntity entity,
             ItemStack stack,
             ItemDisplayContext displayContext,
@@ -43,6 +43,8 @@ public abstract class QuestItemHeldGlowMixin {
             return;
         }
 
+        poseStack.pushPose();
+        poseStack.scale(1.035F, 1.035F, 1.035F);
         OutlineBufferSource outline = minecraft.renderBuffers().outlineBufferSource();
         outline.setColor(255, 209, 102, 255);
         this.itemRenderer.renderStatic(
@@ -57,5 +59,6 @@ public abstract class QuestItemHeldGlowMixin {
                 OverlayTexture.NO_OVERLAY,
                 entity.getId() + displayContext.ordinal());
         outline.endOutlineBatch();
+        poseStack.popPose();
     }
 }

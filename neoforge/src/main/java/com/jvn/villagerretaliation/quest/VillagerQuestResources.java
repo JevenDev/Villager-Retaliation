@@ -116,19 +116,15 @@ public final class VillagerQuestResources {
         }
 
         JsonObject display = DatapackJsonReader.readObject(root, "display");
-        String title = firstNonBlank(
-                DatapackJsonReader.readString(root, "title"),
-                display == null ? "" : DatapackJsonReader.readString(display, "title"));
-        String description = firstNonBlank(
-                DatapackJsonReader.readString(root, "description"),
-                display == null ? "" : DatapackJsonReader.readString(display, "description"));
+        String title = display == null ? "" : DatapackJsonReader.readString(display, "title");
+        String description = display == null ? "" : DatapackJsonReader.readString(display, "description");
         ResourceLocation parent = DatapackJsonReader.readResourceLocation(root, "parent").orElse(null);
 
         return new QuestDefinition(
                 id,
                 title,
                 description,
-                DatapackJsonReader.readString(root, "questline", "questline_id"),
+                DatapackJsonReader.readString(root, "questline"),
                 parent,
                 readOffer(location, root),
                 readTarget(root),
@@ -148,7 +144,7 @@ public final class VillagerQuestResources {
         }
 
         Set<VillagerProfession> professions = new LinkedHashSet<>();
-        for (String value : DatapackJsonReader.readStringList(offer, "profession", "professions", "offered_by")) {
+        for (String value : DatapackJsonReader.readStringList(offer, "professions")) {
             Optional<VillagerProfession> profession = VillagerProfessionUtil.parse(value);
             if (profession.isPresent()) {
                 professions.add(profession.get());
@@ -157,7 +153,7 @@ public final class VillagerQuestResources {
             }
         }
 
-        int minLevel = readVillagerLevel(offer, "min_villager_level", readVillagerLevel(offer, "min_level", 1));
+        int minLevel = readVillagerLevel(offer, "min_villager_level", 1);
         return new QuestDefinition.Offer(
                 professions,
                 minLevel,
@@ -172,27 +168,17 @@ public final class VillagerQuestResources {
         }
 
         Map<VillagerSkill, Integer> skills = new LinkedHashMap<>();
-        if (element.isJsonArray()) {
-            for (JsonElement child : element.getAsJsonArray()) {
-                if (child.isJsonObject()) {
-                    JsonObject entry = child.getAsJsonObject();
-                    VillagerSkill skill = VillagerSkill.bySerializedName(DatapackJsonReader.readString(entry, "skill"));
-                    if (skill != null) {
-                        skills.put(skill, Math.max(1, DatapackJsonReader.readInt(entry, "min", 1)));
-                    }
-                }
+        if (!element.isJsonObject()) {
+            return Map.of();
+        }
+
+        for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
+            VillagerSkill skill = VillagerSkill.bySerializedName(entry.getKey());
+            if (skill == null || !entry.getValue().isJsonObject()) {
+                continue;
             }
-        } else if (element.isJsonObject()) {
-            for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
-                VillagerSkill skill = VillagerSkill.bySerializedName(entry.getKey());
-                if (skill == null) {
-                    continue;
-                }
-                int min = entry.getValue().isJsonObject()
-                        ? DatapackJsonReader.readInt(entry.getValue().getAsJsonObject(), "min", 1)
-                        : DatapackJsonReader.readInt(entry.getValue(), 1);
-                skills.put(skill, Math.max(1, min));
-            }
+            int min = DatapackJsonReader.readInt(entry.getValue().getAsJsonObject(), "min", 1);
+            skills.put(skill, Math.max(1, min));
         }
         return Map.copyOf(skills);
     }
@@ -204,7 +190,7 @@ public final class VillagerQuestResources {
                 : DatapackJsonReader.readResourceLocation(target, "structure").orElse(null);
         List<String> pieces = target == null
                 ? List.of()
-                : DatapackJsonReader.readStringList(target, "piece", "pieces", "structure_piece", "structure_pieces");
+                : DatapackJsonReader.readStringList(target, "pieces");
         int searchRadius = target == null
                 ? DEFAULT_STRUCTURE_SEARCH_RADIUS
                 : DatapackJsonReader.readInt(target, "search_radius", DEFAULT_STRUCTURE_SEARCH_RADIUS);
@@ -214,14 +200,6 @@ public final class VillagerQuestResources {
         ResourceLocation proofItem = target == null
                 ? null
                 : DatapackJsonReader.readResourceLocation(target, "proof_item").orElse(null);
-
-        JsonObject criteria = DatapackJsonReader.readObject(root, "criteria");
-        if (criteria != null) {
-            TargetParts parts = readTargetCriteria(criteria, structure, pieces, proofItem);
-            structure = parts.structure();
-            pieces = parts.pieces();
-            proofItem = parts.proofItem();
-        }
 
         return new QuestDefinition.Target(structure, pieces, searchRadius, discoveryRadius, proofItem);
     }
@@ -251,16 +229,14 @@ public final class VillagerQuestResources {
         String id = firstNonBlank(DatapackJsonReader.readString(entry, "id"), "objective_" + index);
         String context = "quest objective \"" + id + "\"";
         QuestDefinition.ObjectiveType type = QuestDefinition.ObjectiveType.bySerializedName(
-                DatapackJsonReader.readString(entry, "type", "kind"));
+                DatapackJsonReader.readString(entry, "type"));
         if (type == null) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "unknown objective type.");
             return Optional.empty();
         }
 
         ResourceLocation structure = DatapackJsonReader.readResourceLocation(entry, "structure").orElse(null);
-        ResourceLocation item = DatapackJsonReader.readResourceLocation(entry, "item")
-                .or(() -> DatapackJsonReader.readResourceLocation(entry, "proof_item"))
-                .orElse(null);
+        ResourceLocation item = DatapackJsonReader.readResourceLocation(entry, "item").orElse(null);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry);
         if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "structure_visit objective must define structure.");
@@ -280,7 +256,7 @@ public final class VillagerQuestResources {
                 type,
                 DatapackJsonReader.readBoolean(entry, "optional", false),
                 structure,
-                DatapackJsonReader.readStringList(entry, "piece", "pieces", "structure_piece", "structure_pieces"),
+                DatapackJsonReader.readStringList(entry, "pieces"),
                 DatapackJsonReader.readInt(entry, "search_radius", DEFAULT_STRUCTURE_SEARCH_RADIUS),
                 DatapackJsonReader.readInt(entry, "discovery_radius", DEFAULT_DISCOVERY_RADIUS),
                 item,
@@ -291,49 +267,15 @@ public final class VillagerQuestResources {
 
     private static QuestDefinition.ObjectiveTracker readObjectiveTracker(JsonObject objective) {
         JsonObject tracker = DatapackJsonReader.readObject(objective, "tracker");
-        JsonObject source = tracker == null ? objective : tracker;
-        String text = DatapackJsonReader.readString(source, "text", "label", "objective");
-        String completeText = DatapackJsonReader.readString(source, "complete_text", "completed_text", "done_text");
-        boolean showProgress = DatapackJsonReader.readBoolean(source, "show_progress", "showProgress", true);
-        float progress = (float) DatapackJsonReader.readDouble(source, "progress", -1.0D);
-        Map<String, String> metadata = readStringMap(DatapackJsonReader.readObject(source, "metadata"));
-        if (tracker == null
-                && text.isBlank()
-                && completeText.isBlank()
-                && progress < 0.0F
-                && metadata.isEmpty()
-                && !objective.has("show_progress")
-                && !objective.has("showProgress")) {
+        if (tracker == null) {
             return QuestDefinition.ObjectiveTracker.EMPTY;
         }
+        String text = DatapackJsonReader.readString(tracker, "text");
+        String completeText = DatapackJsonReader.readString(tracker, "complete_text");
+        boolean showProgress = DatapackJsonReader.readBoolean(tracker, "show_progress", true);
+        float progress = (float) DatapackJsonReader.readDouble(tracker, "progress", -1.0D);
+        Map<String, String> metadata = readStringMap(DatapackJsonReader.readObject(tracker, "metadata"));
         return new QuestDefinition.ObjectiveTracker(text, completeText, showProgress, progress, metadata);
-    }
-
-    private static TargetParts readTargetCriteria(
-            JsonObject criteria,
-            ResourceLocation structure,
-            List<String> pieces,
-            ResourceLocation proofItem) {
-        for (Map.Entry<String, JsonElement> entry : criteria.entrySet()) {
-            if (!entry.getValue().isJsonObject()) {
-                continue;
-            }
-            JsonObject criterion = entry.getValue().getAsJsonObject();
-            String trigger = DatapackJsonReader.readString(criterion, "trigger").toLowerCase(Locale.ROOT);
-            if (structure == null && trigger.contains("structure")) {
-                structure = DatapackJsonReader.readResourceLocation(criterion, "structure").orElse(null);
-                List<String> criterionPieces = DatapackJsonReader.readStringList(criterion, "piece", "pieces", "structure_piece", "structure_pieces");
-                if (!criterionPieces.isEmpty()) {
-                    pieces = criterionPieces;
-                }
-            }
-            if (proofItem == null && (trigger.contains("inventory") || criterion.has("item") || criterion.has("proof_item"))) {
-                proofItem = DatapackJsonReader.readResourceLocation(criterion, "proof_item")
-                        .or(() -> DatapackJsonReader.readResourceLocation(criterion, "item"))
-                        .orElse(null);
-            }
-        }
-        return new TargetParts(structure, pieces, proofItem);
     }
 
     private static QuestDefinition.Rewards readRewards(JsonObject root) {
@@ -342,12 +284,10 @@ public final class VillagerQuestResources {
             return QuestDefinition.Rewards.EMPTY;
         }
         return new QuestDefinition.Rewards(
-                Math.max(0, DatapackJsonReader.readInt(rewards, "experience", DatapackJsonReader.readInt(rewards, "xp", 0))),
+                Math.max(0, DatapackJsonReader.readInt(rewards, "experience", 0)),
                 DatapackJsonReader.readInt(rewards, "reputation", 0),
                 DatapackJsonReader.readInt(rewards, "gossip_reputation", 0),
-                DatapackJsonReader.readResourceLocation(rewards, "loot")
-                        .or(() -> DatapackJsonReader.readResourceLocation(rewards, "loot_table"))
-                        .orElse(null),
+                DatapackJsonReader.readResourceLocation(rewards, "loot_table").orElse(null),
                 readMemoryEvent(rewards)
         );
     }
@@ -369,7 +309,7 @@ public final class VillagerQuestResources {
                 maxCompletions,
                 readDurationTicks(rules, "completion_cooldown", 0L),
                 QuestDefinition.AbandonmentMode.bySerializedName(
-                        DatapackJsonReader.readString(rules, "abandonment", "abandonment_policy", "drop_policy")),
+                        DatapackJsonReader.readString(rules, "abandonment")),
                 readDurationTicks(rules, "abandonment_cooldown", 0L),
                 DatapackJsonReader.readBoolean(rules, "consume_on_completion", false),
                 DatapackJsonReader.readBoolean(rules, "consume_on_abandonment", false),
@@ -379,106 +319,36 @@ public final class VillagerQuestResources {
     }
 
     private static QuestDefinition.ActiveState readActiveState(ResourceLocation location, JsonObject rules) {
-        JsonObject active = firstObject(rules, "active", "active_state", "active_visibility");
+        JsonObject active = DatapackJsonReader.readObject(rules, "active");
         List<DialogueCondition> conditions = active == null
-                ? readConditionsFromArray(location, "quest active state", rules, "active_conditions", "active_when")
+                ? List.of()
                 : DialogueCondition.readList(location, "quest active state", active);
         boolean hideWhenUnmet = active == null
-                ? readBoolean(rules, false, "hide_when_inactive", "hide_when_active_conditions_unmet")
-                : readBoolean(active, false, "hide_when_unmet", "hide_when_inactive");
+                ? false
+                : DatapackJsonReader.readBoolean(active, "hide_when_unmet", false);
         boolean pauseProgressWhenUnmet = active == null
-                ? readBoolean(rules, true, "pause_progress_when_inactive", "pause_progress_when_active_conditions_unmet")
-                : readBoolean(active, true, "pause_progress_when_unmet", "pause_progress_when_inactive");
+                ? true
+                : DatapackJsonReader.readBoolean(active, "pause_progress_when_unmet", true);
         return new QuestDefinition.ActiveState(conditions, hideWhenUnmet, pauseProgressWhenUnmet);
     }
 
     private static QuestDefinition.Expiration readExpiration(ResourceLocation location, JsonObject rules) {
-        JsonObject expiration = firstObject(rules, "expiration", "expires");
-        if (expiration == null && !hasAny(rules,
-                "expires_after_ticks",
-                "expires_after_seconds",
-                "expires_after_days",
-                "expiration_conditions",
-                "expires_when")) {
+        JsonObject expiration = DatapackJsonReader.readObject(rules, "expiration");
+        if (expiration == null) {
             return QuestDefinition.Expiration.DEFAULT;
         }
 
-        JsonObject source = expiration == null ? rules : expiration;
-        long afterTicks = readDurationTicks(source, "after", 0L);
-        if (afterTicks <= 0L) {
-            afterTicks = readDurationTicks(source, "duration", 0L);
-        }
-        if (afterTicks <= 0L) {
-            afterTicks = readDurationTicks(source, "expires_after", 0L);
-        }
-        List<DialogueCondition> conditions = DialogueCondition.readList(location, "quest expiration", source);
-        if (conditions.isEmpty()) {
-            conditions = readConditionsFromArray(location, "quest expiration", source, "expiration_conditions", "expires_when");
-        }
-        if (conditions.isEmpty() && source != rules) {
-            conditions = readConditionsFromArray(location, "quest expiration", rules, "expiration_conditions", "expires_when");
-        }
+        long afterTicks = readDurationTicks(expiration, "after", 0L);
+        List<DialogueCondition> conditions = DialogueCondition.readList(location, "quest expiration", expiration);
         return new QuestDefinition.Expiration(
                 afterTicks,
                 conditions,
-                readBoolean(source, false, "consume", "consume_on_expiration"),
-                readBoolean(source, true, "allow_repickup", "allow_repick_up"),
-                readBoolean(source, true, "notify", "send_notification"),
-                firstNonBlank(
-                        DatapackJsonReader.readString(source, "notification", "notification_trigger"),
-                        "quest.expired"),
-                firstNonBlank(
-                        DatapackJsonReader.readString(source, "text", "fallback", "fallback_text", "notification_text"),
-                        "Quest expired: {quest}")
+                DatapackJsonReader.readBoolean(expiration, "consume", false),
+                DatapackJsonReader.readBoolean(expiration, "allow_repickup", true),
+                DatapackJsonReader.readBoolean(expiration, "notify", true),
+                firstNonBlank(DatapackJsonReader.readString(expiration, "notification"), "quest.expired"),
+                firstNonBlank(DatapackJsonReader.readString(expiration, "text"), "Quest expired: {quest}")
         );
-    }
-
-    private static List<DialogueCondition> readConditionsFromArray(
-            ResourceLocation location,
-            String context,
-            JsonObject owner,
-            String... keys) {
-        for (String key : keys) {
-            JsonElement element = owner.get(key);
-            if (element == null || element.isJsonNull()) {
-                continue;
-            }
-            JsonObject wrapper = new JsonObject();
-            wrapper.add("conditions", element);
-            List<DialogueCondition> conditions = DialogueCondition.readList(location, context, wrapper);
-            if (!conditions.isEmpty()) {
-                return conditions;
-            }
-        }
-        return List.of();
-    }
-
-    private static JsonObject firstObject(JsonObject object, String... keys) {
-        for (String key : keys) {
-            JsonObject child = DatapackJsonReader.readObject(object, key);
-            if (child != null) {
-                return child;
-            }
-        }
-        return null;
-    }
-
-    private static boolean readBoolean(JsonObject object, boolean fallback, String... keys) {
-        for (String key : keys) {
-            if (object.has(key)) {
-                return DatapackJsonReader.readBoolean(object, key, fallback);
-            }
-        }
-        return fallback;
-    }
-
-    private static boolean hasAny(JsonObject object, String... keys) {
-        for (String key : keys) {
-            if (object.has(key)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static long readDurationTicks(JsonObject object, String baseName, long fallback) {
@@ -534,8 +404,8 @@ public final class VillagerQuestResources {
 
     private static QuestDefinition.Step readTrackerStep(JsonObject step) {
         return new QuestDefinition.Step(
-                DatapackJsonReader.readString(step, "text", "label", "objective"),
-                DatapackJsonReader.readBoolean(step, "show_progress", "showProgress", true),
+                DatapackJsonReader.readString(step, "text"),
+                DatapackJsonReader.readBoolean(step, "show_progress", true),
                 (float) DatapackJsonReader.readDouble(step, "progress", -1.0D),
                 readStringMap(DatapackJsonReader.readObject(step, "metadata"))
         );
@@ -576,7 +446,11 @@ public final class VillagerQuestResources {
 
     private static Optional<QuestDefinition.Trigger> readTrigger(ResourceLocation location, JsonObject trigger, int index) {
         QuestDefinition.TriggerEvent event = QuestDefinition.TriggerEvent.bySerializedName(
-                DatapackJsonReader.readString(trigger, "event", "trigger"));
+                DatapackJsonReader.readString(trigger, "event"));
+        if (event == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest trigger", "unknown trigger event.");
+            return Optional.empty();
+        }
         String id = DatapackJsonReader.readString(trigger, "id");
         if (id.isBlank()) {
             id = event.name().toLowerCase(Locale.ROOT) + "_" + index;
@@ -591,12 +465,6 @@ public final class VillagerQuestResources {
         boolean repeatable = defaultTriggerRepeatable(actions);
         if (trigger.has("repeatable")) {
             repeatable = DatapackJsonReader.readBoolean(trigger, "repeatable", repeatable);
-        }
-        if (trigger.has("once")) {
-            repeatable = !DatapackJsonReader.readBoolean(trigger, "once", false);
-        }
-        if (trigger.has("run_once")) {
-            repeatable = !DatapackJsonReader.readBoolean(trigger, "run_once", false);
         }
 
         return Optional.of(new QuestDefinition.Trigger(
@@ -619,7 +487,7 @@ public final class VillagerQuestResources {
     }
 
     private static ResourceLocation readMemoryEvent(JsonObject rewards) {
-        String value = DatapackJsonReader.readString(rewards, "memory", "memory_event");
+        String value = DatapackJsonReader.readString(rewards, "memory_event");
         if (value.isBlank()) {
             return null;
         }
@@ -703,9 +571,6 @@ public final class VillagerQuestResources {
 
     private static String firstNonBlank(String first, String second) {
         return first == null || first.isBlank() ? second : first;
-    }
-
-    private record TargetParts(ResourceLocation structure, List<String> pieces, ResourceLocation proofItem) {
     }
 
     private record CachedQuests(MinecraftServer server, Map<ResourceLocation, QuestDefinition> quests) {

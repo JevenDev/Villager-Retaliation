@@ -253,13 +253,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `type` | string | optional | If supplied, must be `dialogue_option`. Typed `options/` files can omit it. |
 | `request` | enum | required | Dialogue request sent when selected. |
 | `order` | integer | array index | Lower values appear earlier. |
-| `topic` | string | none | Beta.12+. Author-facing story topic. Metadata only; does not affect matching. |
-| `tags` | string or array | none | Beta.12+. Author-facing labels for organizing dialogue and future quest hooks. Metadata only. |
-| `questline` / `questline_id` | string | none | Beta.12+. Optional questline id for pack organization and future systems. Metadata only. |
-| `quest` / `quest_id` | string | none | Beta.12+. Optional quest id for pack organization and future systems. Metadata only. |
-| `stage` / `chapter` | string | none | Beta.12+. Optional narrative stage or chapter id. Metadata only. |
-| `notes` / `author_notes` | string | none | Beta.12+. Private pack-author notes. Metadata only. |
-| `metadata` | object | none | Beta.12+. Nested form for `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`. |
+| `metadata` | object | none | Beta.12+. Nested author metadata with `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`. Metadata does not affect matching. |
 | `professions` | string or array | any | Filters by villager profession. |
 | `dispositions` | string or array | any | Filters by legacy dialogue disposition derived from reputation and context. This is not the beta.12 temporary mood field. |
 | `requires_villager_unarmed` | boolean | `false` | Requires the villager to have no usable weapon in either hand. `villager_unarmed` is also accepted as an alias. |
@@ -307,13 +301,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `text` | string | required unless `lines` is set | The response text. |
 | `lines` | array | required unless `text` is set | Alternate response texts. One is selected at random after this entry wins weighted selection. |
 | `text_key` | string | none | Beta.12+. Message key used as this line's text, letting filters stay in `lines` while localized variants live in `messages`. |
-| `topic` | string | none | Beta.12+. Author-facing story topic. Metadata only; shown by `/villagerretaliation dialogue explain` when present. |
-| `tags` | string or array | none | Beta.12+. Author-facing labels for organizing dialogue and future quest hooks. Metadata only. |
-| `questline` / `questline_id` | string | none | Beta.12+. Optional questline id for pack organization and future systems. Metadata only. |
-| `quest` / `quest_id` | string | none | Beta.12+. Optional quest id for pack organization and future systems. Metadata only. |
-| `stage` / `chapter` | string | none | Beta.12+. Optional narrative stage or chapter id. Metadata only. |
-| `notes` / `author_notes` | string | none | Beta.12+. Private pack-author notes. Metadata only. |
-| `metadata` | object | none | Beta.12+. Nested form for `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`. |
+| `metadata` | object | none | Beta.12+. Nested author metadata with `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`. Shown by `/villagerretaliation dialogue explain` when present. |
 | `option` | string or array | none | Restricts the line to option id(s). |
 | `option_ids` | string or array | none | Same purpose as `option`. |
 | `professions` | string or array | inherited/any | Filters by profession. |
@@ -429,22 +417,7 @@ Use `text_key` when one rule should resolve text from `messages` instead of carr
 
 Dialogue options, lines, messages, openings, closings, and pacify entries can carry author-facing metadata. The fields are intentionally inert in beta.12: they do not make an entry match, hide, sort, or win selection. They exist so large packs can group story material now, and so future quest and questline systems have stable ids to build on.
 
-Use top-level fields when the entry is short:
-
-```json
-{
-  "id": "my_pack.old_road.rumor_01",
-  "request": "story",
-  "topic": "Old Road",
-  "tags": ["old_road", "rumor"],
-  "questline": "old_road",
-  "quest": "find_the_bridge",
-  "stage": "rumors",
-  "text": "The old road still remembers who crossed it."
-}
-```
-
-Use nested `metadata` when you want the rule fields and author notes visually separated:
+Use nested `metadata` to keep author notes and story grouping separate from matching rules:
 
 ```json
 {
@@ -462,7 +435,7 @@ Use nested `metadata` when you want the rule fields and author notes visually se
 }
 ```
 
-`questline`, `quest`, `stage`, and `tags` are normalized to lowercase id-like values. `questline_id`, `quest_id`, `chapter`, and `author_notes` are accepted aliases.
+`questline`, `quest`, `stage`, and `tags` are normalized to lowercase id-like values. Metadata must be nested under `metadata`; the older top-level metadata aliases are no longer part of the beta.12 authoring shape.
 
 Text effects are data-driven per dialogue line and affect the chat-style response text, not the separate in-world floating text indicators. Inline tags are the preferred format when only part of a sentence should be expressive:
 

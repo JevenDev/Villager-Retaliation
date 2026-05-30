@@ -35,6 +35,8 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - First-conversation and first-village opening lines now respect persisted seen-memory after world leave/join cycles.
 - The default diamond-sword proximity forced-dialogue witness radius was reduced from 8 blocks to 4 blocks.
 - The built-in Lost Civilization quest now keeps `Abandon quest` inside the active quest conversation instead of exposing a separate top-level abandon option.
+- Quest JSON now uses the canonical beta.12 shape only: nested `display`, plural `offer.professions`, object-shaped `offer.skills`, explicit `objectives`, canonical rewards, and `repeatable` trigger behavior.
+- Dialogue tree display and story metadata now match quest formatting with nested `display` and `metadata` blocks.
 
 ### Fixed
 
@@ -45,6 +47,9 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 ### Removed
 
 - Removed the Datapack Generator's beta.11-to-beta.12 Convert workflow. Beta.12 is a manual retargeting boundary, not a marker-only migration.
+- Removed quest compatibility aliases and advancement-style `criteria` / `requirements` inference from the quest loader.
+- Removed quest/dialogue-tree action aliases from the beta.12 action reader. Actions now use canonical `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker` fields.
+- Removed top-level dialogue metadata aliases from maintained beta.12 dialogue and dialogue-tree authoring.
 - No beta.12 runtime JSON fields, triggers, or placeholders are removed solely because of the folderized dialogue layout.
 
 ### Migration Notes For Pack Authors
@@ -56,6 +61,9 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Split old monolithic dialogue files by ownership and purpose. Keep bundle files only when several related entries are easier to maintain together.
 - Review intentional overrides carefully: Minecraft resource replacement still happens by exact resource path before Villager Retaliation merges entries, so copying an old built-in monolith can replace more beta.12 content than intended.
 - Use `conditions` for new memory, family, relationship, recruitment, quest, and event-gated dialogue. The older flat helper fields still load in beta.12 but are planned for beta.13 deprecation.
+- Convert quests to the canonical beta.12 schema before testing: `criteria` / `requirements`, singular `profession`, array-form `skills`, `loot`, `memory`, and `once` are no longer accepted by the quest loader.
+- Convert quest and dialogue-tree actions to canonical beta.12 fields before testing: use `type: "quest"` plus `action: "start" | "remind" | "turn_in" | "abandon"`, `amount` for numeric rewards, `memory_event`, `loot_table`, and `forced_dialogue`.
+- Put dialogue narrative metadata under `metadata` instead of top-level `topic`, `tags`, `questline`, `quest`, `stage`, or `notes`.
 - Use `priority` when one matched line should reliably win, and use `weight` only to tune random odds inside the same priority tier.
 - Use `text_key` when translators should replace message text without copying the full line filters.
 - For skill-trade packs, use `request.targetable: true` plus request metadata only for trades that should appear as Special Orders. The queued order stores the trade definition id, so later cost/result/config changes affect future fulfillment.

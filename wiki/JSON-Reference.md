@@ -38,7 +38,7 @@ are both accepted by the loaders that use `professions`, filters, item lists, ta
 
 ## Canonical Names And Aliases
 
-The wiki tables list canonical field names first. Shorter or older aliases still load where documented, but new packs should prefer canonical names so examples stay consistent:
+The wiki tables list canonical field names first. Quest files, quest/dialogue-tree actions, and dialogue tree metadata are canonical-only in beta.12; use exactly the field names shown on those pages. Older aliases still load in other systems only where documented, but new packs should prefer canonical names so examples stay consistent:
 
 | Prefer | Accepted aliases |
 | --- | --- |
@@ -50,7 +50,7 @@ The wiki tables list canonical field names first. Shorter or older aliases still
 | `requires_witness_armed`, `requires_witness_unarmed` | `witness_armed`, `witness_unarmed` |
 | `world_text_kind` | `style` in notifications |
 
-Compatibility aliases are meant for old packs and quick hand-authored JSON. The Datapack Generator writes canonical names when possible.
+Compatibility aliases are meant for old packs and quick hand-authored JSON outside the canonical quest and dialogue-tree surfaces. The Datapack Generator writes canonical names when possible.
 
 ## Text Or Lines
 
@@ -78,7 +78,7 @@ Selection is entry-first: filters and `chance` are checked, `weight` chooses a m
 
 ## Quests
 
-Quest files live in `data/<namespace>/quests/`. They combine advancement-like `criteria` with explicit offer, target, reward, tracker, lifecycle rule, and trigger sections. Dialogue trees run quest actions and show or hide entries with `conditions` using `type: "quest"`.
+Quest files live in `data/<namespace>/quests/`. They combine explicit display, offer, target, objective, reward, tracker, lifecycle rule, and trigger sections. Dialogue trees run quest actions and show or hide entries with `conditions` using `type: "quest"`.
 
 Quest `triggers` provide the reusable event foundation for later quest features. A trigger can watch quest lifecycle events, active-player ticks, or proximity to the starting villager, then stack existing dialogue conditions such as time, weather, memory, reputation, skill, and quest state before running notification, tracker, or `trigger: "quest"` forced-dialogue actions.
 
@@ -408,9 +408,9 @@ That entry passes its random chance gate roughly 25 percent of the time before w
 
 ## Dialogue Narrative Metadata
 
-Dialogue options, lines, messages, openings, closings, and pacify entries can include beta.12 author metadata. These fields are inert today: they help pack maintainers group story material and prepare stable ids for future quest systems, but they do not change matching or selection.
+Dialogue options, lines, messages, openings, closings, pacify entries, and dialogue trees can include beta.12 author metadata. These fields are inert today: they help pack maintainers group story material and prepare stable ids for future quest systems, but they do not change matching or selection.
 
-Accepted fields are `topic`, `tags`, `questline` / `questline_id`, `quest` / `quest_id`, `stage` / `chapter`, and `notes` / `author_notes`. You can place them directly on an entry or under a nested `metadata` object.
+Accepted nested fields are `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`. Place them under a `metadata` object.
 
 ```json
 {

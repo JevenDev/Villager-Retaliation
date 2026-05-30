@@ -6,7 +6,46 @@ Quests live under:
 data/<namespace>/quests/<quest_id>.json
 ```
 
-Each quest owns its objective rules, lifecycle limits, rewards, and optional tracker text. Branching offer, reminder, turn-in, and abandon conversations should live in matching [Dialogue Tree JSON](Dialogue-Trees.md) files.
+Each quest owns its display text, offer gates, target rules, explicit objectives, lifecycle limits, rewards, and optional tracker text. Branching offer, reminder, turn-in, and abandon conversations should live in matching [Dialogue Tree JSON](Dialogue-Trees.md) files.
+
+Quest JSON is canonical in beta.12. Older advancement-style `criteria` / `requirements` blocks and alias fields are not loaded by the quest system.
+
+## Canonical Shape
+
+```json
+{
+  "id": "example:tales_of_a_lost_civilization",
+  "display": {
+    "title": "Tales of a Lost Civilization",
+    "description": "Reach an Ancient City center and return with an Echo Shard."
+  },
+  "questline": "lost_civilization",
+  "offer": {
+    "professions": ["minecraft:cartographer"],
+    "min_villager_level": "journeyman",
+    "skills": {
+      "cartography": { "min": 50 }
+    }
+  },
+  "target": {
+    "structure": "minecraft:ancient_city",
+    "pieces": ["ancient_city/city_center/city_center_1"],
+    "search_radius": 256,
+    "discovery_radius": 128,
+    "proof_item": "minecraft:echo_shard"
+  },
+  "objectives": [
+    {
+      "id": "recover_echo_shard",
+      "type": "item_check",
+      "item": "minecraft:echo_shard",
+      "count": 1
+    }
+  ]
+}
+```
+
+`offer.professions` is always an array, and `offer.skills` is an object keyed by villager skill id. Skill requirements use `{ "min": number }` so future skill gates can grow without changing shape.
 
 ## Lifecycle Rules
 
@@ -43,6 +82,22 @@ Example:
   }
 }
 ```
+
+## Objectives
+
+Use `objectives` for extra completion rules beyond the top-level `target` visit/proof pair. Objective ids are stable and can drive tracker text and placeholders.
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `id` | string | Stable objective id. |
+| `type` | enum | `structure_visit`, `item_check`, or `condition`. |
+| `optional` | boolean | Optional objectives can complete and show progress without blocking turn-in. |
+| `structure`, `pieces`, `search_radius`, `discovery_radius` | target fields | Used by `structure_visit`. |
+| `item`, `count` | item fields | Used by `item_check`. |
+| `conditions` | array | Used by `condition`; all conditions must match. |
+| `tracker` | object | Optional objective-specific tracker text. |
+
+Objective tracker fields are `text`, `complete_text`, `show_progress`, `progress`, and `metadata`.
 
 ### Conditional Active State
 
@@ -125,7 +180,7 @@ Use `tracker` to define the middle-left quest tracker copy. The runtime chooses 
 }
 ```
 
-Tracker text supports `{quest}`, `{quest_id}`, `{target}`, `{target_x}`, `{target_z}`, `{direction}`, `{distance}`, `{proof_item}`, `{visited_target}`, `{has_proof}`, and `{active_conditions}`.
+Tracker text supports `{quest}`, `{quest_id}`, `{target}`, `{target_x}`, `{target_z}`, `{direction}`, `{distance}`, `{proof_item}`, `{visited_target}`, `{has_proof}`, `{active_conditions}`, `{objective}`, `{objective_id}`, `{objective_type}`, `{objective_item}`, `{objective_item_id}`, `{objective_count}`, `{objective_complete}`, `{objective_progress}`, `{objective_target_x}`, `{objective_target_y}`, and `{objective_target_z}`.
 
 ## Quest Triggers
 
@@ -140,7 +195,7 @@ The event says when the trigger is checked. The conditions reuse the same condit
       "id": "storm_reminder",
       "event": "proximity",
       "radius": 10,
-      "once": true,
+      "repeatable": false,
       "cooldown_seconds": 120,
       "conditions": [
         {
@@ -172,8 +227,8 @@ Events:
 
 | Event | When it is checked |
 | --- | --- |
-| `player_tick` | Periodically while the quest is active and the starting villager is loaded. Aliases: `tick`, `while_active`. |
-| `proximity` | Periodically while the quest is active and the player is within `radius` blocks of the starting villager. Aliases: `villager_proximity`, `near_villager`. |
+| `player_tick` | Periodically while the quest is active and the starting villager is loaded. |
+| `proximity` | Periodically while the quest is active and the player is within `radius` blocks of the starting villager. |
 | `started` | Immediately after the quest is accepted. |
 | `progress` | Immediately after objective progress changes, such as proof collected or target visited. |
 | `completed` | Immediately after turn-in succeeds. |
@@ -190,4 +245,4 @@ Actions:
 
 Continuous triggers default to a 30-second cooldown if no `cooldown_ticks`, `cooldown_seconds`, or `cooldown_days` value is set. Lifecycle triggers default to no cooldown.
 
-Forced-dialogue triggers default to one-shot behavior so a villager does not keep re-opening the same authored scene after a cooldown. Set `repeatable: true` to allow repeats, or use `once: true` / `run_once: true` explicitly for other trigger types.
+Forced-dialogue triggers default to one-shot behavior so a villager does not keep re-opening the same authored scene after a cooldown. Set `repeatable: true` to allow repeats, or `repeatable: false` when any trigger should run only once for an active quest.

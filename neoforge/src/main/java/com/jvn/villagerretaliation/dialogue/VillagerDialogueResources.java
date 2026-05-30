@@ -44,7 +44,7 @@ public final class VillagerDialogueResources {
             "notifications", "entries", "preferences", "rewards", "payments");
     private static final Set<String> OPTION_KEYS = Set.of(
             "id", "label", "type", "request", "order", "professions", "dispositions",
-            "metadata", "topic", "tags", "questline", "questline_id", "quest", "quest_id", "stage", "chapter", "notes", "author_notes",
+            "metadata",
             "quest_action",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
@@ -69,21 +69,21 @@ public final class VillagerDialogueResources {
             "requires_known_widowed_partner", "requires_active_special_orders");
     private static final Set<String> MESSAGE_KEYS = Set.of(
             "id", "key", "text", "lines", "professions", "dispositions",
-            "metadata", "topic", "tags", "questline", "questline_id", "quest", "quest_id", "stage", "chapter", "notes", "author_notes",
+            "metadata",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
             "show_for_adults", "show_for_babies", "weight");
     private static final Set<String> CONVERSATION_KEYS = Set.of(
             "id", "text", "lines", "professions", "dispositions",
-            "metadata", "topic", "tags", "questline", "questline_id", "quest", "quest_id", "stage", "chapter", "notes", "author_notes",
+            "metadata",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
             "show_for_adults", "show_for_babies", "first_conversation_only", "first_village_interaction_only", "weight");
     private static final Set<String> PACIFY_KEYS = Set.of(
             "id", "text", "lines", "outcomes", "professions", "dispositions",
-            "metadata", "topic", "tags", "questline", "questline_id", "quest", "quest_id", "stage", "chapter", "notes", "author_notes",
+            "metadata",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed", "weight");
     private static final Set<String> LINE_KEYS = Set.of(
             "id", "request", "text", "lines", "text_key", "option", "option_ids", "professions", "dispositions",
-            "metadata", "topic", "tags", "questline", "questline_id", "quest", "quest_id", "stage", "chapter", "notes", "author_notes",
+            "metadata",
             "mood", "moods", "min_mood_intensity",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation",

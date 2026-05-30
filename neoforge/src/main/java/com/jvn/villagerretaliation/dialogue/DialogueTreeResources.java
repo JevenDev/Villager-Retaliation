@@ -141,6 +141,7 @@ public final class DialogueTreeResources {
         if (id == null) {
             return null;
         }
+        JsonObject display = DatapackJsonReader.readObject(root, "display");
         Map<String, DialogueTreeDefinition.Node> nodes = readNodes(location, root);
         if (nodes.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one node.");
@@ -149,29 +150,40 @@ public final class DialogueTreeResources {
 
         List<DialogueTreeDefinition.Entry> entries = readEntries(location, root);
         if (entries.isEmpty()) {
-            entries = List.of(new DialogueTreeDefinition.Entry(
-                    "default",
-                    DatapackJsonReader.readString(root, "label"),
-                    DialogueEntryMetadata.read(location, "dialogue tree entry", "file root", root),
-                    DatapackJsonReader.readString(root, "start", "start_node"),
-                    DatapackJsonReader.readEnum(root, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
-                    DatapackJsonReader.readBoolean(root, "show_for_adults", true),
-                    DatapackJsonReader.readBoolean(root, "show_for_babies", true),
-                    readProfessions(location, "dialogue tree entry", root),
-                    readDispositions(root),
-                    DialogueCondition.readList(location, "dialogue tree entry", root),
-                    DatapackJsonReader.readBoolean(root, "force_camera_towards_villager"),
-                    DatapackJsonReader.readInt(root, "order", 50)
-            ));
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one entry.");
+            return null;
+        }
+        List<DialogueTreeDefinition.Entry> validEntries = entries.stream()
+                .filter(entry -> {
+                    if (entry.start().isBlank()) {
+                        DatapackDiagnostics.warnInvalidDialogueCondition(
+                                location,
+                                "dialogue tree entry \"" + entry.id() + "\"",
+                                "entry must define start.");
+                        return false;
+                    }
+                    if (!nodes.containsKey(entry.start())) {
+                        DatapackDiagnostics.warnInvalidDialogueCondition(
+                                location,
+                                "dialogue tree entry \"" + entry.id() + "\"",
+                                "start references unknown node \"" + entry.start() + "\".");
+                        return false;
+                    }
+                    return true;
+                })
+                .toList();
+        if (validEntries.isEmpty()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree has no valid entries.");
+            return null;
         }
 
         return new DialogueTreeDefinition(
                 id,
-                DatapackJsonReader.readString(root, "title"),
-                DatapackJsonReader.readString(root, "description"),
+                display == null ? "" : DatapackJsonReader.readString(display, "title"),
+                display == null ? "" : DatapackJsonReader.readString(display, "description"),
                 DialogueEntryMetadata.read(location, "dialogue tree", "file root", root),
                 DialogueCondition.readList(location, "dialogue tree", root),
-                entries,
+                validEntries,
                 nodes
         );
     }
@@ -196,7 +208,7 @@ public final class DialogueTreeResources {
                         firstNonBlank(DatapackJsonReader.readString(entry, "id"), "entry_" + index),
                         DatapackJsonReader.readString(entry, "label"),
                         DialogueEntryMetadata.read(location, "dialogue tree entry", context, entry),
-                        DatapackJsonReader.readString(entry, "start", "start_node"),
+                        DatapackJsonReader.readString(entry, "start"),
                         DatapackJsonReader.readEnum(entry, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
                         DatapackJsonReader.readBoolean(entry, "show_for_adults", true),
                         DatapackJsonReader.readBoolean(entry, "show_for_babies", true),
@@ -219,21 +231,14 @@ public final class DialogueTreeResources {
         }
 
         Map<String, DialogueTreeDefinition.Node> nodes = new LinkedHashMap<>();
-        if (element.isJsonObject()) {
-            for (Map.Entry<String, JsonElement> child : element.getAsJsonObject().entrySet()) {
-                if (child.getValue().isJsonObject()) {
-                    DialogueTreeDefinition.Node node = readNode(location, child.getKey(), child.getValue().getAsJsonObject());
-                    nodes.put(node.id(), node);
-                }
-            }
-        } else if (element.isJsonArray()) {
-            int index = 0;
-            for (JsonElement child : element.getAsJsonArray()) {
-                if (child.isJsonObject()) {
-                    DialogueTreeDefinition.Node node = readNode(location, "node_" + index, child.getAsJsonObject());
-                    nodes.put(node.id(), node);
-                }
-                index++;
+        if (!element.isJsonObject()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "nodes must be an object keyed by node id.");
+            return Map.of();
+        }
+        for (Map.Entry<String, JsonElement> child : element.getAsJsonObject().entrySet()) {
+            if (child.getValue().isJsonObject()) {
+                DialogueTreeDefinition.Node node = readNode(location, child.getKey(), child.getValue().getAsJsonObject());
+                nodes.put(node.id(), node);
             }
         }
         return Map.copyOf(nodes);
@@ -273,7 +278,7 @@ public final class DialogueTreeResources {
                         id,
                         DatapackJsonReader.readString(response, "label"),
                         DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response),
-                        DatapackJsonReader.readString(response, "next", "next_node"),
+                        DatapackJsonReader.readString(response, "next"),
                         DatapackJsonReader.readEnum(response, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
                         DatapackJsonReader.readLines(response),
                         VillagerActionDefinition.readList(location, responseContext, response),
@@ -289,7 +294,7 @@ public final class DialogueTreeResources {
 
     private static Set<VillagerProfession> readProfessions(ResourceLocation location, String context, JsonObject entry) {
         Set<VillagerProfession> professions = new LinkedHashSet<>();
-        for (String value : DatapackJsonReader.readStringList(entry, "profession", "professions")) {
+        for (String value : DatapackJsonReader.readStringList(entry, "professions")) {
             Optional<VillagerProfession> profession = VillagerProfessionUtil.parse(value);
             if (profession.isPresent()) {
                 professions.add(profession.get());

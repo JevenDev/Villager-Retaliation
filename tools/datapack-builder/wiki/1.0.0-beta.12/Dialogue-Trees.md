@@ -13,12 +13,21 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
 ```json
 {
   "id": "example:lost_civilization_intro",
-  "title": "Lost Civilization Intro",
+  "display": {
+    "title": "Lost Civilization Intro",
+    "description": "Cartographer quest offer and follow-up scene."
+  },
+  "metadata": {
+    "topic": "ancient_city",
+    "tags": ["quest", "exploration"],
+    "questline": "lost_civilization",
+    "quest": "tales_of_a_lost_civilization"
+  },
   "entries": [
     {
       "id": "offer",
       "label": "Lost Civilization",
-      "profession": "minecraft:cartographer",
+      "professions": ["minecraft:cartographer"],
       "request": "story",
       "order": 18,
       "conditions": [
@@ -69,9 +78,9 @@ Common fields:
 | --- | --- |
 | `id` | Stable entry id within this tree. |
 | `label` | Player-facing Talk menu label. |
-| `start` / `start_node` | Node id to enter when selected. Defaults to `start`. |
+| `start` | Node id to enter when selected. Defaults to `start`. |
 | `request` | Dialogue request type used for mood/reputation behavior. Defaults to `story`. |
-| `profession` / `professions` | Optional villager profession filter. |
+| `professions` | Optional villager profession filter. |
 | `conditions` | Standard dialogue conditions. |
 | `show_for_adults`, `show_for_babies` | Age gates. |
 | `order` | Sort order in the Talk menu. |
@@ -80,7 +89,7 @@ Common fields:
 
 Nodes contain villager `text` or `lines`, optional `actions`, and optional player `responses`.
 
-Responses contain a player-facing `label` and either `next`/`next_node` or `end: true`. Responses can also have their own `conditions` and `actions`.
+Responses contain a player-facing `label` and either `next` or `end: true`. Responses can also have their own `conditions`, `metadata`, and `actions`.
 
 If a node has responses, the conversation stays inside the tree and the response labels replace the normal Talk options. If a node has `end: true` or no available responses, the tree session ends and the normal Talk options return.
 
@@ -95,11 +104,14 @@ Supported action types:
 | Type | Fields |
 | --- | --- |
 | `quest` | `quest`, `action`: `start`, `remind`, `turn_in`, or `abandon`; optional status-keyed `lines`. |
-| `experience` / `xp` | `amount` |
+| `experience` | `amount` |
 | `reputation` | `amount` |
-| `gossip` / `gossip_reputation` | `amount` |
-| `memory` / `village_memory` | `memory` or `tag` |
-| `loot` / `give_loot` | `loot` or `loot_table` |
+| `gossip` | `amount` |
+| `memory` | `memory_event` |
+| `loot` | `loot_table` |
+| `notification` | `notification` or `text` |
+| `tracker` | `flash_tracker` |
+| `forced_dialogue` | `forced_dialogue` |
 
 Quest actions return a status such as `started`, `reminder`, `inactive`, `completed`, `missing_target`, `missing_proof`, `abandoned`, `abandoned_cooldown`, `abandoned_forever`, `unavailable`, `already_completed`, or `locate_failed`. When an action defines `lines`, the matching status selects the spoken line.
 
@@ -126,4 +138,15 @@ Dialogue trees support the shared dialogue placeholders plus quest placeholders 
 {visited_target}
 {has_proof}
 {active_conditions}
+{objective}
+{objective_id}
+{objective_type}
+{objective_item}
+{objective_item_id}
+{objective_count}
+{objective_complete}
+{objective_progress}
+{objective_target_x}
+{objective_target_y}
+{objective_target_z}
 ```

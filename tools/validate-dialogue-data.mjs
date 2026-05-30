@@ -141,30 +141,16 @@ const conditionKeys = {
 };
 
 const dialogueMetadataKeys = new Set([
-  "metadata",
-  "topic",
-  "tags",
-  "questline",
-  "questline_id",
-  "quest",
-  "quest_id",
-  "stage",
-  "chapter",
-  "notes",
-  "author_notes"
+  "metadata"
 ]);
 
 const nestedDialogueMetadataKeys = new Set([
   "topic",
   "tags",
   "questline",
-  "questline_id",
   "quest",
-  "quest_id",
   "stage",
-  "chapter",
-  "notes",
-  "author_notes"
+  "notes"
 ]);
 
 const reputationLevels = new Set(["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"]);
@@ -302,9 +288,12 @@ const relationshipStates = new Set([
 const recruitmentScenarios = new Set(["betrayed", "injured", "left_behind"]);
 const weatherStates = new Set(["clear", "rain", "thunder"]);
 const timesOfDay = new Set(["morning", "afternoon", "evening", "night"]);
-const dialogueTreeActionTypes = new Set(["quest", "xp", "experience", "reputation", "gossip", "gossip_reputation", "memory", "village_memory", "loot", "give_loot", "loot_table"]);
-const dialogueTreeActionKeys = new Set(["type", "kind", "quest", "quest_id", "action", "quest_action", "amount", "value", "loot", "loot_table", "memory", "memory_event", "tag", "lines"]);
-const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove"]);
+const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "gossip", "memory", "loot", "notification", "tracker", "forced_dialogue"]);
+const dialogueTreeActionKeys = new Set(["type", "quest", "action", "amount", "loot_table", "memory_event", "notification", "text", "forced_dialogue", "flash_tracker", "lines"]);
+const dialogueTreeQuestActions = new Set(["start", "remind", "turn_in", "abandon"]);
+const questObjectiveTypes = new Set(["structure_visit", "item_check", "condition"]);
+const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "completed", "abandoned", "expired"]);
+const questAbandonmentModes = new Set(["remove_forever", "allow_repickup", "cooldown"]);
 
 const knownPlaceholders = new Set([
   "active_order_word",
@@ -392,6 +381,17 @@ const knownPlaceholders = new Set([
   "max_orders",
   "niece_nephew",
   "niece_nephew_possessive",
+  "objective",
+  "objective_complete",
+  "objective_count",
+  "objective_id",
+  "objective_item",
+  "objective_item_id",
+  "objective_progress",
+  "objective_target_x",
+  "objective_target_y",
+  "objective_target_z",
+  "objective_type",
   "offer_slot",
   "parent",
   "parent_possessive",
@@ -506,6 +506,8 @@ for (const [kind, relativeRoot] of Object.entries(roots)) {
       checkForcedDialogue(file, data);
     } else if (kind === "notifications") {
       checkIds(file, data.notifications ?? [], "notification");
+    } else if (kind === "quests") {
+      checkQuest(file, data);
     }
   }
 }
@@ -579,12 +581,356 @@ function checkDialogue(file, data) {
   }
 }
 
+function checkQuest(file, data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    errors.push(`${relative(file)}: quest root must be an object.`);
+    return;
+  }
+
+  checkUnknownObjectKeys(file, data, "root", new Set([
+    "id",
+    "display",
+    "questline",
+    "parent",
+    "offer",
+    "target",
+    "objectives",
+    "rules",
+    "tracker",
+    "triggers",
+    "rewards",
+    "dialogue"
+  ]));
+
+  checkDisplayObject(file, data.display, "display");
+  checkQuestOffer(file, data.offer, "offer");
+  checkQuestTarget(file, data.target, "target");
+  checkQuestObjectives(file, data.objectives, "objectives");
+  checkQuestRules(file, data.rules, "rules");
+  checkQuestTracker(file, data.tracker, "tracker");
+  checkQuestTriggers(file, data.triggers, "triggers");
+  checkQuestRewards(file, data.rewards, "rewards");
+  checkQuestDialogue(file, data.dialogue, "dialogue");
+}
+
+function checkDisplayObject(file, display, location) {
+  if (display === undefined) {
+    return;
+  }
+  if (!display || typeof display !== "object" || Array.isArray(display)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, display, location, new Set(["title", "description"]));
+  checkOptionalString(file, display, location, "title");
+  checkOptionalString(file, display, location, "description");
+}
+
+function checkQuestOffer(file, offer, location) {
+  if (offer === undefined) {
+    return;
+  }
+  if (!offer || typeof offer !== "object" || Array.isArray(offer)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, offer, location, new Set(["professions", "min_villager_level", "skills"]));
+  checkStringList(file, offer, location, ["professions"], "profession id");
+  checkStringValues(file, offer, location, ["min_villager_level"], villagerLevels, "villager trade level");
+  if (offer.skills !== undefined) {
+    if (!offer.skills || typeof offer.skills !== "object" || Array.isArray(offer.skills)) {
+      errors.push(`${relative(file)}: ${location}.skills must be an object keyed by skill id.`);
+    } else {
+      for (const [skill, requirement] of Object.entries(offer.skills)) {
+        if (!villagerSkills.has(normalizedString(skill))) {
+          errors.push(`${relative(file)}: ${location}.skills has unsupported villager skill "${skill}".`);
+        }
+        if (!requirement || typeof requirement !== "object" || Array.isArray(requirement)) {
+          errors.push(`${relative(file)}: ${location}.skills.${skill} must be an object.`);
+          continue;
+        }
+        checkUnknownObjectKeys(file, requirement, `${location}.skills.${skill}`, new Set(["min"]));
+        checkOptionalInteger(file, requirement, `${location}.skills.${skill}`, "min", { min: 1, max: 100 });
+      }
+    }
+  }
+}
+
+function checkQuestTarget(file, target, location) {
+  if (target === undefined) {
+    return;
+  }
+  if (!target || typeof target !== "object" || Array.isArray(target)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, target, location, new Set([
+    "structure",
+    "pieces",
+    "search_radius",
+    "discovery_radius",
+    "proof_item"
+  ]));
+  checkOptionalString(file, target, location, "structure");
+  checkStringList(file, target, location, ["pieces"], "structure piece");
+  checkOptionalInteger(file, target, location, "search_radius", { min: 1 });
+  checkOptionalInteger(file, target, location, "discovery_radius", { min: 1 });
+  checkOptionalString(file, target, location, "proof_item");
+}
+
+function checkQuestObjectives(file, objectives, location) {
+  if (objectives === undefined) {
+    return;
+  }
+  if (!Array.isArray(objectives)) {
+    errors.push(`${relative(file)}: ${location} must be an array.`);
+    return;
+  }
+  checkIds(file, objectives, "quest objective");
+  for (const [index, objective] of objectives.entries()) {
+    const objectiveLocation = `${location}[${index}]`;
+    if (!objective || typeof objective !== "object" || Array.isArray(objective)) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must be an object.`);
+      continue;
+    }
+    checkUnknownObjectKeys(file, objective, objectiveLocation, new Set([
+      "id",
+      "type",
+      "optional",
+      "structure",
+      "pieces",
+      "search_radius",
+      "discovery_radius",
+      "item",
+      "count",
+      "conditions",
+      "tracker"
+    ]));
+    checkStringValues(file, objective, objectiveLocation, ["type"], questObjectiveTypes, "quest objective type", { requireAny: true });
+    checkOptionalBoolean(file, objective, objectiveLocation, "optional");
+    checkOptionalString(file, objective, objectiveLocation, "structure");
+    checkStringList(file, objective, objectiveLocation, ["pieces"], "structure piece");
+    checkOptionalInteger(file, objective, objectiveLocation, "search_radius", { min: 1 });
+    checkOptionalInteger(file, objective, objectiveLocation, "discovery_radius", { min: 1 });
+    checkOptionalString(file, objective, objectiveLocation, "item");
+    checkOptionalInteger(file, objective, objectiveLocation, "count", { min: 1 });
+    checkConditions(file, objective, objectiveLocation);
+    checkQuestObjectiveTracker(file, objective.tracker, `${objectiveLocation}.tracker`);
+  }
+}
+
+function checkQuestObjectiveTracker(file, tracker, location) {
+  if (tracker === undefined) {
+    return;
+  }
+  if (!tracker || typeof tracker !== "object" || Array.isArray(tracker)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, tracker, location, new Set(["text", "complete_text", "show_progress", "progress", "metadata"]));
+  checkOptionalString(file, tracker, location, "text");
+  checkOptionalString(file, tracker, location, "complete_text");
+  checkOptionalBoolean(file, tracker, location, "show_progress");
+  checkOptionalNumber(file, tracker, location, "progress", { min: 0, max: 1 });
+  checkStringMap(file, tracker.metadata, `${location}.metadata`);
+}
+
+function checkQuestRules(file, rules, location) {
+  if (rules === undefined) {
+    return;
+  }
+  if (!rules || typeof rules !== "object" || Array.isArray(rules)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, rules, location, new Set([
+    "repeatable",
+    "locked_to_villager",
+    "cross_villager_compatible",
+    "max_starts",
+    "max_completions",
+    "completion_cooldown_ticks",
+    "completion_cooldown_seconds",
+    "completion_cooldown_days",
+    "abandonment",
+    "abandonment_cooldown_ticks",
+    "abandonment_cooldown_seconds",
+    "abandonment_cooldown_days",
+    "consume_on_completion",
+    "consume_on_abandonment",
+    "active",
+    "expiration"
+  ]));
+  for (const key of ["repeatable", "locked_to_villager", "cross_villager_compatible", "consume_on_completion", "consume_on_abandonment"]) {
+    checkOptionalBoolean(file, rules, location, key);
+  }
+  for (const key of ["max_starts", "max_completions", "completion_cooldown_ticks", "completion_cooldown_seconds", "completion_cooldown_days", "abandonment_cooldown_ticks", "abandonment_cooldown_seconds", "abandonment_cooldown_days"]) {
+    checkOptionalInteger(file, rules, location, key, { min: 0 });
+  }
+  checkStringValues(file, rules, location, ["abandonment"], questAbandonmentModes, "quest abandonment mode");
+  checkQuestActive(file, rules.active, `${location}.active`);
+  checkQuestExpiration(file, rules.expiration, `${location}.expiration`);
+}
+
+function checkQuestActive(file, active, location) {
+  if (active === undefined) {
+    return;
+  }
+  if (!active || typeof active !== "object" || Array.isArray(active)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, active, location, new Set(["conditions", "hide_when_unmet", "pause_progress_when_unmet"]));
+  checkConditions(file, active, location);
+  checkOptionalBoolean(file, active, location, "hide_when_unmet");
+  checkOptionalBoolean(file, active, location, "pause_progress_when_unmet");
+}
+
+function checkQuestExpiration(file, expiration, location) {
+  if (expiration === undefined) {
+    return;
+  }
+  if (!expiration || typeof expiration !== "object" || Array.isArray(expiration)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, expiration, location, new Set([
+    "after_ticks",
+    "after_seconds",
+    "after_days",
+    "conditions",
+    "consume",
+    "allow_repickup",
+    "notify",
+    "notification",
+    "text"
+  ]));
+  for (const key of ["after_ticks", "after_seconds", "after_days"]) {
+    checkOptionalInteger(file, expiration, location, key, { min: 0 });
+  }
+  checkConditions(file, expiration, location);
+  for (const key of ["consume", "allow_repickup", "notify"]) {
+    checkOptionalBoolean(file, expiration, location, key);
+  }
+  checkOptionalString(file, expiration, location, "notification");
+  checkOptionalString(file, expiration, location, "text");
+}
+
+function checkQuestTracker(file, tracker, location) {
+  if (tracker === undefined) {
+    return;
+  }
+  if (!tracker || typeof tracker !== "object" || Array.isArray(tracker)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, tracker, location, new Set(["title", "steps", "metadata"]));
+  checkOptionalString(file, tracker, location, "title");
+  checkStringMap(file, tracker.metadata, `${location}.metadata`);
+  if (tracker.steps !== undefined) {
+    if (!tracker.steps || typeof tracker.steps !== "object" || Array.isArray(tracker.steps)) {
+      errors.push(`${relative(file)}: ${location}.steps must be an object keyed by step id.`);
+    } else {
+      for (const [stepId, step] of Object.entries(tracker.steps)) {
+        const stepLocation = `${location}.steps.${stepId}`;
+        if (!step || typeof step !== "object" || Array.isArray(step)) {
+          errors.push(`${relative(file)}: ${stepLocation} must be an object.`);
+          continue;
+        }
+        checkUnknownObjectKeys(file, step, stepLocation, new Set(["text", "show_progress", "progress", "metadata"]));
+        checkOptionalString(file, step, stepLocation, "text");
+        checkOptionalBoolean(file, step, stepLocation, "show_progress");
+        checkOptionalNumber(file, step, stepLocation, "progress", { min: 0, max: 1 });
+        checkStringMap(file, step.metadata, `${stepLocation}.metadata`);
+      }
+    }
+  }
+}
+
+function checkQuestTriggers(file, triggers, location) {
+  if (triggers === undefined) {
+    return;
+  }
+  if (!Array.isArray(triggers)) {
+    errors.push(`${relative(file)}: ${location} must be an array.`);
+    return;
+  }
+  checkIds(file, triggers, "quest trigger");
+  for (const [index, trigger] of triggers.entries()) {
+    const triggerLocation = `${location}[${index}]`;
+    if (!trigger || typeof trigger !== "object" || Array.isArray(trigger)) {
+      errors.push(`${relative(file)}: ${triggerLocation} must be an object.`);
+      continue;
+    }
+    checkUnknownObjectKeys(file, trigger, triggerLocation, new Set([
+      "id",
+      "event",
+      "conditions",
+      "actions",
+      "cooldown_ticks",
+      "cooldown_seconds",
+      "cooldown_days",
+      "radius",
+      "repeatable"
+    ]));
+    checkStringValues(file, trigger, triggerLocation, ["event"], questTriggerEvents, "quest trigger event", { requireAny: true });
+    checkConditions(file, trigger, triggerLocation);
+    checkDialogueTreeActions(file, trigger.actions, `${triggerLocation}.actions`);
+    for (const key of ["cooldown_ticks", "cooldown_seconds", "cooldown_days"]) {
+      checkOptionalInteger(file, trigger, triggerLocation, key, { min: 0 });
+    }
+    checkOptionalNumber(file, trigger, triggerLocation, "radius", { min: 0 });
+    checkOptionalBoolean(file, trigger, triggerLocation, "repeatable");
+  }
+}
+
+function checkQuestRewards(file, rewards, location) {
+  if (rewards === undefined) {
+    return;
+  }
+  if (!rewards || typeof rewards !== "object" || Array.isArray(rewards)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, rewards, location, new Set(["experience", "reputation", "gossip_reputation", "loot_table", "memory_event"]));
+  for (const key of ["experience", "reputation", "gossip_reputation"]) {
+    checkOptionalInteger(file, rewards, location, key);
+  }
+  checkOptionalString(file, rewards, location, "loot_table");
+  checkOptionalString(file, rewards, location, "memory_event");
+}
+
+function checkQuestDialogue(file, dialogue, location) {
+  if (dialogue === undefined) {
+    return;
+  }
+  if (!dialogue || typeof dialogue !== "object" || Array.isArray(dialogue)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, dialogue, location, new Set([
+    "start",
+    "reminder",
+    "turn_in",
+    "already_completed",
+    "unavailable",
+    "inactive",
+    "missing_target",
+    "missing_proof",
+    "locate_failed"
+  ]));
+}
+
 function checkDialogueTree(file, data) {
   if (!data || typeof data !== "object" || Array.isArray(data)) {
     errors.push(`${relative(file)}: dialogue tree root must be an object.`);
     return;
   }
+  checkDialogueMetadata(file, data, "root");
 
+  if (!Array.isArray(data.entries) || data.entries.length === 0) {
+    errors.push(`${relative(file)}: dialogue tree must define at least one entry.`);
+  }
   const entries = Array.isArray(data.entries) ? data.entries : [];
   checkIds(file, entries, "dialogue tree entry");
   for (const [index, entry] of entries.entries()) {
@@ -592,8 +938,9 @@ function checkDialogueTree(file, data) {
       errors.push(`${relative(file)}: entries[${index}] must be an object.`);
       continue;
     }
+    checkDialogueMetadata(file, entry, `entries[${index}]`);
     checkConditions(file, entry, `entries[${index}]`);
-    checkStringList(file, entry, `entries[${index}]`, ["profession", "professions"], "profession id");
+    checkStringList(file, entry, `entries[${index}]`, ["professions"], "profession id");
   }
 
   const nodes = dialogueTreeNodes(data.nodes);
@@ -604,8 +951,19 @@ function checkDialogueTree(file, data) {
 
   const nodeIds = new Set(nodes.map((node) => node.id).filter(Boolean));
   checkIds(file, nodes, "dialogue tree node");
+  for (const [index, entry] of entries.entries()) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      continue;
+    }
+    if (typeof entry.start !== "string" || !entry.start.trim()) {
+      errors.push(`${relative(file)}: entries[${index}].start must reference a dialogue tree node.`);
+    } else if (!nodeIds.has(entry.start)) {
+      errors.push(`${relative(file)}: entries[${index}].start references unknown node "${entry.start}".`);
+    }
+  }
   for (const node of nodes) {
     const location = node.location;
+    checkDialogueMetadata(file, node, location);
     checkDialogueTreeActions(file, node.actions, `${location}.actions`);
     if (Array.isArray(node.responses)) {
       checkIds(file, node.responses, "dialogue tree response");
@@ -615,13 +973,11 @@ function checkDialogueTree(file, data) {
           errors.push(`${relative(file)}: ${responseLocation} must be an object.`);
           continue;
         }
+        checkDialogueMetadata(file, response, responseLocation);
         checkConditions(file, response, responseLocation);
         checkDialogueTreeActions(file, response.actions, `${responseLocation}.actions`);
         if (typeof response.next === "string" && response.next.trim() && !nodeIds.has(response.next)) {
           errors.push(`${relative(file)}: ${responseLocation}.next references unknown node "${response.next}".`);
-        }
-        if (typeof response.next_node === "string" && response.next_node.trim() && !nodeIds.has(response.next_node)) {
-          errors.push(`${relative(file)}: ${responseLocation}.next_node references unknown node "${response.next_node}".`);
         }
       }
     } else if (node.responses !== undefined) {
@@ -635,9 +991,7 @@ function dialogueTreeNodes(nodes) {
     return [];
   }
   if (Array.isArray(nodes)) {
-    return nodes
-      .filter((node) => node && typeof node === "object" && !Array.isArray(node))
-      .map((node, index) => ({ ...node, id: node.id ?? `node_${index}`, location: `nodes[${index}]` }));
+    return [];
   }
   return Object.entries(nodes)
     .filter(([, node]) => node && typeof node === "object" && !Array.isArray(node))
@@ -663,13 +1017,13 @@ function checkDialogueTreeActions(file, actions, location) {
         errors.push(`${relative(file)}: ${actionLocation}.${key} is not a supported dialogue action field.`);
       }
     }
-    const type = normalizedString(action.type ?? action.kind ?? (action.quest ? "quest" : ""));
+    const type = normalizedString(action.type);
     if (!dialogueTreeActionTypes.has(type)) {
       errors.push(`${relative(file)}: ${actionLocation}.type must be one of ${[...dialogueTreeActionTypes].join(", ")}.`);
     }
     if (type === "quest") {
-      checkStringList(file, action, actionLocation, ["quest", "quest_id"], "quest id");
-      checkStringValues(file, action, actionLocation, ["action", "quest_action"], dialogueTreeQuestActions, "quest action", { requireAny: true });
+      checkStringList(file, action, actionLocation, ["quest"], "quest id");
+      checkStringValues(file, action, actionLocation, ["action"], dialogueTreeQuestActions, "quest action", { requireAny: true });
     }
     if (action.lines !== undefined && (!action.lines || typeof action.lines !== "object" || Array.isArray(action.lines))) {
       errors.push(`${relative(file)}: ${actionLocation}.lines must be an object keyed by action status.`);
@@ -989,6 +1343,13 @@ function checkStringList(file, entry, location, keys, label) {
   }
 }
 
+function checkOptionalString(file, entry, location, key) {
+  const value = entry[key];
+  if (value !== undefined && (typeof value !== "string" || !value.trim())) {
+    errors.push(`${relative(file)}: ${location}.${key} must be a nonblank string.`);
+  }
+}
+
 function checkOptionalInteger(file, entry, location, key, options = {}) {
   const value = entry[key];
   if (value === undefined) {
@@ -1001,12 +1362,55 @@ function checkOptionalInteger(file, entry, location, key, options = {}) {
   if (options.min !== undefined && value < options.min) {
     errors.push(`${relative(file)}: ${location}.${key} must be at least ${options.min}.`);
   }
+  if (options.max !== undefined && value > options.max) {
+    errors.push(`${relative(file)}: ${location}.${key} must be at most ${options.max}.`);
+  }
+}
+
+function checkOptionalNumber(file, entry, location, key, options = {}) {
+  const value = entry[key];
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    errors.push(`${relative(file)}: ${location}.${key} must be a number.`);
+    return;
+  }
+  if (options.min !== undefined && value < options.min) {
+    errors.push(`${relative(file)}: ${location}.${key} must be at least ${options.min}.`);
+  }
+  if (options.max !== undefined && value > options.max) {
+    errors.push(`${relative(file)}: ${location}.${key} must be at most ${options.max}.`);
+  }
 }
 
 function checkOptionalBoolean(file, entry, location, key) {
   const value = entry[key];
   if (value !== undefined && typeof value !== "boolean") {
     errors.push(`${relative(file)}: ${location}.${key} must be a boolean.`);
+  }
+}
+
+function checkStringMap(file, value, location) {
+  if (value === undefined) {
+    return;
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (typeof child !== "string") {
+      errors.push(`${relative(file)}: ${location}.${key} must be a string.`);
+    }
+  }
+}
+
+function checkUnknownObjectKeys(file, object, location, allowedKeys) {
+  for (const key of Object.keys(object)) {
+    if (!allowedKeys.has(key)) {
+      errors.push(`${relative(file)}: ${location}.${key} is not a supported field.`);
+    }
   }
 }
 

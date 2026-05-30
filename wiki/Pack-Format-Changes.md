@@ -94,6 +94,9 @@ The website and Datapack Generator do not provide beta.11 to beta.12 migration s
 ### Removed
 
 - Removed the Datapack Generator's beta.11 to beta.12 Convert workflow. The site no longer offers automated pack-version migration for this boundary.
+- Removed quest JSON compatibility aliases and advancement-style `criteria` / `requirements` inference. Beta.12 quest files use `display`, plural `offer.professions`, object-shaped `offer.skills`, explicit `objectives`, canonical reward keys, and `repeatable` trigger behavior.
+- Removed quest/dialogue-tree action aliases from the beta.12 action reader. Actions now use canonical `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker` fields.
+- Removed top-level dialogue metadata aliases from the maintained beta.12 authoring shape. Dialogue and dialogue tree metadata now lives under a nested `metadata` object with `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`.
 - No beta.12 runtime JSON fields, triggers, or placeholders are removed solely because of the folderized dialogue layout.
 
 ### Migration Notes
@@ -115,6 +118,9 @@ The website and Datapack Generator do not provide beta.11 to beta.12 migration s
 - Migrate flat normal dialogue line helper fields to `conditions` before beta.13 if you want to avoid the beta.13 deprecation path.
 - Prefer `conditions` for new dialogue option family and relationship checks. The flat option helper fields are still accepted for compatibility in beta.12, but are planned for beta.13 deprecation.
 - Prefer canonical field names from [JSON Reference](JSON-Reference.md). Aliases remain compatibility inputs, not the recommended names for new examples.
+- Retarget quest packs by converting old `criteria` / `requirements` blocks into `target` plus explicit `objectives`, replacing singular `profession` with `professions`, moving rewards to `loot_table` / `memory_event`, and using `repeatable: false` instead of `once`.
+- Retarget quest and dialogue-tree actions by using canonical fields: `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker`.
+- Retarget dialogue tree story metadata by moving top-level `topic`, `tags`, `questline`, `quest`, `stage`, and `notes` into `metadata`.
 - Use `requires_high_*` when a simple score of 60+ is enough. Use `min_*` and `max_*` score ranges when a line needs exact attribute bands.
 - Packs that customize opening greetings can override `opening.return_after_absence` to control how villagers mention long gaps between visits.
 - Prefer the folderized dialogue layout for new packs: put single-purpose files under typed folders, and use bundle files only when several related entries are easier to maintain together.

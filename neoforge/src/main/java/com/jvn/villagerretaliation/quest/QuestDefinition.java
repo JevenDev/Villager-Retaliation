@@ -170,9 +170,9 @@ public record QuestDefinition(
         public static ObjectiveType bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
             return switch (normalized) {
-                case "structure_visit", "visit_structure", "structure" -> STRUCTURE_VISIT;
-                case "item_check", "proof_item", "item", "inventory" -> ITEM_CHECK;
-                case "condition", "conditions" -> CONDITION;
+                case "structure_visit" -> STRUCTURE_VISIT;
+                case "item_check" -> ITEM_CHECK;
+                case "condition" -> CONDITION;
                 default -> null;
             };
         }
@@ -277,8 +277,8 @@ public record QuestDefinition(
         public static AbandonmentMode bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
             return switch (normalized) {
-                case "remove_forever", "permanent", "consume", "consumed" -> REMOVE_FOREVER;
-                case "cooldown", "cooldown_based", "after_cooldown" -> COOLDOWN;
+                case "remove_forever" -> REMOVE_FOREVER;
+                case "cooldown" -> COOLDOWN;
                 default -> ALLOW_REPICKUP;
             };
         }
@@ -353,14 +353,14 @@ public record QuestDefinition(
         public static TriggerEvent bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
             return switch (normalized) {
-                case "tick", "player_tick", "while_active" -> PLAYER_TICK;
-                case "proximity", "villager_proximity", "near_villager", "nearby" -> PROXIMITY;
-                case "start", "started", "quest_started", "accepted" -> STARTED;
-                case "progress", "updated", "quest_progress", "quest_updated" -> PROGRESS;
-                case "complete", "completed", "quest_completed", "turn_in", "turned_in" -> COMPLETED;
-                case "abandon", "abandoned", "drop", "dropped", "quest_abandoned" -> ABANDONED;
-                case "expire", "expired", "quest_expired" -> EXPIRED;
-                default -> PLAYER_TICK;
+                case "player_tick" -> PLAYER_TICK;
+                case "proximity" -> PROXIMITY;
+                case "started" -> STARTED;
+                case "progress" -> PROGRESS;
+                case "completed" -> COMPLETED;
+                case "abandoned" -> ABANDONED;
+                case "expired" -> EXPIRED;
+                default -> null;
             };
         }
 

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.quest;
 
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
@@ -23,7 +24,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
 public final class VillagerQuestItemHighlightClient {
-    private static final int HIGHLIGHT_FILL = 0x44F6C453;
+    private static final int HIGHLIGHT_FILL = 0x18F6C453;
     private static final int HIGHLIGHT_EDGE = 0xFFF6C453;
     private static final double WORLD_GLOW_RADIUS = 64.0D;
     private static final double WORLD_GLOW_RADIUS_SQUARED = WORLD_GLOW_RADIUS * WORLD_GLOW_RADIUS;
@@ -39,28 +40,27 @@ public final class VillagerQuestItemHighlightClient {
             return;
         }
 
-        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
-        if (tracked.isEmpty()) {
+        List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries = activeQuestItemEntries();
+        if (activeQuestItemEntries.isEmpty()) {
             clearLocalItemGlows(minecraft);
             return;
         }
 
         Map<Integer, Boolean> stillGlowing = new HashMap<>();
-        for (net.minecraft.world.entity.Entity entity : minecraft.level.entitiesForRendering()) {
-            if (!(entity instanceof ItemEntity itemEntity)
-                    || !itemEntity.isAlive()
-                    || itemEntity.distanceToSqr(minecraft.player) > WORLD_GLOW_RADIUS_SQUARED) {
+        for (ItemEntity itemEntity : minecraft.level.getEntities(
+                net.minecraft.world.entity.EntityType.ITEM,
+                minecraft.player.getBoundingBox().inflate(WORLD_GLOW_RADIUS),
+                entity -> entity.isAlive() && entity.distanceToSqr(minecraft.player) <= WORLD_GLOW_RADIUS_SQUARED)) {
+            if (questEntryForStack(itemEntity.getItem(), activeQuestItemEntries).isEmpty()) {
                 continue;
             }
-            if (matchesTrackedQuestItem(itemEntity.getItem(), tracked.get())) {
-                int entityId = itemEntity.getId();
-                if (!itemEntity.hasGlowingTag()) {
-                    LOCALLY_GLOWING_ITEM_ENTITIES.putIfAbsent(entityId, false);
-                    itemEntity.setGlowingTag(true);
-                }
-                if (LOCALLY_GLOWING_ITEM_ENTITIES.containsKey(entityId)) {
-                    stillGlowing.put(entityId, LOCALLY_GLOWING_ITEM_ENTITIES.get(entityId));
-                }
+            int entityId = itemEntity.getId();
+            if (!itemEntity.hasGlowingTag()) {
+                LOCALLY_GLOWING_ITEM_ENTITIES.putIfAbsent(entityId, false);
+                itemEntity.setGlowingTag(true);
+            }
+            if (LOCALLY_GLOWING_ITEM_ENTITIES.containsKey(entityId)) {
+                stillGlowing.put(entityId, LOCALLY_GLOWING_ITEM_ENTITIES.get(entityId));
             }
         }
 
@@ -77,12 +77,12 @@ public final class VillagerQuestItemHighlightClient {
         if (event.getItemStack().isEmpty()) {
             return;
         }
-        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
-        if (tracked.isEmpty() || !matchesTrackedQuestItem(event.getItemStack(), tracked.get())) {
+        Optional<QuestTrackerSyncPayload.Entry> questEntry = questEntryForStack(event.getItemStack());
+        if (questEntry.isEmpty()) {
             return;
         }
 
-        Component marker = Component.literal("Quest item: " + tracked.get().title())
+        Component marker = Component.literal("Quest item: " + questEntry.get().title())
                 .withStyle(ChatFormatting.GOLD);
         if (!event.getToolTip().contains(marker)) {
             event.getToolTip().add(marker);
@@ -97,40 +97,38 @@ public final class VillagerQuestItemHighlightClient {
         if (minecraft.player == null || minecraft.options.hideGui) {
             return;
         }
-        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
-        if (tracked.isEmpty() || tracked.get().questItems().isEmpty()) {
+        List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries = activeQuestItemEntries();
+        if (activeQuestItemEntries.isEmpty()) {
             return;
         }
 
         int screenWidth = minecraft.getWindow().getGuiScaledWidth();
         int screenHeight = minecraft.getWindow().getGuiScaledHeight();
-        int left = screenWidth / 2 - 91;
-        int top = screenHeight - 22;
+        int left = screenWidth / 2 - 88;
+        int top = screenHeight - 19;
         for (int slot = 0; slot < 9; slot++) {
             ItemStack stack = minecraft.player.getInventory().getItem(slot);
-            if (matchesTrackedQuestItem(stack, tracked.get())) {
+            if (questEntryForStack(stack, activeQuestItemEntries).isPresent()) {
                 renderSlotHighlight(event.getGuiGraphics(), left + slot * 20, top);
             }
         }
     }
 
     public static void onContainerForeground(ContainerScreenEvent.Render.Foreground event) {
-        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
-        if (tracked.isEmpty()
-                || tracked.get().questItems().isEmpty()
+        List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries = activeQuestItemEntries();
+        if (activeQuestItemEntries.isEmpty()
                 || !(event.getContainerScreen() instanceof AbstractContainerScreen<?> screen)) {
             return;
         }
         for (Slot slot : screen.getMenu().slots) {
-            if (slot.hasItem() && matchesTrackedQuestItem(slot.getItem(), tracked.get())) {
+            if (slot.hasItem() && questEntryForStack(slot.getItem(), activeQuestItemEntries).isPresent()) {
                 renderSlotHighlight(event.getGuiGraphics(), slot.x, slot.y);
             }
         }
     }
 
-    public static boolean matchesActiveTrackedQuestItem(ItemStack stack) {
-        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
-        return tracked.isPresent() && matchesTrackedQuestItem(stack, tracked.get());
+    public static boolean matchesActiveQuestItem(ItemStack stack) {
+        return questEntryForStack(stack).isPresent();
     }
 
     public static boolean shouldRenderHeldQuestGlow(
@@ -140,7 +138,7 @@ public final class VillagerQuestItemHighlightClient {
         Minecraft minecraft = Minecraft.getInstance();
         return entity == minecraft.player
                 && isHeldDisplayContext(displayContext)
-                && matchesActiveTrackedQuestItem(stack);
+                && matchesActiveQuestItem(stack);
     }
 
     private static boolean matchesTrackedQuestItem(ItemStack stack, QuestTrackerSyncPayload.Entry entry) {
@@ -163,6 +161,30 @@ public final class VillagerQuestItemHighlightClient {
     private static Optional<QuestTrackerSyncPayload.Entry> activeTrackedEntry() {
         Optional<QuestTrackerSyncPayload.Entry> tracked = VillagerQuestTrackerOverlay.trackedEntry();
         return tracked.filter(VillagerQuestItemHighlightClient::isActiveTrackedEntry);
+    }
+
+    private static Optional<QuestTrackerSyncPayload.Entry> questEntryForStack(ItemStack stack) {
+        return questEntryForStack(stack, activeQuestItemEntries());
+    }
+
+    private static Optional<QuestTrackerSyncPayload.Entry> questEntryForStack(
+            ItemStack stack,
+            List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries) {
+        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry()
+                .filter(entry -> matchesTrackedQuestItem(stack, entry));
+        if (tracked.isPresent()) {
+            return tracked;
+        }
+        return activeQuestItemEntries.stream()
+                .filter(entry -> matchesTrackedQuestItem(stack, entry))
+                .findFirst();
+    }
+
+    private static List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries() {
+        return VillagerQuestTrackerOverlay.entries().stream()
+                .filter(VillagerQuestItemHighlightClient::isActiveTrackedEntry)
+                .filter(entry -> !entry.questItems().isEmpty())
+                .toList();
     }
 
     private static boolean isActiveTrackedEntry(QuestTrackerSyncPayload.Entry entry) {

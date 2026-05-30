@@ -38,7 +38,7 @@ are both accepted by the loaders that use `professions`, filters, item lists, ta
 
 ## Canonical Names And Aliases
 
-The wiki tables list canonical field names first. Shorter or older aliases still load where documented, but new packs should prefer canonical names so examples stay consistent:
+The wiki tables list canonical field names first. Quest files, quest/dialogue-tree actions, and dialogue tree metadata are canonical-only in beta.12; use exactly the field names shown on those pages. Older aliases still load in other systems only where documented, but new packs should prefer canonical names so examples stay consistent:
 
 | Prefer | Accepted aliases |
 | --- | --- |
@@ -50,7 +50,7 @@ The wiki tables list canonical field names first. Shorter or older aliases still
 | `requires_witness_armed`, `requires_witness_unarmed` | `witness_armed`, `witness_unarmed` |
 | `world_text_kind` | `style` in notifications |
 
-Compatibility aliases are meant for old packs and quick hand-authored JSON. The Datapack Generator writes canonical names when possible.
+Compatibility aliases are meant for old packs and quick hand-authored JSON outside the canonical quest and dialogue-tree surfaces. The Datapack Generator writes canonical names when possible.
 
 ## Text Or Lines
 
@@ -78,7 +78,7 @@ Selection is entry-first: filters and `chance` are checked, `weight` chooses a m
 
 ## Quests
 
-Quest files live in `data/<namespace>/quests/`. They combine advancement-like `criteria` with explicit offer, target, reward, tracker, lifecycle rule, and trigger sections. Dialogue trees run quest actions and show or hide entries with `conditions` using `type: "quest"`.
+Quest files live in `data/<namespace>/quests/`. They combine explicit display, offer, target, objective, reward, tracker, lifecycle rule, and trigger sections. Dialogue trees run quest actions and show or hide entries with `conditions` using `type: "quest"`.
 
 Quest `triggers` provide the reusable event foundation for later quest features. A trigger can watch quest lifecycle events, active-player ticks, or proximity to the starting villager, then stack existing dialogue conditions such as time, weather, memory, reputation, skill, and quest state before running notification, tracker, or `trigger: "quest"` forced-dialogue actions.
 
@@ -327,7 +327,7 @@ Forced dialogue files live under:
 data/villagerretaliation/forced_dialogue/*.json
 ```
 
-They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, `container_opened`, fired when the server config watches container opening instead of theft, `container_broken`, fired when a player breaks a watched container, `retaliation_started`, fired when a villager acquires the current player as a retaliation target, `player_item_proximity`, fired when a nearby visible player carries a matching held or worn item, and `trade_refresh`, used internally by the beta.12 trade-refresh button to load data-driven forced-dialogue option sets. The default config watches opening and breaking of generated containers, applies a large break reputation penalty plus additional loss per generated item dropped, and the built-in default pack targets vanilla village chest loot tables. Built-in opening prompts are reputation-gated: neutral/suspicious players get the standard opening warning, hostile/despised/feared players get harsher responses, and trusted or better players are only interrupted if they take items.
+They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, `container_opened`, fired when the server config watches container opening instead of theft, `container_broken`, fired when a player breaks a watched container, `retaliation_started`, fired when a villager acquires the current player as a retaliation target, `player_item_proximity`, fired when a nearby visible player carries a matching held or worn item, and `trade_refresh`, used internally by the beta.12 trade-refresh button to load data-driven forced-dialogue option sets. The default config watches opening and breaking of generated containers, applies a large break reputation penalty plus additional loss per generated item dropped, and the built-in default pack targets vanilla village chest loot tables. Built-in opening prompts are reputation-gated: neutral/suspicious players get the standard opening warning, hostile/despised/feared players get harsher responses, and trusted or better players can receive a reputation-scaled vouch allow/deny chat outcome before any locked opening prompt starts.
 
 ```json
 {
@@ -394,7 +394,7 @@ For the full current list, when each value is remembered, and dropdown examples 
 
 `weight` controls weighted random selection among matching entries. Higher values are more likely. Missing weights usually default to `10`, and values below `1` are clamped or ignored depending on the system.
 
-Normal dialogue `lines` also support `priority`, `category`, and `text_key` in beta.12+. Higher `priority` values narrow the candidate pool before weighted random selection. `category` is only an author/debug label surfaced by `/villagerretaliation dialogue explain`. `text_key` resolves the line text from a keyed dialogue message, which lets locale packs override wording without copying the line's rule filters.
+Normal dialogue `lines` also support `priority`, `category`, and `text_key` in beta.12+. Higher `priority` values narrow the candidate pool before weighted random selection. `category` is only an author/debug label surfaced by `/villagerretaliation dialogue explain`. `text_key` resolves the line text from a keyed dialogue message, which lets locale packs override wording without copying the line's rule filters. Explain output also reports candidate source files and line metadata when present.
 
 Notifications also support `chance`, a number from `0.0` to `1.0`:
 
@@ -405,6 +405,27 @@ Notifications also support `chance`, a number from `0.0` to `1.0`:
 ```
 
 That entry passes its random chance gate roughly 25 percent of the time before weighted selection.
+
+## Dialogue Narrative Metadata
+
+Dialogue options, lines, messages, openings, closings, pacify entries, and dialogue trees can include beta.12 author metadata. These fields are inert today: they help pack maintainers group story material and prepare stable ids for future quest systems, but they do not change matching or selection.
+
+Accepted nested fields are `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`. Place them under a `metadata` object.
+
+```json
+{
+  "id": "my_pack.old_road.rumor_01",
+  "request": "story",
+  "metadata": {
+    "topic": "Old Road",
+    "tags": ["old_road", "rumor"],
+    "questline": "old_road",
+    "quest": "find_the_bridge",
+    "stage": "rumors"
+  },
+  "text": "The old road still remembers who crossed it."
+}
+```
 
 ## Adult And Baby Filters
 

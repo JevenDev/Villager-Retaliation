@@ -6,14 +6,15 @@
   },
   "questline": "lost_civilization",
   "offer": {
-    "profession": "minecraft:cartographer",
+    "professions": [
+      "minecraft:cartographer"
+    ],
     "min_villager_level": "journeyman",
-    "skills": [
-      {
-        "skill": "cartography",
+    "skills": {
+      "cartography": {
         "min": 50
       }
-    ]
+    }
   },
   "target": {
     "structure": "minecraft:ancient_city",
@@ -26,6 +27,23 @@
     "discovery_radius": 128,
     "proof_item": "minecraft:echo_shard"
   },
+  "objectives": [
+    {
+      "id": "recover_echo_shard",
+      "type": "item_check",
+      "item": "minecraft:echo_shard",
+      "count": 1,
+      "tracker": {
+        "text": "Recover {objective_item} as proof of the journey.",
+        "complete_text": "Recovered {objective_item}.",
+        "show_progress": true,
+        "progress": 0.66,
+        "metadata": {
+          "hint": "City center visited"
+        }
+      }
+    }
+  ],
   "rules": {
     "repeatable": false,
     "locked_to_villager": true,
@@ -74,7 +92,7 @@
       "id": "storm_reminder",
       "event": "proximity",
       "radius": 10,
-      "once": true,
+      "repeatable": false,
       "cooldown_seconds": 120,
       "conditions": [
         {
@@ -99,32 +117,11 @@
       ]
     }
   ],
-  "criteria": {
-    "visit_city_center": {
-      "trigger": "villagerretaliation:structure_piece",
-      "structure": "minecraft:ancient_city",
-      "pieces": [
-        "ancient_city/city_center/city_center_1",
-        "ancient_city/city_center/city_center_2",
-        "ancient_city/city_center/city_center_3"
-      ]
-    },
-    "echo_shard": {
-      "trigger": "minecraft:inventory_changed",
-      "item": "minecraft:echo_shard"
-    }
-  },
-  "requirements": [
-    [
-      "visit_city_center",
-      "echo_shard"
-    ]
-  ],
   "rewards": {
     "experience": 350,
     "reputation": 18,
     "gossip_reputation": 8,
-    "memory": "player_completed_quest",
-    "loot": "villagerretaliation:quest/tales_of_a_lost_civilization"
+    "memory_event": "player_completed_quest",
+    "loot_table": "villagerretaliation:quest/tales_of_a_lost_civilization"
   }
 }

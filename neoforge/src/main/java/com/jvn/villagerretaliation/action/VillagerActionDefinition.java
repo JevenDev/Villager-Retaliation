@@ -65,33 +65,15 @@ public record VillagerActionDefinition(
 
     public static boolean hasInlineAction(JsonObject entry) {
         return entry.has("type")
-                || entry.has("kind")
-                || entry.has("action")
                 || entry.has("notification")
-                || entry.has("notification_trigger")
-                || entry.has("trigger")
-                || entry.has("message")
-                || entry.has("message_key")
                 || entry.has("text")
-                || entry.has("fallback")
-                || entry.has("fallback_text")
                 || entry.has("forced_dialogue")
-                || entry.has("forced_dialogue_id")
-                || entry.has("dialogue")
-                || entry.has("dialogue_id")
-                || entry.has("tracker")
                 || entry.has("flash_tracker")
                 || entry.has("quest")
-                || entry.has("quest_id")
-                || entry.has("xp")
                 || entry.has("experience")
                 || entry.has("reputation")
                 || entry.has("gossip")
-                || entry.has("gossip_reputation")
-                || entry.has("memory")
                 || entry.has("memory_event")
-                || entry.has("tag")
-                || entry.has("loot")
                 || entry.has("loot_table");
     }
 
@@ -104,24 +86,13 @@ public record VillagerActionDefinition(
 
         ResourceLocation questId = readQuestId(location, entry);
         QuestAction questAction = QuestAction.bySerializedName(
-                DatapackJsonReader.readString(entry, "action", "quest_action"));
-        int amount = DatapackJsonReader.readInt(entry, "amount", DatapackJsonReader.readInt(entry, "value", 0));
-        if (amount == 0) {
-            amount = DatapackJsonReader.readInt(entry, kind == Kind.EXPERIENCE ? "xp" : kind.serializedName(), 0);
-        }
-        if (amount == 0 && kind == Kind.GOSSIP) {
-            amount = DatapackJsonReader.readInt(entry, "gossip_reputation", 0);
-        }
+                DatapackJsonReader.readString(entry, "action"));
+        int amount = DatapackJsonReader.readInt(entry, "amount", 0);
         ResourceLocation memoryTag = readMemoryTag(location, context, entry);
-        ResourceLocation lootTable = DatapackJsonReader.readResourceLocation(entry, "loot")
-                .or(() -> DatapackJsonReader.readResourceLocation(entry, "loot_table"))
-                .orElse(null);
-        String notificationTrigger = firstNonBlank(
-                DatapackJsonReader.readString(entry, "notification", "notification_trigger"),
-                DatapackJsonReader.readString(entry, "message", "message_key"));
-        notificationTrigger = firstNonBlank(notificationTrigger, DatapackJsonReader.readString(entry, "trigger"));
-        String text = DatapackJsonReader.readString(entry, "text", "fallback", "fallback_text");
-        String forcedDialogue = DatapackJsonReader.readString(entry, "forced_dialogue", "forced_dialogue_id", "dialogue", "dialogue_id");
+        ResourceLocation lootTable = DatapackJsonReader.readResourceLocation(entry, "loot_table").orElse(null);
+        String notificationTrigger = DatapackJsonReader.readString(entry, "notification");
+        String text = DatapackJsonReader.readString(entry, "text");
+        String forcedDialogue = DatapackJsonReader.readString(entry, "forced_dialogue");
         boolean flashTracker = DatapackJsonReader.readBoolean(entry, "flash_tracker", true);
 
         if (!hasRequiredFields(location, context, kind, questId, questAction, memoryTag, lootTable, notificationTrigger, text, forcedDialogue)) {
@@ -142,57 +113,15 @@ public record VillagerActionDefinition(
     }
 
     private static Kind inferKind(JsonObject entry) {
-        Kind explicit = Kind.bySerializedName(DatapackJsonReader.readString(entry, "type", "kind"));
+        Kind explicit = Kind.bySerializedName(DatapackJsonReader.readString(entry, "type"));
         if (explicit != Kind.NONE) {
             return explicit;
-        }
-        Kind actionKind = Kind.bySerializedName(DatapackJsonReader.readString(entry, "action"));
-        if (actionKind != Kind.NONE) {
-            return actionKind;
-        }
-        String action = DatapackJsonReader.readString(entry, "action");
-        if (!action.isBlank() && entry.has("quest")) {
-            return Kind.QUEST;
-        }
-        if (!DatapackJsonReader.readString(entry, "forced_dialogue", "forced_dialogue_id", "dialogue", "dialogue_id").isBlank()) {
-            return Kind.FORCED_DIALOGUE;
-        }
-        if (entry.has("flash_tracker") || entry.has("tracker")) {
-            return Kind.TRACKER;
-        }
-        if (entry.has("quest") || entry.has("quest_id")) {
-            return Kind.QUEST;
-        }
-        if (entry.has("xp") || entry.has("experience")) {
-            return Kind.EXPERIENCE;
-        }
-        if (entry.has("gossip") || entry.has("gossip_reputation")) {
-            return Kind.GOSSIP;
-        }
-        if (entry.has("reputation")) {
-            return Kind.REPUTATION;
-        }
-        if (entry.has("memory") || entry.has("memory_event") || entry.has("tag")) {
-            return Kind.MEMORY;
-        }
-        if (entry.has("loot") || entry.has("loot_table")) {
-            return Kind.LOOT;
-        }
-        if (entry.has("notification") || entry.has("notification_trigger") || entry.has("message")
-                || entry.has("message_key") || entry.has("text") || entry.has("fallback") || entry.has("fallback_text")) {
-            return Kind.NOTIFICATION;
         }
         return Kind.NONE;
     }
 
     private static ResourceLocation readQuestId(ResourceLocation location, JsonObject entry) {
-        for (String key : List.of("quest", "quest_id")) {
-            ResourceLocation questId = QuestIds.parse(DatapackJsonReader.readString(entry, key), location);
-            if (questId != null) {
-                return questId;
-            }
-        }
-        return null;
+        return QuestIds.parse(DatapackJsonReader.readString(entry, "quest"), location);
     }
 
     private static boolean hasRequiredFields(
@@ -222,7 +151,7 @@ public record VillagerActionDefinition(
     }
 
     private static ResourceLocation readMemoryTag(ResourceLocation location, String context, JsonObject entry) {
-        String value = DatapackJsonReader.readString(entry, "memory", "memory_event", "tag");
+        String value = DatapackJsonReader.readString(entry, "memory_event");
         if (value.isBlank()) {
             return null;
         }
@@ -288,10 +217,6 @@ public record VillagerActionDefinition(
         return Map.copyOf(copy);
     }
 
-    private static String firstNonBlank(String first, String second) {
-        return first == null || first.isBlank() ? second : first;
-    }
-
     public enum Kind {
         NONE("none"),
         NOTIFICATION("notification"),
@@ -317,15 +242,15 @@ public record VillagerActionDefinition(
         public static Kind bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
             return switch (normalized) {
-                case "notification", "notify", "message" -> NOTIFICATION;
-                case "tracker", "quest_tracker", "flash_tracker" -> TRACKER;
-                case "forced_dialogue", "dialogue", "forced" -> FORCED_DIALOGUE;
+                case "notification" -> NOTIFICATION;
+                case "tracker" -> TRACKER;
+                case "forced_dialogue" -> FORCED_DIALOGUE;
                 case "quest" -> QUEST;
-                case "xp", "experience" -> EXPERIENCE;
+                case "experience" -> EXPERIENCE;
                 case "reputation" -> REPUTATION;
-                case "gossip", "gossip_reputation" -> GOSSIP;
-                case "memory", "village_memory" -> MEMORY;
-                case "loot", "give_loot", "loot_table" -> LOOT;
+                case "gossip" -> GOSSIP;
+                case "memory" -> MEMORY;
+                case "loot" -> LOOT;
                 default -> NONE;
             };
         }
@@ -341,10 +266,10 @@ public record VillagerActionDefinition(
         public static QuestAction bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
             return switch (normalized) {
-                case "start", "accept", "begin" -> START;
-                case "remind", "reminder", "details" -> REMIND;
-                case "turn_in", "turnin", "complete", "claim" -> TURN_IN;
-                case "abandon", "drop", "cancel", "remove" -> ABANDON;
+                case "start" -> START;
+                case "remind" -> REMIND;
+                case "turn_in" -> TURN_IN;
+                case "abandon" -> ABANDON;
                 default -> NONE;
             };
         }

@@ -1349,7 +1349,7 @@ public final class VillagerQuestService {
         boolean configuredStep = objectiveTracker
                 || (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
                 && definition.tracker().steps().containsKey(stepKey));
-        float progressValue = configuredStep && step.progress() > 0.0F ? step.progress() : trackerFallbackProgress(stepKey);
+        float progressValue = configuredStep && step.progress() >= 0.0F ? step.progress() : trackerFallbackProgress(stepKey);
         boolean showProgress = configuredStep ? step.showProgress() : progress.state() == VillagerQuestSavedData.QuestState.ACTIVE;
         String title = definition.tracker().title().isBlank() ? definition.title() : definition.tracker().title();
         String issuer = issuerSummary(player, progress);
@@ -1560,8 +1560,15 @@ public final class VillagerQuestService {
         values.put("proof_item", questItemName(definition, progress));
         values.put("visited_target", progress != null && progress.visitedTarget() ? "yes" : "no");
         values.put("has_proof", hasRequiredProof(context.player(), definition) ? "yes" : "no");
-        values.put("active_conditions", activeConditionsMet(context, definition) ? "met" : "unmet");
+        boolean activeConditionsMet = activeConditionsMet(context, definition);
+        values.put("active_conditions", activeConditionsMet ? "met" : "unmet");
         values.put("objective", progress == null ? "" : progress.targetObjectiveId());
+        addObjectiveReplacements(
+                values,
+                context.player(),
+                definition,
+                progress,
+                currentObjectiveForTracker(context.player(), definition, progress, activeConditionsMet));
         addIssuerReplacements(values, context, progress);
 
         BlockPos targetPos = progress == null ? null : progress.targetPos();
@@ -1706,6 +1713,9 @@ public final class VillagerQuestService {
     private static List<QuestTrackerSyncPayload.QuestItem> questItems(
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
+            return List.of();
+        }
         Map<String, QuestTrackerSyncPayload.QuestItem> items = new LinkedHashMap<>();
         addQuestItem(items, definition.target().proofItem(), 1);
         for (QuestDefinition.Objective objective : definition.objectives()) {

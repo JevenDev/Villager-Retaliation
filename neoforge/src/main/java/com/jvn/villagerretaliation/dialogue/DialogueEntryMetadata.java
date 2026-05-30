@@ -18,29 +18,15 @@ public record DialogueEntryMetadata(
         String notes) {
     public static final DialogueEntryMetadata EMPTY = new DialogueEntryMetadata("", Set.of(), "", "", "", "");
     public static final Set<String> FIELD_KEYS = Set.of(
-            "metadata",
-            "topic",
-            "tags",
-            "questline",
-            "questline_id",
-            "quest",
-            "quest_id",
-            "stage",
-            "chapter",
-            "notes",
-            "author_notes");
+            "metadata");
 
     private static final Set<String> NESTED_KEYS = Set.of(
             "topic",
             "tags",
             "questline",
-            "questline_id",
             "quest",
-            "quest_id",
             "stage",
-            "chapter",
-            "notes",
-            "author_notes");
+            "notes");
 
     public DialogueEntryMetadata {
         topic = normalizeTopic(topic);
@@ -61,13 +47,12 @@ public record DialogueEntryMetadata(
         if (metadata != null) {
             tags.addAll(DatapackJsonReader.readStringList(metadata, "tags"));
         }
-        tags.addAll(DatapackJsonReader.readStringList(entry, "tags"));
 
-        String topic = readFirst(entry, metadata, "topic");
-        String questline = readFirst(entry, metadata, "questline", "questline_id");
-        String quest = readFirst(entry, metadata, "quest", "quest_id");
-        String stage = readFirst(entry, metadata, "stage", "chapter");
-        String notes = readFirst(entry, metadata, "notes", "author_notes");
+        String topic = metadata == null ? "" : DatapackJsonReader.readString(metadata, "topic");
+        String questline = metadata == null ? "" : DatapackJsonReader.readString(metadata, "questline");
+        String quest = metadata == null ? "" : DatapackJsonReader.readString(metadata, "quest");
+        String stage = metadata == null ? "" : DatapackJsonReader.readString(metadata, "stage");
+        String notes = metadata == null ? "" : DatapackJsonReader.readString(metadata, "notes");
 
         return new DialogueEntryMetadata(topic, tags, questline, quest, stage, notes);
     }
@@ -103,14 +88,6 @@ public record DialogueEntryMetadata(
             parts.add("tags=" + String.join("|", this.tags));
         }
         return String.join(", ", parts);
-    }
-
-    private static String readFirst(JsonObject entry, JsonObject metadata, String... keys) {
-        String topLevel = DatapackJsonReader.readString(entry, keys);
-        if (!topLevel.isBlank()) {
-            return topLevel;
-        }
-        return metadata == null ? "" : DatapackJsonReader.readString(metadata, keys);
     }
 
     private static Set<String> normalizeTags(Set<String> rawTags) {

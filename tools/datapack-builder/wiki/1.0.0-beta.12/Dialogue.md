@@ -253,6 +253,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `type` | string | optional | If supplied, must be `dialogue_option`. Typed `options/` files can omit it. |
 | `request` | enum | required | Dialogue request sent when selected. |
 | `order` | integer | array index | Lower values appear earlier. |
+| `metadata` | object | none | Beta.12+. Nested author metadata with `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`. Metadata does not affect matching. |
 | `professions` | string or array | any | Filters by villager profession. |
 | `dispositions` | string or array | any | Filters by legacy dialogue disposition derived from reputation and context. This is not the beta.12 temporary mood field. |
 | `requires_villager_unarmed` | boolean | `false` | Requires the villager to have no usable weapon in either hand. `villager_unarmed` is also accepted as an alias. |
@@ -300,6 +301,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `text` | string | required unless `lines` is set | The response text. |
 | `lines` | array | required unless `text` is set | Alternate response texts. One is selected at random after this entry wins weighted selection. |
 | `text_key` | string | none | Beta.12+. Message key used as this line's text, letting filters stay in `lines` while localized variants live in `messages`. |
+| `metadata` | object | none | Beta.12+. Nested author metadata with `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`. Shown by `/villagerretaliation dialogue explain` when present. |
 | `option` | string or array | none | Restricts the line to option id(s). |
 | `option_ids` | string or array | none | Same purpose as `option`. |
 | `professions` | string or array | inherited/any | Filters by profession. |
@@ -407,9 +409,33 @@ Reputation filters on options and lines check the player's current reputation wi
 
 Flat filters such as `professions`, `dispositions`, `reputation_levels`, `weather`, `times`, `show_for_adults`, and `show_for_babies` are convenience fields for common one-step checks. Use `conditions` when an option or line needs compound logic, grouped alternatives, negation, or family/relationship checks. When both flat filters and `conditions` are present, all of them must match.
 
-Normal dialogue line selection is: matching filters, requested option or memory preference, recent-variant freshness, highest `priority`, then weighted random selection. The effective weight shown by `/villagerretaliation dialogue explain` is `weight + specificityScore * 8`, so more specific filters still get a small documented boost inside the same priority tier.
+Normal dialogue line selection is: matching filters, requested option or memory preference, recent-variant freshness, highest `priority`, then weighted random selection. The effective weight shown by `/villagerretaliation dialogue explain` is `weight + specificityScore * 8`, so more specific filters still get a small documented boost inside the same priority tier. Explain output also reports the candidate source file and any line metadata summary.
 
 Use `text_key` when one rule should resolve text from `messages` instead of carrying localized text directly. The message entry can provide `lines` variants and can be overridden per locale by id/key without copying the rule filters.
+
+### Narrative Metadata
+
+Dialogue options, lines, messages, openings, closings, and pacify entries can carry author-facing metadata. The fields are intentionally inert in beta.12: they do not make an entry match, hide, sort, or win selection. They exist so large packs can group story material now, and so future quest and questline systems have stable ids to build on.
+
+Use nested `metadata` to keep author notes and story grouping separate from matching rules:
+
+```json
+{
+  "id": "my_pack.old_road.rumor_02",
+  "request": "story",
+  "metadata": {
+    "topic": "Old Road",
+    "tags": ["old_road", "rumor"],
+    "questline": "old_road",
+    "quest": "find_the_bridge",
+    "stage": "rumors",
+    "notes": "Early breadcrumb before the bridge quest starts."
+  },
+  "text": "Nobody repairs that bridge because nobody agrees who broke it."
+}
+```
+
+`questline`, `quest`, `stage`, and `tags` are normalized to lowercase id-like values. Metadata must be nested under `metadata`; the older top-level metadata aliases are no longer part of the beta.12 authoring shape.
 
 Text effects are data-driven per dialogue line and affect the chat-style response text, not the separate in-world floating text indicators. Inline tags are the preferred format when only part of a sentence should be expressive:
 
@@ -529,8 +555,8 @@ Condition blocks support:
 | `skill` | `skill`, `skills`, `min`, `max`, `min_rank`, `max_rank` | Matches villager skill scores from 1-100 or ranks `novice`, `apprentice`, `skilled`, `expert`, and `master`. If several skills are listed, any one matching skill passes. Use `all_of` if several skills must match at once. |
 | `villager_level` / `trade_level` | `level`, `levels`, `min`, `max` | Matches the vanilla villager trade level. Values can be `novice`, `apprentice`, `journeyman`, `expert`, `master`, or `1`-`5`. |
 | `quest` | `quest`, `quest_id`, `state`, `states` | Matches a loaded quest state. Useful states are `available`, `not_started`, `active`, `active_visible`, `inactive`, `in_progress`, `ready`, `completed`, `abandoned`, `expired`, `consumed`, `unavailable`, and `not_completed`. |
-| `weather` | `state`, `states` | Uses `clear`, `rain`, or `thunder`. |
-| `time` / `time_of_day` | `value`, `values` | Uses `morning`, `afternoon`, `evening`, or `night`. |
+| `weather` | `state`, `states`, `weather`, `weathers` | Uses `clear`, `rain`, or `thunder`. |
+| `time` / `time_of_day` | `value`, `values`, `time`, `times` | Uses `morning`, `afternoon`, `evening`, or `night`. |
 
 Example:
 
