@@ -477,7 +477,13 @@ public final class VillagerDialogueService {
         if (!line.eventTags().isEmpty() && context.recentEvents().stream().noneMatch(event -> line.eventTags().contains(event.tag()))) {
             return "event tags";
         }
+        if (!line.eventTagIds().isEmpty() && !context.hasRecentEventTag(line.eventTagIds())) {
+            return "event tags";
+        }
         if (!line.playerEventTags().isEmpty() && !context.hasRecentPlayerEvent(line.playerEventTags().toArray(VillageEventMemory.EventTag[]::new))) {
+            return "player event tags";
+        }
+        if (!line.playerEventTagIds().isEmpty() && !context.hasRecentPlayerEventTag(line.playerEventTagIds())) {
             return "player event tags";
         }
         if ((line.requiresContainerTheftToSelf() && context.recentContainerTheftToThisVillager().isEmpty())

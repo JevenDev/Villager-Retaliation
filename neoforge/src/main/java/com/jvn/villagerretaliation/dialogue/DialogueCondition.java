@@ -30,7 +30,30 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     int specificityScore();
 
     static List<DialogueCondition> readList(ResourceLocation location, String context, JsonObject entry) {
+        List<DialogueCondition> conditions = new ArrayList<>();
+        conditions.addAll(readConditionArray(location, context, entry, "conditions"));
+
+        JsonObject availability = entry == null ? null : readObject(entry, "availability");
+        if (availability != null) {
+            conditions.addAll(readConditionArray(location, context + " availability", availability, "conditions"));
+        }
+        JsonObject availableWhen = entry == null ? null : readObject(entry, "available_when");
+        if (availableWhen != null) {
+            conditions.addAll(readConditionArray(location, context + " available_when", availableWhen, "conditions"));
+        } else if (entry != null && entry.has("available_when")) {
+            conditions.addAll(readConditionArray(location, context + " available_when", entry, "available_when"));
+        }
+        return List.copyOf(conditions);
+    }
+
+    private static List<DialogueCondition> readConditionArray(ResourceLocation location, String context, JsonObject entry, String key) {
+        if (entry == null) {
+            return List.of();
+        }
         JsonElement element = entry.get("conditions");
+        if (!"conditions".equals(key)) {
+            element = entry.get(key);
+        }
         if (element == null || element.isJsonNull()) {
             return List.of();
         }
@@ -136,12 +159,16 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             };
         }
 
-        EnumSet<VillageEventMemory.EventTag> tags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
+        java.util.LinkedHashSet<ResourceLocation> tags = new java.util.LinkedHashSet<>();
         for (String value : readStringList(condition, "tag")) {
-            readEnum(value, VillageEventMemory.EventTag.class).ifPresent(tags::add);
+            VillageEventMemory.parseTagId(value).ifPresentOrElse(
+                    tags::add,
+                    () -> warnInvalid(location, context, "memory condition references invalid tag \"" + value + "\"."));
         }
         for (String value : readStringList(condition, "tags")) {
-            readEnum(value, VillageEventMemory.EventTag.class).ifPresent(tags::add);
+            VillageEventMemory.parseTagId(value).ifPresentOrElse(
+                    tags::add,
+                    () -> warnInvalid(location, context, "memory condition references invalid tag \"" + value + "\"."));
         }
         if (tags.isEmpty()) {
             warnInvalid(location, context, "memory condition must define tag, tags, or kind.");
@@ -331,6 +358,11 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
     }
 
+    private static JsonObject readObject(JsonObject entry, String key) {
+        JsonElement element = entry.get(key);
+        return element == null || !element.isJsonObject() ? null : element.getAsJsonObject();
+    }
+
     private static List<String> readStringList(JsonObject entry, String key) {
         JsonElement element = entry.get(key);
         if (element == null) {
@@ -512,7 +544,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         }
     }
 
-    record Memory(Set<VillageEventMemory.EventTag> tags, MemorySource source, boolean currentPlayerOnly, MemoryKind kind)
+    record Memory(Set<ResourceLocation> tags, MemorySource source, boolean currentPlayerOnly, MemoryKind kind)
             implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
@@ -530,7 +562,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             UUID playerId = context.player().getUUID();
             UUID villagerId = context.villager().getUUID();
             for (VillageEventMemory.MemoryEvent event : context.recentEvents()) {
-                if (!this.tags.contains(event.tag())) {
+                if (!this.tags.contains(event.tagId())) {
                     continue;
                 }
                 if (this.currentPlayerOnly && !playerId.equals(event.playerId())) {

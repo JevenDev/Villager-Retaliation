@@ -33,7 +33,9 @@ public record DialogueLine(
         Set<DialogueContext.WeatherState> weatherStates,
         Set<DialogueContext.TimeOfDay> timeOfDays,
         Set<VillageEventMemory.EventTag> eventTags,
+        Set<ResourceLocation> eventTagIds,
         Set<VillageEventMemory.EventTag> playerEventTags,
+        Set<ResourceLocation> playerEventTagIds,
         boolean requiresContainerTheftToSelf,
         boolean requiresContainerTheftFromOther,
         boolean requiresRetaliationToSelf,
@@ -89,6 +91,8 @@ public record DialogueLine(
     public DialogueLine {
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
         lines = lines == null ? List.of() : List.copyOf(lines);
+        eventTagIds = eventTagIds == null ? Set.of() : Set.copyOf(eventTagIds);
+        playerEventTagIds = playerEventTagIds == null ? Set.of() : Set.copyOf(playerEventTagIds);
         conditions = conditions == null ? List.of() : List.copyOf(conditions);
     }
 
@@ -209,7 +213,13 @@ public record DialogueLine(
         if (!this.eventTags.isEmpty() && context.recentEvents().stream().noneMatch(event -> this.eventTags.contains(event.tag()))) {
             return false;
         }
+        if (!this.eventTagIds.isEmpty() && !context.hasRecentEventTag(this.eventTagIds)) {
+            return false;
+        }
         if (!this.playerEventTags.isEmpty() && !context.hasRecentPlayerEvent(this.playerEventTags.toArray(VillageEventMemory.EventTag[]::new))) {
+            return false;
+        }
+        if (!this.playerEventTagIds.isEmpty() && !context.hasRecentPlayerEventTag(this.playerEventTagIds)) {
             return false;
         }
         if (this.requiresContainerTheftToSelf && context.recentContainerTheftToThisVillager().isEmpty()) {
@@ -381,10 +391,10 @@ public record DialogueLine(
         if (!this.reputationCondition.isEmpty()) {
             score += 3;
         }
-        if (!this.eventTags.isEmpty()) {
+        if (!this.eventTags.isEmpty() || !this.eventTagIds.isEmpty()) {
             score += 4;
         }
-        if (!this.playerEventTags.isEmpty()) {
+        if (!this.playerEventTags.isEmpty() || !this.playerEventTagIds.isEmpty()) {
             score += 5;
         }
         if (this.requiresContainerTheftToSelf || this.requiresContainerTheftFromOther) {
@@ -485,7 +495,9 @@ public record DialogueLine(
         private final Set<DialogueContext.WeatherState> weatherStates = EnumSet.noneOf(DialogueContext.WeatherState.class);
         private final Set<DialogueContext.TimeOfDay> timeOfDays = EnumSet.noneOf(DialogueContext.TimeOfDay.class);
         private final Set<VillageEventMemory.EventTag> eventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
+        private final Set<ResourceLocation> eventTagIds = new java.util.HashSet<>();
         private final Set<VillageEventMemory.EventTag> playerEventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
+        private final Set<ResourceLocation> playerEventTagIds = new java.util.HashSet<>();
         private boolean requiresContainerTheftToSelf;
         private boolean requiresContainerTheftFromOther;
         private boolean requiresRetaliationToSelf;
@@ -614,8 +626,26 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder eventTagIds(ResourceLocation... eventTagIds) {
+            for (ResourceLocation eventTagId : eventTagIds) {
+                if (eventTagId != null) {
+                    this.eventTagIds.add(eventTagId);
+                }
+            }
+            return this;
+        }
+
         public Builder playerEventTags(VillageEventMemory.EventTag... eventTags) {
             this.playerEventTags.addAll(java.util.List.of(eventTags));
+            return this;
+        }
+
+        public Builder playerEventTagIds(ResourceLocation... eventTagIds) {
+            for (ResourceLocation eventTagId : eventTagIds) {
+                if (eventTagId != null) {
+                    this.playerEventTagIds.add(eventTagId);
+                }
+            }
             return this;
         }
 
@@ -951,7 +981,9 @@ public record DialogueLine(
                     Set.copyOf(this.weatherStates),
                     Set.copyOf(this.timeOfDays),
                     Set.copyOf(this.eventTags),
+                    Set.copyOf(this.eventTagIds),
                     Set.copyOf(this.playerEventTags),
+                    Set.copyOf(this.playerEventTagIds),
                     this.requiresContainerTheftToSelf,
                     this.requiresContainerTheftFromOther,
                     this.requiresRetaliationToSelf,

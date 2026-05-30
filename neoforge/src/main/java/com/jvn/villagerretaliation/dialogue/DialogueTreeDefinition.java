@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
@@ -15,6 +16,7 @@ public record DialogueTreeDefinition(
         String title,
         String description,
         DialogueEntryMetadata metadata,
+        List<DialogueCondition> conditions,
         List<Entry> entries,
         Map<String, Node> nodes
 ) {
@@ -22,8 +24,13 @@ public record DialogueTreeDefinition(
         title = title == null || title.isBlank() ? id.toString() : title;
         description = description == null ? "" : description;
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
+        conditions = conditions == null ? List.of() : List.copyOf(conditions);
         entries = entries == null ? List.of() : List.copyOf(entries);
         nodes = nodes == null ? Map.of() : Map.copyOf(nodes);
+    }
+
+    public boolean matches(DialogueContext context) {
+        return this.conditions.stream().allMatch(condition -> condition.matches(context));
     }
 
     public Optional<Node> node(String id) {
@@ -43,6 +50,7 @@ public record DialogueTreeDefinition(
     public record Entry(
             String id,
             String label,
+            DialogueEntryMetadata metadata,
             String start,
             DialogueRequestType requestType,
             boolean showForAdults,
@@ -56,6 +64,7 @@ public record DialogueTreeDefinition(
         public Entry {
             id = id == null || id.isBlank() ? "default" : id;
             label = label == null ? "" : label;
+            metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
             start = start == null || start.isBlank() ? "start" : start;
             requestType = requestType == null ? DialogueRequestType.STORY : requestType;
             professions = professions == null ? Set.of() : Set.copyOf(professions);
@@ -87,6 +96,8 @@ public record DialogueTreeDefinition(
             return option(
                     DialogueTreeService.entryOptionId(treeId, this.id),
                     DialogueTreeReference.entry(treeId, this.id),
+                    treeId,
+                    this.metadata,
                     this.label,
                     this.requestType,
                     this.forceCameraTowardsVillager,
@@ -98,7 +109,8 @@ public record DialogueTreeDefinition(
     public record Node(
             String id,
             List<String> lines,
-            List<DialogueActionDefinition> actions,
+            List<VillagerActionDefinition> actions,
+            List<DialogueCondition> conditions,
             List<Response> responses,
             boolean end
     ) {
@@ -106,7 +118,12 @@ public record DialogueTreeDefinition(
             id = id == null || id.isBlank() ? "start" : id;
             lines = lines == null ? List.of() : List.copyOf(lines);
             actions = actions == null ? List.of() : List.copyOf(actions);
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
             responses = responses == null ? List.of() : List.copyOf(responses);
+        }
+
+        public boolean matches(DialogueContext context) {
+            return this.conditions.stream().allMatch(condition -> condition.matches(context));
         }
 
         public String selectLine(net.minecraft.util.RandomSource random) {
@@ -120,10 +137,11 @@ public record DialogueTreeDefinition(
     public record Response(
             String id,
             String label,
+            DialogueEntryMetadata metadata,
             String next,
             DialogueRequestType requestType,
             List<String> lines,
-            List<DialogueActionDefinition> actions,
+            List<VillagerActionDefinition> actions,
             List<DialogueCondition> conditions,
             boolean end,
             int order
@@ -131,6 +149,7 @@ public record DialogueTreeDefinition(
         public Response {
             id = id == null || id.isBlank() ? "response" : id;
             label = label == null ? "" : label;
+            metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
             next = next == null ? "" : next;
             requestType = requestType == null ? DialogueRequestType.STORY : requestType;
             lines = lines == null ? List.of() : List.copyOf(lines);
@@ -146,6 +165,8 @@ public record DialogueTreeDefinition(
             return option(
                     DialogueTreeService.responseOptionId(treeId, this.id),
                     DialogueTreeReference.response(treeId, this.id),
+                    treeId,
+                    this.metadata,
                     this.label,
                     this.requestType,
                     false,
@@ -164,14 +185,16 @@ public record DialogueTreeDefinition(
     private static DialogueOptionDefinition option(
             String id,
             DialogueTreeReference treeReference,
+            ResourceLocation source,
+            DialogueEntryMetadata metadata,
             String label,
             DialogueRequestType requestType,
             boolean forceCameraTowardsVillager,
             int order) {
         return new DialogueOptionDefinition(
                 id,
-                null,
-                DialogueEntryMetadata.EMPTY,
+                source,
+                metadata,
                 DialogueQuestAction.EMPTY,
                 treeReference,
                 label,

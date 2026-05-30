@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -131,6 +132,7 @@ public final class VillagerQuestResources {
                 parent,
                 readOffer(location, root),
                 readTarget(root),
+                readObjectives(location, root),
                 readRules(location, root),
                 readTracker(root),
                 readTriggers(location, root),
@@ -222,6 +224,68 @@ public final class VillagerQuestResources {
         }
 
         return new QuestDefinition.Target(structure, pieces, searchRadius, discoveryRadius, proofItem);
+    }
+
+    private static List<QuestDefinition.Objective> readObjectives(ResourceLocation location, JsonObject root) {
+        JsonElement element = root.get("objectives");
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest objectives", "objectives must be an array.");
+            return List.of();
+        }
+
+        List<QuestDefinition.Objective> objectives = new ArrayList<>();
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (child.isJsonObject()) {
+                readObjective(location, child.getAsJsonObject(), index).ifPresent(objectives::add);
+            }
+            index++;
+        }
+        return List.copyOf(objectives);
+    }
+
+    private static Optional<QuestDefinition.Objective> readObjective(ResourceLocation location, JsonObject entry, int index) {
+        String id = firstNonBlank(DatapackJsonReader.readString(entry, "id"), "objective_" + index);
+        String context = "quest objective \"" + id + "\"";
+        QuestDefinition.ObjectiveType type = QuestDefinition.ObjectiveType.bySerializedName(
+                DatapackJsonReader.readString(entry, "type", "kind"));
+        if (type == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "unknown objective type.");
+            return Optional.empty();
+        }
+
+        ResourceLocation structure = DatapackJsonReader.readResourceLocation(entry, "structure").orElse(null);
+        ResourceLocation item = DatapackJsonReader.readResourceLocation(entry, "item")
+                .or(() -> DatapackJsonReader.readResourceLocation(entry, "proof_item"))
+                .orElse(null);
+        List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry);
+        if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "structure_visit objective must define structure.");
+            return Optional.empty();
+        }
+        if (type == QuestDefinition.ObjectiveType.ITEM_CHECK && item == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "item_check objective must define item or proof_item.");
+            return Optional.empty();
+        }
+        if (type == QuestDefinition.ObjectiveType.CONDITION && conditions.isEmpty()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "condition objective must define conditions.");
+            return Optional.empty();
+        }
+
+        return Optional.of(new QuestDefinition.Objective(
+                id,
+                type,
+                DatapackJsonReader.readBoolean(entry, "optional", false),
+                structure,
+                DatapackJsonReader.readStringList(entry, "piece", "pieces", "structure_piece", "structure_pieces"),
+                DatapackJsonReader.readInt(entry, "search_radius", DEFAULT_STRUCTURE_SEARCH_RADIUS),
+                DatapackJsonReader.readInt(entry, "discovery_radius", DEFAULT_DISCOVERY_RADIUS),
+                item,
+                DatapackJsonReader.readInt(entry, "count", 1),
+                conditions));
     }
 
     private static TargetParts readTargetCriteria(
@@ -496,7 +560,10 @@ public final class VillagerQuestResources {
         if (id.isBlank()) {
             id = event.name().toLowerCase(Locale.ROOT) + "_" + index;
         }
-        List<QuestDefinition.TriggerAction> actions = readTriggerActions(trigger);
+        List<VillagerActionDefinition> actions = VillagerActionDefinition.readListOrInline(
+                location,
+                "quest trigger \"" + id + "\"",
+                trigger);
         if (actions.isEmpty()) {
             return Optional.empty();
         }
@@ -522,99 +589,20 @@ public final class VillagerQuestResources {
         ));
     }
 
-    private static boolean defaultTriggerRepeatable(List<QuestDefinition.TriggerAction> actions) {
-        return actions.stream().noneMatch(action -> action.type() == QuestDefinition.TriggerActionType.FORCED_DIALOGUE);
+    private static boolean defaultTriggerRepeatable(List<VillagerActionDefinition> actions) {
+        return actions.stream().noneMatch(action -> action.kind() == VillagerActionDefinition.Kind.FORCED_DIALOGUE);
     }
 
     private static long defaultTriggerCooldown(QuestDefinition.TriggerEvent event) {
         return event.isContinuous() ? 20L * 30L : 0L;
     }
 
-    private static List<QuestDefinition.TriggerAction> readTriggerActions(JsonObject trigger) {
-        JsonElement element = trigger.get("actions");
-        if (element == null || element.isJsonNull()) {
-            if (!hasInlineTriggerAction(trigger)) {
-                return List.of();
-            }
-            QuestDefinition.TriggerAction inferred = readTriggerAction(trigger);
-            return inferred == null ? List.of() : List.of(inferred);
-        }
-        if (!element.isJsonArray()) {
-            return List.of();
-        }
-
-        List<QuestDefinition.TriggerAction> actions = new ArrayList<>();
-        for (JsonElement child : element.getAsJsonArray()) {
-            if (child.isJsonObject()) {
-                QuestDefinition.TriggerAction action = readTriggerAction(child.getAsJsonObject());
-                if (action != null) {
-                    actions.add(action);
-                }
-            }
-        }
-        return List.copyOf(actions);
-    }
-
-    private static boolean hasInlineTriggerAction(JsonObject trigger) {
-        return trigger.has("type")
-                || trigger.has("action")
-                || trigger.has("notification")
-                || trigger.has("notification_trigger")
-                || trigger.has("message")
-                || trigger.has("message_key")
-                || trigger.has("text")
-                || trigger.has("fallback")
-                || trigger.has("fallback_text")
-                || trigger.has("forced_dialogue")
-                || trigger.has("forced_dialogue_id")
-                || trigger.has("dialogue")
-                || trigger.has("dialogue_id")
-                || trigger.has("tracker")
-                || trigger.has("flash_tracker");
-    }
-
-    private static QuestDefinition.TriggerAction readTriggerAction(JsonObject action) {
-        QuestDefinition.TriggerActionType type = inferTriggerActionType(action);
-        String notificationTrigger = firstNonBlank(
-                DatapackJsonReader.readString(action, "notification", "notification_trigger"),
-                DatapackJsonReader.readString(action, "message", "message_key"));
-        notificationTrigger = firstNonBlank(notificationTrigger, DatapackJsonReader.readString(action, "trigger"));
-        String text = DatapackJsonReader.readString(action, "text", "fallback", "fallback_text");
-        String forcedDialogue = DatapackJsonReader.readString(action, "forced_dialogue", "forced_dialogue_id", "dialogue", "dialogue_id");
-        boolean flashTracker = DatapackJsonReader.readBoolean(action, "flash_tracker", true);
-        if (type == QuestDefinition.TriggerActionType.FORCED_DIALOGUE && forcedDialogue.isBlank()) {
-            return null;
-        }
-        if (type == QuestDefinition.TriggerActionType.NOTIFICATION && notificationTrigger.isBlank() && text.isBlank()) {
-            return null;
-        }
-        return new QuestDefinition.TriggerAction(type, notificationTrigger, text, forcedDialogue, flashTracker);
-    }
-
-    private static QuestDefinition.TriggerActionType inferTriggerActionType(JsonObject action) {
-        String explicit = DatapackJsonReader.readString(action, "type", "action");
-        if (!explicit.isBlank()) {
-            return QuestDefinition.TriggerActionType.bySerializedName(explicit);
-        }
-        if (!DatapackJsonReader.readString(action, "forced_dialogue", "forced_dialogue_id", "dialogue", "dialogue_id").isBlank()) {
-            return QuestDefinition.TriggerActionType.FORCED_DIALOGUE;
-        }
-        if (action.has("flash_tracker") || action.has("tracker")) {
-            return QuestDefinition.TriggerActionType.TRACKER;
-        }
-        return QuestDefinition.TriggerActionType.NOTIFICATION;
-    }
-
-    private static VillageEventMemory.EventTag readMemoryEvent(JsonObject rewards) {
+    private static ResourceLocation readMemoryEvent(JsonObject rewards) {
         String value = DatapackJsonReader.readString(rewards, "memory", "memory_event");
         if (value.isBlank()) {
             return null;
         }
-        try {
-            return VillageEventMemory.EventTag.valueOf(value.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ignored) {
-            return null;
-        }
+        return VillageEventMemory.parseTagId(value).orElse(null);
     }
 
     private static QuestDefinition.Dialogue readDialogue(JsonObject root) {

@@ -16,7 +16,9 @@ import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -113,6 +115,10 @@ public record DialogueContext(
 
     public boolean hasRecentEvent(VillageEventMemory.EventTag... tags) {
         return VillageEventMemory.hasAny(this.recentEvents, tags);
+    }
+
+    public boolean hasRecentEventTag(Set<ResourceLocation> tagIds) {
+        return VillageEventMemory.hasAnyTag(this.recentEvents, tagIds);
     }
 
     public int socialAttributeValue(VillagerSocialAttribute attribute) {
@@ -273,6 +279,10 @@ public record DialogueContext(
 
     public boolean hasRecentPlayerEvent(VillageEventMemory.EventTag... tags) {
         return VillageEventMemory.hasAnyForPlayer(this.recentEvents, this.player.getUUID(), tags);
+    }
+
+    public boolean hasRecentPlayerEventTag(Set<ResourceLocation> tagIds) {
+        return VillageEventMemory.hasAnyTagForPlayer(this.recentEvents, this.player.getUUID(), tagIds);
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentGiftToThisVillager() {

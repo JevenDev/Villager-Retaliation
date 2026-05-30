@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.village;
 
+import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.event.VillagerEventTriggerService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -7,13 +9,17 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -38,6 +44,25 @@ public final class VillageEventMemory {
     public static void remember(ServerLevel level, EventTag tag, BlockPos pos, Entity source, Entity player) {
         remember(level, new MemoryEvent(
                 tag,
+                level.getGameTime(),
+                pos.immutable(),
+                source == null ? null : source.getUUID(),
+                player == null ? null : player.getUUID(),
+                null,
+                null,
+                null,
+                null,
+                null
+        ));
+    }
+
+    public static void remember(ServerLevel level, ResourceLocation tagId, BlockPos pos, Entity source, Entity player) {
+        if (tagId == null) {
+            return;
+        }
+        remember(level, new MemoryEvent(
+                legacyTag(tagId).orElse(null),
+                tagId,
                 level.getGameTime(),
                 pos.immutable(),
                 source == null ? null : source.getUUID(),
@@ -242,7 +267,7 @@ public final class VillageEventMemory {
     private static void remember(ServerLevel level, MemoryEvent event) {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(event, "event");
-        Objects.requireNonNull(event.tag(), "event tag");
+        Objects.requireNonNull(event.tagId(), "event tag id");
         Objects.requireNonNull(event.pos(), "event position");
         ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
         pruneIfReady(level);
@@ -252,6 +277,7 @@ public final class VillageEventMemory {
         events.addLast(event);
         trimToMaxEvents(events);
         invalidateRecentCache(level.dimension());
+        VillagerEventTriggerService.onMemoryWritten(level, event);
     }
 
     public static void clear() {
@@ -308,7 +334,7 @@ public final class VillageEventMemory {
             if (event.gameTime() - previous.gameTime() > WEATHER_EVENT_DEDUPE_TICKS) {
                 return false;
             }
-            if (previous.tag() == event.tag() && previous.pos().distSqr(event.pos()) <= RELEVANT_EVENT_RADIUS_SQR) {
+            if (sameTag(previous, event) && previous.pos().distSqr(event.pos()) <= RELEVANT_EVENT_RADIUS_SQR) {
                 return true;
             }
         }
@@ -329,7 +355,7 @@ public final class VillageEventMemory {
             if (event.gameTime() - previous.gameTime() > NOISY_EVENT_DEDUPE_TICKS) {
                 return false;
             }
-            if (previous.tag() == event.tag()
+            if (sameTag(previous, event)
                     && Objects.equals(previous.playerId(), event.playerId())
                     && previous.pos().distSqr(event.pos()) <= RELEVANT_EVENT_RADIUS_SQR) {
                 return true;
@@ -345,7 +371,7 @@ public final class VillageEventMemory {
             if (event.gameTime() - previous.gameTime() > NOISY_EVENT_DEDUPE_TICKS) {
                 return false;
             }
-            if (previous.tag() != event.tag()
+            if (!sameTag(previous, event)
                     || previous.retaliation() == null
                     || event.retaliation() == null) {
                 continue;
@@ -360,6 +386,10 @@ public final class VillageEventMemory {
             }
         }
         return false;
+    }
+
+    private static boolean sameTag(MemoryEvent left, MemoryEvent right) {
+        return Objects.equals(left.tagId(), right.tagId());
     }
 
     private static boolean isWeatherEvent(EventTag tag) {
@@ -390,6 +420,13 @@ public final class VillageEventMemory {
         return events.stream().anyMatch(event -> wanted.contains(event.tag()));
     }
 
+    public static boolean hasAnyTag(List<MemoryEvent> events, Set<ResourceLocation> tagIds) {
+        if (events == null || events.isEmpty() || tagIds == null || tagIds.isEmpty()) {
+            return false;
+        }
+        return events.stream().anyMatch(event -> tagIds.contains(event.tagId()));
+    }
+
     public static boolean hasAnyForPlayer(List<MemoryEvent> events, UUID playerId, EventTag... tags) {
         if (playerId == null || events == null || events.isEmpty() || tags == null || tags.length == 0) {
             return false;
@@ -400,6 +437,14 @@ public final class VillageEventMemory {
         }
         return events.stream().anyMatch(event ->
                 playerId.equals(event.playerId()) && wanted.contains(event.tag()));
+    }
+
+    public static boolean hasAnyTagForPlayer(List<MemoryEvent> events, UUID playerId, Set<ResourceLocation> tagIds) {
+        if (playerId == null || events == null || events.isEmpty() || tagIds == null || tagIds.isEmpty()) {
+            return false;
+        }
+        return events.stream().anyMatch(event ->
+                playerId.equals(event.playerId()) && tagIds.contains(event.tagId()));
     }
 
     public static int countForPlayer(List<MemoryEvent> events, UUID playerId, EventTag... tags) {
@@ -423,6 +468,41 @@ public final class VillageEventMemory {
             }
         }
         return wanted;
+    }
+
+    public static ResourceLocation idFor(EventTag tag) {
+        return tag == null
+                ? null
+                : ResourceLocation.fromNamespaceAndPath(
+                        VillagerRetaliation.MOD_ID,
+                        tag.name().toLowerCase(Locale.ROOT));
+    }
+
+    public static Optional<EventTag> legacyTag(ResourceLocation tagId) {
+        if (tagId == null || !VillagerRetaliation.MOD_ID.equals(tagId.getNamespace())) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(EventTag.valueOf(tagId.getPath().toUpperCase(Locale.ROOT)));
+        } catch (IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<ResourceLocation> parseTagId(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isBlank()) {
+            return Optional.empty();
+        }
+        if (!normalized.contains(":")) {
+            try {
+                return Optional.of(idFor(EventTag.valueOf(normalized.toUpperCase(Locale.ROOT))));
+            } catch (IllegalArgumentException ignored) {
+                return Optional.empty();
+            }
+        }
+        ResourceLocation tagId = ResourceLocation.tryParse(normalized);
+        return tagId == null ? Optional.empty() : Optional.of(tagId);
     }
 
     public enum EventTag {
@@ -468,6 +548,7 @@ public final class VillageEventMemory {
 
     public record MemoryEvent(
             EventTag tag,
+            ResourceLocation tagId,
             long gameTime,
             BlockPos pos,
             UUID sourceId,
@@ -477,6 +558,30 @@ public final class VillageEventMemory {
             RetaliationMemory retaliation,
             CuredVillagerMemory curedVillager,
             KilledVillagerMemory killedVillager) {
+        public MemoryEvent(
+                EventTag tag,
+                long gameTime,
+                BlockPos pos,
+                UUID sourceId,
+                UUID playerId,
+                GiftMemory gift,
+                ContainerTheftMemory containerTheft,
+                RetaliationMemory retaliation,
+                CuredVillagerMemory curedVillager,
+                KilledVillagerMemory killedVillager) {
+            this(
+                    tag,
+                    idFor(tag),
+                    gameTime,
+                    pos,
+                    sourceId,
+                    playerId,
+                    gift,
+                    containerTheft,
+                    retaliation,
+                    curedVillager,
+                    killedVillager);
+        }
     }
 
     public record GiftMemory(String villagerName, String itemName, VillagerGiftPreferences.GiftReaction reaction, int reputationValue) {

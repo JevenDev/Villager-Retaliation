@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.VillagerLocale;
@@ -43,6 +44,7 @@ public final class DialogueTreeResources {
 
     public static List<DialogueOptionDefinition> entryOptions(DialogueContext context, DialogueDisposition disposition) {
         return trees(context.level().getServer(), context.locale()).stream()
+                .filter(tree -> tree.matches(context))
                 .flatMap(tree -> tree.entries().stream()
                         .filter(entry -> entry.matches(context, disposition))
                         .map(entry -> entry.toOption(tree.id())))
@@ -150,6 +152,7 @@ public final class DialogueTreeResources {
             entries = List.of(new DialogueTreeDefinition.Entry(
                     "default",
                     DatapackJsonReader.readString(root, "label"),
+                    DialogueEntryMetadata.read(location, "dialogue tree entry", "file root", root),
                     DatapackJsonReader.readString(root, "start", "start_node"),
                     DatapackJsonReader.readEnum(root, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
                     DatapackJsonReader.readBoolean(root, "show_for_adults", true),
@@ -167,6 +170,7 @@ public final class DialogueTreeResources {
                 DatapackJsonReader.readString(root, "title"),
                 DatapackJsonReader.readString(root, "description"),
                 DialogueEntryMetadata.read(location, "dialogue tree", "file root", root),
+                DialogueCondition.readList(location, "dialogue tree", root),
                 entries,
                 nodes
         );
@@ -191,6 +195,7 @@ public final class DialogueTreeResources {
                 entries.add(new DialogueTreeDefinition.Entry(
                         firstNonBlank(DatapackJsonReader.readString(entry, "id"), "entry_" + index),
                         DatapackJsonReader.readString(entry, "label"),
+                        DialogueEntryMetadata.read(location, "dialogue tree entry", context, entry),
                         DatapackJsonReader.readString(entry, "start", "start_node"),
                         DatapackJsonReader.readEnum(entry, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
                         DatapackJsonReader.readBoolean(entry, "show_for_adults", true),
@@ -240,7 +245,8 @@ public final class DialogueTreeResources {
         return new DialogueTreeDefinition.Node(
                 id,
                 DatapackJsonReader.readLines(node),
-                DialogueActionDefinition.readList(location, context, node),
+                VillagerActionDefinition.readList(location, context, node),
+                DialogueCondition.readList(location, context, node),
                 readResponses(location, context, node),
                 DatapackJsonReader.readBoolean(node, "end", false)
         );
@@ -266,10 +272,11 @@ public final class DialogueTreeResources {
                 responses.add(new DialogueTreeDefinition.Response(
                         id,
                         DatapackJsonReader.readString(response, "label"),
+                        DialogueEntryMetadata.read(location, "dialogue tree response", responseContext, response),
                         DatapackJsonReader.readString(response, "next", "next_node"),
                         DatapackJsonReader.readEnum(response, "request", DialogueRequestType.class).orElse(DialogueRequestType.STORY),
                         DatapackJsonReader.readLines(response),
-                        DialogueActionDefinition.readList(location, responseContext, response),
+                        VillagerActionDefinition.readList(location, responseContext, response),
                         DialogueCondition.readList(location, responseContext, response),
                         DatapackJsonReader.readBoolean(response, "end", false),
                         DatapackJsonReader.readInt(response, "order", index)

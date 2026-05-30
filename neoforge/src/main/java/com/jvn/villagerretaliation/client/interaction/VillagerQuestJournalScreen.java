@@ -91,6 +91,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0) {
             this.state.setSelectedOption(hovered);
+            VillagerQuestTrackerOverlay.toggleTracking(entries().get(hovered));
             ensureSelectedVisible();
             return true;
         }
@@ -226,6 +227,17 @@ public final class VillagerQuestJournalScreen extends Screen {
         VillagerInteractionUiUtil.drawScaledString(graphics, this.font, selected.title(), left, top, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.TITLE_COLOR, alpha), scale);
         int y = top + VillagerInteractionUiUtil.scaledLineStep(this.font, scale) + experimentalUnitAtLeast(8, 4);
         y = renderWrappedLine(graphics, selected.objective(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.TEXT_COLOR, alpha), scale, textBottom);
+        y += experimentalUnitAtLeast(6, 3);
+        y = renderWrappedLine(graphics, statusLine(selected), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
+        if (!selected.issuer().isBlank()) {
+            y = renderWrappedLine(graphics, "Issued by: " + selected.issuer(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
+        }
+        if (!selected.issuerLocation().isBlank()) {
+            y = renderWrappedLine(graphics, selected.issuerLocation(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
+        }
+        if (!selected.questItems().isEmpty()) {
+            y = renderWrappedLine(graphics, questItemsLine(selected), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
+        }
         if (!selected.metadata().isBlank()) {
             y += experimentalUnitAtLeast(8, 4);
             renderWrappedLine(graphics, selected.metadata(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
@@ -258,6 +270,26 @@ public final class VillagerQuestJournalScreen extends Screen {
             y += VillagerInteractionUiUtil.scaledLineStep(this.font, scale);
         }
         return y;
+    }
+
+    private static String statusLine(QuestTrackerSyncPayload.Entry entry) {
+        if (entry.status().isBlank()) {
+            return entry.trackable() && VillagerQuestTrackerOverlay.isTracked(entry) ? "Tracked" : "Not tracked";
+        }
+        if (!entry.trackable()) {
+            return "Status: " + entry.status();
+        }
+        return VillagerQuestTrackerOverlay.isTracked(entry)
+                ? "Status: " + entry.status() + " | Tracked"
+                : "Status: " + entry.status() + " | Not tracked";
+    }
+
+    private static String questItemsLine(QuestTrackerSyncPayload.Entry entry) {
+        List<String> names = new ArrayList<>();
+        for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
+            names.add(item.count() > 1 ? item.label() + " x" + item.count() : item.label());
+        }
+        return "Quest item: " + String.join(", ", names);
     }
 
     private void closeJournal() {
@@ -627,7 +659,14 @@ public final class VillagerQuestJournalScreen extends Screen {
 
         @Override
         public String optionLabel(int index) {
-            return entries().get(index).title();
+            QuestTrackerSyncPayload.Entry entry = entries().get(index);
+            if (VillagerQuestTrackerOverlay.isTracked(entry)) {
+                return "> " + entry.title();
+            }
+            if (!entry.trackable() && !entry.status().isBlank()) {
+                return entry.title() + " [" + entry.status() + "]";
+            }
+            return entry.title();
         }
 
         @Override

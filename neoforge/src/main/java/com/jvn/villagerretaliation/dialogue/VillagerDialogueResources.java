@@ -5,7 +5,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -39,7 +38,9 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 public final class VillagerDialogueResources {
     private static final String DIALOGUE_ROOT = "dialogue/";
     private static final Set<String> ROOT_KEYS = Set.of(
-            "replace", "options", "lines", "messages", "openings", "closings", "pacify",
+            "replace", "replace_sections", "replace_options", "replace_lines", "replace_messages",
+            "replace_openings", "replace_closings", "replace_pacify",
+            "options", "lines", "messages", "openings", "closings", "pacify",
             "notifications", "entries", "preferences", "rewards", "payments");
     private static final Set<String> OPTION_KEYS = Set.of(
             "id", "label", "type", "request", "order", "professions", "dispositions",
@@ -52,7 +53,7 @@ public final class VillagerDialogueResources {
             "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
             "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
             "min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level",
-            "take_items", "payment", "give_items", "conditions", "force_camera_towards_villager",
+            "take_items", "payment", "give_items", "conditions", "availability", "available_when", "force_camera_towards_villager",
             "show_for_adults", "show_for_babies",
             "requires_unreported_cartographer_map_discovery", "requires_unreported_story_hint_discovery",
             "requires_unreported_combat_survival_report", "requires_unreported_gear_report",
@@ -98,7 +99,7 @@ public final class VillagerDialogueResources {
             "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
             "min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level",
             "story_structure", "story_structures", "story_biome", "story_biomes",
-            "conditions",
+            "conditions", "availability", "available_when",
             "requires_recent_broken_bed_memory", "requires_recent_direct_hit_memory",
             "requires_gear_report_used_in_combat", "requires_gear_report_unused_in_combat",
             "recruitment_followup_scenarios", "requires_recruitment_memory", "recruitment_memory_scenarios",
@@ -402,8 +403,7 @@ public final class VillagerDialogueResources {
         Map<String, ResourceLocation> optionSources = new HashMap<>();
         Map<String, ResourceLocation> messageSources = new HashMap<>();
         server.getResourceManager()
-                .listResources(root, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
-                        && location.getPath().endsWith(".json"))
+                .listResources(root, location -> location.getPath().endsWith(".json"))
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
@@ -444,19 +444,35 @@ public final class VillagerDialogueResources {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
             if (readBoolean(root, "replace", false)) {
-                lines.clear();
-                openings.clear();
-                closings.clear();
-                pacifyLines.clear();
-                options.clear();
-                messages.clear();
-                lineSources.clear();
-                openingSources.clear();
-                closingSources.clear();
-                pacifySources.clear();
-                optionSources.clear();
-                messageSources.clear();
+                clearAllSections(
+                        lines,
+                        openings,
+                        closings,
+                        pacifyLines,
+                        options,
+                        messages,
+                        lineSources,
+                        openingSources,
+                        closingSources,
+                        pacifySources,
+                        optionSources,
+                        messageSources);
             }
+            replaceSections(
+                    location,
+                    root,
+                    lines,
+                    openings,
+                    closings,
+                    pacifyLines,
+                    options,
+                    messages,
+                    lineSources,
+                    openingSources,
+                    closingSources,
+                    pacifySources,
+                    optionSources,
+                    messageSources);
             if (!containsBundledSections(root)) {
                 Optional<DialogueFileSection> singleSection = sectionFromPath(location, locale)
                         .or(() -> inferSection(root));
@@ -500,6 +516,107 @@ public final class VillagerDialogueResources {
         }
     }
 
+    private static void clearAllSections(
+            Map<String, DialogueLine> lines,
+            Map<String, ConversationLine> openings,
+            Map<String, ConversationLine> closings,
+            Map<String, PacifyLine> pacifyLines,
+            Map<String, DialogueOptionDefinition> options,
+            Map<String, KeyedMessageLine> messages,
+            Map<String, ResourceLocation> lineSources,
+            Map<String, ResourceLocation> openingSources,
+            Map<String, ResourceLocation> closingSources,
+            Map<String, ResourceLocation> pacifySources,
+            Map<String, ResourceLocation> optionSources,
+            Map<String, ResourceLocation> messageSources) {
+        lines.clear();
+        openings.clear();
+        closings.clear();
+        pacifyLines.clear();
+        options.clear();
+        messages.clear();
+        lineSources.clear();
+        openingSources.clear();
+        closingSources.clear();
+        pacifySources.clear();
+        optionSources.clear();
+        messageSources.clear();
+    }
+
+    private static void replaceSections(
+            ResourceLocation location,
+            JsonObject root,
+            Map<String, DialogueLine> lines,
+            Map<String, ConversationLine> openings,
+            Map<String, ConversationLine> closings,
+            Map<String, PacifyLine> pacifyLines,
+            Map<String, DialogueOptionDefinition> options,
+            Map<String, KeyedMessageLine> messages,
+            Map<String, ResourceLocation> lineSources,
+            Map<String, ResourceLocation> openingSources,
+            Map<String, ResourceLocation> closingSources,
+            Map<String, ResourceLocation> pacifySources,
+            Map<String, ResourceLocation> optionSources,
+            Map<String, ResourceLocation> messageSources) {
+        Set<DialogueFileSection> sections = java.util.EnumSet.noneOf(DialogueFileSection.class);
+        for (String value : readStringList(root, "replace_sections")) {
+            String normalized = value.trim().toLowerCase(java.util.Locale.ROOT);
+            DialogueFileSection.fromPathSegment(normalized).ifPresentOrElse(
+                    sections::add,
+                    () -> DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location,
+                            "dialogue",
+                            "unknown replace_sections entry \"" + value + "\"."));
+        }
+        if (readBoolean(root, "replace_options")) {
+            sections.add(DialogueFileSection.OPTIONS);
+        }
+        if (readBoolean(root, "replace_lines")) {
+            sections.add(DialogueFileSection.LINES);
+        }
+        if (readBoolean(root, "replace_messages")) {
+            sections.add(DialogueFileSection.MESSAGES);
+        }
+        if (readBoolean(root, "replace_openings")) {
+            sections.add(DialogueFileSection.OPENINGS);
+        }
+        if (readBoolean(root, "replace_closings")) {
+            sections.add(DialogueFileSection.CLOSINGS);
+        }
+        if (readBoolean(root, "replace_pacify")) {
+            sections.add(DialogueFileSection.PACIFY);
+        }
+
+        for (DialogueFileSection section : sections) {
+            switch (section) {
+                case OPTIONS -> {
+                    options.clear();
+                    optionSources.clear();
+                }
+                case LINES -> {
+                    lines.clear();
+                    lineSources.clear();
+                }
+                case MESSAGES -> {
+                    messages.clear();
+                    messageSources.clear();
+                }
+                case OPENINGS -> {
+                    openings.clear();
+                    openingSources.clear();
+                }
+                case CLOSINGS -> {
+                    closings.clear();
+                    closingSources.clear();
+                }
+                case PACIFY -> {
+                    pacifyLines.clear();
+                    pacifySources.clear();
+                }
+            }
+        }
+    }
+
     private static void readSingleSectionFile(
             ResourceLocation location,
             JsonObject root,
@@ -519,6 +636,13 @@ public final class VillagerDialogueResources {
             Map<String, ResourceLocation> messageSources) {
         JsonObject entry = root.deepCopy();
         entry.remove("replace");
+        entry.remove("replace_sections");
+        entry.remove("replace_options");
+        entry.remove("replace_lines");
+        entry.remove("replace_messages");
+        entry.remove("replace_openings");
+        entry.remove("replace_closings");
+        entry.remove("replace_pacify");
         if (section == DialogueFileSection.OPTIONS && !entry.has("type")) {
             entry.addProperty("type", "dialogue_option");
         }
@@ -1059,10 +1183,18 @@ public final class VillagerDialogueResources {
         if (!eventTags.isEmpty()) {
             builder.eventTags(eventTags.toArray(VillageEventMemory.EventTag[]::new));
         }
+        Set<ResourceLocation> eventTagIds = readMemoryTagIds(location, context, entry, "event_tags");
+        if (!eventTagIds.isEmpty()) {
+            builder.eventTagIds(eventTagIds.toArray(ResourceLocation[]::new));
+        }
 
         Set<VillageEventMemory.EventTag> playerEventTags = readEnumSet(entry, "player_event_tags", VillageEventMemory.EventTag.class);
         if (!playerEventTags.isEmpty()) {
             builder.playerEventTags(playerEventTags.toArray(VillageEventMemory.EventTag[]::new));
+        }
+        Set<ResourceLocation> playerEventTagIds = readMemoryTagIds(location, context, entry, "player_event_tags");
+        if (!playerEventTagIds.isEmpty()) {
+            builder.playerEventTagIds(playerEventTagIds.toArray(ResourceLocation[]::new));
         }
         if (readBoolean(entry, "requires_container_theft_to_self")) {
             builder.requiresContainerTheftToSelf();
@@ -1319,6 +1451,23 @@ public final class VillagerDialogueResources {
         Set<E> values = EnumSet.noneOf(enumClass);
         for (String value : readStringList(entry, key)) {
             readEnum(value, enumClass).ifPresent(values::add);
+        }
+        return Set.copyOf(values);
+    }
+
+    private static Set<ResourceLocation> readMemoryTagIds(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            String key) {
+        Set<ResourceLocation> values = new java.util.LinkedHashSet<>();
+        for (String value : readStringList(entry, key)) {
+            VillageEventMemory.parseTagId(value).ifPresentOrElse(
+                    values::add,
+                    () -> DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location,
+                            context,
+                            key + " references invalid memory tag \"" + value + "\"."));
         }
         return Set.copyOf(values);
     }

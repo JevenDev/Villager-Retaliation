@@ -1,10 +1,10 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
-import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.Locale;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +21,7 @@ public record QuestDefinition(
         ResourceLocation parent,
         Offer offer,
         Target target,
+        List<Objective> objectives,
         Rules rules,
         Tracker tracker,
         List<Trigger> triggers,
@@ -33,6 +34,7 @@ public record QuestDefinition(
         questline = questline == null ? "" : questline;
         offer = offer == null ? Offer.any() : offer;
         target = target == null ? Target.EMPTY : target;
+        objectives = objectives == null ? List.of() : List.copyOf(objectives);
         rules = rules == null ? Rules.DEFAULT : rules;
         tracker = tracker == null ? Tracker.EMPTY : tracker;
         triggers = triggers == null ? List.of() : List.copyOf(triggers);
@@ -100,9 +102,48 @@ public record QuestDefinition(
             int reputation,
             int gossipReputation,
             ResourceLocation lootTable,
-            VillageEventMemory.EventTag memoryEvent
+            ResourceLocation memoryEvent
     ) {
         public static final Rewards EMPTY = new Rewards(0, 0, 0, null, null);
+    }
+
+    public record Objective(
+            String id,
+            ObjectiveType type,
+            boolean optional,
+            ResourceLocation structure,
+            List<String> pieces,
+            int searchRadius,
+            int discoveryRadius,
+            ResourceLocation item,
+            int count,
+            List<DialogueCondition> conditions
+    ) {
+        public Objective {
+            id = id == null || id.isBlank() ? "objective" : id;
+            type = type == null ? ObjectiveType.CONDITION : type;
+            pieces = pieces == null ? List.of() : List.copyOf(pieces);
+            searchRadius = Math.max(1, searchRadius);
+            discoveryRadius = Math.max(1, discoveryRadius);
+            count = Math.max(1, count);
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
+        }
+    }
+
+    public enum ObjectiveType {
+        STRUCTURE_VISIT,
+        ITEM_CHECK,
+        CONDITION;
+
+        public static ObjectiveType bySerializedName(String value) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+            return switch (normalized) {
+                case "structure_visit", "visit_structure", "structure" -> STRUCTURE_VISIT;
+                case "item_check", "proof_item", "item", "inventory" -> ITEM_CHECK;
+                case "condition", "conditions" -> CONDITION;
+                default -> null;
+            };
+        }
     }
 
     public record Rules(
@@ -251,7 +292,7 @@ public record QuestDefinition(
             String id,
             TriggerEvent event,
             List<DialogueCondition> conditions,
-            List<TriggerAction> actions,
+            List<VillagerActionDefinition> actions,
             long cooldownTicks,
             double radius,
             boolean repeatable
@@ -293,36 +334,6 @@ public record QuestDefinition(
 
         public boolean isContinuous() {
             return this == PLAYER_TICK || this == PROXIMITY;
-        }
-    }
-
-    public record TriggerAction(
-            TriggerActionType type,
-            String trigger,
-            String text,
-            String forcedDialogue,
-            boolean flashTracker
-    ) {
-        public TriggerAction {
-            type = type == null ? TriggerActionType.NOTIFICATION : type;
-            trigger = trigger == null ? "" : trigger;
-            text = text == null ? "" : text;
-            forcedDialogue = forcedDialogue == null ? "" : forcedDialogue;
-        }
-    }
-
-    public enum TriggerActionType {
-        NOTIFICATION,
-        TRACKER,
-        FORCED_DIALOGUE;
-
-        public static TriggerActionType bySerializedName(String value) {
-            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-            return switch (normalized) {
-                case "tracker", "quest_tracker", "flash_tracker" -> TRACKER;
-                case "forced_dialogue", "dialogue", "forced" -> FORCED_DIALOGUE;
-                default -> NOTIFICATION;
-            };
         }
     }
 

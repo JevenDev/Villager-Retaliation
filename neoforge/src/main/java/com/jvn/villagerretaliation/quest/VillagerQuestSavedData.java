@@ -31,8 +31,14 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_EXPIRED_TIME = "ExpiredGameTime";
     private static final String TAG_VISITED_TARGET = "VisitedTarget";
     private static final String TAG_HAS_PROOF = "HasProof";
+    private static final String TAG_ISSUER_NAME = "IssuerName";
+    private static final String TAG_ISSUER_PROFESSION = "IssuerProfession";
+    private static final String TAG_ISSUER_DIMENSION = "IssuerDimension";
+    private static final String TAG_ISSUER_POS = "IssuerPos";
     private static final String TAG_TARGET_DIMENSION = "TargetDimension";
     private static final String TAG_TARGET_POS = "TargetPos";
+    private static final String TAG_TARGET_OBJECTIVE = "TargetObjective";
+    private static final String TAG_COMPLETED_OBJECTIVES = "CompletedObjectives";
     private static final String TAG_START_COUNT = "StartCount";
     private static final String TAG_COMPLETION_COUNT = "CompletionCount";
     private static final String TAG_ABANDON_COUNT = "AbandonCount";
@@ -107,6 +113,14 @@ public class VillagerQuestSavedData extends SavedData {
         return List.copyOf(active);
     }
 
+    public List<Map.Entry<ResourceLocation, QuestProgress>> progress(UUID playerId) {
+        Map<ResourceLocation, QuestProgress> playerEntries = this.entries.get(playerId);
+        if (playerEntries == null || playerEntries.isEmpty()) {
+            return List.of();
+        }
+        return List.copyOf(playerEntries.entrySet());
+    }
+
     public enum QuestState {
         NOT_STARTED,
         ACTIVE,
@@ -136,8 +150,14 @@ public class VillagerQuestSavedData extends SavedData {
         private long expiredGameTime;
         private boolean visitedTarget;
         private boolean hasProof;
+        private String issuerName = "";
+        private String issuerProfession = "";
+        private ResourceKey<Level> issuerDimension;
+        private BlockPos issuerPos;
         private ResourceKey<Level> targetDimension;
         private BlockPos targetPos;
+        private String targetObjectiveId = "";
+        private final java.util.Set<String> completedObjectives = new java.util.HashSet<>();
         private int startCount;
         private int completionCount;
         private int abandonCount;
@@ -156,15 +176,35 @@ public class VillagerQuestSavedData extends SavedData {
             progress.expiredGameTime = tag.getLong(TAG_EXPIRED_TIME);
             progress.visitedTarget = tag.getBoolean(TAG_VISITED_TARGET);
             progress.hasProof = tag.getBoolean(TAG_HAS_PROOF);
+            progress.issuerName = tag.getString(TAG_ISSUER_NAME);
+            progress.issuerProfession = tag.getString(TAG_ISSUER_PROFESSION);
             progress.startCount = tag.getInt(TAG_START_COUNT);
             progress.completionCount = tag.getInt(TAG_COMPLETION_COUNT);
             progress.abandonCount = tag.getInt(TAG_ABANDON_COUNT);
             progress.consumedReason = tag.getString(TAG_CONSUMED_REASON);
+            progress.targetObjectiveId = tag.getString(TAG_TARGET_OBJECTIVE);
+            if (tag.contains(TAG_COMPLETED_OBJECTIVES, Tag.TAG_LIST)) {
+                ListTag objectivesTag = tag.getList(TAG_COMPLETED_OBJECTIVES, Tag.TAG_STRING);
+                for (Tag rawObjective : objectivesTag) {
+                    String objectiveId = rawObjective.getAsString();
+                    if (!objectiveId.isBlank()) {
+                        progress.completedObjectives.add(objectiveId);
+                    }
+                }
+            }
             if (tag.contains(TAG_TRIGGER_TIMES, Tag.TAG_COMPOUND)) {
                 CompoundTag triggerTimesTag = tag.getCompound(TAG_TRIGGER_TIMES);
                 for (String key : triggerTimesTag.getAllKeys()) {
                     progress.triggerTimes.put(key, triggerTimesTag.getLong(key));
                 }
+            }
+            ResourceLocation issuerDimensionId = ResourceLocation.tryParse(tag.getString(TAG_ISSUER_DIMENSION));
+            if (issuerDimensionId != null) {
+                progress.issuerDimension = ResourceKey.create(Registries.DIMENSION, issuerDimensionId);
+            }
+            if (tag.contains(TAG_ISSUER_POS, Tag.TAG_COMPOUND)) {
+                CompoundTag posTag = tag.getCompound(TAG_ISSUER_POS);
+                progress.issuerPos = new BlockPos(posTag.getInt("X"), posTag.getInt("Y"), posTag.getInt("Z"));
             }
             ResourceLocation dimensionId = ResourceLocation.tryParse(tag.getString(TAG_TARGET_DIMENSION));
             if (dimensionId != null) {
@@ -189,10 +229,36 @@ public class VillagerQuestSavedData extends SavedData {
             tag.putLong(TAG_EXPIRED_TIME, this.expiredGameTime);
             tag.putBoolean(TAG_VISITED_TARGET, this.visitedTarget);
             tag.putBoolean(TAG_HAS_PROOF, this.hasProof);
+            if (!this.issuerName.isBlank()) {
+                tag.putString(TAG_ISSUER_NAME, this.issuerName);
+            }
+            if (!this.issuerProfession.isBlank()) {
+                tag.putString(TAG_ISSUER_PROFESSION, this.issuerProfession);
+            }
+            if (this.issuerDimension != null) {
+                tag.putString(TAG_ISSUER_DIMENSION, this.issuerDimension.location().toString());
+            }
+            if (this.issuerPos != null) {
+                CompoundTag posTag = new CompoundTag();
+                posTag.putInt("X", this.issuerPos.getX());
+                posTag.putInt("Y", this.issuerPos.getY());
+                posTag.putInt("Z", this.issuerPos.getZ());
+                tag.put(TAG_ISSUER_POS, posTag);
+            }
             tag.putInt(TAG_START_COUNT, this.startCount);
             tag.putInt(TAG_COMPLETION_COUNT, this.completionCount);
             tag.putInt(TAG_ABANDON_COUNT, this.abandonCount);
             tag.putString(TAG_CONSUMED_REASON, this.consumedReason);
+            if (!this.targetObjectiveId.isBlank()) {
+                tag.putString(TAG_TARGET_OBJECTIVE, this.targetObjectiveId);
+            }
+            if (!this.completedObjectives.isEmpty()) {
+                ListTag objectivesTag = new ListTag();
+                for (String objectiveId : this.completedObjectives) {
+                    objectivesTag.add(net.minecraft.nbt.StringTag.valueOf(objectiveId));
+                }
+                tag.put(TAG_COMPLETED_OBJECTIVES, objectivesTag);
+            }
             if (!this.triggerTimes.isEmpty()) {
                 CompoundTag triggerTimesTag = new CompoundTag();
                 for (Map.Entry<String, Long> entry : this.triggerTimes.entrySet()) {
@@ -245,12 +311,32 @@ public class VillagerQuestSavedData extends SavedData {
             return this.hasProof;
         }
 
+        public String issuerName() {
+            return this.issuerName;
+        }
+
+        public String issuerProfession() {
+            return this.issuerProfession;
+        }
+
+        public ResourceKey<Level> issuerDimension() {
+            return this.issuerDimension;
+        }
+
+        public BlockPos issuerPos() {
+            return this.issuerPos;
+        }
+
         public ResourceKey<Level> targetDimension() {
             return this.targetDimension;
         }
 
         public BlockPos targetPos() {
             return this.targetPos;
+        }
+
+        public String targetObjectiveId() {
+            return this.targetObjectiveId;
         }
 
         public int startCount() {
@@ -274,6 +360,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.startedVillagerId = villagerId;
             this.targetDimension = dimension;
             this.targetPos = pos == null ? null : pos.immutable();
+            this.targetObjectiveId = "";
             this.startedGameTime = gameTime;
             this.completedGameTime = 0L;
             this.abandonedGameTime = 0L;
@@ -282,7 +369,30 @@ public class VillagerQuestSavedData extends SavedData {
             this.hasProof = false;
             this.consumedReason = "";
             this.triggerTimes.clear();
+            this.completedObjectives.clear();
             this.startCount++;
+        }
+
+        public void setIssuer(
+                UUID villagerId,
+                String displayName,
+                String professionId,
+                ResourceKey<Level> dimension,
+                BlockPos pos) {
+            if (villagerId != null) {
+                this.startedVillagerId = villagerId;
+            }
+            this.issuerName = displayName == null ? "" : displayName;
+            this.issuerProfession = professionId == null ? "" : professionId;
+            this.issuerDimension = dimension;
+            this.issuerPos = pos == null ? null : pos.immutable();
+        }
+
+        public void setTarget(UUID villagerId, ResourceKey<Level> dimension, BlockPos pos, String objectiveId) {
+            this.startedVillagerId = villagerId;
+            this.targetDimension = dimension;
+            this.targetPos = pos == null ? null : pos.immutable();
+            this.targetObjectiveId = objectiveId == null ? "" : objectiveId;
         }
 
         public void complete(long gameTime, boolean consume) {
@@ -300,6 +410,8 @@ public class VillagerQuestSavedData extends SavedData {
             this.hasProof = false;
             this.targetDimension = null;
             this.targetPos = null;
+            this.targetObjectiveId = "";
+            this.completedObjectives.clear();
             this.consumedReason = consume ? "abandonment" : "";
         }
 
@@ -310,6 +422,8 @@ public class VillagerQuestSavedData extends SavedData {
             this.hasProof = false;
             this.targetDimension = null;
             this.targetPos = null;
+            this.targetObjectiveId = "";
+            this.completedObjectives.clear();
             this.consumedReason = consume ? "expiration" : "";
         }
 
@@ -327,6 +441,17 @@ public class VillagerQuestSavedData extends SavedData {
             }
             this.hasProof = true;
             return true;
+        }
+
+        public boolean markObjectiveComplete(String objectiveId) {
+            if (objectiveId == null || objectiveId.isBlank()) {
+                return false;
+            }
+            return this.completedObjectives.add(objectiveId);
+        }
+
+        public boolean objectiveComplete(String objectiveId) {
+            return objectiveId != null && this.completedObjectives.contains(objectiveId);
         }
 
         public long lastTriggerGameTime(String triggerId) {

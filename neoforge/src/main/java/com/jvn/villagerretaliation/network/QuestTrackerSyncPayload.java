@@ -10,6 +10,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 public record QuestTrackerSyncPayload(List<Entry> entries, boolean flash) implements CustomPacketPayload {
     public static final int MAX_TRACKER_ENTRIES = 3;
     public static final int MAX_SYNC_ENTRIES = 32;
+    public static final int MAX_QUEST_ITEMS = 16;
     public static final Type<QuestTrackerSyncPayload> TYPE = VillagerPayloads.type("quest_tracker_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, QuestTrackerSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(QuestTrackerSyncPayload::encode, QuestTrackerSyncPayload::decode);
@@ -29,6 +30,16 @@ public record QuestTrackerSyncPayload(List<Entry> entries, boolean flash) implem
             buffer.writeUtf(entry.metadata(), 256);
             buffer.writeFloat(entry.progress());
             buffer.writeBoolean(entry.showProgress());
+            buffer.writeUtf(entry.state(), 32);
+            buffer.writeUtf(entry.status(), 96);
+            buffer.writeUtf(entry.issuer(), 160);
+            buffer.writeUtf(entry.issuerLocation(), 192);
+            buffer.writeVarInt(Math.min(MAX_QUEST_ITEMS, entry.questItems().size()));
+            for (QuestItem item : entry.questItems()) {
+                buffer.writeUtf(item.itemId(), 128);
+                buffer.writeUtf(item.label(), 128);
+                buffer.writeVarInt(item.count());
+            }
         }
         buffer.writeBoolean(payload.flash());
     }
@@ -43,13 +54,34 @@ public record QuestTrackerSyncPayload(List<Entry> entries, boolean flash) implem
                     buffer.readUtf(256),
                     buffer.readUtf(256),
                     buffer.readFloat(),
-                    buffer.readBoolean()
+                    buffer.readBoolean(),
+                    buffer.readUtf(32),
+                    buffer.readUtf(96),
+                    buffer.readUtf(160),
+                    buffer.readUtf(192),
+                    readQuestItems(buffer)
             );
             if (entries.size() < MAX_SYNC_ENTRIES) {
                 entries.add(entry);
             }
         }
         return new QuestTrackerSyncPayload(entries, buffer.readBoolean());
+    }
+
+    private static List<QuestItem> readQuestItems(RegistryFriendlyByteBuf buffer) {
+        int size = buffer.readVarInt();
+        List<QuestItem> items = new ArrayList<>(Math.min(MAX_QUEST_ITEMS, size));
+        for (int i = 0; i < size; i++) {
+            QuestItem item = new QuestItem(
+                    buffer.readUtf(128),
+                    buffer.readUtf(128),
+                    buffer.readVarInt()
+            );
+            if (items.size() < MAX_QUEST_ITEMS) {
+                items.add(item);
+            }
+        }
+        return items;
     }
 
     @Override
@@ -63,13 +95,37 @@ public record QuestTrackerSyncPayload(List<Entry> entries, boolean flash) implem
             String objective,
             String metadata,
             float progress,
-            boolean showProgress) {
+            boolean showProgress,
+            String state,
+            String status,
+            String issuer,
+            String issuerLocation,
+            List<QuestItem> questItems) {
         public Entry {
             questId = questId == null ? "" : questId;
             title = title == null ? "" : title;
             objective = objective == null ? "" : objective;
             metadata = metadata == null ? "" : metadata;
             progress = Math.max(0.0F, Math.min(1.0F, progress));
+            state = state == null ? "" : state;
+            status = status == null ? "" : status;
+            issuer = issuer == null ? "" : issuer;
+            issuerLocation = issuerLocation == null ? "" : issuerLocation;
+            questItems = questItems == null
+                    ? List.of()
+                    : List.copyOf(questItems.stream().filter(Objects::nonNull).limit(MAX_QUEST_ITEMS).toList());
+        }
+
+        public boolean trackable() {
+            return "active".equalsIgnoreCase(this.state);
+        }
+    }
+
+    public record QuestItem(String itemId, String label, int count) {
+        public QuestItem {
+            itemId = itemId == null ? "" : itemId;
+            label = label == null ? "" : label;
+            count = Math.max(1, count);
         }
     }
 }
