@@ -66,13 +66,17 @@ public record VillagerActionDefinition(
     public static boolean hasInlineAction(JsonObject entry) {
         return entry.has("type")
                 || entry.has("notification")
+                || entry.has("trigger")
                 || entry.has("text")
                 || entry.has("forced_dialogue")
                 || entry.has("flash_tracker")
                 || entry.has("quest")
+                || entry.has("quest_id")
+                || entry.has("action")
                 || entry.has("experience")
                 || entry.has("reputation")
                 || entry.has("gossip")
+                || entry.has("gossip_reputation")
                 || entry.has("memory_event")
                 || entry.has("loot_table");
     }
@@ -87,10 +91,12 @@ public record VillagerActionDefinition(
         ResourceLocation questId = readQuestId(location, entry);
         QuestAction questAction = QuestAction.bySerializedName(
                 DatapackJsonReader.readString(entry, "action"));
-        int amount = DatapackJsonReader.readInt(entry, "amount", 0);
+        int amount = readAmount(kind, entry);
         ResourceLocation memoryTag = readMemoryTag(location, context, entry);
         ResourceLocation lootTable = DatapackJsonReader.readResourceLocation(entry, "loot_table").orElse(null);
-        String notificationTrigger = DatapackJsonReader.readString(entry, "notification");
+        String notificationTrigger = firstNonBlank(
+                DatapackJsonReader.readString(entry, "notification"),
+                DatapackJsonReader.readString(entry, "trigger"));
         String text = DatapackJsonReader.readString(entry, "text");
         String forcedDialogue = DatapackJsonReader.readString(entry, "forced_dialogue");
         boolean flashTracker = DatapackJsonReader.readBoolean(entry, "flash_tracker", true);
@@ -117,11 +123,60 @@ public record VillagerActionDefinition(
         if (explicit != Kind.NONE) {
             return explicit;
         }
+        if (entry.has("quest") || entry.has("quest_id")) {
+            return Kind.QUEST;
+        }
+        if (entry.has("forced_dialogue")) {
+            return Kind.FORCED_DIALOGUE;
+        }
+        if (entry.has("loot_table")) {
+            return Kind.LOOT;
+        }
+        if (entry.has("memory_event")) {
+            return Kind.MEMORY;
+        }
+        if (entry.has("experience")) {
+            return Kind.EXPERIENCE;
+        }
+        if (entry.has("reputation")) {
+            return Kind.REPUTATION;
+        }
+        if (entry.has("gossip") || entry.has("gossip_reputation")) {
+            return Kind.GOSSIP;
+        }
+        if (entry.has("flash_tracker")) {
+            return Kind.TRACKER;
+        }
+        if (entry.has("notification") || entry.has("trigger") || entry.has("text")) {
+            return Kind.NOTIFICATION;
+        }
         return Kind.NONE;
     }
 
+    private static int readAmount(Kind kind, JsonObject entry) {
+        Integer explicitAmount = DatapackJsonReader.readNullableInt(entry, "amount");
+        if (explicitAmount != null) {
+            return explicitAmount;
+        }
+        return switch (kind) {
+            case EXPERIENCE -> DatapackJsonReader.readInt(entry, "experience", 0);
+            case REPUTATION -> DatapackJsonReader.readInt(entry, "reputation", 0);
+            case GOSSIP -> DatapackJsonReader.readInt(
+                    entry,
+                    "gossip",
+                    DatapackJsonReader.readInt(entry, "gossip_reputation", 0));
+            default -> 0;
+        };
+    }
+
     private static ResourceLocation readQuestId(ResourceLocation location, JsonObject entry) {
-        return QuestIds.parse(DatapackJsonReader.readString(entry, "quest"), location);
+        for (String key : List.of("quest", "quest_id", "id")) {
+            String value = DatapackJsonReader.readString(entry, key);
+            if (!value.isBlank()) {
+                return QuestIds.parse(value, location);
+            }
+        }
+        return null;
     }
 
     private static boolean hasRequiredFields(
@@ -209,6 +264,10 @@ public record VillagerActionDefinition(
         return status == null ? "" : status.trim().toLowerCase(Locale.ROOT);
     }
 
+    private static String firstNonBlank(String first, String second) {
+        return first == null || first.isBlank() ? second : first;
+    }
+
     private static Map<String, List<String>> copyLines(Map<String, List<String>> linesByStatus) {
         Map<String, List<String>> copy = new LinkedHashMap<>();
         for (Map.Entry<String, List<String>> entry : linesByStatus.entrySet()) {
@@ -242,15 +301,15 @@ public record VillagerActionDefinition(
         public static Kind bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
             return switch (normalized) {
-                case "notification" -> NOTIFICATION;
-                case "tracker" -> TRACKER;
-                case "forced_dialogue" -> FORCED_DIALOGUE;
-                case "quest" -> QUEST;
-                case "experience" -> EXPERIENCE;
-                case "reputation" -> REPUTATION;
-                case "gossip" -> GOSSIP;
-                case "memory" -> MEMORY;
-                case "loot" -> LOOT;
+                case "notification", "notify", "hud", "message" -> NOTIFICATION;
+                case "tracker", "quest_tracker", "flash_tracker" -> TRACKER;
+                case "forced_dialogue", "force_dialogue", "dialogue" -> FORCED_DIALOGUE;
+                case "quest", "quest_action" -> QUEST;
+                case "experience", "xp" -> EXPERIENCE;
+                case "reputation", "rep" -> REPUTATION;
+                case "gossip", "gossip_reputation" -> GOSSIP;
+                case "memory", "memory_event" -> MEMORY;
+                case "loot", "loot_table" -> LOOT;
                 default -> NONE;
             };
         }
@@ -266,10 +325,10 @@ public record VillagerActionDefinition(
         public static QuestAction bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
             return switch (normalized) {
-                case "start" -> START;
-                case "remind" -> REMIND;
-                case "turn_in" -> TURN_IN;
-                case "abandon" -> ABANDON;
+                case "start", "accept", "begin" -> START;
+                case "remind", "reminder", "details" -> REMIND;
+                case "turn_in", "turnin", "complete", "claim" -> TURN_IN;
+                case "abandon", "drop", "cancel", "remove" -> ABANDON;
                 default -> NONE;
             };
         }
