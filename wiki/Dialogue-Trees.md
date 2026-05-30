@@ -99,19 +99,21 @@ For active quest menu nodes, keep destructive choices near the bottom: use an `A
 
 Actions let dialogue mutate game state without adding new Java handlers for every feature.
 
+Dialogue trees and quest triggers share the same action parser. Use explicit `type` values for clarity, or omit `type` when a unique action field identifies the kind. For example, `{ "experience": 25 }`, `{ "forced_dialogue": "quest.scene" }`, `{ "quest_id": "example:quest", "action": "accept" }`, and `{ "trigger": "quest.updated", "text": "Quest updated: {quest}" }` are all valid shorthand forms.
+
 Supported action types:
 
 | Type | Fields |
 | --- | --- |
-| `quest` | `quest`, `action`: `start`, `remind`, `turn_in`, or `abandon`; optional status-keyed `lines`. |
-| `experience` | `amount` |
-| `reputation` | `amount` |
-| `gossip` | `amount` |
-| `memory` | `memory_event` |
-| `loot` | `loot_table` |
-| `notification` | `notification` or `text` |
-| `tracker` | `flash_tracker` |
-| `forced_dialogue` | `forced_dialogue` |
+| `quest` / `quest_action` | `quest`, `quest_id`, or `id`; `action`: `start`/`accept`/`begin`, `remind`/`details`, `turn_in`/`complete`/`claim`, or `abandon`/`drop`/`cancel`; optional status-keyed `lines`. |
+| `experience` / `xp` | `amount` or `experience` |
+| `reputation` / `rep` | `amount` or `reputation` |
+| `gossip` / `gossip_reputation` | `amount`, `gossip`, or `gossip_reputation` |
+| `memory` / `memory_event` | `memory_event` |
+| `loot` / `loot_table` | `loot_table` |
+| `notification` / `notify` | `notification` or `trigger`, optional `text` |
+| `tracker` / `flash_tracker` | `flash_tracker` |
+| `forced_dialogue` / `dialogue` | `forced_dialogue` |
 
 Quest actions return a status such as `started`, `reminder`, `inactive`, `completed`, `missing_target`, `missing_proof`, `abandoned`, `abandoned_cooldown`, `abandoned_forever`, `unavailable`, `already_completed`, or `locate_failed`. When an action defines `lines`, the matching status selects the spoken line.
 
