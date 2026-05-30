@@ -21,13 +21,17 @@ import org.lwjgl.glfw.GLFW;
 public final class VillagerQuestJournalScreen extends Screen {
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
+    private static final float DETAIL_SCROLL_STEP = 16.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
     private static final float OPTION_SELECTED_SCALE = 0.02F;
 
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
     private final OptionListContext optionListContext = new OptionListContext();
     private boolean draggingScrollbar;
+    private boolean draggingDetailsScrollbar;
     private float scrollbarDragOffset;
+    private float detailsScrollbarDragOffset;
+    private int detailsSelectedOption = Integer.MIN_VALUE;
     private long detailsAnimationStartMillis = -1L;
     private boolean closingWithAnimation;
 
@@ -45,7 +49,9 @@ public final class VillagerQuestJournalScreen extends Screen {
     @Override
     public void tick() {
         clampSelectedOption();
+        resetDetailsScrollAfterSelectionChange();
         this.state.tickOptionScroll(OPTION_SCROLL_LERP);
+        this.state.tickDetailsScroll(OPTION_SCROLL_LERP);
     }
 
     @Override
@@ -90,7 +96,7 @@ public final class VillagerQuestJournalScreen extends Screen {
 
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0) {
-            this.state.setSelectedOption(hovered);
+            setSelectedOption(hovered);
             VillagerQuestTrackerOverlay.toggleTracking(entries().get(hovered));
             ensureSelectedVisible();
             return true;
@@ -100,6 +106,12 @@ public final class VillagerQuestJournalScreen extends Screen {
         if (scrollbarThumb != null && scrollbarThumb.contains(mouseX, mouseY)) {
             this.draggingScrollbar = true;
             this.scrollbarDragOffset = ToucanScrollbars.dragOffset(mouseY, scrollbarThumb);
+            return true;
+        }
+        ToucanScrollbarThumb detailsScrollbarThumb = detailsScrollbarThumb();
+        if (detailsScrollbarThumb != null && detailsScrollbarThumb.contains(mouseX, mouseY)) {
+            this.draggingDetailsScrollbar = true;
+            this.detailsScrollbarDragOffset = ToucanScrollbars.dragOffset(mouseY, detailsScrollbarThumb);
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -117,6 +129,20 @@ public final class VillagerQuestJournalScreen extends Screen {
             this.state.jumpOptionScrollToTarget();
             return true;
         }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingDetailsScrollbar) {
+            ToucanScrollbarThumb detailsScrollbarThumb = detailsScrollbarThumb();
+            if (detailsScrollbarThumb == null) {
+                this.draggingDetailsScrollbar = false;
+                return false;
+            }
+            setTargetDetailsScroll(ToucanScrollbars.scrollFromThumbDrag(
+                    mouseY,
+                    this.detailsScrollbarDragOffset,
+                    detailsScrollbarThumb,
+                    maxDetailsScroll()));
+            this.state.jumpDetailsScrollToTarget();
+            return true;
+        }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
@@ -126,11 +152,19 @@ public final class VillagerQuestJournalScreen extends Screen {
             this.draggingScrollbar = false;
             return true;
         }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingDetailsScrollbar) {
+            this.draggingDetailsScrollbar = false;
+            return true;
+        }
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (maxDetailsScroll() > 0.0F && isPointInsideDetailsScrollArea(mouseX, mouseY)) {
+            setTargetDetailsScroll(this.state.targetDetailsScroll() - (float) scrollY * DETAIL_SCROLL_STEP);
+            return true;
+        }
         if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, mouseY)) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
@@ -220,56 +254,102 @@ public final class VillagerQuestJournalScreen extends Screen {
             return;
         }
         float scale = VillagerInteractionExperimentalLayout.scaleFactor();
-        int wrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(right - left, scale);
+        int contentRight = detailsContentRight(right);
+        int wrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(contentRight - left, scale);
+        int lineStep = VillagerInteractionUiUtil.scaledLineStep(this.font, scale);
         int progressReservedHeight = selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0;
-        int textBottom = bottom - progressReservedHeight;
-        graphics.enableScissor(left - skillsContainerPaddingX(), top - skillsContainerPaddingY(), right + experimentalUnitAtLeast(4, 2), bottom);
-        VillagerInteractionUiUtil.drawScaledString(graphics, this.font, selected.title(), left, top, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.TITLE_COLOR, alpha), scale);
-        int y = top + VillagerInteractionUiUtil.scaledLineStep(this.font, scale) + experimentalUnitAtLeast(8, 4);
-        y = renderWrappedLine(graphics, selected.objective(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.TEXT_COLOR, alpha), scale, textBottom);
-        y += experimentalUnitAtLeast(6, 3);
-        y = renderWrappedLine(graphics, statusLine(selected), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
-        if (!selected.issuer().isBlank()) {
-            y = renderWrappedLine(graphics, "Issued by: " + selected.issuer(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
-        }
-        if (!selected.issuerLocation().isBlank()) {
-            y = renderWrappedLine(graphics, selected.issuerLocation(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
-        }
-        if (!selected.questItems().isEmpty()) {
-            y = renderWrappedLine(graphics, questItemsLine(selected), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
-        }
-        if (!selected.metadata().isBlank()) {
-            y += experimentalUnitAtLeast(8, 4);
-            renderWrappedLine(graphics, selected.metadata(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
+        int textBottom = Math.max(top + lineStep, bottom - progressReservedHeight);
+        int viewportHeight = Math.max(1, textBottom - top);
+        List<QuestDetailLine> detailLines = buildQuestDetailLines(selected, wrapWidth, lineStep);
+        int contentHeight = detailContentHeight(detailLines, lineStep);
+        float maxScroll = ToucanScrollState.maxScroll(contentHeight, viewportHeight);
+        setTargetDetailsScroll(this.state.targetDetailsScroll());
+        float scroll = Mth.clamp(this.state.detailsScroll(), 0.0F, maxScroll);
+
+        graphics.enableScissor(left - skillsContainerPaddingX(), top, right + experimentalUnitAtLeast(4, 2), textBottom);
+        for (QuestDetailLine line : detailLines) {
+            float lineTop = top + line.top() - scroll;
+            float lineBottom = lineTop + lineStep;
+            if (lineBottom < top || lineTop > textBottom) {
+                continue;
+            }
+            float edgeAlpha = VillagerInteractionUiUtil.edgeFadeAlpha(
+                    scroll,
+                    maxScroll,
+                    lineTop,
+                    lineBottom,
+                    top,
+                    textBottom,
+                    experimentalUnitAtLeast(18, 10));
+            if (!VillagerInteractionExperimentalChrome.shouldDrawText(edgeAlpha * alpha)) {
+                continue;
+            }
+            VillagerInteractionUiUtil.drawScaledString(
+                    graphics,
+                    this.font,
+                    line.text(),
+                    left,
+                    Mth.floor(lineTop),
+                    VillagerInteractionUiUtil.withAlpha(line.color(), edgeAlpha * alpha),
+                    scale);
         }
         graphics.disableScissor();
 
+        renderDetailsScrollbar(graphics, top, viewportHeight, contentHeight, maxScroll, alpha);
         if (selected.showProgress()) {
             int barHeight = experimentalUnitAtLeast(2, 1);
-            int barTop = Math.min(bottom - barHeight, y + experimentalUnitAtLeast(8, 4) + experimentalUnitAtLeast(2, 1));
-            int barRight = right;
-            VillagerQuestUi.renderProgressBar(graphics, left, barTop, barRight, barHeight, selected.progress(), alpha, experimentalTicks(), true, false);
+            int barTop = bottom - barHeight - experimentalUnitAtLeast(2, 1);
+            VillagerQuestUi.renderProgressBar(graphics, left, barTop, contentRight, barHeight, selected.progress(), alpha, experimentalTicks(), true, false);
         }
     }
 
-    private int renderWrappedLine(
-            GuiGraphics graphics,
+    private List<QuestDetailLine> buildQuestDetailLines(QuestTrackerSyncPayload.Entry selected, int wrapWidth, int lineStep) {
+        List<QuestDetailLine> lines = new ArrayList<>();
+        int y = 0;
+        y = addWrappedDetailLines(lines, selected.title(), wrapWidth, VillagerQuestUi.TITLE_COLOR, y, lineStep, experimentalUnitAtLeast(8, 4));
+        y = addWrappedDetailLines(lines, selected.objective(), wrapWidth, VillagerQuestUi.TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(6, 3));
+        y = addWrappedDetailLines(lines, statusLine(selected), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+        if (!selected.issuer().isBlank()) {
+            y = addWrappedDetailLines(lines, "Issued by: " + selected.issuer(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+        }
+        if (!selected.issuerLocation().isBlank()) {
+            y = addWrappedDetailLines(lines, selected.issuerLocation(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+        }
+        if (!selected.questItems().isEmpty()) {
+            y = addWrappedDetailLines(lines, questItemsLine(selected), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+        }
+        if (!selected.metadata().isBlank()) {
+            y += experimentalUnitAtLeast(6, 3);
+            addWrappedDetailLines(lines, selected.metadata(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, 0);
+        }
+        return lines;
+    }
+
+    private int addWrappedDetailLines(
+            List<QuestDetailLine> lines,
             String text,
-            int left,
-            int top,
             int wrapWidth,
             int color,
-            float scale,
-            int bottom) {
+            int top,
+            int lineStep,
+            int gapAfter) {
+        if (text == null || text.isBlank() || wrapWidth <= 0) {
+            return top;
+        }
         int y = top;
         for (FormattedCharSequence line : this.font.split(Component.literal(text), wrapWidth)) {
-            if (y + VillagerInteractionUiUtil.scaledLineStep(this.font, scale) > bottom) {
-                break;
-            }
-            VillagerInteractionUiUtil.drawScaledString(graphics, this.font, line, left, y, color, scale);
-            y += VillagerInteractionUiUtil.scaledLineStep(this.font, scale);
+            lines.add(new QuestDetailLine(line, color, y));
+            y += lineStep;
         }
-        return y;
+        return y + gapAfter;
+    }
+
+    private static int detailContentHeight(List<QuestDetailLine> detailLines, int lineStep) {
+        if (detailLines.isEmpty()) {
+            return 0;
+        }
+        QuestDetailLine lastLine = detailLines.get(detailLines.size() - 1);
+        return lastLine.top() + lineStep;
     }
 
     private static String statusLine(QuestTrackerSyncPayload.Entry entry) {
@@ -361,6 +441,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> buildExitFadeRectElements() {
         List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements = new ArrayList<>();
         addScrollbarExitFadeRects(rectElements, scrollbarThumb(), this.state.optionScroll(), maxOptionScroll());
+        addScrollbarExitFadeRects(rectElements, detailsScrollbarThumb(), this.state.detailsScroll(), maxDetailsScroll());
         return rectElements;
     }
 
@@ -422,7 +503,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private void updateMouseSelection(int mouseX, int mouseY) {
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0) {
-            this.state.setSelectedOption(hovered);
+            setSelectedOption(hovered);
         }
     }
 
@@ -435,13 +516,40 @@ public final class VillagerQuestJournalScreen extends Screen {
         return mouseX >= left && mouseX <= right && mouseY >= top - verticalPadding && mouseY <= bottom + verticalPadding;
     }
 
+    private boolean isPointInsideDetailsScrollArea(double mouseX, double mouseY) {
+        int left = skillsPanelLeft() - experimentalUnitAtLeast(6, 3);
+        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), skillsPanelLeft() + skillsPanelWidth()) + experimentalUnitAtLeast(6, 3);
+        int top = skillsPanelTop() + skillsContainerPaddingY();
+        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
+        return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
+    }
+
     private void clampSelectedOption() {
         if (entries().isEmpty()) {
             this.state.resetOptions(false);
             return;
         }
-        this.state.setSelectedOption(Mth.clamp(this.state.selectedOption(), 0, entries().size() - 1));
+        setSelectedOption(Mth.clamp(this.state.selectedOption(), 0, entries().size() - 1));
         setTargetOptionScroll(this.state.targetOptionScroll());
+        setTargetDetailsScroll(this.state.targetDetailsScroll());
+    }
+
+    private void setSelectedOption(int selectedOption) {
+        if (this.state.selectedOption() != selectedOption) {
+            this.detailsSelectedOption = selectedOption;
+            this.state.resetDetailsScroll();
+            this.detailsAnimationStartMillis = Util.getMillis();
+        }
+        this.state.setSelectedOption(selectedOption);
+    }
+
+    private void resetDetailsScrollAfterSelectionChange() {
+        if (this.detailsSelectedOption == this.state.selectedOption()) {
+            return;
+        }
+        this.detailsSelectedOption = this.state.selectedOption();
+        this.state.resetDetailsScroll();
+        this.detailsAnimationStartMillis = Util.getMillis();
     }
 
     private QuestTrackerSyncPayload.Entry selectedEntry() {
@@ -453,6 +561,10 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private void setTargetOptionScroll(float scroll) {
         this.state.setTargetOptionScroll(scroll, maxOptionScroll());
+    }
+
+    private void setTargetDetailsScroll(float scroll) {
+        this.state.setTargetDetailsScroll(scroll, maxDetailsScroll());
     }
 
     private float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
@@ -477,6 +589,22 @@ public final class VillagerQuestJournalScreen extends Screen {
                 VillagerInteractionExperimentalChrome.chromeAlpha());
     }
 
+    private void renderDetailsScrollbar(
+            GuiGraphics graphics,
+            int viewportTop,
+            int viewportHeight,
+            int contentHeight,
+            float maxScroll,
+            float alpha) {
+        ToucanScrollbars.renderFadedThumb(
+                graphics,
+                detailsScrollbarThumb(viewportTop, viewportHeight, contentHeight, maxScroll),
+                this.state.detailsScroll(),
+                maxScroll,
+                0xAFFFFFFF,
+                alpha);
+    }
+
     private ToucanScrollbarThumb scrollbarThumb() {
         return VillagerInteractionUiUtil.buildScrollbarThumb(
                 optionsTop(),
@@ -491,12 +619,68 @@ public final class VillagerQuestJournalScreen extends Screen {
         );
     }
 
+    private ToucanScrollbarThumb detailsScrollbarThumb() {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (selected == null) {
+            return null;
+        }
+        int top = skillsPanelTop() + skillsContainerPaddingY();
+        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
+        if (bottom <= top) {
+            return null;
+        }
+        int viewportHeight = Math.max(1, bottom - top - (selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0));
+        float maxScroll = maxDetailsScroll(selected, viewportHeight);
+        int contentHeight = detailsContentHeight(selected);
+        return detailsScrollbarThumb(top, viewportHeight, contentHeight, maxScroll);
+    }
+
+    private ToucanScrollbarThumb detailsScrollbarThumb(int viewportTop, int viewportHeight, int contentHeight, float maxScroll) {
+        if (maxScroll <= 0.0F) {
+            return null;
+        }
+        return VillagerInteractionUiUtil.buildScrollbarThumb(
+                viewportTop,
+                viewportHeight,
+                detailsScrollbarLeft(),
+                optionScrollbarWidth(),
+                optionScrollbarHitWidth(),
+                experimentalUnitAtLeast(18, 10),
+                this.state.detailsScroll(),
+                maxScroll,
+                contentHeight);
+    }
+
     private float maxOptionScroll() {
         return ToucanScrollState.maxScroll(optionContentHeight(), optionViewportHeight());
     }
 
+    private float maxDetailsScroll() {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (selected == null) {
+            return 0.0F;
+        }
+        int top = skillsPanelTop() + skillsContainerPaddingY();
+        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
+        int viewportHeight = Math.max(1, bottom - top - (selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0));
+        return maxDetailsScroll(selected, viewportHeight);
+    }
+
+    private float maxDetailsScroll(QuestTrackerSyncPayload.Entry selected, int viewportHeight) {
+        return ToucanScrollState.maxScroll(detailsContentHeight(selected), viewportHeight);
+    }
+
     private float optionContentHeight() {
         return VillagerInteractionOptionList.optionContentHeight(this.optionListContext);
+    }
+
+    private int detailsContentHeight(QuestTrackerSyncPayload.Entry selected) {
+        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
+        int left = skillsPanelLeft();
+        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), left + skillsPanelWidth());
+        int wrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(detailsContentRight(right) - left, scale);
+        int lineStep = VillagerInteractionUiUtil.scaledLineStep(this.font, scale);
+        return detailContentHeight(buildQuestDetailLines(selected, wrapWidth, lineStep), lineStep);
     }
 
     private int optionWidth() {
@@ -538,6 +722,16 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private int scrollbarRight() {
         return optionsScrollbarLeft() + optionScrollbarWidth();
+    }
+
+    private int detailsScrollbarLeft() {
+        int left = skillsPanelLeft();
+        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), left + skillsPanelWidth());
+        return Math.max(left, right - optionScrollbarWidth());
+    }
+
+    private int detailsContentRight(int panelRight) {
+        return Math.max(skillsPanelLeft() + experimentalUnitAtLeast(48, 32), panelRight - experimentalUnitAtLeast(12, 7));
     }
 
     private int skillsPanelTop() {
@@ -619,6 +813,9 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private static List<QuestTrackerSyncPayload.Entry> entries() {
         return VillagerQuestTrackerOverlay.entries();
+    }
+
+    private record QuestDetailLine(FormattedCharSequence text, int color, int top) {
     }
 
     private final class OptionListContext implements VillagerInteractionOptionList.Context {

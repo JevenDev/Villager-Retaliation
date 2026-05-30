@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.quest;
 
 import com.jvn.villagerretaliation.client.interaction.VillagerQuestJournalScreen;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
+import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
@@ -15,45 +16,38 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerQuestTrackerOverlay {
     private static final int FLASH_LIFETIME_TICKS = 96;
 
     private static List<QuestTrackerSyncPayload.Entry> entries = List.of();
     private static int flashTicks;
+    private static int notificationAge;
     private static int age;
     private static float notificationAlpha;
     private static float trackerAlpha;
     private static boolean trackerVisible;
     private static String trackedQuestId = "";
-    private static String manuallyUntrackedQuestId = "";
 
     private VillagerQuestTrackerOverlay() {
     }
 
     public static void accept(QuestTrackerSyncPayload payload) {
         entries = payload.entries();
-        if (!trackedQuestId.isBlank() && !containsTrackableQuest(trackedQuestId)) {
-            trackedQuestId = "";
-        }
-        if (!manuallyUntrackedQuestId.isBlank() && !containsTrackableQuest(manuallyUntrackedQuestId)) {
-            manuallyUntrackedQuestId = "";
-        }
-        if (trackedQuestId.isBlank() && payload.flash()) {
-            firstTrackableEntry()
-                    .filter(entry -> !entry.questId().equals(manuallyUntrackedQuestId))
-                    .ifPresent(entry -> trackedQuestId = entry.questId());
-        }
+        trackedQuestId = payload.trackedQuestId();
         if (payload.flash() && trackedEntry().isPresent()) {
             flashTicks = FLASH_LIFETIME_TICKS;
+            notificationAge = 0;
         } else if (trackedEntry().isEmpty()) {
             flashTicks = 0;
+            notificationAge = 0;
             notificationAlpha = 0.0F;
         }
         if (entries.isEmpty()) {
             flashTicks = 0;
+            notificationAge = 0;
             trackedQuestId = "";
-            manuallyUntrackedQuestId = "";
             if (Minecraft.getInstance().screen instanceof VillagerQuestJournalScreen) {
                 Minecraft.getInstance().setScreen(null);
             }
@@ -71,10 +65,13 @@ public final class VillagerQuestTrackerOverlay {
             age++;
             if (flashTicks > 0) {
                 flashTicks--;
+                notificationAge++;
+            } else {
+                notificationAge = 0;
             }
             boolean journalOpen = minecraft.screen instanceof VillagerQuestJournalScreen;
             boolean hasTrackedEntry = trackedEntry().isPresent();
-            boolean targetTrackerVisible = hasTrackedEntry && (trackerVisible || journalOpen || flashTicks > 0);
+            boolean targetTrackerVisible = hasTrackedEntry && (trackerVisible || journalOpen);
             boolean targetNotificationVisible = hasTrackedEntry && flashTicks > 0 && !targetTrackerVisible;
             trackerAlpha = approach(trackerAlpha, targetTrackerVisible);
             notificationAlpha = approach(notificationAlpha, targetNotificationVisible);
@@ -118,12 +115,12 @@ public final class VillagerQuestTrackerOverlay {
     public static void reset() {
         entries = List.of();
         flashTicks = 0;
+        notificationAge = 0;
         age = 0;
         notificationAlpha = 0.0F;
         trackerAlpha = 0.0F;
         trackerVisible = false;
         trackedQuestId = "";
-        manuallyUntrackedQuestId = "";
     }
 
     public static List<QuestTrackerSyncPayload.Entry> entries() {
@@ -147,20 +144,15 @@ public final class VillagerQuestTrackerOverlay {
         if (entry == null || !entry.trackable()) {
             return;
         }
-        if (entry.questId().equals(trackedQuestId)) {
-            trackedQuestId = "";
-            manuallyUntrackedQuestId = entry.questId();
-            flashTicks = 0;
-            notificationAlpha = 0.0F;
-            return;
+        if (!isTracked(entry)) {
+            trackerVisible = true;
         }
-        trackedQuestId = entry.questId();
-        manuallyUntrackedQuestId = "";
-        trackerVisible = true;
+        PacketDistributor.sendToServer(new QuestTrackerRequestPayload(entry.questId(), QuestTrackerRequestPayload.Action.TOGGLE));
     }
 
     public static void dismissJournalFlash() {
         flashTicks = 0;
+        notificationAge = 0;
         notificationAlpha = 0.0F;
         if (!trackerVisible) {
             trackerAlpha = 0.0F;
@@ -217,17 +209,6 @@ public final class VillagerQuestTrackerOverlay {
         }
     }
 
-    private static Optional<QuestTrackerSyncPayload.Entry> firstTrackableEntry() {
-        return entries.stream().filter(QuestTrackerSyncPayload.Entry::trackable).findFirst();
-    }
-
-    private static boolean containsTrackableQuest(String questId) {
-        if (questId == null || questId.isBlank()) {
-            return false;
-        }
-        return entries.stream().anyMatch(entry -> entry.trackable() && questId.equals(entry.questId()));
-    }
-
     private static List<QuestTrackerSyncPayload.Entry> trackerEntries(boolean showRecentQuests) {
         Optional<QuestTrackerSyncPayload.Entry> tracked = trackedEntry();
         if (tracked.isEmpty()) {
@@ -261,6 +242,6 @@ public final class VillagerQuestTrackerOverlay {
         int y = Math.max(VillagerAdaptiveGuiScale.unit(10), screenHeight / 2 - VillagerQuestHudRenderer.notificationHeight() / 2);
         float alpha = notificationAlpha;
 
-        VillagerQuestHudRenderer.renderNotification(graphics, font, entry, x, y, width, alpha);
+        VillagerQuestHudRenderer.renderNotification(graphics, font, entry, x, y, width, alpha, notificationAge);
     }
 }

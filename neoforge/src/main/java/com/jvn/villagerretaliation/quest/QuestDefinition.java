@@ -117,7 +117,8 @@ public record QuestDefinition(
             int discoveryRadius,
             ResourceLocation item,
             int count,
-            List<DialogueCondition> conditions
+            List<DialogueCondition> conditions,
+            ObjectiveTracker tracker
     ) {
         public Objective {
             id = id == null || id.isBlank() ? "objective" : id;
@@ -127,6 +128,37 @@ public record QuestDefinition(
             discoveryRadius = Math.max(1, discoveryRadius);
             count = Math.max(1, count);
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
+            tracker = tracker == null ? ObjectiveTracker.EMPTY : tracker;
+        }
+    }
+
+    public record ObjectiveTracker(
+            String text,
+            String completeText,
+            boolean showProgress,
+            float progress,
+            java.util.Map<String, String> metadata
+    ) {
+        public static final ObjectiveTracker EMPTY = new ObjectiveTracker("", "", true, -1.0F, java.util.Map.of());
+
+        public ObjectiveTracker {
+            text = text == null ? "" : text;
+            completeText = completeText == null ? "" : completeText;
+            progress = Math.max(-1.0F, Math.min(1.0F, progress));
+            metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
+        }
+
+        public boolean hasAnyDisplay() {
+            return !this.text.isBlank()
+                    || !this.completeText.isBlank()
+                    || this.progress >= 0.0F
+                    || !this.metadata.isEmpty();
+        }
+
+        public boolean hasActiveDisplay() {
+            return !this.text.isBlank()
+                    || this.progress >= 0.0F
+                    || !this.metadata.isEmpty();
         }
     }
 

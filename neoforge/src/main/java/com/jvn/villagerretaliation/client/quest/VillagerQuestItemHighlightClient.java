@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.client.quest;
 
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -9,8 +11,12 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -19,15 +25,59 @@ import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 public final class VillagerQuestItemHighlightClient {
     private static final int HIGHLIGHT_FILL = 0x44F6C453;
     private static final int HIGHLIGHT_EDGE = 0xFFF6C453;
+    private static final double WORLD_GLOW_RADIUS = 64.0D;
+    private static final double WORLD_GLOW_RADIUS_SQUARED = WORLD_GLOW_RADIUS * WORLD_GLOW_RADIUS;
+    private static final Map<Integer, Boolean> LOCALLY_GLOWING_ITEM_ENTITIES = new HashMap<>();
 
     private VillagerQuestItemHighlightClient() {
+    }
+
+    public static void onClientTick(ClientTickEvent.Post event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.level == null) {
+            clearLocalItemGlows(minecraft);
+            return;
+        }
+
+        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
+        if (tracked.isEmpty()) {
+            clearLocalItemGlows(minecraft);
+            return;
+        }
+
+        Map<Integer, Boolean> stillGlowing = new HashMap<>();
+        for (net.minecraft.world.entity.Entity entity : minecraft.level.entitiesForRendering()) {
+            if (!(entity instanceof ItemEntity itemEntity)
+                    || !itemEntity.isAlive()
+                    || itemEntity.distanceToSqr(minecraft.player) > WORLD_GLOW_RADIUS_SQUARED) {
+                continue;
+            }
+            if (matchesTrackedQuestItem(itemEntity.getItem(), tracked.get())) {
+                int entityId = itemEntity.getId();
+                if (!itemEntity.hasGlowingTag()) {
+                    LOCALLY_GLOWING_ITEM_ENTITIES.putIfAbsent(entityId, false);
+                    itemEntity.setGlowingTag(true);
+                }
+                if (LOCALLY_GLOWING_ITEM_ENTITIES.containsKey(entityId)) {
+                    stillGlowing.put(entityId, LOCALLY_GLOWING_ITEM_ENTITIES.get(entityId));
+                }
+            }
+        }
+
+        LOCALLY_GLOWING_ITEM_ENTITIES.keySet().removeIf(entityId -> {
+            if (stillGlowing.containsKey(entityId)) {
+                return false;
+            }
+            restoreItemGlowState(minecraft, entityId);
+            return true;
+        });
     }
 
     public static void onItemTooltip(ItemTooltipEvent event) {
         if (event.getItemStack().isEmpty()) {
             return;
         }
-        Optional<QuestTrackerSyncPayload.Entry> tracked = VillagerQuestTrackerOverlay.trackedEntry();
+        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
         if (tracked.isEmpty() || !matchesTrackedQuestItem(event.getItemStack(), tracked.get())) {
             return;
         }
@@ -47,7 +97,7 @@ public final class VillagerQuestItemHighlightClient {
         if (minecraft.player == null || minecraft.options.hideGui) {
             return;
         }
-        Optional<QuestTrackerSyncPayload.Entry> tracked = VillagerQuestTrackerOverlay.trackedEntry();
+        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
         if (tracked.isEmpty() || tracked.get().questItems().isEmpty()) {
             return;
         }
@@ -65,7 +115,7 @@ public final class VillagerQuestItemHighlightClient {
     }
 
     public static void onContainerForeground(ContainerScreenEvent.Render.Foreground event) {
-        Optional<QuestTrackerSyncPayload.Entry> tracked = VillagerQuestTrackerOverlay.trackedEntry();
+        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
         if (tracked.isEmpty()
                 || tracked.get().questItems().isEmpty()
                 || !(event.getContainerScreen() instanceof AbstractContainerScreen<?> screen)) {
@@ -76,6 +126,21 @@ public final class VillagerQuestItemHighlightClient {
                 renderSlotHighlight(event.getGuiGraphics(), slot.x, slot.y);
             }
         }
+    }
+
+    public static boolean matchesActiveTrackedQuestItem(ItemStack stack) {
+        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry();
+        return tracked.isPresent() && matchesTrackedQuestItem(stack, tracked.get());
+    }
+
+    public static boolean shouldRenderHeldQuestGlow(
+            LivingEntity entity,
+            ItemStack stack,
+            ItemDisplayContext displayContext) {
+        Minecraft minecraft = Minecraft.getInstance();
+        return entity == minecraft.player
+                && isHeldDisplayContext(displayContext)
+                && matchesActiveTrackedQuestItem(stack);
     }
 
     private static boolean matchesTrackedQuestItem(ItemStack stack, QuestTrackerSyncPayload.Entry entry) {
@@ -93,6 +158,40 @@ public final class VillagerQuestItemHighlightClient {
             }
         }
         return false;
+    }
+
+    private static Optional<QuestTrackerSyncPayload.Entry> activeTrackedEntry() {
+        Optional<QuestTrackerSyncPayload.Entry> tracked = VillagerQuestTrackerOverlay.trackedEntry();
+        return tracked.filter(VillagerQuestItemHighlightClient::isActiveTrackedEntry);
+    }
+
+    private static boolean isActiveTrackedEntry(QuestTrackerSyncPayload.Entry entry) {
+        return "active".equalsIgnoreCase(entry.state());
+    }
+
+    private static boolean isHeldDisplayContext(ItemDisplayContext displayContext) {
+        return displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
+                || displayContext == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
+                || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+                || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+    }
+
+    private static void clearLocalItemGlows(Minecraft minecraft) {
+        LOCALLY_GLOWING_ITEM_ENTITIES.keySet().removeIf(entityId -> {
+            restoreItemGlowState(minecraft, entityId);
+            return true;
+        });
+    }
+
+    private static void restoreItemGlowState(Minecraft minecraft, int entityId) {
+        Boolean previous = LOCALLY_GLOWING_ITEM_ENTITIES.get(entityId);
+        if (minecraft.level == null) {
+            return;
+        }
+        net.minecraft.world.entity.Entity entity = minecraft.level.getEntity(entityId);
+        if (entity instanceof ItemEntity itemEntity && previous != null) {
+            itemEntity.setGlowingTag(previous);
+        }
     }
 
     private static void renderSlotHighlight(GuiGraphics graphics, int left, int top) {

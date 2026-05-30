@@ -285,7 +285,28 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readInt(entry, "discovery_radius", DEFAULT_DISCOVERY_RADIUS),
                 item,
                 DatapackJsonReader.readInt(entry, "count", 1),
-                conditions));
+                conditions,
+                readObjectiveTracker(entry)));
+    }
+
+    private static QuestDefinition.ObjectiveTracker readObjectiveTracker(JsonObject objective) {
+        JsonObject tracker = DatapackJsonReader.readObject(objective, "tracker");
+        JsonObject source = tracker == null ? objective : tracker;
+        String text = DatapackJsonReader.readString(source, "text", "label", "objective");
+        String completeText = DatapackJsonReader.readString(source, "complete_text", "completed_text", "done_text");
+        boolean showProgress = DatapackJsonReader.readBoolean(source, "show_progress", "showProgress", true);
+        float progress = (float) DatapackJsonReader.readDouble(source, "progress", -1.0D);
+        Map<String, String> metadata = readStringMap(DatapackJsonReader.readObject(source, "metadata"));
+        if (tracker == null
+                && text.isBlank()
+                && completeText.isBlank()
+                && progress < 0.0F
+                && metadata.isEmpty()
+                && !objective.has("show_progress")
+                && !objective.has("showProgress")) {
+            return QuestDefinition.ObjectiveTracker.EMPTY;
+        }
+        return new QuestDefinition.ObjectiveTracker(text, completeText, showProgress, progress, metadata);
     }
 
     private static TargetParts readTargetCriteria(

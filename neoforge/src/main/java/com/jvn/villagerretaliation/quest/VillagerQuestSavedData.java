@@ -21,6 +21,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 public class VillagerQuestSavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_quests";
     private static final String TAG_ENTRIES = "Entries";
+    private static final String TAG_TRACKED_QUESTS = "TrackedQuests";
     private static final String TAG_PLAYER = "Player";
     private static final String TAG_QUEST = "Quest";
     private static final String TAG_STATE = "State";
@@ -46,6 +47,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_TRIGGER_TIMES = "TriggerTimes";
 
     private final Map<UUID, Map<ResourceLocation, QuestProgress>> entries = new HashMap<>();
+    private final Map<UUID, ResourceLocation> trackedQuests = new HashMap<>();
 
     public static VillagerQuestSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -71,6 +73,19 @@ public class VillagerQuestSavedData extends SavedData {
             QuestProgress progress = QuestProgress.load(entryTag);
             data.entries.computeIfAbsent(entryTag.getUUID(TAG_PLAYER), ignored -> new HashMap<>()).put(questId, progress);
         }
+        ListTag trackedTag = tag.getList(TAG_TRACKED_QUESTS, Tag.TAG_COMPOUND);
+        for (Tag rawEntry : trackedTag) {
+            if (!(rawEntry instanceof CompoundTag entryTag)
+                    || !entryTag.hasUUID(TAG_PLAYER)
+                    || !entryTag.contains(TAG_QUEST, Tag.TAG_STRING)) {
+                continue;
+            }
+
+            ResourceLocation questId = ResourceLocation.tryParse(entryTag.getString(TAG_QUEST));
+            if (questId != null) {
+                data.trackedQuests.put(entryTag.getUUID(TAG_PLAYER), questId);
+            }
+        }
         return data;
     }
 
@@ -86,6 +101,14 @@ public class VillagerQuestSavedData extends SavedData {
             }
         }
         tag.put(TAG_ENTRIES, entriesTag);
+        ListTag trackedTag = new ListTag();
+        for (Map.Entry<UUID, ResourceLocation> entry : this.trackedQuests.entrySet()) {
+            CompoundTag entryTag = new CompoundTag();
+            entryTag.putUUID(TAG_PLAYER, entry.getKey());
+            entryTag.putString(TAG_QUEST, entry.getValue().toString());
+            trackedTag.add(entryTag);
+        }
+        tag.put(TAG_TRACKED_QUESTS, trackedTag);
         return tag;
     }
 
@@ -119,6 +142,38 @@ public class VillagerQuestSavedData extends SavedData {
             return List.of();
         }
         return List.copyOf(playerEntries.entrySet());
+    }
+
+    public ResourceLocation getTrackedQuest(UUID playerId) {
+        return this.trackedQuests.get(playerId);
+    }
+
+    public void setTrackedQuest(UUID playerId, ResourceLocation questId) {
+        if (playerId == null || questId == null) {
+            return;
+        }
+        this.trackedQuests.put(playerId, questId);
+        setDirty();
+    }
+
+    public void clearTrackedQuest(UUID playerId) {
+        if (playerId != null && this.trackedQuests.remove(playerId) != null) {
+            setDirty();
+        }
+    }
+
+    public boolean toggleTrackedQuest(UUID playerId, ResourceLocation questId) {
+        if (playerId == null || questId == null) {
+            return false;
+        }
+        if (questId.equals(this.trackedQuests.get(playerId))) {
+            this.trackedQuests.remove(playerId);
+            setDirty();
+            return false;
+        }
+        this.trackedQuests.put(playerId, questId);
+        setDirty();
+        return true;
     }
 
     public enum QuestState {

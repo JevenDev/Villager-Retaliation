@@ -3,7 +3,8 @@
   "package": "com.jvn.villagerretaliation.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "client.ChatComponentMixin"
+    "client.ChatComponentMixin",
+    "client.QuestItemHeldGlowMixin"
   ],
   "injectors": {
     "defaultRequire": 1

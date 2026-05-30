@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -61,9 +62,7 @@ public record DialogueActionDefinition(
             return empty();
         }
 
-        ResourceLocation questId = DatapackJsonReader.readResourceLocation(entry, "quest")
-                .or(() -> DatapackJsonReader.readResourceLocation(entry, "quest_id"))
-                .orElse(null);
+        ResourceLocation questId = readQuestId(location, entry);
         DialogueQuestAction.Action questAction = DialogueQuestAction.Action.bySerializedName(
                 DatapackJsonReader.readString(entry, "action", "quest_action"));
         int amount = DatapackJsonReader.readInt(entry, "amount", DatapackJsonReader.readInt(entry, "value", 0));
@@ -83,6 +82,16 @@ public record DialogueActionDefinition(
 
     private static DialogueActionDefinition empty() {
         return new DialogueActionDefinition(Kind.NONE, null, DialogueQuestAction.Action.NONE, 0, null, null, Map.of());
+    }
+
+    private static ResourceLocation readQuestId(ResourceLocation location, JsonObject entry) {
+        for (String key : List.of("quest", "quest_id")) {
+            ResourceLocation questId = QuestIds.parse(DatapackJsonReader.readString(entry, key), location);
+            if (questId != null) {
+                return questId;
+            }
+        }
+        return null;
     }
 
     private static VillageEventMemory.EventTag readMemoryEvent(JsonObject entry) {

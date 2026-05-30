@@ -15,27 +15,36 @@ import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
+import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -45,6 +54,9 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 public final class VillagerRetaliationCommands {
+    private static final double DEFAULT_DEBUG_PROVIDER_RADIUS = 64.0D;
+    private static final double MAX_DEBUG_PROVIDER_RADIUS = 256.0D;
+
     private VillagerRetaliationCommands() {
     }
 
@@ -81,6 +93,7 @@ public final class VillagerRetaliationCommands {
                         .then(literal("datapack")
                                 .then(literal("diagnostics")
                                         .executes(VillagerRetaliationCommands::showDatapackDiagnostics)))
+                        .then(questDebugCommands())
                         .then(literal("profile")
                                 .then(literal("get")
                                         .then(targetArgument()
@@ -147,6 +160,273 @@ public final class VillagerRetaliationCommands {
                                 .distinct(),
                         builder
                 ));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> questDebugCommands() {
+        return literal("quest")
+                .then(literal("debug")
+                        .then(literal("providers")
+                                .executes(context -> listQuestDebugProviders(context, DEFAULT_DEBUG_PROVIDER_RADIUS))
+                                .then(argument("radius", DoubleArgumentType.doubleArg(1.0D, MAX_DEBUG_PROVIDER_RADIUS))
+                                        .executes(context -> listQuestDebugProviders(
+                                                context,
+                                                DoubleArgumentType.getDouble(context, "radius")))))
+                        .then(literal("start")
+                                .then(questIdArgument()
+                                        .then(providerNameArgument()
+                                                .executes(context -> startQuestDebug(
+                                                        context,
+                                                        DEFAULT_DEBUG_PROVIDER_RADIUS,
+                                                        false)))))
+                        .then(literal("start_near")
+                                .then(argument("radius", DoubleArgumentType.doubleArg(1.0D, MAX_DEBUG_PROVIDER_RADIUS))
+                                        .then(questIdArgument()
+                                                .then(providerNameArgument()
+                                                        .executes(context -> startQuestDebug(
+                                                                context,
+                                                                DoubleArgumentType.getDouble(context, "radius"),
+                                                                false))))))
+                        .then(literal("force_start")
+                                .then(questIdArgument()
+                                        .then(providerNameArgument()
+                                                .executes(context -> startQuestDebug(
+                                                        context,
+                                                        DEFAULT_DEBUG_PROVIDER_RADIUS,
+                                                        true)))))
+                        .then(literal("force_start_near")
+                                .then(argument("radius", DoubleArgumentType.doubleArg(1.0D, MAX_DEBUG_PROVIDER_RADIUS))
+                                        .then(questIdArgument()
+                                                .then(providerNameArgument()
+                                                        .executes(context -> startQuestDebug(
+                                                                context,
+                                                                DoubleArgumentType.getDouble(context, "radius"),
+                                                                true)))))));
+    }
+
+    private static RequiredArgumentBuilder<CommandSourceStack, String> questIdArgument() {
+        return argument("quest_id", StringArgumentType.word())
+                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                        questIdSuggestions(context.getSource()),
+                        builder));
+    }
+
+    private static Iterable<String> questIdSuggestions(CommandSourceStack source) {
+        LinkedHashSet<String> suggestions = new LinkedHashSet<>();
+        VillagerQuestResources.quests(source.getServer()).forEach(quest -> {
+            ResourceLocation id = quest.id();
+            suggestions.add(id.toString());
+            if (VillagerRetaliation.MOD_ID.equals(id.getNamespace())) {
+                suggestions.add(id.getPath());
+            }
+        });
+        return suggestions;
+    }
+
+    private static RequiredArgumentBuilder<CommandSourceStack, String> providerNameArgument() {
+        return argument("provider_name", StringArgumentType.greedyString())
+                .suggests((context, builder) -> {
+                    ServerPlayer player = context.getSource().getEntity() instanceof ServerPlayer serverPlayer
+                            ? serverPlayer
+                            : null;
+                    if (player == null) {
+                        return builder.buildFuture();
+                    }
+                    return SharedSuggestionProvider.suggest(
+                            nearbyQuestProviders(player, DEFAULT_DEBUG_PROVIDER_RADIUS)
+                                    .stream()
+                                    .map(VillagerRetaliationCommands::displayName),
+                            builder);
+                });
+    }
+
+    private static int listQuestDebugProviders(CommandContext<CommandSourceStack> context, double radius) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so nearby villagers can be resolved."));
+            return 0;
+        }
+
+        double clampedRadius = debugProviderRadius(radius);
+        List<Villager> providers = nearbyQuestProviders(player, clampedRadius);
+        if (providers.isEmpty()) {
+            source.sendFailure(Component.literal("No nearby villager providers found within " + formatRadius(clampedRadius) + " blocks."));
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("Nearby quest debug providers within "
+                + formatRadius(clampedRadius)
+                + " blocks. Type the displayed name in start commands:"), false);
+        providers.forEach(provider -> source.sendSuccess(() -> Component.literal(providerDebugLine(provider)), false));
+        return providers.size();
+    }
+
+    private static int startQuestDebug(CommandContext<CommandSourceStack> context, double radius, boolean force) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so nearby villagers can be resolved."));
+            return 0;
+        }
+
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+
+        ProviderResolution provider = resolveQuestDebugProvider(
+                player,
+                StringArgumentType.getString(context, "provider_name"),
+                debugProviderRadius(radius));
+        if (!provider.error().isBlank()) {
+            source.sendFailure(Component.literal(provider.error()));
+            provider.matches().forEach(match -> source.sendFailure(Component.literal(providerDebugLine(match))));
+            return 0;
+        }
+
+        VillagerQuestService.DebugStartResult result = VillagerQuestService.debugStartQuest(
+                player,
+                provider.provider(),
+                quest.questId(),
+                force);
+        if (!result.started()) {
+            source.sendFailure(Component.literal(result.message()));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal(result.message()), true);
+        return 1;
+    }
+
+    private static QuestResolution resolveQuestDebugQuest(CommandSourceStack source, String rawQuestId) {
+        String query = unquote(rawQuestId);
+        if (query.isBlank()) {
+            return new QuestResolution(null, List.of(), "Quest id cannot be blank.");
+        }
+
+        List<ResourceLocation> questIds = VillagerQuestResources.quests(source.getServer())
+                .stream()
+                .map(quest -> quest.id())
+                .toList();
+        LinkedHashSet<ResourceLocation> candidates = new LinkedHashSet<>();
+        ResourceLocation direct = ResourceLocation.tryParse(query.toLowerCase(java.util.Locale.ROOT));
+        if (direct != null) {
+            candidates.add(direct);
+        }
+        ResourceLocation modDefault = QuestIds.parseInModNamespace(query);
+        if (modDefault != null) {
+            candidates.add(modDefault);
+        }
+        for (ResourceLocation candidate : candidates) {
+            if (questIds.contains(candidate)) {
+                return new QuestResolution(candidate, List.of(), "");
+            }
+        }
+
+        if (!query.contains(":")) {
+            String normalizedPath = query.toLowerCase(java.util.Locale.ROOT);
+            List<ResourceLocation> pathMatches = questIds.stream()
+                    .filter(id -> id.getPath().equals(normalizedPath))
+                    .toList();
+            if (pathMatches.size() == 1) {
+                return new QuestResolution(pathMatches.get(0), List.of(), "");
+            }
+            if (pathMatches.size() > 1) {
+                return new QuestResolution(
+                        null,
+                        pathMatches,
+                        "Multiple quests use path \"" + rawQuestId + "\": " + formatQuestMatches(pathMatches) + ". Use the full namespaced id.");
+            }
+        }
+
+        String normalizedQuery = query.toLowerCase(java.util.Locale.ROOT);
+        List<ResourceLocation> suggestions = questIds.stream()
+                .filter(id -> id.toString().contains(normalizedQuery) || id.getPath().contains(normalizedQuery))
+                .limit(5)
+                .toList();
+        String suggestionText = suggestions.isEmpty()
+                ? " Tab-complete an available quest id."
+                : " Did you mean " + formatQuestMatches(suggestions) + "?";
+        return new QuestResolution(null, suggestions, "Unknown quest: " + rawQuestId + "." + suggestionText);
+    }
+
+    private static String formatQuestMatches(List<ResourceLocation> questIds) {
+        return String.join(", ", questIds.stream().map(ResourceLocation::toString).toList());
+    }
+
+    private static ProviderResolution resolveQuestDebugProvider(ServerPlayer player, String rawProviderName, double radius) {
+        String normalizedQuery = normalizeName(unquote(rawProviderName));
+        if (normalizedQuery.isBlank()) {
+            return new ProviderResolution(null, List.of(), "Provider name cannot be blank.");
+        }
+
+        List<Villager> providers = nearbyQuestProviders(player, radius);
+        List<Villager> exact = providers.stream()
+                .filter(provider -> normalizeName(displayName(provider)).equals(normalizedQuery))
+                .toList();
+        if (exact.size() == 1) {
+            return new ProviderResolution(exact.get(0), List.of(), "");
+        }
+        if (exact.size() > 1) {
+            return new ProviderResolution(null, exact, "Multiple nearby villagers exactly match \"" + rawProviderName + "\". Be more specific.");
+        }
+
+        List<Villager> contains = providers.stream()
+                .filter(provider -> normalizeName(displayName(provider)).contains(normalizedQuery))
+                .toList();
+        if (contains.size() == 1) {
+            return new ProviderResolution(contains.get(0), List.of(), "");
+        }
+        if (contains.size() > 1) {
+            return new ProviderResolution(null, contains, "Multiple nearby villagers match \"" + rawProviderName + "\". Be more specific.");
+        }
+        return new ProviderResolution(
+                null,
+                List.of(),
+                "No nearby villager provider named \"" + rawProviderName + "\" was found within " + formatRadius(radius) + " blocks.");
+    }
+
+    private static List<Villager> nearbyQuestProviders(ServerPlayer player, double radius) {
+        double clampedRadius = debugProviderRadius(radius);
+        AABB area = player.getBoundingBox().inflate(clampedRadius);
+        return player.serverLevel()
+                .getEntitiesOfClass(
+                        Villager.class,
+                        area,
+                        villager -> villager.isAlive() && !villager.isBaby())
+                .stream()
+                .sorted(Comparator.comparingDouble(villager -> villager.distanceToSqr(player)))
+                .toList();
+    }
+
+    private static String providerDebugLine(Villager villager) {
+        BlockPos pos = villager.blockPosition();
+        return displayName(villager)
+                + " | " + VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "villager")
+                + " | " + pos.getX() + " " + pos.getY() + " " + pos.getZ()
+                + " | " + villager.getUUID();
+    }
+
+    private static String displayName(Villager villager) {
+        return VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+    }
+
+    private static double debugProviderRadius(double radius) {
+        return Math.max(1.0D, Math.min(MAX_DEBUG_PROVIDER_RADIUS, radius));
+    }
+
+    private static String formatRadius(double radius) {
+        return radius == Math.rint(radius)
+                ? Integer.toString((int) radius)
+                : String.format(java.util.Locale.ROOT, "%.1f", radius);
+    }
+
+    private static String unquote(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        if (trimmed.length() >= 2
+                && ((trimmed.startsWith("\"") && trimmed.endsWith("\""))
+                || (trimmed.startsWith("'") && trimmed.endsWith("'")))) {
+            return trimmed.substring(1, trimmed.length() - 1).trim();
+        }
+        return trimmed;
     }
 
     private static int setNearbyReputation(CommandContext<CommandSourceStack> context, int reputation) {
@@ -555,6 +835,20 @@ public final class VillagerRetaliationCommands {
     private static void syncProfileIfPlayer(CommandSourceStack source, AbstractVillager villager, VillagerProfile profile) {
         if (source.getEntity() instanceof ServerPlayer player) {
             VillagerReputationNetworking.sendProfile(player, villager, profile);
+        }
+    }
+
+    private record ProviderResolution(Villager provider, List<Villager> matches, String error) {
+        private ProviderResolution {
+            matches = matches == null ? List.of() : List.copyOf(matches);
+            error = error == null ? "" : error;
+        }
+    }
+
+    private record QuestResolution(ResourceLocation questId, List<ResourceLocation> matches, String error) {
+        private QuestResolution {
+            matches = matches == null ? List.of() : List.copyOf(matches);
+            error = error == null ? "" : error;
         }
     }
 }

@@ -6,6 +6,7 @@ import net.minecraft.util.Mth;
 final class VillagerInteractionScreenState {
     private int selectedOption = -1;
     private final ToucanScrollState optionScroll = new ToucanScrollState();
+    private final ToucanScrollState detailsScroll = new ToucanScrollState();
 
     int selectedOption() {
         return this.selectedOption;
@@ -23,9 +24,18 @@ final class VillagerInteractionScreenState {
         return this.optionScroll.targetScroll();
     }
 
+    float detailsScroll() {
+        return this.detailsScroll.currentScroll();
+    }
+
+    float targetDetailsScroll() {
+        return this.detailsScroll.targetScroll();
+    }
+
     void resetOptions(boolean hasOptions) {
         this.selectedOption = hasOptions ? 0 : -1;
         this.optionScroll.reset();
+        this.detailsScroll.reset();
     }
 
     OptionListPosition captureOptionListPosition() {
@@ -54,12 +64,28 @@ final class VillagerInteractionScreenState {
         this.optionScroll.tick(lerp, 0.15F);
     }
 
+    void tickDetailsScroll(float lerp) {
+        this.detailsScroll.tick(lerp, 0.15F);
+    }
+
     void setTargetOptionScroll(float scroll, float maxScroll) {
         this.optionScroll.setTargetScroll(scroll, maxScroll);
     }
 
+    void setTargetDetailsScroll(float scroll, float maxScroll) {
+        this.detailsScroll.setTargetScroll(scroll, maxScroll);
+    }
+
     void jumpOptionScrollToTarget() {
         this.optionScroll.jumpToTarget();
+    }
+
+    void jumpDetailsScrollToTarget() {
+        this.detailsScroll.jumpToTarget();
+    }
+
+    void resetDetailsScroll() {
+        this.detailsScroll.reset();
     }
 
     record OptionListPosition(int selectedOption, float optionScroll, float targetOptionScroll) {

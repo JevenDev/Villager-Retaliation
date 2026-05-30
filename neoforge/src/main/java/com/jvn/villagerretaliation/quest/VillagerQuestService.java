@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
@@ -167,6 +168,7 @@ public final class VillagerQuestService {
             if (expireQuestIfNeeded(player, definition, progress, questContext)) {
                 changed = true;
                 progressNotice = true;
+                clearTrackedQuestIf(data, player, entry.getKey());
                 continue;
             }
             if (definition.rules().activeState().pauseProgressWhenUnmet()
@@ -235,10 +237,81 @@ public final class VillagerQuestService {
         sendTrackerSync(player, flash);
     }
 
+    public static void handleTrackerRequest(ServerPlayer player, String questIdText, QuestTrackerRequestPayload.Action action) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        ResourceLocation questId = ResourceLocation.tryParse(questIdText);
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        if (questId == null || !canTrackQuest(level, player, questId)) {
+            sendTrackerSync(player, false);
+            return;
+        }
+
+        switch (action == null ? QuestTrackerRequestPayload.Action.TOGGLE : action) {
+            case TRACK -> data.setTrackedQuest(player.getUUID(), questId);
+            case UNTRACK -> {
+                if (questId.equals(data.getTrackedQuest(player.getUUID()))) {
+                    data.clearTrackedQuest(player.getUUID());
+                }
+            }
+            case TOGGLE -> data.toggleTrackedQuest(player.getUUID(), questId);
+        }
+        sendTrackerSync(player, false);
+    }
+
+    public static DebugStartResult debugStartQuest(ServerPlayer player, Villager provider, ResourceLocation questId, boolean force) {
+        if (player == null || provider == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugStartResult(false, "This debug command must be run by a player so nearby villagers can be resolved.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugStartResult(false, "Unknown quest: " + questId);
+        }
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, provider);
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), definition.id());
+        if (!force && progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
+            return new DebugStartResult(false, "Quest is already active for " + player.getGameProfile().getName() + ".");
+        }
+        if (!force && !canStart(context, definition, progress, true)) {
+            return new DebugStartResult(false, "Quest cannot restart from its current state. Use force_start to replace existing quest state.");
+        }
+
+        boolean replacedExisting = force && progress != null && progress.state() != VillagerQuestSavedData.QuestState.NOT_STARTED;
+        QuestActionOutcome outcome = startQuest(context, definition, true, force);
+        if (!"started".equals(outcome.status())) {
+            return new DebugStartResult(false, outcome.text().isBlank() ? "Debug quest start failed." : outcome.text());
+        }
+
+        String providerName = VillagerPresetNameRegistry.resolveDisplayName(provider).getString();
+        String profession = VillagerInteractionTextUtil.professionName(provider.getVillagerData().getProfession(), "villager");
+        BlockPos pos = provider.blockPosition();
+        String replaced = replacedExisting
+                ? " Existing quest state was replaced."
+                : "";
+        return new DebugStartResult(
+                true,
+                "Started quest " + definition.title()
+                        + " for " + player.getGameProfile().getName()
+                        + " from provider " + providerName + " the " + profession
+                        + " at " + pos.getX() + " " + pos.getY() + " " + pos.getZ()
+                        + ". Offer requirements were bypassed for debug."
+                        + replaced);
+    }
+
     private static QuestActionOutcome startQuest(DialogueContext context, QuestDefinition definition) {
+        return startQuest(context, definition, false, false);
+    }
+
+    private static QuestActionOutcome startQuest(
+            DialogueContext context,
+            QuestDefinition definition,
+            boolean bypassOfferRequirements,
+            boolean forceRestart) {
         VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
         VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
-        if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
+        if (!forceRestart && progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
             return matchesVillagerLock(context, definition, progress)
                     ? remindQuest(context, definition)
                     : result(
@@ -247,7 +320,7 @@ public final class VillagerQuestService {
                             startBlockedLine(context, definition, progress),
                             replacements(context, definition, progress));
         }
-        if (!canStart(context, definition, progress)) {
+        if (!forceRestart && !canStart(context, definition, progress, bypassOfferRequirements)) {
             return result(
                     startBlockedStatus(definition, progress),
                     lineId(definition, "unavailable"),
@@ -284,6 +357,7 @@ public final class VillagerQuestService {
             started.markHasProof();
         }
         data.setDirty();
+        data.setTrackedQuest(context.player().getUUID(), definition.id());
         if (target != null) {
             rememberQuestStoryHint(context, definition, target.pos());
         }
@@ -366,6 +440,7 @@ public final class VillagerQuestService {
         progress.markHasProof();
         progress.complete(context.level().getGameTime(), definition.rules().consumeOnCompletion());
         data.setDirty();
+        clearTrackedQuestIf(data, context.player(), definition.id());
         awardRewards(context, definition);
         sendQuestNotification(context, "quest.completed", definition, progress, "Quest completed: {quest}");
         if (dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.COMPLETED)) {
@@ -395,6 +470,7 @@ public final class VillagerQuestService {
                 || definition.rules().abandonment() == QuestDefinition.AbandonmentMode.REMOVE_FOREVER;
         progress.abandon(context.level().getGameTime(), consume);
         data.setDirty();
+        clearTrackedQuestIf(data, context.player(), definition.id());
         sendQuestNotification(context, "quest.abandoned", definition, progress, "Quest abandoned: {quest}");
         if (dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.ABANDONED)) {
             data.setDirty();
@@ -418,7 +494,15 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        if (!definition.offer().matches(context)) {
+        return canStart(context, definition, progress, false);
+    }
+
+    private static boolean canStart(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            boolean bypassOfferRequirements) {
+        if (!bypassOfferRequirements && !definition.offer().matches(context)) {
             return false;
         }
         if (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED) {
@@ -832,23 +916,24 @@ public final class VillagerQuestService {
     }
 
     private static boolean hasItemCount(ServerPlayer player, ResourceLocation itemId, int count) {
+        return itemCount(player, itemId) >= Math.max(1, count);
+    }
+
+    private static int itemCount(ServerPlayer player, ResourceLocation itemId) {
         if (itemId == null) {
-            return false;
+            return 0;
         }
         Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
         if (item.isEmpty()) {
-            return false;
+            return 0;
         }
-        int remaining = Math.max(1, count);
+        int total = 0;
         for (ItemStack stack : player.getInventory().items) {
             if (stack.is(item.get())) {
-                remaining -= stack.getCount();
-                if (remaining <= 0) {
-                    return true;
-                }
+                total += stack.getCount();
             }
         }
-        return false;
+        return total;
     }
 
     private static boolean updateObjectiveProgress(
@@ -1158,6 +1243,11 @@ public final class VillagerQuestService {
             return;
         }
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        ResourceLocation trackedQuestId = data.getTrackedQuest(player.getUUID());
+        if (trackedQuestId != null && !canTrackQuest(level, player, trackedQuestId)) {
+            data.clearTrackedQuest(player.getUUID());
+            trackedQuestId = null;
+        }
         List<Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress>> visible =
                 new ArrayList<>(data.progress(player.getUUID()));
         visible.removeIf(entry -> !shouldSyncTrackerEntry(level, entry.getKey(), entry.getValue()));
@@ -1183,7 +1273,10 @@ public final class VillagerQuestService {
                 entries.add(trackerEntry(player, definition, entry.getValue(), activeConditionsMet));
             }
         }
-        PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(entries, flash));
+        PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(
+                entries,
+                trackedQuestId == null ? "" : trackedQuestId.toString(),
+                flash));
     }
 
     private static boolean shouldSyncTrackerEntry(
@@ -1206,24 +1299,56 @@ public final class VillagerQuestService {
         };
     }
 
+    private static boolean canTrackQuest(ServerLevel level, ServerPlayer player, ResourceLocation questId) {
+        VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(level).get(player.getUUID(), questId);
+        if (progress == null) {
+            return false;
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return false;
+        }
+        if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
+            boolean activeConditionsMet = activeConditionsMetForPlayer(player, definition, progress);
+            return activeConditionsMet || !definition.rules().activeState().hideWhenUnmet();
+        }
+        return shouldSyncTrackerEntry(level, questId, progress);
+    }
+
+    private static void clearTrackedQuestIf(
+            VillagerQuestSavedData data,
+            ServerPlayer player,
+            ResourceLocation questId) {
+        if (questId != null && questId.equals(data.getTrackedQuest(player.getUUID()))) {
+            data.clearTrackedQuest(player.getUUID());
+        }
+    }
+
     private static QuestTrackerSyncPayload.Entry trackerEntry(
             ServerPlayer player,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             boolean activeConditionsMet) {
+        QuestDefinition.Objective currentObjective = currentObjectiveForTracker(player, definition, progress, activeConditionsMet);
         String stepKey = progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
                 ? trackerStepKey(player, definition, progress, activeConditionsMet)
                 : trackerStateStepKey(player, definition, progress);
-        Map<String, String> replacements = trackerReplacements(player, definition, progress, activeConditionsMet);
+        Map<String, String> replacements = trackerReplacements(player, definition, progress, currentObjective, activeConditionsMet);
         QuestDefinition.Step fallback = new QuestDefinition.Step(
                 trackerFallbackText(stepKey),
                 progress.state() == VillagerQuestSavedData.QuestState.ACTIVE,
                 trackerFallbackProgress(stepKey),
                 Map.of()
         );
-        QuestDefinition.Step step = definition.tracker().step(stepKey, fallback);
-        boolean configuredStep = progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
-                && definition.tracker().steps().containsKey(stepKey);
+        boolean objectiveTracker = progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && currentObjective != null
+                && currentObjective.tracker().hasActiveDisplay();
+        QuestDefinition.Step step = objectiveTracker
+                ? objectiveTrackerStep(currentObjective, fallback)
+                : definition.tracker().step(stepKey, fallback);
+        boolean configuredStep = objectiveTracker
+                || (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && definition.tracker().steps().containsKey(stepKey));
         float progressValue = configuredStep && step.progress() > 0.0F ? step.progress() : trackerFallbackProgress(stepKey);
         boolean showProgress = configuredStep ? step.showProgress() : progress.state() == VillagerQuestSavedData.QuestState.ACTIVE;
         String title = definition.tracker().title().isBlank() ? definition.title() : definition.tracker().title();
@@ -1263,6 +1388,31 @@ public final class VillagerQuestService {
             case NOT_STARTED -> "not_started";
             case ACTIVE -> trackerStepKey(player, definition, progress, true);
         };
+    }
+
+    private static QuestDefinition.Step objectiveTrackerStep(
+            QuestDefinition.Objective objective,
+            QuestDefinition.Step fallback) {
+        QuestDefinition.ObjectiveTracker tracker = objective.tracker();
+        String text = tracker.text().isBlank() ? fallback.text() : tracker.text();
+        float progress = tracker.progress() >= 0.0F ? tracker.progress() : fallback.progress();
+        Map<String, String> metadata = tracker.metadata().isEmpty() ? fallback.metadata() : tracker.metadata();
+        return new QuestDefinition.Step(text, tracker.showProgress(), progress, metadata);
+    }
+
+    private static QuestDefinition.Objective currentObjectiveForTracker(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            boolean activeConditionsMet) {
+        if (!activeConditionsMet
+                || progress == null
+                || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                || definition.objectives().isEmpty()
+                || !(player.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        return firstIncompleteRequiredObjective(player, null, level, definition, progress).orElse(null);
     }
 
     private static String trackerStepKey(
@@ -1331,6 +1481,15 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             boolean activeConditionsMet) {
+        return trackerReplacements(player, definition, progress, null, activeConditionsMet);
+    }
+
+    private static Map<String, String> trackerReplacements(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Objective objective,
+            boolean activeConditionsMet) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("quest", definition.title());
         values.put("quest_id", definition.id().toString());
@@ -1340,6 +1499,7 @@ public final class VillagerQuestService {
         values.put("has_proof", hasRequiredProof(player, definition) ? "yes" : "no");
         values.put("active_conditions", activeConditionsMet ? "met" : "unmet");
         values.put("objective", progress == null ? "" : progress.targetObjectiveId());
+        addObjectiveReplacements(values, player, definition, progress, objective);
         addIssuerReplacements(values, player, progress);
 
         BlockPos targetPos = progress == null ? null : progress.targetPos();
@@ -1428,6 +1588,7 @@ public final class VillagerQuestService {
         values.put("issuer_profession", issuerProfessionName(player, progress));
         values.put("issuer_dimension", issuerDimensionText(player, progress));
         values.put("issuer_location", issuerLocationSummary(player, progress));
+        values.put("issuer_status", issuerStatus(player, progress));
         BlockPos issuerPos = issuerPos(player, progress);
         if (issuerPos == null) {
             values.put("issuer_x", "unknown");
@@ -1438,6 +1599,70 @@ public final class VillagerQuestService {
             values.put("issuer_y", Integer.toString(issuerPos.getY()));
             values.put("issuer_z", Integer.toString(issuerPos.getZ()));
         }
+    }
+
+    private static void addObjectiveReplacements(
+            Map<String, String> values,
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Objective objective) {
+        if (objective == null) {
+            values.put("objective_id", progress == null ? "" : progress.targetObjectiveId());
+            values.put("objective_type", "");
+            values.put("objective_item", questItemName(definition, progress));
+            values.put("objective_item_id", "");
+            values.put("objective_count", "");
+            values.put("objective_complete", "no");
+            values.put("objective_progress", "0");
+            values.put("objective_target_x", "unknown");
+            values.put("objective_target_y", "unknown");
+            values.put("objective_target_z", "unknown");
+            return;
+        }
+
+        values.put("objective", objective.id());
+        values.put("objective_id", objective.id());
+        values.put("objective_type", objective.type().name().toLowerCase(Locale.ROOT));
+        values.put("objective_item", objective.item() == null ? questItemName(definition, progress) : itemName(objective.item()));
+        values.put("objective_item_id", objective.item() == null ? "" : objective.item().toString());
+        values.put("objective_count", Integer.toString(objective.count()));
+        boolean complete = progress != null && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective);
+        values.put("objective_complete", complete ? "yes" : "no");
+        values.put("objective_progress", String.format(Locale.ROOT, "%.2f", objectiveProgress(player, definition, progress, objective)));
+
+        BlockPos targetPos = progress != null
+                && objective.id().equals(progress.targetObjectiveId())
+                ? progress.targetPos()
+                : null;
+        if (targetPos == null) {
+            values.put("objective_target_x", "unknown");
+            values.put("objective_target_y", "unknown");
+            values.put("objective_target_z", "unknown");
+        } else {
+            values.put("objective_target_x", Integer.toString(roundCoordinate(targetPos.getX())));
+            values.put("objective_target_y", Integer.toString(roundCoordinate(targetPos.getY())));
+            values.put("objective_target_z", Integer.toString(roundCoordinate(targetPos.getZ())));
+        }
+    }
+
+    private static float objectiveProgress(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Objective objective) {
+        if (progress != null && progress.objectiveComplete(objective.id())) {
+            return 1.0F;
+        }
+        return switch (objective.type()) {
+            case ITEM_CHECK -> objective.item() == null
+                    ? 0.0F
+                    : Mth.clamp((float) itemCount(player, objective.item()) / (float) objective.count(), 0.0F, 1.0F);
+            case STRUCTURE_VISIT, CONDITION -> progress != null
+                    && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective)
+                    ? 1.0F
+                    : 0.0F;
+        };
     }
 
     private static void addIssuerReplacements(
@@ -1546,30 +1771,38 @@ public final class VillagerQuestService {
     }
 
     private static String issuerName(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+        Villager villager = liveStartedVillager(player, progress);
+        if (villager != null) {
+            return VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        }
         if (progress != null && !progress.issuerName().isBlank()) {
             return progress.issuerName();
         }
-        Villager villager = liveStartedVillager(player, progress);
-        return villager == null
-                ? "Unknown villager"
-                : VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        return "Unknown villager";
     }
 
     private static String issuerProfessionName(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+        Villager villager = liveStartedVillager(player, progress);
+        if (villager != null) {
+            return VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "villager");
+        }
         if (progress != null && !progress.issuerProfession().isBlank()) {
             ResourceLocation professionId = ResourceLocation.tryParse(progress.issuerProfession());
             if (professionId != null) {
                 return VillagerInteractionTextUtil.resourcePathName(professionId);
             }
         }
-        Villager villager = liveStartedVillager(player, progress);
-        return villager == null
-                ? "villager"
-                : VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "villager");
+        return "villager";
     }
 
     private static String issuerLocationSummary(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
-        BlockPos pos = issuerPos(player, progress);
+        Villager live = liveStartedVillager(player, progress);
+        if (live != null && live.isAlive()) {
+            BlockPos livePos = live.blockPosition();
+            return "Current location: " + livePos.getX() + ", " + livePos.getY() + ", " + livePos.getZ()
+                    + " in " + live.level().dimension().location();
+        }
+        BlockPos pos = progress == null ? null : progress.issuerPos();
         if (pos == null) {
             return "Last seen location unknown";
         }
@@ -1579,22 +1812,30 @@ public final class VillagerQuestService {
     }
 
     private static BlockPos issuerPos(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
-        if (progress != null && progress.issuerPos() != null) {
-            return progress.issuerPos();
-        }
         Villager villager = liveStartedVillager(player, progress);
-        return villager == null ? null : villager.blockPosition();
+        if (villager != null) {
+            return villager.blockPosition();
+        }
+        return progress == null ? null : progress.issuerPos();
     }
 
     private static String issuerDimensionText(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
-        ResourceKey<Level> dimension = progress == null ? null : progress.issuerDimension();
-        if (dimension == null) {
-            Villager villager = liveStartedVillager(player, progress);
-            if (villager != null) {
-                dimension = villager.level().dimension();
-            }
+        Villager villager = liveStartedVillager(player, progress);
+        if (villager != null) {
+            return villager.level().dimension().location().toString();
         }
+        ResourceKey<Level> dimension = progress == null ? null : progress.issuerDimension();
         return dimension == null ? "unknown" : dimension.location().toString();
+    }
+
+    private static String issuerStatus(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+        if (liveStartedVillager(player, progress) != null) {
+            return "current";
+        }
+        return progress != null
+                && (progress.issuerPos() != null || !progress.issuerName().isBlank() || progress.issuerDimension() != null)
+                ? "last_seen"
+                : "unknown";
     }
 
     private static Villager liveStartedVillager(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
@@ -1644,6 +1885,12 @@ public final class VillagerQuestService {
     private record LocatedTarget(BlockPos pos, String objectiveId) {
         private LocatedTarget(BlockPos pos) {
             this(pos, "");
+        }
+    }
+
+    public record DebugStartResult(boolean started, String message) {
+        public DebugStartResult {
+            message = message == null ? "" : message;
         }
     }
 

@@ -7,7 +7,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record QuestTrackerSyncPayload(List<Entry> entries, boolean flash) implements CustomPacketPayload {
+public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId, boolean flash) implements CustomPacketPayload {
     public static final int MAX_TRACKER_ENTRIES = 3;
     public static final int MAX_SYNC_ENTRIES = 32;
     public static final int MAX_QUEST_ITEMS = 16;
@@ -19,6 +19,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, boolean flash) implem
         entries = entries == null
                 ? List.of()
                 : List.copyOf(entries.stream().filter(Objects::nonNull).limit(MAX_SYNC_ENTRIES).toList());
+        trackedQuestId = trackedQuestId == null ? "" : trackedQuestId;
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, QuestTrackerSyncPayload payload) {
@@ -41,6 +42,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, boolean flash) implem
                 buffer.writeVarInt(item.count());
             }
         }
+        buffer.writeUtf(payload.trackedQuestId(), 128);
         buffer.writeBoolean(payload.flash());
     }
 
@@ -65,7 +67,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, boolean flash) implem
                 entries.add(entry);
             }
         }
-        return new QuestTrackerSyncPayload(entries, buffer.readBoolean());
+        return new QuestTrackerSyncPayload(entries, buffer.readUtf(128), buffer.readBoolean());
     }
 
     private static List<QuestItem> readQuestItems(RegistryFriendlyByteBuf buffer) {
@@ -117,7 +119,10 @@ public record QuestTrackerSyncPayload(List<Entry> entries, boolean flash) implem
         }
 
         public boolean trackable() {
-            return "active".equalsIgnoreCase(this.state);
+            return switch (this.state.toLowerCase(java.util.Locale.ROOT)) {
+                case "active", "abandoned", "expired" -> true;
+                default -> false;
+            };
         }
     }
 

@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "12";
+    private static final String PROTOCOL_VERSION = "13";
 
     private VillagerReputationNetworking() {
     }
@@ -97,6 +97,16 @@ public final class VillagerReputationNetworking {
                 QuestTrackerSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay",
                 "accept"
+        );
+        network.playToServer(
+                QuestTrackerRequestPayload.TYPE,
+                QuestTrackerRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> com.jvn.villagerretaliation.quest.VillagerQuestService.handleTrackerRequest(
+                                player,
+                                payload.questId(),
+                                payload.action()
+                        )))
         );
         network.playToServer(
                 VillagerReputationRequestPayload.TYPE,

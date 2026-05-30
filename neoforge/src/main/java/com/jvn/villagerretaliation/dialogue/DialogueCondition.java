@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
@@ -303,7 +304,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         for (String key : List.of("quest", "quest_id", "id")) {
             String value = readString(condition, key);
             if (!value.isBlank()) {
-                questId = ResourceLocation.tryParse(value);
+                questId = QuestIds.parse(value, location);
                 break;
             }
         }

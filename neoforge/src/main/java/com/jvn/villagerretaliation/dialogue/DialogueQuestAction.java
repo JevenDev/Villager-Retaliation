@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import java.util.Locale;
 import net.minecraft.resources.ResourceLocation;
@@ -24,7 +25,7 @@ public record DialogueQuestAction(ResourceLocation questId, Action action) {
         }
 
         JsonObject actionObject = element.getAsJsonObject();
-        ResourceLocation questId = readQuestId(actionObject);
+        ResourceLocation questId = readQuestId(location, actionObject);
         if (questId == null) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "quest_action must define quest or quest_id.");
             return EMPTY;
@@ -38,11 +39,11 @@ public record DialogueQuestAction(ResourceLocation questId, Action action) {
         return new DialogueQuestAction(questId, action);
     }
 
-    private static ResourceLocation readQuestId(JsonObject object) {
+    private static ResourceLocation readQuestId(ResourceLocation location, JsonObject object) {
         for (String key : new String[] { "quest", "quest_id", "id" }) {
             String value = readString(object, key);
             if (!value.isBlank()) {
-                return ResourceLocation.tryParse(value);
+                return QuestIds.parse(value, location);
             }
         }
         return null;

@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
+import com.jvn.villagerretaliation.event.VillagerEventTriggerSavedData;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftResources;
 import com.jvn.villagerretaliation.loot.ProfessionLootResources;
@@ -44,6 +45,7 @@ public final class VillagerDataWarmup {
         VillagerReputationSavedData.get(server.overworld());
         VillagerSocialGraphSavedData.get(server.overworld());
         VillagerQuestSavedData.get(server.overworld());
+        VillagerEventTriggerSavedData.get(server.overworld());
     }
 
     public static void clearCaches() {
