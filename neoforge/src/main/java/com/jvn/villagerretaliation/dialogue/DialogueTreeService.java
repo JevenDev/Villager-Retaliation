@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionExecutor;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -177,6 +178,9 @@ public final class DialogueTreeService {
         for (VillagerActionDefinition action : actions) {
             VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
             replacements.putAll(result.replacements());
+            if (result.flashTracker()) {
+                VillagerQuestService.flashTracker(context.player(), true);
+            }
             if (!result.text().isBlank()) {
                 texts.add(result.text());
             }
