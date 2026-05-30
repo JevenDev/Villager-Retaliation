@@ -46,7 +46,7 @@ public record DialogueQuestAction(ResourceLocation questId, Action action) {
     }
 
     private static DialogueQuestAction readSharedQuestAction(ResourceLocation location, String context, JsonObject option) {
-        if (!option.has("actions") && !VillagerActionDefinition.hasInlineAction(option)) {
+        if (!option.has("actions") && !hasInlineQuestAction(option)) {
             return EMPTY;
         }
         List<VillagerActionDefinition> actions = VillagerActionDefinition.readListOrInline(location, context, option);
@@ -60,6 +60,13 @@ public record DialogueQuestAction(ResourceLocation questId, Action action) {
             }
         }
         return EMPTY;
+    }
+
+    private static boolean hasInlineQuestAction(JsonObject option) {
+        VillagerActionDefinition.Kind explicit = VillagerActionDefinition.Kind.bySerializedName(readString(option, "type"));
+        return explicit == VillagerActionDefinition.Kind.QUEST
+                || option.has("quest")
+                || option.has("quest_id");
     }
 
     private static ResourceLocation readQuestId(ResourceLocation location, JsonObject object) {
