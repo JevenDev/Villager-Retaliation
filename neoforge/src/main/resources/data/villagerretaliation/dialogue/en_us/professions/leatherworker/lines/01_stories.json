@@ -1,21 +1,29 @@
 {
-  "lines": [
-    {
-      "id": "leatherworker_story_hide_variants",
-      "request": "story",
-      "lines": [
-        "A split seam can ruin a journey faster than a bad map.",
-        "I once made boots that outlasted three owners and four <wavy>bad roads</wavy>.",
-        "My apron has seen enough mistakes to deserve its own corner by the fire.",
-        "There is a story from the cauldron, but it sounds smaller unless you were standing there.",
-        "Most stories here begin with someone saying, 'It will only take a moment.' They are always wrong.",
-        "I remember the smell of rain, the sound of the bell, and everyone suddenly pretending they had a plan.",
-        "The funny part came later. At the time, nobody was laughing.",
-        "A village story changes depending on who got embarrassed in it.",
-        "I could make it grand, but honestly, it was mostly mud, noise, and bad timing.",
-        "Still, we tell it because we made it through, and that makes people stand a little straighter."
-      ],
-      "weight": 74
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "leatherworker_story_hide_variants",
+                      "request":  "story",
+                      "lines":  [
+                                    "A split seam can ruin a journey faster than a bad map.",
+                                    "I once made boots that outlasted three owners and four \u003cwavy\u003ebad roads\u003c/wavy\u003e.",
+                                    "My apron has seen enough mistakes to deserve its own corner by the fire.",
+                                    "There is a story from the cauldron, but it sounds smaller unless you were standing there.",
+                                    "Most stories here begin with someone saying, \u0027It will only take a moment.\u0027 They are always wrong.",
+                                    "I remember the smell of rain, the sound of the bell, and everyone suddenly pretending they had a plan.",
+                                    "The funny part came later. At the time, nobody was laughing.",
+                                    "A village story changes depending on who got embarrassed in it.",
+                                    "I could make it grand, but honestly, it was mostly mud, noise, and bad timing.",
+                                    "Still, we tell it because we made it through, and that makes people stand a little straighter."
+                                ],
+                      "weight":  74
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.leatherworker",
+                                  "section.lines"
+                              ]
+                 }
 }

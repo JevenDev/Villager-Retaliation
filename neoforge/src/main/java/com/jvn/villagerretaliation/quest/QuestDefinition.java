@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import java.util.Locale;
@@ -26,7 +27,9 @@ public record QuestDefinition(
         Tracker tracker,
         List<Trigger> triggers,
         Rewards rewards,
-        Dialogue dialogue
+        Dialogue dialogue,
+        DialogueEntryMetadata metadata,
+        Links links
 ) {
     public QuestDefinition {
         title = title == null || title.isBlank() ? id.toString() : title;
@@ -40,6 +43,33 @@ public record QuestDefinition(
         triggers = triggers == null ? List.of() : List.copyOf(triggers);
         rewards = rewards == null ? Rewards.EMPTY : rewards;
         dialogue = dialogue == null ? Dialogue.EMPTY : dialogue;
+        metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
+        links = links == null ? Links.EMPTY : links;
+    }
+
+    public record Links(
+            ResourceLocation dialogueTree,
+            String offer,
+            String reminder,
+            String turnIn,
+            List<String> forcedDialogue
+    ) {
+        public static final Links EMPTY = new Links(null, "", "", "", List.of());
+
+        public Links {
+            offer = offer == null ? "" : offer;
+            reminder = reminder == null ? "" : reminder;
+            turnIn = turnIn == null ? "" : turnIn;
+            forcedDialogue = forcedDialogue == null ? List.of() : List.copyOf(forcedDialogue);
+        }
+
+        public boolean isEmpty() {
+            return this.dialogueTree == null
+                    && this.offer.isBlank()
+                    && this.reminder.isBlank()
+                    && this.turnIn.isBlank()
+                    && this.forcedDialogue.isEmpty();
+        }
     }
 
     public record Offer(

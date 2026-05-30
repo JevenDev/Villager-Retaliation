@@ -1,99 +1,106 @@
 {
-  "lines": [
-    {
-      "id": "shepherd_share_story_bamboo_jungle",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:bamboo_jungle",
-      "lines": [
-        "{target}? Green stalks can hide quick trouble. I would count everyone twice.",
-        "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I'll be at the loom.",
-        "Bamboo crowds the eye and the feet. I'll remember that when I count everyone.",
-        "Bamboo Jungle is no small story. Fear scatters folk like a loose flock.",
-        "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will count heads before I count sheep.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "shepherd_share_story_jungle",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:jungle",
-      "lines": [
-        "{target}? Leaves crowd close enough to hide anything. I would count everyone twice.",
-        "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the loom.",
-        "The green is loud even when nothing moves. I'll remember that when I count everyone.",
-        "Jungle is no small story. Fear scatters folk like a loose flock.",
-        "I will remember Jungle as a hot forest that keeps secrets well. I will count heads before I count sheep.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "shepherd_share_story_mangrove_swamp",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:mangrove_swamp",
-      "lines": [
-        "{target}? Mud holds boots longer than plans. I would count everyone twice.",
-        "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the loom.",
-        "Thick roots make every hurry foolish. I'll remember that when I count everyone.",
-        "Mangrove Swamp is no small story. Fear scatters folk like a loose flock.",
-        "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will count heads before I count sheep.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "shepherd_share_story_sparse_jungle",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:sparse_jungle",
-      "lines": [
-        "{target}? Thin jungle still keeps thick surprises. I would count everyone twice.",
-        "If anyone heads for Sparse Jungle, tell them: Don't trust open patches too quickly. I will be at the loom.",
-        "Vines and shadows take turns hiding things. I'll remember that when I count everyone.",
-        "Sparse Jungle is no small story. Fear scatters folk like a loose flock.",
-        "I will remember Sparse Jungle as green country pretending to be easier than it is. I will count heads before I count sheep.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "shepherd_share_story_swamp",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:swamp",
-      "lines": [
-        "{target}? Mud and water both remember footsteps. I would count everyone twice.",
-        "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the loom.",
-        "Fog makes close things feel far. I'll remember that when I count everyone.",
-        "Swamp is no small story. Fear scatters folk like a loose flock.",
-        "I will remember Swamp as wet land that grabs at ankles and plans. I will count heads before I count sheep.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "shepherd_share_story_bamboo_jungle",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:bamboo_jungle",
+                      "lines":  [
+                                    "{target}? Green stalks can hide quick trouble. I would count everyone twice.",
+                                    "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I\u0027ll be at the loom.",
+                                    "Bamboo crowds the eye and the feet. I\u0027ll remember that when I count everyone.",
+                                    "Bamboo Jungle is no small story. Fear scatters folk like a loose flock.",
+                                    "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will count heads before I count sheep.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "shepherd_share_story_jungle",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:jungle",
+                      "lines":  [
+                                    "{target}? Leaves crowd close enough to hide anything. I would count everyone twice.",
+                                    "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the loom.",
+                                    "The green is loud even when nothing moves. I\u0027ll remember that when I count everyone.",
+                                    "Jungle is no small story. Fear scatters folk like a loose flock.",
+                                    "I will remember Jungle as a hot forest that keeps secrets well. I will count heads before I count sheep.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "shepherd_share_story_mangrove_swamp",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:mangrove_swamp",
+                      "lines":  [
+                                    "{target}? Mud holds boots longer than plans. I would count everyone twice.",
+                                    "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the loom.",
+                                    "Thick roots make every hurry foolish. I\u0027ll remember that when I count everyone.",
+                                    "Mangrove Swamp is no small story. Fear scatters folk like a loose flock.",
+                                    "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will count heads before I count sheep.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "shepherd_share_story_sparse_jungle",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:sparse_jungle",
+                      "lines":  [
+                                    "{target}? Thin jungle still keeps thick surprises. I would count everyone twice.",
+                                    "If anyone heads for Sparse Jungle, tell them: Don\u0027t trust open patches too quickly. I will be at the loom.",
+                                    "Vines and shadows take turns hiding things. I\u0027ll remember that when I count everyone.",
+                                    "Sparse Jungle is no small story. Fear scatters folk like a loose flock.",
+                                    "I will remember Sparse Jungle as green country pretending to be easier than it is. I will count heads before I count sheep.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "shepherd_share_story_swamp",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:swamp",
+                      "lines":  [
+                                    "{target}? Mud and water both remember footsteps. I would count everyone twice.",
+                                    "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the loom.",
+                                    "Fog makes close things feel far. I\u0027ll remember that when I count everyone.",
+                                    "Swamp is no small story. Fear scatters folk like a loose flock.",
+                                    "I will remember Swamp as wet land that grabs at ankles and plans. I will count heads before I count sheep.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "section.lines"
+                              ]
+                 }
 }

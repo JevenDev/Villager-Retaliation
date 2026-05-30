@@ -1,23 +1,31 @@
 {
-  "lines": [
-    {
-      "id": "combat_survival_shepherd",
-      "request": "combat_survival_report",
-      "option": "combat_survival_report",
-      "show_for_babies": false,
-      "lines": [
-        "I have chased enough trouble from the flock to know when trouble has teeth.",
-        "I know the sound of everyone trying to get through one gate at once. I made it through.",
-        "I counted my steps back like I count heads at dusk.",
-        "A scattered mind is hard to gather. I managed it enough to get home.",
-        "The village gate felt like a pen after a long, bad storm.",
-        "I made it back with my heart running ahead of me.",
-        "Keeping calm is easier when no one is shouting. I did my best anyway.",
-        "I reached home and only then remembered to breathe properly.",
-        "When danger came close, nobody had time to sound brave first.",
-        "You learn a lot about a village when everyone hears the bell at once."
-      ],
-      "weight": 234
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "combat_survival_shepherd",
+                      "request":  "combat_survival_report",
+                      "option":  "combat_survival_report",
+                      "show_for_babies":  false,
+                      "lines":  [
+                                    "I have chased enough trouble from the flock to know when trouble has teeth.",
+                                    "I know the sound of everyone trying to get through one gate at once. I made it through.",
+                                    "I counted my steps back like I count heads at dusk.",
+                                    "A scattered mind is hard to gather. I managed it enough to get home.",
+                                    "The village gate felt like a pen after a long, bad storm.",
+                                    "I made it back with my heart running ahead of me.",
+                                    "Keeping calm is easier when no one is shouting. I did my best anyway.",
+                                    "I reached home and only then remembered to breathe properly.",
+                                    "When danger came close, nobody had time to sound brave first.",
+                                    "You learn a lot about a village when everyone hears the bell at once."
+                                ],
+                      "weight":  234
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.shepherd",
+                                  "section.lines"
+                              ]
+                 }
 }

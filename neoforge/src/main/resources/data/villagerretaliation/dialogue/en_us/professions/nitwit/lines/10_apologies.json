@@ -1,23 +1,31 @@
 {
-  "lines": [
-    {
-      "id": "apology_nitwit_wobbly",
-      "request": "apology",
-      "option": "apologize_for_harm",
-      "show_for_babies": false,
-      "lines": [
-        "That sounded sorry. I am still standing over here for a bit.",
-        "I accept the apology, but I am keeping one pocket full of suspicion.",
-        "That sounded like the right kind of sorry. I think.",
-        "I accept, but I am standing behind this idea of distance for now.",
-        "Okay. Try doing the good version of that next time.",
-        "I'll forgive a bit now and maybe another bit after lunch.",
-        "Words received. Suspicion still lightly worn.",
-        "Fine. I am putting the apology somewhere safe in my head.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
-      ],
-      "weight": 234
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "apology_nitwit_wobbly",
+                      "request":  "apology",
+                      "option":  "apologize_for_harm",
+                      "show_for_babies":  false,
+                      "lines":  [
+                                    "That sounded sorry. I am still standing over here for a bit.",
+                                    "I accept the apology, but I am keeping one pocket full of suspicion.",
+                                    "That sounded like the right kind of sorry. I think.",
+                                    "I accept, but I am standing behind this idea of distance for now.",
+                                    "Okay. Try doing the good version of that next time.",
+                                    "I\u0027ll forgive a bit now and maybe another bit after lunch.",
+                                    "Words received. Suspicion still lightly worn.",
+                                    "Fine. I am putting the apology somewhere safe in my head.",
+                                    "I was wrong. I would rather say it plainly than dress it up.",
+                                    "That came out sharper than it should have. I am sorry."
+                                ],
+                      "weight":  234
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.nitwit",
+                                  "section.lines"
+                              ]
+                 }
 }

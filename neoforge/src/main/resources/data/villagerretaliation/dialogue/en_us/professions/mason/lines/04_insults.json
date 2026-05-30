@@ -1,42 +1,50 @@
 {
-  "lines": [
-    {
-      "id": "mason_new_insult_gravel",
-      "request": "insult",
-      "weight": 18,
-      "lines": [
-        "That remark had all the strength of loose gravel.",
-        "I have swept up gravel with firmer opinions than that.",
-        "If that thought were mortar, the wall would already be down.",
-        "You walk in like trouble forgot to close the door behind it.",
-        "I have seen broken stonework with better instincts than you.",
-        "Careful. The village has long memories and very little patience today.",
-        "You are not as frightening as you think. That may be the problem.",
-        "If foolishness made noise, you would drown out the bell.",
-        "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
-      ]
-    },
-    {
-      "id": "mason_new_rude_weight",
-      "request": "insult",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "weight": 30,
-      "lines": [
-        "Your words carry weight, but not the useful kind.",
-        "You brought heavy talk and no foundation under it.",
-        "That kind of weight cracks floors, not arguments.",
-        "You walk in like trouble forgot to close the door behind it.",
-        "I have seen broken stonework with better instincts than you.",
-        "Careful. The village has long memories and very little patience today.",
-        "You are not as frightening as you think. That may be the problem.",
-        "If foolishness made noise, you would drown out the bell.",
-        "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "mason_new_insult_gravel",
+                      "request":  "insult",
+                      "weight":  18,
+                      "lines":  [
+                                    "That remark had all the strength of loose gravel.",
+                                    "I have swept up gravel with firmer opinions than that.",
+                                    "If that thought were mortar, the wall would already be down.",
+                                    "You walk in like trouble forgot to close the door behind it.",
+                                    "I have seen broken stonework with better instincts than you.",
+                                    "Careful. The village has long memories and very little patience today.",
+                                    "You are not as frightening as you think. That may be the problem.",
+                                    "If foolishness made noise, you would drown out the bell.",
+                                    "Do not test me just because I am speaking in complete sentences.",
+                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
+                                ]
+                  },
+                  {
+                      "id":  "mason_new_rude_weight",
+                      "request":  "insult",
+                      "dispositions":  [
+                                           "rude",
+                                           "hostile"
+                                       ],
+                      "weight":  30,
+                      "lines":  [
+                                    "Your words carry weight, but not the useful kind.",
+                                    "You brought heavy talk and no foundation under it.",
+                                    "That kind of weight cracks floors, not arguments.",
+                                    "You walk in like trouble forgot to close the door behind it.",
+                                    "I have seen broken stonework with better instincts than you.",
+                                    "Careful. The village has long memories and very little patience today.",
+                                    "You are not as frightening as you think. That may be the problem.",
+                                    "If foolishness made noise, you would drown out the bell.",
+                                    "Do not test me just because I am speaking in complete sentences.",
+                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
+                                ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.mason",
+                                  "section.lines"
+                              ]
+                 }
 }

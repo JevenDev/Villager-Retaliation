@@ -1,21 +1,29 @@
 {
-  "lines": [
-    {
-      "id": "librarian_new_insult_blank",
-      "request": "insult",
-      "weight": 18,
-      "lines": [
-        "That thought had too many blank pages.",
-        "I have seen bad sources with more sense than that.",
-        "Careful. Even ink looks softer than your manners right now.",
-        "You walk in like trouble forgot to close the door behind it.",
-        "I have seen broken record-keeping with better instincts than you.",
-        "Careful. The village has long memories and very little patience today.",
-        "You are not as frightening as you think. That may be the problem.",
-        "If foolishness made noise, you would drown out the bell.",
-        "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "librarian_new_insult_blank",
+                      "request":  "insult",
+                      "weight":  18,
+                      "lines":  [
+                                    "That thought had too many blank pages.",
+                                    "I have seen bad sources with more sense than that.",
+                                    "Careful. Even ink looks softer than your manners right now.",
+                                    "You walk in like trouble forgot to close the door behind it.",
+                                    "I have seen broken record-keeping with better instincts than you.",
+                                    "Careful. The village has long memories and very little patience today.",
+                                    "You are not as frightening as you think. That may be the problem.",
+                                    "If foolishness made noise, you would drown out the bell.",
+                                    "Do not test me just because I am speaking in complete sentences.",
+                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
+                                ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.librarian",
+                                  "section.lines"
+                              ]
+                 }
 }

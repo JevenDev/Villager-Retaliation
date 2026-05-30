@@ -1,144 +1,152 @@
 {
-  "lines": [
-    {
-      "id": "recruitment_left_behind_bamboo_jungle",
-      "request": "recruitment_followup",
-      "option": "recruitment_left_behind",
-      "show_for_babies": false,
-      "weight": 20,
-      "lines": [
-        "Don't leave me alone in the Bamboo Jungle. Everything rustles like it is sneaking up on me.",
-        "The Bamboo Jungle is too dense to lose sight of you in. I could barely tell which way was safe.",
-        "I was stuck in the Bamboo Jungle listening to every stalk creak and every branch snap.",
-        "If you disappear in a Bamboo Jungle, all I have left is noise and bad guesses.",
-        "The bamboo kept moving, and I could not tell what was wind and what was trouble.",
-        "Every direction looked the same once you were gone.",
-        "Please do not leave me somewhere that can hide you after three steps.",
-        "The Bamboo Jungle made every little sound feel too close.",
-        "I kept trying to see through the stalks, but the jungle was better at hiding things than I was at finding them.",
-        "I was alone in all that green noise, hoping the next rustle was you coming back."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "left_behind"
-          ],
-          "biome": "minecraft:bamboo_jungle"
-        }
-      ]
-    },
-    {
-      "id": "recruitment_left_behind_jungle",
-      "request": "recruitment_followup",
-      "option": "recruitment_left_behind",
-      "show_for_babies": false,
-      "weight": 20,
-      "lines": [
-        "Don't leave me in the Jungle. I cannot tell whether the next sound is leaves or teeth.",
-        "The Jungle is too thick to lose your guide in. I could barely see a safe way forward.",
-        "I was stranded in the Jungle with vines everywhere and no clear line back to you.",
-        "If you disappear in a Jungle, I am left with heat, noise, and no honest path.",
-        "The vines made every route feel slower than it should have been.",
-        "I kept hearing things move above me, beside me, and somewhere I could not see.",
-        "Please do not leave me somewhere that turns every step into a guess.",
-        "The Jungle was loud enough to hide danger and dense enough to hide you.",
-        "I could not tell if I should call out or stay quiet, and neither felt safe.",
-        "I was sweating, lost, and trying not to imagine what might be watching from the leaves."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "left_behind"
-          ],
-          "biome": "minecraft:jungle"
-        }
-      ]
-    },
-    {
-      "id": "recruitment_left_behind_mangrove_swamp",
-      "request": "recruitment_followup",
-      "option": "recruitment_left_behind",
-      "show_for_babies": false,
-      "weight": 20,
-      "lines": [
-        "Don't leave me in the Mangrove Swamp. Mud, roots, and shallow water slow everything down.",
-        "The Mangrove Swamp is too tangled to stand alone in with any confidence.",
-        "I waited in the Mangrove Swamp trying not to trip over roots while listening for danger.",
-        "If you disappear in a Mangrove Swamp, I am left ankle-deep in worry and swamp water.",
-        "The roots caught at my feet every time I tried to move.",
-        "I could not tell where the path ended and the swamp started.",
-        "Please do not leave me somewhere the ground argues with every step.",
-        "The mud made running feel impossible, which made waiting feel worse.",
-        "The Mangrove Swamp hid too much under the water and too much between the roots.",
-        "I was stuck in the muck, watching the trees and hoping you had not forgotten me."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "left_behind"
-          ],
-          "biome": "minecraft:mangrove_swamp"
-        }
-      ]
-    },
-    {
-      "id": "recruitment_left_behind_sparse_jungle",
-      "request": "recruitment_followup",
-      "option": "recruitment_left_behind",
-      "show_for_babies": false,
-      "weight": 20,
-      "lines": [
-        "Don't leave me in the Sparse Jungle. Fewer trees do not make it feel much safer.",
-        "The Sparse Jungle still has enough brush to hide trouble while I wait for you.",
-        "I stood in the Sparse Jungle trying to decide which rustle mattered most.",
-        "If you disappear in a Sparse Jungle, I am left with heat, brush, and too many maybes.",
-        "There was just enough open space to make me feel visible and just enough cover to make me nervous.",
-        "I kept looking between the trees, hoping one of them would give you back.",
-        "Please do not leave me somewhere that looks open but still hides too much.",
-        "The Sparse Jungle made every sound feel like it had somewhere to hide.",
-        "I could see farther than in a thick jungle, but not far enough to relax.",
-        "I was alone in the heat, listening to the brush and trying not to guess wrong."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "left_behind"
-          ],
-          "biome": "minecraft:sparse_jungle"
-        }
-      ]
-    },
-    {
-      "id": "recruitment_left_behind_swamp",
-      "request": "recruitment_followup",
-      "option": "recruitment_left_behind",
-      "show_for_babies": false,
-      "weight": 20,
-      "lines": [
-        "Don't leave me in the Swamp. Mud, water, and gloom make a miserable watch post.",
-        "The Swamp is too soggy and too murky to be standing alone in.",
-        "I waited in the Swamp trying not to trip into the water while I looked for you.",
-        "If you disappear in a Swamp, I am left wading through mud and bad feelings.",
-        "Every step made a sound I did not want anything else to hear.",
-        "The water was shallow enough to cross and deep enough to make me nervous.",
-        "Please do not leave me somewhere the ground feels half-finished.",
-        "The Swamp made everything smell wet, old, and unfriendly.",
-        "I kept watching the water, because I could not tell what was under it.",
-        "I was alone in the muck, hoping the next movement was you and not something worse."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "left_behind"
-          ],
-          "biome": "minecraft:swamp"
-        }
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "recruitment_left_behind_bamboo_jungle",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me alone in the Bamboo Jungle. Everything rustles like it is sneaking up on me.",
+                                    "The Bamboo Jungle is too dense to lose sight of you in. I could barely tell which way was safe.",
+                                    "I was stuck in the Bamboo Jungle listening to every stalk creak and every branch snap.",
+                                    "If you disappear in a Bamboo Jungle, all I have left is noise and bad guesses.",
+                                    "The bamboo kept moving, and I could not tell what was wind and what was trouble.",
+                                    "Every direction looked the same once you were gone.",
+                                    "Please do not leave me somewhere that can hide you after three steps.",
+                                    "The Bamboo Jungle made every little sound feel too close.",
+                                    "I kept trying to see through the stalks, but the jungle was better at hiding things than I was at finding them.",
+                                    "I was alone in all that green noise, hoping the next rustle was you coming back."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "left_behind"
+                                                           ],
+                                             "biome":  "minecraft:bamboo_jungle"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_jungle",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Jungle. I cannot tell whether the next sound is leaves or teeth.",
+                                    "The Jungle is too thick to lose your guide in. I could barely see a safe way forward.",
+                                    "I was stranded in the Jungle with vines everywhere and no clear line back to you.",
+                                    "If you disappear in a Jungle, I am left with heat, noise, and no honest path.",
+                                    "The vines made every route feel slower than it should have been.",
+                                    "I kept hearing things move above me, beside me, and somewhere I could not see.",
+                                    "Please do not leave me somewhere that turns every step into a guess.",
+                                    "The Jungle was loud enough to hide danger and dense enough to hide you.",
+                                    "I could not tell if I should call out or stay quiet, and neither felt safe.",
+                                    "I was sweating, lost, and trying not to imagine what might be watching from the leaves."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "left_behind"
+                                                           ],
+                                             "biome":  "minecraft:jungle"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_mangrove_swamp",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Mangrove Swamp. Mud, roots, and shallow water slow everything down.",
+                                    "The Mangrove Swamp is too tangled to stand alone in with any confidence.",
+                                    "I waited in the Mangrove Swamp trying not to trip over roots while listening for danger.",
+                                    "If you disappear in a Mangrove Swamp, I am left ankle-deep in worry and swamp water.",
+                                    "The roots caught at my feet every time I tried to move.",
+                                    "I could not tell where the path ended and the swamp started.",
+                                    "Please do not leave me somewhere the ground argues with every step.",
+                                    "The mud made running feel impossible, which made waiting feel worse.",
+                                    "The Mangrove Swamp hid too much under the water and too much between the roots.",
+                                    "I was stuck in the muck, watching the trees and hoping you had not forgotten me."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "left_behind"
+                                                           ],
+                                             "biome":  "minecraft:mangrove_swamp"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_sparse_jungle",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Sparse Jungle. Fewer trees do not make it feel much safer.",
+                                    "The Sparse Jungle still has enough brush to hide trouble while I wait for you.",
+                                    "I stood in the Sparse Jungle trying to decide which rustle mattered most.",
+                                    "If you disappear in a Sparse Jungle, I am left with heat, brush, and too many maybes.",
+                                    "There was just enough open space to make me feel visible and just enough cover to make me nervous.",
+                                    "I kept looking between the trees, hoping one of them would give you back.",
+                                    "Please do not leave me somewhere that looks open but still hides too much.",
+                                    "The Sparse Jungle made every sound feel like it had somewhere to hide.",
+                                    "I could see farther than in a thick jungle, but not far enough to relax.",
+                                    "I was alone in the heat, listening to the brush and trying not to guess wrong."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "left_behind"
+                                                           ],
+                                             "biome":  "minecraft:sparse_jungle"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_swamp",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Swamp. Mud, water, and gloom make a miserable watch post.",
+                                    "The Swamp is too soggy and too murky to be standing alone in.",
+                                    "I waited in the Swamp trying not to trip into the water while I looked for you.",
+                                    "If you disappear in a Swamp, I am left wading through mud and bad feelings.",
+                                    "Every step made a sound I did not want anything else to hear.",
+                                    "The water was shallow enough to cross and deep enough to make me nervous.",
+                                    "Please do not leave me somewhere the ground feels half-finished.",
+                                    "The Swamp made everything smell wet, old, and unfriendly.",
+                                    "I kept watching the water, because I could not tell what was under it.",
+                                    "I was alone in the muck, hoping the next movement was you and not something worse."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "left_behind"
+                                                           ],
+                                             "biome":  "minecraft:swamp"
+                                         }
+                                     ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.group.recruitment_left_behind",
+                                  "section.lines"
+                              ]
+                 }
 }

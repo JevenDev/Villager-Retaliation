@@ -1,68 +1,76 @@
 {
-  "lines": [
-    {
-      "id": "cleric_cured_recognition_warm",
-      "request": "cured_recognition",
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ],
-      "lines": [
-        "I remember the cure like a bell under <wavy>water</wavy>. You were there when it rang clear.",
-        "Whatever <pulse>mercy</pulse> found me, it came through your hands.",
-        "You helped pull me back when even my name felt far away.",
-        "I remember cold, hunger, and then your face cutting through the fog.",
-        "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
-        "Some part of me still listens for that old <shake>groan</shake>. I hate that part.",
-        "You helped me back. I may not say it gracefully, but I know what that means.",
-        "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
-        "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
-        "Do not make a ceremony of it. Just know I remember."
-      ],
-      "weight": 60
-    },
-    {
-      "id": "cleric_cured_recognition_confused",
-      "request": "cured_recognition",
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ],
-      "lines": [
-        "My memory kneels and trembles. I know you, but not cleanly.",
-        "I remember weakness, bitterness, gold, and then breath. The rest is <wavy>prayer smoke</wavy>.",
-        "The memory is rough around the edges, but your face stayed in it.",
-        "I remember cold, hunger, and then your face cutting through the fog.",
-        "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
-        "Some part of me still listens for that old <shake>groan</shake>. I hate that part.",
-        "You helped me back. I may not say it gracefully, but I know what that means.",
-        "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
-        "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
-        "Do not make a ceremony of it. Just know I remember."
-      ],
-      "weight": 60
-    },
-    {
-      "id": "cleric_cured_recognition_uneasy_1",
-      "request": "cured_recognition",
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "weight": 30,
-      "lines": [
-        "I remember you from the edge of a <color:dark_purple>curse</color>. Forgive me if my thanks sounds afraid.",
-        "I know you helped. I also remember why my hands still shake.",
-        "The cure left <wavy>echoes</wavy> behind. Stand where I can breathe around them.",
-        "You walk in like trouble forgot to close the door behind it.",
-        "I have seen broken remedies with better instincts than you.",
-        "Careful. The village has long memories and very little patience today.",
-        "You are not as frightening as you think. That may be the problem.",
-        "If foolishness made noise, you would drown out the bell.",
-        "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "cleric_cured_recognition_warm",
+                      "request":  "cured_recognition",
+                      "dispositions":  [
+                                           "friendly",
+                                           "respectful"
+                                       ],
+                      "lines":  [
+                                    "I remember the cure like a bell under \u003cwavy\u003ewater\u003c/wavy\u003e. You were there when it rang clear.",
+                                    "Whatever \u003cpulse\u003emercy\u003c/pulse\u003e found me, it came through your hands.",
+                                    "You helped pull me back when even my name felt far away.",
+                                    "I remember cold, hunger, and then your face cutting through the fog.",
+                                    "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
+                                    "Some part of me still listens for that old \u003cshake\u003egroan\u003c/shake\u003e. I hate that part.",
+                                    "You helped me back. I may not say it gracefully, but I know what that means.",
+                                    "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
+                                    "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
+                                    "Do not make a ceremony of it. Just know I remember."
+                                ],
+                      "weight":  60
+                  },
+                  {
+                      "id":  "cleric_cured_recognition_confused",
+                      "request":  "cured_recognition",
+                      "dispositions":  [
+                                           "neutral",
+                                           "cautious"
+                                       ],
+                      "lines":  [
+                                    "My memory kneels and trembles. I know you, but not cleanly.",
+                                    "I remember weakness, bitterness, gold, and then breath. The rest is \u003cwavy\u003eprayer smoke\u003c/wavy\u003e.",
+                                    "The memory is rough around the edges, but your face stayed in it.",
+                                    "I remember cold, hunger, and then your face cutting through the fog.",
+                                    "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
+                                    "Some part of me still listens for that old \u003cshake\u003egroan\u003c/shake\u003e. I hate that part.",
+                                    "You helped me back. I may not say it gracefully, but I know what that means.",
+                                    "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
+                                    "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
+                                    "Do not make a ceremony of it. Just know I remember."
+                                ],
+                      "weight":  60
+                  },
+                  {
+                      "id":  "cleric_cured_recognition_uneasy_1",
+                      "request":  "cured_recognition",
+                      "dispositions":  [
+                                           "rude",
+                                           "hostile",
+                                           "fearful"
+                                       ],
+                      "weight":  30,
+                      "lines":  [
+                                    "I remember you from the edge of a \u003ccolor:dark_purple\u003ecurse\u003c/color\u003e. Forgive me if my thanks sounds afraid.",
+                                    "I know you helped. I also remember why my hands still shake.",
+                                    "The cure left \u003cwavy\u003eechoes\u003c/wavy\u003e behind. Stand where I can breathe around them.",
+                                    "You walk in like trouble forgot to close the door behind it.",
+                                    "I have seen broken remedies with better instincts than you.",
+                                    "Careful. The village has long memories and very little patience today.",
+                                    "You are not as frightening as you think. That may be the problem.",
+                                    "If foolishness made noise, you would drown out the bell.",
+                                    "Do not test me just because I am speaking in complete sentences.",
+                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
+                                ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.cleric",
+                                  "section.lines"
+                              ]
+                 }
 }

@@ -1,23 +1,31 @@
 {
-  "lines": [
-    {
-      "id": "combat_survival_armorer",
-      "request": "combat_survival_report",
-      "option": "combat_survival_report",
-      "show_for_babies": false,
-      "lines": [
-        "A few new dents, no missing plates. That's a victory I can repair.",
-        "Every buckle held except the one in my knees. I'll forgive that one.",
-        "My hands still keep checking straps that are already there. I made it back, though.",
-        "The plates held, the straps held, and somehow I held too.",
-        "I'll hammer out the dents tomorrow. Tonight I am grateful there is a tomorrow.",
-        "Armor can turn a blow, but it can't quiet the heart after. I am home, at least.",
-        "I counted every buckle at the door. All present. That felt like a blessing.",
-        "A few marks on the metal, a few in my memory. Nothing missing.",
-        "When danger came close, nobody had time to sound brave first.",
-        "You learn a lot about a village when everyone hears the bell at once."
-      ],
-      "weight": 234
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "combat_survival_armorer",
+                      "request":  "combat_survival_report",
+                      "option":  "combat_survival_report",
+                      "show_for_babies":  false,
+                      "lines":  [
+                                    "A few new dents, no missing plates. That\u0027s a victory I can repair.",
+                                    "Every buckle held except the one in my knees. I\u0027ll forgive that one.",
+                                    "My hands still keep checking straps that are already there. I made it back, though.",
+                                    "The plates held, the straps held, and somehow I held too.",
+                                    "I\u0027ll hammer out the dents tomorrow. Tonight I am grateful there is a tomorrow.",
+                                    "Armor can turn a blow, but it can\u0027t quiet the heart after. I am home, at least.",
+                                    "I counted every buckle at the door. All present. That felt like a blessing.",
+                                    "A few marks on the metal, a few in my memory. Nothing missing.",
+                                    "When danger came close, nobody had time to sound brave first.",
+                                    "You learn a lot about a village when everyone hears the bell at once."
+                                ],
+                      "weight":  234
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.armorer",
+                                  "section.lines"
+                              ]
+                 }
 }

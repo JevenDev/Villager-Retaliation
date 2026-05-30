@@ -1,23 +1,31 @@
 {
-  "lines": [
-    {
-      "id": "apology_librarian",
-      "request": "apology",
-      "option": "apologize_for_harm",
-      "show_for_babies": false,
-      "lines": [
-        "I'll file that apology carefully. The follow-up is the part worth reading.",
-        "I'll not erase the record. I may add this to it.",
-        "Your apology is noted. The revision will be in your behavior.",
-        "I dislike repeat offenses in any edition.",
-        "Words can clarify. They can't replace the missing page.",
-        "I'll not close the book on you yet. Don't make me regret the bookmark.",
-        "The statement is clear. The evidence must follow.",
-        "I accept the correction. Now avoid making an errata list.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
-      ],
-      "weight": 234
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "apology_librarian",
+                      "request":  "apology",
+                      "option":  "apologize_for_harm",
+                      "show_for_babies":  false,
+                      "lines":  [
+                                    "I\u0027ll file that apology carefully. The follow-up is the part worth reading.",
+                                    "I\u0027ll not erase the record. I may add this to it.",
+                                    "Your apology is noted. The revision will be in your behavior.",
+                                    "I dislike repeat offenses in any edition.",
+                                    "Words can clarify. They can\u0027t replace the missing page.",
+                                    "I\u0027ll not close the book on you yet. Don\u0027t make me regret the bookmark.",
+                                    "The statement is clear. The evidence must follow.",
+                                    "I accept the correction. Now avoid making an errata list.",
+                                    "I was wrong. I would rather say it plainly than dress it up.",
+                                    "That came out sharper than it should have. I am sorry."
+                                ],
+                      "weight":  234
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.librarian",
+                                  "section.lines"
+                              ]
+                 }
 }

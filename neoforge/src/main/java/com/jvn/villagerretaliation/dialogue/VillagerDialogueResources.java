@@ -40,7 +40,7 @@ public final class VillagerDialogueResources {
     private static final Set<String> ROOT_KEYS = Set.of(
             "replace", "replace_sections", "replace_options", "replace_lines", "replace_messages",
             "replace_openings", "replace_closings", "replace_pacify",
-            "options", "lines", "messages", "openings", "closings", "pacify",
+            "options", "lines", "messages", "openings", "closings", "pacify", "metadata",
             "notifications", "entries", "preferences", "rewards", "payments");
     private static final Set<String> OPTION_KEYS = Set.of(
             "id", "label", "type", "request", "order", "professions", "dispositions",
@@ -443,6 +443,7 @@ public final class VillagerDialogueResources {
             Map<String, ResourceLocation> messageSources) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            DialogueEntryMetadata rootMetadata = DialogueEntryMetadata.read(location, "dialogue", "file root", root);
             if (readBoolean(root, "replace", false)) {
                 clearAllSections(
                         lines,
@@ -481,6 +482,7 @@ public final class VillagerDialogueResources {
                             location,
                             root,
                             singleSection.get(),
+                            rootMetadata,
                             defaultProfessionsFor(location, locale),
                             lines,
                             openings,
@@ -505,9 +507,9 @@ public final class VillagerDialogueResources {
                     "payments", "data/villagerretaliation/pacification/<file>.json"));
             DatapackDiagnostics.warnUnknownRootKeys(location, "dialogue", root, ROOT_KEYS);
             Set<VillagerProfession> defaultProfessions = defaultProfessionsFor(location, locale);
-            readDialogueOptions(location, root, defaultProfessions, options, optionSources);
+            readDialogueOptions(location, root, rootMetadata, defaultProfessions, options, optionSources);
             readKeyedMessages(location, root, defaultProfessions, messages, messageSources);
-            readDialogueLines(location, root, defaultProfessions, lines, lineSources);
+            readDialogueLines(location, root, rootMetadata, defaultProfessions, lines, lineSources);
             readConversationLines(location, root, "openings", defaultProfessions, openings, openingSources);
             readConversationLines(location, root, "closings", defaultProfessions, closings, closingSources);
             readPacifyLines(location, root, defaultProfessions, pacifyLines, pacifySources);
@@ -621,6 +623,7 @@ public final class VillagerDialogueResources {
             ResourceLocation location,
             JsonObject root,
             DialogueFileSection section,
+            DialogueEntryMetadata rootMetadata,
             Set<VillagerProfession> defaultProfessions,
             Map<String, DialogueLine> lines,
             Map<String, ConversationLine> openings,
@@ -653,8 +656,8 @@ public final class VillagerDialogueResources {
         syntheticRoot.add(section.key, entries);
 
         switch (section) {
-            case OPTIONS -> readDialogueOptions(location, syntheticRoot, defaultProfessions, options, optionSources);
-            case LINES -> readDialogueLines(location, syntheticRoot, defaultProfessions, lines, lineSources);
+            case OPTIONS -> readDialogueOptions(location, syntheticRoot, rootMetadata, defaultProfessions, options, optionSources);
+            case LINES -> readDialogueLines(location, syntheticRoot, rootMetadata, defaultProfessions, lines, lineSources);
             case MESSAGES -> readKeyedMessages(location, syntheticRoot, defaultProfessions, messages, messageSources);
             case OPENINGS -> readConversationLines(location, syntheticRoot, "openings", defaultProfessions, openings, openingSources);
             case CLOSINGS -> readConversationLines(location, syntheticRoot, "closings", defaultProfessions, closings, closingSources);
@@ -773,6 +776,7 @@ public final class VillagerDialogueResources {
     private static void readDialogueOptions(
             ResourceLocation location,
             JsonObject root,
+            DialogueEntryMetadata rootMetadata,
             Set<VillagerProfession> defaultProfessions,
             Map<String, DialogueOptionDefinition> options,
             Map<String, ResourceLocation> optionSources) {
@@ -859,7 +863,7 @@ public final class VillagerDialogueResources {
             putEntry(location, "dialogue option", resolvedId, new DialogueOptionDefinition(
                     resolvedId,
                     location,
-                    DialogueEntryMetadata.read(location, "dialogue option", context, entry),
+                    rootMetadata.merge(DialogueEntryMetadata.read(location, "dialogue option", context, entry)),
                     DialogueQuestAction.read(location, context, entry),
                     DialogueTreeReference.EMPTY,
                     label,
@@ -974,6 +978,7 @@ public final class VillagerDialogueResources {
     private static void readDialogueLines(
             ResourceLocation location,
             JsonObject root,
+            DialogueEntryMetadata rootMetadata,
             Set<VillagerProfession> defaultProfessions,
             Map<String, DialogueLine> lines,
             Map<String, ResourceLocation> lineSources) {
@@ -1017,7 +1022,7 @@ public final class VillagerDialogueResources {
                     entryLines
             );
             builder.source(location);
-            builder.metadata(DialogueEntryMetadata.read(location, "dialogue line", context, entry));
+            builder.metadata(rootMetadata.merge(DialogueEntryMetadata.read(location, "dialogue line", context, entry)));
             builder.textKey(textKey);
             applyDialogueOptions(location, context, builder, entry, defaultProfessions);
             putEntry(location, "dialogue line", resolvedId, builder.build(), lines, lineSources);

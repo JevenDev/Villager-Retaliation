@@ -1,61 +1,69 @@
 {
-  "pacify": [
-    {
-      "id": "cartographer_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "weight": 26,
-      "lines": [
-        "Fine. I'll mark this as settled, lightly, in pencil.",
-        "Fine. I'll set this down before it gets heavier.",
-        "Fine. I can step back, but do not make me regret it.",
-        "Fine. I can let this cool, but do not mistake calm for forgetting.",
-        "That helps. Keep your hands peaceful and we may still end this properly.",
-        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-        "You are short. A nervous apology does not settle a public mistake.",
-        "No. I am too angry to bargain while you are standing there like that.",
-        "Put the weapon away first. I will not discuss peace with steel in my face.",
-        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
-      ]
-    },
-    {
-      "id": "cartographer_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "weight": 26,
-      "lines": [
-        "Your count is off. The route to peace is {emerald_cost} {emeralds}.",
-        "That's short of the full repair. Bring {emerald_cost} {emeralds}.",
-        "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
-        "Fine. I can let this cool, but do not mistake calm for forgetting.",
-        "That helps. Keep your hands peaceful and we may still end this properly.",
-        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-        "You are short. A nervous apology does not settle a public mistake.",
-        "No. I am too angry to bargain while you are standing there like that.",
-        "Put the weapon away first. I will not discuss peace with steel in my face.",
-        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
-      ]
-    },
-    {
-      "id": "cartographer_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "weight": 26,
-      "lines": [
-        "No. Every path back to trust is closed for now.",
-        "No. Some damage has to cool before payment matters.",
-        "No. Keep {payment_items}; trust is not ready to trade.",
-        "Fine. I can let this cool, but do not mistake calm for forgetting.",
-        "That helps. Keep your hands peaceful and we may still end this properly.",
-        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-        "You are short. A nervous apology does not settle a public mistake.",
-        "No. I am too angry to bargain while you are standing there like that.",
-        "Put the weapon away first. I will not discuss peace with steel in my face.",
-        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
-      ]
-    }
-  ]
+    "pacify":  [
+                   {
+                       "id":  "cartographer_pacify_success",
+                       "outcomes":  [
+                                        "success"
+                                    ],
+                       "weight":  26,
+                       "lines":  [
+                                     "Fine. I\u0027ll mark this as settled, lightly, in pencil.",
+                                     "Fine. I\u0027ll set this down before it gets heavier.",
+                                     "Fine. I can step back, but do not make me regret it.",
+                                     "Fine. I can let this cool, but do not mistake calm for forgetting.",
+                                     "That helps. Keep your hands peaceful and we may still end this properly.",
+                                     "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+                                     "You are short. A nervous apology does not settle a public mistake.",
+                                     "No. I am too angry to bargain while you are standing there like that.",
+                                     "Put the weapon away first. I will not discuss peace with steel in my face.",
+                                     "This can still end quietly. Do not make me \u003cshake\u003eregret\u003c/shake\u003e offering that chance."
+                                 ]
+                   },
+                   {
+                       "id":  "cartographer_pacify_short",
+                       "outcomes":  [
+                                        "not_enough_emeralds"
+                                    ],
+                       "weight":  26,
+                       "lines":  [
+                                     "Your count is off. The route to peace is {emerald_cost} {emeralds}.",
+                                     "That\u0027s short of the full repair. Bring {emerald_cost} {emeralds}.",
+                                     "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
+                                     "Fine. I can let this cool, but do not mistake calm for forgetting.",
+                                     "That helps. Keep your hands peaceful and we may still end this properly.",
+                                     "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+                                     "You are short. A nervous apology does not settle a public mistake.",
+                                     "No. I am too angry to bargain while you are standing there like that.",
+                                     "Put the weapon away first. I will not discuss peace with steel in my face.",
+                                     "This can still end quietly. Do not make me \u003cshake\u003eregret\u003c/shake\u003e offering that chance."
+                                 ]
+                   },
+                   {
+                       "id":  "cartographer_pacify_blocked",
+                       "outcomes":  [
+                                        "blocked_by_reputation"
+                                    ],
+                       "weight":  26,
+                       "lines":  [
+                                     "No. Every path back to trust is closed for now.",
+                                     "No. Some damage has to cool before payment matters.",
+                                     "No. Keep {payment_items}; trust is not ready to trade.",
+                                     "Fine. I can let this cool, but do not mistake calm for forgetting.",
+                                     "That helps. Keep your hands peaceful and we may still end this properly.",
+                                     "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+                                     "You are short. A nervous apology does not settle a public mistake.",
+                                     "No. I am too angry to bargain while you are standing there like that.",
+                                     "Put the weapon away first. I will not discuss peace with steel in my face.",
+                                     "This can still end quietly. Do not make me \u003cshake\u003eregret\u003c/shake\u003e offering that chance."
+                                 ]
+                   }
+               ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.cartographer",
+                                  "section.pacify"
+                              ]
+                 }
 }

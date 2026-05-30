@@ -1,126 +1,134 @@
 {
-    "closings": [
-        {
-            "id": "global_friendly_closing",
-            "show_for_babies": false,
-            "dispositions": [
-                "respectful",
-                "friendly"
-            ],
-            "lines": [
-                "Safe <pulse>travels</pulse>. Come by whenever you like.",
-                "Take your time out there. I will be glad to see you again.",
-                "<pulse>Catch you later</pulse>. Keep safe on the road.",
-                "Do not wander too far without a good meal in you.",
-                "Good talking with you. Truly.",
-                "May the road treat you kindly.",
-                "You have a steady step today. Hold onto that.",
-                "I have plenty waiting on me, but I <green>enjoyed</green> this.",
-                "Thanks for stopping a while. It is good to share the time.",
-                "Until <pulse>next time</pulse>, walk easy and keep a <wave>warm</wave> fire nearby."
-            ]
-        },
-        {
-            "id": "global_neutral_closing",
-            "show_for_babies": false,
-            "dispositions": [
-                "neutral",
-                "cautious"
-            ],
-            "lines": [
-                "Until next time.",
-                "That will do for now, I think.",
-                "We can speak again another day.",
-                "I have a few things to finish.",
-                "I appreciate the talk.",
-                "<pulse>Take care</pulse>. Come back when you need something.",
-                "That is enough chatter for now.",
-                "Thank you for the time.",
-                "I will be <wave>around</wave>, <i>if</i> you need me.",
-                "Be well until we meet again."
-            ]
-        },
-        {
-            "id": "global_hostile_closing",
-            "show_for_babies": false,
-            "dispositions": [
-                "rude",
-                "hostile",
-                "fearful"
-            ],
-            "lines": [
-                "That is <i>enough</i> for now.",
-                "We are finished here.",
-                "I have said enough.",
-                "Let us <pulse>not drag this out</pulse>.",
-                "I am done for today.",
-                "This conversation is over.",
-                "No more words. Not now.",
-                "We can leave this for another time.",
-                "I need some distance.",
-                "This is where we stop."
-            ]
-        },
-        {
-            "id": "baby_friendly_closing",
-            "show_for_adults": false,
-            "dispositions": [
-                "respectful",
-                "friendly"
-            ],
-            "lines": [
-                "<jump>Bye!</jump> Come back later!",
-                "Bye! You can visit again.",
-                "Goodbye! I am going to <pulse>play</pulse> now.",
-                "See you later!",
-                "Alright, I am off to run and <jump>jump</jump>!",
-                "Come back when you are done with your game.",
-                "I will be here when you come back.",
-                "Goodbye! Do not be gone too long.",
-                "Okay, I am going to do something fun now.",
-                "Go on now. I will see you soon!"
-            ]
-        },
-        {
-            "id": "baby_cautious_closing",
-            "show_for_adults": false,
-            "dispositions": [
-                "neutral",
-                "cautious",
-                "rude"
-            ],
-            "lines": [
-                "Okay. Goodbye.",
-                "Okay. I am <pulse>done</pulse> talking now.",
-                "Goodbye. I am going over there.",
-                "Goodbye now. I need to stay busy.",
-                "Okay, I am done for a while.",
-                "I am going to the other side of the square.",
-                "I will see you again soon. Maybe.",
-                "Alright, that is all.",
-                "Time to go do my chores.",
-                "Goodbye! I am heading <wave>over there</wave> now."
-            ]
-        },
-        {
-            "id": "baby_afraid_closing",
-            "show_for_adults": false,
-            "dispositions": [
-                "hostile",
-                "fearful"
-            ],
-            "lines": [
-                "I am going to find someone <pulse>older</pulse>.",
-                "I am going back where it feels safer.",
-                "I need to find a grown-up now.",
-                "I am heading somewhere safer.",
-                "I think I should stay close to people I trust.",
-                "I am going to the grown-ups' side now.",
-                "I do not want to be alone right now.",
-                "I am leaving so I can breathe easier.",
-                "I will come back when I feel braver.",
-                "<i>I am going where the crowd is.</i>"
-            ]
-        }
-    ]
+    "closings":  [
+                     {
+                         "id":  "global_friendly_closing",
+                         "show_for_babies":  false,
+                         "dispositions":  [
+                                              "respectful",
+                                              "friendly"
+                                          ],
+                         "lines":  [
+                                       "Safe \u003cpulse\u003etravels\u003c/pulse\u003e. Come by whenever you like.",
+                                       "Take your time out there. I will be glad to see you again.",
+                                       "\u003cpulse\u003eCatch you later\u003c/pulse\u003e. Keep safe on the road.",
+                                       "Do not wander too far without a good meal in you.",
+                                       "Good talking with you. Truly.",
+                                       "May the road treat you kindly.",
+                                       "You have a steady step today. Hold onto that.",
+                                       "I have plenty waiting on me, but I \u003cgreen\u003eenjoyed\u003c/green\u003e this.",
+                                       "Thanks for stopping a while. It is good to share the time.",
+                                       "Until \u003cpulse\u003enext time\u003c/pulse\u003e, walk easy and keep a \u003cwave\u003ewarm\u003c/wave\u003e fire nearby."
+                                   ]
+                     },
+                     {
+                         "id":  "global_neutral_closing",
+                         "show_for_babies":  false,
+                         "dispositions":  [
+                                              "neutral",
+                                              "cautious"
+                                          ],
+                         "lines":  [
+                                       "Until next time.",
+                                       "That will do for now, I think.",
+                                       "We can speak again another day.",
+                                       "I have a few things to finish.",
+                                       "I appreciate the talk.",
+                                       "\u003cpulse\u003eTake care\u003c/pulse\u003e. Come back when you need something.",
+                                       "That is enough chatter for now.",
+                                       "Thank you for the time.",
+                                       "I will be \u003cwave\u003earound\u003c/wave\u003e, \u003ci\u003eif\u003c/i\u003e you need me.",
+                                       "Be well until we meet again."
+                                   ]
+                     },
+                     {
+                         "id":  "global_hostile_closing",
+                         "show_for_babies":  false,
+                         "dispositions":  [
+                                              "rude",
+                                              "hostile",
+                                              "fearful"
+                                          ],
+                         "lines":  [
+                                       "That is \u003ci\u003eenough\u003c/i\u003e for now.",
+                                       "We are finished here.",
+                                       "I have said enough.",
+                                       "Let us \u003cpulse\u003enot drag this out\u003c/pulse\u003e.",
+                                       "I am done for today.",
+                                       "This conversation is over.",
+                                       "No more words. Not now.",
+                                       "We can leave this for another time.",
+                                       "I need some distance.",
+                                       "This is where we stop."
+                                   ]
+                     },
+                     {
+                         "id":  "baby_friendly_closing",
+                         "show_for_adults":  false,
+                         "dispositions":  [
+                                              "respectful",
+                                              "friendly"
+                                          ],
+                         "lines":  [
+                                       "\u003cjump\u003eBye!\u003c/jump\u003e Come back later!",
+                                       "Bye! You can visit again.",
+                                       "Goodbye! I am going to \u003cpulse\u003eplay\u003c/pulse\u003e now.",
+                                       "See you later!",
+                                       "Alright, I am off to run and \u003cjump\u003ejump\u003c/jump\u003e!",
+                                       "Come back when you are done with your game.",
+                                       "I will be here when you come back.",
+                                       "Goodbye! Do not be gone too long.",
+                                       "Okay, I am going to do something fun now.",
+                                       "Go on now. I will see you soon!"
+                                   ]
+                     },
+                     {
+                         "id":  "baby_cautious_closing",
+                         "show_for_adults":  false,
+                         "dispositions":  [
+                                              "neutral",
+                                              "cautious",
+                                              "rude"
+                                          ],
+                         "lines":  [
+                                       "Okay. Goodbye.",
+                                       "Okay. I am \u003cpulse\u003edone\u003c/pulse\u003e talking now.",
+                                       "Goodbye. I am going over there.",
+                                       "Goodbye now. I need to stay busy.",
+                                       "Okay, I am done for a while.",
+                                       "I am going to the other side of the square.",
+                                       "I will see you again soon. Maybe.",
+                                       "Alright, that is all.",
+                                       "Time to go do my chores.",
+                                       "Goodbye! I am heading \u003cwave\u003eover there\u003c/wave\u003e now."
+                                   ]
+                     },
+                     {
+                         "id":  "baby_afraid_closing",
+                         "show_for_adults":  false,
+                         "dispositions":  [
+                                              "hostile",
+                                              "fearful"
+                                          ],
+                         "lines":  [
+                                       "I am going to find someone \u003cpulse\u003eolder\u003c/pulse\u003e.",
+                                       "I am going back where it feels safer.",
+                                       "I need to find a grown-up now.",
+                                       "I am heading somewhere safer.",
+                                       "I think I should stay close to people I trust.",
+                                       "I am going to the grown-ups\u0027 side now.",
+                                       "I do not want to be alone right now.",
+                                       "I am leaving so I can breathe easier.",
+                                       "I will come back when I feel braver.",
+                                       "\u003ci\u003eI am going where the crowd is.\u003c/i\u003e"
+                                   ]
+                     }
+                 ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.global",
+                                  "section.closings"
+                              ]
+                 }
 }

@@ -1,80 +1,87 @@
 {
-  "lines": [
-    {
-      "id": "cleric_share_story_meadow",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:meadow",
-      "lines": [
-        "{target}? Gentle ground can make travelers careless. I would keep milk and bottles ready.",
-        "If anyone heads for Meadow, tell them: Rest there, but do not forget night comes. I will be at the brewing stand.",
-        "Flowers and bees do not bar the dark. I'll remember that when I set out the bottles.",
-        "Meadow is no small story. Some hurts reach deeper than skin.",
-        "I'll remember Meadow as soft grass that still needs a lantern. I'll keep a remedy close.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "cleric_share_story_stony_peaks",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:stony_peaks",
-      "lines": [
-        "{target}? Stone peaks make every fall honest. I would keep milk and bottles ready.",
-        "If anyone heads for Stony Peaks, tell them: Bring blocks and stop before your legs shake. I will be at the brewing stand.",
-        "Bare rock gives little cover and no softness. I'll remember that when I set out the bottles.",
-        "Stony Peaks is no small story. Some hurts reach deeper than skin.",
-        "I'll remember Stony Peaks as high stone with hard answers. I'll keep a remedy close.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "cleric_share_story_windswept_gravelly_hills",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:windswept_gravelly_hills",
-      "lines": [
-        "{target}? Gravel moves when you most need it still. I would keep milk and bottles ready.",
-        "If anyone heads for Windswept Gravelly Hills, tell them: Test every slope before trusting it. I will be at the brewing stand.",
-        "Loose stone tells lies under boots. I'll remember that when I set out the bottles.",
-        "Windswept Gravelly Hills is no small story. Some hurts reach deeper than skin.",
-        "I will remember Windswept Gravelly Hills as windy hills that slide under pressure. I will keep a remedy close.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "cleric_share_story_windswept_hills",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:windswept_hills",
-      "lines": [
-        "{target}? Hard wind turns every edge into advice. I would keep milk and bottles ready.",
-        "If anyone heads for Windswept Hills, tell them: Keep low and do not race the mountain. I will be at the brewing stand.",
-        "Clouds move fast up there and so can mistakes. I'll remember that when I set out the bottles.",
-        "Windswept Hills is no small story. Some hurts reach deeper than skin.",
-        "I'll remember Windswept Hills as high rough land that talks in gusts. I'll keep a remedy close.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "cleric_share_story_meadow",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:meadow",
+                      "lines":  [
+                                    "{target}? Gentle ground can make travelers careless. I would keep milk and bottles ready.",
+                                    "If anyone heads for Meadow, tell them: Rest there, but do not forget night comes. I will be at the brewing stand.",
+                                    "Flowers and bees do not bar the dark. I\u0027ll remember that when I set out the bottles.",
+                                    "Meadow is no small story. Some hurts reach deeper than skin.",
+                                    "I\u0027ll remember Meadow as soft grass that still needs a lantern. I\u0027ll keep a remedy close.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "cleric_share_story_stony_peaks",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:stony_peaks",
+                      "lines":  [
+                                    "{target}? Stone peaks make every fall honest. I would keep milk and bottles ready.",
+                                    "If anyone heads for Stony Peaks, tell them: Bring blocks and stop before your legs shake. I will be at the brewing stand.",
+                                    "Bare rock gives little cover and no softness. I\u0027ll remember that when I set out the bottles.",
+                                    "Stony Peaks is no small story. Some hurts reach deeper than skin.",
+                                    "I\u0027ll remember Stony Peaks as high stone with hard answers. I\u0027ll keep a remedy close.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "cleric_share_story_windswept_gravelly_hills",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:windswept_gravelly_hills",
+                      "lines":  [
+                                    "{target}? Gravel moves when you most need it still. I would keep milk and bottles ready.",
+                                    "If anyone heads for Windswept Gravelly Hills, tell them: Test every slope before trusting it. I will be at the brewing stand.",
+                                    "Loose stone tells lies under boots. I\u0027ll remember that when I set out the bottles.",
+                                    "Windswept Gravelly Hills is no small story. Some hurts reach deeper than skin.",
+                                    "I will remember Windswept Gravelly Hills as windy hills that slide under pressure. I will keep a remedy close.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "cleric_share_story_windswept_hills",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:windswept_hills",
+                      "lines":  [
+                                    "{target}? Hard wind turns every edge into advice. I would keep milk and bottles ready.",
+                                    "If anyone heads for Windswept Hills, tell them: Keep low and do not race the mountain. I will be at the brewing stand.",
+                                    "Clouds move fast up there and so can mistakes. I\u0027ll remember that when I set out the bottles.",
+                                    "Windswept Hills is no small story. Some hurts reach deeper than skin.",
+                                    "I\u0027ll remember Windswept Hills as high rough land that talks in gusts. I\u0027ll keep a remedy close.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "section.lines"
+                              ]
+                 }
 }

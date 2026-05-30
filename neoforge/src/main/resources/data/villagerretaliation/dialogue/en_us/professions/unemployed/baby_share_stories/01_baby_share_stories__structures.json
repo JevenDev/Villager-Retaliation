@@ -1,361 +1,368 @@
 {
-  "lines": [
-    {
-      "id": "baby_share_story_ruined_portal_jungle",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:ruined_portal_jungle",
-      "lines": [
-        "You went to {target}? I am glad you came back. Jungle Ruined Portal sounds too big for me.",
-        "Jungle Ruined Portal sounds scary because vines can hide lava as well as stone. I would stay near a grown-up.",
-        "If I saw Jungle Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Jungle Ruined Portal from the safe part, where you got home.",
-        "I am not going to Jungle Ruined Portal. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_ruined_portal_mountain",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:ruined_portal_mountain",
-      "lines": [
-        "You went to {target}? I am glad you came back. Mountain Ruined Portal sounds too big for me.",
-        "Mountain Ruined Portal sounds scary because broken obsidian near cliffs makes bad footing worse. I would stay near a grown-up.",
-        "If I saw Mountain Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Mountain Ruined Portal from the safe part, where you got home.",
-        "I am not going to Mountain Ruined Portal. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_ruined_portal_nether",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:ruined_portal_nether",
-      "lines": [
-        "You went to {target}? I am glad you came back. Nether Ruined Portal sounds too big for me.",
-        "Nether Ruined Portal sounds scary because a broken portal in the Nether still feels too awake. I would stay near a grown-up.",
-        "If I saw Nether Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Nether Ruined Portal from the safe part, where you got home.",
-        "I am not going to Nether Ruined Portal. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_ruined_portal_ocean",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:ruined_portal_ocean",
-      "lines": [
-        "You went to {target}? I am glad you came back. Ocean Ruined Portal sounds too big for me.",
-        "Ocean Ruined Portal sounds scary because lava stone under water makes no honest sense. I would stay near a grown-up.",
-        "If I saw Ocean Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Ocean Ruined Portal from the safe part, where you got home.",
-        "I am not going to Ocean Ruined Portal. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_ruined_portal_swamp",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:ruined_portal_swamp",
-      "lines": [
-        "You went to {target}? I am glad you came back. Swamp Ruined Portal sounds too big for me.",
-        "Swamp Ruined Portal sounds scary because mud, vines, and Nether stone all grab at your feet. I would stay near a grown-up.",
-        "If I saw Swamp Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Swamp Ruined Portal from the safe part, where you got home.",
-        "I am not going to Swamp Ruined Portal. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_shipwreck",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:shipwreck",
-      "lines": [
-        "You went to {target}? I am glad you came back. Shipwreck sounds too big for me.",
-        "Shipwreck sounds scary because broken planks underwater snag the careless. I would stay near a grown-up.",
-        "If I saw Shipwreck, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Shipwreck from the safe part, where you got home.",
-        "I am not going to Shipwreck. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_shipwreck_beached",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:shipwreck_beached",
-      "lines": [
-        "You went to {target}? I am glad you came back. Beached Shipwreck sounds too big for me.",
-        "Beached Shipwreck sounds scary because a ship on land already lost one argument. I would stay near a grown-up.",
-        "If I saw Beached Shipwreck, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Beached Shipwreck from the safe part, where you got home.",
-        "I am not going to Beached Shipwreck. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_stronghold",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:stronghold",
-      "lines": [
-        "You went to {target}? I am glad you came back. Stronghold sounds too big for me.",
-        "Stronghold sounds scary because deep stone can lead farther than anyone planned. I would stay near a grown-up.",
-        "If I saw Stronghold, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Stronghold from the safe part, where you got home.",
-        "I am not going to Stronghold. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_swamp_hut",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:swamp_hut",
-      "lines": [
-        "You went to {target}? I am glad you came back. Swamp Hut sounds too big for me.",
-        "Swamp Hut sounds scary because witches do not need much room to make trouble. I would stay near a grown-up.",
-        "If I saw Swamp Hut, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Swamp Hut from the safe part, where you got home.",
-        "I am not going to Swamp Hut. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_trail_ruins",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:trail_ruins",
-      "lines": [
-        "You went to {target}? I am glad you came back. Trail Ruins sounds too big for me.",
-        "Trail Ruins sounds scary because old roads leave sharp bits behind. I would stay near a grown-up.",
-        "If I saw Trail Ruins, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Trail Ruins from the safe part, where you got home.",
-        "I am not going to Trail Ruins. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_trial_chambers",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:trial_chambers",
-      "lines": [
-        "You went to {target}? I am glad you came back. Trial Chambers sounds too big for me.",
-        "Trial Chambers sounds scary because rooms built for tests rarely grade kindly. I would stay near a grown-up.",
-        "If I saw Trial Chambers, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Trial Chambers from the safe part, where you got home.",
-        "I am not going to Trial Chambers. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_village_desert",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:village_desert",
-      "lines": [
-        "You went to {target}? I am glad you came back. Desert Village sounds too big for me.",
-        "Desert Village sounds scary because neighbors there fight heat before anything else. I would stay near a grown-up.",
-        "If I saw Desert Village, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Desert Village from the safe part, where you got home.",
-        "I am not going to Desert Village. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_village_plains",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:village_plains",
-      "lines": [
-        "You went to {target}? I am glad you came back. Plains Village sounds too big for me.",
-        "Plains Village sounds scary because open fields give little warning before danger arrives. I would stay near a grown-up.",
-        "If I saw Plains Village, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Plains Village from the safe part, where you got home.",
-        "I am not going to Plains Village. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_village_savanna",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:village_savanna",
-      "lines": [
-        "You went to {target}? I am glad you came back. Savanna Village sounds too big for me.",
-        "Savanna Village sounds scary because dry grass carries sound and fire quickly. I would stay near a grown-up.",
-        "If I saw Savanna Village, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Savanna Village from the safe part, where you got home.",
-        "I am not going to Savanna Village. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_village_snowy",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:village_snowy",
-      "lines": [
-        "You went to {target}? I am glad you came back. Snowy Village sounds too big for me.",
-        "Snowy Village sounds scary because cold makes every chore heavier. I would stay near a grown-up.",
-        "If I saw Snowy Village, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Snowy Village from the safe part, where you got home.",
-        "I am not going to Snowy Village. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_village_taiga",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:village_taiga",
-      "lines": [
-        "You went to {target}? I am glad you came back. Taiga Village sounds too big for me.",
-        "Taiga Village sounds scary because trees and snow make quiet approaches easy. I would stay near a grown-up.",
-        "If I saw Taiga Village, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Taiga Village from the safe part, where you got home.",
-        "I am not going to Taiga Village. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    },
-    {
-      "id": "baby_share_story_woodland_mansion",
-      "request": "share_story",
-      "option": "baby_share_story",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "story_structure": "minecraft:woodland_mansion",
-      "lines": [
-        "You went to {target}? I am glad you came back. Woodland Mansion sounds too big for me.",
-        "Woodland Mansion sounds scary because illagers make a house feel like a threat. I would stay near a grown-up.",
-        "If I saw Woodland Mansion, I would hold my bread tight and keep the village bell in mind.",
-        "Please tell the story of Woodland Mansion from the safe part, where you got home.",
-        "I am not going to Woodland Mansion. I am very good at not going there.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 140
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "baby_share_story_ruined_portal_jungle",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:ruined_portal_jungle",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Jungle Ruined Portal sounds too big for me.",
+                                    "Jungle Ruined Portal sounds scary because vines can hide lava as well as stone. I would stay near a grown-up.",
+                                    "If I saw Jungle Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Jungle Ruined Portal from the safe part, where you got home.",
+                                    "I am not going to Jungle Ruined Portal. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_ruined_portal_mountain",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:ruined_portal_mountain",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Mountain Ruined Portal sounds too big for me.",
+                                    "Mountain Ruined Portal sounds scary because broken obsidian near cliffs makes bad footing worse. I would stay near a grown-up.",
+                                    "If I saw Mountain Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Mountain Ruined Portal from the safe part, where you got home.",
+                                    "I am not going to Mountain Ruined Portal. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_ruined_portal_nether",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:ruined_portal_nether",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Nether Ruined Portal sounds too big for me.",
+                                    "Nether Ruined Portal sounds scary because a broken portal in the Nether still feels too awake. I would stay near a grown-up.",
+                                    "If I saw Nether Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Nether Ruined Portal from the safe part, where you got home.",
+                                    "I am not going to Nether Ruined Portal. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_ruined_portal_ocean",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:ruined_portal_ocean",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Ocean Ruined Portal sounds too big for me.",
+                                    "Ocean Ruined Portal sounds scary because lava stone under water makes no honest sense. I would stay near a grown-up.",
+                                    "If I saw Ocean Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Ocean Ruined Portal from the safe part, where you got home.",
+                                    "I am not going to Ocean Ruined Portal. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_ruined_portal_swamp",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:ruined_portal_swamp",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Swamp Ruined Portal sounds too big for me.",
+                                    "Swamp Ruined Portal sounds scary because mud, vines, and Nether stone all grab at your feet. I would stay near a grown-up.",
+                                    "If I saw Swamp Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Swamp Ruined Portal from the safe part, where you got home.",
+                                    "I am not going to Swamp Ruined Portal. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_shipwreck",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:shipwreck",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Shipwreck sounds too big for me.",
+                                    "Shipwreck sounds scary because broken planks underwater snag the careless. I would stay near a grown-up.",
+                                    "If I saw Shipwreck, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Shipwreck from the safe part, where you got home.",
+                                    "I am not going to Shipwreck. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_shipwreck_beached",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:shipwreck_beached",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Beached Shipwreck sounds too big for me.",
+                                    "Beached Shipwreck sounds scary because a ship on land already lost one argument. I would stay near a grown-up.",
+                                    "If I saw Beached Shipwreck, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Beached Shipwreck from the safe part, where you got home.",
+                                    "I am not going to Beached Shipwreck. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_stronghold",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:stronghold",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Stronghold sounds too big for me.",
+                                    "Stronghold sounds scary because deep stone can lead farther than anyone planned. I would stay near a grown-up.",
+                                    "If I saw Stronghold, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Stronghold from the safe part, where you got home.",
+                                    "I am not going to Stronghold. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_swamp_hut",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:swamp_hut",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Swamp Hut sounds too big for me.",
+                                    "Swamp Hut sounds scary because witches do not need much room to make trouble. I would stay near a grown-up.",
+                                    "If I saw Swamp Hut, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Swamp Hut from the safe part, where you got home.",
+                                    "I am not going to Swamp Hut. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_trail_ruins",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:trail_ruins",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Trail Ruins sounds too big for me.",
+                                    "Trail Ruins sounds scary because old roads leave sharp bits behind. I would stay near a grown-up.",
+                                    "If I saw Trail Ruins, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Trail Ruins from the safe part, where you got home.",
+                                    "I am not going to Trail Ruins. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_trial_chambers",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:trial_chambers",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Trial Chambers sounds too big for me.",
+                                    "Trial Chambers sounds scary because rooms built for tests rarely grade kindly. I would stay near a grown-up.",
+                                    "If I saw Trial Chambers, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Trial Chambers from the safe part, where you got home.",
+                                    "I am not going to Trial Chambers. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_village_desert",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:village_desert",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Desert Village sounds too big for me.",
+                                    "Desert Village sounds scary because neighbors there fight heat before anything else. I would stay near a grown-up.",
+                                    "If I saw Desert Village, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Desert Village from the safe part, where you got home.",
+                                    "I am not going to Desert Village. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_village_plains",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:village_plains",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Plains Village sounds too big for me.",
+                                    "Plains Village sounds scary because open fields give little warning before danger arrives. I would stay near a grown-up.",
+                                    "If I saw Plains Village, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Plains Village from the safe part, where you got home.",
+                                    "I am not going to Plains Village. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_village_savanna",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:village_savanna",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Savanna Village sounds too big for me.",
+                                    "Savanna Village sounds scary because dry grass carries sound and fire quickly. I would stay near a grown-up.",
+                                    "If I saw Savanna Village, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Savanna Village from the safe part, where you got home.",
+                                    "I am not going to Savanna Village. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_village_snowy",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:village_snowy",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Snowy Village sounds too big for me.",
+                                    "Snowy Village sounds scary because cold makes every chore heavier. I would stay near a grown-up.",
+                                    "If I saw Snowy Village, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Snowy Village from the safe part, where you got home.",
+                                    "I am not going to Snowy Village. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_village_taiga",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:village_taiga",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Taiga Village sounds too big for me.",
+                                    "Taiga Village sounds scary because trees and snow make quiet approaches easy. I would stay near a grown-up.",
+                                    "If I saw Taiga Village, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Taiga Village from the safe part, where you got home.",
+                                    "I am not going to Taiga Village. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  },
+                  {
+                      "id":  "baby_share_story_woodland_mansion",
+                      "request":  "share_story",
+                      "option":  "baby_share_story",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "story_structure":  "minecraft:woodland_mansion",
+                      "lines":  [
+                                    "You went to {target}? I am glad you came back. Woodland Mansion sounds too big for me.",
+                                    "Woodland Mansion sounds scary because illagers make a house feel like a threat. I would stay near a grown-up.",
+                                    "If I saw Woodland Mansion, I would hold my bread tight and keep the village bell in mind.",
+                                    "Please tell the story of Woodland Mansion from the safe part, where you got home.",
+                                    "I am not going to Woodland Mansion. I am very good at not going there.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  140
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "section.lines"
+                              ]
+                 }
 }

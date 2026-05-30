@@ -1,170 +1,178 @@
 {
-  "lines": [
-    {
-      "id": "weaponsmith_question_blades_variants",
-      "request": "question",
-      "lines": [
-        "Rust on a sword is just neglect learning to speak.",
-        "Trouble always finds villages. <bold>Best be ready.</bold>",
-        "A blade tells the truth about its owner sooner or later.",
-        "Ready is not the same as eager. A village should know the difference.",
-        "Keeping an edge honest is mostly knowing when to stop grinding.",
-        "An unready guard is just confidence standing in the wrong place.",
-        "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else's problem.",
-        "People think weapons is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good hammer more than a loud promise. The hammer has less to prove."
-      ],
-      "weight": 172
-    },
-    {
-      "id": "weaponsmith_inspect_weapon_strong",
-      "request": "question",
-      "option": "weaponsmith_inspect_weapon",
-      "player_items": [
-        "#minecraft:swords",
-        "#minecraft:axes"
-      ],
-      "player_item_slots": [
-        "main_hand"
-      ],
-      "min_player_item_durability_percent": 60,
-      "lines": [
-        "{held_item} has {held_item_durability} durability left out of {held_item_max_durability}. Plenty of life in that edge.",
-        "{held_item} is sitting at {held_item_durability_percent}% durability. Keep it clean and it will answer when called.",
-        "{held_item} is sitting at {held_item_durability} of {held_item_max_durability}. That edge still has work left in it.",
-        "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else's problem.",
-        "People think weapons is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good hammer more than a loud promise. The hammer has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the grindstone has done to me."
-      ],
-      "weight": 80
-    },
-    {
-      "id": "weaponsmith_inspect_weapon_worn",
-      "request": "question",
-      "option": "weaponsmith_inspect_weapon",
-      "player_items": [
-        "#minecraft:swords",
-        "#minecraft:axes"
-      ],
-      "player_item_slots": [
-        "main_hand"
-      ],
-      "min_player_item_durability_percent": 25,
-      "max_player_item_durability_percent": 59,
-      "lines": [
-        "{held_item} has {held_item_durability} durability left. Serviceable, but do not mistake serviceable for ready.",
-        "{held_item} is down to {held_item_durability_percent}%. It will hold, but I would mend it before trusting it with trouble.",
-        "{held_item} is down to {held_item_durability} durability. It will serve, but watch the edge.",
-        "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else's problem.",
-        "People think weapons is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good hammer more than a loud promise. The hammer has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the grindstone has done to me."
-      ],
-      "weight": 80
-    },
-    {
-      "id": "weaponsmith_inspect_weapon_low",
-      "request": "question",
-      "option": "weaponsmith_inspect_weapon",
-      "player_items": [
-        "#minecraft:swords",
-        "#minecraft:axes"
-      ],
-      "player_item_slots": [
-        "main_hand"
-      ],
-      "max_player_item_durability_percent": 24,
-      "lines": [
-        "{held_item} has only {held_item_durability} durability left. That is a <shake>warning</shake>, not a weapon.",
-        "{held_item} is at {held_item_durability_percent}%. Mend it before it chooses the worst possible moment to become scrap.",
-        "{held_item} is at {held_item_durability} durability. That's nearly a plea for repair.",
-        "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else's problem.",
-        "People think weapons is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good hammer more than a loud promise. The hammer has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the grindstone has done to me."
-      ],
-      "weight": 80
-    },
-    {
-      "id": "question_follow_memory_weaponsmith_betrayed",
-      "request": "question",
-      "option": "adult_general_question",
-      "show_for_babies": false,
-      "weight": 4,
-      "lines": [
-        "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship.",
-        "I remember following you through that road. My feet remember it even better.",
-        "That trip across that road taught me to ask more questions before walking.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "betrayed"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "question_follow_memory_weaponsmith_boat",
-      "request": "question",
-      "option": "adult_general_question",
-      "show_for_babies": false,
-      "weight": 3,
-      "lines": [
-        "That boat trip had one good quality: no one was swinging steel in it.",
-        "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It can't make me forget it.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "boat_trip": true
-        }
-      ]
-    },
-    {
-      "id": "default_profession_weaponsmith_weight",
-      "request": "question",
-      "show_for_babies": false,
-      "lines": [
-        "A weapon is not courage. It is just steel waiting to learn who holds it.",
-        "Blades should be sharp enough to end danger, not start arguments.",
-        "The best sword in the village is the one that never needs a story.",
-        "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else's problem.",
-        "People think weapons is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good hammer more than a loud promise. The hammer has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the grindstone has done to me."
-      ],
-      "weight": 18
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "weaponsmith_question_blades_variants",
+                      "request":  "question",
+                      "lines":  [
+                                    "Rust on a sword is just neglect learning to speak.",
+                                    "Trouble always finds villages. \u003cbold\u003eBest be ready.\u003c/bold\u003e",
+                                    "A blade tells the truth about its owner sooner or later.",
+                                    "Ready is not the same as eager. A village should know the difference.",
+                                    "Keeping an edge honest is mostly knowing when to stop grinding.",
+                                    "An unready guard is just confidence standing in the wrong place.",
+                                    "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else\u0027s problem.",
+                                    "People think weapons is simple until something goes wrong and suddenly it is very important.",
+                                    "A village runs on small work. Nobody praises it until it stops happening.",
+                                    "I trust a good hammer more than a loud promise. The hammer has less to prove."
+                                ],
+                      "weight":  172
+                  },
+                  {
+                      "id":  "weaponsmith_inspect_weapon_strong",
+                      "request":  "question",
+                      "option":  "weaponsmith_inspect_weapon",
+                      "player_items":  [
+                                           "#minecraft:swords",
+                                           "#minecraft:axes"
+                                       ],
+                      "player_item_slots":  [
+                                                "main_hand"
+                                            ],
+                      "min_player_item_durability_percent":  60,
+                      "lines":  [
+                                    "{held_item} has {held_item_durability} durability left out of {held_item_max_durability}. Plenty of life in that edge.",
+                                    "{held_item} is sitting at {held_item_durability_percent}% durability. Keep it clean and it will answer when called.",
+                                    "{held_item} is sitting at {held_item_durability} of {held_item_max_durability}. That edge still has work left in it.",
+                                    "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else\u0027s problem.",
+                                    "People think weapons is simple until something goes wrong and suddenly it is very important.",
+                                    "A village runs on small work. Nobody praises it until it stops happening.",
+                                    "I trust a good hammer more than a loud promise. The hammer has less to prove.",
+                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+                                    "I notice the little things. That is either a skill or what the grindstone has done to me."
+                                ],
+                      "weight":  80
+                  },
+                  {
+                      "id":  "weaponsmith_inspect_weapon_worn",
+                      "request":  "question",
+                      "option":  "weaponsmith_inspect_weapon",
+                      "player_items":  [
+                                           "#minecraft:swords",
+                                           "#minecraft:axes"
+                                       ],
+                      "player_item_slots":  [
+                                                "main_hand"
+                                            ],
+                      "min_player_item_durability_percent":  25,
+                      "max_player_item_durability_percent":  59,
+                      "lines":  [
+                                    "{held_item} has {held_item_durability} durability left. Serviceable, but do not mistake serviceable for ready.",
+                                    "{held_item} is down to {held_item_durability_percent}%. It will hold, but I would mend it before trusting it with trouble.",
+                                    "{held_item} is down to {held_item_durability} durability. It will serve, but watch the edge.",
+                                    "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else\u0027s problem.",
+                                    "People think weapons is simple until something goes wrong and suddenly it is very important.",
+                                    "A village runs on small work. Nobody praises it until it stops happening.",
+                                    "I trust a good hammer more than a loud promise. The hammer has less to prove.",
+                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+                                    "I notice the little things. That is either a skill or what the grindstone has done to me."
+                                ],
+                      "weight":  80
+                  },
+                  {
+                      "id":  "weaponsmith_inspect_weapon_low",
+                      "request":  "question",
+                      "option":  "weaponsmith_inspect_weapon",
+                      "player_items":  [
+                                           "#minecraft:swords",
+                                           "#minecraft:axes"
+                                       ],
+                      "player_item_slots":  [
+                                                "main_hand"
+                                            ],
+                      "max_player_item_durability_percent":  24,
+                      "lines":  [
+                                    "{held_item} has only {held_item_durability} durability left. That is a \u003cshake\u003ewarning\u003c/shake\u003e, not a weapon.",
+                                    "{held_item} is at {held_item_durability_percent}%. Mend it before it chooses the worst possible moment to become scrap.",
+                                    "{held_item} is at {held_item_durability} durability. That\u0027s nearly a plea for repair.",
+                                    "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else\u0027s problem.",
+                                    "People think weapons is simple until something goes wrong and suddenly it is very important.",
+                                    "A village runs on small work. Nobody praises it until it stops happening.",
+                                    "I trust a good hammer more than a loud promise. The hammer has less to prove.",
+                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+                                    "I notice the little things. That is either a skill or what the grindstone has done to me."
+                                ],
+                      "weight":  80
+                  },
+                  {
+                      "id":  "question_follow_memory_weaponsmith_betrayed",
+                      "request":  "question",
+                      "option":  "adult_general_question",
+                      "show_for_babies":  false,
+                      "weight":  4,
+                      "lines":  [
+                                    "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship.",
+                                    "I remember following you through that road. My feet remember it even better.",
+                                    "That trip across that road taught me to ask more questions before walking.",
+                                    "Following you taught me that plans sound much safer before anyone starts walking.",
+                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                    "Next time, warn me before the road becomes a test of character.",
+                                    "I learned two things out there: stay close, and ask better questions earlier.",
+                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                    "If I followed you again, I would pack more food and fewer assumptions."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "betrayed"
+                                                           ]
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "question_follow_memory_weaponsmith_boat",
+                      "request":  "question",
+                      "option":  "adult_general_question",
+                      "show_for_babies":  false,
+                      "weight":  3,
+                      "lines":  [
+                                    "That boat trip had one good quality: no one was swinging steel in it.",
+                                    "That boat trip still sits oddly in my memory, but at least it floated.",
+                                    "A boat can make a bad plan quieter. It can\u0027t make me forget it.",
+                                    "Following you taught me that plans sound much safer before anyone starts walking.",
+                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                    "Next time, warn me before the road becomes a test of character.",
+                                    "I learned two things out there: stay close, and ask better questions earlier.",
+                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                    "If I followed you again, I would pack more food and fewer assumptions."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "boat_trip":  true
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "default_profession_weaponsmith_weight",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "lines":  [
+                                    "A weapon is not courage. It is just steel waiting to learn who holds it.",
+                                    "Blades should be sharp enough to end danger, not start arguments.",
+                                    "The best sword in the village is the one that never needs a story.",
+                                    "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else\u0027s problem.",
+                                    "People think weapons is simple until something goes wrong and suddenly it is very important.",
+                                    "A village runs on small work. Nobody praises it until it stops happening.",
+                                    "I trust a good hammer more than a loud promise. The hammer has less to prove.",
+                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+                                    "I notice the little things. That is either a skill or what the grindstone has done to me."
+                                ],
+                      "weight":  18
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.weaponsmith",
+                                  "section.lines"
+                              ]
+                 }
 }

@@ -1,97 +1,105 @@
 {
-  "messages": [
-    {
-      "id": "armorer_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Here, {gift_item}. Well-kept armor is not the only thing that protects a friend.",
-        "Take {gift_item}. I would rather see you prepared than patched up later.",
-        "Take {gift_item}. It is not much, but it is given with care.",
-        "Most days, I am at the forge, trying to keep straps and plates from becoming everyone else's problem.",
-        "People think armor is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good hammer more than a loud promise. The hammer has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the forge has done to me."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "armorer_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} held like proper mail for {tested_villager}. Advice should take a dent and stay useful.",
-        "I thought {gift_item} would fit. Glad {tested_villager} wore the gesture well.",
-        "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "armorer_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "Then that fit was off. For {gift_subject}, try {alternative_gift}; better plate, fewer gaps.",
-        "A poor fitting, then. Bring {alternative_gift} next time and the trade should sit easier.",
-        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "weight": 20,
-      "lines": [
-        "You trusted a cracked plate. That's on both of us. Try {alternative_gift}.",
-        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time.",
-        "You walk in like trouble forgot to close the door behind it.",
-        "I have seen broken armor with better instincts than you.",
-        "Careful. The village has long memories and very little patience today.",
-        "You are not as frightening as you think. That may be the problem.",
-        "If foolishness made noise, you would drown out the bell.",
-        "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
-      ]
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "weight": 20,
-      "lines": [
-        "{gift_item} buckled? Fine. {alternative_gift} should hold better.",
-        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time.",
-        "You walk in like trouble forgot to close the door behind it.",
-        "I have seen broken armor with better instincts than you.",
-        "Careful. The village has long memories and very little patience today.",
-        "You are not as frightening as you think. That may be the problem.",
-        "If foolishness made noise, you would drown out the bell.",
-        "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
-      ]
-    }
-  ]
+    "messages":  [
+                     {
+                         "id":  "armorer_gift_given_variants",
+                         "key":  "gift_given",
+                         "lines":  [
+                                       "Here, {gift_item}. Well-kept armor is not the only thing that protects a friend.",
+                                       "Take {gift_item}. I would rather see you prepared than patched up later.",
+                                       "Take {gift_item}. It is not much, but it is given with care.",
+                                       "Most days, I am at the forge, trying to keep straps and plates from becoming everyone else\u0027s problem.",
+                                       "People think armor is simple until something goes wrong and suddenly it is very important.",
+                                       "A village runs on small work. Nobody praises it until it stops happening.",
+                                       "I trust a good hammer more than a loud promise. The hammer has less to prove.",
+                                       "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+                                       "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+                                       "I notice the little things. That is either a skill or what the forge has done to me."
+                                   ],
+                         "weight":  48
+                     },
+                     {
+                         "id":  "armorer_gift_advice_followup_liked_variants",
+                         "key":  "gift_advice_followup.liked",
+                         "lines":  [
+                                       "Good. {gift_item} held like proper mail for {tested_villager}. Advice should take a dent and stay useful.",
+                                       "I thought {gift_item} would fit. Glad {tested_villager} wore the gesture well.",
+                                       "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
+                                       "Following you taught me that plans sound much safer before anyone starts walking.",
+                                       "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                       "Next time, warn me before the road becomes a test of character.",
+                                       "I learned two things out there: stay close, and ask better questions earlier.",
+                                       "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                       "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                       "If I followed you again, I would pack more food and fewer assumptions."
+                                   ],
+                         "weight":  44
+                     },
+                     {
+                         "id":  "armorer_gift_advice_followup_disliked_variants",
+                         "key":  "gift_advice_followup.disliked",
+                         "lines":  [
+                                       "Then that fit was off. For {gift_subject}, try {alternative_gift}; better plate, fewer gaps.",
+                                       "A poor fitting, then. Bring {alternative_gift} next time and the trade should sit easier.",
+                                       "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
+                                       "Following you taught me that plans sound much safer before anyone starts walking.",
+                                       "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                       "Next time, warn me before the road becomes a test of character.",
+                                       "I learned two things out there: stay close, and ask better questions earlier.",
+                                       "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                       "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                       "If I followed you again, I would pack more food and fewer assumptions."
+                                   ],
+                         "weight":  44
+                     },
+                     {
+                         "key":  "gift_advice_followup.disliked",
+                         "dispositions":  [
+                                              "cautious",
+                                              "rude",
+                                              "hostile",
+                                              "fearful"
+                                          ],
+                         "weight":  20,
+                         "lines":  [
+                                       "You trusted a cracked plate. That\u0027s on both of us. Try {alternative_gift}.",
+                                       "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+                                       "Then we correct the guess: {alternative_gift} next time.",
+                                       "You walk in like trouble forgot to close the door behind it.",
+                                       "I have seen broken armor with better instincts than you.",
+                                       "Careful. The village has long memories and very little patience today.",
+                                       "You are not as frightening as you think. That may be the problem.",
+                                       "If foolishness made noise, you would drown out the bell.",
+                                       "Do not test me just because I am speaking in complete sentences.",
+                                       "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
+                                   ]
+                     },
+                     {
+                         "key":  "gift_advice_followup.disliked",
+                         "dispositions":  [
+                                              "rude",
+                                              "hostile"
+                                          ],
+                         "weight":  20,
+                         "lines":  [
+                                       "{gift_item} buckled? Fine. {alternative_gift} should hold better.",
+                                       "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+                                       "Then we correct the guess: {alternative_gift} next time.",
+                                       "You walk in like trouble forgot to close the door behind it.",
+                                       "I have seen broken armor with better instincts than you.",
+                                       "Careful. The village has long memories and very little patience today.",
+                                       "You are not as frightening as you think. That may be the problem.",
+                                       "If foolishness made noise, you would drown out the bell.",
+                                       "Do not test me just because I am speaking in complete sentences.",
+                                       "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
+                                   ]
+                     }
+                 ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.armorer",
+                                  "section.messages"
+                              ]
+                 }
 }

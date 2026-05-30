@@ -1,23 +1,31 @@
 {
-  "lines": [
-    {
-      "id": "apology_cartographer_mark",
-      "request": "apology",
-      "option": "apologize_for_harm",
-      "show_for_babies": false,
-      "lines": [
-        "I can mark the apology. Whether the route changes is up to you.",
-        "Some paths can be corrected after a bad turn. Don't make me redraw this one twice.",
-        "You are asking to redraw a line you crossed. That can be done carefully.",
-        "A bad route is not shameful if you correct it before others follow.",
-        "I'll mark this apology, but not as the destination.",
-        "Don't make a habit of needing a way back from harm.",
-        "Fine. Let us see whether your next steps match your words.",
-        "Some mistakes become warnings on maps. Try not to become one.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
-      ],
-      "weight": 234
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "apology_cartographer_mark",
+                      "request":  "apology",
+                      "option":  "apologize_for_harm",
+                      "show_for_babies":  false,
+                      "lines":  [
+                                    "I can mark the apology. Whether the route changes is up to you.",
+                                    "Some paths can be corrected after a bad turn. Don\u0027t make me redraw this one twice.",
+                                    "You are asking to redraw a line you crossed. That can be done carefully.",
+                                    "A bad route is not shameful if you correct it before others follow.",
+                                    "I\u0027ll mark this apology, but not as the destination.",
+                                    "Don\u0027t make a habit of needing a way back from harm.",
+                                    "Fine. Let us see whether your next steps match your words.",
+                                    "Some mistakes become warnings on maps. Try not to become one.",
+                                    "I was wrong. I would rather say it plainly than dress it up.",
+                                    "That came out sharper than it should have. I am sorry."
+                                ],
+                      "weight":  234
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.cartographer",
+                                  "section.lines"
+                              ]
+                 }
 }

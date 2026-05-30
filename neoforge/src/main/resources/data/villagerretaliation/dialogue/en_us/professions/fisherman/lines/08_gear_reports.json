@@ -1,54 +1,62 @@
 {
-  "lines": [
-    {
-      "id": "gear_report_fisherman_used",
-      "request": "gear_report",
-      "option": "gear_report",
-      "show_for_babies": false,
-      "weight": 32,
-      "lines": [
-        "It held steady. Better than most nets, and those are meant to catch trouble.",
-        "It did the job when fear was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The weather and water tell a story if you know where to look.",
-        "That has seen use. Not enough to panic, but enough to respect it.",
-        "A small flaw becomes a loud problem when trouble starts moving.",
-        "Keep your net ready. Most people notice damage after it matters.",
-        "This is still serviceable, but do not treat that as permission to be reckless.",
-        "I would fix that before night. Night has a talent for finding weak spots.",
-        "Good equipment should feel boring. Exciting equipment is usually breaking."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "kind": "gear_report_used_in_combat"
-        }
-      ]
-    },
-    {
-      "id": "gear_report_fisherman_unused",
-      "request": "gear_report",
-      "option": "gear_report",
-      "show_for_babies": false,
-      "weight": 32,
-      "lines": [
-        "Dry, unused, and welcome. Some things should stay out of the water and out of danger.",
-        "It did the job when fear was loud. That's praise enough.",
-        "Good gear earns trust the moment trouble tests it.",
-        "Let me see that. The weather and water tell a story if you know where to look.",
-        "That has seen use. Not enough to panic, but enough to respect it.",
-        "A small flaw becomes a loud problem when trouble starts moving.",
-        "Keep your net ready. Most people notice damage after it matters.",
-        "This is still serviceable, but do not treat that as permission to be reckless.",
-        "I would fix that before night. Night has a talent for finding weak spots.",
-        "Good equipment should feel boring. Exciting equipment is usually breaking."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "kind": "gear_report_unused_in_combat"
-        }
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "gear_report_fisherman_used",
+                      "request":  "gear_report",
+                      "option":  "gear_report",
+                      "show_for_babies":  false,
+                      "weight":  32,
+                      "lines":  [
+                                    "It held steady. Better than most nets, and those are meant to catch trouble.",
+                                    "It did the job when fear was loud. That\u0027s praise enough.",
+                                    "Good gear earns trust the moment trouble tests it.",
+                                    "Let me see that. The weather and water tell a story if you know where to look.",
+                                    "That has seen use. Not enough to panic, but enough to respect it.",
+                                    "A small flaw becomes a loud problem when trouble starts moving.",
+                                    "Keep your net ready. Most people notice damage after it matters.",
+                                    "This is still serviceable, but do not treat that as permission to be reckless.",
+                                    "I would fix that before night. Night has a talent for finding weak spots.",
+                                    "Good equipment should feel boring. Exciting equipment is usually breaking."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "kind":  "gear_report_used_in_combat"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "gear_report_fisherman_unused",
+                      "request":  "gear_report",
+                      "option":  "gear_report",
+                      "show_for_babies":  false,
+                      "weight":  32,
+                      "lines":  [
+                                    "Dry, unused, and welcome. Some things should stay out of the water and out of danger.",
+                                    "It did the job when fear was loud. That\u0027s praise enough.",
+                                    "Good gear earns trust the moment trouble tests it.",
+                                    "Let me see that. The weather and water tell a story if you know where to look.",
+                                    "That has seen use. Not enough to panic, but enough to respect it.",
+                                    "A small flaw becomes a loud problem when trouble starts moving.",
+                                    "Keep your net ready. Most people notice damage after it matters.",
+                                    "This is still serviceable, but do not treat that as permission to be reckless.",
+                                    "I would fix that before night. Night has a talent for finding weak spots.",
+                                    "Good equipment should feel boring. Exciting equipment is usually breaking."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "kind":  "gear_report_unused_in_combat"
+                                         }
+                                     ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.fisherman",
+                                  "section.lines"
+                              ]
+                 }
 }

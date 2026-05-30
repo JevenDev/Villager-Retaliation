@@ -1,293 +1,301 @@
 {
-  "lines": [
-    {
-      "id": "village_event_snowstorm_baby_1",
-      "request": "village_event_report",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "event_tags": [
-        "snowstorm"
-      ],
-      "lines": [
-        "The snow made everything disappear. I stayed where I could see a lantern.",
-        "My toes got cold just looking outside.",
-        "The wind pushed snow at the door like it wanted in.",
-        "I am okay. I want soup though.",
-        "The whole village looked like a blanket, but a scary blanket.",
-        "I could not see the paths, so I decided not to be on them.",
-        "The snow was pretty until it started hiding everything.",
-        "I stayed close to the fire because the outside was too white.",
-        "My nose got cold even when I was inside. That feels unfair.",
-        "Next time the sky drops that much snow, I am staying under a blanket."
-      ],
-      "weight": 160
-    },
-    {
-      "id": "container_theft_memory_direct_question",
-      "request": "question",
-      "show_for_babies": false,
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "lines": [
-        "I still remember you trying to take my {stolen_item}.",
-        "You want an answer after the {stolen_stack} from the {stolen_container}? Fine. Ask, but ask honestly.",
-        "I remember the {stolen_item}. I remember who reached for it too.",
-        "It is hard to talk normally with the {stolen_container} still on my mind.",
-        "You reached for what was not yours. That does not vanish because time passed.",
-        "The {stolen_stack} taught me to watch your hands before your words.",
-        "I keep my things closer now. You can guess why.",
-        "If you wanted trust, the {stolen_container} was a poor place to start.",
-        "That theft made even simple questions feel less simple.",
-        "I am answering, but do not mistake that for forgetting."
-      ],
-      "weight": 64,
-      "conditions": [
-        {
-          "type": "memory",
-          "tag": "player_container_theft",
-          "source": "this_villager"
-        }
-      ]
-    },
-    {
-      "id": "container_theft_memory_village_question_1",
-      "request": "question",
-      "show_for_babies": false,
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "weight": 32,
-      "lines": [
-        "<aqua>{theft_witness}</aqua> told me about you stealing {stolen_stack}. Not wise.",
-        "<aqua>{theft_witness}</aqua> said you took {stolen_stack}. That story travels fast.",
-        "<aqua>{theft_witness_possessive}</aqua> account of the {stolen_stack} has reached plenty of ears.",
-        "The village has heard about the {stolen_stack}. People are watching you more closely now.",
-        "A theft from one villager has a way of reaching every doorway.",
-        "<aqua>{theft_witness}</aqua> did not sound confused about what happened.",
-        "If you thought {stolen_stack} would stay quiet, you do not know villages very well.",
-        "People remember who takes from a {stolen_container} without permission.",
-        "You can ask your question, but the story of {stolen_stack} is standing beside you.",
-        "Around here, stolen things grow longer shadows than you might expect."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "tag": "player_container_theft",
-          "source": "other_villager"
-        }
-      ]
-    },
-    {
-      "id": "container_theft_memory_village_greeting_1",
-      "request": "greeting",
-      "show_for_babies": false,
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "weight": 30,
-      "lines": [
-        "I know what happened at the {stolen_container}. <aqua>{theft_witness_possessive}</aqua> story reached me.",
-        "The {stolen_container} has been part of more conversations since you touched it.",
-        "<aqua>{theft_witness}</aqua> saw enough at the {stolen_container} for the village to remember.",
-        "Word travels quickly when someone reaches where they should not.",
-        "I have heard about the {stolen_stack}. That makes this greeting colder than it might have been.",
-        "The village is small. A hand in the wrong {stolen_container} does not stay secret.",
-        "You arrive with a story already attached to you.",
-        "I know enough about the theft to keep my distance.",
-        "A greeting is all I am offering while that {stolen_container} is still in memory.",
-        "People are still talking about what happened. I am one of them."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "tag": "player_container_theft",
-          "source": "other_villager"
-        }
-      ]
-    },
-    {
-      "id": "reputation_royalty_greeting_1",
-      "request": "greeting",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "royalty"
-      ],
-      "weight": 28,
-      "lines": [
-        "When you arrive, people stand a little straighter. That is not fear. That is what trust looks like after it has survived trouble.",
-        "Your name opens doors here because people believe it should.",
-        "People relax when you arrive. That is rare power; carry it gently.",
-        "The village knows your footsteps like a good omen now.",
-        "You have become the sort of name people speak when they need hope to sound practical.",
-        "There is respect here for you, and more than a little gratitude.",
-        "When trouble comes, people look to the paths and hope you are on them.",
-        "You are welcome here in a way few outsiders ever become.",
-        "The village does not bow easily, but it does remember who earned its trust.",
-        "Walk kindly with the weight of that respect. You earned it, and it can still be spent."
-      ]
-    },
-    {
-      "id": "reputation_revered_question_1",
-      "request": "question",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "revered",
-        "royalty"
-      ],
-      "weight": 26,
-      "lines": [
-        "Some players pass through villages like weather. You left roots.",
-        "You made yourself part of the village instead of passing through it.",
-        "People speak of you like someone whose footsteps belong here.",
-        "Your help has settled into the village like a well-built wall.",
-        "You are remembered here for more than one good deed.",
-        "The village does not give that kind of regard lightly.",
-        "You have become part of the stories people use to feel safer.",
-        "When your name comes up, most faces soften before anyone says why.",
-        "You have done enough good here that people measure others against it.",
-        "A village knows the difference between a visitor and someone who stayed in the ways that matter."
-      ]
-    },
-    {
-      "id": "reputation_respected_question_1",
-      "request": "question",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "respected",
-        "revered",
-        "royalty"
-      ],
-      "weight": 24,
-      "lines": [
-        "People listen when you speak here. That is useful. It is also a responsibility.",
-        "Respect is useful. Be careful not to spend it carelessly.",
-        "People weigh your words because your actions gave them reason to.",
-        "You have earned a place in the village's better conversations.",
-        "A good name is a tool. Use it carefully.",
-        "People here expect more from you now, because you have shown you can give it.",
-        "Respect makes doors easier to open, but it also makes mistakes louder.",
-        "You are trusted enough that your choices reach farther than you may think.",
-        "The village has seen enough from you to listen first.",
-        "Keep walking the way that earned this respect, and it will hold."
-      ]
-    },
-    {
-      "id": "reputation_trusted_greeting_1",
-      "request": "greeting",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "trusted",
-        "respected",
-        "revered",
-        "royalty"
-      ],
-      "weight": 28,
-      "lines": [
-        "Good to see you. The village keeps its doors easier when your footsteps are nearby.",
-        "Good to have you nearby. The village breathes easier.",
-        "Your footsteps sound familiar in a good way now.",
-        "There you are. The square feels steadier with you in it.",
-        "I am glad it is you coming down the path.",
-        "You have made yourself a welcome sight here.",
-        "People do not tense when they see you anymore. That says plenty.",
-        "It is good when familiar footsteps belong to someone helpful.",
-        "Welcome back. The village knows your shape in the doorway now.",
-        "You are easy to greet these days. That is a good thing."
-      ]
-    },
-    {
-      "id": "reputation_neutral_question_1",
-      "request": "question",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "neutral"
-      ],
-      "weight": 22,
-      "lines": [
-        "We do not know what kind of neighbor you are yet. Villages learn quickly.",
-        "We will see what kind of neighbor you choose to be.",
-        "Neutral is not empty. It is the village still watching.",
-        "You have time to become welcome. You also have time to become trouble.",
-        "Around here, reputation starts small and grows from repeated choices.",
-        "No one has decided much about you yet. That can be a gift.",
-        "The village is waiting to see which habits you bring with you.",
-        "You are still a question here, not an answer.",
-        "Do right by people, and they will notice. Do wrong, and they will notice faster.",
-        "For now, you are someone passing through. What comes next is up to you."
-      ]
-    },
-    {
-      "id": "reputation_suspicious_greeting_1",
-      "request": "greeting",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "suspicious"
-      ],
-      "weight": 26,
-      "lines": [
-        "Hello. That is all I am ready to offer for now.",
-        "Hello. I am listening, but not leaning closer.",
-        "You may speak. I am keeping my caution where I can reach it.",
-        "Hello. I will hear you out, but I am watching the edges.",
-        "You have not given me enough reason to relax yet.",
-        "Speak if you need to. I will decide how much of it to trust.",
-        "The village is not closed to you, but it is not open wide either.",
-        "I know your face. I am still learning what it means when it arrives.",
-        "Careful words would serve you well right now.",
-        "I can greet you without pretending I am comfortable."
-      ]
-    },
-    {
-      "id": "reputation_hostile_question_1",
-      "request": "question",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "hostile"
-      ],
-      "weight": 28,
-      "lines": [
-        "You have a talent for making people check where the exits are.",
-        "Every door seems to notice you before I do.",
-        "You make the square feel smaller when you enter it.",
-        "People lower their voices when you arrive, and not out of respect.",
-        "Your presence makes the village count its exits twice.",
-        "You ask questions like trust is still on the table.",
-        "It is hard to answer calmly when your name already carries trouble.",
-        "The village has learned to make room between itself and you.",
-        "If you want honesty, here it is: people feel safer when you leave.",
-        "You have made caution feel like common sense."
-      ]
-    },
-    {
-      "id": "reputation_despised_question_1",
-      "request": "question",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "despised"
-      ],
-      "weight": 30,
-      "lines": [
-        "You want answers? Start with why anyone here should give you one.",
-        "Answers are for people who have not made questions dangerous.",
-        "You have spent every benefit of the doubt here.",
-        "The village does not owe warmth to someone who kept choosing harm.",
-        "You ask like your name has not already soured the room.",
-        "Even patience has a bottom, and you found it.",
-        "There are people here who still tense at the sound of your footsteps.",
-        "You burned through trust faster than anyone could rebuild it.",
-        "If you want help here, you are starting from below empty.",
-        "Some reputations do not follow people. They arrive before them."
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "village_event_snowstorm_baby_1",
+                      "request":  "village_event_report",
+                      "show_for_adults":  false,
+                      "show_for_babies":  true,
+                      "event_tags":  [
+                                         "snowstorm"
+                                     ],
+                      "lines":  [
+                                    "The snow made everything disappear. I stayed where I could see a lantern.",
+                                    "My toes got cold just looking outside.",
+                                    "The wind pushed snow at the door like it wanted in.",
+                                    "I am okay. I want soup though.",
+                                    "The whole village looked like a blanket, but a scary blanket.",
+                                    "I could not see the paths, so I decided not to be on them.",
+                                    "The snow was pretty until it started hiding everything.",
+                                    "I stayed close to the fire because the outside was too white.",
+                                    "My nose got cold even when I was inside. That feels unfair.",
+                                    "Next time the sky drops that much snow, I am staying under a blanket."
+                                ],
+                      "weight":  160
+                  },
+                  {
+                      "id":  "container_theft_memory_direct_question",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "cautious",
+                                           "rude",
+                                           "hostile",
+                                           "fearful"
+                                       ],
+                      "lines":  [
+                                    "I still remember you trying to take my {stolen_item}.",
+                                    "You want an answer after the {stolen_stack} from the {stolen_container}? Fine. Ask, but ask honestly.",
+                                    "I remember the {stolen_item}. I remember who reached for it too.",
+                                    "It is hard to talk normally with the {stolen_container} still on my mind.",
+                                    "You reached for what was not yours. That does not vanish because time passed.",
+                                    "The {stolen_stack} taught me to watch your hands before your words.",
+                                    "I keep my things closer now. You can guess why.",
+                                    "If you wanted trust, the {stolen_container} was a poor place to start.",
+                                    "That theft made even simple questions feel less simple.",
+                                    "I am answering, but do not mistake that for forgetting."
+                                ],
+                      "weight":  64,
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "tag":  "player_container_theft",
+                                             "source":  "this_villager"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "container_theft_memory_village_question_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "cautious",
+                                           "rude",
+                                           "hostile",
+                                           "fearful"
+                                       ],
+                      "weight":  32,
+                      "lines":  [
+                                    "\u003caqua\u003e{theft_witness}\u003c/aqua\u003e told me about you stealing {stolen_stack}. Not wise.",
+                                    "\u003caqua\u003e{theft_witness}\u003c/aqua\u003e said you took {stolen_stack}. That story travels fast.",
+                                    "\u003caqua\u003e{theft_witness_possessive}\u003c/aqua\u003e account of the {stolen_stack} has reached plenty of ears.",
+                                    "The village has heard about the {stolen_stack}. People are watching you more closely now.",
+                                    "A theft from one villager has a way of reaching every doorway.",
+                                    "\u003caqua\u003e{theft_witness}\u003c/aqua\u003e did not sound confused about what happened.",
+                                    "If you thought {stolen_stack} would stay quiet, you do not know villages very well.",
+                                    "People remember who takes from a {stolen_container} without permission.",
+                                    "You can ask your question, but the story of {stolen_stack} is standing beside you.",
+                                    "Around here, stolen things grow longer shadows than you might expect."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "tag":  "player_container_theft",
+                                             "source":  "other_villager"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "container_theft_memory_village_greeting_1",
+                      "request":  "greeting",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "cautious",
+                                           "rude",
+                                           "hostile",
+                                           "fearful"
+                                       ],
+                      "weight":  30,
+                      "lines":  [
+                                    "I know what happened at the {stolen_container}. \u003caqua\u003e{theft_witness_possessive}\u003c/aqua\u003e story reached me.",
+                                    "The {stolen_container} has been part of more conversations since you touched it.",
+                                    "\u003caqua\u003e{theft_witness}\u003c/aqua\u003e saw enough at the {stolen_container} for the village to remember.",
+                                    "Word travels quickly when someone reaches where they should not.",
+                                    "I have heard about the {stolen_stack}. That makes this greeting colder than it might have been.",
+                                    "The village is small. A hand in the wrong {stolen_container} does not stay secret.",
+                                    "You arrive with a story already attached to you.",
+                                    "I know enough about the theft to keep my distance.",
+                                    "A greeting is all I am offering while that {stolen_container} is still in memory.",
+                                    "People are still talking about what happened. I am one of them."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "tag":  "player_container_theft",
+                                             "source":  "other_villager"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "reputation_royalty_greeting_1",
+                      "request":  "greeting",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "royalty"
+                                            ],
+                      "weight":  28,
+                      "lines":  [
+                                    "When you arrive, people stand a little straighter. That is not fear. That is what trust looks like after it has survived trouble.",
+                                    "Your name opens doors here because people believe it should.",
+                                    "People relax when you arrive. That is rare power; carry it gently.",
+                                    "The village knows your footsteps like a good omen now.",
+                                    "You have become the sort of name people speak when they need hope to sound practical.",
+                                    "There is respect here for you, and more than a little gratitude.",
+                                    "When trouble comes, people look to the paths and hope you are on them.",
+                                    "You are welcome here in a way few outsiders ever become.",
+                                    "The village does not bow easily, but it does remember who earned its trust.",
+                                    "Walk kindly with the weight of that respect. You earned it, and it can still be spent."
+                                ]
+                  },
+                  {
+                      "id":  "reputation_revered_question_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "revered",
+                                                "royalty"
+                                            ],
+                      "weight":  26,
+                      "lines":  [
+                                    "Some players pass through villages like weather. You left roots.",
+                                    "You made yourself part of the village instead of passing through it.",
+                                    "People speak of you like someone whose footsteps belong here.",
+                                    "Your help has settled into the village like a well-built wall.",
+                                    "You are remembered here for more than one good deed.",
+                                    "The village does not give that kind of regard lightly.",
+                                    "You have become part of the stories people use to feel safer.",
+                                    "When your name comes up, most faces soften before anyone says why.",
+                                    "You have done enough good here that people measure others against it.",
+                                    "A village knows the difference between a visitor and someone who stayed in the ways that matter."
+                                ]
+                  },
+                  {
+                      "id":  "reputation_respected_question_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "respected",
+                                                "revered",
+                                                "royalty"
+                                            ],
+                      "weight":  24,
+                      "lines":  [
+                                    "People listen when you speak here. That is useful. It is also a responsibility.",
+                                    "Respect is useful. Be careful not to spend it carelessly.",
+                                    "People weigh your words because your actions gave them reason to.",
+                                    "You have earned a place in the village\u0027s better conversations.",
+                                    "A good name is a tool. Use it carefully.",
+                                    "People here expect more from you now, because you have shown you can give it.",
+                                    "Respect makes doors easier to open, but it also makes mistakes louder.",
+                                    "You are trusted enough that your choices reach farther than you may think.",
+                                    "The village has seen enough from you to listen first.",
+                                    "Keep walking the way that earned this respect, and it will hold."
+                                ]
+                  },
+                  {
+                      "id":  "reputation_trusted_greeting_1",
+                      "request":  "greeting",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "trusted",
+                                                "respected",
+                                                "revered",
+                                                "royalty"
+                                            ],
+                      "weight":  28,
+                      "lines":  [
+                                    "Good to see you. The village keeps its doors easier when your footsteps are nearby.",
+                                    "Good to have you nearby. The village breathes easier.",
+                                    "Your footsteps sound familiar in a good way now.",
+                                    "There you are. The square feels steadier with you in it.",
+                                    "I am glad it is you coming down the path.",
+                                    "You have made yourself a welcome sight here.",
+                                    "People do not tense when they see you anymore. That says plenty.",
+                                    "It is good when familiar footsteps belong to someone helpful.",
+                                    "Welcome back. The village knows your shape in the doorway now.",
+                                    "You are easy to greet these days. That is a good thing."
+                                ]
+                  },
+                  {
+                      "id":  "reputation_neutral_question_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "neutral"
+                                            ],
+                      "weight":  22,
+                      "lines":  [
+                                    "We do not know what kind of neighbor you are yet. Villages learn quickly.",
+                                    "We will see what kind of neighbor you choose to be.",
+                                    "Neutral is not empty. It is the village still watching.",
+                                    "You have time to become welcome. You also have time to become trouble.",
+                                    "Around here, reputation starts small and grows from repeated choices.",
+                                    "No one has decided much about you yet. That can be a gift.",
+                                    "The village is waiting to see which habits you bring with you.",
+                                    "You are still a question here, not an answer.",
+                                    "Do right by people, and they will notice. Do wrong, and they will notice faster.",
+                                    "For now, you are someone passing through. What comes next is up to you."
+                                ]
+                  },
+                  {
+                      "id":  "reputation_suspicious_greeting_1",
+                      "request":  "greeting",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "suspicious"
+                                            ],
+                      "weight":  26,
+                      "lines":  [
+                                    "Hello. That is all I am ready to offer for now.",
+                                    "Hello. I am listening, but not leaning closer.",
+                                    "You may speak. I am keeping my caution where I can reach it.",
+                                    "Hello. I will hear you out, but I am watching the edges.",
+                                    "You have not given me enough reason to relax yet.",
+                                    "Speak if you need to. I will decide how much of it to trust.",
+                                    "The village is not closed to you, but it is not open wide either.",
+                                    "I know your face. I am still learning what it means when it arrives.",
+                                    "Careful words would serve you well right now.",
+                                    "I can greet you without pretending I am comfortable."
+                                ]
+                  },
+                  {
+                      "id":  "reputation_hostile_question_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "hostile"
+                                            ],
+                      "weight":  28,
+                      "lines":  [
+                                    "You have a talent for making people check where the exits are.",
+                                    "Every door seems to notice you before I do.",
+                                    "You make the square feel smaller when you enter it.",
+                                    "People lower their voices when you arrive, and not out of respect.",
+                                    "Your presence makes the village count its exits twice.",
+                                    "You ask questions like trust is still on the table.",
+                                    "It is hard to answer calmly when your name already carries trouble.",
+                                    "The village has learned to make room between itself and you.",
+                                    "If you want honesty, here it is: people feel safer when you leave.",
+                                    "You have made caution feel like common sense."
+                                ]
+                  },
+                  {
+                      "id":  "reputation_despised_question_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "despised"
+                                            ],
+                      "weight":  30,
+                      "lines":  [
+                                    "You want answers? Start with why anyone here should give you one.",
+                                    "Answers are for people who have not made questions dangerous.",
+                                    "You have spent every benefit of the doubt here.",
+                                    "The village does not owe warmth to someone who kept choosing harm.",
+                                    "You ask like your name has not already soured the room.",
+                                    "Even patience has a bottom, and you found it.",
+                                    "There are people here who still tense at the sound of your footsteps.",
+                                    "You burned through trust faster than anyone could rebuild it.",
+                                    "If you want help here, you are starting from below empty.",
+                                    "Some reputations do not follow people. They arrive before them."
+                                ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.global",
+                                  "section.lines"
+                              ]
+                 }
 }

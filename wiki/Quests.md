@@ -1,5 +1,7 @@
 # Quest JSON
 
+For the shared metadata, tag, and dialogue-linking rules that now apply across quests, dialogue trees, forced dialogue, and ambient dialogue, read [Dialogue And Quests](Dialogue-And-Quests.md) first.
+
 Quests live under:
 
 ```text
@@ -7,6 +9,8 @@ data/<namespace>/quests/<quest_id>.json
 ```
 
 Each quest owns its display text, offer gates, target rules, explicit objectives, lifecycle limits, rewards, and optional tracker text. Branching offer, reminder, turn-in, and abandon conversations should live in matching [Dialogue Tree JSON](Dialogue-Trees.md) files.
+
+Quest `links` are pack-author-facing metadata and validation hooks. They are parsed by the loader and checked by the validator, but the current runtime still uses dialogue-tree quest actions and quest trigger actions to actually start, remind, turn in, abandon, or force quest dialogue.
 
 Quest JSON is canonical in beta.12. Older advancement-style `criteria` / `requirements` blocks and alias fields are not loaded by the quest system.
 
@@ -44,6 +48,34 @@ Quest JSON is canonical in beta.12. Older advancement-style `criteria` / `requir
   ]
 }
 ```
+
+Add a `metadata` block and `links` block when the quest owns dialogue surfaces:
+
+```json
+{
+  "metadata": {
+    "topic": "quests.lost_civilization",
+    "questline": "lost_civilization",
+    "quest": "example:tales_of_a_lost_civilization",
+    "tags": [
+      "content.quest",
+      "dialogue.linked",
+      "questline.lost_civilization"
+    ]
+  },
+  "links": {
+    "dialogue_tree": "example:tales_of_a_lost_civilization",
+    "offer": "offer",
+    "reminder": "reminder",
+    "turn_in": "turn_in",
+    "forced_dialogue": [
+      "quest.lost_civilization.storm_reminder"
+    ]
+  }
+}
+```
+
+`links.offer`, `links.reminder`, and `links.turn_in` must match real `entries[].id` values in the linked dialogue tree. `links.forced_dialogue` must list real forced-dialogue entry ids, not file names.
 
 `offer.professions` is always an array, and `offer.skills` is an object keyed by villager skill id. Skill requirements use `{ "min": number }` so future skill gates can grow without changing shape.
 

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
+const metadataTagPattern = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 
 const roots = {
   dialogue: "neoforge/src/main/resources/data/villagerretaliation/dialogue/en_us",
@@ -289,7 +290,26 @@ const recruitmentScenarios = new Set(["betrayed", "injured", "left_behind"]);
 const weatherStates = new Set(["clear", "rain", "thunder"]);
 const timesOfDay = new Set(["morning", "afternoon", "evening", "night"]);
 const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "gossip", "memory", "loot", "notification", "tracker", "forced_dialogue"]);
-const dialogueTreeActionKeys = new Set(["type", "quest", "action", "amount", "loot_table", "memory_event", "notification", "text", "forced_dialogue", "flash_tracker", "lines"]);
+const dialogueTreeActionKeys = new Set([
+  "type",
+  "quest",
+  "quest_id",
+  "id",
+  "action",
+  "amount",
+  "experience",
+  "reputation",
+  "gossip",
+  "gossip_reputation",
+  "loot_table",
+  "memory_event",
+  "notification",
+  "trigger",
+  "text",
+  "forced_dialogue",
+  "flash_tracker",
+  "lines"
+]);
 const dialogueTreeQuestActions = new Set(["start", "remind", "turn_in", "abandon"]);
 const questObjectiveTypes = new Set(["structure_visit", "item_check", "condition"]);
 const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "completed", "abandoned", "expired"]);
@@ -482,6 +502,12 @@ const knownPlaceholders = new Set([
 ]);
 
 const errors = [];
+const questDefinitions = new Map();
+const dialogueTreeDefinitions = new Map();
+const forcedDialogueDefinitions = new Map();
+const pendingQuestReferences = [];
+const pendingDialogueTreeLinks = [];
+const pendingForcedDialogueReferences = [];
 const dialogueIdScopes = {
   options: new Map(),
   lines: new Map(),
@@ -501,16 +527,21 @@ for (const [kind, relativeRoot] of Object.entries(roots)) {
     if (kind === "dialogue") {
       checkDialogue(file, data);
     } else if (kind === "dialogueTrees") {
+      indexDialogueTree(file, data);
       checkDialogueTree(file, data);
     } else if (kind === "forcedDialogue") {
+      indexForcedDialogue(file, data);
       checkForcedDialogue(file, data);
     } else if (kind === "notifications") {
       checkIds(file, data.notifications ?? [], "notification");
     } else if (kind === "quests") {
+      indexQuest(file, data);
       checkQuest(file, data);
     }
   }
 }
+
+validateCrossReferences();
 
 if (errors.length > 0) {
   for (const error of errors) {
@@ -548,6 +579,7 @@ function stripBom(text) {
 }
 
 function checkDialogue(file, data) {
+  checkDialogueMetadata(file, data, "root");
   const sections = dialogueSectionsFor(file, data);
   checkDialogueIds(file, sections.options, "dialogue option", dialogueIdScopes.options);
   checkDialogueIds(file, sections.lines, "dialogue line", dialogueIdScopes.lines);
@@ -590,6 +622,8 @@ function checkQuest(file, data) {
   checkUnknownObjectKeys(file, data, "root", new Set([
     "id",
     "display",
+    "metadata",
+    "links",
     "questline",
     "parent",
     "offer",
@@ -602,7 +636,10 @@ function checkQuest(file, data) {
     "dialogue"
   ]));
 
+  checkDialogueMetadata(file, data, "root");
+  checkQuestMetadataConsistency(file, data, "root");
   checkDisplayObject(file, data.display, "display");
+  checkQuestLinks(file, data, "links");
   checkQuestOffer(file, data.offer, "offer");
   checkQuestTarget(file, data.target, "target");
   checkQuestObjectives(file, data.objectives, "objectives");
@@ -900,6 +937,59 @@ function checkQuestRewards(file, rewards, location) {
   checkOptionalString(file, rewards, location, "memory_event");
 }
 
+function checkQuestLinks(file, data, location) {
+  const links = data.links;
+  if (links === undefined) {
+    return;
+  }
+  if (!links || typeof links !== "object" || Array.isArray(links)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, links, location, new Set([
+    "dialogue_tree",
+    "offer",
+    "reminder",
+    "turn_in",
+    "forced_dialogue"
+  ]));
+  checkOptionalString(file, links, location, "dialogue_tree");
+  checkOptionalString(file, links, location, "offer");
+  checkOptionalString(file, links, location, "reminder");
+  checkOptionalString(file, links, location, "turn_in");
+  checkStringList(file, links, location, ["forced_dialogue"], "forced dialogue id");
+
+  const treeId = stringValue(links.dialogue_tree);
+  const offer = stringValue(links.offer);
+  const reminder = stringValue(links.reminder);
+  const turnIn = stringValue(links.turn_in);
+  if ((offer || reminder || turnIn) && !treeId) {
+    errors.push(`${relative(file)}: ${location}.dialogue_tree is required when offer, reminder, or turn_in is set.`);
+  }
+  if (treeId) {
+    pendingDialogueTreeLinks.push({
+      file,
+      questId: stringValue(data.id),
+      location,
+      treeId,
+      offer,
+      reminder,
+      turnIn,
+      metadataQuest: stringValue(metadataObject(data).quest)
+    });
+  }
+  for (const forcedDialogueId of readValues(links, ["forced_dialogue"])) {
+    if (typeof forcedDialogueId === "string" && forcedDialogueId.trim()) {
+      pendingForcedDialogueReferences.push({
+        file,
+        location: `${location}.forced_dialogue`,
+        id: forcedDialogueId.trim(),
+        reason: "quest links"
+      });
+    }
+  }
+}
+
 function checkQuestDialogue(file, dialogue, location) {
   if (dialogue === undefined) {
     return;
@@ -927,6 +1017,7 @@ function checkDialogueTree(file, data) {
     return;
   }
   checkDialogueMetadata(file, data, "root");
+  checkDialogueTreeMetadataConsistency(file, data, "root");
 
   if (!Array.isArray(data.entries) || data.entries.length === 0) {
     errors.push(`${relative(file)}: dialogue tree must define at least one entry.`);
@@ -1017,13 +1108,36 @@ function checkDialogueTreeActions(file, actions, location) {
         errors.push(`${relative(file)}: ${actionLocation}.${key} is not a supported dialogue action field.`);
       }
     }
-    const type = normalizedString(action.type);
+    const type = actionType(action);
     if (!dialogueTreeActionTypes.has(type)) {
       errors.push(`${relative(file)}: ${actionLocation}.type must be one of ${[...dialogueTreeActionTypes].join(", ")}.`);
     }
     if (type === "quest") {
-      checkStringList(file, action, actionLocation, ["quest"], "quest id");
+      checkStringList(file, action, actionLocation, ["quest", "quest_id", "id"], "quest id");
       checkStringValues(file, action, actionLocation, ["action"], dialogueTreeQuestActions, "quest action", { requireAny: true });
+      for (const questId of readValues(action, ["quest", "quest_id", "id"])) {
+        if (typeof questId === "string" && questId.trim()) {
+          pendingQuestReferences.push({
+            file,
+            location: actionLocation,
+            id: questId.trim(),
+            reason: "dialogue or trigger action"
+          });
+        }
+      }
+    }
+    if (type === "forced_dialogue") {
+      checkStringList(file, action, actionLocation, ["forced_dialogue"], "forced dialogue id");
+      for (const forcedDialogueId of readValues(action, ["forced_dialogue"])) {
+        if (typeof forcedDialogueId === "string" && forcedDialogueId.trim()) {
+          pendingForcedDialogueReferences.push({
+            file,
+            location: actionLocation,
+            id: forcedDialogueId.trim(),
+            reason: "dialogue or trigger action"
+          });
+        }
+      }
     }
     if (action.lines !== undefined && (!action.lines || typeof action.lines !== "object" || Array.isArray(action.lines))) {
       errors.push(`${relative(file)}: ${actionLocation}.lines must be an object keyed by action status.`);
@@ -1032,9 +1146,11 @@ function checkDialogueTreeActions(file, actions, location) {
 }
 
 function checkForcedDialogue(file, data) {
+  checkDialogueMetadata(file, data, "root");
   const entries = entriesFor(data);
   checkIds(file, entries, "forced dialogue entry");
   for (const [entryIndex, entry] of entries.entries()) {
+    checkDialogueMetadata(file, entry, `entries[${entryIndex}]`);
     checkForcedDialogueOptions(file, entry.options, `entries[${entryIndex}].options`);
     checkForcedDialogueOptions(file, entry.leave_options, `entries[${entryIndex}].leave_options`);
     checkForcedDialogueOption(file, entry.leave_option, `entries[${entryIndex}].leave_option`);
@@ -1181,6 +1297,15 @@ function checkNestedDialogueMetadata(file, metadata, location) {
 function checkDialogueMetadataField(file, entry, location, key) {
   if (key === "tags") {
     checkStringList(file, entry, location, [key], "metadata tag");
+    for (const tag of readValues(entry, [key])) {
+      if (typeof tag !== "string") {
+        continue;
+      }
+      const normalizedTag = tag.trim();
+      if (normalizedTag && !metadataTagPattern.test(normalizedTag)) {
+        errors.push(`${relative(file)}: ${location}.${key} has invalid metadata tag "${tag}". Use lowercase dotted, dashed, or underscored tags.`);
+      }
+    }
     return;
   }
   const value = entry[key];
@@ -1269,6 +1394,16 @@ function checkCondition(file, condition, location) {
   } else if (type === "quest") {
     checkStringList(file, condition, location, ["quest", "quest_id", "id"], "quest id");
     checkStringValues(file, condition, location, ["state", "states"], questStates, "quest state", { requireAny: true });
+    for (const questId of readValues(condition, ["quest", "quest_id", "id"])) {
+      if (typeof questId === "string" && questId.trim()) {
+        pendingQuestReferences.push({
+          file,
+          location,
+          id: questId.trim(),
+          reason: "quest condition"
+        });
+      }
+    }
   } else if (type === "weather") {
     checkStringValues(file, condition, location, ["state", "states", "weather", "weathers"], weatherStates, "weather state", { requireAny: true });
   } else if (type === "time" || type === "time_of_day") {
@@ -1436,6 +1571,41 @@ function normalizedString(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
+function actionType(action) {
+  const explicit = normalizedString(action.type);
+  if (explicit) {
+    return explicit;
+  }
+  if (Object.hasOwn(action, "quest") || Object.hasOwn(action, "quest_id") || Object.hasOwn(action, "id")) {
+    return "quest";
+  }
+  if (Object.hasOwn(action, "forced_dialogue")) {
+    return "forced_dialogue";
+  }
+  if (Object.hasOwn(action, "flash_tracker")) {
+    return "tracker";
+  }
+  if (Object.hasOwn(action, "memory_event")) {
+    return "memory";
+  }
+  if (Object.hasOwn(action, "loot_table")) {
+    return "loot";
+  }
+  if (Object.hasOwn(action, "gossip") || Object.hasOwn(action, "gossip_reputation")) {
+    return "gossip";
+  }
+  if (Object.hasOwn(action, "reputation")) {
+    return "reputation";
+  }
+  if (Object.hasOwn(action, "experience")) {
+    return "experience";
+  }
+  if (Object.hasOwn(action, "notification") || Object.hasOwn(action, "trigger") || Object.hasOwn(action, "text")) {
+    return "notification";
+  }
+  return "";
+}
+
 function checkIds(file, entries, label) {
   const seen = new Map();
   for (const [index, entry] of entries.entries()) {
@@ -1498,4 +1668,134 @@ function walkStrings(value, visit) {
 
 function relative(file) {
   return path.relative(root, file).replaceAll(path.sep, "/");
+}
+
+function stringValue(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function metadataObject(entry) {
+  return entry && typeof entry === "object" && !Array.isArray(entry) && entry.metadata && typeof entry.metadata === "object" && !Array.isArray(entry.metadata)
+    ? entry.metadata
+    : {};
+}
+
+function indexQuest(file, data) {
+  const questId = stringValue(data?.id);
+  if (!questId) {
+    return;
+  }
+  const previous = questDefinitions.get(questId);
+  if (previous) {
+    errors.push(`${relative(file)}: duplicate quest id "${questId}" also defined in ${previous.file}.`);
+    return;
+  }
+  questDefinitions.set(questId, { file: relative(file) });
+}
+
+function indexDialogueTree(file, data) {
+  const treeId = stringValue(data?.id);
+  if (!treeId) {
+    return;
+  }
+  const previous = dialogueTreeDefinitions.get(treeId);
+  if (previous) {
+    errors.push(`${relative(file)}: duplicate dialogue tree id "${treeId}" also defined in ${previous.file}.`);
+    return;
+  }
+  dialogueTreeDefinitions.set(treeId, {
+    file: relative(file),
+    entryIds: new Set((Array.isArray(data?.entries) ? data.entries : [])
+      .filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry) && stringValue(entry.id))
+      .map((entry) => stringValue(entry.id))),
+    metadataQuest: stringValue(metadataObject(data).quest)
+  });
+}
+
+function indexForcedDialogue(file, data) {
+  for (const entry of entriesFor(data)) {
+    const entryId = stringValue(entry?.id);
+    if (!entryId) {
+      continue;
+    }
+    const previous = forcedDialogueDefinitions.get(entryId);
+    if (previous) {
+      errors.push(`${relative(file)}: duplicate forced dialogue id "${entryId}" also defined in ${previous.file}.`);
+      continue;
+    }
+    forcedDialogueDefinitions.set(entryId, { file: relative(file) });
+  }
+}
+
+function checkQuestMetadataConsistency(file, data, location) {
+  const metadata = metadataObject(data);
+  const metadataQuestline = stringValue(metadata.questline);
+  const metadataQuest = stringValue(metadata.quest);
+  const questline = stringValue(data.questline);
+  const questId = stringValue(data.id);
+
+  if (metadataQuestline && !metadataQuest) {
+    errors.push(`${relative(file)}: ${location}.metadata.quest is required when metadata.questline is set.`);
+  }
+  if (metadataQuest && !metadataQuestline) {
+    errors.push(`${relative(file)}: ${location}.metadata.questline is required when metadata.quest is set.`);
+  }
+  if (questId && metadataQuest && metadataQuest !== questId) {
+    errors.push(`${relative(file)}: ${location}.metadata.quest must match id "${questId}".`);
+  }
+  if (questline && metadataQuestline && metadataQuestline !== questline) {
+    errors.push(`${relative(file)}: ${location}.metadata.questline must match questline "${questline}".`);
+  }
+}
+
+function checkDialogueTreeMetadataConsistency(file, data, location) {
+  const metadata = metadataObject(data);
+  const metadataQuestline = stringValue(metadata.questline);
+  const metadataQuest = stringValue(metadata.quest);
+  if (metadataQuestline && !metadataQuest) {
+    errors.push(`${relative(file)}: ${location}.metadata.quest is required when metadata.questline is set.`);
+  }
+  if (metadataQuest && !metadataQuestline) {
+    errors.push(`${relative(file)}: ${location}.metadata.questline is required when metadata.quest is set.`);
+  }
+  if (metadataQuest) {
+    pendingQuestReferences.push({
+      file,
+      location: `${location}.metadata.quest`,
+      id: metadataQuest,
+      reason: "dialogue tree metadata"
+    });
+  }
+}
+
+function validateCrossReferences() {
+  for (const reference of pendingQuestReferences) {
+    if (!questDefinitions.has(reference.id)) {
+      errors.push(`${relative(reference.file)}: ${reference.location} references missing quest id "${reference.id}" from ${reference.reason}.`);
+    }
+  }
+
+  for (const reference of pendingForcedDialogueReferences) {
+    if (!forcedDialogueDefinitions.has(reference.id)) {
+      errors.push(`${relative(reference.file)}: ${reference.location} references missing forced dialogue id "${reference.id}" from ${reference.reason}.`);
+    }
+  }
+
+  for (const link of pendingDialogueTreeLinks) {
+    const tree = dialogueTreeDefinitions.get(link.treeId);
+    if (!tree) {
+      errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree references missing dialogue tree id "${link.treeId}".`);
+      continue;
+    }
+
+    for (const [field, entryId] of [["offer", link.offer], ["reminder", link.reminder], ["turn_in", link.turnIn]]) {
+      if (entryId && !tree.entryIds.has(entryId)) {
+        errors.push(`${relative(link.file)}: ${link.location}.${field} points to missing dialogue tree entry id "${entryId}" in "${link.treeId}".`);
+      }
+    }
+
+    if (link.metadataQuest && tree.metadataQuest && tree.metadataQuest !== link.metadataQuest) {
+      errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree points to "${link.treeId}" but its metadata.quest is "${tree.metadataQuest}" instead of "${link.metadataQuest}".`);
+    }
+  }
 }

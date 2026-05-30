@@ -1,251 +1,258 @@
 {
-  "lines": [
-    {
-      "id": "fisherman_share_story_cold_ocean",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:cold_ocean",
-      "lines": [
-        "{target}? Cold water steals strength quickly. I would keep rope dry and a boat tied.",
-        "If anyone heads for Cold Ocean, tell them: Bring a boat and do not swim for pride. I will be at the barrel.",
-        "Gray waves make distance feel heavier. I'll remember that when I coil the rope.",
-        "Cold Ocean is no small story. Deep trouble does not always look deep.",
-        "I'll remember Cold Ocean as water that chills courage out of the bones. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_deep_cold_ocean",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:deep_cold_ocean",
-      "lines": [
-        "{target}? Deep cold leaves little room for mistakes. I would keep rope dry and a boat tied.",
-        "If anyone heads for Deep Cold Ocean, tell them: Use a boat and save your breath. I will be at the barrel.",
-        "The bottom waits farther down than courage wants. I'll remember that when I coil the rope.",
-        "Deep Cold Ocean is no small story. Deep trouble does not always look deep.",
-        "I will remember Deep Cold Ocean as cold water with too much room beneath it. I will keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_deep_frozen_ocean",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:deep_frozen_ocean",
-      "lines": [
-        "{target}? Ice above and depth below make a cruel pair. I would keep rope dry and a boat tied.",
-        "If anyone heads for Deep Frozen Ocean, tell them: Mind cracks and keep a boat near. I will be at the barrel.",
-        "Blue ice can make the sea look solid enough to trust. I'll remember that when I coil the rope.",
-        "Deep Frozen Ocean is no small story. Deep trouble does not always look deep.",
-        "I will remember Deep Frozen Ocean as a frozen roof over water that still wants you. I will keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_frozen_ocean",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:frozen_ocean",
-      "lines": [
-        "{target}? Ice over water is a promise with cracks. I would keep rope dry and a boat tied.",
-        "If anyone heads for Frozen Ocean, tell them: Test the way and keep a boat ready. I will be at the barrel.",
-        "Frozen waves still have depth beneath them. I'll remember that when I coil the rope.",
-        "Frozen Ocean is no small story. Deep trouble does not always look deep.",
-        "I'll remember Frozen Ocean as a white sea pretending to be ground. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_frozen_peaks",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:frozen_peaks",
-      "lines": [
-        "{target}? Mountain cold sharpens every mistake. I would keep rope dry and a boat tied.",
-        "If anyone heads for Frozen Peaks, tell them: Climb slowly and turn back before pride freezes. I will be at the barrel.",
-        "Powder snow can swallow a sure step. I'll remember that when I coil the rope.",
-        "Frozen Peaks is no small story. Deep trouble does not always look deep.",
-        "I'll remember Frozen Peaks as high white stone with thin air around it. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_frozen_river",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:frozen_river",
-      "lines": [
-        "{target}? A frozen crossing can betray a heavy foot. I would keep rope dry and a boat tied.",
-        "If anyone heads for Frozen River, tell them: Cross where the banks are kind. I will be at the barrel.",
-        "Ice speaks in cracks before it opens. I'll remember that when I coil the rope.",
-        "Frozen River is no small story. Deep trouble does not always look deep.",
-        "I'll remember Frozen River as a road of ice over moving water. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_grove",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:grove",
-      "lines": [
-        "{target}? Snowy trees make quiet steps too easy. I would keep rope dry and a boat tied.",
-        "If anyone heads for Grove, tell them: Watch for powder snow and things hiding behind trunks. I will be at the barrel.",
-        "Spruce shade keeps winter close. I'll remember that when I coil the rope.",
-        "Grove is no small story. Deep trouble does not always look deep.",
-        "I'll remember Grove as a white wood where sound gets swallowed. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_ice_spikes",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:ice_spikes",
-      "lines": [
-        "{target}? Ice stands tall enough to turn wind mean. I would keep rope dry and a boat tied.",
-        "If anyone heads for Ice Spikes, tell them: Keep low and do not trust smooth footing. I will be at the barrel.",
-        "Packed ice shines like it wants you careless. I'll remember that when I coil the rope.",
-        "Ice Spikes is no small story. Deep trouble does not always look deep.",
-        "I'll remember Ice Spikes as frozen spears under a hard sky. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_jagged_peaks",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:jagged_peaks",
-      "lines": [
-        "{target}? Sharp mountains punish tired feet. I would keep rope dry and a boat tied.",
-        "If anyone heads for Jagged Peaks, tell them: Climb with blocks ready and pride asleep. I will be at the barrel.",
-        "One loose step can travel all the way down. I'll remember that when I coil the rope.",
-        "Jagged Peaks is no small story. Deep trouble does not always look deep.",
-        "I'll remember Jagged Peaks as peaks that look cut by a giant axe. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_snowy_beach",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:snowy_beach",
-      "lines": [
-        "{target}? Snow and surf make cold from both sides. I would keep rope dry and a boat tied.",
-        "If anyone heads for Snowy Beach, tell them: Keep dry and leave before the wind turns. I will be at the barrel.",
-        "Sand under snow hides the shore badly. I'll remember that when I coil the rope.",
-        "Snowy Beach is no small story. Deep trouble does not always look deep.",
-        "I'll remember Snowy Beach as a cold edge where land meets colder water. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_snowy_plains",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:snowy_plains",
-      "lines": [
-        "{target}? White ground shows tracks and hides holes. I would keep rope dry and a boat tied.",
-        "If anyone heads for Snowy Plains, tell them: Follow footprints only if you trust who made them. I will be at the barrel.",
-        "Snow makes distance look shorter than it is. I'll remember that when I coil the rope.",
-        "Snowy Plains is no small story. Deep trouble does not always look deep.",
-        "I'll remember Snowy Plains as flat winter with every sound laid bare. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_snowy_slopes",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:snowy_slopes",
-      "lines": [
-        "{target}? Powder snow can swallow a careless step. I would keep rope dry and a boat tied.",
-        "If anyone heads for Snowy Slopes, tell them: Wear leather boots and test the white ground. I will be at the barrel.",
-        "The hill looks soft until it takes your knees. I'll remember that when I coil the rope.",
-        "Snowy Slopes is no small story. Deep trouble does not always look deep.",
-        "I'll remember Snowy Slopes as a slope where snow pretends to be stone. I'll keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "fisherman_share_story_snowy_taiga",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:snowy_taiga",
-      "lines": [
-        "{target}? Cold trees make long watches longer. I would keep rope dry and a boat tied.",
-        "If anyone heads for Snowy Taiga, tell them: Keep torches dry and listen for wolves. I will be at the barrel.",
-        "Spruce and snow muffle bad sounds. I'll remember that when I coil the rope.",
-        "Snowy Taiga is no small story. Deep trouble does not always look deep.",
-        "I will remember Snowy Taiga as winter trees with shadows under every branch. I will keep a rope ready.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "fisherman_share_story_cold_ocean",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:cold_ocean",
+                      "lines":  [
+                                    "{target}? Cold water steals strength quickly. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Cold Ocean, tell them: Bring a boat and do not swim for pride. I will be at the barrel.",
+                                    "Gray waves make distance feel heavier. I\u0027ll remember that when I coil the rope.",
+                                    "Cold Ocean is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Cold Ocean as water that chills courage out of the bones. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_deep_cold_ocean",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:deep_cold_ocean",
+                      "lines":  [
+                                    "{target}? Deep cold leaves little room for mistakes. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Deep Cold Ocean, tell them: Use a boat and save your breath. I will be at the barrel.",
+                                    "The bottom waits farther down than courage wants. I\u0027ll remember that when I coil the rope.",
+                                    "Deep Cold Ocean is no small story. Deep trouble does not always look deep.",
+                                    "I will remember Deep Cold Ocean as cold water with too much room beneath it. I will keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_deep_frozen_ocean",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:deep_frozen_ocean",
+                      "lines":  [
+                                    "{target}? Ice above and depth below make a cruel pair. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Deep Frozen Ocean, tell them: Mind cracks and keep a boat near. I will be at the barrel.",
+                                    "Blue ice can make the sea look solid enough to trust. I\u0027ll remember that when I coil the rope.",
+                                    "Deep Frozen Ocean is no small story. Deep trouble does not always look deep.",
+                                    "I will remember Deep Frozen Ocean as a frozen roof over water that still wants you. I will keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_frozen_ocean",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:frozen_ocean",
+                      "lines":  [
+                                    "{target}? Ice over water is a promise with cracks. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Frozen Ocean, tell them: Test the way and keep a boat ready. I will be at the barrel.",
+                                    "Frozen waves still have depth beneath them. I\u0027ll remember that when I coil the rope.",
+                                    "Frozen Ocean is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Frozen Ocean as a white sea pretending to be ground. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_frozen_peaks",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:frozen_peaks",
+                      "lines":  [
+                                    "{target}? Mountain cold sharpens every mistake. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Frozen Peaks, tell them: Climb slowly and turn back before pride freezes. I will be at the barrel.",
+                                    "Powder snow can swallow a sure step. I\u0027ll remember that when I coil the rope.",
+                                    "Frozen Peaks is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Frozen Peaks as high white stone with thin air around it. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_frozen_river",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:frozen_river",
+                      "lines":  [
+                                    "{target}? A frozen crossing can betray a heavy foot. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Frozen River, tell them: Cross where the banks are kind. I will be at the barrel.",
+                                    "Ice speaks in cracks before it opens. I\u0027ll remember that when I coil the rope.",
+                                    "Frozen River is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Frozen River as a road of ice over moving water. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_grove",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:grove",
+                      "lines":  [
+                                    "{target}? Snowy trees make quiet steps too easy. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Grove, tell them: Watch for powder snow and things hiding behind trunks. I will be at the barrel.",
+                                    "Spruce shade keeps winter close. I\u0027ll remember that when I coil the rope.",
+                                    "Grove is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Grove as a white wood where sound gets swallowed. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_ice_spikes",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:ice_spikes",
+                      "lines":  [
+                                    "{target}? Ice stands tall enough to turn wind mean. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Ice Spikes, tell them: Keep low and do not trust smooth footing. I will be at the barrel.",
+                                    "Packed ice shines like it wants you careless. I\u0027ll remember that when I coil the rope.",
+                                    "Ice Spikes is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Ice Spikes as frozen spears under a hard sky. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_jagged_peaks",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:jagged_peaks",
+                      "lines":  [
+                                    "{target}? Sharp mountains punish tired feet. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Jagged Peaks, tell them: Climb with blocks ready and pride asleep. I will be at the barrel.",
+                                    "One loose step can travel all the way down. I\u0027ll remember that when I coil the rope.",
+                                    "Jagged Peaks is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Jagged Peaks as peaks that look cut by a giant axe. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_snowy_beach",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:snowy_beach",
+                      "lines":  [
+                                    "{target}? Snow and surf make cold from both sides. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Snowy Beach, tell them: Keep dry and leave before the wind turns. I will be at the barrel.",
+                                    "Sand under snow hides the shore badly. I\u0027ll remember that when I coil the rope.",
+                                    "Snowy Beach is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Snowy Beach as a cold edge where land meets colder water. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_snowy_plains",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:snowy_plains",
+                      "lines":  [
+                                    "{target}? White ground shows tracks and hides holes. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Snowy Plains, tell them: Follow footprints only if you trust who made them. I will be at the barrel.",
+                                    "Snow makes distance look shorter than it is. I\u0027ll remember that when I coil the rope.",
+                                    "Snowy Plains is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Snowy Plains as flat winter with every sound laid bare. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_snowy_slopes",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:snowy_slopes",
+                      "lines":  [
+                                    "{target}? Powder snow can swallow a careless step. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Snowy Slopes, tell them: Wear leather boots and test the white ground. I will be at the barrel.",
+                                    "The hill looks soft until it takes your knees. I\u0027ll remember that when I coil the rope.",
+                                    "Snowy Slopes is no small story. Deep trouble does not always look deep.",
+                                    "I\u0027ll remember Snowy Slopes as a slope where snow pretends to be stone. I\u0027ll keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "fisherman_share_story_snowy_taiga",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:snowy_taiga",
+                      "lines":  [
+                                    "{target}? Cold trees make long watches longer. I would keep rope dry and a boat tied.",
+                                    "If anyone heads for Snowy Taiga, tell them: Keep torches dry and listen for wolves. I will be at the barrel.",
+                                    "Spruce and snow muffle bad sounds. I\u0027ll remember that when I coil the rope.",
+                                    "Snowy Taiga is no small story. Deep trouble does not always look deep.",
+                                    "I will remember Snowy Taiga as winter trees with shadows under every branch. I will keep a rope ready.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "section.lines"
+                              ]
+                 }
 }

@@ -1,89 +1,97 @@
 {
-  "pacify": [
-    {
-      "id": "global_pacify_success_1",
-      "outcomes": [
-        "success"
-      ],
-      "lines": [
-        "Fine. I will stand down, but peace takes more than payment.",
-        "I will let this pass for now. Do not make me <shake>regret</shake> it.",
-        "That is enough to cool my temper. Keep your hands peaceful.",
-        "This settles the moment, not the memory.",
-        "I will step back. You should spend this second chance carefully.",
-        "The payment helps. Better choices will help more.",
-        "Fine. Let this end here before it grows sharper.",
-        "I will accept this. Do not mistake that for forgetting.",
-        "Peace can start here, if you let it.",
-        "That is enough for now. Keep the rest of your actions <pulse>clean</pulse>."
-      ],
-      "weight": 60
-    },
-    {
-      "id": "global_pacify_short_1",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "lines": [
-        "That is not enough. Bring {emerald_cost} {emeralds} if you want this settled.",
-        "You are short. Peace costs <color:green>{emerald_cost} {emeralds}</color> today.",
-        "A small offer will not calm a large mistake. I need {emerald_cost} {emeralds}.",
-        "That does not cover it. Not even close.",
-        "If you mean to settle this, bring the full {emerald_cost} {emeralds}.",
-        "You cannot buy peace with half the price.",
-        "The offer is too light for the damage done.",
-        "I need {emerald_cost} {emeralds}. Anything less leaves this open.",
-        "That is not enough to cool anyone's temper.",
-        "Come back with <color:green>{emerald_cost} {emeralds}</color>, or choose another way."
-      ],
-      "weight": 60
-    },
-    {
-      "id": "global_pacify_blocked_1",
-      "dispositions": [
-        "hostile",
-        "fearful"
-      ],
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "lines": [
-        "<shake>No.</shake> Some things are not bought back with {payment_items}.",
-        "The village remembers too much for that to work.",
-        "No. The offer does not reach the damage yet.",
-        "Keep {payment_items}. This is not the kind of hurt they can fix.",
-        "You cannot press payment into a wound and call it healed.",
-        "Not from you. Not after what the village remembers.",
-        "That offer comes too late to sound peaceful.",
-        "No. Trust is not for sale today.",
-        "The damage is heavier than those {payment_items}.",
-        "<shake>Back away.</shake> This cannot be settled like that."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "global_pacify_blocked_2",
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "weight": 24,
-      "lines": [
-        "Keep them. I do not trust your apology.",
-        "No. The offer does not reach the damage yet.",
-        "Keep {payment_items}. This is not ready to mend.",
-        "You cannot buy your way out of every memory.",
-        "No. I would rather keep my distance than take your payment.",
-        "That might settle a mistake. This is more than that.",
-        "The village is not ready to accept peace from your hand.",
-        "Your {payment_items} do not make me feel safer.",
-        "No. The wound is still too fresh for bargaining.",
-        "Keep the {payment_items}. I am keeping my <shake>caution</shake>."
-      ]
-    }
-  ]
+    "pacify":  [
+                   {
+                       "id":  "global_pacify_success_1",
+                       "outcomes":  [
+                                        "success"
+                                    ],
+                       "lines":  [
+                                     "Fine. I will stand down, but peace takes more than payment.",
+                                     "I will let this pass for now. Do not make me \u003cshake\u003eregret\u003c/shake\u003e it.",
+                                     "That is enough to cool my temper. Keep your hands peaceful.",
+                                     "This settles the moment, not the memory.",
+                                     "I will step back. You should spend this second chance carefully.",
+                                     "The payment helps. Better choices will help more.",
+                                     "Fine. Let this end here before it grows sharper.",
+                                     "I will accept this. Do not mistake that for forgetting.",
+                                     "Peace can start here, if you let it.",
+                                     "That is enough for now. Keep the rest of your actions \u003cpulse\u003eclean\u003c/pulse\u003e."
+                                 ],
+                       "weight":  60
+                   },
+                   {
+                       "id":  "global_pacify_short_1",
+                       "outcomes":  [
+                                        "not_enough_emeralds"
+                                    ],
+                       "lines":  [
+                                     "That is not enough. Bring {emerald_cost} {emeralds} if you want this settled.",
+                                     "You are short. Peace costs \u003ccolor:green\u003e{emerald_cost} {emeralds}\u003c/color\u003e today.",
+                                     "A small offer will not calm a large mistake. I need {emerald_cost} {emeralds}.",
+                                     "That does not cover it. Not even close.",
+                                     "If you mean to settle this, bring the full {emerald_cost} {emeralds}.",
+                                     "You cannot buy peace with half the price.",
+                                     "The offer is too light for the damage done.",
+                                     "I need {emerald_cost} {emeralds}. Anything less leaves this open.",
+                                     "That is not enough to cool anyone\u0027s temper.",
+                                     "Come back with \u003ccolor:green\u003e{emerald_cost} {emeralds}\u003c/color\u003e, or choose another way."
+                                 ],
+                       "weight":  60
+                   },
+                   {
+                       "id":  "global_pacify_blocked_1",
+                       "dispositions":  [
+                                            "hostile",
+                                            "fearful"
+                                        ],
+                       "outcomes":  [
+                                        "blocked_by_reputation"
+                                    ],
+                       "lines":  [
+                                     "\u003cshake\u003eNo.\u003c/shake\u003e Some things are not bought back with {payment_items}.",
+                                     "The village remembers too much for that to work.",
+                                     "No. The offer does not reach the damage yet.",
+                                     "Keep {payment_items}. This is not the kind of hurt they can fix.",
+                                     "You cannot press payment into a wound and call it healed.",
+                                     "Not from you. Not after what the village remembers.",
+                                     "That offer comes too late to sound peaceful.",
+                                     "No. Trust is not for sale today.",
+                                     "The damage is heavier than those {payment_items}.",
+                                     "\u003cshake\u003eBack away.\u003c/shake\u003e This cannot be settled like that."
+                                 ],
+                       "weight":  48
+                   },
+                   {
+                       "id":  "global_pacify_blocked_2",
+                       "dispositions":  [
+                                            "rude",
+                                            "hostile",
+                                            "fearful"
+                                        ],
+                       "outcomes":  [
+                                        "blocked_by_reputation"
+                                    ],
+                       "weight":  24,
+                       "lines":  [
+                                     "Keep them. I do not trust your apology.",
+                                     "No. The offer does not reach the damage yet.",
+                                     "Keep {payment_items}. This is not ready to mend.",
+                                     "You cannot buy your way out of every memory.",
+                                     "No. I would rather keep my distance than take your payment.",
+                                     "That might settle a mistake. This is more than that.",
+                                     "The village is not ready to accept peace from your hand.",
+                                     "Your {payment_items} do not make me feel safer.",
+                                     "No. The wound is still too fresh for bargaining.",
+                                     "Keep the {payment_items}. I am keeping my \u003cshake\u003ecaution\u003c/shake\u003e."
+                                 ]
+                   }
+               ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.global",
+                                  "section.pacify"
+                              ]
+                 }
 }

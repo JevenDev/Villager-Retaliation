@@ -1,13 +1,21 @@
 {
-  "options": [
-    {
-      "id": "recruitment_left_behind",
-      "label": "About leaving you behind...",
-      "type": "dialogue_option",
-      "request": "recruitment_followup",
-      "order": -1,
-      "show_for_babies": false,
-      "requires_unreported_recruitment_followup": true
-    }
-  ]
+    "options":  [
+                    {
+                        "id":  "recruitment_left_behind",
+                        "label":  "About leaving you behind...",
+                        "type":  "dialogue_option",
+                        "request":  "recruitment_followup",
+                        "order":  -1,
+                        "show_for_babies":  false,
+                        "requires_unreported_recruitment_followup":  true
+                    }
+                ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.group.recruitment_left_behind",
+                                  "section.options"
+                              ]
+                 }
 }

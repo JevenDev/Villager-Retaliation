@@ -6,6 +6,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
@@ -133,7 +134,9 @@ public final class VillagerQuestResources {
                 readTracker(root),
                 readTriggers(location, root),
                 readRewards(root),
-                readDialogue(root)
+                readDialogue(root),
+                DialogueEntryMetadata.read(location, "quest", "quest", root),
+                readLinks(root)
         );
     }
 
@@ -509,6 +512,20 @@ public final class VillagerQuestResources {
                 readLines(dialogue, "missing_target"),
                 readLines(dialogue, "missing_proof"),
                 readLines(dialogue, "locate_failed")
+        );
+    }
+
+    private static QuestDefinition.Links readLinks(JsonObject root) {
+        JsonObject links = DatapackJsonReader.readObject(root, "links");
+        if (links == null) {
+            return QuestDefinition.Links.EMPTY;
+        }
+        return new QuestDefinition.Links(
+                DatapackJsonReader.readResourceLocation(links, "dialogue_tree").orElse(null),
+                DatapackJsonReader.readString(links, "offer"),
+                DatapackJsonReader.readString(links, "reminder"),
+                DatapackJsonReader.readString(links, "turn_in"),
+                DatapackJsonReader.readStringList(links, "forced_dialogue")
         );
     }
 

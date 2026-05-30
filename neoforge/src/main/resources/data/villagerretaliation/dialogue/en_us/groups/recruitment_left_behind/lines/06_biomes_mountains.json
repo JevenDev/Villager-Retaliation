@@ -1,116 +1,124 @@
 {
-  "lines": [
-    {
-      "id": "recruitment_left_behind_meadow",
-      "request": "recruitment_followup",
-      "option": "recruitment_left_behind",
-      "show_for_babies": false,
-      "weight": 20,
-      "lines": [
-        "Don't leave me in the Meadow. Open ground on a mountain is still open ground.",
-        "The Meadow looked gentle until I noticed how exposed I was standing there alone.",
-        "I waited in the Meadow with wind all around and nowhere proper to hide.",
-        "If you wander off in a Meadow, I am left out in the open hoping nothing spots me first.",
-        "The flowers made it look peaceful, but they did not make it safe.",
-        "I could see far, but not far enough to know where you went.",
-        "Please do not leave me somewhere pretty and exposed and expect me to feel fine.",
-        "The Meadow felt too quiet once I was the only one standing in it.",
-        "Every breeze made the grass move, and every movement made me look twice.",
-        "I was alone on open ground, hoping the next thing to appear over the hill was you."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "left_behind"
-          ],
-          "biome": "minecraft:meadow"
-        }
-      ]
-    },
-    {
-      "id": "recruitment_left_behind_stony_peaks",
-      "request": "recruitment_followup",
-      "option": "recruitment_left_behind",
-      "show_for_babies": false,
-      "weight": 20,
-      "lines": [
-        "Don't leave me on the Stony Peaks. Rocks and height are enough danger without being alone.",
-        "The Stony Peaks made every path feel like it wanted a wrong step from me.",
-        "I waited on the Stony Peaks with wind in my ears and loose stone underfoot.",
-        "If you wander off on the Stony Peaks, I am left balancing fear and bad footing.",
-        "Every loose rock sounded like a warning once you were gone.",
-        "I kept my eyes on the path, but the drop kept asking for attention.",
-        "Please do not leave me somewhere the ground can betray me that easily.",
-        "The Stony Peaks made standing still feel safer than moving, and neither felt good.",
-        "I could not tell which stones would hold and which ones were waiting to slide.",
-        "I was alone above the world, trying not to think about how far down it was."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "left_behind"
-          ],
-          "biome": "minecraft:stony_peaks"
-        }
-      ]
-    },
-    {
-      "id": "recruitment_left_behind_windswept_gravelly_hills",
-      "request": "recruitment_followup",
-      "option": "recruitment_left_behind",
-      "show_for_babies": false,
-      "weight": 20,
-      "lines": [
-        "Don't leave me in the Windswept Gravelly Hills. Loose gravel and strong wind are cruel company.",
-        "The Windswept Gravelly Hills feel one bad step away from sliding apart under me.",
-        "I waited in the Windswept Gravelly Hills trying not to trust the ground too much.",
-        "If you disappear in the Windswept Gravelly Hills, I am left bracing against wind on unstable stone.",
-        "The gravel shifted under me like it was thinking about leaving too.",
-        "Every gust made the hillside feel less certain.",
-        "Please do not leave me where both the ground and the weather are trying to move me.",
-        "I kept planting my feet carefully, and the hill kept making that feel foolish.",
-        "The loose stone made every step sound worse than it was, which did not help.",
-        "I was alone on unstable ground, hoping I would not have to run."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "left_behind"
-          ],
-          "biome": "minecraft:windswept_gravelly_hills"
-        }
-      ]
-    },
-    {
-      "id": "recruitment_left_behind_windswept_hills",
-      "request": "recruitment_followup",
-      "option": "recruitment_left_behind",
-      "show_for_babies": false,
-      "weight": 20,
-      "lines": [
-        "Don't leave me in the Windswept Hills. Every gust up there feels like a shove.",
-        "The Windswept Hills are too exposed to stand alone on for long.",
-        "I waited in the Windswept Hills with wind in my face and no shelter worth the name.",
-        "If you wander off in the Windswept Hills, I am left fighting the weather and my nerves together.",
-        "The wind kept pulling at me like it wanted me somewhere worse.",
-        "I could see plenty of land and still no clear way to feel safe.",
-        "Please do not leave me where the hills are loud and the air keeps pushing.",
-        "The Windswept Hills made every sound thin and every step uncertain.",
-        "I kept leaning into the gusts and hoping I would not need to move quickly.",
-        "I was alone in the open, trying to keep my footing and my patience."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "scenarios": [
-            "left_behind"
-          ],
-          "biome": "minecraft:windswept_hills"
-        }
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "recruitment_left_behind_meadow",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Meadow. Open ground on a mountain is still open ground.",
+                                    "The Meadow looked gentle until I noticed how exposed I was standing there alone.",
+                                    "I waited in the Meadow with wind all around and nowhere proper to hide.",
+                                    "If you wander off in a Meadow, I am left out in the open hoping nothing spots me first.",
+                                    "The flowers made it look peaceful, but they did not make it safe.",
+                                    "I could see far, but not far enough to know where you went.",
+                                    "Please do not leave me somewhere pretty and exposed and expect me to feel fine.",
+                                    "The Meadow felt too quiet once I was the only one standing in it.",
+                                    "Every breeze made the grass move, and every movement made me look twice.",
+                                    "I was alone on open ground, hoping the next thing to appear over the hill was you."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "left_behind"
+                                                           ],
+                                             "biome":  "minecraft:meadow"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_stony_peaks",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me on the Stony Peaks. Rocks and height are enough danger without being alone.",
+                                    "The Stony Peaks made every path feel like it wanted a wrong step from me.",
+                                    "I waited on the Stony Peaks with wind in my ears and loose stone underfoot.",
+                                    "If you wander off on the Stony Peaks, I am left balancing fear and bad footing.",
+                                    "Every loose rock sounded like a warning once you were gone.",
+                                    "I kept my eyes on the path, but the drop kept asking for attention.",
+                                    "Please do not leave me somewhere the ground can betray me that easily.",
+                                    "The Stony Peaks made standing still feel safer than moving, and neither felt good.",
+                                    "I could not tell which stones would hold and which ones were waiting to slide.",
+                                    "I was alone above the world, trying not to think about how far down it was."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "left_behind"
+                                                           ],
+                                             "biome":  "minecraft:stony_peaks"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_windswept_gravelly_hills",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Windswept Gravelly Hills. Loose gravel and strong wind are cruel company.",
+                                    "The Windswept Gravelly Hills feel one bad step away from sliding apart under me.",
+                                    "I waited in the Windswept Gravelly Hills trying not to trust the ground too much.",
+                                    "If you disappear in the Windswept Gravelly Hills, I am left bracing against wind on unstable stone.",
+                                    "The gravel shifted under me like it was thinking about leaving too.",
+                                    "Every gust made the hillside feel less certain.",
+                                    "Please do not leave me where both the ground and the weather are trying to move me.",
+                                    "I kept planting my feet carefully, and the hill kept making that feel foolish.",
+                                    "The loose stone made every step sound worse than it was, which did not help.",
+                                    "I was alone on unstable ground, hoping I would not have to run."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "left_behind"
+                                                           ],
+                                             "biome":  "minecraft:windswept_gravelly_hills"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_windswept_hills",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Windswept Hills. Every gust up there feels like a shove.",
+                                    "The Windswept Hills are too exposed to stand alone on for long.",
+                                    "I waited in the Windswept Hills with wind in my face and no shelter worth the name.",
+                                    "If you wander off in the Windswept Hills, I am left fighting the weather and my nerves together.",
+                                    "The wind kept pulling at me like it wanted me somewhere worse.",
+                                    "I could see plenty of land and still no clear way to feel safe.",
+                                    "Please do not leave me where the hills are loud and the air keeps pushing.",
+                                    "The Windswept Hills made every sound thin and every step uncertain.",
+                                    "I kept leaning into the gusts and hoping I would not need to move quickly.",
+                                    "I was alone in the open, trying to keep my footing and my patience."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "scenarios":  [
+                                                               "left_behind"
+                                                           ],
+                                             "biome":  "minecraft:windswept_hills"
+                                         }
+                                     ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.group.recruitment_left_behind",
+                                  "section.lines"
+                              ]
+                 }
 }

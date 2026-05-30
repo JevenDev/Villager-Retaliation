@@ -40,6 +40,7 @@ public final class ForcedDialogueResources {
     private static final String LEAVE_OPTION_ID = "leave";
     private static final Set<String> ROOT_KEYS = Set.of(
             "entries", "notifications", "messages", "openings", "closings", "pacify",
+            "metadata",
             "id", "trigger", "event", "line", "lines", "priority", "chance", "witness_radius",
             "witness_profession", "witness_professions", "professions",
             "requires_witness_unarmed", "witness_unarmed", "requires_witness_armed", "witness_armed",

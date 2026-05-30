@@ -1,99 +1,106 @@
 {
-  "lines": [
-    {
-      "id": "unemployed_share_story_bamboo_jungle",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:bamboo_jungle",
-      "lines": [
-        "{target}? Green stalks can hide quick trouble. I would help whoever is closest.",
-        "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I'll be at the square.",
-        "Bamboo crowds the eye and the feet. I'll keep that in mind by the square.",
-        "Bamboo Jungle is no small story. A village survives by hands, not titles.",
-        "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will keep my hands free to help.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "unemployed_share_story_jungle",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:jungle",
-      "lines": [
-        "{target}? Leaves crowd close enough to hide anything. I would help whoever is closest.",
-        "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the square.",
-        "The green is loud even when nothing moves. I'll keep that in mind by the square.",
-        "Jungle is no small story. A village survives by hands, not titles.",
-        "I'll remember Jungle as a hot forest that keeps secrets well. I'll keep my hands free to help.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "unemployed_share_story_mangrove_swamp",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:mangrove_swamp",
-      "lines": [
-        "{target}? Mud holds boots longer than plans. I would help whoever is closest.",
-        "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the square.",
-        "Thick roots make every hurry foolish. I'll keep that in mind by the square.",
-        "Mangrove Swamp is no small story. A village survives by hands, not titles.",
-        "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will keep my hands free to help.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "unemployed_share_story_sparse_jungle",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:sparse_jungle",
-      "lines": [
-        "{target}? Thin jungle still keeps thick surprises. I would help whoever is closest.",
-        "If anyone heads for Sparse Jungle, tell them: Don't trust open patches too quickly. I will be at the square.",
-        "Vines and shadows take turns hiding things. I'll keep that in mind by the square.",
-        "Sparse Jungle is no small story. A village survives by hands, not titles.",
-        "I will remember Sparse Jungle as green country pretending to be easier than it is. I will keep my hands free to help.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "unemployed_share_story_swamp",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:swamp",
-      "lines": [
-        "{target}? Mud and water both remember footsteps. I would help whoever is closest.",
-        "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the square.",
-        "Fog makes close things feel far. I'll keep that in mind by the square.",
-        "Swamp is no small story. A village survives by hands, not titles.",
-        "I will remember Swamp as wet land that grabs at ankles and plans. I will keep my hands free to help.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "unemployed_share_story_bamboo_jungle",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:bamboo_jungle",
+                      "lines":  [
+                                    "{target}? Green stalks can hide quick trouble. I would help whoever is closest.",
+                                    "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I\u0027ll be at the square.",
+                                    "Bamboo crowds the eye and the feet. I\u0027ll keep that in mind by the square.",
+                                    "Bamboo Jungle is no small story. A village survives by hands, not titles.",
+                                    "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will keep my hands free to help.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "unemployed_share_story_jungle",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:jungle",
+                      "lines":  [
+                                    "{target}? Leaves crowd close enough to hide anything. I would help whoever is closest.",
+                                    "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the square.",
+                                    "The green is loud even when nothing moves. I\u0027ll keep that in mind by the square.",
+                                    "Jungle is no small story. A village survives by hands, not titles.",
+                                    "I\u0027ll remember Jungle as a hot forest that keeps secrets well. I\u0027ll keep my hands free to help.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "unemployed_share_story_mangrove_swamp",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:mangrove_swamp",
+                      "lines":  [
+                                    "{target}? Mud holds boots longer than plans. I would help whoever is closest.",
+                                    "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the square.",
+                                    "Thick roots make every hurry foolish. I\u0027ll keep that in mind by the square.",
+                                    "Mangrove Swamp is no small story. A village survives by hands, not titles.",
+                                    "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will keep my hands free to help.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "unemployed_share_story_sparse_jungle",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:sparse_jungle",
+                      "lines":  [
+                                    "{target}? Thin jungle still keeps thick surprises. I would help whoever is closest.",
+                                    "If anyone heads for Sparse Jungle, tell them: Don\u0027t trust open patches too quickly. I will be at the square.",
+                                    "Vines and shadows take turns hiding things. I\u0027ll keep that in mind by the square.",
+                                    "Sparse Jungle is no small story. A village survives by hands, not titles.",
+                                    "I will remember Sparse Jungle as green country pretending to be easier than it is. I will keep my hands free to help.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "unemployed_share_story_swamp",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:swamp",
+                      "lines":  [
+                                    "{target}? Mud and water both remember footsteps. I would help whoever is closest.",
+                                    "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the square.",
+                                    "Fog makes close things feel far. I\u0027ll keep that in mind by the square.",
+                                    "Swamp is no small story. A village survives by hands, not titles.",
+                                    "I will remember Swamp as wet land that grabs at ankles and plans. I will keep my hands free to help.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "section.lines"
+                              ]
+                 }
 }

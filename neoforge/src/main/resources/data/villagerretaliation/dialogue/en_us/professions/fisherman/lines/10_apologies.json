@@ -1,23 +1,31 @@
 {
-  "lines": [
-    {
-      "id": "apology_fisherman_line",
-      "request": "apology",
-      "option": "apologize_for_harm",
-      "show_for_babies": false,
-      "lines": [
-        "You cast trouble into the water. Fine. Now reel back something better.",
-        "Bad tides pass. I'll see whether you bring the same storm again.",
-        "You tangled the line. Fine. Untangle it slowly and do not cut it again.",
-        "An apology floats. Trust sinks or holds by what follows.",
-        "I'll hear you out. I have waited longer for worse catches.",
-        "Bad waters calm if the wind changes. Let us see whether yours does.",
-        "You hooked harm and brought it here. Now bring something decent.",
-        "Fine. I'll not throw the words back, but I'll inspect them.",
-        "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
-      ],
-      "weight": 234
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "apology_fisherman_line",
+                      "request":  "apology",
+                      "option":  "apologize_for_harm",
+                      "show_for_babies":  false,
+                      "lines":  [
+                                    "You cast trouble into the water. Fine. Now reel back something better.",
+                                    "Bad tides pass. I\u0027ll see whether you bring the same storm again.",
+                                    "You tangled the line. Fine. Untangle it slowly and do not cut it again.",
+                                    "An apology floats. Trust sinks or holds by what follows.",
+                                    "I\u0027ll hear you out. I have waited longer for worse catches.",
+                                    "Bad waters calm if the wind changes. Let us see whether yours does.",
+                                    "You hooked harm and brought it here. Now bring something decent.",
+                                    "Fine. I\u0027ll not throw the words back, but I\u0027ll inspect them.",
+                                    "I was wrong. I would rather say it plainly than dress it up.",
+                                    "That came out sharper than it should have. I am sorry."
+                                ],
+                      "weight":  234
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.fisherman",
+                                  "section.lines"
+                              ]
+                 }
 }

@@ -19,9 +19,9 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
   },
   "metadata": {
     "topic": "ancient_city",
-    "tags": ["quest", "exploration"],
+    "tags": ["content.dialogue", "dialogue.scene", "quest.linked", "questline.lost_civilization", "scope.quest_scene"],
     "questline": "lost_civilization",
-    "quest": "tales_of_a_lost_civilization"
+    "quest": "example:tales_of_a_lost_civilization"
   },
   "entries": [
     {
@@ -71,6 +71,8 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
 ## Entries
 
 `entries` generate Talk menu options. A tree can have several entries pointing at different starting nodes, which is useful for quest offer, reminder, and turn-in states.
+
+When a quest file declares `links.dialogue_tree`, `links.offer`, `links.reminder`, or `links.turn_in`, those values should point at this tree id and these entry ids exactly. The current runtime still enters the scene through the tree entry and quest action path, but the validator now treats the quest links as the authoring contract.
 
 Common fields:
 

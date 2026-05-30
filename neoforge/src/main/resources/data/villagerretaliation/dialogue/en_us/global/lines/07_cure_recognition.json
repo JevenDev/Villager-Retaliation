@@ -1,263 +1,271 @@
 {
-  "lines": [
-    {
-      "id": "gift_global_disliked_poor",
-      "request": "gift_preferences",
-      "gift_advice": "global_disliked",
-      "lines": [
-        "{gift_item} makes a poor gift. Most villagers would rather not handle it.",
-        "{gift_item} sends the wrong message.",
-        "If you are trying to be kind, avoid {gift_item}.",
-        "{gift_item} is more warning than present.",
-        "Handing someone {gift_item} is a quick way to sour the room.",
-        "{gift_item} belongs somewhere else, not in someone's hands as a gift.",
-        "Most people here would call {gift_item} a bad offering.",
-        "Better to arrive empty-handed than with {gift_item}.",
-        "Do not wrap {gift_item} and call it kindness.",
-        "{gift_item} is the kind of gift people remember for the wrong reason."
-      ],
-      "weight": 186
-    },
-    {
-      "id": "gift_profession_liked_thoughtful",
-      "request": "gift_preferences",
-      "gift_advice": "profession_liked",
-      "lines": [
-        "If you are choosing for {gift_subject}, {gift_item} is a thoughtful pick.",
-        "For {gift_subject}, {gift_item} shows you paid attention.",
-        "{gift_subject} can make good use of {gift_item}.",
-        "{gift_item} suits {gift_subject} better than most gifts.",
-        "You can tell someone knows the trade when they bring {gift_item}.",
-        "That work gives {gift_item} real value.",
-        "{gift_item} is the kind of thing {gift_subject} remembers kindly.",
-        "A careful gift for {gift_subject}? {gift_item}.",
-        "{gift_subject} tends to respect a gift like {gift_item}.",
-        "{gift_item} feels personal to {gift_subject}."
-      ],
-      "weight": 186
-    },
-    {
-      "id": "gift_profession_disliked_avoid",
-      "request": "gift_preferences",
-      "gift_advice": "profession_disliked",
-      "lines": [
-        "If you are choosing for {gift_subject}, I would avoid {gift_item}.",
-        "For {gift_subject}, {gift_item} feels careless.",
-        "Do not bring {gift_item} to {gift_subject} and expect gratitude.",
-        "{gift_subject} has little use for {gift_item}.",
-        "{gift_item} is a poor match for {gift_subject}.",
-        "If I were gifting {gift_subject}, I would leave {gift_item} at home.",
-        "{gift_subject} may take {gift_item} the wrong way.",
-        "For that profession, {gift_item} is more nuisance than gift.",
-        "You can insult the trade without meaning to. {gift_item} may do it.",
-        "{gift_item} is the kind of thing {gift_subject} remembers sourly."
-      ],
-      "weight": 186
-    },
-    {
-      "id": "gift_already_known_all",
-      "request": "gift_preferences",
-      "gift_advice": "already_known",
-      "lines": [
-        "I think you already know what I can tell you about gifts.",
-        "You've picked my memory clean on gifts, I'm afraid.",
-        "No fresh advice. Try another villager if you want more gift gossip.",
-        "I would rather not pretend I know more than I do.",
-        "No new gift advice from me today. Ask someone else and you may hear more.",
-        "That is the end of my gift wisdom for the moment.",
-        "Nothing new comes to mind. Gifts are personal, even when villagers gossip.",
-        "I do not have another gift tip ready for you.",
-        "You have already heard the useful parts from me.",
-        "My gift advice is empty for now. Best not to scrape the bowl."
-      ],
-      "weight": 150
-    },
-    {
-      "id": "cured_recognition_generic_warm_1",
-      "request": "cured_recognition",
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ],
-      "lines": [
-        "I remember pieces. Your face came back before my voice did. Thank you for waiting on the other side.",
-        "I remember enough to know you pulled me out of something dark.",
-        "I remember waking back into myself, and you were part of that morning.",
-        "The cure felt like surfacing after too long underwater. You were there when I could breathe again.",
-        "Some memories are broken, but your help is one of the pieces that stayed.",
-        "I do not remember everything clearly, but I remember enough to be grateful.",
-        "You helped bring my name back to me. That is not a small kindness.",
-        "When the fog lifted, I knew someone had stayed close enough to help.",
-        "I remember fear, then warmth, then your face. That order matters to me.",
-        "Whatever I lost in that dark, I know you helped me find the way out."
-      ],
-      "weight": 60
-    },
-    {
-      "id": "cured_recognition_generic_confused_1",
-      "request": "cured_recognition",
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ],
-      "lines": [
-        "I know you, I think. The memory has teeth marks around the edges.",
-        "Your voice sounds familiar, but everything before the cure is fog and hunger.",
-        "I know your face, but the memory still limps when it reaches you.",
-        "There are pieces of you in my memory, but they do not sit together neatly yet.",
-        "I believe you helped me. I am still trying to remember that without shaking.",
-        "The cure brought me back, but not all at once.",
-        "I recognize you in flashes. That is more comfort than it sounds.",
-        "My thoughts still circle the dark places before they reach your kindness.",
-        "I am grateful, I think. I just wish my memory would say it plainly.",
-        "You feel familiar in a way that still makes me careful."
-      ],
-      "weight": 60
-    },
-    {
-      "id": "cured_recognition_generic_uneasy_1",
-      "request": "cured_recognition",
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "weight": 30,
-      "lines": [
-        "I remember you. That does not make the remembering easy.",
-        "I know you helped. I also know remembering still hurts.",
-        "The gratitude is real. So is the fear around it.",
-        "You were part of my return, but the road back was not gentle.",
-        "I am thankful, and I am unsettled. Both are true.",
-        "Do not ask me to make the memory clean just because the cure worked.",
-        "I know I owe you something. I also know my hands still shake when I think of it.",
-        "Being saved does not erase what came before.",
-        "Your face is tied to a hard morning. I am still learning what to do with that.",
-        "I can be grateful without being ready to stand close."
-      ]
-    },
-    {
-      "id": "village_cure_acknowledgement_respectful_1",
-      "request": "greeting",
-      "show_for_babies": false,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ],
-      "player_event_tags": [
-        "player_cured_villager"
-      ],
-      "weight": 34,
-      "lines": [
-        "Word reached us about <aqua>{cured_villager}</aqua>. You brought one of ours back.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "It is good to see <aqua>{cured_villager}</aqua> walking these paths again.",
-        "You gave <aqua>{cured_villager}</aqua> a way back, and the village will remember that.",
-        "Not everyone would have stayed long enough to help <aqua>{cured_villager}</aqua>.",
-        "The village feels a little more whole with <aqua>{cured_villager}</aqua> returned.",
-        "You did more than cure an illness. You returned someone to their people.",
-        "<aqua>{cured_villager}</aqua> is home again. That matters here.",
-        "When people speak kindly of you lately, <aqua>{cured_villager}</aqua> is often why."
-      ]
-    },
-    {
-      "id": "village_cure_acknowledgement_respectful_2",
-      "request": "question",
-      "show_for_babies": false,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ],
-      "player_event_tags": [
-        "player_cured_villager"
-      ],
-      "weight": 34,
-      "lines": [
-        "<aqua>{cured_villager_possessive}</aqua> cure matters here. People remember who stayed to help.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "You helped return <aqua>{cured_villager}</aqua> to the village, and that is no small thing.",
-        "There is relief in seeing <aqua>{cured_villager}</aqua> among us again.",
-        "The cure gave <aqua>{cured_villager}</aqua> back more than health. It gave them home.",
-        "People noticed your patience with <aqua>{cured_villager}</aqua>.",
-        "A cure like that echoes through more than one household.",
-        "<aqua>{cured_villager}</aqua> walks easier now, and some of that is because of you.",
-        "The village keeps count of harm, yes, but it keeps count of healing too."
-      ]
-    },
-    {
-      "id": "village_cure_acknowledgement_neutral_1",
-      "request": "greeting",
-      "show_for_babies": false,
-      "dispositions": [
-        "neutral"
-      ],
-      "player_event_tags": [
-        "player_cured_villager"
-      ],
-      "weight": 32,
-      "lines": [
-        "I heard you cured <aqua>{cured_villager}</aqua>. That is not a small thing.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "<aqua>{cured_villager}</aqua> is back among us. People have noticed.",
-        "Whatever else is said, helping <aqua>{cured_villager}</aqua> mattered.",
-        "A cure like that is hard for a village to ignore.",
-        "You did right by <aqua>{cured_villager}</aqua>, from what I hear.",
-        "Seeing <aqua>{cured_villager}</aqua> well again has eased more than one worry.",
-        "The village has room to remember good deeds too.",
-        "You brought <aqua>{cured_villager}</aqua> back from a hard place. That counts."
-      ]
-    },
-    {
-      "id": "village_cure_acknowledgement_neutral_2",
-      "request": "question",
-      "show_for_babies": false,
-      "dispositions": [
-        "neutral"
-      ],
-      "player_event_tags": [
-        "player_cured_villager"
-      ],
-      "weight": 32,
-      "lines": [
-        "<aqua>{cured_villager}</aqua> is walking these paths again because of you. The village noticed.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "There are fewer worried looks now that <aqua>{cured_villager}</aqua> is back.",
-        "You helped restore more than one person's peace with that cure.",
-        "I do not know every detail, but I know <aqua>{cured_villager}</aqua> returned.",
-        "A village remembers the one who brings someone home.",
-        "<aqua>{cured_villager}</aqua> has a second chance. You helped make that happen.",
-        "People speak of that cure with care. It mattered.",
-        "You gave the village one less empty place to look at."
-      ]
-    },
-    {
-      "id": "village_cure_acknowledgement_wary_1",
-      "request": "greeting",
-      "show_for_babies": false,
-      "dispositions": [
-        "cautious",
-        "rude"
-      ],
-      "player_event_tags": [
-        "player_cured_villager"
-      ],
-      "weight": 34,
-      "lines": [
-        "I heard what you did for <aqua>{cured_villager}</aqua>. I am still wary, but I will not pretend that meant nothing.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "I have my doubts about you, but helping <aqua>{cured_villager}</aqua> counts for something.",
-        "<aqua>{cured_villager}</aqua> is back, and even I can respect the hand that helped.",
-        "Do not expect all doors to open at once, but that cure was noticed.",
-        "You did a good thing for <aqua>{cured_villager}</aqua>. I can say that much.",
-        "I am cautious, not blind. Bringing <aqua>{cured_villager}</aqua> back mattered.",
-        "The village is still measuring you, but that cure weighs in your favor.",
-        "I will not call you trusted, but I will call that deed worthy."
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "gift_global_disliked_poor",
+                      "request":  "gift_preferences",
+                      "gift_advice":  "global_disliked",
+                      "lines":  [
+                                    "{gift_item} makes a poor gift. Most villagers would rather not handle it.",
+                                    "{gift_item} sends the wrong message.",
+                                    "If you are trying to be kind, avoid {gift_item}.",
+                                    "{gift_item} is more warning than present.",
+                                    "Handing someone {gift_item} is a quick way to sour the room.",
+                                    "{gift_item} belongs somewhere else, not in someone\u0027s hands as a gift.",
+                                    "Most people here would call {gift_item} a bad offering.",
+                                    "Better to arrive empty-handed than with {gift_item}.",
+                                    "Do not wrap {gift_item} and call it kindness.",
+                                    "{gift_item} is the kind of gift people remember for the wrong reason."
+                                ],
+                      "weight":  186
+                  },
+                  {
+                      "id":  "gift_profession_liked_thoughtful",
+                      "request":  "gift_preferences",
+                      "gift_advice":  "profession_liked",
+                      "lines":  [
+                                    "If you are choosing for {gift_subject}, {gift_item} is a thoughtful pick.",
+                                    "For {gift_subject}, {gift_item} shows you paid attention.",
+                                    "{gift_subject} can make good use of {gift_item}.",
+                                    "{gift_item} suits {gift_subject} better than most gifts.",
+                                    "You can tell someone knows the trade when they bring {gift_item}.",
+                                    "That work gives {gift_item} real value.",
+                                    "{gift_item} is the kind of thing {gift_subject} remembers kindly.",
+                                    "A careful gift for {gift_subject}? {gift_item}.",
+                                    "{gift_subject} tends to respect a gift like {gift_item}.",
+                                    "{gift_item} feels personal to {gift_subject}."
+                                ],
+                      "weight":  186
+                  },
+                  {
+                      "id":  "gift_profession_disliked_avoid",
+                      "request":  "gift_preferences",
+                      "gift_advice":  "profession_disliked",
+                      "lines":  [
+                                    "If you are choosing for {gift_subject}, I would avoid {gift_item}.",
+                                    "For {gift_subject}, {gift_item} feels careless.",
+                                    "Do not bring {gift_item} to {gift_subject} and expect gratitude.",
+                                    "{gift_subject} has little use for {gift_item}.",
+                                    "{gift_item} is a poor match for {gift_subject}.",
+                                    "If I were gifting {gift_subject}, I would leave {gift_item} at home.",
+                                    "{gift_subject} may take {gift_item} the wrong way.",
+                                    "For that profession, {gift_item} is more nuisance than gift.",
+                                    "You can insult the trade without meaning to. {gift_item} may do it.",
+                                    "{gift_item} is the kind of thing {gift_subject} remembers sourly."
+                                ],
+                      "weight":  186
+                  },
+                  {
+                      "id":  "gift_already_known_all",
+                      "request":  "gift_preferences",
+                      "gift_advice":  "already_known",
+                      "lines":  [
+                                    "I think you already know what I can tell you about gifts.",
+                                    "You\u0027ve picked my memory clean on gifts, I\u0027m afraid.",
+                                    "No fresh advice. Try another villager if you want more gift gossip.",
+                                    "I would rather not pretend I know more than I do.",
+                                    "No new gift advice from me today. Ask someone else and you may hear more.",
+                                    "That is the end of my gift wisdom for the moment.",
+                                    "Nothing new comes to mind. Gifts are personal, even when villagers gossip.",
+                                    "I do not have another gift tip ready for you.",
+                                    "You have already heard the useful parts from me.",
+                                    "My gift advice is empty for now. Best not to scrape the bowl."
+                                ],
+                      "weight":  150
+                  },
+                  {
+                      "id":  "cured_recognition_generic_warm_1",
+                      "request":  "cured_recognition",
+                      "dispositions":  [
+                                           "friendly",
+                                           "respectful"
+                                       ],
+                      "lines":  [
+                                    "I remember pieces. Your face came back before my voice did. Thank you for waiting on the other side.",
+                                    "I remember enough to know you pulled me out of something dark.",
+                                    "I remember waking back into myself, and you were part of that morning.",
+                                    "The cure felt like surfacing after too long underwater. You were there when I could breathe again.",
+                                    "Some memories are broken, but your help is one of the pieces that stayed.",
+                                    "I do not remember everything clearly, but I remember enough to be grateful.",
+                                    "You helped bring my name back to me. That is not a small kindness.",
+                                    "When the fog lifted, I knew someone had stayed close enough to help.",
+                                    "I remember fear, then warmth, then your face. That order matters to me.",
+                                    "Whatever I lost in that dark, I know you helped me find the way out."
+                                ],
+                      "weight":  60
+                  },
+                  {
+                      "id":  "cured_recognition_generic_confused_1",
+                      "request":  "cured_recognition",
+                      "dispositions":  [
+                                           "neutral",
+                                           "cautious"
+                                       ],
+                      "lines":  [
+                                    "I know you, I think. The memory has teeth marks around the edges.",
+                                    "Your voice sounds familiar, but everything before the cure is fog and hunger.",
+                                    "I know your face, but the memory still limps when it reaches you.",
+                                    "There are pieces of you in my memory, but they do not sit together neatly yet.",
+                                    "I believe you helped me. I am still trying to remember that without shaking.",
+                                    "The cure brought me back, but not all at once.",
+                                    "I recognize you in flashes. That is more comfort than it sounds.",
+                                    "My thoughts still circle the dark places before they reach your kindness.",
+                                    "I am grateful, I think. I just wish my memory would say it plainly.",
+                                    "You feel familiar in a way that still makes me careful."
+                                ],
+                      "weight":  60
+                  },
+                  {
+                      "id":  "cured_recognition_generic_uneasy_1",
+                      "request":  "cured_recognition",
+                      "dispositions":  [
+                                           "rude",
+                                           "hostile",
+                                           "fearful"
+                                       ],
+                      "weight":  30,
+                      "lines":  [
+                                    "I remember you. That does not make the remembering easy.",
+                                    "I know you helped. I also know remembering still hurts.",
+                                    "The gratitude is real. So is the fear around it.",
+                                    "You were part of my return, but the road back was not gentle.",
+                                    "I am thankful, and I am unsettled. Both are true.",
+                                    "Do not ask me to make the memory clean just because the cure worked.",
+                                    "I know I owe you something. I also know my hands still shake when I think of it.",
+                                    "Being saved does not erase what came before.",
+                                    "Your face is tied to a hard morning. I am still learning what to do with that.",
+                                    "I can be grateful without being ready to stand close."
+                                ]
+                  },
+                  {
+                      "id":  "village_cure_acknowledgement_respectful_1",
+                      "request":  "greeting",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "friendly",
+                                           "respectful"
+                                       ],
+                      "player_event_tags":  [
+                                                "player_cured_villager"
+                                            ],
+                      "weight":  34,
+                      "lines":  [
+                                    "Word reached us about \u003caqua\u003e{cured_villager}\u003c/aqua\u003e. You brought one of ours back.",
+                                    "People are saying \u003caqua\u003e{cured_villager}\u003c/aqua\u003e came home because you stayed.",
+                                    "\u003caqua\u003e{cured_villager_possessive}\u003c/aqua\u003e cure changed the way people say your name.",
+                                    "It is good to see \u003caqua\u003e{cured_villager}\u003c/aqua\u003e walking these paths again.",
+                                    "You gave \u003caqua\u003e{cured_villager}\u003c/aqua\u003e a way back, and the village will remember that.",
+                                    "Not everyone would have stayed long enough to help \u003caqua\u003e{cured_villager}\u003c/aqua\u003e.",
+                                    "The village feels a little more whole with \u003caqua\u003e{cured_villager}\u003c/aqua\u003e returned.",
+                                    "You did more than cure an illness. You returned someone to their people.",
+                                    "\u003caqua\u003e{cured_villager}\u003c/aqua\u003e is home again. That matters here.",
+                                    "When people speak kindly of you lately, \u003caqua\u003e{cured_villager}\u003c/aqua\u003e is often why."
+                                ]
+                  },
+                  {
+                      "id":  "village_cure_acknowledgement_respectful_2",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "friendly",
+                                           "respectful"
+                                       ],
+                      "player_event_tags":  [
+                                                "player_cured_villager"
+                                            ],
+                      "weight":  34,
+                      "lines":  [
+                                    "\u003caqua\u003e{cured_villager_possessive}\u003c/aqua\u003e cure matters here. People remember who stayed to help.",
+                                    "People are saying \u003caqua\u003e{cured_villager}\u003c/aqua\u003e came home because you stayed.",
+                                    "\u003caqua\u003e{cured_villager_possessive}\u003c/aqua\u003e cure changed the way people say your name.",
+                                    "You helped return \u003caqua\u003e{cured_villager}\u003c/aqua\u003e to the village, and that is no small thing.",
+                                    "There is relief in seeing \u003caqua\u003e{cured_villager}\u003c/aqua\u003e among us again.",
+                                    "The cure gave \u003caqua\u003e{cured_villager}\u003c/aqua\u003e back more than health. It gave them home.",
+                                    "People noticed your patience with \u003caqua\u003e{cured_villager}\u003c/aqua\u003e.",
+                                    "A cure like that echoes through more than one household.",
+                                    "\u003caqua\u003e{cured_villager}\u003c/aqua\u003e walks easier now, and some of that is because of you.",
+                                    "The village keeps count of harm, yes, but it keeps count of healing too."
+                                ]
+                  },
+                  {
+                      "id":  "village_cure_acknowledgement_neutral_1",
+                      "request":  "greeting",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "neutral"
+                                       ],
+                      "player_event_tags":  [
+                                                "player_cured_villager"
+                                            ],
+                      "weight":  32,
+                      "lines":  [
+                                    "I heard you cured \u003caqua\u003e{cured_villager}\u003c/aqua\u003e. That is not a small thing.",
+                                    "People are saying \u003caqua\u003e{cured_villager}\u003c/aqua\u003e came home because you stayed.",
+                                    "\u003caqua\u003e{cured_villager_possessive}\u003c/aqua\u003e cure changed the way people say your name.",
+                                    "\u003caqua\u003e{cured_villager}\u003c/aqua\u003e is back among us. People have noticed.",
+                                    "Whatever else is said, helping \u003caqua\u003e{cured_villager}\u003c/aqua\u003e mattered.",
+                                    "A cure like that is hard for a village to ignore.",
+                                    "You did right by \u003caqua\u003e{cured_villager}\u003c/aqua\u003e, from what I hear.",
+                                    "Seeing \u003caqua\u003e{cured_villager}\u003c/aqua\u003e well again has eased more than one worry.",
+                                    "The village has room to remember good deeds too.",
+                                    "You brought \u003caqua\u003e{cured_villager}\u003c/aqua\u003e back from a hard place. That counts."
+                                ]
+                  },
+                  {
+                      "id":  "village_cure_acknowledgement_neutral_2",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "neutral"
+                                       ],
+                      "player_event_tags":  [
+                                                "player_cured_villager"
+                                            ],
+                      "weight":  32,
+                      "lines":  [
+                                    "\u003caqua\u003e{cured_villager}\u003c/aqua\u003e is walking these paths again because of you. The village noticed.",
+                                    "People are saying \u003caqua\u003e{cured_villager}\u003c/aqua\u003e came home because you stayed.",
+                                    "\u003caqua\u003e{cured_villager_possessive}\u003c/aqua\u003e cure changed the way people say your name.",
+                                    "There are fewer worried looks now that \u003caqua\u003e{cured_villager}\u003c/aqua\u003e is back.",
+                                    "You helped restore more than one person\u0027s peace with that cure.",
+                                    "I do not know every detail, but I know \u003caqua\u003e{cured_villager}\u003c/aqua\u003e returned.",
+                                    "A village remembers the one who brings someone home.",
+                                    "\u003caqua\u003e{cured_villager}\u003c/aqua\u003e has a second chance. You helped make that happen.",
+                                    "People speak of that cure with care. It mattered.",
+                                    "You gave the village one less empty place to look at."
+                                ]
+                  },
+                  {
+                      "id":  "village_cure_acknowledgement_wary_1",
+                      "request":  "greeting",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "cautious",
+                                           "rude"
+                                       ],
+                      "player_event_tags":  [
+                                                "player_cured_villager"
+                                            ],
+                      "weight":  34,
+                      "lines":  [
+                                    "I heard what you did for \u003caqua\u003e{cured_villager}\u003c/aqua\u003e. I am still wary, but I will not pretend that meant nothing.",
+                                    "People are saying \u003caqua\u003e{cured_villager}\u003c/aqua\u003e came home because you stayed.",
+                                    "\u003caqua\u003e{cured_villager_possessive}\u003c/aqua\u003e cure changed the way people say your name.",
+                                    "I have my doubts about you, but helping \u003caqua\u003e{cured_villager}\u003c/aqua\u003e counts for something.",
+                                    "\u003caqua\u003e{cured_villager}\u003c/aqua\u003e is back, and even I can respect the hand that helped.",
+                                    "Do not expect all doors to open at once, but that cure was noticed.",
+                                    "You did a good thing for \u003caqua\u003e{cured_villager}\u003c/aqua\u003e. I can say that much.",
+                                    "I am cautious, not blind. Bringing \u003caqua\u003e{cured_villager}\u003c/aqua\u003e back mattered.",
+                                    "The village is still measuring you, but that cure weighs in your favor.",
+                                    "I will not call you trusted, but I will call that deed worthy."
+                                ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.global",
+                                  "section.lines"
+                              ]
+                 }
 }

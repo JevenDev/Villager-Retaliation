@@ -1,19 +1,27 @@
 {
-  "closings": [
-    {
-      "id": "fisherman_closing",
-      "lines": [
-        "I should get back to reading the water before the weather turns.",
-        "Best I return to my net and line before the evening tide shifts.",
-        "The current has been tugging strange today. I ought to check it.",
-        "There is a knot in one of my lines that will only get worse if I ignore it.",
-        "I need to ready the bait bucket before dawn sneaks up on me.",
-        "<pulse>Back</pulse> to the traps and boatside knots.",
-        "The river keeps its secrets unless you give it your full attention.",
-        "I promised myself I would patch that ripped net before the week is out.",
-        "It is getting late. I should head back to the shore.",
-        "I'll be out there again when the moon sits higher."
-      ]
-    }
-  ]
+    "closings":  [
+                     {
+                         "id":  "fisherman_closing",
+                         "lines":  [
+                                       "I should get back to reading the water before the weather turns.",
+                                       "Best I return to my net and line before the evening tide shifts.",
+                                       "The current has been tugging strange today. I ought to check it.",
+                                       "There is a knot in one of my lines that will only get worse if I ignore it.",
+                                       "I need to ready the bait bucket before dawn sneaks up on me.",
+                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to the traps and boatside knots.",
+                                       "The river keeps its secrets unless you give it your full attention.",
+                                       "I promised myself I would patch that ripped net before the week is out.",
+                                       "It is getting late. I should head back to the shore.",
+                                       "I\u0027ll be out there again when the moon sits higher."
+                                   ]
+                     }
+                 ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.fisherman",
+                                  "section.closings"
+                              ]
+                 }
 }

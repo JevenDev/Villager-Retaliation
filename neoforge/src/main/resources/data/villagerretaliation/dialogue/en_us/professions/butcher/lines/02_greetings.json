@@ -1,21 +1,29 @@
 {
-  "lines": [
-    {
-      "id": "butcher_new_greeting_smoke",
-      "request": "greeting",
-      "weight": 26,
-      "lines": [
-        "If you smell <wavy>smoke</wavy>, that is supper being planned properly.",
-        "Give the smokehouse room. Butchery works better without elbows in it.",
-        "Step carefully near the smokehouse. I would rather greet you than patch you up.",
-        "There you are. I was just near the smoker, trying to keep the day sensible.",
-        "Morning. Or afternoon. The work makes the hours blur if I let it.",
-        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-        "If you need me, speak up. If you need gossip, speak quieter.",
-        "You caught me before the next little disaster. That is rare timing.",
-        "Hello. Try not to bring the whole village into this unless it is important.",
-        "I have a moment. Not a long one, but a real one."
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "butcher_new_greeting_smoke",
+                      "request":  "greeting",
+                      "weight":  26,
+                      "lines":  [
+                                    "If you smell \u003cwavy\u003esmoke\u003c/wavy\u003e, that is supper being planned properly.",
+                                    "Give the smokehouse room. Butchery works better without elbows in it.",
+                                    "Step carefully near the smokehouse. I would rather greet you than patch you up.",
+                                    "There you are. I was just near the smoker, trying to keep the day sensible.",
+                                    "Morning. Or afternoon. The work makes the hours blur if I let it.",
+                                    "Good to see you walking in calmly. That usually means nothing is on fire yet.",
+                                    "If you need me, speak up. If you need gossip, speak quieter.",
+                                    "You caught me before the next little disaster. That is rare timing.",
+                                    "Hello. Try not to bring the whole village into this unless it is important.",
+                                    "I have a moment. Not a long one, but a real one."
+                                ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.butcher",
+                                  "section.lines"
+                              ]
+                 }
 }

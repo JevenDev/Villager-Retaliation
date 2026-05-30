@@ -1,19 +1,27 @@
 {
-  "closings": [
-    {
-      "id": "nitwit_closing",
-      "lines": [
-        "<pulse>Back</pulse> to odd jobs before my ideas wander off without me.",
-        "I should go find a small task and make it look neat.",
-        "There is a strange little fix I wanted to try.",
-        "I have a list of silly-useful ideas, and one of them might work.",
-        "I promised to help someone carry something awkward today.",
-        "<pulse>Back</pulse> to sorting scraps into something useful.",
-        "Maybe I'll see if that squeaky hinge wants my opinion.",
-        "I am not much for plans, but I can still do the next thing.",
-        "I'll be by the crossroads if anything needs trying.",
-        "I'll come back once I have chased down another odd thought."
-      ]
-    }
-  ]
+    "closings":  [
+                     {
+                         "id":  "nitwit_closing",
+                         "lines":  [
+                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to odd jobs before my ideas wander off without me.",
+                                       "I should go find a small task and make it look neat.",
+                                       "There is a strange little fix I wanted to try.",
+                                       "I have a list of silly-useful ideas, and one of them might work.",
+                                       "I promised to help someone carry something awkward today.",
+                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to sorting scraps into something useful.",
+                                       "Maybe I\u0027ll see if that squeaky hinge wants my opinion.",
+                                       "I am not much for plans, but I can still do the next thing.",
+                                       "I\u0027ll be by the crossroads if anything needs trying.",
+                                       "I\u0027ll come back once I have chased down another odd thought."
+                                   ]
+                     }
+                 ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.nitwit",
+                                  "section.closings"
+                              ]
+                 }
 }

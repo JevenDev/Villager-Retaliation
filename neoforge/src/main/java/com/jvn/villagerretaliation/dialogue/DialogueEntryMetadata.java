@@ -90,6 +90,26 @@ public record DialogueEntryMetadata(
         return String.join(", ", parts);
     }
 
+    public DialogueEntryMetadata merge(DialogueEntryMetadata override) {
+        if (override == null || override.isEmpty()) {
+            return this;
+        }
+        if (this.isEmpty()) {
+            return override;
+        }
+
+        Set<String> mergedTags = new LinkedHashSet<>(this.tags);
+        mergedTags.addAll(override.tags);
+        return new DialogueEntryMetadata(
+                override.topic.isBlank() ? this.topic : override.topic,
+                mergedTags,
+                override.questline.isBlank() ? this.questline : override.questline,
+                override.quest.isBlank() ? this.quest : override.quest,
+                override.stage.isBlank() ? this.stage : override.stage,
+                override.notes.isBlank() ? this.notes : override.notes
+        );
+    }
+
     private static Set<String> normalizeTags(Set<String> rawTags) {
         if (rawTags == null || rawTags.isEmpty()) {
             return Set.of();

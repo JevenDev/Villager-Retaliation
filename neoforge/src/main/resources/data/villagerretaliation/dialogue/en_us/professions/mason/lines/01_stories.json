@@ -1,21 +1,29 @@
 {
-  "lines": [
-    {
-      "id": "mason_story_wall_variants",
-      "request": "story",
-      "lines": [
-        "The best wall is boring. Boring means it held.",
-        "One bad chip once made me redo a whole doorway. It was right to complain.",
-        "An arch looks impossible until the last stone <bold>proves everyone wrong</bold>.",
-        "There is a story from the stonecutter, but it sounds smaller unless you were standing there.",
-        "Most stories here begin with someone saying, 'It will only take a moment.' They are always wrong.",
-        "I remember the smell of rain, the sound of the bell, and everyone suddenly pretending they had a plan.",
-        "The funny part came later. At the time, nobody was laughing.",
-        "A village story changes depending on who got embarrassed in it.",
-        "I could make it grand, but honestly, it was mostly mud, noise, and bad timing.",
-        "Still, we tell it because we made it through, and that makes people stand a little straighter."
-      ],
-      "weight": 74
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "mason_story_wall_variants",
+                      "request":  "story",
+                      "lines":  [
+                                    "The best wall is boring. Boring means it held.",
+                                    "One bad chip once made me redo a whole doorway. It was right to complain.",
+                                    "An arch looks impossible until the last stone \u003cbold\u003eproves everyone wrong\u003c/bold\u003e.",
+                                    "There is a story from the stonecutter, but it sounds smaller unless you were standing there.",
+                                    "Most stories here begin with someone saying, \u0027It will only take a moment.\u0027 They are always wrong.",
+                                    "I remember the smell of rain, the sound of the bell, and everyone suddenly pretending they had a plan.",
+                                    "The funny part came later. At the time, nobody was laughing.",
+                                    "A village story changes depending on who got embarrassed in it.",
+                                    "I could make it grand, but honestly, it was mostly mud, noise, and bad timing.",
+                                    "Still, we tell it because we made it through, and that makes people stand a little straighter."
+                                ],
+                      "weight":  74
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.mason",
+                                  "section.lines"
+                              ]
+                 }
 }

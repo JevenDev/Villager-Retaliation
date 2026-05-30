@@ -1,109 +1,117 @@
 {
-  "lines": [
-    {
-      "id": "librarian_question_pages_variants",
-      "request": "question",
-      "lines": [
-        "Missing pages worry me less than people who never read warnings.",
-        "Villages remember more than people expect.",
-        "Ink is quiet until someone needs proof.",
-        "Records do not care who feels embarrassed by them.",
-        "A tidy shelf is proof that peace can be arranged, briefly.",
-        "Forgotten warnings do not become kinder. They become <jump>surprises</jump>.",
-        "Most days, I am at the lectern, trying to keep records and rumors from becoming everyone else's problem.",
-        "People think record-keeping is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good quill more than a loud promise. The quill has less to prove."
-      ],
-      "weight": 172
-    },
-    {
-      "id": "librarian_new_hostile_memory",
-      "request": "question",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "weight": 30,
-      "lines": [
-        "You may prefer I forget. I have chosen a profession that argues otherwise.",
-        "I have seen bad sources with more sense than that.",
-        "Careful. Even ink looks softer than your manners right now.",
-        "You walk in like trouble forgot to close the door behind it.",
-        "I have seen broken record-keeping with better instincts than you.",
-        "Careful. The village has long memories and very little patience today.",
-        "You are not as frightening as you think. That may be the problem.",
-        "If foolishness made noise, you would drown out the bell.",
-        "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
-      ]
-    },
-    {
-      "id": "question_follow_memory_librarian",
-      "request": "question",
-      "option": "adult_general_question",
-      "show_for_babies": false,
-      "weight": 3,
-      "lines": [
-        "The story of me following you needs editing. Mostly shorter chapters and fewer hazards.",
-        "I remember following you through that road. My feet remember it even better.",
-        "That trip across that road taught me to ask more questions before walking.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory"
-        }
-      ]
-    },
-    {
-      "id": "question_follow_memory_librarian_boat",
-      "request": "question",
-      "option": "adult_general_question",
-      "show_for_babies": false,
-      "weight": 3,
-      "lines": [
-        "The boat chapter of our journey was damp, brief, and badly footnoted.",
-        "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It can't make me forget it.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "boat_trip": true
-        }
-      ]
-    },
-    {
-      "id": "default_profession_librarian_margin_notes",
-      "request": "question",
-      "show_for_babies": false,
-      "lines": [
-        "Every village has a history. Some of it even waits politely on shelves.",
-        "Books are quiet until you need them. Then they become everyone who wrote before you.",
-        "I keep records because memory without witnesses starts bargaining with itself.",
-        "Most days, I am at the lectern, trying to keep records and rumors from becoming everyone else's problem.",
-        "People think record-keeping is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good quill more than a loud promise. The quill has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the lectern has done to me."
-      ],
-      "weight": 18
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "librarian_question_pages_variants",
+                      "request":  "question",
+                      "lines":  [
+                                    "Missing pages worry me less than people who never read warnings.",
+                                    "Villages remember more than people expect.",
+                                    "Ink is quiet until someone needs proof.",
+                                    "Records do not care who feels embarrassed by them.",
+                                    "A tidy shelf is proof that peace can be arranged, briefly.",
+                                    "Forgotten warnings do not become kinder. They become \u003cjump\u003esurprises\u003c/jump\u003e.",
+                                    "Most days, I am at the lectern, trying to keep records and rumors from becoming everyone else\u0027s problem.",
+                                    "People think record-keeping is simple until something goes wrong and suddenly it is very important.",
+                                    "A village runs on small work. Nobody praises it until it stops happening.",
+                                    "I trust a good quill more than a loud promise. The quill has less to prove."
+                                ],
+                      "weight":  172
+                  },
+                  {
+                      "id":  "librarian_new_hostile_memory",
+                      "request":  "question",
+                      "dispositions":  [
+                                           "rude",
+                                           "hostile"
+                                       ],
+                      "weight":  30,
+                      "lines":  [
+                                    "You may prefer I forget. I have chosen a profession that argues otherwise.",
+                                    "I have seen bad sources with more sense than that.",
+                                    "Careful. Even ink looks softer than your manners right now.",
+                                    "You walk in like trouble forgot to close the door behind it.",
+                                    "I have seen broken record-keeping with better instincts than you.",
+                                    "Careful. The village has long memories and very little patience today.",
+                                    "You are not as frightening as you think. That may be the problem.",
+                                    "If foolishness made noise, you would drown out the bell.",
+                                    "Do not test me just because I am speaking in complete sentences.",
+                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
+                                ]
+                  },
+                  {
+                      "id":  "question_follow_memory_librarian",
+                      "request":  "question",
+                      "option":  "adult_general_question",
+                      "show_for_babies":  false,
+                      "weight":  3,
+                      "lines":  [
+                                    "The story of me following you needs editing. Mostly shorter chapters and fewer hazards.",
+                                    "I remember following you through that road. My feet remember it even better.",
+                                    "That trip across that road taught me to ask more questions before walking.",
+                                    "Following you taught me that plans sound much safer before anyone starts walking.",
+                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                    "Next time, warn me before the road becomes a test of character.",
+                                    "I learned two things out there: stay close, and ask better questions earlier.",
+                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                    "If I followed you again, I would pack more food and fewer assumptions."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "question_follow_memory_librarian_boat",
+                      "request":  "question",
+                      "option":  "adult_general_question",
+                      "show_for_babies":  false,
+                      "weight":  3,
+                      "lines":  [
+                                    "The boat chapter of our journey was damp, brief, and badly footnoted.",
+                                    "That boat trip still sits oddly in my memory, but at least it floated.",
+                                    "A boat can make a bad plan quieter. It can\u0027t make me forget it.",
+                                    "Following you taught me that plans sound much safer before anyone starts walking.",
+                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                    "Next time, warn me before the road becomes a test of character.",
+                                    "I learned two things out there: stay close, and ask better questions earlier.",
+                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                    "If I followed you again, I would pack more food and fewer assumptions."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "boat_trip":  true
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "default_profession_librarian_margin_notes",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "lines":  [
+                                    "Every village has a history. Some of it even waits politely on shelves.",
+                                    "Books are quiet until you need them. Then they become everyone who wrote before you.",
+                                    "I keep records because memory without witnesses starts bargaining with itself.",
+                                    "Most days, I am at the lectern, trying to keep records and rumors from becoming everyone else\u0027s problem.",
+                                    "People think record-keeping is simple until something goes wrong and suddenly it is very important.",
+                                    "A village runs on small work. Nobody praises it until it stops happening.",
+                                    "I trust a good quill more than a loud promise. The quill has less to prove.",
+                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+                                    "I notice the little things. That is either a skill or what the lectern has done to me."
+                                ],
+                      "weight":  18
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.librarian",
+                                  "section.lines"
+                              ]
+                 }
 }

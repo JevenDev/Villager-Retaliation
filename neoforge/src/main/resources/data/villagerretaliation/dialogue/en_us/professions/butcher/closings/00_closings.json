@@ -1,19 +1,27 @@
 {
-  "closings": [
-    {
-      "id": "butcher_closing",
-      "lines": [
-        "I should get back before the shop falls behind.",
-        "Best I return to the salt and smoke before it gets <pulse>too late</pulse>.",
-        "There is meat to trim, and it will not wait forever.",
-        "I need to check the drying racks and make sure the ties are holding.",
-        "<pulse>Back</pulse> to the block before the first customer comes looking.",
-        "I still owe someone a fresh wrap before noon.",
-        "I can't leave sharp knives sitting idle for too long.",
-        "The day's work is waiting for me back at the shop.",
-        "Time to make sure nothing useful goes to waste.",
-        "I am heading back. A good shop does not close itself."
-      ]
-    }
-  ]
+    "closings":  [
+                     {
+                         "id":  "butcher_closing",
+                         "lines":  [
+                                       "I should get back before the shop falls behind.",
+                                       "Best I return to the salt and smoke before it gets \u003cpulse\u003etoo late\u003c/pulse\u003e.",
+                                       "There is meat to trim, and it will not wait forever.",
+                                       "I need to check the drying racks and make sure the ties are holding.",
+                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to the block before the first customer comes looking.",
+                                       "I still owe someone a fresh wrap before noon.",
+                                       "I can\u0027t leave sharp knives sitting idle for too long.",
+                                       "The day\u0027s work is waiting for me back at the shop.",
+                                       "Time to make sure nothing useful goes to waste.",
+                                       "I am heading back. A good shop does not close itself."
+                                   ]
+                     }
+                 ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.butcher",
+                                  "section.closings"
+                              ]
+                 }
 }

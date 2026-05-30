@@ -1,366 +1,470 @@
 [
-  {
-    "id": "recruitment_left_behind_cold_ocean",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me near the Cold Ocean. That water bites hard enough without me facing it alone.",
-      "The Cold Ocean is no place to lose track of each other. One bad slip and I am done for.",
-      "I waited by the Cold Ocean trying to ignore how quickly that wind chills through me.",
-      "If you disappear beside a Cold Ocean, all I can think about is freezing before help returns.",
-      "The Cold Ocean does not give second chances. Please do not make me wait there alone again.",
-      "I kept looking at the water, wondering how fast it would take the warmth from me.",
-      "Next time we pass a Cold Ocean, stay where I can see you.",
-      "The wind off that water made every minute feel longer than it was.",
-      "I can handle cold. I cannot handle being forgotten in it.",
-      "Being left beside the Cold Ocean made me feel very small, and very far from safe."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:cold_ocean"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_deep_cold_ocean",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me by the Deep Cold Ocean. Cold water and deep water are both bad enough already.",
-      "The Deep Cold Ocean made every <wavy>wave</wavy> sound like a threat while I was waiting for you.",
-      "I was alone near the Deep Cold Ocean trying not to think about how little room I had for mistakes.",
-      "If you are going to lose me, do not do it beside a Deep Cold Ocean where everything feels fatal.",
-      "That water looked endless. Waiting beside it alone did not help.",
-      "The Deep Cold Ocean is the sort of place where even silence feels dangerous.",
-      "I kept thinking about what would happen if I slipped, and none of the answers were good.",
-      "Please do not leave me staring at deep cold water again.",
-      "The cold was bad. The depth made it worse.",
-      "I could not stop watching the waves. It felt like they were waiting for me to make one mistake."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:deep_cold_ocean"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_deep_frozen_ocean",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me near the Deep Frozen Ocean. Cold, depth, and ice are a terrible combination.",
-      "The Deep Frozen Ocean is no place to stand alone while the wind cuts through everything.",
-      "I waited by the Deep Frozen Ocean wondering whether the cold or the water would claim me first.",
-      "If you vanish beside a Deep Frozen Ocean, I am left with ice, depth, and no good options.",
-      "That place felt like it was built out of every bad decision at once.",
-      "The ice looked solid enough until I had to trust it alone.",
-      "I kept listening for cracks and hoping none of them were under me.",
-      "Please do not leave me where the ocean is frozen on top and endless underneath.",
-      "The Deep Frozen Ocean makes even standing still feel risky.",
-      "I was cold, exposed, and very aware that help was not nearby."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:deep_frozen_ocean"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_frozen_ocean",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me by the Frozen Ocean. Ice and freezing water are not mistakes I can afford.",
-      "The Frozen Ocean made every gust feel cruel once I was standing there alone.",
-      "I waited near the Frozen Ocean wondering whether the ice would hold if I had to move fast.",
-      "If you wander off beside a Frozen Ocean, I am left with cold, cracks, and worry.",
-      "The ice kept making sounds. I kept pretending I was not counting them.",
-      "A Frozen Ocean is pretty from a distance. Up close, alone, it is just dangerous.",
-      "I do not like waiting somewhere where the ground might stop being ground.",
-      "Next time, do not leave me beside freezing water with nowhere warm to go.",
-      "I was afraid to move and afraid to stay still. That is not a good place to leave someone.",
-      "The Frozen Ocean made me feel like one wrong step would be the whole story."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:frozen_ocean"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_frozen_peaks",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me on the Frozen Peaks. One slip up there and the mountain <shake>finishes the story</shake>.",
-      "The Frozen Peaks are all wind, ice, and bad footing. I needed you back quickly.",
-      "I was alone on the Frozen Peaks trying not to let the cold or the height get into my head.",
-      "If you disappear on the Frozen Peaks, I am left freezing above a very long fall.",
-      "Every step up there felt like it wanted to become my last one.",
-      "The mountain was loud with wind and quiet with everything else. I hated it.",
-      "I kept my feet still because I did not trust the ground to forgive me.",
-      "Please do not leave me alone where the air is thin and the fall is not.",
-      "The Frozen Peaks are not a waiting room. They are a warning.",
-      "I was cold, stranded, and one bad patch of ice away from being gone."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:frozen_peaks"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_frozen_river",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me by the Frozen River. Ice only looks patient until it breaks.",
-      "The Frozen River was too cold and too uncertain to be waiting beside alone.",
-      "I stood near the Frozen River trying not to trust the ice more than it deserved.",
-      "If you wander off at a Frozen River, I am left choosing between cold banks and colder water.",
-      "The river sounded alive under the ice. That did not comfort me.",
-      "I kept wondering how thick the ice was, which is not a thought I enjoy having alone.",
-      "Frozen water is still water. It just waits longer before it ruins you.",
-      "Please do not leave me beside a river that might open beneath my feet.",
-      "The banks were cold, the ice was worse, and you were nowhere nearby.",
-      "I did not know whether to stay on the edge or move away. Both felt like mistakes."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:frozen_river"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_grove",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me in the Grove. Snowy woods on a slope are still dangerous, no matter how calm they look.",
-      "The Grove was quiet in the worst way once I realized I was standing there by myself.",
-      "I waited in the Grove with snow underfoot and too many shadows between the trees.",
-      "If you vanish in a Grove, I am left cold, uphill, and listening for trouble.",
-      "The trees made it hard to see far, and that made every sound feel closer.",
-      "A Grove looks peaceful until you are alone and unsure which way you went.",
-      "I kept watching the gaps between the trees, expecting something to move.",
-      "Please do not leave me where the snow hides tracks and the woods hide everything else.",
-      "The Grove swallowed your footsteps faster than I liked.",
-      "I was cold, surrounded by trees, and very aware that I did not know where you were."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:grove"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_ice_spikes",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me out here in the Ice Spikes. It's already so cold and dangerous as is.",
-      "The Ice Spikes are all freezing wind and sharp towers. I did not want to face that alone.",
-      "I was stuck in the Ice Spikes trying not to panic every time the wind howled through them.",
-      "If you disappear in the Ice Spikes, I am left shivering between blades of ice and bad luck.",
-      "Those spikes make the whole place feel like it wants you gone.",
-      "I kept turning around because every ice tower looked like something standing behind me.",
-      "The cold was bad enough, but the shape of that place made it worse.",
-      "Please do not leave me somewhere that looks like the ground grew teeth.",
-      "The Ice Spikes are not just cold. They feel hostile.",
-      "I waited there with frozen hands and no idea which direction was safest."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:ice_spikes"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_jagged_peaks",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me on the Jagged Peaks. The name alone should have warned you.",
-      "The Jagged Peaks are too steep and too cold to be abandoned on.",
-      "I waited on the Jagged Peaks trying not to think about how little room there was for a misstep.",
-      "If you vanish on the Jagged Peaks, I am left clinging to rock and hoping for your return.",
-      "Every edge up there looked sharp enough to punish a mistake.",
-      "The wind shoved harder than I liked, and the mountain did not care.",
-      "I had nowhere comfortable to stand and nowhere safe to fall.",
-      "Please do not leave me on a peak that already sounds like a threat.",
-      "The Jagged Peaks made every step feel like a negotiation.",
-      "I was balancing between cold stone, sharp drops, and a growing fear you were not coming back."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:jagged_peaks"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_snowy_beach",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me on the Snowy Beach. Cold wind off the water is miserable enough already.",
-      "A Snowy Beach is all freezing air, open ground, and too few places to hide.",
-      "I waited on the Snowy Beach trying not to let the cold make me careless.",
-      "If you vanish on a Snowy Beach, I am left shivering between surf and snow.",
-      "The waves kept coming in like they had somewhere better to be.",
-      "There was no shelter, no warmth, and no sign of you.",
-      "A beach should not feel that empty, but the snow managed it.",
-      "Please do not leave me where the cold comes from both the ground and the water.",
-      "The Snowy Beach made waiting feel exposed in every direction.",
-      "I kept watching the shoreline, hoping you would come back before the cold settled in."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:snowy_beach"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_snowy_plains",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me in the Snowy Plains. Cold and open is a terrible combination.",
-      "The Snowy Plains gave me nowhere to hide and far too much wind to endure.",
-      "I stood in the Snowy Plains watching the horizon and wishing it had fewer dangers on it.",
-      "If you disappear in the Snowy Plains, I am left freezing in the open with no shelter nearby.",
-      "Everything was visible out there except you.",
-      "The plains made me feel exposed, like anything could see me coming from far away.",
-      "I kept looking across the snow and finding nothing useful.",
-      "Please do not leave me in a place where there is nowhere to hide from the cold.",
-      "The Snowy Plains turned waiting into standing still for the weather.",
-      "I was alone in the open, and the open did not feel kind."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:snowy_plains"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_snowy_slopes",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me on the Snowy Slopes. Ice and inclines are bad partners.",
-      "The Snowy Slopes are cold enough without adding the risk of sliding into trouble.",
-      "I waited on the Snowy Slopes trying to keep my footing and my nerves at the same time.",
-      "If you wander off on the Snowy Slopes, I am left freezing on a tilted problem.",
-      "Every step felt like it might turn into a slide.",
-      "I could not relax there. Even standing still felt like work.",
-      "The snow hid enough of the ground to make me distrust all of it.",
-      "Please do not leave me on a slope where one wrong move sends me somewhere worse.",
-      "The Snowy Slopes made waiting feel like balancing.",
-      "I was cold, uneasy, and trying very hard not to move the wrong way."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:snowy_slopes"
-      }
-    ]
-  },
-  {
-    "id": "recruitment_left_behind_snowy_taiga",
-    "request": "recruitment_followup",
-    "option": "recruitment_left_behind",
-    "show_for_babies": false,
-    "weight": 20,
-    "lines": [
-      "Don't leave me in the Snowy Taiga. Cold trees and deeper shadows are not comforting.",
-      "The Snowy Taiga was quiet in a way that made me expect the worst.",
-      "I waited in the Snowy Taiga listening to the wind in the pines and not much else.",
-      "If you disappear in a Snowy Taiga, I am left cold under dark branches with no help in sight.",
-      "The trees blocked the view but not the cold.",
-      "I kept hearing things in the branches and hoping they were only branches.",
-      "A Snowy Taiga does not feel empty. It feels like it is holding its breath.",
-      "Please do not leave me where the woods are dark and the snow makes every sound strange.",
-      "The pines made it hard to tell where anything was coming from.",
-      "I was cold, alone, and surrounded by enough trees to make every direction feel uncertain."
-    ],
-    "conditions": [
-      {
-        "type": "recruitment_memory",
-        "scenarios": [
-          "left_behind"
-        ],
-        "biome": "minecraft:snowy_taiga"
-      }
-    ]
-  }
+    {
+        "id":  "recruitment_left_behind_cold_ocean",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me near the Cold Ocean. That water bites hard enough without me facing it alone.",
+                      "The Cold Ocean is no place to lose track of each other. One bad slip and I am done for.",
+                      "I waited by the Cold Ocean trying to ignore how quickly that wind chills through me.",
+                      "If you disappear beside a Cold Ocean, all I can think about is freezing before help returns.",
+                      "The Cold Ocean does not give second chances. Please do not make me wait there alone again.",
+                      "I kept looking at the water, wondering how fast it would take the warmth from me.",
+                      "Next time we pass a Cold Ocean, stay where I can see you.",
+                      "The wind off that water made every minute feel longer than it was.",
+                      "I can handle cold. I cannot handle being forgotten in it.",
+                      "Being left beside the Cold Ocean made me feel very small, and very far from safe."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:cold_ocean"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_deep_cold_ocean",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me by the Deep Cold Ocean. Cold water and deep water are both bad enough already.",
+                      "The Deep Cold Ocean made every \u003cwavy\u003ewave\u003c/wavy\u003e sound like a threat while I was waiting for you.",
+                      "I was alone near the Deep Cold Ocean trying not to think about how little room I had for mistakes.",
+                      "If you are going to lose me, do not do it beside a Deep Cold Ocean where everything feels fatal.",
+                      "That water looked endless. Waiting beside it alone did not help.",
+                      "The Deep Cold Ocean is the sort of place where even silence feels dangerous.",
+                      "I kept thinking about what would happen if I slipped, and none of the answers were good.",
+                      "Please do not leave me staring at deep cold water again.",
+                      "The cold was bad. The depth made it worse.",
+                      "I could not stop watching the waves. It felt like they were waiting for me to make one mistake."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:deep_cold_ocean"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_deep_frozen_ocean",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me near the Deep Frozen Ocean. Cold, depth, and ice are a terrible combination.",
+                      "The Deep Frozen Ocean is no place to stand alone while the wind cuts through everything.",
+                      "I waited by the Deep Frozen Ocean wondering whether the cold or the water would claim me first.",
+                      "If you vanish beside a Deep Frozen Ocean, I am left with ice, depth, and no good options.",
+                      "That place felt like it was built out of every bad decision at once.",
+                      "The ice looked solid enough until I had to trust it alone.",
+                      "I kept listening for cracks and hoping none of them were under me.",
+                      "Please do not leave me where the ocean is frozen on top and endless underneath.",
+                      "The Deep Frozen Ocean makes even standing still feel risky.",
+                      "I was cold, exposed, and very aware that help was not nearby."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:deep_frozen_ocean"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_frozen_ocean",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me by the Frozen Ocean. Ice and freezing water are not mistakes I can afford.",
+                      "The Frozen Ocean made every gust feel cruel once I was standing there alone.",
+                      "I waited near the Frozen Ocean wondering whether the ice would hold if I had to move fast.",
+                      "If you wander off beside a Frozen Ocean, I am left with cold, cracks, and worry.",
+                      "The ice kept making sounds. I kept pretending I was not counting them.",
+                      "A Frozen Ocean is pretty from a distance. Up close, alone, it is just dangerous.",
+                      "I do not like waiting somewhere where the ground might stop being ground.",
+                      "Next time, do not leave me beside freezing water with nowhere warm to go.",
+                      "I was afraid to move and afraid to stay still. That is not a good place to leave someone.",
+                      "The Frozen Ocean made me feel like one wrong step would be the whole story."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:frozen_ocean"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_frozen_peaks",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me on the Frozen Peaks. One slip up there and the mountain \u003cshake\u003efinishes the story\u003c/shake\u003e.",
+                      "The Frozen Peaks are all wind, ice, and bad footing. I needed you back quickly.",
+                      "I was alone on the Frozen Peaks trying not to let the cold or the height get into my head.",
+                      "If you disappear on the Frozen Peaks, I am left freezing above a very long fall.",
+                      "Every step up there felt like it wanted to become my last one.",
+                      "The mountain was loud with wind and quiet with everything else. I hated it.",
+                      "I kept my feet still because I did not trust the ground to forgive me.",
+                      "Please do not leave me alone where the air is thin and the fall is not.",
+                      "The Frozen Peaks are not a waiting room. They are a warning.",
+                      "I was cold, stranded, and one bad patch of ice away from being gone."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:frozen_peaks"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_frozen_river",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me by the Frozen River. Ice only looks patient until it breaks.",
+                      "The Frozen River was too cold and too uncertain to be waiting beside alone.",
+                      "I stood near the Frozen River trying not to trust the ice more than it deserved.",
+                      "If you wander off at a Frozen River, I am left choosing between cold banks and colder water.",
+                      "The river sounded alive under the ice. That did not comfort me.",
+                      "I kept wondering how thick the ice was, which is not a thought I enjoy having alone.",
+                      "Frozen water is still water. It just waits longer before it ruins you.",
+                      "Please do not leave me beside a river that might open beneath my feet.",
+                      "The banks were cold, the ice was worse, and you were nowhere nearby.",
+                      "I did not know whether to stay on the edge or move away. Both felt like mistakes."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:frozen_river"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_grove",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me in the Grove. Snowy woods on a slope are still dangerous, no matter how calm they look.",
+                      "The Grove was quiet in the worst way once I realized I was standing there by myself.",
+                      "I waited in the Grove with snow underfoot and too many shadows between the trees.",
+                      "If you vanish in a Grove, I am left cold, uphill, and listening for trouble.",
+                      "The trees made it hard to see far, and that made every sound feel closer.",
+                      "A Grove looks peaceful until you are alone and unsure which way you went.",
+                      "I kept watching the gaps between the trees, expecting something to move.",
+                      "Please do not leave me where the snow hides tracks and the woods hide everything else.",
+                      "The Grove swallowed your footsteps faster than I liked.",
+                      "I was cold, surrounded by trees, and very aware that I did not know where you were."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:grove"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_ice_spikes",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me out here in the Ice Spikes. It\u0027s already so cold and dangerous as is.",
+                      "The Ice Spikes are all freezing wind and sharp towers. I did not want to face that alone.",
+                      "I was stuck in the Ice Spikes trying not to panic every time the wind howled through them.",
+                      "If you disappear in the Ice Spikes, I am left shivering between blades of ice and bad luck.",
+                      "Those spikes make the whole place feel like it wants you gone.",
+                      "I kept turning around because every ice tower looked like something standing behind me.",
+                      "The cold was bad enough, but the shape of that place made it worse.",
+                      "Please do not leave me somewhere that looks like the ground grew teeth.",
+                      "The Ice Spikes are not just cold. They feel hostile.",
+                      "I waited there with frozen hands and no idea which direction was safest."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:ice_spikes"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_jagged_peaks",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me on the Jagged Peaks. The name alone should have warned you.",
+                      "The Jagged Peaks are too steep and too cold to be abandoned on.",
+                      "I waited on the Jagged Peaks trying not to think about how little room there was for a misstep.",
+                      "If you vanish on the Jagged Peaks, I am left clinging to rock and hoping for your return.",
+                      "Every edge up there looked sharp enough to punish a mistake.",
+                      "The wind shoved harder than I liked, and the mountain did not care.",
+                      "I had nowhere comfortable to stand and nowhere safe to fall.",
+                      "Please do not leave me on a peak that already sounds like a threat.",
+                      "The Jagged Peaks made every step feel like a negotiation.",
+                      "I was balancing between cold stone, sharp drops, and a growing fear you were not coming back."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:jagged_peaks"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_snowy_beach",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me on the Snowy Beach. Cold wind off the water is miserable enough already.",
+                      "A Snowy Beach is all freezing air, open ground, and too few places to hide.",
+                      "I waited on the Snowy Beach trying not to let the cold make me careless.",
+                      "If you vanish on a Snowy Beach, I am left shivering between surf and snow.",
+                      "The waves kept coming in like they had somewhere better to be.",
+                      "There was no shelter, no warmth, and no sign of you.",
+                      "A beach should not feel that empty, but the snow managed it.",
+                      "Please do not leave me where the cold comes from both the ground and the water.",
+                      "The Snowy Beach made waiting feel exposed in every direction.",
+                      "I kept watching the shoreline, hoping you would come back before the cold settled in."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:snowy_beach"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_snowy_plains",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me in the Snowy Plains. Cold and open is a terrible combination.",
+                      "The Snowy Plains gave me nowhere to hide and far too much wind to endure.",
+                      "I stood in the Snowy Plains watching the horizon and wishing it had fewer dangers on it.",
+                      "If you disappear in the Snowy Plains, I am left freezing in the open with no shelter nearby.",
+                      "Everything was visible out there except you.",
+                      "The plains made me feel exposed, like anything could see me coming from far away.",
+                      "I kept looking across the snow and finding nothing useful.",
+                      "Please do not leave me in a place where there is nowhere to hide from the cold.",
+                      "The Snowy Plains turned waiting into standing still for the weather.",
+                      "I was alone in the open, and the open did not feel kind."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:snowy_plains"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_snowy_slopes",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me on the Snowy Slopes. Ice and inclines are bad partners.",
+                      "The Snowy Slopes are cold enough without adding the risk of sliding into trouble.",
+                      "I waited on the Snowy Slopes trying to keep my footing and my nerves at the same time.",
+                      "If you wander off on the Snowy Slopes, I am left freezing on a tilted problem.",
+                      "Every step felt like it might turn into a slide.",
+                      "I could not relax there. Even standing still felt like work.",
+                      "The snow hid enough of the ground to make me distrust all of it.",
+                      "Please do not leave me on a slope where one wrong move sends me somewhere worse.",
+                      "The Snowy Slopes made waiting feel like balancing.",
+                      "I was cold, uneasy, and trying very hard not to move the wrong way."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:snowy_slopes"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_snowy_taiga",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "Don\u0027t leave me in the Snowy Taiga. Cold trees and deeper shadows are not comforting.",
+                      "The Snowy Taiga was quiet in a way that made me expect the worst.",
+                      "I waited in the Snowy Taiga listening to the wind in the pines and not much else.",
+                      "If you disappear in a Snowy Taiga, I am left cold under dark branches with no help in sight.",
+                      "The trees blocked the view but not the cold.",
+                      "I kept hearing things in the branches and hoping they were only branches.",
+                      "A Snowy Taiga does not feel empty. It feels like it is holding its breath.",
+                      "Please do not leave me where the woods are dark and the snow makes every sound strange.",
+                      "The pines made it hard to tell where anything was coming from.",
+                      "I was cold, alone, and surrounded by enough trees to make every direction feel uncertain."
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:snowy_taiga"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    }
 ]

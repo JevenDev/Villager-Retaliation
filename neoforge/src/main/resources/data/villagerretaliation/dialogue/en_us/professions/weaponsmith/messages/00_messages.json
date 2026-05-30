@@ -1,97 +1,105 @@
 {
-  "messages": [
-    {
-      "id": "weaponsmith_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Take {gift_item}. Better to carry thanks before you need steel.",
-        "Here, {gift_item}. I trust you to use it with a cooler head than most.",
-        "Take {gift_item}. It is not much, but it is given with care.",
-        "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else's problem.",
-        "People think weapons is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good hammer more than a loud promise. The hammer has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the grindstone has done to me."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "weaponsmith_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} struck true with {tested_villager}.",
-        "Then the advice kept its edge. {tested_villager} liked {gift_item}.",
-        "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "weaponsmith_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "That blade was poorly balanced. For {gift_subject}, try {alternative_gift}.",
-        "{gift_item} missed clean? Bring {alternative_gift}; better weight for the hand.",
-        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "weight": 20,
-      "lines": [
-        "That advice had a dull edge. Try {alternative_gift}; it should bite better.",
-        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time.",
-        "You walk in like trouble forgot to close the door behind it.",
-        "I have seen broken weapons with better instincts than you.",
-        "Careful. The village has long memories and very little patience today.",
-        "You are not as frightening as you think. That may be the problem.",
-        "If foolishness made noise, you would drown out the bell.",
-        "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
-      ]
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "weight": 20,
-      "lines": [
-        "You swung with what I handed you. Next time, choose {alternative_gift}.",
-        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time.",
-        "You walk in like trouble forgot to close the door behind it.",
-        "I have seen broken weapons with better instincts than you.",
-        "Careful. The village has long memories and very little patience today.",
-        "You are not as frightening as you think. That may be the problem.",
-        "If foolishness made noise, you would drown out the bell.",
-        "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
-      ]
-    }
-  ]
+    "messages":  [
+                     {
+                         "id":  "weaponsmith_gift_given_variants",
+                         "key":  "gift_given",
+                         "lines":  [
+                                       "Take {gift_item}. Better to carry thanks before you need steel.",
+                                       "Here, {gift_item}. I trust you to use it with a cooler head than most.",
+                                       "Take {gift_item}. It is not much, but it is given with care.",
+                                       "Most days, I am at the grindstone, trying to keep balance and edges from becoming everyone else\u0027s problem.",
+                                       "People think weapons is simple until something goes wrong and suddenly it is very important.",
+                                       "A village runs on small work. Nobody praises it until it stops happening.",
+                                       "I trust a good hammer more than a loud promise. The hammer has less to prove.",
+                                       "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+                                       "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+                                       "I notice the little things. That is either a skill or what the grindstone has done to me."
+                                   ],
+                         "weight":  48
+                     },
+                     {
+                         "id":  "weaponsmith_gift_advice_followup_liked_variants",
+                         "key":  "gift_advice_followup.liked",
+                         "lines":  [
+                                       "Good. {gift_item} struck true with {tested_villager}.",
+                                       "Then the advice kept its edge. {tested_villager} liked {gift_item}.",
+                                       "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
+                                       "Following you taught me that plans sound much safer before anyone starts walking.",
+                                       "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                       "Next time, warn me before the road becomes a test of character.",
+                                       "I learned two things out there: stay close, and ask better questions earlier.",
+                                       "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                       "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                       "If I followed you again, I would pack more food and fewer assumptions."
+                                   ],
+                         "weight":  44
+                     },
+                     {
+                         "id":  "weaponsmith_gift_advice_followup_disliked_variants",
+                         "key":  "gift_advice_followup.disliked",
+                         "lines":  [
+                                       "That blade was poorly balanced. For {gift_subject}, try {alternative_gift}.",
+                                       "{gift_item} missed clean? Bring {alternative_gift}; better weight for the hand.",
+                                       "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
+                                       "Following you taught me that plans sound much safer before anyone starts walking.",
+                                       "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                       "Next time, warn me before the road becomes a test of character.",
+                                       "I learned two things out there: stay close, and ask better questions earlier.",
+                                       "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                       "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                       "If I followed you again, I would pack more food and fewer assumptions."
+                                   ],
+                         "weight":  44
+                     },
+                     {
+                         "key":  "gift_advice_followup.disliked",
+                         "dispositions":  [
+                                              "cautious",
+                                              "rude",
+                                              "hostile",
+                                              "fearful"
+                                          ],
+                         "weight":  20,
+                         "lines":  [
+                                       "That advice had a dull edge. Try {alternative_gift}; it should bite better.",
+                                       "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+                                       "Then we correct the guess: {alternative_gift} next time.",
+                                       "You walk in like trouble forgot to close the door behind it.",
+                                       "I have seen broken weapons with better instincts than you.",
+                                       "Careful. The village has long memories and very little patience today.",
+                                       "You are not as frightening as you think. That may be the problem.",
+                                       "If foolishness made noise, you would drown out the bell.",
+                                       "Do not test me just because I am speaking in complete sentences.",
+                                       "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
+                                   ]
+                     },
+                     {
+                         "key":  "gift_advice_followup.disliked",
+                         "dispositions":  [
+                                              "rude",
+                                              "hostile"
+                                          ],
+                         "weight":  20,
+                         "lines":  [
+                                       "You swung with what I handed you. Next time, choose {alternative_gift}.",
+                                       "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+                                       "Then we correct the guess: {alternative_gift} next time.",
+                                       "You walk in like trouble forgot to close the door behind it.",
+                                       "I have seen broken weapons with better instincts than you.",
+                                       "Careful. The village has long memories and very little patience today.",
+                                       "You are not as frightening as you think. That may be the problem.",
+                                       "If foolishness made noise, you would drown out the bell.",
+                                       "Do not test me just because I am speaking in complete sentences.",
+                                       "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
+                                   ]
+                     }
+                 ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.weaponsmith",
+                                  "section.messages"
+                              ]
+                 }
 }

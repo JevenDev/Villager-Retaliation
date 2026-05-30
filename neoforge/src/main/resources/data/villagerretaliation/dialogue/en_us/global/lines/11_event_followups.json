@@ -1,732 +1,740 @@
 {
-  "lines": [
-    {
-      "id": "reputation_feared_greeting_1",
-      "request": "greeting",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "feared"
-      ],
-      "weight": 32,
-      "lines": [
-        "I see you. Everyone sees you. Please keep walking peacefully.",
-        "I am watching your hands first and your words second.",
-        "Speak softly. The village is already tense enough around you.",
-        "Hello. I would rather this stay a greeting and nothing more.",
-        "People step aside when you pass. I hope you understand what that means.",
-        "I can speak with you, but I will not stand too close.",
-        "The square gets quieter when you arrive.",
-        "I am trying not to sound afraid. Help me by giving me no reason.",
-        "Keep your hands calm, and maybe everyone else can breathe.",
-        "You are welcome to speak, but not to frighten anyone further."
-      ]
-    },
-    {
-      "id": "baby_reputation_low_question_1",
-      "request": "question",
-      "show_for_adults": false,
-      "reputation_levels": [
-        "hostile",
-        "despised",
-        "feared"
-      ],
-      "weight": 24,
-      "lines": [
-        "The adults get quiet when you come near.",
-        "When you come close, people tell me to stay by the door.",
-        "I know your name because grown-ups say it quietly.",
-        "People look at your hands before they look at your face.",
-        "I am not supposed to stand too close to you.",
-        "The village feels smaller when you are here.",
-        "Grown-ups tell me to go inside when they see you coming.",
-        "I do not know what you did, but I know people remember it.",
-        "Your footsteps make people stop talking.",
-        "I am going to answer from here, okay?"
-      ]
-    },
-    {
-      "id": "baby_reputation_high_greeting_1",
-      "request": "greeting",
-      "show_for_adults": false,
-      "reputation_levels": [
-        "trusted",
-        "respected",
-        "revered",
-        "royalty"
-      ],
-      "weight": 24,
-      "lines": [
-        "Hi! They said you help when bad things come.",
-        "Hi! They said you make monsters go away.",
-        "You are the helper everyone talks about, right?",
-        "Hello! The grown-ups smile when they say your name.",
-        "Hi! Are you here to help again?",
-        "I heard you are brave. Are you tired from being brave?",
-        "People say the village is safer when you are nearby.",
-        "Hi! I am allowed to say hello to you.",
-        "They said you stood in front of danger. That sounds scary and cool.",
-        "<jump>Hi!</jump> I know you. You are the good kind of familiar."
-      ]
-    },
-    {
-      "id": "event_player_attack_apology_1",
-      "request": "apology",
-      "show_for_babies": false,
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "player_event_tags": [
-        "player_attacked_villager"
-      ],
-      "weight": 35,
-      "lines": [
-        "I can hear the apology. I can also remember the hit. Both are true right now.",
-        "I hear sorry. I am waiting to see safer hands.",
-        "The apology reached me. The memory did too.",
-        "You can regret it and still have done it.",
-        "I am not throwing your apology away, but I am not resting in it either.",
-        "Words are easier to offer than trust is to rebuild.",
-        "I will remember that you said this. I will also remember why you needed to.",
-        "If you mean it, your next choices will say so louder.",
-        "The bruise faded faster than the caution did.",
-        "I can accept the apology without pretending I feel safe yet."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "kind": "recent_direct_hit"
-        }
-      ]
-    },
-    {
-      "id": "event_player_attack_apology_2",
-      "request": "apology",
-      "show_for_babies": false,
-      "player_event_tags": [
-        "player_attacked_villager"
-      ],
-      "weight": 28,
-      "lines": [
-        "If you want this village to believe you, let your next ten choices be quieter than that one.",
-        "I hear sorry. I am waiting to see safer hands.",
-        "The apology reached me. The memory did too.",
-        "An apology is a beginning, not a broom.",
-        "Do better long enough for people to notice without being asked.",
-        "The village can hear regret, but it watches repair.",
-        "You cannot rush trust back into place.",
-        "Say less next time, and choose better sooner.",
-        "I hope the apology is honest. I hope your actions become easier to believe.",
-        "Let this be the start of different behavior, not just a different sentence."
-      ]
-    },
-    {
-      "id": "event_player_attack_report_1",
-      "request": "village_event_report",
-      "show_for_babies": false,
-      "player_event_tags": [
-        "player_attacked_villager"
-      ],
-      "weight": 30,
-      "lines": [
-        "We are not training dummies with jobs. When one of us is hurt, all of us count who stood nearby.",
-        "One hurt villager turns into a village full of witnesses.",
-        "When someone here is harmed, the whole square learns your name differently.",
-        "Harm does not stay where it lands. It travels through doors, families, and memory.",
-        "The village talks after one of its own is struck.",
-        "You made people check on each other, and then check where you went.",
-        "That kind of violence changes the shape of a day.",
-        "People remember who helped, who froze, and who caused the hurt.",
-        "A hit against one villager is never only between two people here.",
-        "The village is quieter now, but not because it forgot."
-      ]
-    },
-    {
-      "id": "event_player_attack_baby_1",
-      "request": "village_event_report",
-      "show_for_adults": false,
-      "event_tags": [
-        "baby_villager_attacked"
-      ],
-      "player_event_tags": [
-        "player_attacked_villager"
-      ],
-      "lines": [
-        "I heard someone small cry. I do not want to talk about that sound.",
-        "Grown-ups say accidents happen. That did not sound like an accident.",
-        "Someone little got scared. I do not like that part.",
-        "The grown-ups moved very fast after that.",
-        "I stayed close to the wall because everyone sounded worried.",
-        "No one should make a little one cry like that.",
-        "I wanted to help, but I did not know where to stand.",
-        "The village felt sharp after it happened.",
-        "I keep thinking about the crying, even when it is quiet now.",
-        "I hope the little one feels safe again soon."
-      ],
-      "weight": 54
-    },
-    {
-      "id": "event_villager_attacked_baby_1",
-      "request": "village_event_report",
-      "show_for_adults": false,
-      "event_tags": [
-        "villager_attacked"
-      ],
-      "weight": 24,
-      "lines": [
-        "Someone got hurt. I do not like the sound the village made after.",
-        "I heard a grown-up make a hurt sound. I did not like it.",
-        "Everybody moved fast, and nobody smiled after.",
-        "The doors opened and shut too quickly.",
-        "I stayed where I was told, but I kept listening.",
-        "The grown-ups tried to sound calm. They were not very good at it.",
-        "I do not like when the village gets scared all at once.",
-        "Someone said it would be okay, but they said it with worried eyes.",
-        "I wanted to ask questions, but nobody had soft answers.",
-        "I hope the hurt person gets better soon."
-      ]
-    },
-    {
-      "id": "event_villager_death_baby_1",
-      "request": "village_event_report",
-      "show_for_adults": false,
-      "event_tags": [
-        "villager_death"
-      ],
-      "lines": [
-        "I saw everybody run, and then one voice was gone.",
-        "The bell sounded <shake>too loud</shake> after that. Everything did.",
-        "I saw people stop talking all at once. That was scary.",
-        "Someone cried, and nobody told them to be quiet.",
-        "The grown-ups moved slower after it happened.",
-        "I do not understand all of it, but I know someone is missing.",
-        "The village feels like it is holding its breath.",
-        "I asked where they went, and the answer made everyone sad.",
-        "I do not like when a name makes people look down.",
-        "I hope they are somewhere safe, even if they are not here."
-      ],
-      "weight": 56
-    },
-    {
-      "id": "event_villager_death_shared_6",
-      "request": "village_event_report",
-      "event_tags": [
-        "villager_death"
-      ],
-      "weight": 32,
-      "lines": [
-        "A village is not just beds and bells. When one voice is gone, every room gets bigger.",
-        "A missing voice changes <pulse>every room</pulse> it used to fill.",
-        "We count the living because one of us cannot answer anymore.",
-        "Grief moves through a village slower than news, but it reaches every door.",
-        "There is an empty place now, and everyone knows where it is.",
-        "People keep listening for footsteps that will not come.",
-        "The work goes on, but it does not sound the same.",
-        "A death leaves more silence than one person should be able to leave.",
-        "We remember by speaking carefully and helping the ones who cannot yet stand steady.",
-        "The village is still here, but it is not the same village it was yesterday."
-      ]
-    },
-    {
-      "id": "event_villager_death_hostile_1",
-      "request": "village_event_report",
-      "show_for_babies": false,
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "event_tags": [
-        "villager_death"
-      ],
-      "weight": 34,
-      "lines": [
-        "If you came to ask whether we forget death quickly, <pulse>no</pulse>.",
-        "A missing voice changes every room it used to fill.",
-        "We count the living because one of us cannot answer anymore.",
-        "Do not prod at grief like it is village gossip.",
-        "Someone is gone. Speak with care or do not speak.",
-        "The village is mourning, and I have little patience for careless questions.",
-        "Death does not become easier because a stranger wants details.",
-        "We are still carrying it. Do not make it heavier.",
-        "There are names we say gently now. Remember that.",
-        "If you want answers, start by showing respect for the one who cannot answer."
-      ]
-    },
-    {
-      "id": "event_player_defended_village_trusted_1",
-      "request": "village_defense_report",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "trusted",
-        "respected",
-        "revered",
-        "royalty"
-      ],
-      "player_event_tags": [
-        "player_defended_village"
-      ],
-      "weight": 34,
-      "lines": [
-        "You stood between trouble and our doors. That is the sort of thing people <pulse>remember</pulse> without needing a ledger.",
-        "You helped when the village needed hands, not speeches.",
-        "People noticed where you stood when danger came.",
-        "When trouble reached us, you did not step away.",
-        "The village has safer memories because you were there.",
-        "You gave people time to reach doors, and that matters.",
-        "There are families here who slept easier because you chose to act.",
-        "You did not make a show of it. You simply helped.",
-        "That kind of courage settles deep into village memory.",
-        "We know who stood with us. Your name is among them."
-      ]
-    },
-    {
-      "id": "event_player_defended_village_suspicious_1",
-      "request": "village_defense_report",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "suspicious",
-        "hostile",
-        "despised",
-        "feared"
-      ],
-      "player_event_tags": [
-        "player_defended_village"
-      ],
-      "weight": 32,
-      "lines": [
-        "You helped. I am not too proud to say that. I am also not ready to stop being careful.",
-        "You helped when the village needed hands, not speeches.",
-        "People noticed where you stood when danger came.",
-        "That deed matters. So does everything that made us wary before it.",
-        "I can give credit without giving you my full trust.",
-        "You stood with us when it counted. I am still deciding what that changes.",
-        "A good act does not erase caution, but it does complicate it.",
-        "The village saw you help. It will remember that alongside the rest.",
-        "I am grateful enough to say it, and careful enough to mean only that.",
-        "You gave us reason to think twice about you. That is a start."
-      ]
-    },
-    {
-      "id": "event_player_defended_raid_respected_1",
-      "request": "village_defense_report",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "respected",
-        "revered",
-        "royalty"
-      ],
-      "event_tags": [
-        "raid"
-      ],
-      "player_event_tags": [
-        "player_defended_raid"
-      ],
-      "weight": 36,
-      "lines": [
-        "During the raid, you did not ask who owed you. You just moved. That matters.",
-        "Raid horns make truth simple. <pulse>You chose to help.</pulse>",
-        "When the raid came, you moved toward danger. We saw that.",
-        "You stood firm when the horns tried to make everyone smaller.",
-        "The village remembers who runs toward the gates when others run from them.",
-        "You gave the raiders one more reason to regret coming here.",
-        "There was no time for speeches, and you did not waste any.",
-        "Your courage had dirt on its boots and work in its hands.",
-        "People are alive to speak of what you did.",
-        "That raid could have taken more from us. You helped make sure it did not."
-      ]
-    },
-    {
-      "id": "event_player_defended_raid_low_rep_1",
-      "request": "village_defense_report",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "suspicious",
-        "hostile",
-        "despised",
-        "feared"
-      ],
-      "event_tags": [
-        "raid"
-      ],
-      "player_event_tags": [
-        "player_defended_raid"
-      ],
-      "weight": 34,
-      "lines": [
-        "You fought the raiders. I saw it. Good deeds do not erase bad ones, but they do get written down.",
-        "Raid horns make truth simple. You chose to help.",
-        "When the raid came, you moved toward danger. We saw that.",
-        "I am not ready to trust you, but I will not deny what you did.",
-        "You helped keep people alive. That counts, even from you.",
-        "The village remembers harm, but it also remembers defense.",
-        "You stood with us when standing mattered. I am still weighing that.",
-        "A brave act does not close every wound, but it is not nothing.",
-        "You gave us a reason to speak your name with less certainty.",
-        "Do not waste the good you did by returning to the worst of yourself."
-      ]
-    },
-    {
-      "id": "event_golem_defeated_mob_6",
-      "request": "village_event_report",
-      "event_tags": [
-        "iron_golem_defeated_mob"
-      ],
-      "weight": 26,
-      "lines": [
-        "The iron one moved before <shake>panic</shake> could. That sound is ugly, but it means we get another morning.",
-        "The iron one bought us a quieter morning.",
-        "Metal moved before fear could finish spreading.",
-        "When the golem steps forward, the village remembers how to breathe.",
-        "The fight was loud, but the silence after was a mercy.",
-        "Iron took the danger seriously before most of us could move.",
-        "The golem did what it was made to do, and we are grateful for it.",
-        "There is comfort in hearing heavy footsteps move toward trouble.",
-        "The mob did not get far. The iron one made sure of that.",
-        "We will repair the ground. We are just glad there are people left to repair it."
-      ]
-    },
-    {
-      "id": "event_golem_killed_alarm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "golem_killed"
-      ],
-      "weight": 30,
-      "lines": [
-        "When iron falls, flesh starts <pulse>counting windows</pulse>.",
-        "When the iron one falls, every door feels thinner.",
-        "The village sounds different without iron footsteps nearby.",
-        "People keep looking toward the place where it should be standing.",
-        "A fallen golem makes the whole village feel exposed.",
-        "We are grateful for what it stopped. We are afraid of what comes next.",
-        "The silence after iron falls is not a peaceful silence.",
-        "Every gate feels farther away without those heavy steps nearby.",
-        "We will need to be careful until another guard stands tall.",
-        "The village lost more than metal. It lost a little courage with it."
-      ]
-    },
-    {
-      "id": "event_village_fire_player_suspicion_1",
-      "request": "village_event_report",
-      "show_for_babies": false,
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "event_tags": [
-        "village_fire"
-      ],
-      "weight": 30,
-      "lines": [
-        "Fire does not care who placed it. Villagers do.",
-        "Fire spreads fast. Suspicion travels almost as quickly.",
-        "Smoke clears. The question of who started it does not.",
-        "A village forgives accidents more easily than carelessness.",
-        "People are counting scorch marks and watching faces.",
-        "The flames are out, but the questions are still warm.",
-        "If someone caused this, the village will want more than an apology.",
-        "Fire leaves ash, but suspicion leaves its own stains.",
-        "We are cleaning walls and wondering who brought the spark.",
-        "Do not expect calm answers while the smoke is still in our clothes."
-      ]
-    },
-    {
-      "id": "event_cured_villager_gratitude_1",
-      "request": "cured_recognition",
-      "show_for_babies": false,
-      "player_event_tags": [
-        "player_cured_villager"
-      ],
-      "weight": 34,
-      "lines": [
-        "I remember hunger, then a bottle, then your face coming back into focus. That is a strange debt to carry.",
-        "I remember the cure as hunger leaving and morning returning.",
-        "You were there when the world stopped being teeth and noise.",
-        "The dark had its hands on me, and you helped pry them loose.",
-        "I remember enough to know I was not alone when I came back.",
-        "The cure did not feel gentle, but waking afterward did.",
-        "Your face is tied to the moment I became myself again.",
-        "I do not know how to repay being returned to my own name.",
-        "There are gaps in my memory, but gratitude filled one of them.",
-        "You helped me come home to myself. I will not forget that."
-      ]
-    },
-    {
-      "id": "event_gift_loved_gossip_1",
-      "request": "gift_preferences",
-      "show_for_babies": false,
-      "player_event_tags": [
-        "player_gave_loved_gift"
-      ],
-      "weight": 30,
-      "lines": [
-        "A good gift says you paid attention before you spent anything.",
-        "The best gifts prove someone listened first.",
-        "A thoughtful gift can make a village feel less guarded.",
-        "People remember when a gift fits them instead of just filling their hands.",
-        "The right gift can say more kindly than a long speech.",
-        "A loved gift travels through gossip with a warmer voice.",
-        "You learn plenty about a person by noticing what they cherish.",
-        "Some gifts are small enough to hold and large enough to matter.",
-        "A gift chosen well can open a door without touching the handle.",
-        "When someone feels seen, the whole village hears about it eventually."
-      ]
-    },
-    {
-      "id": "event_gift_hated_gossip_1",
-      "request": "gift_preferences",
-      "show_for_babies": false,
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile"
-      ],
-      "player_event_tags": [
-        "player_gave_hated_gift"
-      ],
-      "weight": 30,
-      "lines": [
-        "A bad gift can land like an insult. Some apologies are wrapped before they are spoken.",
-        "A wrong gift can bruise more than an empty hand.",
-        "Some presents arrive carrying insult instead of kindness.",
-        "A gift chosen badly can make a person feel studied in the wrong way.",
-        "People remember when a present feels careless, or worse, pointed.",
-        "Better to bring nothing than something that makes the room colder.",
-        "A hated gift does not stay between two hands for long.",
-        "That kind of gift makes people wonder what you meant by it.",
-        "If kindness was the goal, that gift took the long road away from it.",
-        "Some mistakes fit in a pocket and still weigh down a reputation."
-      ]
-    },
-    {
-      "id": "event_reputation_changed_positive_1",
-      "request": "question",
-      "show_for_babies": false,
-      "min_reputation": 75,
-      "player_event_tags": [
-        "reputation_changed"
-      ],
-      "weight": 24,
-      "lines": [
-        "Your name has been moving through conversations lately. For once, mostly upward.",
-        "People have been saying your name with fewer locks in their voices.",
-        "The village has noticed better choices lately.",
-        "A few doors are opening easier than they used to.",
-        "People are beginning to sound less careful when they speak of you.",
-        "Trust does not return all at once, but yours has been gaining ground.",
-        "Your recent choices have been easier for the village to respect.",
-        "There is less suspicion attached to your footsteps than before.",
-        "People are watching, yes, but some are watching with hope now.",
-        "Keep going this way. A better reputation is built one remembered act at a time."
-      ]
-    },
-    {
-      "id": "event_reputation_changed_negative_1",
-      "request": "question",
-      "show_for_babies": false,
-      "max_reputation": -75,
-      "player_event_tags": [
-        "reputation_changed"
-      ],
-      "weight": 26,
-      "lines": [
-        "The bell is not the only thing that carries warnings through a village.",
-        "Warnings move faster than gossip when trust drops.",
-        "Your name has been traveling with caution beside it.",
-        "People have started lowering their voices when you come up.",
-        "The village is learning to be careful around you.",
-        "Trust can fall faster than a door can close.",
-        "Your recent choices have made people less willing to relax.",
-        "A reputation can sour quietly, then all at once.",
-        "If you feel the village pulling away, ask what you did to teach it that.",
-        "The path back is longer once people start warning each other."
-      ]
-    },
-    {
-      "id": "sleep_broken_bed_apology_1",
-      "request": "apology",
-      "weight": 32,
-      "lines": [
-        "A bed is where fear is supposed to stop for the night. Breaking one says more than you think.",
-        "Beds are where fear is meant to end. Breaking one wakes more than a sleeper.",
-        "A broken bed makes the whole night feel unsafe.",
-        "You damaged the place someone trusted to rest.",
-        "A bed is not just wood and wool. It is the promise of a safe night.",
-        "When a bed breaks, sleep feels farther away.",
-        "I hear the apology, but someone still has to lie awake because of it.",
-        "Repair the bed, yes, but understand what you disturbed.",
-        "A broken bed can make a home feel less like home.",
-        "If you are sorry, help make the night feel safe again."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "kind": "recent_broken_bed"
-        }
-      ]
-    },
-    {
-      "id": "gear_report_used_combat_1",
-      "request": "gear_report",
-      "show_for_babies": false,
-      "weight": 28,
-      "lines": [
-        "The gear held. I did too. That is not the same as enjoying the test.",
-        "The gear did its work. I am still deciding what that cost me.",
-        "It held when I needed it, and I am here because of that.",
-        "I trusted it because I had to, and it answered well enough.",
-        "The fight proved the gear useful. I would have preferred a gentler lesson.",
-        "It took the moment seriously when the moment turned sharp.",
-        "I am grateful for the protection, even if I hated needing it.",
-        "Good gear does not make fear vanish. It gives fear something to stand behind.",
-        "I came back with proof that preparation matters.",
-        "The gear earned its place, and so did the hands that gave it to me."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "kind": "gear_report_used_in_combat"
-        }
-      ]
-    },
-    {
-      "id": "gear_report_unused_combat_1",
-      "request": "gear_report",
-      "show_for_babies": false,
-      "weight": 28,
-      "lines": [
-        "I have kept the gear ready. Around here, ready is a kind of prayer.",
-        "The gear is still ready, and I prefer it that way.",
-        "Unused protection is still protection. It keeps tomorrow possible.",
-        "I have not needed it yet, which is the best report I can give.",
-        "It waits quietly, and I hope it keeps waiting.",
-        "The gear gives me a little more courage than I had before.",
-        "Prepared feels better than lucky.",
-        "I would rather carry it unused than need it missing.",
-        "It has not seen trouble yet. May it stay that way.",
-        "Knowing it is there makes the road feel less eager to surprise me."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "kind": "gear_report_unused_in_combat"
-        }
-      ]
-    },
-    {
-      "id": "recruitment_followup_betrayal_shadow_1",
-      "request": "recruitment_followup",
-      "show_for_babies": false,
-      "weight": 30,
-      "lines": [
-        "Following you taught me something about the world. I am still deciding what it taught me about you.",
-        "That trip taught me the world is wide and trust can be narrow.",
-        "I followed your road. I am still judging where it led.",
-        "A long road gives a person time to think, and I have not liked every thought.",
-        "I learned how far I was willing to go because I trusted you.",
-        "The distance matters less than what happened along it.",
-        "A journey can end at home and still leave questions behind.",
-        "I remember the road, but I remember the feeling of following more.",
-        "You asked for trust over distance. That is not a small ask.",
-        "I came back with sore feet and a sharper opinion."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "min_follow_distance": 128
-        }
-      ]
-    },
-    {
-      "id": "container_theft_memory_direct_hostile_1",
-      "request": "question",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "hostile",
-        "despised",
-        "feared"
-      ],
-      "weight": 34,
-      "lines": [
-        "You stole {stolen_stack}. If you expected the village to file that under small mistakes, you misread us.",
-        "You took {stolen_stack}. Do not dress theft up as confusion.",
-        "{stolen_stack} went missing with your name close behind it.",
-        "Theft does not become smaller because you want to talk about something else.",
-        "You reached into what was not yours. That is the part I remember first.",
-        "I do not care how useful {stolen_stack} looked to you. It was not yours.",
-        "A thief asking questions should expect careful answers.",
-        "The village knows what happened, and so do I.",
-        "You made {stolen_stack} part of your reputation.",
-        "Return what you can, repair what you cannot, and stop pretending theft is a misunderstanding."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "tag": "player_container_theft",
-          "source": "this_villager"
-        }
-      ]
-    },
-    {
-      "id": "container_theft_memory_direct_trusted_1",
-      "request": "question",
-      "show_for_babies": false,
-      "reputation_levels": [
-        "trusted",
-        "respected",
-        "revered",
-        "royalty"
-      ],
-      "weight": 32,
-      "lines": [
-        "The {stolen_item} bothered me because I thought better of you. I would like to be right again.",
-        "The {stolen_item} hurt because trust was standing nearby.",
-        "I keep thinking about the {stolen_item}, and about who I thought you were.",
-        "It is worse when someone trusted takes what is not theirs.",
-        "I did not expect to guard my things from you. That is why it stung.",
-        "A small theft can feel large when respect is involved.",
-        "I want this to be something you repair, not something you become.",
-        "You had trust here. Do not spend the rest of it poorly.",
-        "The {stolen_item} can be replaced. The ease I felt around you is harder.",
-        "I am disappointed because I had reason to expect better."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "tag": "player_container_theft",
-          "source": "this_villager"
-        }
-      ]
-    },
-    {
-      "id": "container_theft_memory_village_baby_1",
-      "request": "question",
-      "show_for_adults": false,
-      "weight": 26,
-      "lines": [
-        "Someone said you took {stolen_item}. Are you giving it back?",
-        "They said {stolen_item} was not yours. Is that true?",
-        "Are you bringing back the {stolen_item}, or should I tell someone?",
-        "Grown-ups say taking things makes people lock boxes.",
-        "If you took it by mistake, you should un-mistake it.",
-        "I do not think pockets are supposed to borrow things forever.",
-        "Did you ask first? I think asking first is the important part.",
-        "People are talking about the {stolen_item}. That usually means trouble.",
-        "If you give it back, maybe everyone can stop whispering.",
-        "I am little, but I know yours and mine are different words."
-      ],
-      "conditions": [
-        {
-          "type": "memory",
-          "tag": "player_container_theft",
-          "source": "other_villager"
-        }
-      ]
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "reputation_feared_greeting_1",
+                      "request":  "greeting",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "feared"
+                                            ],
+                      "weight":  32,
+                      "lines":  [
+                                    "I see you. Everyone sees you. Please keep walking peacefully.",
+                                    "I am watching your hands first and your words second.",
+                                    "Speak softly. The village is already tense enough around you.",
+                                    "Hello. I would rather this stay a greeting and nothing more.",
+                                    "People step aside when you pass. I hope you understand what that means.",
+                                    "I can speak with you, but I will not stand too close.",
+                                    "The square gets quieter when you arrive.",
+                                    "I am trying not to sound afraid. Help me by giving me no reason.",
+                                    "Keep your hands calm, and maybe everyone else can breathe.",
+                                    "You are welcome to speak, but not to frighten anyone further."
+                                ]
+                  },
+                  {
+                      "id":  "baby_reputation_low_question_1",
+                      "request":  "question",
+                      "show_for_adults":  false,
+                      "reputation_levels":  [
+                                                "hostile",
+                                                "despised",
+                                                "feared"
+                                            ],
+                      "weight":  24,
+                      "lines":  [
+                                    "The adults get quiet when you come near.",
+                                    "When you come close, people tell me to stay by the door.",
+                                    "I know your name because grown-ups say it quietly.",
+                                    "People look at your hands before they look at your face.",
+                                    "I am not supposed to stand too close to you.",
+                                    "The village feels smaller when you are here.",
+                                    "Grown-ups tell me to go inside when they see you coming.",
+                                    "I do not know what you did, but I know people remember it.",
+                                    "Your footsteps make people stop talking.",
+                                    "I am going to answer from here, okay?"
+                                ]
+                  },
+                  {
+                      "id":  "baby_reputation_high_greeting_1",
+                      "request":  "greeting",
+                      "show_for_adults":  false,
+                      "reputation_levels":  [
+                                                "trusted",
+                                                "respected",
+                                                "revered",
+                                                "royalty"
+                                            ],
+                      "weight":  24,
+                      "lines":  [
+                                    "Hi! They said you help when bad things come.",
+                                    "Hi! They said you make monsters go away.",
+                                    "You are the helper everyone talks about, right?",
+                                    "Hello! The grown-ups smile when they say your name.",
+                                    "Hi! Are you here to help again?",
+                                    "I heard you are brave. Are you tired from being brave?",
+                                    "People say the village is safer when you are nearby.",
+                                    "Hi! I am allowed to say hello to you.",
+                                    "They said you stood in front of danger. That sounds scary and cool.",
+                                    "\u003cjump\u003eHi!\u003c/jump\u003e I know you. You are the good kind of familiar."
+                                ]
+                  },
+                  {
+                      "id":  "event_player_attack_apology_1",
+                      "request":  "apology",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "cautious",
+                                           "rude",
+                                           "hostile",
+                                           "fearful"
+                                       ],
+                      "player_event_tags":  [
+                                                "player_attacked_villager"
+                                            ],
+                      "weight":  35,
+                      "lines":  [
+                                    "I can hear the apology. I can also remember the hit. Both are true right now.",
+                                    "I hear sorry. I am waiting to see safer hands.",
+                                    "The apology reached me. The memory did too.",
+                                    "You can regret it and still have done it.",
+                                    "I am not throwing your apology away, but I am not resting in it either.",
+                                    "Words are easier to offer than trust is to rebuild.",
+                                    "I will remember that you said this. I will also remember why you needed to.",
+                                    "If you mean it, your next choices will say so louder.",
+                                    "The bruise faded faster than the caution did.",
+                                    "I can accept the apology without pretending I feel safe yet."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "kind":  "recent_direct_hit"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "event_player_attack_apology_2",
+                      "request":  "apology",
+                      "show_for_babies":  false,
+                      "player_event_tags":  [
+                                                "player_attacked_villager"
+                                            ],
+                      "weight":  28,
+                      "lines":  [
+                                    "If you want this village to believe you, let your next ten choices be quieter than that one.",
+                                    "I hear sorry. I am waiting to see safer hands.",
+                                    "The apology reached me. The memory did too.",
+                                    "An apology is a beginning, not a broom.",
+                                    "Do better long enough for people to notice without being asked.",
+                                    "The village can hear regret, but it watches repair.",
+                                    "You cannot rush trust back into place.",
+                                    "Say less next time, and choose better sooner.",
+                                    "I hope the apology is honest. I hope your actions become easier to believe.",
+                                    "Let this be the start of different behavior, not just a different sentence."
+                                ]
+                  },
+                  {
+                      "id":  "event_player_attack_report_1",
+                      "request":  "village_event_report",
+                      "show_for_babies":  false,
+                      "player_event_tags":  [
+                                                "player_attacked_villager"
+                                            ],
+                      "weight":  30,
+                      "lines":  [
+                                    "We are not training dummies with jobs. When one of us is hurt, all of us count who stood nearby.",
+                                    "One hurt villager turns into a village full of witnesses.",
+                                    "When someone here is harmed, the whole square learns your name differently.",
+                                    "Harm does not stay where it lands. It travels through doors, families, and memory.",
+                                    "The village talks after one of its own is struck.",
+                                    "You made people check on each other, and then check where you went.",
+                                    "That kind of violence changes the shape of a day.",
+                                    "People remember who helped, who froze, and who caused the hurt.",
+                                    "A hit against one villager is never only between two people here.",
+                                    "The village is quieter now, but not because it forgot."
+                                ]
+                  },
+                  {
+                      "id":  "event_player_attack_baby_1",
+                      "request":  "village_event_report",
+                      "show_for_adults":  false,
+                      "event_tags":  [
+                                         "baby_villager_attacked"
+                                     ],
+                      "player_event_tags":  [
+                                                "player_attacked_villager"
+                                            ],
+                      "lines":  [
+                                    "I heard someone small cry. I do not want to talk about that sound.",
+                                    "Grown-ups say accidents happen. That did not sound like an accident.",
+                                    "Someone little got scared. I do not like that part.",
+                                    "The grown-ups moved very fast after that.",
+                                    "I stayed close to the wall because everyone sounded worried.",
+                                    "No one should make a little one cry like that.",
+                                    "I wanted to help, but I did not know where to stand.",
+                                    "The village felt sharp after it happened.",
+                                    "I keep thinking about the crying, even when it is quiet now.",
+                                    "I hope the little one feels safe again soon."
+                                ],
+                      "weight":  54
+                  },
+                  {
+                      "id":  "event_villager_attacked_baby_1",
+                      "request":  "village_event_report",
+                      "show_for_adults":  false,
+                      "event_tags":  [
+                                         "villager_attacked"
+                                     ],
+                      "weight":  24,
+                      "lines":  [
+                                    "Someone got hurt. I do not like the sound the village made after.",
+                                    "I heard a grown-up make a hurt sound. I did not like it.",
+                                    "Everybody moved fast, and nobody smiled after.",
+                                    "The doors opened and shut too quickly.",
+                                    "I stayed where I was told, but I kept listening.",
+                                    "The grown-ups tried to sound calm. They were not very good at it.",
+                                    "I do not like when the village gets scared all at once.",
+                                    "Someone said it would be okay, but they said it with worried eyes.",
+                                    "I wanted to ask questions, but nobody had soft answers.",
+                                    "I hope the hurt person gets better soon."
+                                ]
+                  },
+                  {
+                      "id":  "event_villager_death_baby_1",
+                      "request":  "village_event_report",
+                      "show_for_adults":  false,
+                      "event_tags":  [
+                                         "villager_death"
+                                     ],
+                      "lines":  [
+                                    "I saw everybody run, and then one voice was gone.",
+                                    "The bell sounded \u003cshake\u003etoo loud\u003c/shake\u003e after that. Everything did.",
+                                    "I saw people stop talking all at once. That was scary.",
+                                    "Someone cried, and nobody told them to be quiet.",
+                                    "The grown-ups moved slower after it happened.",
+                                    "I do not understand all of it, but I know someone is missing.",
+                                    "The village feels like it is holding its breath.",
+                                    "I asked where they went, and the answer made everyone sad.",
+                                    "I do not like when a name makes people look down.",
+                                    "I hope they are somewhere safe, even if they are not here."
+                                ],
+                      "weight":  56
+                  },
+                  {
+                      "id":  "event_villager_death_shared_6",
+                      "request":  "village_event_report",
+                      "event_tags":  [
+                                         "villager_death"
+                                     ],
+                      "weight":  32,
+                      "lines":  [
+                                    "A village is not just beds and bells. When one voice is gone, every room gets bigger.",
+                                    "A missing voice changes \u003cpulse\u003eevery room\u003c/pulse\u003e it used to fill.",
+                                    "We count the living because one of us cannot answer anymore.",
+                                    "Grief moves through a village slower than news, but it reaches every door.",
+                                    "There is an empty place now, and everyone knows where it is.",
+                                    "People keep listening for footsteps that will not come.",
+                                    "The work goes on, but it does not sound the same.",
+                                    "A death leaves more silence than one person should be able to leave.",
+                                    "We remember by speaking carefully and helping the ones who cannot yet stand steady.",
+                                    "The village is still here, but it is not the same village it was yesterday."
+                                ]
+                  },
+                  {
+                      "id":  "event_villager_death_hostile_1",
+                      "request":  "village_event_report",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "rude",
+                                           "hostile",
+                                           "fearful"
+                                       ],
+                      "event_tags":  [
+                                         "villager_death"
+                                     ],
+                      "weight":  34,
+                      "lines":  [
+                                    "If you came to ask whether we forget death quickly, \u003cpulse\u003eno\u003c/pulse\u003e.",
+                                    "A missing voice changes every room it used to fill.",
+                                    "We count the living because one of us cannot answer anymore.",
+                                    "Do not prod at grief like it is village gossip.",
+                                    "Someone is gone. Speak with care or do not speak.",
+                                    "The village is mourning, and I have little patience for careless questions.",
+                                    "Death does not become easier because a stranger wants details.",
+                                    "We are still carrying it. Do not make it heavier.",
+                                    "There are names we say gently now. Remember that.",
+                                    "If you want answers, start by showing respect for the one who cannot answer."
+                                ]
+                  },
+                  {
+                      "id":  "event_player_defended_village_trusted_1",
+                      "request":  "village_defense_report",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "trusted",
+                                                "respected",
+                                                "revered",
+                                                "royalty"
+                                            ],
+                      "player_event_tags":  [
+                                                "player_defended_village"
+                                            ],
+                      "weight":  34,
+                      "lines":  [
+                                    "You stood between trouble and our doors. That is the sort of thing people \u003cpulse\u003eremember\u003c/pulse\u003e without needing a ledger.",
+                                    "You helped when the village needed hands, not speeches.",
+                                    "People noticed where you stood when danger came.",
+                                    "When trouble reached us, you did not step away.",
+                                    "The village has safer memories because you were there.",
+                                    "You gave people time to reach doors, and that matters.",
+                                    "There are families here who slept easier because you chose to act.",
+                                    "You did not make a show of it. You simply helped.",
+                                    "That kind of courage settles deep into village memory.",
+                                    "We know who stood with us. Your name is among them."
+                                ]
+                  },
+                  {
+                      "id":  "event_player_defended_village_suspicious_1",
+                      "request":  "village_defense_report",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "suspicious",
+                                                "hostile",
+                                                "despised",
+                                                "feared"
+                                            ],
+                      "player_event_tags":  [
+                                                "player_defended_village"
+                                            ],
+                      "weight":  32,
+                      "lines":  [
+                                    "You helped. I am not too proud to say that. I am also not ready to stop being careful.",
+                                    "You helped when the village needed hands, not speeches.",
+                                    "People noticed where you stood when danger came.",
+                                    "That deed matters. So does everything that made us wary before it.",
+                                    "I can give credit without giving you my full trust.",
+                                    "You stood with us when it counted. I am still deciding what that changes.",
+                                    "A good act does not erase caution, but it does complicate it.",
+                                    "The village saw you help. It will remember that alongside the rest.",
+                                    "I am grateful enough to say it, and careful enough to mean only that.",
+                                    "You gave us reason to think twice about you. That is a start."
+                                ]
+                  },
+                  {
+                      "id":  "event_player_defended_raid_respected_1",
+                      "request":  "village_defense_report",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "respected",
+                                                "revered",
+                                                "royalty"
+                                            ],
+                      "event_tags":  [
+                                         "raid"
+                                     ],
+                      "player_event_tags":  [
+                                                "player_defended_raid"
+                                            ],
+                      "weight":  36,
+                      "lines":  [
+                                    "During the raid, you did not ask who owed you. You just moved. That matters.",
+                                    "Raid horns make truth simple. \u003cpulse\u003eYou chose to help.\u003c/pulse\u003e",
+                                    "When the raid came, you moved toward danger. We saw that.",
+                                    "You stood firm when the horns tried to make everyone smaller.",
+                                    "The village remembers who runs toward the gates when others run from them.",
+                                    "You gave the raiders one more reason to regret coming here.",
+                                    "There was no time for speeches, and you did not waste any.",
+                                    "Your courage had dirt on its boots and work in its hands.",
+                                    "People are alive to speak of what you did.",
+                                    "That raid could have taken more from us. You helped make sure it did not."
+                                ]
+                  },
+                  {
+                      "id":  "event_player_defended_raid_low_rep_1",
+                      "request":  "village_defense_report",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "suspicious",
+                                                "hostile",
+                                                "despised",
+                                                "feared"
+                                            ],
+                      "event_tags":  [
+                                         "raid"
+                                     ],
+                      "player_event_tags":  [
+                                                "player_defended_raid"
+                                            ],
+                      "weight":  34,
+                      "lines":  [
+                                    "You fought the raiders. I saw it. Good deeds do not erase bad ones, but they do get written down.",
+                                    "Raid horns make truth simple. You chose to help.",
+                                    "When the raid came, you moved toward danger. We saw that.",
+                                    "I am not ready to trust you, but I will not deny what you did.",
+                                    "You helped keep people alive. That counts, even from you.",
+                                    "The village remembers harm, but it also remembers defense.",
+                                    "You stood with us when standing mattered. I am still weighing that.",
+                                    "A brave act does not close every wound, but it is not nothing.",
+                                    "You gave us a reason to speak your name with less certainty.",
+                                    "Do not waste the good you did by returning to the worst of yourself."
+                                ]
+                  },
+                  {
+                      "id":  "event_golem_defeated_mob_6",
+                      "request":  "village_event_report",
+                      "event_tags":  [
+                                         "iron_golem_defeated_mob"
+                                     ],
+                      "weight":  26,
+                      "lines":  [
+                                    "The iron one moved before \u003cshake\u003epanic\u003c/shake\u003e could. That sound is ugly, but it means we get another morning.",
+                                    "The iron one bought us a quieter morning.",
+                                    "Metal moved before fear could finish spreading.",
+                                    "When the golem steps forward, the village remembers how to breathe.",
+                                    "The fight was loud, but the silence after was a mercy.",
+                                    "Iron took the danger seriously before most of us could move.",
+                                    "The golem did what it was made to do, and we are grateful for it.",
+                                    "There is comfort in hearing heavy footsteps move toward trouble.",
+                                    "The mob did not get far. The iron one made sure of that.",
+                                    "We will repair the ground. We are just glad there are people left to repair it."
+                                ]
+                  },
+                  {
+                      "id":  "event_golem_killed_alarm_1",
+                      "request":  "village_event_report",
+                      "event_tags":  [
+                                         "golem_killed"
+                                     ],
+                      "weight":  30,
+                      "lines":  [
+                                    "When iron falls, flesh starts \u003cpulse\u003ecounting windows\u003c/pulse\u003e.",
+                                    "When the iron one falls, every door feels thinner.",
+                                    "The village sounds different without iron footsteps nearby.",
+                                    "People keep looking toward the place where it should be standing.",
+                                    "A fallen golem makes the whole village feel exposed.",
+                                    "We are grateful for what it stopped. We are afraid of what comes next.",
+                                    "The silence after iron falls is not a peaceful silence.",
+                                    "Every gate feels farther away without those heavy steps nearby.",
+                                    "We will need to be careful until another guard stands tall.",
+                                    "The village lost more than metal. It lost a little courage with it."
+                                ]
+                  },
+                  {
+                      "id":  "event_village_fire_player_suspicion_1",
+                      "request":  "village_event_report",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "cautious",
+                                           "rude",
+                                           "hostile",
+                                           "fearful"
+                                       ],
+                      "event_tags":  [
+                                         "village_fire"
+                                     ],
+                      "weight":  30,
+                      "lines":  [
+                                    "Fire does not care who placed it. Villagers do.",
+                                    "Fire spreads fast. Suspicion travels almost as quickly.",
+                                    "Smoke clears. The question of who started it does not.",
+                                    "A village forgives accidents more easily than carelessness.",
+                                    "People are counting scorch marks and watching faces.",
+                                    "The flames are out, but the questions are still warm.",
+                                    "If someone caused this, the village will want more than an apology.",
+                                    "Fire leaves ash, but suspicion leaves its own stains.",
+                                    "We are cleaning walls and wondering who brought the spark.",
+                                    "Do not expect calm answers while the smoke is still in our clothes."
+                                ]
+                  },
+                  {
+                      "id":  "event_cured_villager_gratitude_1",
+                      "request":  "cured_recognition",
+                      "show_for_babies":  false,
+                      "player_event_tags":  [
+                                                "player_cured_villager"
+                                            ],
+                      "weight":  34,
+                      "lines":  [
+                                    "I remember hunger, then a bottle, then your face coming back into focus. That is a strange debt to carry.",
+                                    "I remember the cure as hunger leaving and morning returning.",
+                                    "You were there when the world stopped being teeth and noise.",
+                                    "The dark had its hands on me, and you helped pry them loose.",
+                                    "I remember enough to know I was not alone when I came back.",
+                                    "The cure did not feel gentle, but waking afterward did.",
+                                    "Your face is tied to the moment I became myself again.",
+                                    "I do not know how to repay being returned to my own name.",
+                                    "There are gaps in my memory, but gratitude filled one of them.",
+                                    "You helped me come home to myself. I will not forget that."
+                                ]
+                  },
+                  {
+                      "id":  "event_gift_loved_gossip_1",
+                      "request":  "gift_preferences",
+                      "show_for_babies":  false,
+                      "player_event_tags":  [
+                                                "player_gave_loved_gift"
+                                            ],
+                      "weight":  30,
+                      "lines":  [
+                                    "A good gift says you paid attention before you spent anything.",
+                                    "The best gifts prove someone listened first.",
+                                    "A thoughtful gift can make a village feel less guarded.",
+                                    "People remember when a gift fits them instead of just filling their hands.",
+                                    "The right gift can say more kindly than a long speech.",
+                                    "A loved gift travels through gossip with a warmer voice.",
+                                    "You learn plenty about a person by noticing what they cherish.",
+                                    "Some gifts are small enough to hold and large enough to matter.",
+                                    "A gift chosen well can open a door without touching the handle.",
+                                    "When someone feels seen, the whole village hears about it eventually."
+                                ]
+                  },
+                  {
+                      "id":  "event_gift_hated_gossip_1",
+                      "request":  "gift_preferences",
+                      "show_for_babies":  false,
+                      "dispositions":  [
+                                           "cautious",
+                                           "rude",
+                                           "hostile"
+                                       ],
+                      "player_event_tags":  [
+                                                "player_gave_hated_gift"
+                                            ],
+                      "weight":  30,
+                      "lines":  [
+                                    "A bad gift can land like an insult. Some apologies are wrapped before they are spoken.",
+                                    "A wrong gift can bruise more than an empty hand.",
+                                    "Some presents arrive carrying insult instead of kindness.",
+                                    "A gift chosen badly can make a person feel studied in the wrong way.",
+                                    "People remember when a present feels careless, or worse, pointed.",
+                                    "Better to bring nothing than something that makes the room colder.",
+                                    "A hated gift does not stay between two hands for long.",
+                                    "That kind of gift makes people wonder what you meant by it.",
+                                    "If kindness was the goal, that gift took the long road away from it.",
+                                    "Some mistakes fit in a pocket and still weigh down a reputation."
+                                ]
+                  },
+                  {
+                      "id":  "event_reputation_changed_positive_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "min_reputation":  75,
+                      "player_event_tags":  [
+                                                "reputation_changed"
+                                            ],
+                      "weight":  24,
+                      "lines":  [
+                                    "Your name has been moving through conversations lately. For once, mostly upward.",
+                                    "People have been saying your name with fewer locks in their voices.",
+                                    "The village has noticed better choices lately.",
+                                    "A few doors are opening easier than they used to.",
+                                    "People are beginning to sound less careful when they speak of you.",
+                                    "Trust does not return all at once, but yours has been gaining ground.",
+                                    "Your recent choices have been easier for the village to respect.",
+                                    "There is less suspicion attached to your footsteps than before.",
+                                    "People are watching, yes, but some are watching with hope now.",
+                                    "Keep going this way. A better reputation is built one remembered act at a time."
+                                ]
+                  },
+                  {
+                      "id":  "event_reputation_changed_negative_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "max_reputation":  -75,
+                      "player_event_tags":  [
+                                                "reputation_changed"
+                                            ],
+                      "weight":  26,
+                      "lines":  [
+                                    "The bell is not the only thing that carries warnings through a village.",
+                                    "Warnings move faster than gossip when trust drops.",
+                                    "Your name has been traveling with caution beside it.",
+                                    "People have started lowering their voices when you come up.",
+                                    "The village is learning to be careful around you.",
+                                    "Trust can fall faster than a door can close.",
+                                    "Your recent choices have made people less willing to relax.",
+                                    "A reputation can sour quietly, then all at once.",
+                                    "If you feel the village pulling away, ask what you did to teach it that.",
+                                    "The path back is longer once people start warning each other."
+                                ]
+                  },
+                  {
+                      "id":  "sleep_broken_bed_apology_1",
+                      "request":  "apology",
+                      "weight":  32,
+                      "lines":  [
+                                    "A bed is where fear is supposed to stop for the night. Breaking one says more than you think.",
+                                    "Beds are where fear is meant to end. Breaking one wakes more than a sleeper.",
+                                    "A broken bed makes the whole night feel unsafe.",
+                                    "You damaged the place someone trusted to rest.",
+                                    "A bed is not just wood and wool. It is the promise of a safe night.",
+                                    "When a bed breaks, sleep feels farther away.",
+                                    "I hear the apology, but someone still has to lie awake because of it.",
+                                    "Repair the bed, yes, but understand what you disturbed.",
+                                    "A broken bed can make a home feel less like home.",
+                                    "If you are sorry, help make the night feel safe again."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "kind":  "recent_broken_bed"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "gear_report_used_combat_1",
+                      "request":  "gear_report",
+                      "show_for_babies":  false,
+                      "weight":  28,
+                      "lines":  [
+                                    "The gear held. I did too. That is not the same as enjoying the test.",
+                                    "The gear did its work. I am still deciding what that cost me.",
+                                    "It held when I needed it, and I am here because of that.",
+                                    "I trusted it because I had to, and it answered well enough.",
+                                    "The fight proved the gear useful. I would have preferred a gentler lesson.",
+                                    "It took the moment seriously when the moment turned sharp.",
+                                    "I am grateful for the protection, even if I hated needing it.",
+                                    "Good gear does not make fear vanish. It gives fear something to stand behind.",
+                                    "I came back with proof that preparation matters.",
+                                    "The gear earned its place, and so did the hands that gave it to me."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "kind":  "gear_report_used_in_combat"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "gear_report_unused_combat_1",
+                      "request":  "gear_report",
+                      "show_for_babies":  false,
+                      "weight":  28,
+                      "lines":  [
+                                    "I have kept the gear ready. Around here, ready is a kind of prayer.",
+                                    "The gear is still ready, and I prefer it that way.",
+                                    "Unused protection is still protection. It keeps tomorrow possible.",
+                                    "I have not needed it yet, which is the best report I can give.",
+                                    "It waits quietly, and I hope it keeps waiting.",
+                                    "The gear gives me a little more courage than I had before.",
+                                    "Prepared feels better than lucky.",
+                                    "I would rather carry it unused than need it missing.",
+                                    "It has not seen trouble yet. May it stay that way.",
+                                    "Knowing it is there makes the road feel less eager to surprise me."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "kind":  "gear_report_unused_in_combat"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "recruitment_followup_betrayal_shadow_1",
+                      "request":  "recruitment_followup",
+                      "show_for_babies":  false,
+                      "weight":  30,
+                      "lines":  [
+                                    "Following you taught me something about the world. I am still deciding what it taught me about you.",
+                                    "That trip taught me the world is wide and trust can be narrow.",
+                                    "I followed your road. I am still judging where it led.",
+                                    "A long road gives a person time to think, and I have not liked every thought.",
+                                    "I learned how far I was willing to go because I trusted you.",
+                                    "The distance matters less than what happened along it.",
+                                    "A journey can end at home and still leave questions behind.",
+                                    "I remember the road, but I remember the feeling of following more.",
+                                    "You asked for trust over distance. That is not a small ask.",
+                                    "I came back with sore feet and a sharper opinion."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "min_follow_distance":  128
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "container_theft_memory_direct_hostile_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "hostile",
+                                                "despised",
+                                                "feared"
+                                            ],
+                      "weight":  34,
+                      "lines":  [
+                                    "You stole {stolen_stack}. If you expected the village to file that under small mistakes, you misread us.",
+                                    "You took {stolen_stack}. Do not dress theft up as confusion.",
+                                    "{stolen_stack} went missing with your name close behind it.",
+                                    "Theft does not become smaller because you want to talk about something else.",
+                                    "You reached into what was not yours. That is the part I remember first.",
+                                    "I do not care how useful {stolen_stack} looked to you. It was not yours.",
+                                    "A thief asking questions should expect careful answers.",
+                                    "The village knows what happened, and so do I.",
+                                    "You made {stolen_stack} part of your reputation.",
+                                    "Return what you can, repair what you cannot, and stop pretending theft is a misunderstanding."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "tag":  "player_container_theft",
+                                             "source":  "this_villager"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "container_theft_memory_direct_trusted_1",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "reputation_levels":  [
+                                                "trusted",
+                                                "respected",
+                                                "revered",
+                                                "royalty"
+                                            ],
+                      "weight":  32,
+                      "lines":  [
+                                    "The {stolen_item} bothered me because I thought better of you. I would like to be right again.",
+                                    "The {stolen_item} hurt because trust was standing nearby.",
+                                    "I keep thinking about the {stolen_item}, and about who I thought you were.",
+                                    "It is worse when someone trusted takes what is not theirs.",
+                                    "I did not expect to guard my things from you. That is why it stung.",
+                                    "A small theft can feel large when respect is involved.",
+                                    "I want this to be something you repair, not something you become.",
+                                    "You had trust here. Do not spend the rest of it poorly.",
+                                    "The {stolen_item} can be replaced. The ease I felt around you is harder.",
+                                    "I am disappointed because I had reason to expect better."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "tag":  "player_container_theft",
+                                             "source":  "this_villager"
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "container_theft_memory_village_baby_1",
+                      "request":  "question",
+                      "show_for_adults":  false,
+                      "weight":  26,
+                      "lines":  [
+                                    "Someone said you took {stolen_item}. Are you giving it back?",
+                                    "They said {stolen_item} was not yours. Is that true?",
+                                    "Are you bringing back the {stolen_item}, or should I tell someone?",
+                                    "Grown-ups say taking things makes people lock boxes.",
+                                    "If you took it by mistake, you should un-mistake it.",
+                                    "I do not think pockets are supposed to borrow things forever.",
+                                    "Did you ask first? I think asking first is the important part.",
+                                    "People are talking about the {stolen_item}. That usually means trouble.",
+                                    "If you give it back, maybe everyone can stop whispering.",
+                                    "I am little, but I know yours and mine are different words."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "memory",
+                                             "tag":  "player_container_theft",
+                                             "source":  "other_villager"
+                                         }
+                                     ]
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.global",
+                                  "section.lines"
+                              ]
+                 }
 }

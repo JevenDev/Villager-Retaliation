@@ -1,61 +1,68 @@
 {
-  "lines": [
-    {
-      "id": "shepherd_share_story_mushroom_fields",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:mushroom_fields",
-      "lines": [
-        "{target}? Strange quiet can make a place feel too safe. I would count everyone twice.",
-        "If anyone heads for Mushroom Fields, tell them: Eat only what you know and keep your boat close. I will be at the loom.",
-        "Mycelium underfoot is not village dirt. I'll remember that when I count everyone.",
-        "Mushroom Fields is no small story. Fear scatters folk like a loose flock.",
-        "I will remember Mushroom Fields as odd land where even the grass changed its mind. I will count heads before I count sheep.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "shepherd_share_story_plains",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:plains",
-      "lines": [
-        "{target}? Open ground shows you to everything else. I would count everyone twice.",
-        "If anyone heads for Plains, tell them: Keep moving and watch the horizon. I'll be at the loom.",
-        "Grass bends before trouble arrives if you look. I'll remember that when I count everyone.",
-        "Plains is no small story. Fear scatters folk like a loose flock.",
-        "I will remember Plains as wide land with nowhere to hide after dark. I will count heads before I count sheep.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    },
-    {
-      "id": "shepherd_share_story_sunflower_plains",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_biome": "minecraft:sunflower_plains",
-      "lines": [
-        "{target}? Sunny fields can still point toward trouble. I would count everyone twice.",
-        "If anyone heads for Sunflower Plains, tell them: Enjoy the flowers with a torch ready. I will be at the loom.",
-        "Sunflowers face light, not safety. I'll remember that when I count everyone.",
-        "Sunflower Plains is no small story. Fear scatters folk like a loose flock.",
-        "I will remember Sunflower Plains as bright fields that still grow dark at night. I will count heads before I count sheep.",
-        "{target}? I would not rush toward it without telling someone where you are going first.",
-        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-        "If you go there, come back with the story and not just the scratches. The village remembers both.",
-        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
-      ],
-      "weight": 120
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "shepherd_share_story_mushroom_fields",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:mushroom_fields",
+                      "lines":  [
+                                    "{target}? Strange quiet can make a place feel too safe. I would count everyone twice.",
+                                    "If anyone heads for Mushroom Fields, tell them: Eat only what you know and keep your boat close. I will be at the loom.",
+                                    "Mycelium underfoot is not village dirt. I\u0027ll remember that when I count everyone.",
+                                    "Mushroom Fields is no small story. Fear scatters folk like a loose flock.",
+                                    "I will remember Mushroom Fields as odd land where even the grass changed its mind. I will count heads before I count sheep.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "shepherd_share_story_plains",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:plains",
+                      "lines":  [
+                                    "{target}? Open ground shows you to everything else. I would count everyone twice.",
+                                    "If anyone heads for Plains, tell them: Keep moving and watch the horizon. I\u0027ll be at the loom.",
+                                    "Grass bends before trouble arrives if you look. I\u0027ll remember that when I count everyone.",
+                                    "Plains is no small story. Fear scatters folk like a loose flock.",
+                                    "I will remember Plains as wide land with nowhere to hide after dark. I will count heads before I count sheep.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  },
+                  {
+                      "id":  "shepherd_share_story_sunflower_plains",
+                      "request":  "share_story",
+                      "option":  "adult_share_story",
+                      "story_biome":  "minecraft:sunflower_plains",
+                      "lines":  [
+                                    "{target}? Sunny fields can still point toward trouble. I would count everyone twice.",
+                                    "If anyone heads for Sunflower Plains, tell them: Enjoy the flowers with a torch ready. I will be at the loom.",
+                                    "Sunflowers face light, not safety. I\u0027ll remember that when I count everyone.",
+                                    "Sunflower Plains is no small story. Fear scatters folk like a loose flock.",
+                                    "I will remember Sunflower Plains as bright fields that still grow dark at night. I will count heads before I count sheep.",
+                                    "{target}? I would not rush toward it without telling someone where you are going first.",
+                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
+                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
+                                ],
+                      "weight":  120
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "section.lines"
+                              ]
+                 }
 }

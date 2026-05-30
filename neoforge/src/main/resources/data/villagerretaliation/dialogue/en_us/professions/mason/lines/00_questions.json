@@ -1,90 +1,98 @@
 {
-  "lines": [
-    {
-      "id": "mason_question_corners_variants",
-      "request": "question",
-      "lines": [
-        "Walls with weak corners teach humility before they teach repair.",
-        "Stone remembers <pulse>pressure</pulse>. People do too.",
-        "A wall is only as honest as its weakest corner.",
-        "Foundations matter because everything else gets to pretend they do not.",
-        "Good steps are noticed only by people who have climbed bad ones.",
-        "A crack is not always disaster. Sometimes it is a warning asking politely.",
-        "Most days, I am at the stonecutter, trying to keep cracks and foundations from becoming everyone else's problem.",
-        "People think stonework is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good chisel more than a loud promise. The chisel has less to prove."
-      ],
-      "weight": 172
-    },
-    {
-      "id": "question_follow_memory_mason",
-      "request": "question",
-      "option": "adult_general_question",
-      "show_for_babies": false,
-      "weight": 4,
-      "lines": [
-        "After following you that far, I understood why roads need better foundations.",
-        "That road needed a mason, and so did my feet.",
-        "Long paths teach you where the ground gives up.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "min_follow_distance": 500,
-          "excludes_ocean_crossing": true
-        }
-      ]
-    },
-    {
-      "id": "question_follow_memory_mason_boat",
-      "request": "question",
-      "option": "adult_general_question",
-      "show_for_babies": false,
-      "weight": 3,
-      "lines": [
-        "I do not trust anything with no foundation, but that boat held better than I expected.",
-        "That boat had no foundation and too much confidence, but it crossed.",
-        "I still distrust floating floors. Yours happened to survive.",
-        "Following you taught me that plans sound much safer before anyone starts walking.",
-        "I kept up, mostly. My feet have a harsher opinion of the trip.",
-        "Next time, warn me before the road becomes a test of character.",
-        "I learned two things out there: stay close, and ask better questions earlier.",
-        "You move like danger is a normal part of the route. I am still adjusting to that.",
-        "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
-      ],
-      "conditions": [
-        {
-          "type": "recruitment_memory",
-          "boat_trip": true
-        }
-      ]
-    },
-    {
-      "id": "default_profession_mason_foundations",
-      "request": "question",
-      "show_for_babies": false,
-      "lines": [
-        "Stone is patient. That's why careless builders should fear it.",
-        "A wall is not just blocks. It is everyone sleeping behind it.",
-        "Foundations tell me whether a place expects to last.",
-        "Most days, I am at the stonecutter, trying to keep cracks and foundations from becoming everyone else's problem.",
-        "People think stonework is simple until something goes wrong and suddenly it is very important.",
-        "A village runs on small work. Nobody praises it until it stops happening.",
-        "I trust a good chisel more than a loud promise. The chisel has less to prove.",
-        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the stonecutter has done to me."
-      ],
-      "weight": 18
-    }
-  ]
+    "lines":  [
+                  {
+                      "id":  "mason_question_corners_variants",
+                      "request":  "question",
+                      "lines":  [
+                                    "Walls with weak corners teach humility before they teach repair.",
+                                    "Stone remembers \u003cpulse\u003epressure\u003c/pulse\u003e. People do too.",
+                                    "A wall is only as honest as its weakest corner.",
+                                    "Foundations matter because everything else gets to pretend they do not.",
+                                    "Good steps are noticed only by people who have climbed bad ones.",
+                                    "A crack is not always disaster. Sometimes it is a warning asking politely.",
+                                    "Most days, I am at the stonecutter, trying to keep cracks and foundations from becoming everyone else\u0027s problem.",
+                                    "People think stonework is simple until something goes wrong and suddenly it is very important.",
+                                    "A village runs on small work. Nobody praises it until it stops happening.",
+                                    "I trust a good chisel more than a loud promise. The chisel has less to prove."
+                                ],
+                      "weight":  172
+                  },
+                  {
+                      "id":  "question_follow_memory_mason",
+                      "request":  "question",
+                      "option":  "adult_general_question",
+                      "show_for_babies":  false,
+                      "weight":  4,
+                      "lines":  [
+                                    "After following you that far, I understood why roads need better foundations.",
+                                    "That road needed a mason, and so did my feet.",
+                                    "Long paths teach you where the ground gives up.",
+                                    "Following you taught me that plans sound much safer before anyone starts walking.",
+                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                    "Next time, warn me before the road becomes a test of character.",
+                                    "I learned two things out there: stay close, and ask better questions earlier.",
+                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                    "If I followed you again, I would pack more food and fewer assumptions."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "min_follow_distance":  500,
+                                             "excludes_ocean_crossing":  true
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "question_follow_memory_mason_boat",
+                      "request":  "question",
+                      "option":  "adult_general_question",
+                      "show_for_babies":  false,
+                      "weight":  3,
+                      "lines":  [
+                                    "I do not trust anything with no foundation, but that boat held better than I expected.",
+                                    "That boat had no foundation and too much confidence, but it crossed.",
+                                    "I still distrust floating floors. Yours happened to survive.",
+                                    "Following you taught me that plans sound much safer before anyone starts walking.",
+                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
+                                    "Next time, warn me before the road becomes a test of character.",
+                                    "I learned two things out there: stay close, and ask better questions earlier.",
+                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
+                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
+                                    "If I followed you again, I would pack more food and fewer assumptions."
+                                ],
+                      "conditions":  [
+                                         {
+                                             "type":  "recruitment_memory",
+                                             "boat_trip":  true
+                                         }
+                                     ]
+                  },
+                  {
+                      "id":  "default_profession_mason_foundations",
+                      "request":  "question",
+                      "show_for_babies":  false,
+                      "lines":  [
+                                    "Stone is patient. That\u0027s why careless builders should fear it.",
+                                    "A wall is not just blocks. It is everyone sleeping behind it.",
+                                    "Foundations tell me whether a place expects to last.",
+                                    "Most days, I am at the stonecutter, trying to keep cracks and foundations from becoming everyone else\u0027s problem.",
+                                    "People think stonework is simple until something goes wrong and suddenly it is very important.",
+                                    "A village runs on small work. Nobody praises it until it stops happening.",
+                                    "I trust a good chisel more than a loud promise. The chisel has less to prove.",
+                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+                                    "I notice the little things. That is either a skill or what the stonecutter has done to me."
+                                ],
+                      "weight":  18
+                  }
+              ],
+    "metadata":  {
+                     "tags":  [
+                                  "content.dialogue",
+                                  "dialogue.ambient",
+                                  "scope.profession.mason",
+                                  "section.lines"
+                              ]
+                 }
 }
