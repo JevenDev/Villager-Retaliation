@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.dialogue;
 
-import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
@@ -15,7 +14,6 @@ public record DialogueOptionDefinition(
         DialogueEntryMetadata metadata,
         DialogueQuestAction questAction,
         DialogueTreeReference treeReference,
-        List<VillagerActionDefinition> actions,
         String label,
         DialogueRequestType requestType,
         boolean showForAdults,
@@ -72,7 +70,6 @@ public record DialogueOptionDefinition(
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
         questAction = questAction == null ? DialogueQuestAction.EMPTY : questAction;
         treeReference = treeReference == null ? DialogueTreeReference.EMPTY : treeReference;
-        actions = actions == null ? List.of() : List.copyOf(actions);
         conditions = conditions == null ? List.of() : List.copyOf(conditions);
     }
 
@@ -220,7 +217,6 @@ public record DialogueOptionDefinition(
                 DialogueEntryMetadata.EMPTY,
                 DialogueQuestAction.EMPTY,
                 DialogueTreeReference.EMPTY,
-                List.of(),
                 label,
                 requestType,
                 true,
