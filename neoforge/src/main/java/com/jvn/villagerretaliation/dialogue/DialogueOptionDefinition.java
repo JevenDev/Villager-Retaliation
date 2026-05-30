@@ -260,6 +260,7 @@ public record DialogueOptionDefinition(
                 false,
                 false,
                 false,
+                false,
                 List.of(),
                 false,
                 order
