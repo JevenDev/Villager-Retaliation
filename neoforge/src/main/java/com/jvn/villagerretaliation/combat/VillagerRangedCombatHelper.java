@@ -97,6 +97,13 @@ final class VillagerRangedCombatHelper {
         clearChargedCrossbows(villager);
     }
 
+    static boolean hasState(AbstractVillager villager) {
+        UUID villagerId = villager.getUUID();
+        return SEE_TIME.containsKey(villagerId)
+                || ATTACK_DELAY.containsKey(villagerId)
+                || CROSSBOW_STATE.containsKey(villagerId);
+    }
+
     static void seedInitialAttackDelay(AbstractVillager villager, ItemStack equippedWeapon) {
         if (VillagerRetaliationVillagerWeapons.isBowWeapon(equippedWeapon)) {
             ATTACK_DELAY.put(villager.getUUID(), INITIAL_RANGED_WINDUP_TICKS);

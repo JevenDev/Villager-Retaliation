@@ -81,6 +81,8 @@ public final class VillagerRetaliationHandler {
     private static final double ARMORER_SHIELD_TRIGGER_RANGE_SQR = ARMORER_SHIELD_TRIGGER_RANGE * ARMORER_SHIELD_TRIGGER_RANGE;
     private static final long SMITH_IRON_GOLEM_REPAIR_COOLDOWN_TICKS = 6000L;
     private static final long SMITH_IRON_GOLEM_REPAIR_SCAN_INTERVAL_TICKS = 100L;
+    private static final long SMITH_IRON_GOLEM_REPAIR_APPROACH_RETRY_TICKS = 60L;
+    private static final long SMITH_IRON_GOLEM_REPAIR_PATH_FAILURE_COOLDOWN_TICKS = 200L;
     private static final double SMITH_IRON_GOLEM_REPAIR_SEARCH_RADIUS = 12.0D;
     private static final double SMITH_IRON_GOLEM_REPAIR_REACH_SQR = 9.0D;
     private static final float SMITH_IRON_GOLEM_REPAIR_HEAL_AMOUNT = 25.0F;
@@ -659,14 +661,16 @@ public final class VillagerRetaliationHandler {
     private static void tryAcquireHostileTarget(Villager villager) {
         if (RETALIATION.hasAnger(villager)
                 || !villager.isAlive()
-                || !VillagerRetaliationConfig.VILLAGERS_TARGET_HOSTILE_MOBS.get()
-                || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
-                || !ACTOR_POLICY.canFightBack(villager)) {
+                || !VillagerRetaliationConfig.VILLAGERS_TARGET_HOSTILE_MOBS.get()) {
             return;
         }
 
         long gameTime = villager.level().getGameTime();
         if (!consumeScanSlot(villager, NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
+            return;
+        }
+        if (!VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
+                || !ACTOR_POLICY.canFightBack(villager)) {
             return;
         }
 
@@ -1391,8 +1395,8 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void handlePassivePotionState(Villager villager) {
-        resetArmorerShieldState(villager);
-        VillagerRangedCombatHelper.clearState(villager);
+        resetArmorerShieldStateIfActive(villager);
+        clearRangedStateIfActive(villager);
         if (VillagerInventoryAccess.hasOpenInventory(villager)) {
             suspendCombatForOpenInventory(villager);
             return;
@@ -1405,8 +1409,8 @@ public final class VillagerRetaliationHandler {
         }
 
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
-        RETALIATION.restoreTemporaryWeapon(villager);
-        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
+        restoreTemporaryWeaponIfActive(villager);
+        returnBorrowedCombatWeaponIfActive(villager);
         if (VillagerClericPotionHelper.tryOutOfCombatMilk(villager)) {
             return;
         }
@@ -1446,8 +1450,18 @@ public final class VillagerRetaliationHandler {
 
         if (!villager.hasLineOfSight(ironGolem)
                 || villager.distanceToSqr(ironGolem) > SMITH_IRON_GOLEM_REPAIR_REACH_SQR) {
-            NEXT_IRON_GOLEM_REPAIR_TICKS.put(villager.getUUID(), gameTime + 20L);
-            villager.getNavigation().moveTo(ironGolem, ACTOR_POLICY.movementSpeed(villager) * 0.6D);
+            if (!villager.getNavigation().isDone()) {
+                NEXT_IRON_GOLEM_REPAIR_TICKS.put(villager.getUUID(), gameTime + SMITH_IRON_GOLEM_REPAIR_APPROACH_RETRY_TICKS);
+                return true;
+            }
+
+            boolean pathStarted = villager.getNavigation().moveTo(ironGolem, ACTOR_POLICY.movementSpeed(villager) * 0.6D);
+            NEXT_IRON_GOLEM_REPAIR_TICKS.put(
+                    villager.getUUID(),
+                    gameTime + (pathStarted
+                            ? SMITH_IRON_GOLEM_REPAIR_APPROACH_RETRY_TICKS
+                            : SMITH_IRON_GOLEM_REPAIR_PATH_FAILURE_COOLDOWN_TICKS)
+            );
             return true;
         }
 
@@ -1544,9 +1558,40 @@ public final class VillagerRetaliationHandler {
         return villager.getOffhandItem().is(Items.SHIELD);
     }
 
+    private static void resetArmorerShieldStateIfActive(Villager villager) {
+        if (VillagerCombatRoles.isArmorer(villager) || isArmorerActivelyBlocking(villager) || hasArmorerShieldTacticState(villager)) {
+            resetArmorerShieldState(villager);
+        }
+    }
+
     private static void resetArmorerShieldState(Villager villager) {
         stopArmorerShieldBlocking(villager);
         clearArmorerShieldTacticState(villager, false);
+    }
+
+    private static boolean hasArmorerShieldTacticState(Villager villager) {
+        UUID villagerId = villager.getUUID();
+        return ARMORER_SHIELD_DISABLED_UNTIL_TICKS.containsKey(villagerId)
+                || ARMORER_PENDING_COUNTER_SWINGS.containsKey(villagerId)
+                || ARMORER_COUNTER_ATTACK_READY_TICKS.containsKey(villagerId);
+    }
+
+    private static void clearRangedStateIfActive(Villager villager) {
+        if (VillagerRangedCombatHelper.hasState(villager) || villager.isUsingItem()) {
+            VillagerRangedCombatHelper.clearState(villager);
+        }
+    }
+
+    private static void restoreTemporaryWeaponIfActive(Villager villager) {
+        if (RETALIATION.hasTemporaryWeapon(villager)) {
+            RETALIATION.restoreTemporaryWeapon(villager);
+        }
+    }
+
+    private static void returnBorrowedCombatWeaponIfActive(Villager villager) {
+        if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)) {
+            VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
+        }
     }
 
     private static boolean consumeScanSlot(Villager villager, Map<UUID, Long> nextScanTicks, long gameTime, long intervalTicks) {

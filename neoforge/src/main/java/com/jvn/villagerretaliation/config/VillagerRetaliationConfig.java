@@ -358,7 +358,7 @@ public final class VillagerRetaliationConfig {
                 .defineInRange("giftAnnoyanceReductionDivisor", 8, 0, 1000);
         MAX_FOLLOW_DISTANCE = BUILDER.comment("Maximum player-to-villager distance in blocks before a following villager stops following.")
                 .translation("villagerretaliation.configuration.dialogue.maxFollowDistance")
-                .defineInRange("maxFollowDistance", 64.0D, 1.0D, 1024.0D);
+                .defineInRange("maxFollowDistance", 32.0D, 1.0D, 1024.0D);
         GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
                 .translation("villagerretaliation.configuration.dialogue.greetingReputationGain")
                 .defineInRange("greetingReputationGain", 1, 0, 1000);

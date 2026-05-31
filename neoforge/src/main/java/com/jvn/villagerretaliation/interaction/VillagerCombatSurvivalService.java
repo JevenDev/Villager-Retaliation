@@ -21,8 +21,10 @@ public final class VillagerCombatSurvivalService {
     private static final double NEARBY_PLAYER_RADIUS = 24.0D;
     private static final double HOSTILE_THREAT_RADIUS = 16.0D;
     private static final long QUIET_SETTLE_TICKS = 20L * 8L;
+    private static final long PASSIVE_CHECK_INTERVAL_TICKS = 20L;
     private static final long NEARBY_THREAT_SCAN_INTERVAL_TICKS = 20L;
     private static final long ACTIVE_COMBAT_WRITE_INTERVAL_TICKS = 20L;
+    private static final Map<UUID, Long> NEXT_PASSIVE_CHECK_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_NEARBY_THREAT_SCAN_TICKS = new HashMap<>();
 
     private VillagerCombatSurvivalService() {
@@ -34,8 +36,14 @@ public final class VillagerCombatSurvivalService {
         }
 
         long gameTime = level.getGameTime();
-        boolean followingPlayer = VillagerRecruitmentService.followingPlayerId(villager).isPresent();
         LivingEntity threat = directHostileThreat(villager);
+        if (threat == null
+                && !villager.getPersistentData().hasUUID(ACTIVE_PLAYER_KEY)
+                && !consumeScanSlot(villager.getUUID(), NEXT_PASSIVE_CHECK_TICKS, gameTime, PASSIVE_CHECK_INTERVAL_TICKS)) {
+            return;
+        }
+
+        boolean followingPlayer = VillagerRecruitmentService.followingPlayerId(villager).isPresent();
         if (threat == null && followingPlayer) {
             threat = nearbyHostileThreatIfReady(villager, gameTime);
         }
@@ -54,7 +62,13 @@ public final class VillagerCombatSurvivalService {
     }
 
     public static void onVillagerLeaveLevel(Villager villager) {
+        NEXT_PASSIVE_CHECK_TICKS.remove(villager.getUUID());
         NEXT_NEARBY_THREAT_SCAN_TICKS.remove(villager.getUUID());
+    }
+
+    public static void clearRuntimeState() {
+        NEXT_PASSIVE_CHECK_TICKS.clear();
+        NEXT_NEARBY_THREAT_SCAN_TICKS.clear();
     }
 
     private static void maybeFinishActiveCombat(ServerLevel level, Villager villager, long gameTime) {
@@ -94,6 +108,7 @@ public final class VillagerCombatSurvivalService {
 
     private static void clearActiveCombat(Villager villager) {
         NEXT_NEARBY_THREAT_SCAN_TICKS.remove(villager.getUUID());
+        NEXT_PASSIVE_CHECK_TICKS.remove(villager.getUUID());
         villager.getPersistentData().remove(ACTIVE_PLAYER_KEY);
         villager.getPersistentData().remove(ACTIVE_EVENT_KIND_KEY);
         villager.getPersistentData().remove(LAST_COMBAT_TICK_KEY);
@@ -158,18 +173,10 @@ public final class VillagerCombatSurvivalService {
 
     private static LivingEntity nearbyHostileThreatIfReady(Villager villager, long gameTime) {
         UUID villagerId = villager.getUUID();
-        Long nextScan = NEXT_NEARBY_THREAT_SCAN_TICKS.get(villagerId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(villagerId, NEARBY_THREAT_SCAN_INTERVAL_TICKS);
-            if (firstScan > gameTime) {
-                NEXT_NEARBY_THREAT_SCAN_TICKS.put(villagerId, firstScan);
-                return null;
-            }
-        } else if (nextScan > gameTime) {
+        if (!consumeScanSlot(villagerId, NEXT_NEARBY_THREAT_SCAN_TICKS, gameTime, NEARBY_THREAT_SCAN_INTERVAL_TICKS)) {
             return null;
         }
 
-        NEXT_NEARBY_THREAT_SCAN_TICKS.put(villagerId, gameTime + NEARBY_THREAT_SCAN_INTERVAL_TICKS);
         return nearbyHostileThreat(villager);
     }
 
@@ -192,6 +199,22 @@ public final class VillagerCombatSurvivalService {
 
     private static boolean isNaturalHostile(Villager villager, LivingEntity target) {
         return target != null && VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target);
+    }
+
+    private static boolean consumeScanSlot(UUID villagerId, Map<UUID, Long> nextScanTicks, long gameTime, long intervalTicks) {
+        Long nextScan = nextScanTicks.get(villagerId);
+        if (nextScan == null) {
+            long firstScan = gameTime + scanStagger(villagerId, intervalTicks);
+            if (firstScan > gameTime) {
+                nextScanTicks.put(villagerId, firstScan);
+                return false;
+            }
+        } else if (nextScan > gameTime) {
+            return false;
+        }
+
+        nextScanTicks.put(villagerId, gameTime + intervalTicks);
+        return true;
     }
 
     private static long scanStagger(UUID villagerId, long intervalTicks) {

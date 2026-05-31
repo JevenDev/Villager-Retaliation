@@ -38,11 +38,12 @@ public final class VillagerTradeMemory {
     public static void ensureProfessionPoolIfNeeded(ServerLevel level, Villager villager) {
         ResourceLocation professionId = VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
         UUID villagerId = villager.getUUID();
-        if (!isTradeProfession(professionId)) {
-            ENSURED_PROFESSION_POOLS.remove(villagerId);
+        if (professionId.equals(ENSURED_PROFESSION_POOLS.get(villagerId))) {
             return;
         }
-        if (professionId.equals(ENSURED_PROFESSION_POOLS.get(villagerId))) {
+
+        if (!isTradeProfession(professionId)) {
+            ENSURED_PROFESSION_POOLS.put(villagerId, professionId);
             return;
         }
 

@@ -129,20 +129,24 @@ public final class VillagerRetaliationVillagerEquipment {
     }
 
     public static MainHandOwner mainHandOwner(AbstractVillager villager) {
-        CompoundTag stateTag = villager.getPersistentData().getCompound(MAINHAND_STATE_TAG);
-        if (!stateTag.isEmpty() && stateTag.contains(MAINHAND_OWNER_TAG)) {
-            return switch (stateTag.getString(MAINHAND_OWNER_TAG)) {
-                case OWNER_MANUAL -> MainHandOwner.MANUAL;
-                case OWNER_PICKED_UP -> MainHandOwner.PICKED_UP;
-                case OWNER_ROLE -> MainHandOwner.ROLE;
-                default -> MainHandOwner.NONE;
-            };
+        CompoundTag persistentData = villager.getPersistentData();
+        if (persistentData.contains(MAINHAND_STATE_TAG, CompoundTag.TAG_COMPOUND)) {
+            CompoundTag stateTag = persistentData.getCompound(MAINHAND_STATE_TAG);
+            if (stateTag.contains(MAINHAND_OWNER_TAG)) {
+                return switch (stateTag.getString(MAINHAND_OWNER_TAG)) {
+                    case OWNER_MANUAL -> MainHandOwner.MANUAL;
+                    case OWNER_PICKED_UP -> MainHandOwner.PICKED_UP;
+                    case OWNER_ROLE -> MainHandOwner.ROLE;
+                    default -> MainHandOwner.NONE;
+                };
+            }
         }
 
-        if (!legacyPickedUpMainHand(villager).isEmpty()) {
+        if (persistentData.contains(LEGACY_PICKED_UP_MAINHAND_TAG, CompoundTag.TAG_COMPOUND)
+                && !legacyPickedUpMainHand(villager).isEmpty()) {
             return MainHandOwner.PICKED_UP;
         }
-        if (isLegacyRoleMainHand(villager)) {
+        if (persistentData.contains(ROLE_MAINHAND_TAG, CompoundTag.TAG_COMPOUND) && isLegacyRoleMainHand(villager)) {
             return MainHandOwner.ROLE;
         }
         return MainHandOwner.NONE;

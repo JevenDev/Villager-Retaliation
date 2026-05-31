@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -16,9 +17,11 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
     private static final long GROUND_WEAPON_SCAN_COOLDOWN_TICKS = 10L;
     private static final long GROUND_WEAPON_PURSUIT_GIVE_UP_TICKS = 200L;
     private static final long GROUND_WEAPON_PURSUIT_DISABLE_TICKS = 200L;
+    private static final long PERSISTED_ANGER_RESTORE_SCAN_INTERVAL_TICKS = 20L;
 
     private final String persistentTagRoot;
     private final Map<UUID, AngerTarget> angerTargets = new HashMap<>();
+    private final Map<UUID, Long> nextPersistedAngerRestoreTicks = new HashMap<>();
     private final Map<UUID, Long> nextAttackTicks = new HashMap<>();
     private final Map<UUID, Long> nextGroundWeaponScanTicks = new HashMap<>();
     private final Map<UUID, UUID> pursuedGroundWeaponIds = new HashMap<>();
@@ -43,6 +46,28 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
     }
 
     void restorePersistedAngerIfNeeded(T villager) {
+        UUID villagerId = villager.getUUID();
+        if (this.angerTargets.containsKey(villagerId)) {
+            return;
+        }
+        if (!(villager.level() instanceof ServerLevel level)) {
+            VillagerRetaliationRetaliationUtil.restorePersistedAngerIfNeeded(villager, this.angerTargets, this.persistentTagRoot);
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        Long nextRestore = this.nextPersistedAngerRestoreTicks.get(villagerId);
+        if (nextRestore == null) {
+            long firstRestore = gameTime + scanStagger(villagerId, PERSISTED_ANGER_RESTORE_SCAN_INTERVAL_TICKS);
+            if (firstRestore > gameTime) {
+                this.nextPersistedAngerRestoreTicks.put(villagerId, firstRestore);
+                return;
+            }
+        } else if (gameTime < nextRestore) {
+            return;
+        }
+
+        this.nextPersistedAngerRestoreTicks.put(villagerId, gameTime + PERSISTED_ANGER_RESTORE_SCAN_INTERVAL_TICKS);
         VillagerRetaliationRetaliationUtil.restorePersistedAngerIfNeeded(villager, this.angerTargets, this.persistentTagRoot);
     }
 
@@ -55,6 +80,7 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
     }
 
     void clearPersistentAnger(T villager) {
+        this.nextPersistedAngerRestoreTicks.remove(villager.getUUID());
         VillagerRetaliationRetaliationUtil.clearPersistentAnger(villager, this.persistentTagRoot);
     }
 
@@ -140,6 +166,7 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
     void clearTransientState(T villager) {
         UUID villagerId = villager.getUUID();
         this.angerTargets.remove(villagerId);
+        this.nextPersistedAngerRestoreTicks.remove(villagerId);
         this.nextAttackTicks.remove(villagerId);
         this.nextGroundWeaponScanTicks.remove(villagerId);
         this.pursuedGroundWeaponIds.remove(villagerId);
@@ -180,5 +207,12 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
 
         var entity = level.getEntity(weaponId);
         return entity instanceof ItemEntity itemEntity ? itemEntity : null;
+    }
+
+    private static long scanStagger(UUID villagerId, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 }

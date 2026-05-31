@@ -44,6 +44,11 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Fixed multiple ready random refreshes so all accepted ready refreshes can fulfill in one pass instead of leaving completed requests behind.
 - Fixed vanilla villager trade-preview hand behavior causing nearby players holding trade costs to replace, duplicate, or drop held villager items.
 - Deferred first-load social graph profile warmup across staggered villager ticks, reducing join-time TPS spikes when teleporting into villages that were first loaded after installing the mod.
+- Reduced repeated smith-villager repair path recalculations around damaged iron golems, especially when the golem is nearby but not immediately reachable.
+- Throttled natural-hostile targeting eligibility checks so stand-ground and nearby-weapon lookups no longer run every tick for every villager.
+- Skipped passive combat cleanup work for villagers that have no active armorer, ranged, temporary-weapon, or borrowed-weapon state.
+- Reduced the default follower lost distance from 64 blocks to 32 blocks.
+- Reduced idle villager tick overhead by staggering persisted-anger restore probes, passive combat-survival checks, and no-op trade-pool checks.
 
 ### Removed
 

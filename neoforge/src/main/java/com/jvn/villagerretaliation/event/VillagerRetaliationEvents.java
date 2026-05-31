@@ -92,6 +92,7 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationVillagerRules.clearCachedChecks();
         VillagerGossipHooks.clear();
         VillagerReputationManager.clearSyncState();
+        VillagerCombatSurvivalService.clearRuntimeState();
         VillagerRecruitmentService.clearRuntimeState();
         VillagerTradeMemory.clearRuntimeState();
         VillagerSocialGraphService.clearRuntimeState();
