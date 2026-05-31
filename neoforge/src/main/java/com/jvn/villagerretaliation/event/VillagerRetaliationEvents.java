@@ -32,6 +32,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.trade.VillagerTradeMemory;
+import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
 import com.jvn.villagerretaliation.util.VillagerDataWarmup;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -418,6 +419,9 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
         VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
+        if (event.getEntity() instanceof AbstractVillager villager) {
+            VillagerTradeUseTracker.forget(villager);
+        }
         if (event.getEntity() instanceof Villager villager) {
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
             VillagerRetaliationVillagerRules.clearCachedChecks(villager);

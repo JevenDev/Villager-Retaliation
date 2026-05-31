@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.skill.VillagerSkillGrowthService;
 import com.jvn.villagerretaliation.skill.VillagerTradeLevelingService;
+import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -211,10 +212,12 @@ public final class VillagerReputationEvents {
             if (event.getEntity() instanceof ServerPlayer serverPlayer) {
                 VillagerReputationAdvancements.onTradeCompleted(level, serverPlayer, villager);
             }
+            int completedTradeCount = VillagerTradeUseTracker.completedTradeCount(villager, event.getMerchantOffer());
             VillagerSkillGrowthService.onTradeCompleted(
                     level,
                     villager,
-                    event.getEntity() instanceof ServerPlayer serverPlayer ? serverPlayer : null);
+                    event.getEntity() instanceof ServerPlayer serverPlayer ? serverPlayer : null,
+                    completedTradeCount);
         }
     }
 
@@ -243,6 +246,7 @@ public final class VillagerReputationEvents {
         AABB area = player.getBoundingBox().inflate(8.0D);
         for (AbstractVillager villager : level.getEntitiesOfClass(AbstractVillager.class, area)) {
             if (villager.getTradingPlayer() == player) {
+                VillagerTradeUseTracker.snapshotOffers(villager);
                 VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
                 VillagerReputationManager.syncToTrackingPlayer(level, villager, player.getUUID());
                 return;

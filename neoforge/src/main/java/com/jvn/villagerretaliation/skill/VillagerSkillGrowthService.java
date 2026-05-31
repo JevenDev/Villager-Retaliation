@@ -26,10 +26,19 @@ public final class VillagerSkillGrowthService {
             ServerLevel level,
             AbstractVillager villager,
             @Nullable ServerPlayer player) {
+        return onTradeCompleted(level, villager, player, 1);
+    }
+
+    public static VillagerSkillGrowthResult onTradeCompleted(
+            ServerLevel level,
+            AbstractVillager villager,
+            @Nullable ServerPlayer player,
+            int completedTrades) {
         if (!(villager instanceof Villager villageResident) || villageResident.isBaby()) {
             return VillagerSkillGrowthResult.NONE;
         }
 
+        int tradeCount = Math.max(1, completedTrades);
         int currentTradeLevel = Math.clamp(villageResident.getVillagerData().getLevel(), 1, 5);
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
         int previousAwardedLevel = profile.highestSkillGrowthTradeLevelAwarded();
@@ -38,7 +47,7 @@ public final class VillagerSkillGrowthService {
         List<VillagerSkillGrowthResult.SkillIncrease> increases = new ArrayList<>();
         boolean profileChanged = false;
 
-        profileChanged |= awardRegularTradeGrowth(level, profile, villager, increases);
+        profileChanged |= awardRegularTradeGrowth(level, profile, villager, tradeCount, increases);
 
         if (VillagerRetaliationConfig.ENABLE_SKILL_GROWTH_FROM_TRADING_LEVELS.get()
                 && currentTradeLevel > previousAwardedLevel) {
@@ -64,6 +73,7 @@ public final class VillagerSkillGrowthService {
             ServerLevel level,
             VillagerProfile profile,
             AbstractVillager villager,
+            int completedTrades,
             List<VillagerSkillGrowthResult.SkillIncrease> increases) {
         if (!VillagerRetaliationConfig.ENABLE_REGULAR_TRADE_SKILL_GROWTH.get()) {
             return false;
@@ -80,7 +90,7 @@ public final class VillagerSkillGrowthService {
             return profile.setRegularTradeSkillGrowthProgress(primary, 0.0D, level.getGameTime());
         }
 
-        double totalProgress = profile.regularTradeSkillGrowthProgress(primary) + amount;
+        double totalProgress = profile.regularTradeSkillGrowthProgress(primary) + amount * Math.max(1, completedTrades);
         int wholePoints = (int) Math.floor(totalProgress + REGULAR_TRADE_PROGRESS_EPSILON);
         double remainingProgress = totalProgress - wholePoints;
         int awardedPoints = Math.min(wholePoints, VillagerSkillSet.MAX_VALUE - oldValue);
