@@ -32,7 +32,7 @@
       "lines": [
         "Good. {tested_villager} has a sound nose for {gift_item}. Fresh advice, clean cut.",
         "If {tested_villager} liked {gift_item}, then the cut was right.",
-        "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
+        "Good. {gift_item} suited {tested_villager}. I like advice that holds up.",
         "Following you taught me that plans sound much safer before anyone starts walking.",
         "I kept up, mostly. My feet have a harsher opinion of the trip.",
         "Next time, warn me before the road becomes a test of character.",
@@ -48,7 +48,7 @@
       "key": "gift_advice_followup.disliked",
       "lines": [
         "Bad cut, then. For {gift_subject}, I would set down {gift_item} and bring {alternative_gift}.",
-        "Some gifts spoil in the telling. Try {alternative_gift}; that should suit {gift_subject} better.",
+        "Some gifts spoil in the telling. Try {alternative_gift}. That should suit {gift_subject} better.",
         "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
         "Following you taught me that plans sound much safer before anyone starts walking.",
         "I kept up, mostly. My feet have a harsher opinion of the trip.",

@@ -119,7 +119,7 @@
       "id": "default_opening_profession_recent_danger",
       "request": "greeting",
       "lines": [
-        "Hello. Keep your voice easy; the village has had enough sharp sounds.",
+        "Hello. Keep your voice easy. The village has had enough sharp sounds.",
         "Good to see someone walking calmly. We have had our fill of running.",
         "If you are here to help, start by closing gates behind you.",
         "Careful where you step. Everyone is still a little quick to turn their head.",

@@ -32,7 +32,7 @@
       "lines": [
         "Good. {tested_villager} received {gift_item} with the right spirit.",
         "Then the omen was clear. {gift_item} carried kindness where you took it.",
-        "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
+        "Good. {gift_item} suited {tested_villager}. I like advice that holds up.",
         "Following you taught me that plans sound much safer before anyone starts walking.",
         "I kept up, mostly. My feet have a harsher opinion of the trip.",
         "Next time, warn me before the road becomes a test of character.",
@@ -47,7 +47,7 @@
       "id": "cleric_gift_advice_followup_disliked_variants",
       "key": "gift_advice_followup.disliked",
       "lines": [
-        "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}; it should be received better.",
+        "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}. It should be received better.",
         "Set {gift_item} aside for that soul. {alternative_gift} is the gentler offering.",
         "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
         "Following you taught me that plans sound much safer before anyone starts walking.",

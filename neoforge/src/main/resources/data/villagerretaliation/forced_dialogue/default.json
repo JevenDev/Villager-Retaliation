@@ -42,7 +42,9 @@
         "You will not find this village helpless.",
         "I have nothing in my hands and a whole village behind me.",
         "Come closer, {target}. I have enough <shake>anger</shake> for both hands.",
-        "No weapon. Still not afraid."
+        "No weapon. Still not afraid.",
+        "No steel, just stubborn. Still enough.",
+        "I may be empty-handed, but I am not alone."
       ],
       "output": {
         "mode": "chat",
@@ -68,7 +70,9 @@
         "Guards! Anyone! {target} is too close!",
         "Get inside! I cannot hold {target} back!",
         "Help me drive it away!",
-        "I have no weapon! Help!"
+        "I have no weapon! Help!",
+        "Keep it off me! I am unarmed!",
+        "Do not let it reach the doors!"
       ],
       "output": {
         "mode": "chat",
@@ -111,7 +115,11 @@
         "The village <pulse>remembers</pulse> you, {target}.",
         "No more warnings, {target}.",
         "Back from my people, {target}!",
-        "You should have left while words still mattered."
+        "You should have left while words still mattered.",
+        "You crossed the line, {target}.",
+        "This village is not yours to scare.",
+        "Back up now or get pushed back.",
+        "You swing at one of us, you answer all of us."
       ],
       "output": {
         "mode": "chat",
@@ -134,7 +142,11 @@
         "For the <pulse>bell</pulse> and every door behind it!",
         "Not one step farther.",
         "The village stands, {target}!",
-        "You will not take another home."
+        "You will not take another home.",
+        "Not one crate, not one bed, not one block.",
+        "You hear that bell? It means leave.",
+        "We survived worse than you.",
+        "Turn around before this gets uglier."
       ],
       "output": {
         "mode": "chat",
@@ -161,7 +173,11 @@
         "Your <shake>fangs</shake> stop here.",
         "The village has heard enough magic for one day.",
         "Summon all you want. We still stand.",
-        "You will not curse this place."
+        "You will not curse this place.",
+        "No totems, no fangs, no foothold here.",
+        "Your magic ends at our walls.",
+        "Try that spell on stone, not villagers.",
+        "We break your focus and send you running."
       ],
       "output": {
         "mode": "chat",
@@ -184,7 +200,11 @@
         "You missed your chance to run.",
         "Raiders leave empty-handed today.",
         "Aim at me, not the children.",
-        "Your <bold>banner</bold> means nothing here."
+        "Your <bold>banner</bold> means nothing here.",
+        "Keep that banner out of our streets.",
+        "No looting today, crossbow fool.",
+        "Your patrol ends in this square.",
+        "Take your raid horn and walk."
       ],
       "output": {
         "mode": "chat",
@@ -207,7 +227,11 @@
         "You will not chop through this village.",
         "Come closer and learn what farmers carry.",
         "<bold>No more doors</bold> for you to break.",
-        "Swing once more and answer for it."
+        "Swing once more and answer for it.",
+        "Your axe meets iron and stone today.",
+        "We rebuilt every door you broke. Try again.",
+        "No chopping paths through our homes.",
+        "Drop it or we drop you."
       ],
       "output": {
         "mode": "chat",
@@ -230,7 +254,11 @@
         "You do <bold>not</bold> get another villager.",
         "I hear your bones. I am not afraid.",
         "The dead can learn to run.",
-        "Stay away from the living."
+        "Stay away from the living.",
+        "Sunlight will finish what we start.",
+        "Graves stay closed. Move.",
+        "No bites, no arrows, no shadows in our homes.",
+        "Rot somewhere else."
       ],
       "output": {
         "mode": "chat",
@@ -261,7 +289,11 @@
         "No <shake>hissing</shake> near my home.",
         "Not near the children.",
         "This path is ours.",
-        "Try the fields. See what happens."
+        "Try the fields. See what happens.",
+        "No webs, no blast craters, no chaos here.",
+        "Crawl back into the dark, {target}.",
+        "One more step and the whole village swings.",
+        "This lane is guarded. Go hunt elsewhere."
       ],
       "output": {
         "mode": "chat",
@@ -291,7 +323,9 @@
         "The village has <shake>teeth</shake> too.",
         "Come on then.",
         "You are done here.",
-        "For the village!"
+        "For the village!",
+        "Not one step closer, {target}.",
+        "You are outnumbered and out of chances."
       ],
       "output": {
         "mode": "chat",

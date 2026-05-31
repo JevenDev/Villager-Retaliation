@@ -130,7 +130,7 @@
       "id": "cartographer_cartographer_map_report_structure_stronghold_variants",
       "key": "cartographer_map_report.structure.stronghold",
       "lines": [
-        "{target_article}, found at last. That's not a road; it is a question carved into stone.",
+        "{target_article}, found at last. That's not a road. It is a question carved into stone.",
         "You found {target_article}. Some maps point outward. That one points beneath everything.",
         "I will mark {target_article} with a steadier hand now that you came back.",
         "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
@@ -215,7 +215,7 @@
       "id": "cartographer_cartographer_map_report_structure_generic_variants",
       "key": "cartographer_map_report.structure.generic",
       "lines": [
-        "You found {target_article}. Good. The map was a promise; now it is a record.",
+        "You found {target_article}. Good. The map was a promise, and now it is a record.",
         "{target_article}, confirmed. I will clean up the linework and pretend I was certain all along.",
         "I will mark {target_article} with a steadier hand now that you came back.",
         "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",

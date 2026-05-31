@@ -32,7 +32,7 @@
       "lines": [
         "Good. {gift_item} held like proper mail for {tested_villager}. Advice should take a dent and stay useful.",
         "I thought {gift_item} would fit. Glad {tested_villager} wore the gesture well.",
-        "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
+        "Good. {gift_item} suited {tested_villager}. I like advice that holds up.",
         "Following you taught me that plans sound much safer before anyone starts walking.",
         "I kept up, mostly. My feet have a harsher opinion of the trip.",
         "Next time, warn me before the road becomes a test of character.",
@@ -47,7 +47,7 @@
       "id": "armorer_gift_advice_followup_disliked_variants",
       "key": "gift_advice_followup.disliked",
       "lines": [
-        "Then that fit was off. For {gift_subject}, try {alternative_gift}; better plate, fewer gaps.",
+        "Then that fit was off. For {gift_subject}, try {alternative_gift}. Better plate, fewer gaps.",
         "A poor fitting, then. Bring {alternative_gift} next time and the trade should sit easier.",
         "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
         "Following you taught me that plans sound much safer before anyone starts walking.",

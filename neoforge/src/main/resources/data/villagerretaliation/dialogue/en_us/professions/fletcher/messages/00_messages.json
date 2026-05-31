@@ -32,7 +32,7 @@
       "lines": [
         "Good. {gift_item} flew true with {tested_villager}.",
         "Then that advice hit center. Sounds like {gift_item} flew true.",
-        "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
+        "Good. {gift_item} suited {tested_villager}. I like advice that holds up.",
         "Following you taught me that plans sound much safer before anyone starts walking.",
         "I kept up, mostly. My feet have a harsher opinion of the trip.",
         "Next time, warn me before the road becomes a test of character.",
@@ -48,7 +48,7 @@
       "key": "gift_advice_followup.disliked",
       "lines": [
         "That shot drifted. For {gift_subject}, nock {alternative_gift} instead.",
-        "{gift_item} missed the mark? Try {alternative_gift}; straighter flight.",
+        "{gift_item} missed the mark? Try {alternative_gift}. Straighter flight.",
         "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
         "Following you taught me that plans sound much safer before anyone starts walking.",
         "I kept up, mostly. My feet have a harsher opinion of the trip.",

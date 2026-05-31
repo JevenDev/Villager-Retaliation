@@ -32,7 +32,7 @@
       "lines": [
         "Excellent. I will mark {gift_item} as a good recommendation, then.",
         "Then my reference was sound. {gift_item} belongs on that page.",
-        "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
+        "Good. {gift_item} suited {tested_villager}. I like advice that holds up.",
         "Following you taught me that plans sound much safer before anyone starts walking.",
         "I kept up, mostly. My feet have a harsher opinion of the trip.",
         "Next time, warn me before the road becomes a test of character.",
@@ -48,7 +48,7 @@
       "key": "gift_advice_followup.disliked",
       "lines": [
         "An error in the margin, then. For {gift_subject}, revise the gift to {alternative_gift}.",
-        "{gift_item} was the wrong citation. Try {alternative_gift}; much stronger source.",
+        "{gift_item} was the wrong citation. Try {alternative_gift}. Much stronger source.",
         "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
         "Following you taught me that plans sound much safer before anyone starts walking.",
         "I kept up, mostly. My feet have a harsher opinion of the trip.",

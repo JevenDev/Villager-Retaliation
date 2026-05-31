@@ -997,7 +997,7 @@
           "end_conversation": false,
           "responses": [
             "Go ahead, then. I put {restocked_summary} on the counter for you now.",
-            "Of course. I restocked {restocked_summary}; you may as well take a look.",
+            "Of course. I restocked {restocked_summary}. You may as well take a look.",
             "Right. The refreshed stock is ready, so let us trade.",
             "Take a look. I finished restocking {restocked_summary} for you.",
             "Back to business, then. I have {restocked_summary} ready for you."
@@ -1036,7 +1036,7 @@
           "end_conversation": true,
           "responses": [
             "Fine. {restocked_summary} will still be here when you come back.",
-            "Very well. I restocked {restocked_summary}; check the counter when you are ready.",
+            "Very well. I restocked {restocked_summary}. Check the counter when you are ready.",
             "Go on, then. I already have {restocked_summary} ready and waiting.",
             "Leave if you like. I already finished restocking {restocked_summary}.",
             "That is alright. {restocked_summary} can wait on the counter a little longer."

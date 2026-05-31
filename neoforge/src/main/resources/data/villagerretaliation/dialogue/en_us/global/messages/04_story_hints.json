@@ -88,7 +88,7 @@
       "key": "story_hint.map",
       "lines": [
         "Here. I marked {target_article} on this <color:gold>map</color>. It should sit about {distance} {direction}{vertical}.",
-        "I marked {target_article}; look about {distance} {direction}{vertical}.",
+        "I marked {target_article}. Look about {distance} {direction}{vertical}.",
         "This map should lead toward {target_article}, about {distance} {direction}{vertical}.",
         "Take this <color:gold>map</color>. It points toward {target_article}, roughly {distance} {direction}{vertical}.",
         "{target_article} is marked here. Follow the map about {distance} {direction}{vertical}.",
@@ -245,7 +245,7 @@
       "key": "story_hint_report.structure.stronghold",
       "lines": [
         "{target_article}, then. That is not just a rumor. That is a door waiting under the world.",
-        "You found {target_article}. Some stone does not mark a place; it marks a question.",
+        "You found {target_article}. Some stone does not mark a place. It marks a question.",
         "{target_article}, confirmed. I wonder how long it has been waiting for footsteps.",
         "So the path led to {target_article}. That sounds less like a destination than a warning.",
         "You reached {target_article}. Some roads go outward. That one pulls down.",
