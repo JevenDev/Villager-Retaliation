@@ -105,11 +105,12 @@ final class VillagerQuestHudRenderer {
         List<NotificationLine> lines = buildNotificationLines(font, entry, contentWidth, lineStep);
         int contentHeight = notificationContentHeight(lines, lineStep);
         int overflow = Math.max(0, contentHeight - viewportHeight);
+        int contentTopOffset = notificationContentTopOffset(contentHeight, viewportHeight, overflow);
         int scroll = notificationScroll(age, overflow);
 
         graphics.enableScissor(contentLeft, viewportTop, x + width - paddingX(), viewportBottom);
         for (NotificationLine line : lines) {
-            int lineTop = viewportTop + line.top() - scroll;
+            int lineTop = viewportTop + contentTopOffset + line.top() - scroll;
             int lineBottom = lineTop + lineStep;
             if (lineBottom < viewportTop || lineTop > viewportBottom) {
                 continue;
@@ -180,6 +181,13 @@ final class VillagerQuestHudRenderer {
         }
         NotificationLine lastLine = lines.get(lines.size() - 1);
         return lastLine.top() + lineStep;
+    }
+
+    private static int notificationContentTopOffset(int contentHeight, int viewportHeight, int overflow) {
+        if (overflow > 0 || contentHeight <= 0) {
+            return 0;
+        }
+        return Math.max(0, (viewportHeight - contentHeight) / 2);
     }
 
     private static int notificationScroll(int age, int overflow) {
