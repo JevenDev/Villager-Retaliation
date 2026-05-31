@@ -3,6 +3,9 @@ package com.jvn.villagerretaliation.social;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +23,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerSocialGraphService {
     private static final long PROFILE_REFRESH_INTERVAL_TICKS = 200L;
+    private static final Map<UUID, Long> PENDING_JOIN_PROFILE_TICKS = new HashMap<>();
 
     private VillagerSocialGraphService() {
     }
@@ -29,19 +33,47 @@ public final class VillagerSocialGraphService {
             return;
         }
         if (event.getLevel() instanceof ServerLevel level && event.getEntity() instanceof Villager villager) {
-            VillagerSocialGraphSavedData.get(level).ensureProfile(level, villager);
+            PENDING_JOIN_PROFILE_TICKS.put(
+                    villager.getUUID(),
+                    level.getGameTime() + profileRefreshOffset(villager.getUUID())
+            );
         }
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof Villager villager)
                 || !(villager.level() instanceof ServerLevel level)
-                || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()
-                || level.getGameTime() % PROFILE_REFRESH_INTERVAL_TICKS
-                != Math.floorMod(villager.getUUID().getLeastSignificantBits(), PROFILE_REFRESH_INTERVAL_TICKS)) {
+                || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
             return;
         }
+
+        long gameTime = level.getGameTime();
+        UUID villagerId = villager.getUUID();
+        Long pendingJoinProfileTick = PENDING_JOIN_PROFILE_TICKS.get(villagerId);
+        if (pendingJoinProfileTick != null) {
+            if (gameTime < pendingJoinProfileTick) {
+                return;
+            }
+            PENDING_JOIN_PROFILE_TICKS.remove(villagerId);
+            VillagerSocialGraphSavedData.get(level).ensureProfile(level, villager);
+            return;
+        }
+
+        if (gameTime % PROFILE_REFRESH_INTERVAL_TICKS != profileRefreshOffset(villagerId)) {
+            return;
+        }
+
         VillagerSocialGraphSavedData.get(level).ensureProfile(level, villager);
+    }
+
+    public static void onEntityLeaveLevel(Entity entity) {
+        if (entity instanceof Villager villager) {
+            PENDING_JOIN_PROFILE_TICKS.remove(villager.getUUID());
+        }
+    }
+
+    public static void clearRuntimeState() {
+        PENDING_JOIN_PROFILE_TICKS.clear();
     }
 
     public static void onBabyEntitySpawn(BabyEntitySpawnEvent event) {
@@ -126,5 +158,9 @@ public final class VillagerSocialGraphService {
             return cause + ":" + BuiltInRegistries.ENTITY_TYPE.getKey(attacker.getType());
         }
         return cause;
+    }
+
+    private static long profileRefreshOffset(UUID villagerId) {
+        return Math.floorMod(villagerId.getLeastSignificantBits(), PROFILE_REFRESH_INTERVAL_TICKS);
     }
 }

@@ -94,6 +94,7 @@ public final class VillagerRetaliationEvents {
         VillagerReputationManager.clearSyncState();
         VillagerRecruitmentService.clearRuntimeState();
         VillagerTradeMemory.clearRuntimeState();
+        VillagerSocialGraphService.clearRuntimeState();
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -422,6 +423,7 @@ public final class VillagerRetaliationEvents {
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
+        VillagerSocialGraphService.onEntityLeaveLevel(event.getEntity());
         VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
         if (event.getEntity() instanceof AbstractVillager villager) {
             VillagerTradeUseTracker.forget(villager);

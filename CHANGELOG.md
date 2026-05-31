@@ -43,6 +43,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Fixed Special Order active-request limits so the fourth request shows the limit dialogue immediately and the cap is hard-clamped to three.
 - Fixed multiple ready random refreshes so all accepted ready refreshes can fulfill in one pass instead of leaving completed requests behind.
 - Fixed vanilla villager trade-preview hand behavior causing nearby players holding trade costs to replace, duplicate, or drop held villager items.
+- Deferred first-load social graph profile warmup across staggered villager ticks, reducing join-time TPS spikes when teleporting into villages that were first loaded after installing the mod.
 
 ### Removed
 
