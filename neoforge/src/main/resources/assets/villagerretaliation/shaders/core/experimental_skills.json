@@ -43,6 +43,12 @@
     { "name": "MouseY", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "Hovered", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "Mode", "type": "float", "count": 1, "values": [ 0.0 ] },
-    { "name": "ClipMainChrome", "type": "float", "count": 1, "values": [ 1.0 ] }
+    { "name": "ClipMainChrome", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "DarkRed", "type": "float", "count": 1, "values": [ 0.0627451 ] },
+    { "name": "DarkGreen", "type": "float", "count": 1, "values": [ 0.0627451 ] },
+    { "name": "DarkBlue", "type": "float", "count": 1, "values": [ 0.0627451 ] },
+    { "name": "LightRed", "type": "float", "count": 1, "values": [ 0.1960784 ] },
+    { "name": "LightGreen", "type": "float", "count": 1, "values": [ 0.1960784 ] },
+    { "name": "LightBlue", "type": "float", "count": 1, "values": [ 0.1960784 ] }
   ]
 }

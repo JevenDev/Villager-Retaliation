@@ -24,6 +24,12 @@ uniform float MouseY;
 uniform float Hovered;
 uniform float Mode;
 uniform float ClipMainChrome;
+uniform float DarkRed;
+uniform float DarkGreen;
+uniform float DarkBlue;
+uniform float LightRed;
+uniform float LightGreen;
+uniform float LightBlue;
 
 in vec2 vertexScreenPos;
 
@@ -274,8 +280,8 @@ vec4 panelColor(vec2 p, vec2 size, vec2 uv) {
 
     compositeCapped(vec3(0.0), lowerVeilAlpha, premultipliedColor, alpha);
     composite(vec3(0.0), lowerShadow * lowerShadowLayer.w, premultipliedColor, alpha);
-    composite(vec3(0.0627451), rightShadow * rightShadowLayer.w, premultipliedColor, alpha);
-    composite(vec3(0.1960784), rightHighlight * rightHighlightLayer.w, premultipliedColor, alpha);
+    composite(vec3(DarkRed, DarkGreen, DarkBlue), rightShadow * rightShadowLayer.w, premultipliedColor, alpha);
+    composite(vec3(LightRed, LightGreen, LightBlue), rightHighlight * rightHighlightLayer.w, premultipliedColor, alpha);
     if (alpha <= 0.001) {
         discard;
     }

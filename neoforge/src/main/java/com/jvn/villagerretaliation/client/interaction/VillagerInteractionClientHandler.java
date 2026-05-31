@@ -63,6 +63,7 @@ public final class VillagerInteractionClientHandler {
         Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(payload.entityId());
         String villagerName = resolveVillagerName(payload.villagerNameKey(), payload.villagerNameFallback());
         String professionName = resolveProfessionName(entity, payload.professionName(), payload.baby());
+        VillagerProfessionUiColors.ColorPair professionUiColors = resolveProfessionUiColors(entity, payload.baby());
         String genderName = resolveGenderName(payload.genderName());
         VillagerNameClientCache.accept(new VillagerNameSyncPayload(
                 payload.entityId(),
@@ -87,6 +88,7 @@ public final class VillagerInteractionClientHandler {
                 payload.entityId(),
                 villagerName,
                 professionName,
+                professionUiColors,
                 genderName,
                 payload.baby(),
                 payload.reputation(),
@@ -378,6 +380,13 @@ public final class VillagerInteractionClientHandler {
             return 0x808080;
         }
         return professionAccentColor(villager.getVillagerData().getProfession());
+    }
+
+    private static VillagerProfessionUiColors.ColorPair resolveProfessionUiColors(Entity entity, boolean baby) {
+        if (!(entity instanceof Villager villager) || baby || villager.isBaby()) {
+            return VillagerProfessionUiColors.DEFAULT_COLORS;
+        }
+        return VillagerProfessionUiColors.colorsFor(villager.getVillagerData().getProfession());
     }
 
     private static int professionAccentColor(VillagerProfession profession) {

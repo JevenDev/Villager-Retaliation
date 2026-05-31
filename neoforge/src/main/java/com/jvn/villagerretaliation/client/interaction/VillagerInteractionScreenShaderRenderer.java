@@ -64,6 +64,8 @@ public final class VillagerInteractionScreenShaderRenderer {
             int screenHeight,
             int mouseX,
             int mouseY,
+            int darkColor,
+            int lightColor,
             boolean clipMainChrome,
             boolean hovered) {
         public static ExperimentalSkillsPanel backdrop(
@@ -79,6 +81,36 @@ public final class VillagerInteractionScreenShaderRenderer {
                 int mouseX,
                 int mouseY,
                 boolean clipMainChrome) {
+            return backdrop(
+                    rect,
+                    alpha,
+                    elapsedTicks,
+                    elapsedMillis,
+                    exitElapsedMillis,
+                    chromeElapsedMillis,
+                    chromeExitElapsedMillis,
+                    screenWidth,
+                    screenHeight,
+                    mouseX,
+                    mouseY,
+                    VillagerProfessionUiColors.DEFAULT_COLORS,
+                    clipMainChrome);
+        }
+
+        public static ExperimentalSkillsPanel backdrop(
+                ShaderRect rect,
+                float alpha,
+                float elapsedTicks,
+                float elapsedMillis,
+                float exitElapsedMillis,
+                float chromeElapsedMillis,
+                float chromeExitElapsedMillis,
+                int screenWidth,
+                int screenHeight,
+                int mouseX,
+                int mouseY,
+                VillagerProfessionUiColors.ColorPair colors,
+                boolean clipMainChrome) {
             return new ExperimentalSkillsPanel(
                     rect,
                     0,
@@ -93,6 +125,8 @@ public final class VillagerInteractionScreenShaderRenderer {
                     screenHeight,
                     mouseX,
                     mouseY,
+                    colors.dark(),
+                    colors.light(),
                     clipMainChrome,
                     false);
         }
@@ -118,6 +152,8 @@ public final class VillagerInteractionScreenShaderRenderer {
                     1,
                     0,
                     0,
+                    VillagerProfessionUiColors.DEFAULT_COLORS.dark(),
+                    VillagerProfessionUiColors.DEFAULT_COLORS.light(),
                     true,
                     hovered);
         }
@@ -183,6 +219,26 @@ public final class VillagerInteractionScreenShaderRenderer {
             float exitElapsedMillis,
             int mouseX,
             int mouseY) {
+        return renderExperimentalChrome(
+                graphics,
+                width,
+                height,
+                elapsedMillis,
+                exitElapsedMillis,
+                mouseX,
+                mouseY,
+                VillagerProfessionUiColors.DEFAULT_COLORS);
+    }
+
+    public static boolean renderExperimentalChrome(
+            GuiGraphics graphics,
+            int width,
+            int height,
+            float elapsedMillis,
+            float exitElapsedMillis,
+            int mouseX,
+            int mouseY,
+            VillagerProfessionUiColors.ColorPair colors) {
         if (experimentalChromeShader == null) {
             return false;
         }
@@ -193,6 +249,7 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(experimentalChromeShader, "MouseY", (float) mouseY);
         setUniform(experimentalChromeShader, "ElapsedMillis", elapsedMillis);
         setUniform(experimentalChromeShader, "ExitElapsedMillis", exitElapsedMillis);
+        setChromeColorUniforms(experimentalChromeShader, colors);
 
         drawQuad(graphics, experimentalChromeShader, new ShaderRect(0, 0, width, height));
         return true;
@@ -315,6 +372,44 @@ public final class VillagerInteractionScreenShaderRenderer {
             boolean clipMainChrome) {
         return renderExperimentalSkillsPanel(
                 graphics,
+                left,
+                top,
+                right,
+                bottom,
+                alpha,
+                elapsedTicks,
+                elapsedMillis,
+                exitElapsedMillis,
+                chromeElapsedMillis,
+                chromeExitElapsedMillis,
+                screenWidth,
+                screenHeight,
+                mouseX,
+                mouseY,
+                VillagerProfessionUiColors.DEFAULT_COLORS,
+                clipMainChrome);
+    }
+
+    public static boolean renderExperimentalSkillsPanel(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int right,
+            int bottom,
+            float alpha,
+            float elapsedTicks,
+            float elapsedMillis,
+            float exitElapsedMillis,
+            float chromeElapsedMillis,
+            float chromeExitElapsedMillis,
+            int screenWidth,
+            int screenHeight,
+            int mouseX,
+            int mouseY,
+            VillagerProfessionUiColors.ColorPair colors,
+            boolean clipMainChrome) {
+        return renderExperimentalSkillsPanel(
+                graphics,
                 ExperimentalSkillsPanel.backdrop(
                         new ShaderRect(left, top, right, bottom),
                         alpha,
@@ -327,6 +422,7 @@ public final class VillagerInteractionScreenShaderRenderer {
                         screenHeight,
                         mouseX,
                         mouseY,
+                        colors,
                         clipMainChrome));
     }
 
@@ -375,6 +471,7 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(experimentalSkillsShader, "Hovered", panel.hovered() ? 1.0F : 0.0F);
         setUniform(experimentalSkillsShader, "Mode", panel.accentColor() == 0 ? 0.0F : 1.0F);
         setUniform(experimentalSkillsShader, "ClipMainChrome", panel.clipMainChrome() ? 1.0F : 0.0F);
+        setChromeColorUniforms(experimentalSkillsShader, new VillagerProfessionUiColors.ColorPair(panel.darkColor(), panel.lightColor()));
 
         drawQuad(graphics, experimentalSkillsShader, panel.rect());
         return true;
@@ -391,6 +488,17 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(shader, "AccentRed", ((accentColor >> 16) & 0xFF) / 255.0F);
         setUniform(shader, "AccentGreen", ((accentColor >> 8) & 0xFF) / 255.0F);
         setUniform(shader, "AccentBlue", (accentColor & 0xFF) / 255.0F);
+    }
+
+    private static void setChromeColorUniforms(ShaderInstance shader, VillagerProfessionUiColors.ColorPair colors) {
+        setColorUniforms(shader, "Dark", colors.dark());
+        setColorUniforms(shader, "Light", colors.light());
+    }
+
+    private static void setColorUniforms(ShaderInstance shader, String prefix, int color) {
+        setUniform(shader, prefix + "Red", ((color >> 16) & 0xFF) / 255.0F);
+        setUniform(shader, prefix + "Green", ((color >> 8) & 0xFF) / 255.0F);
+        setUniform(shader, prefix + "Blue", (color & 0xFF) / 255.0F);
     }
 
     private static void drawQuad(GuiGraphics graphics, ShaderInstance shader, ShaderRect rect) {

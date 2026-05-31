@@ -9,6 +9,12 @@ uniform float MouseX;
 uniform float MouseY;
 uniform float ElapsedMillis;
 uniform float ExitElapsedMillis;
+uniform float DarkRed;
+uniform float DarkGreen;
+uniform float DarkBlue;
+uniform float LightRed;
+uniform float LightGreen;
+uniform float LightBlue;
 
 in vec2 vertexScreenPos;
 
@@ -173,7 +179,7 @@ void renderRightShadow(vec4 layer, inout vec3 premultipliedColor, inout float al
         vec2(682.0, 1360.0)
     );
     if (inside) {
-        composite(vec3(0.0627451), layer.w, premultipliedColor, alpha);
+        composite(vec3(DarkRed, DarkGreen, DarkBlue), layer.w, premultipliedColor, alpha);
     }
 }
 
@@ -190,7 +196,7 @@ void renderRightHighlight(vec4 layer, inout vec3 premultipliedColor, inout float
         vec2(1473.0, 1360.0)
     );
     if (inside) {
-        composite(vec3(0.1960784), layer.w, premultipliedColor, alpha);
+        composite(vec3(LightRed, LightGreen, LightBlue), layer.w, premultipliedColor, alpha);
     }
 }
 

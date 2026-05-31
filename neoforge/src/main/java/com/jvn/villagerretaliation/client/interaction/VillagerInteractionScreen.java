@@ -86,6 +86,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
+    private final VillagerProfessionUiColors.ColorPair professionUiColors;
     private final String genderName;
     private final boolean baby;
     private int reputation;
@@ -133,6 +134,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             int villagerEntityId,
             String villagerName,
             String professionName,
+            VillagerProfessionUiColors.ColorPair professionUiColors,
             String genderName,
             boolean baby,
             int reputation,
@@ -151,6 +153,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
+        this.professionUiColors = professionUiColors == null ? VillagerProfessionUiColors.DEFAULT_COLORS : professionUiColors;
         this.genderName = localizedGenderName(genderName);
         this.baby = baby;
         this.reputation = reputation;
@@ -169,7 +172,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.page = DialoguePage.TALK;
         }
         syncCameraFocusState();
-        VillagerInteractionExperimentalChrome.resetAnimation();
+        VillagerInteractionExperimentalChrome.resetAnimation(this.professionUiColors);
     }
 
     @Override
@@ -946,7 +949,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 this.width,
                 this.height,
                 this.lastMouseX,
-                this.lastMouseY);
+                this.lastMouseY,
+                this.professionUiColors,
+                true);
     }
 
     private boolean experimentalSkillsBackdropVisible() {

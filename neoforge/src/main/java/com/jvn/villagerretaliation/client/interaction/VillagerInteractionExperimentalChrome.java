@@ -28,17 +28,23 @@ final class VillagerInteractionExperimentalChrome {
     private static List<ExitFadeTextElement> exitFadeTextElements = List.of();
     private static List<ExitFadeRectElement> exitFadeRectElements = List.of();
     private static ExitSkillsPanel exitSkillsPanel;
+    private static VillagerProfessionUiColors.ColorPair professionColors = VillagerProfessionUiColors.DEFAULT_COLORS;
 
     private VillagerInteractionExperimentalChrome() {
     }
 
     static void resetAnimation() {
+        resetAnimation(VillagerProfessionUiColors.DEFAULT_COLORS);
+    }
+
+    static void resetAnimation(VillagerProfessionUiColors.ColorPair colors) {
         backdropAnimationStartMillis = Util.getMillis();
         backdropExitStartMillis = -1L;
         exitTextElements = List.of();
         exitFadeTextElements = List.of();
         exitFadeRectElements = List.of();
         exitSkillsPanel = null;
+        professionColors = colors == null ? VillagerProfessionUiColors.DEFAULT_COLORS : colors;
     }
 
     static void startExitAnimation(
@@ -85,7 +91,15 @@ final class VillagerInteractionExperimentalChrome {
         if (exitSkillsPanel != null && exitElapsedMillis >= 0.0F) {
             renderExitSkillsPanel(graphics, exitSkillsPanel, width, height, elapsedMillis, exitElapsedMillis, mouseX, mouseY);
         } else {
-            VillagerInteractionScreenShaderRenderer.renderExperimentalChrome(graphics, width, height, elapsedMillis, exitElapsedMillis, mouseX, mouseY);
+            VillagerInteractionScreenShaderRenderer.renderExperimentalChrome(
+                    graphics,
+                    width,
+                    height,
+                    elapsedMillis,
+                    exitElapsedMillis,
+                    mouseX,
+                    mouseY,
+                    professionColors);
         }
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -122,6 +136,7 @@ final class VillagerInteractionExperimentalChrome {
                 height,
                 mouseX,
                 mouseY,
+                professionColors,
                 false);
     }
 

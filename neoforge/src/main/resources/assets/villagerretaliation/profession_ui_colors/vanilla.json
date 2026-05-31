@@ -1,0 +1,19 @@
+{
+  "colors": [
+    { "profession": "minecraft:armorer", "color": "#8FA7B3" },
+    { "profession": "minecraft:butcher", "color": "#D64F4F" },
+    { "profession": "minecraft:cartographer", "color": "#4FB6B8" },
+    { "profession": "minecraft:cleric", "color": "#B967FF" },
+    { "profession": "minecraft:farmer", "color": "#7CFC00" },
+    { "profession": "minecraft:fisherman", "color": "#3BA7FF" },
+    { "profession": "minecraft:fletcher", "color": "#83B547" },
+    { "profession": "minecraft:leatherworker", "color": "#A86A3D" },
+    { "profession": "minecraft:librarian", "color": "#D9558F" },
+    { "profession": "minecraft:mason", "color": "#9A8F86" },
+    { "profession": "minecraft:nitwit", "color": "#6AD36A" },
+    { "profession": "minecraft:shepherd", "color": "#F2F2F2" },
+    { "profession": "minecraft:toolsmith", "color": "#6FC3D0" },
+    { "profession": "minecraft:weaponsmith", "color": "#FF8A2A" },
+    { "profession": "minecraft:none", "dark": "#101010", "light": "#323232" }
+  ]
+}

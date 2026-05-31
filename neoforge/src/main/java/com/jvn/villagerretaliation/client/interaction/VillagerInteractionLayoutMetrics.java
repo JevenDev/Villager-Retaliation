@@ -128,7 +128,7 @@ final class VillagerInteractionLayoutMetrics {
     }
 
     static int profileSkillRowGap() {
-        return VillagerAdaptiveGuiScale.unitAtLeast(PROFILE_SKILL_ROW_GAP, 1);
+        return VillagerAdaptiveGuiScale.unitAtLeast(PROFILE_SKILL_ROW_GAP, 1) + 1;
     }
 
     static int profileSkillBarHeight() {
