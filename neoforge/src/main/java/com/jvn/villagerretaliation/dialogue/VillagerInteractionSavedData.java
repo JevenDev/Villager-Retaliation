@@ -67,6 +67,8 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_SHARED_STORY_TARGETS = "SharedStoryTargets";
     private static final String TAG_SHARED_STORY_COOLDOWNS = "SharedStoryCooldowns";
     private static final String TAG_SHARED_STORY_COUNTS = "SharedStoryCounts";
+    private static final String TAG_VILLAGE_ENCOUNTERS = "VillageEncounters";
+    private static final String TAG_VILLAGES = "Villages";
     private static final String TAG_TARGETS = "Targets";
     private static final String TAG_TARGET_KEY = "TargetKey";
     private static final String TAG_SHARED_STORIES = "SharedStories";
@@ -102,6 +104,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final int MAX_STORY_HINTS = 12;
     private static final int MAX_SHARED_STORY_TARGETS = 64;
     private static final int MAX_SHARED_STORY_COOLDOWNS_PER_PLAYER = 128;
+    private static final int MAX_VILLAGE_ENCOUNTERS_PER_PLAYER = 128;
     private static final int SHARED_BIOME_STORY_REGION_SHIFT = 8;
     private static final long SHARED_STORY_TARGET_COOLDOWN_TICKS = 20L * 60L * 60L * 24L;
     private static final int DEFAULT_BIOME_STORY_HINT_DISCOVERY_RADIUS = 256;
@@ -112,6 +115,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private final GiftKnowledgeStore giftKnowledge = new GiftKnowledgeStore();
     private final Map<UUID, LinkedHashMap<String, Long>> sharedStoryCooldownsByPlayer = new HashMap<>();
     private final Map<UUID, Integer> sharedStoryCountsByPlayer = new HashMap<>();
+    private final Map<UUID, LinkedHashSet<String>> villageEncountersByPlayer = new HashMap<>();
 
     public static VillagerInteractionSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -334,6 +338,17 @@ public class VillagerInteractionSavedData extends SavedData {
                 data.sharedStoryCountsByPlayer.put(countTag.getUUID(TAG_PLAYER), count);
             }
         }
+        ListTag villageEncountersTag = tag.getList(TAG_VILLAGE_ENCOUNTERS, Tag.TAG_COMPOUND);
+        for (Tag rawEncounters : villageEncountersTag) {
+            if (!(rawEncounters instanceof CompoundTag encountersTag) || !encountersTag.hasUUID(TAG_PLAYER)) {
+                continue;
+            }
+            LinkedHashSet<String> villageKeys = new LinkedHashSet<>();
+            readStringSet(encountersTag.getList(TAG_VILLAGES, Tag.TAG_STRING), villageKeys);
+            if (!villageKeys.isEmpty()) {
+                data.villageEncountersByPlayer.put(encountersTag.getUUID(TAG_PLAYER), villageKeys);
+            }
+        }
         return data;
     }
 
@@ -537,6 +552,17 @@ public class VillagerInteractionSavedData extends SavedData {
             sharedStoryCountsTag.add(countTag);
         }
         tag.put(TAG_SHARED_STORY_COUNTS, sharedStoryCountsTag);
+        ListTag villageEncountersTag = new ListTag();
+        for (Map.Entry<UUID, LinkedHashSet<String>> encountersEntry : this.villageEncountersByPlayer.entrySet()) {
+            if (encountersEntry.getValue().isEmpty()) {
+                continue;
+            }
+            CompoundTag encountersTag = new CompoundTag();
+            encountersTag.putUUID(TAG_PLAYER, encountersEntry.getKey());
+            encountersTag.put(TAG_VILLAGES, writeStringSet(encountersEntry.getValue()));
+            villageEncountersTag.add(encountersTag);
+        }
+        tag.put(TAG_VILLAGE_ENCOUNTERS, villageEncountersTag);
         return tag;
     }
 
@@ -546,6 +572,27 @@ public class VillagerInteractionSavedData extends SavedData {
             tag.add(StringTag.valueOf(value));
         }
         return tag;
+    }
+
+    boolean hasVillageEncounter(UUID playerId, String villageKey) {
+        if (playerId == null || villageKey == null || villageKey.isBlank()) {
+            return false;
+        }
+        Set<String> villageKeys = this.villageEncountersByPlayer.get(playerId);
+        return villageKeys != null && villageKeys.contains(villageKey);
+    }
+
+    boolean rememberVillageEncounter(UUID playerId, String villageKey) {
+        if (playerId == null || villageKey == null || villageKey.isBlank()) {
+            return false;
+        }
+        LinkedHashSet<String> villageKeys = this.villageEncountersByPlayer.computeIfAbsent(playerId, ignored -> new LinkedHashSet<>());
+        boolean changed = villageKeys.add(villageKey);
+        while (villageKeys.size() > MAX_VILLAGE_ENCOUNTERS_PER_PLAYER) {
+            villageKeys.remove(villageKeys.iterator().next());
+            changed = true;
+        }
+        return changed;
     }
 
     public InteractionEntry getOrCreate(UUID villagerId, UUID playerId) {

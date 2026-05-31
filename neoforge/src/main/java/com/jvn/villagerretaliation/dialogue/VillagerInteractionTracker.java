@@ -19,6 +19,8 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.levelgen.structure.Structure;
 
 public final class VillagerInteractionTracker {
+    private static final int VILLAGE_ENCOUNTER_REGION_SIZE = 64;
+
     private VillagerInteractionTracker() {
     }
 
@@ -306,11 +308,15 @@ public final class VillagerInteractionTracker {
             Villager villager,
             ServerPlayer player,
             VillagerInteractionSavedData data) {
+        if (data.getOrEmptyForRead(villager.getUUID(), player.getUUID()).hasMet()) {
+            return false;
+        }
         return VillageMembership.resolve(level, villager)
-                .map(area -> !data.hasMetWithAny(
-                        area.members().stream().map(Villager::getUUID).toList(),
-                        player.getUUID()
-                ))
+                .map(area -> !data.hasVillageEncounter(player.getUUID(), villageEncounterKey(level, area))
+                        && !data.hasMetWithAny(
+                                area.members().stream().map(Villager::getUUID).toList(),
+                                player.getUUID()
+                        ))
                 .orElse(false);
     }
 
@@ -443,9 +449,21 @@ public final class VillagerInteractionTracker {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
         long day = level.getDayTime() / 24000L;
-        if (entry.markSeenDay(day)) {
+        boolean changed = entry.markSeenDay(day);
+        changed |= VillageMembership.resolve(level, villager)
+                .map(area -> data.rememberVillageEncounter(player.getUUID(), villageEncounterKey(level, area)))
+                .orElse(false);
+        if (changed) {
             data.setDirty();
         }
+    }
+
+    private static String villageEncounterKey(ServerLevel level, VillageMembership.VillageArea area) {
+        BlockPos center = area.centerBlock();
+        return level.dimension().location() + ":"
+                + Math.floorDiv(center.getX(), VILLAGE_ENCOUNTER_REGION_SIZE)
+                + ","
+                + Math.floorDiv(center.getZ(), VILLAGE_ENCOUNTER_REGION_SIZE);
     }
 
     public static Optional<RecruitmentMemory> recruitmentMemory(ServerLevel level, Villager villager, ServerPlayer player) {
