@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
@@ -28,7 +29,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NumericTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -39,6 +45,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -494,6 +503,14 @@ public final class VillagerQuestService {
                     "There is still more to do before this is ready.",
                     replacements(context, definition, progress));
         }
+        ItemHandInResult itemHandInResult = handInRequiredObjectiveItems(context, definition);
+        if (itemHandInResult != ItemHandInResult.SUCCESS) {
+            return result(
+                    itemHandInResult.status,
+                    lineId(definition, "missing_objectives"),
+                    itemHandInResult.message,
+                    replacements(context, definition, progress));
+        }
 
         progress.markHasProof();
         progress.complete(context.level().getGameTime(), definition.rules().consumeOnCompletion());
@@ -817,6 +834,10 @@ public final class VillagerQuestService {
         return itemCount(player, itemId) >= Math.max(1, count);
     }
 
+    private static boolean hasItemCount(ServerPlayer player, QuestDefinition.Objective objective) {
+        return itemCount(player, objective) >= Math.max(1, objective.count());
+    }
+
     private static int itemCount(ServerPlayer player, ResourceLocation itemId) {
         if (itemId == null) {
             return 0;
@@ -828,6 +849,33 @@ public final class VillagerQuestService {
         int total = 0;
         for (ItemStack stack : player.getInventory().items) {
             if (stack.is(item.get())) {
+                total += stack.getCount();
+            }
+        }
+        for (ItemStack stack : player.getInventory().offhand) {
+            if (stack.is(item.get())) {
+                total += stack.getCount();
+            }
+        }
+        return total;
+    }
+
+    private static int itemCount(ServerPlayer player, QuestDefinition.Objective objective) {
+        if (objective.item() == null) {
+            return 0;
+        }
+        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
+        if (item.isEmpty()) {
+            return 0;
+        }
+        int total = 0;
+        for (ItemStack stack : player.getInventory().items) {
+            if (matchesObjectiveItem(stack, objective, item.get())) {
+                total += stack.getCount();
+            }
+        }
+        for (ItemStack stack : player.getInventory().offhand) {
+            if (matchesObjectiveItem(stack, objective, item.get())) {
                 total += stack.getCount();
             }
         }
@@ -892,12 +940,20 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
+        List<QuestDefinition.Objective> requiredItemHandIns = new ArrayList<>();
         for (QuestDefinition.Objective objective : definition.objectives()) {
-            if (!objective.optional() && !objectiveComplete(player, context, context.level(), definition, progress, objective)) {
+            if (objective.optional()) {
+                continue;
+            }
+            if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK && objective.consume() && objective.item() != null) {
+                requiredItemHandIns.add(objective);
+                continue;
+            }
+            if (!objectiveComplete(player, context, context.level(), definition, progress, objective)) {
                 return false;
             }
         }
-        return true;
+        return requiredItemHandIns.isEmpty() || previewObjectiveItemStacks(player, requiredItemHandIns).isPresent();
     }
 
     private static boolean objectiveComplete(
@@ -907,12 +963,12 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
-        if (progress.objectiveComplete(objective.id())) {
+        if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK && progress.objectiveComplete(objective.id())) {
             return true;
         }
         return switch (objective.type()) {
             case STRUCTURE_VISIT -> VillagerQuestTargets.isAtObjectiveTarget(level, player.blockPosition(), objective, progress);
-            case ITEM_CHECK -> hasItemCount(player, objective.item(), objective.count());
+            case ITEM_CHECK -> hasItemCount(player, objective);
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
     }
@@ -929,6 +985,210 @@ public final class VillagerQuestService {
             }
         }
         return Optional.empty();
+    }
+
+    private static ItemHandInResult handInRequiredObjectiveItems(DialogueContext context, QuestDefinition definition) {
+        List<QuestDefinition.Objective> requiredItemHandIns = new ArrayList<>();
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            if (!objective.optional()
+                    && objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK
+                    && objective.consume()
+                    && objective.item() != null) {
+                requiredItemHandIns.add(objective);
+            }
+        }
+        if (requiredItemHandIns.isEmpty()) {
+            return ItemHandInResult.SUCCESS;
+        }
+        List<ItemStack> handInStacks = previewObjectiveItemStacks(context.player(), requiredItemHandIns)
+                .orElse(null);
+        if (handInStacks == null) {
+            return ItemHandInResult.MISSING_ITEMS;
+        }
+        if (!VillagerInventoryAccess.canAddItems(context.villager(), handInStacks)) {
+            return ItemHandInResult.NO_ROOM;
+        }
+        if (!removeSpecificPlayerStacks(context.player(), handInStacks)) {
+            return ItemHandInResult.MISSING_ITEMS;
+        }
+        for (ItemStack stack : handInStacks) {
+            ItemStack remainder = VillagerInventoryAccess.addItem(context.villager(), stack.copy());
+            if (!remainder.isEmpty()) {
+                context.player().addItem(remainder);
+            }
+        }
+        return ItemHandInResult.SUCCESS;
+    }
+
+    private static Optional<List<ItemStack>> previewObjectiveItemStacks(
+            ServerPlayer player,
+            List<QuestDefinition.Objective> requiredObjectives) {
+        List<ItemStack> handInStacks = new ArrayList<>();
+        List<ItemStack> availableStacks = removablePlayerStacks(player).stream()
+                .map(ItemStack::copy)
+                .toList();
+        for (QuestDefinition.Objective objective : requiredObjectives) {
+            Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
+            if (item.isEmpty()) {
+                return Optional.empty();
+            }
+            int remaining = objective.count();
+            for (ItemStack stack : availableStacks) {
+                if (remaining <= 0) {
+                    break;
+                }
+                if (!matchesObjectiveItem(stack, objective, item.get())) {
+                    continue;
+                }
+                int removed = Math.min(remaining, stack.getCount());
+                handInStacks.add(stack.copyWithCount(removed));
+                stack.shrink(removed);
+                remaining -= removed;
+            }
+            if (remaining > 0) {
+                return Optional.empty();
+            }
+        }
+        return Optional.of(List.copyOf(handInStacks));
+    }
+
+    private static boolean matchesObjectiveItem(
+            ItemStack stack,
+            QuestDefinition.Objective objective,
+            Item item) {
+        if (stack.isEmpty() || !stack.is(item)) {
+            return false;
+        }
+        QuestDefinition.ItemRequirements requirements = objective.itemRequirements();
+        if (!requirements.enchantments().isEmpty()
+                && requirements.enchantments().stream().anyMatch(requirement -> !matchesEnchantment(stack, requirement))) {
+            return false;
+        }
+        if ((requirements.minDurability().isPresent()
+                || requirements.maxDurability().isPresent()
+                || requirements.minDurabilityPercent().isPresent()
+                || requirements.maxDurabilityPercent().isPresent())
+                && !matchesDurability(stack, requirements)) {
+            return false;
+        }
+        if (requirements.hasCustomData() && !matchesCustomData(stack, requirements.customData())) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean matchesEnchantment(ItemStack stack, QuestDefinition.EnchantmentRequirement requirement) {
+        int level = Math.max(
+                enchantmentLevel(stack.getEnchantments(), requirement.id()),
+                enchantmentLevel(stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY), requirement.id()));
+        return level > 0
+                && requirement.minLevel().stream().allMatch(min -> level >= min)
+                && requirement.maxLevel().stream().allMatch(max -> level <= max);
+    }
+
+    private static int enchantmentLevel(ItemEnchantments enchantments, ResourceLocation id) {
+        int level = 0;
+        for (var entry : enchantments.entrySet()) {
+            Holder<Enchantment> holder = entry.getKey();
+            if (holder.unwrapKey().map(key -> key.location().equals(id)).orElse(false)) {
+                level = Math.max(level, entry.getIntValue());
+            }
+        }
+        return level;
+    }
+
+    private static boolean matchesDurability(ItemStack stack, QuestDefinition.ItemRequirements requirements) {
+        int maximum = stack.isDamageableItem() ? Math.max(0, stack.getMaxDamage()) : 0;
+        int remaining = stack.isDamageableItem() ? Math.max(0, maximum - stack.getDamageValue()) : 0;
+        int percent = maximum <= 0 ? 0 : Math.round(remaining * 100.0F / maximum);
+        return requirements.minDurability().stream().allMatch(min -> remaining >= min)
+                && requirements.maxDurability().stream().allMatch(max -> remaining <= max)
+                && requirements.minDurabilityPercent().stream().allMatch(min -> percent >= min)
+                && requirements.maxDurabilityPercent().stream().allMatch(max -> percent <= max);
+    }
+
+    private static boolean matchesCustomData(ItemStack stack, CompoundTag requiredData) {
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        return containsTagSubset(customData.copyTag(), requiredData);
+    }
+
+    private static boolean containsTagSubset(CompoundTag actual, CompoundTag required) {
+        for (String key : required.getAllKeys()) {
+            Tag requiredChild = required.get(key);
+            Tag actualChild = actual.get(key);
+            if (requiredChild == null || actualChild == null) {
+                return false;
+            }
+            if (requiredChild instanceof CompoundTag requiredCompound) {
+                if (!(actualChild instanceof CompoundTag actualCompound)
+                        || !containsTagSubset(actualCompound, requiredCompound)) {
+                    return false;
+                }
+                continue;
+            }
+            if (requiredChild instanceof NumericTag requiredNumber && actualChild instanceof NumericTag actualNumber) {
+                if (Double.compare(requiredNumber.getAsDouble(), actualNumber.getAsDouble()) != 0) {
+                    return false;
+                }
+                continue;
+            }
+            if (!requiredChild.equals(actualChild)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean removeSpecificPlayerStacks(ServerPlayer player, List<ItemStack> handInStacks) {
+        if (!canRemoveSpecificPlayerStacks(player, handInStacks)) {
+            return false;
+        }
+        for (ItemStack handInStack : handInStacks) {
+            int remaining = handInStack.getCount();
+            for (ItemStack stack : removablePlayerStacks(player)) {
+                if (remaining <= 0) {
+                    break;
+                }
+                if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, handInStack)) {
+                    continue;
+                }
+                int removed = Math.min(remaining, stack.getCount());
+                stack.shrink(removed);
+                remaining -= removed;
+            }
+        }
+        player.getInventory().setChanged();
+        return true;
+    }
+
+    private static boolean canRemoveSpecificPlayerStacks(ServerPlayer player, List<ItemStack> handInStacks) {
+        List<ItemStack> availableStacks = removablePlayerStacks(player).stream()
+                .map(ItemStack::copy)
+                .toList();
+        for (ItemStack handInStack : handInStacks) {
+            int remaining = handInStack.getCount();
+            for (ItemStack stack : availableStacks) {
+                if (remaining <= 0) {
+                    break;
+                }
+                if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, handInStack)) {
+                    continue;
+                }
+                int removed = Math.min(remaining, stack.getCount());
+                stack.shrink(removed);
+                remaining -= removed;
+            }
+            if (remaining > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static List<ItemStack> removablePlayerStacks(ServerPlayer player) {
+        List<ItemStack> stacks = new ArrayList<>(player.getInventory().items);
+        stacks.addAll(player.getInventory().offhand);
+        return stacks;
     }
 
     private static void awardRewards(DialogueContext context, QuestDefinition definition) {
@@ -1280,7 +1540,7 @@ public final class VillagerQuestService {
                 status,
                 issuer,
                 issuerLocation,
-                questItems(definition, progress)
+                questItems(player, definition, progress)
         );
     }
 
@@ -1577,13 +1837,15 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
-        if (progress != null && progress.objectiveComplete(objective.id())) {
+        if (progress != null
+                && objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK
+                && progress.objectiveComplete(objective.id())) {
             return 1.0F;
         }
         return switch (objective.type()) {
             case ITEM_CHECK -> objective.item() == null
                     ? 0.0F
-                    : Mth.clamp((float) itemCount(player, objective.item()) / (float) objective.count(), 0.0F, 1.0F);
+                    : Mth.clamp((float) itemCount(player, objective) / (float) objective.count(), 0.0F, 1.0F);
             case STRUCTURE_VISIT, CONDITION -> progress != null
                     && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective)
                     ? 1.0F
@@ -1630,6 +1892,7 @@ public final class VillagerQuestService {
     }
 
     private static List<QuestTrackerSyncPayload.QuestItem> questItems(
+            ServerPlayer player,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
         if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
@@ -1643,7 +1906,8 @@ public final class VillagerQuestService {
             }
             if (progress != null
                     && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
-                    && progress.objectiveComplete(objective.id())) {
+                    && progress.objectiveComplete(objective.id())
+                    && hasItemCount(player, objective)) {
                 continue;
             }
             addQuestItem(items, objective.item(), objective.count());
@@ -1841,6 +2105,20 @@ public final class VillagerQuestService {
 
         public VillagerDialogueService.DialogueResult dialogueResult() {
             return new VillagerDialogueService.DialogueResult(this.lineId, this.text);
+        }
+    }
+
+    private enum ItemHandInResult {
+        SUCCESS("completed", ""),
+        MISSING_ITEMS("missing_objectives", "There is still more to do before this is ready."),
+        NO_ROOM("inventory_full", "I do not have room in my inventory for that.");
+
+        private final String status;
+        private final String message;
+
+        ItemHandInResult(String status, String message) {
+            this.status = status;
+            this.message = message;
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
@@ -19,8 +20,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.ByteTag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -270,8 +280,163 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readInt(entry, "discovery_radius", DEFAULT_DISCOVERY_RADIUS),
                 item,
                 DatapackJsonReader.readInt(entry, "count", 1),
+                DatapackJsonReader.readBoolean(entry, "consume", true),
+                readObjectiveItemRequirements(entry),
                 conditions,
                 readObjectiveTracker(entry)));
+    }
+
+    private static QuestDefinition.ItemRequirements readObjectiveItemRequirements(JsonObject entry) {
+        OptionalInt minEnchantmentLevel = readOptionalInt(entry, "min_enchantment_level");
+        OptionalInt maxEnchantmentLevel = readOptionalInt(entry, "max_enchantment_level");
+        List<QuestDefinition.EnchantmentRequirement> enchantments = new ArrayList<>();
+        readEnchantmentRequirements(entry.get("enchantment"), minEnchantmentLevel, maxEnchantmentLevel, enchantments);
+        readEnchantmentRequirements(entry.get("enchantments"), minEnchantmentLevel, maxEnchantmentLevel, enchantments);
+        return new QuestDefinition.ItemRequirements(
+                enchantments,
+                readOptionalInt(entry, "min_durability"),
+                readOptionalInt(entry, "max_durability"),
+                readOptionalInt(entry, "min_durability_percent"),
+                readOptionalInt(entry, "max_durability_percent"),
+                readCustomData(entry));
+    }
+
+    private static void readEnchantmentRequirements(
+            JsonElement element,
+            OptionalInt fallbackMinLevel,
+            OptionalInt fallbackMaxLevel,
+            List<QuestDefinition.EnchantmentRequirement> enchantments) {
+        if (element == null) {
+            return;
+        }
+        if (element.isJsonPrimitive()) {
+            readEnchantmentRequirement(element.getAsString(), fallbackMinLevel, fallbackMaxLevel)
+                    .ifPresent(enchantments::add);
+            return;
+        }
+        if (element.isJsonObject()) {
+            readEnchantmentRequirement(element.getAsJsonObject(), fallbackMinLevel, fallbackMaxLevel)
+                    .ifPresent(enchantments::add);
+            return;
+        }
+        if (!element.isJsonArray()) {
+            return;
+        }
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (child.isJsonPrimitive()) {
+                readEnchantmentRequirement(child.getAsString(), fallbackMinLevel, fallbackMaxLevel)
+                        .ifPresent(enchantments::add);
+            } else if (child.isJsonObject()) {
+                readEnchantmentRequirement(child.getAsJsonObject(), fallbackMinLevel, fallbackMaxLevel)
+                        .ifPresent(enchantments::add);
+            }
+        }
+    }
+
+    private static Optional<QuestDefinition.EnchantmentRequirement> readEnchantmentRequirement(
+            JsonObject entry,
+            OptionalInt fallbackMinLevel,
+            OptionalInt fallbackMaxLevel) {
+        String id = firstNonBlank(
+                DatapackJsonReader.readString(entry, "id"),
+                firstNonBlank(
+                        DatapackJsonReader.readString(entry, "enchantment"),
+                        DatapackJsonReader.readString(entry, "name")));
+        OptionalInt minLevel = firstPresent(readOptionalInt(entry, "min_level"), fallbackMinLevel);
+        OptionalInt maxLevel = firstPresent(readOptionalInt(entry, "max_level"), fallbackMaxLevel);
+        return readEnchantmentRequirement(id, minLevel, maxLevel);
+    }
+
+    private static Optional<QuestDefinition.EnchantmentRequirement> readEnchantmentRequirement(
+            String id,
+            OptionalInt minLevel,
+            OptionalInt maxLevel) {
+        if (id == null || id.isBlank()) {
+            return Optional.empty();
+        }
+        ResourceLocation location = ResourceLocation.tryParse(id.contains(":") ? id : "minecraft:" + id);
+        if (location == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new QuestDefinition.EnchantmentRequirement(location, minLevel, maxLevel));
+    }
+
+    private static OptionalInt readOptionalInt(JsonObject entry, String key) {
+        return DatapackJsonReader.readOptionalInt(entry, key)
+                .map(OptionalInt::of)
+                .orElseGet(OptionalInt::empty);
+    }
+
+    private static OptionalInt firstPresent(OptionalInt first, OptionalInt second) {
+        return first.isPresent() ? first : second;
+    }
+
+    private static CompoundTag readCustomData(JsonObject entry) {
+        JsonElement customData = entry.get("custom_data");
+        if (customData == null) {
+            customData = entry.get("nbt");
+        }
+        if (customData == null || !customData.isJsonObject()) {
+            return null;
+        }
+        return readCompoundTag(customData.getAsJsonObject());
+    }
+
+    private static CompoundTag readCompoundTag(JsonObject object) {
+        CompoundTag tag = new CompoundTag();
+        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            Tag child = readTag(entry.getValue());
+            if (child != null) {
+                tag.put(entry.getKey(), child);
+            }
+        }
+        return tag;
+    }
+
+    private static Tag readTag(JsonElement element) {
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        if (element.isJsonObject()) {
+            return readCompoundTag(element.getAsJsonObject());
+        }
+        if (element.isJsonArray()) {
+            ListTag list = new ListTag();
+            for (JsonElement child : element.getAsJsonArray()) {
+                Tag childTag = readTag(child);
+                if (childTag != null) {
+                    try {
+                        list.add(childTag);
+                    } catch (UnsupportedOperationException ignored) {
+                        // NBT lists require one contained tag type; incompatible JSON entries are ignored.
+                    }
+                }
+            }
+            return list;
+        }
+        if (!element.isJsonPrimitive()) {
+            return null;
+        }
+        JsonPrimitive primitive = element.getAsJsonPrimitive();
+        if (primitive.isBoolean()) {
+            return ByteTag.valueOf(primitive.getAsBoolean());
+        }
+        if (primitive.isNumber()) {
+            String value = primitive.getAsString();
+            if (value.contains(".") || value.contains("e") || value.contains("E")) {
+                return DoubleTag.valueOf(primitive.getAsDouble());
+            }
+            try {
+                return IntTag.valueOf(Integer.parseInt(value));
+            } catch (NumberFormatException ignored) {
+                try {
+                    return LongTag.valueOf(primitive.getAsLong());
+                } catch (NumberFormatException ignoredToo) {
+                    return DoubleTag.valueOf(primitive.getAsDouble());
+                }
+            }
+        }
+        return StringTag.valueOf(primitive.getAsString());
     }
 
     private static ResourceKey<Level> readDimension(JsonObject object) {

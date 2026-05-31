@@ -783,11 +783,23 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "type",
       "optional",
       "structure",
+      "dimension",
       "pieces",
       "search_radius",
       "discovery_radius",
       "item",
       "count",
+      "consume",
+      "enchantment",
+      "enchantments",
+      "min_enchantment_level",
+      "max_enchantment_level",
+      "min_durability",
+      "max_durability",
+      "min_durability_percent",
+      "max_durability_percent",
+      "custom_data",
+      "nbt",
       "conditions",
       "tracker"
     ]));
@@ -795,11 +807,14 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     const type = normalizedString(objective.type);
     checkOptionalBoolean(file, objective, objectiveLocation, "optional");
     checkOptionalString(file, objective, objectiveLocation, "structure");
+    checkOptionalString(file, objective, objectiveLocation, "dimension");
     checkStringList(file, objective, objectiveLocation, ["pieces"], "structure piece");
     checkOptionalInteger(file, objective, objectiveLocation, "search_radius", { min: 1 });
     checkOptionalInteger(file, objective, objectiveLocation, "discovery_radius", { min: 1 });
     checkOptionalString(file, objective, objectiveLocation, "item");
     checkOptionalInteger(file, objective, objectiveLocation, "count", { min: 1 });
+    checkOptionalBoolean(file, objective, objectiveLocation, "consume");
+    checkQuestObjectiveItemRequirements(file, objective, objectiveLocation);
     checkConditions(file, objective, objectiveLocation, defaultQuestId);
     checkQuestObjectiveTracker(file, objective.tracker, `${objectiveLocation}.tracker`);
 
@@ -813,6 +828,55 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       errors.push(`${relative(file)}: ${objectiveLocation}.conditions is required for a condition objective.`);
     }
   }
+}
+
+function checkQuestObjectiveItemRequirements(file, objective, location) {
+  checkOptionalInteger(file, objective, location, "min_enchantment_level", { min: 1 });
+  checkOptionalInteger(file, objective, location, "max_enchantment_level", { min: 1 });
+  for (const key of ["min_durability", "max_durability", "min_durability_percent", "max_durability_percent"]) {
+    checkOptionalInteger(file, objective, location, key, { min: 0 });
+  }
+  for (const key of ["enchantment", "enchantments"]) {
+    checkQuestObjectiveEnchantments(file, objective[key], `${location}.${key}`);
+  }
+  for (const key of ["custom_data", "nbt"]) {
+    const value = objective[key];
+    if (value !== undefined && (!value || typeof value !== "object" || Array.isArray(value))) {
+      errors.push(`${relative(file)}: ${location}.${key} must be an object.`);
+    }
+  }
+}
+
+function checkQuestObjectiveEnchantments(file, value, location) {
+  if (value === undefined) {
+    return;
+  }
+  const checkOne = (entry, entryLocation) => {
+    if (typeof entry === "string") {
+      if (!entry.trim()) {
+        errors.push(`${relative(file)}: ${entryLocation} must be a nonblank string.`);
+      }
+      return;
+    }
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      errors.push(`${relative(file)}: ${entryLocation} must be a string or object.`);
+      return;
+    }
+    checkUnknownObjectKeys(file, entry, entryLocation, new Set(["id", "enchantment", "name", "min_level", "max_level"]));
+    if (!stringValue(entry.id) && !stringValue(entry.enchantment) && !stringValue(entry.name)) {
+      errors.push(`${relative(file)}: ${entryLocation} must define id, enchantment, or name.`);
+    }
+    checkOptionalString(file, entry, entryLocation, "id");
+    checkOptionalString(file, entry, entryLocation, "enchantment");
+    checkOptionalString(file, entry, entryLocation, "name");
+    checkOptionalInteger(file, entry, entryLocation, "min_level", { min: 1 });
+    checkOptionalInteger(file, entry, entryLocation, "max_level", { min: 1 });
+  };
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => checkOne(entry, `${location}[${index}]`));
+    return;
+  }
+  checkOne(value, location);
 }
 
 function checkQuestObjectiveTracker(file, tracker, location) {

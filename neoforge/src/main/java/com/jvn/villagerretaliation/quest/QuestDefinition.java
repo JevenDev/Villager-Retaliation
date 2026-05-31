@@ -9,7 +9,9 @@ import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -151,6 +153,8 @@ public record QuestDefinition(
             int discoveryRadius,
             ResourceLocation item,
             int count,
+            boolean consume,
+            ItemRequirements itemRequirements,
             List<DialogueCondition> conditions,
             ObjectiveTracker tracker
     ) {
@@ -161,8 +165,50 @@ public record QuestDefinition(
             searchRadius = Math.max(1, searchRadius);
             discoveryRadius = Math.max(1, discoveryRadius);
             count = Math.max(1, count);
+            itemRequirements = itemRequirements == null ? ItemRequirements.EMPTY : itemRequirements;
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
             tracker = tracker == null ? ObjectiveTracker.EMPTY : tracker;
+        }
+    }
+
+    public record ItemRequirements(
+            List<EnchantmentRequirement> enchantments,
+            OptionalInt minDurability,
+            OptionalInt maxDurability,
+            OptionalInt minDurabilityPercent,
+            OptionalInt maxDurabilityPercent,
+            CompoundTag customData
+    ) {
+        public static final ItemRequirements EMPTY = new ItemRequirements(
+                List.of(),
+                OptionalInt.empty(),
+                OptionalInt.empty(),
+                OptionalInt.empty(),
+                OptionalInt.empty(),
+                null);
+
+        public ItemRequirements {
+            enchantments = enchantments == null ? List.of() : List.copyOf(enchantments);
+            minDurability = minDurability == null ? OptionalInt.empty() : minDurability;
+            maxDurability = maxDurability == null ? OptionalInt.empty() : maxDurability;
+            minDurabilityPercent = minDurabilityPercent == null ? OptionalInt.empty() : minDurabilityPercent;
+            maxDurabilityPercent = maxDurabilityPercent == null ? OptionalInt.empty() : maxDurabilityPercent;
+            customData = customData == null ? null : customData.copy();
+        }
+
+        public boolean hasCustomData() {
+            return this.customData != null && !this.customData.isEmpty();
+        }
+    }
+
+    public record EnchantmentRequirement(
+            ResourceLocation id,
+            OptionalInt minLevel,
+            OptionalInt maxLevel
+    ) {
+        public EnchantmentRequirement {
+            minLevel = minLevel == null ? OptionalInt.empty() : minLevel;
+            maxLevel = maxLevel == null ? OptionalInt.empty() : maxLevel;
         }
     }
 

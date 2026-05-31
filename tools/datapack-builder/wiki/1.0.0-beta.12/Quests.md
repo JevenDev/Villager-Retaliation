@@ -129,11 +129,33 @@ Use `objectives` for extra completion rules beyond the top-level `target` visit/
 | `type` | enum | `structure_visit`, `item_check`, or `condition`. |
 | `optional` | boolean | Optional objectives can complete and show progress without blocking turn-in. |
 | `structure`, `dimension`, `pieces`, `search_radius`, `discovery_radius` | target fields | Used by `structure_visit`. `dimension` is optional; when omitted, the quest searches the villager's current dimension first and then other server dimensions. |
-| `item`, `count` | item fields | Used by `item_check`. |
+| `item`, `count`, `consume` | item fields | Used by `item_check`. `consume` defaults to `true`; consumed quest items are moved into the quest villager's inventory and turn-in fails if the villager has no room. Set it to `false` when the player only needs to possess the item at turn-in. |
+| `enchantment`, `enchantments` | string, object, or array | Optional `item_check` filters. Every listed enchantment must be present on the item or enchanted book. Object entries use `id`, `min_level`, and `max_level`. |
+| `min_durability`, `max_durability`, `min_durability_percent`, `max_durability_percent` | integer | Optional `item_check` durability filters for damageable items. Percent values use remaining durability from `0` to `100`. |
+| `custom_data` / `nbt` | object | Optional `item_check` custom data subset. The stack must contain these custom data keys and values; extra stack data is allowed. |
 | `conditions` | array | Used by `condition`; all conditions must match. |
 | `tracker` | object | Optional objective-specific tracker text. |
 
 Objective tracker fields are `text`, `complete_text`, `show_progress`, `progress`, and `metadata`.
+
+Example item check that only accepts a named custom token with Sharpness III or higher:
+
+```json
+{
+  "type": "item_check",
+  "item": "minecraft:diamond_sword",
+  "count": 1,
+  "consume": true,
+  "enchantments": [
+    { "id": "minecraft:sharpness", "min_level": 3 }
+  ],
+  "custom_data": {
+    "villagerretaliation": {
+      "quest_token": "larder"
+    }
+  }
+}
+```
 
 ### Conditional Active State
 
@@ -297,7 +319,7 @@ Quest triggers and dialogue trees use the same shared action parser. Prefer expl
 | `reputation` / `rep` | `amount` or `reputation` | Changes direct reputation with the acting villager. |
 | `gossip` / `gossip_reputation` | `amount`, `gossip`, or `gossip_reputation` | Spreads village gossip reputation. |
 | `memory` / `memory_event` | `memory_event` | Records a village event memory. |
-| `loot` / `loot_table` | `loot_table` | Gives loot from the referenced loot table. |
+| `loot` / `loot_table` | `loot_table` | Gives loot from the referenced loot table. Use a vanilla loot table/item modifier when a reward needs specific components, enchantments, or custom data. |
 
 Continuous triggers default to a 30-second cooldown if no `cooldown_ticks`, `cooldown_seconds`, or `cooldown_days` value is set. Lifecycle triggers default to no cooldown.
 
