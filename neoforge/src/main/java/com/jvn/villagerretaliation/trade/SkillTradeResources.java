@@ -3,19 +3,16 @@ package com.jvn.villagerretaliation.trade;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.mojang.logging.LogUtils;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,7 +20,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.HashSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -168,12 +164,10 @@ public final class SkillTradeResources {
 
     private static SkillTradePoolData read(MinecraftServer server) {
         Map<ResourceLocation, SkillTradeDefinition> definitions = new LinkedHashMap<>();
-        server.getResourceManager()
-                .listResources(SKILL_TRADE_ROOT, location -> location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), definitions));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                SKILL_TRADE_ROOT,
+                (location, resource) -> readFile(location, resource, definitions));
         LOGGER.info("Loaded {} Villager Retaliation skill trade definitions.", definitions.size());
         return new SkillTradePoolData(List.copyOf(definitions.values()));
     }
@@ -182,17 +176,14 @@ public final class SkillTradeResources {
             ResourceLocation location,
             Resource resource,
             Map<ResourceLocation, SkillTradeDefinition> definitions) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "skill trade", resource).ifPresent(root -> {
             DatapackDiagnostics.warnUnknownRootKeys(location, "skill trades", root, ROOT_KEYS);
             if (readBoolean(root, "replace", false)) {
                 definitions.clear();
                 LOGGER.info("Villager Retaliation skill trade file {} requested global replace.", location);
             }
             readEntries(location, root, definitions);
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            LOGGER.warn("Villager Retaliation could not read skill trade file {}. It will be skipped.", location, exception);
-        }
+        });
     }
 
     private static void readEntries(

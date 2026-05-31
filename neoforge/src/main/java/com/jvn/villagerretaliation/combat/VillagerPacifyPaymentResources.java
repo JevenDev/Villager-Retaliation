@@ -3,16 +3,12 @@ package com.jvn.villagerretaliation.combat;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -106,23 +102,17 @@ public final class VillagerPacifyPaymentResources {
 
     private static PaymentRules read(MinecraftServer server) {
         List<PaymentRule> paymentRules = new ArrayList<>();
-        server.getResourceManager()
-                .listResources(PACIFICATION_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
-                        && location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), paymentRules));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                PACIFICATION_ROOT,
+                location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
+                (location, resource) -> readFile(location, resource, paymentRules));
         return new PaymentRules(List.copyOf(paymentRules));
     }
 
     private static void readFile(ResourceLocation location, Resource resource, List<PaymentRule> paymentRules) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            readPaymentRules(location, root, paymentRules);
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            // Invalid payment resources are ignored so one datapack file cannot break pacification.
-        }
+        DatapackResourceLoader.readObject(location, "pacification payment", resource)
+                .ifPresent(root -> readPaymentRules(location, root, paymentRules));
     }
 
     private static void readPaymentRules(ResourceLocation location, JsonObject root, List<PaymentRule> paymentRules) {

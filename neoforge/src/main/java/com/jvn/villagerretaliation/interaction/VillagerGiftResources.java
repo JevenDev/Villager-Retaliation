@@ -3,16 +3,13 @@ package com.jvn.villagerretaliation.interaction;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.toucanlib.util.ToucanRandom;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -177,13 +174,11 @@ public final class VillagerGiftResources {
     private static GiftPool read(MinecraftServer server) {
         Map<String, GiftPreferenceRule> preferenceRules = new LinkedHashMap<>();
         Map<String, GiftRewardRule> rewardRules = new LinkedHashMap<>();
-        server.getResourceManager()
-                .listResources(GIFT_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
-                        && location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), preferenceRules, rewardRules));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                GIFT_ROOT,
+                location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
+                (location, resource) -> readFile(location, resource, preferenceRules, rewardRules));
         return new GiftPool(List.copyOf(preferenceRules.values()), List.copyOf(rewardRules.values()));
     }
 
@@ -192,17 +187,14 @@ public final class VillagerGiftResources {
             Resource resource,
             Map<String, GiftPreferenceRule> preferenceRules,
             Map<String, GiftRewardRule> rewardRules) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "gift", resource).ifPresent(root -> {
             if (readBoolean(root, "replace", false)) {
                 preferenceRules.clear();
                 rewardRules.clear();
             }
             readPreferenceRules(location, root, preferenceRules);
             readRewardRules(location, root, rewardRules);
-        } catch (IOException | IllegalStateException exception) {
-            // Invalid gift resources are ignored so one bad datapack file cannot break every gift.
-        }
+        });
     }
 
     private static void readPreferenceRules(

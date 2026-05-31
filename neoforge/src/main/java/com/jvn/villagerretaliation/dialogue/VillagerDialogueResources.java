@@ -3,14 +3,13 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
 import com.jvn.villagerretaliation.util.VillagerLocale;
@@ -18,8 +17,6 @@ import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -402,14 +399,12 @@ public final class VillagerDialogueResources {
         Map<String, ResourceLocation> pacifySources = new HashMap<>();
         Map<String, ResourceLocation> optionSources = new HashMap<>();
         Map<String, ResourceLocation> messageSources = new HashMap<>();
-        server.getResourceManager()
-                .listResources(root, location -> location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(
-                        entry.getKey(),
-                        entry.getValue(),
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                root,
+                (location, resource) -> readFile(
+                        location,
+                        resource,
                         locale,
                         lines,
                         openings,
@@ -441,8 +436,7 @@ public final class VillagerDialogueResources {
             Map<String, ResourceLocation> pacifySources,
             Map<String, ResourceLocation> optionSources,
             Map<String, ResourceLocation> messageSources) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "dialogue", resource).ifPresent(root -> {
             DialogueEntryMetadata rootMetadata = DialogueEntryMetadata.read(location, "dialogue", "file root", root);
             if (readBoolean(root, "replace", false)) {
                 clearAllSections(
@@ -513,9 +507,7 @@ public final class VillagerDialogueResources {
             readConversationLines(location, root, "openings", defaultProfessions, openings, openingSources);
             readConversationLines(location, root, "closings", defaultProfessions, closings, closingSources);
             readPacifyLines(location, root, defaultProfessions, pacifyLines, pacifySources);
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            DatapackDiagnostics.warnSkippedFile(location, "dialogue", exception);
-        }
+        });
     }
 
     private static void clearAllSections(

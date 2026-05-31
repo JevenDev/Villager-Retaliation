@@ -3,16 +3,13 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -107,12 +104,10 @@ public final class DialogueTreeResources {
             Map<ResourceLocation, DialogueTreeDefinition> trees,
             Map<ResourceLocation, ResourceLocation> sources) {
         String root = RESOURCE_ROOT + locale;
-        server.getResourceManager()
-                .listResources(root, location -> location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), locale, trees, sources));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                root,
+                (location, resource) -> readFile(location, resource, locale, trees, sources));
     }
 
     private static void readFile(
@@ -121,8 +116,7 @@ public final class DialogueTreeResources {
             String locale,
             Map<ResourceLocation, DialogueTreeDefinition> trees,
             Map<ResourceLocation, ResourceLocation> sources) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "dialogue tree", resource).ifPresent(root -> {
             DialogueTreeDefinition definition = readTree(location, root, fallbackTreeId(location, locale));
             if (definition == null) {
                 return;
@@ -132,9 +126,7 @@ public final class DialogueTreeResources {
                 DatapackDiagnostics.warnDuplicateId(location, "dialogue tree", definition.id().toString(), previous);
             }
             trees.put(definition.id(), definition);
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            DatapackDiagnostics.warnSkippedFile(location, "dialogue tree", exception);
-        }
+        });
     }
 
     private static DialogueTreeDefinition readTree(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {

@@ -1,18 +1,13 @@
 package com.jvn.villagerretaliation.event;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -61,12 +56,10 @@ public final class VillagerEventTriggerResources {
     private static Map<ResourceLocation, VillagerEventTriggerDefinition> read(MinecraftServer server) {
         Map<ResourceLocation, VillagerEventTriggerDefinition> triggers = new LinkedHashMap<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
-        server.getResourceManager()
-                .listResources(RESOURCE_ROOT, location -> location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), triggers, sources));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                RESOURCE_ROOT,
+                (location, resource) -> readFile(location, resource, triggers, sources));
         return Map.copyOf(triggers);
     }
 
@@ -75,8 +68,7 @@ public final class VillagerEventTriggerResources {
             Resource resource,
             Map<ResourceLocation, VillagerEventTriggerDefinition> triggers,
             Map<ResourceLocation, ResourceLocation> sources) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "villager event trigger", resource).ifPresent(root -> {
             VillagerEventTriggerDefinition definition = readTrigger(location, root, fallbackId(location));
             if (definition == null) {
                 return;
@@ -86,9 +78,7 @@ public final class VillagerEventTriggerResources {
                 DatapackDiagnostics.warnDuplicateId(location, "villager event trigger", definition.id().toString(), previous);
             }
             triggers.put(definition.id(), definition);
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            DatapackDiagnostics.warnSkippedFile(location, "villager event trigger", exception);
-        }
+        });
     }
 
     private static VillagerEventTriggerDefinition readTrigger(
@@ -120,7 +110,7 @@ public final class VillagerEventTriggerResources {
                 VillagerEventTriggerDefinition.Scope.bySerializedName(DatapackJsonReader.readString(root, "scope")),
                 DialogueCondition.readList(location, "villager event trigger \"" + id + "\"", root),
                 actions,
-                readDurationTicks(root, "cooldown", 0L),
+                DatapackJsonReader.readDurationTicks(root, "cooldown", 0L),
                 repeatable);
     }
 
@@ -135,34 +125,6 @@ public final class VillagerEventTriggerResources {
                             "invalid memory tag \"" + value + "\"."));
         }
         return Set.copyOf(values);
-    }
-
-    private static long readDurationTicks(JsonObject object, String baseName, long fallback) {
-        Long ticks = readNullableLong(object, baseName + "_ticks");
-        if (ticks != null) {
-            return Math.max(0L, ticks);
-        }
-        Long days = readNullableLong(object, baseName + "_days");
-        if (days != null) {
-            return Math.max(0L, days * 24000L);
-        }
-        Long seconds = readNullableLong(object, baseName + "_seconds");
-        if (seconds != null) {
-            return Math.max(0L, seconds * 20L);
-        }
-        return fallback;
-    }
-
-    private static Long readNullableLong(JsonObject object, String key) {
-        JsonElement element = object.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            return null;
-        }
-        try {
-            return element.getAsLong();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return null;
-        }
     }
 
     private static ResourceLocation fallbackId(ResourceLocation location) {

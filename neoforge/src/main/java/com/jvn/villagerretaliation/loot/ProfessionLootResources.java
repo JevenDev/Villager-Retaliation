@@ -3,17 +3,14 @@ package com.jvn.villagerretaliation.loot;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.toucanlib.util.ToucanRandom;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -132,26 +129,21 @@ public final class ProfessionLootResources {
 
     private static ProfessionLootRulePool read(MinecraftServer server) {
         Map<String, ProfessionLootRule> rules = new LinkedHashMap<>();
-        server.getResourceManager()
-                .listResources(PROFESSION_LOOT_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
-                        && location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), rules));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                PROFESSION_LOOT_ROOT,
+                location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
+                (location, resource) -> readFile(location, resource, rules));
         return new ProfessionLootRulePool(List.copyOf(rules.values()));
     }
 
     private static void readFile(ResourceLocation location, Resource resource, Map<String, ProfessionLootRule> rules) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "profession loot", resource).ifPresent(root -> {
             if (readBoolean(root, "replace", false)) {
                 rules.clear();
             }
             readRules(location, root, rules);
-        } catch (IOException | IllegalStateException exception) {
-            // Invalid profession loot resources are ignored so one bad datapack file cannot break every drop.
-        }
+        });
     }
 
     private static void readRules(ResourceLocation location, JsonObject root, Map<String, ProfessionLootRule> rules) {

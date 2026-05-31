@@ -3,21 +3,18 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -132,12 +129,10 @@ public final class ForcedDialogueResources {
 
     private static List<ForcedDialogueDefinition> read(MinecraftServer server) {
         Map<String, ForcedDialogueDefinition> definitions = new LinkedHashMap<>();
-        server.getResourceManager()
-                .listResources(RESOURCE_ROOT, location -> location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), definitions));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                RESOURCE_ROOT,
+                (location, resource) -> readFile(location, resource, definitions));
         return List.copyOf(definitions.values());
     }
 
@@ -145,8 +140,7 @@ public final class ForcedDialogueResources {
             ResourceLocation location,
             Resource resource,
             Map<String, ForcedDialogueDefinition> definitions) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "forced dialogue", resource).ifPresent(root -> {
             DatapackDiagnostics.warnMisplacedRootKeys(location, "forced dialogue", root, Map.of(
                     "notifications", "data/villagerretaliation/notifications/<locale>/<file>.json",
                     "messages", "data/villagerretaliation/dialogue/<locale>/<file>.json",
@@ -169,9 +163,7 @@ public final class ForcedDialogueResources {
             }
 
             readEntry(location, root, 0, defaultQuestId).ifPresent(definition -> putDefinition(location, definitions, definition));
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            DatapackDiagnostics.warnSkippedFile(location, "forced dialogue", exception);
-        }
+        });
     }
 
     private static void putDefinition(

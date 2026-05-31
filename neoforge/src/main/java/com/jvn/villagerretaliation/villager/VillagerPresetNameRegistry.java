@@ -3,14 +3,12 @@ package com.jvn.villagerretaliation.villager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
-import java.io.IOException;
-import java.io.Reader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -181,23 +179,21 @@ public final class VillagerPresetNameRegistry {
         List<String> maleNames = new ArrayList<>();
         List<String> femaleNames = new ArrayList<>();
         List<String> fallbackNames = new ArrayList<>();
-        server.getResourceManager()
-                .listResources(VILLAGER_NAMES_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
-                        && location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readNameFile(entry.getValue(), maleNames, femaleNames, fallbackNames));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                VILLAGER_NAMES_ROOT,
+                location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
+                (location, resource) -> readNameFile(location, resource, maleNames, femaleNames, fallbackNames));
         return new NamePool(List.copyOf(maleNames), List.copyOf(femaleNames), List.copyOf(fallbackNames));
     }
 
     private static void readNameFile(
+            ResourceLocation location,
             Resource resource,
             List<String> maleNames,
             List<String> femaleNames,
             List<String> fallbackNames) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "villager names", resource).ifPresent(root -> {
             if (readBoolean(root, "replace", false)) {
                 maleNames.clear();
                 femaleNames.clear();
@@ -206,9 +202,7 @@ public final class VillagerPresetNameRegistry {
             maleNames.addAll(readNames(root.getAsJsonArray("male_names")));
             femaleNames.addAll(readNames(root.getAsJsonArray("female_names")));
             fallbackNames.addAll(readNames(root.getAsJsonArray("names")));
-        } catch (IOException | IllegalStateException exception) {
-            // Invalid name resources are ignored so one custom list cannot break every preset name.
-        }
+        });
     }
 
     private static List<String> readNames(JsonArray names) {

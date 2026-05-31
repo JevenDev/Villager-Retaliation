@@ -3,21 +3,18 @@ package com.jvn.villagerretaliation.notification;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -156,21 +153,18 @@ public final class VillagerNotificationResources {
             String locale,
             Map<String, VillagerNotificationDefinition> definitions) {
         String root = NOTIFICATION_ROOT + locale;
-        server.getResourceManager()
-                .listResources(root, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
-                        && location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), definitions));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                root,
+                location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
+                (location, resource) -> readFile(location, resource, definitions));
     }
 
     private static void readFile(
             ResourceLocation location,
             Resource resource,
             Map<String, VillagerNotificationDefinition> definitions) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "notification", resource).ifPresent(root -> {
             if (readBoolean(root, "replace", false)) {
                 definitions.clear();
             }
@@ -195,9 +189,7 @@ public final class VillagerNotificationResources {
                 }
                 index++;
             }
-        } catch (IOException | IllegalStateException exception) {
-            // Invalid notification resources are ignored so one bad datapack file cannot break every notice.
-        }
+        });
     }
 
     private static Optional<VillagerNotificationDefinition> readDefinition(

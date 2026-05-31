@@ -3,13 +3,9 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.Comparator;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -64,12 +60,10 @@ public final class GeneratedContainerLootResources {
 
     private static Set<ResourceLocation> read(MinecraftServer server) {
         Set<ResourceLocation> lootTables = new LinkedHashSet<>();
-        server.getResourceManager()
-                .listResources(RESOURCE_ROOT, location -> location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), lootTables));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                RESOURCE_ROOT,
+                (location, resource) -> readFile(location, resource, lootTables));
         return Set.copyOf(lootTables);
     }
 
@@ -77,8 +71,7 @@ public final class GeneratedContainerLootResources {
             ResourceLocation location,
             Resource resource,
             Set<ResourceLocation> lootTables) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "generated container", resource).ifPresent(root -> {
             DatapackDiagnostics.warnUnknownRootKeys(location, "generated container", root, ROOT_KEYS);
             JsonArray entries = root.getAsJsonArray("entries");
             if (entries != null) {
@@ -91,9 +84,7 @@ public final class GeneratedContainerLootResources {
             }
 
             readLootTables(root, lootTables);
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            DatapackDiagnostics.warnSkippedFile(location, "generated container", exception);
-        }
+        });
     }
 
     private static void readLootTables(JsonObject entry, Set<ResourceLocation> lootTables) {

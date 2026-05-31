@@ -2,21 +2,17 @@ package com.jvn.villagerretaliation.quest;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -79,12 +75,10 @@ public final class VillagerQuestResources {
     private static Map<ResourceLocation, QuestDefinition> read(MinecraftServer server) {
         Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
-        server.getResourceManager()
-                .listResources(RESOURCE_ROOT, location -> location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), quests, sources));
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                RESOURCE_ROOT,
+                (location, resource) -> readFile(location, resource, quests, sources));
         return Map.copyOf(quests);
     }
 
@@ -93,8 +87,7 @@ public final class VillagerQuestResources {
             Resource resource,
             Map<ResourceLocation, QuestDefinition> quests,
             Map<ResourceLocation, ResourceLocation> sources) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, "quest", resource).ifPresent(root -> {
             ResourceLocation fallbackId = fallbackQuestId(location);
             QuestDefinition definition = readQuest(location, root, fallbackId);
             if (definition == null) {
@@ -105,9 +98,7 @@ public final class VillagerQuestResources {
                 DatapackDiagnostics.warnDuplicateId(location, "quest", definition.id().toString(), previous);
             }
             quests.put(definition.id(), definition);
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            DatapackDiagnostics.warnSkippedFile(location, "quest", exception);
-        }
+        });
     }
 
     private static QuestDefinition readQuest(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
@@ -317,10 +308,10 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readBoolean(rules, "cross_villager_compatible", false),
                 maxStarts,
                 maxCompletions,
-                readDurationTicks(rules, "completion_cooldown", 0L),
+                DatapackJsonReader.readDurationTicks(rules, "completion_cooldown", 0L),
                 QuestDefinition.AbandonmentMode.bySerializedName(
                         DatapackJsonReader.readString(rules, "abandonment")),
-                readDurationTicks(rules, "abandonment_cooldown", 0L),
+                DatapackJsonReader.readDurationTicks(rules, "abandonment_cooldown", 0L),
                 DatapackJsonReader.readBoolean(rules, "consume_on_completion", false),
                 DatapackJsonReader.readBoolean(rules, "consume_on_abandonment", false),
                 readActiveState(location, rules, defaultQuestId),
@@ -354,7 +345,7 @@ public final class VillagerQuestResources {
             return QuestDefinition.Expiration.DEFAULT;
         }
 
-        long afterTicks = readDurationTicks(expiration, "after", 0L);
+        long afterTicks = DatapackJsonReader.readDurationTicks(expiration, "after", 0L);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, "quest expiration", expiration, defaultQuestId);
         return new QuestDefinition.Expiration(
                 afterTicks,
@@ -365,34 +356,6 @@ public final class VillagerQuestResources {
                 firstNonBlank(DatapackJsonReader.readString(expiration, "notification"), "quest.expired"),
                 firstNonBlank(DatapackJsonReader.readString(expiration, "text"), "Quest expired: {quest}")
         );
-    }
-
-    private static long readDurationTicks(JsonObject object, String baseName, long fallback) {
-        Long ticks = readNullableLong(object, baseName + "_ticks");
-        if (ticks != null) {
-            return Math.max(0L, ticks);
-        }
-        Long days = readNullableLong(object, baseName + "_days");
-        if (days != null) {
-            return Math.max(0L, days * 24000L);
-        }
-        Long seconds = readNullableLong(object, baseName + "_seconds");
-        if (seconds != null) {
-            return Math.max(0L, seconds * 20L);
-        }
-        return fallback;
-    }
-
-    private static Long readNullableLong(JsonObject object, String key) {
-        JsonElement element = object.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            return null;
-        }
-        try {
-            return element.getAsLong();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return null;
-        }
     }
 
     private static QuestDefinition.Tracker readTracker(JsonObject root) {
@@ -496,7 +459,7 @@ public final class VillagerQuestResources {
                 event,
                 DialogueCondition.readList(location, "quest trigger \"" + id + "\"", trigger, defaultQuestId),
                 actions,
-                readDurationTicks(trigger, "cooldown", defaultTriggerCooldown(event)),
+                DatapackJsonReader.readDurationTicks(trigger, "cooldown", defaultTriggerCooldown(event)),
                 DatapackJsonReader.readDouble(trigger, "radius", 10.0D),
                 repeatable
         ));

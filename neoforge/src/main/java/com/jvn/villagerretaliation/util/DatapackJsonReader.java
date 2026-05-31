@@ -106,6 +106,34 @@ public final class DatapackJsonReader {
         return Optional.ofNullable(readNullableInt(entry, key));
     }
 
+    public static long readDurationTicks(JsonObject entry, String baseName, long fallback) {
+        Long ticks = readNullableLong(entry, baseName + "_ticks");
+        if (ticks != null) {
+            return Math.max(0L, ticks);
+        }
+        Long days = readNullableLong(entry, baseName + "_days");
+        if (days != null) {
+            return Math.max(0L, days * 24000L);
+        }
+        Long seconds = readNullableLong(entry, baseName + "_seconds");
+        if (seconds != null) {
+            return Math.max(0L, seconds * 20L);
+        }
+        return fallback;
+    }
+
+    public static Long readNullableLong(JsonObject entry, String key) {
+        JsonElement element = entry.get(key);
+        if (element == null || !element.isJsonPrimitive()) {
+            return null;
+        }
+        try {
+            return element.getAsLong();
+        } catch (NumberFormatException | UnsupportedOperationException ignored) {
+            return null;
+        }
+    }
+
     public static double readDouble(JsonObject entry, String key, double fallback) {
         return readDouble(entry.get(key), fallback);
     }

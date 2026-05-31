@@ -3,12 +3,8 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
-import com.jvn.villagerretaliation.util.DatapackDiagnostics;
-import java.io.IOException;
-import java.io.Reader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -35,8 +31,7 @@ final class DialogueJsonResources {
             Function<JsonObject, T> rootContextFactory,
             BiConsumer<JsonObject, T> entryConsumer
     ) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        DatapackResourceLoader.readObject(location, systemName, resource).ifPresent(root -> {
             T rootContext = rootContextFactory.apply(root);
 
             JsonArray entries = root.getAsJsonArray("entries");
@@ -50,9 +45,7 @@ final class DialogueJsonResources {
             }
 
             entryConsumer.accept(root, rootContext);
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            DatapackDiagnostics.warnSkippedFile(location, systemName, exception);
-        }
+        });
     }
 
     static List<String> readStringList(JsonObject entry, String key) {

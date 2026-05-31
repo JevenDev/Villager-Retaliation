@@ -1,9 +1,9 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,15 +46,13 @@ public final class BiomeStoryResources {
 
     private static Map<ResourceLocation, Entry> read(MinecraftServer server) {
         Map<ResourceLocation, Entry> entries = new LinkedHashMap<>();
-        server.getResourceManager()
-                .listResources(RESOURCE_ROOT, location -> location.getPath().endsWith(".json"))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> DialogueJsonResources.readEntryObjects(
-                        entry.getKey(),
+        DatapackResourceLoader.forEachJsonResource(
+                server,
+                RESOURCE_ROOT,
+                (location, resource) -> DialogueJsonResources.readEntryObjects(
+                        location,
                         "story biome",
-                        entry.getValue(),
+                        resource,
                         json -> readEntry(json, entries)
                 ));
         return Map.copyOf(entries);
