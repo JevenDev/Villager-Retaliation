@@ -28,6 +28,7 @@ public final class VillagerQuestTrackerOverlay {
     private static float notificationAlpha;
     private static float trackerAlpha;
     private static boolean trackerVisible;
+    private static int ignoredJournalToggleTicks;
     private static String trackedQuestId = "";
 
     private VillagerQuestTrackerOverlay() {
@@ -120,6 +121,7 @@ public final class VillagerQuestTrackerOverlay {
         notificationAlpha = 0.0F;
         trackerAlpha = 0.0F;
         trackerVisible = false;
+        ignoredJournalToggleTicks = 0;
         trackedQuestId = "";
     }
 
@@ -159,6 +161,10 @@ public final class VillagerQuestTrackerOverlay {
         }
     }
 
+    public static void ignorePendingJournalToggle() {
+        ignoredJournalToggleTicks = 2;
+    }
+
     public static void renderTrackerLayer(
             GuiGraphics graphics,
             Font font,
@@ -192,16 +198,23 @@ public final class VillagerQuestTrackerOverlay {
 
     private static void updateKeyState() {
         while (VillagerQuestKeyMappings.OPEN_JOURNAL.consumeClick()) {
-            openJournal();
+            if (ignoredJournalToggleTicks > 0) {
+                continue;
+            }
+            toggleJournal();
         }
         while (VillagerQuestKeyMappings.TOGGLE_TRACKER.consumeClick()) {
             trackerVisible = !trackerVisible;
         }
+        if (ignoredJournalToggleTicks > 0) {
+            ignoredJournalToggleTicks--;
+        }
     }
 
-    private static void openJournal() {
+    private static void toggleJournal() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof VillagerQuestJournalScreen) {
+        if (minecraft.screen instanceof VillagerQuestJournalScreen journal) {
+            journal.onClose();
             return;
         }
         if (!entries.isEmpty()) {

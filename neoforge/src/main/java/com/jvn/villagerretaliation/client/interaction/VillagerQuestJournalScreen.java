@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.toucanlib.client.ToucanScrollbarThumb;
 import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.toucanlib.client.ToucanScrollbars;
+import com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestUi;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
@@ -71,6 +72,11 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (VillagerQuestKeyMappings.OPEN_JOURNAL.matches(keyCode, scanCode)) {
+            VillagerQuestTrackerOverlay.ignorePendingJournalToggle();
+            closeJournal();
+            return true;
+        }
         return switch (keyCode) {
             case GLFW.GLFW_KEY_ESCAPE -> {
                 closeJournal();
