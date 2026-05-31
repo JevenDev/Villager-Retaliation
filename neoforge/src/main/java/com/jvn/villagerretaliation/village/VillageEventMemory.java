@@ -40,8 +40,8 @@ public final class VillageEventMemory {
     private VillageEventMemory() {
     }
 
-    public static void remember(ServerLevel level, EventTag tag, BlockPos pos, Entity source, Entity player) {
-        remember(level, new MemoryEvent(
+    public static boolean remember(ServerLevel level, EventTag tag, BlockPos pos, Entity source, Entity player) {
+        return remember(level, new MemoryEvent(
                 tag,
                 level.getGameTime(),
                 pos.immutable(),
@@ -55,11 +55,11 @@ public final class VillageEventMemory {
         ));
     }
 
-    public static void remember(ServerLevel level, ResourceLocation tagId, BlockPos pos, Entity source, Entity player) {
+    public static boolean remember(ServerLevel level, ResourceLocation tagId, BlockPos pos, Entity source, Entity player) {
         if (tagId == null) {
-            return;
+            return false;
         }
-        remember(level, new MemoryEvent(
+        return remember(level, new MemoryEvent(
                 legacyTag(tagId).orElse(null),
                 tagId,
                 level.getGameTime(),
@@ -263,7 +263,7 @@ public final class VillageEventMemory {
         return events;
     }
 
-    private static void remember(ServerLevel level, MemoryEvent event) {
+    private static boolean remember(ServerLevel level, MemoryEvent event) {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(event, "event");
         Objects.requireNonNull(event.tagId(), "event tag id");
@@ -272,13 +272,14 @@ public final class VillageEventMemory {
         ArrayDeque<MemoryEvent> events = data.eventsForWrite(level.dimension());
         pruneIfReady(level, data, events);
         if (isDuplicateEvent(events, event)) {
-            return;
+            return false;
         }
         events.addLast(event);
         trimToMaxEvents(events);
         data.markChanged();
         invalidateRecentCache(level.dimension());
         VillagerEventTriggerService.onMemoryWritten(level, event);
+        return true;
     }
 
     public static void clear() {

@@ -553,8 +553,9 @@ public final class VillagerRetaliationEvents {
         }
         if (level.getGameTime() % 200L == Math.floorMod(villager.getUUID().getLeastSignificantBits(), 200L)) {
             VillageEventMemory.EventTag weatherTag = weatherEventTag(level, villager.blockPosition());
-            VillageEventMemory.remember(level, weatherTag, villager.blockPosition(), villager, null);
-            VillagerMoodService.recordVillageEvent(level, villager, weatherTag, null);
+            if (VillageEventMemory.remember(level, weatherTag, villager.blockPosition(), villager, null)) {
+                VillagerMoodService.recordVillageEvent(level, villager, weatherTag, null);
+            }
         }
     }
 

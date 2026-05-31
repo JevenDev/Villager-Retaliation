@@ -110,11 +110,13 @@ public final class ForcedDialogueService {
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
     private static final long TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS = 40L;
+    private static final long SHARED_PARTICIPANT_SCAN_INTERVAL_TICKS = 20L;
     private static final long PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS = 80L;
     private static final long PLAYER_ITEM_PROXIMITY_COOLDOWN_TICKS = 20L * 30L;
     private static final Map<UUID, RecentContainerClick> RECENT_CONTAINER_CLICKS = new HashMap<>();
     private static final Map<UUID, ContainerSnapshot> OPEN_CONTAINER_SNAPSHOTS = new HashMap<>();
     private static final Map<UUID, ForcedDialogueSession> FORCED_SESSIONS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_SHARED_PARTICIPANT_SCAN_TICKS = new HashMap<>();
     private static final Map<PlayerItemProximityKey, Long> NEXT_PLAYER_ITEM_PROXIMITY_TICK = new HashMap<>();
 
     private ForcedDialogueService() {
@@ -1809,16 +1811,25 @@ public final class ForcedDialogueService {
     }
 
     public static void tickSharedForcedDialogueParticipant(ServerLevel level, Villager villager) {
-        if (FORCED_SESSIONS.isEmpty()
-                || !VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
                 || !villager.isAlive()
                 || villager.isBaby()
                 || villager.isTrading()) {
             return;
         }
+        if (FORCED_SESSIONS.isEmpty()) {
+            NEXT_SHARED_PARTICIPANT_SCAN_TICKS.clear();
+            return;
+        }
 
         UUID villagerId = villager.getUUID();
-        for (Map.Entry<UUID, ForcedDialogueSession> entry : List.copyOf(FORCED_SESSIONS.entrySet())) {
+        long gameTime = level.getGameTime();
+        boolean scanForNewParticipation = consumeVillagerScanSlot(
+                villagerId,
+                NEXT_SHARED_PARTICIPANT_SCAN_TICKS,
+                gameTime,
+                SHARED_PARTICIPANT_SCAN_INTERVAL_TICKS);
+        for (Map.Entry<UUID, ForcedDialogueSession> entry : FORCED_SESSIONS.entrySet()) {
             if (!(level.getPlayerByUUID(entry.getKey()) instanceof ServerPlayer player)
                     || !player.isAlive()
                     || player.isSpectator()
@@ -1839,12 +1850,42 @@ public final class ForcedDialogueService {
                 continue;
             }
 
+            if (!scanForNewParticipation) {
+                continue;
+            }
             if (isEligibleSharedForcedDialogueContinuation(level, player, villager, session)) {
                 ForcedDialogueSession updated = withParticipant(session, villager);
                 FORCED_SESSIONS.put(player.getUUID(), updated);
                 VillagerConversationService.holdSharedForcedParticipant(villager, player);
             }
         }
+    }
+
+    private static boolean consumeVillagerScanSlot(
+            UUID villagerId,
+            Map<UUID, Long> nextScanTicks,
+            long gameTime,
+            long intervalTicks) {
+        Long nextScan = nextScanTicks.get(villagerId);
+        if (nextScan == null) {
+            long firstScan = gameTime + scanStagger(villagerId, intervalTicks);
+            if (firstScan > gameTime) {
+                nextScanTicks.put(villagerId, firstScan);
+                return false;
+            }
+        } else if (gameTime < nextScan) {
+            return false;
+        }
+
+        nextScanTicks.put(villagerId, gameTime + Math.max(1L, intervalTicks));
+        return true;
+    }
+
+    private static long scanStagger(UUID id, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(id.getMostSignificantBits() ^ id.getLeastSignificantBits(), intervalTicks);
     }
 
     private static boolean tryAdvanceDynamicForcedDialogueGroup(
