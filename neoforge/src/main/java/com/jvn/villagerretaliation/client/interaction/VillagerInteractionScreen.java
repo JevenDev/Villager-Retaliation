@@ -1453,6 +1453,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return VillagerInteractionExperimentalLayout.unit(guiScaleThreeValue);
     }
 
+    private int experimentalUnitAtLeast(int guiScaleThreeValue, int minimum) {
+        return VillagerInteractionExperimentalLayout.unitAtLeast(guiScaleThreeValue, minimum);
+    }
+
     private int optionViewportHeight() {
         return VillagerInteractionLayoutMetrics.optionViewportHeight(this.options.size());
     }
@@ -2108,7 +2112,42 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int profileChartRadius() {
-            return PROFILE_CHART_RADIUS;
+            return VillagerInteractionScreen.this.experimentalUnit(PROFILE_CHART_RADIUS);
+        }
+
+        @Override
+        public int profileChartCenterXOffset() {
+            return VillagerInteractionScreen.this.experimentalUnit(8);
+        }
+
+        @Override
+        public int profileChartCenterYOffset() {
+            return VillagerInteractionScreen.this.experimentalUnit(16);
+        }
+
+        @Override
+        public int profileChartLabelXOffset() {
+            return VillagerInteractionScreen.this.experimentalUnit(18);
+        }
+
+        @Override
+        public int profileChartLabelYOffset() {
+            return VillagerInteractionScreen.this.experimentalUnit(14);
+        }
+
+        @Override
+        public int profileChartTopLimit() {
+            return VillagerInteractionScreen.this.conversationInfoTop() + VillagerInteractionScreen.this.experimentalUnit(2);
+        }
+
+        @Override
+        public int profileChartBottomLimit() {
+            int hintHeight = Math.round(VillagerInteractionScreen.this.font.lineHeight * VillagerInteractionScreen.this.experimentalScaleFactor());
+            int screenBottomLimit = VillagerInteractionScreen.this.height - hintHeight - VillagerInteractionScreen.this.experimentalUnit(8);
+            int viewportBottomLimit = VillagerInteractionScreen.this.conversationInfoTop()
+                    + VillagerInteractionScreen.this.rootOptionViewportHeight()
+                    - VillagerInteractionScreen.this.experimentalUnit(4);
+            return Math.min(screenBottomLimit, viewportBottomLimit);
         }
 
         @Override
@@ -2137,8 +2176,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public int profileChartPointRadius() {
+            return VillagerInteractionScreen.this.experimentalUnitAtLeast(1, 1);
+        }
+
+        @Override
+        public int profileChartPointHoverRadius() {
+            return VillagerInteractionScreen.this.experimentalUnitAtLeast(2, 1);
+        }
+
+        @Override
         public int profileChartPointHitRadius() {
-            return PROFILE_CHART_POINT_HIT_RADIUS;
+            return VillagerInteractionScreen.this.experimentalUnitAtLeast(PROFILE_CHART_POINT_HIT_RADIUS, 2);
         }
 
         @Override

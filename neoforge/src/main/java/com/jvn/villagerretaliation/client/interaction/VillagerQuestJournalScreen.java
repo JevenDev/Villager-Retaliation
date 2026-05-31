@@ -857,9 +857,6 @@ public final class VillagerQuestJournalScreen extends Screen {
         @Override
         public String optionLabel(int index) {
             QuestTrackerSyncPayload.Entry entry = entries().get(index);
-            if (VillagerQuestTrackerOverlay.isTracked(entry)) {
-                return "> " + entry.title();
-            }
             if (!entry.trackable() && !entry.status().isBlank()) {
                 return entry.title() + " [" + entry.status() + "]";
             }
