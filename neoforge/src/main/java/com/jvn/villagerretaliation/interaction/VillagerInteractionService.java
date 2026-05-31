@@ -396,7 +396,7 @@ public final class VillagerInteractionService {
         return new DialogueContextSnapshots(
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager),
-                VillageEventMemory.recentForVillage(level, villager)
+                VillageEventMemory.lazyRecentForVillage(level, villager)
         );
     }
 

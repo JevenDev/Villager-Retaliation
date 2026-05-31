@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.village;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
+import java.util.AbstractList;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -208,6 +209,13 @@ public final class VillageEventMemory {
                 .orElseGet(() -> recentNear(level, villager.blockPosition()));
     }
 
+    public static List<MemoryEvent> lazyRecentForVillage(ServerLevel level, Villager villager) {
+        if (villager == null || !villager.isAlive()) {
+            return List.of();
+        }
+        return new LazyRecentEvents(level, villager);
+    }
+
     private static List<MemoryEvent> recentForArea(ServerLevel level, BlockPos fallbackPos, VillageMembership.VillageArea area) {
         return cachedRecentEvents(
                 level,
@@ -333,6 +341,34 @@ public final class VillageEventMemory {
 
     private static boolean isDuplicateEvent(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
         return isDuplicateWeatherEvent(events, event) || isDuplicateNoisyEvent(events, event);
+    }
+
+    private static final class LazyRecentEvents extends AbstractList<MemoryEvent> {
+        private final ServerLevel level;
+        private final Villager villager;
+        private List<MemoryEvent> events;
+
+        private LazyRecentEvents(ServerLevel level, Villager villager) {
+            this.level = level;
+            this.villager = villager;
+        }
+
+        @Override
+        public MemoryEvent get(int index) {
+            return events().get(index);
+        }
+
+        @Override
+        public int size() {
+            return events().size();
+        }
+
+        private List<MemoryEvent> events() {
+            if (this.events == null) {
+                this.events = recentForVillage(this.level, this.villager);
+            }
+            return this.events;
+        }
     }
 
     private static boolean isDuplicateWeatherEvent(ArrayDeque<MemoryEvent> events, MemoryEvent event) {

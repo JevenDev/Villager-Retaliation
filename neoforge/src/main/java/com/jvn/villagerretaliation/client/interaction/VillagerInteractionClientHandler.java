@@ -202,14 +202,19 @@ public final class VillagerInteractionClientHandler {
 
     private static void addVillagerChatSeparator(Minecraft minecraft, int accentColor) {
         if (VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_MESSAGES.get()) {
-            addVillagerChatMessage(minecraft, Component.empty(), accentColor);
+            addVillagerChatSpacer(minecraft);
         }
     }
 
     private static void addVillagerChatSpeakerSeparator(Minecraft minecraft, int accentColor) {
         if (VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_SPEAKERS.get()) {
-            addVillagerChatMessage(minecraft, Component.empty(), accentColor);
+            addVillagerChatSpacer(minecraft);
         }
+    }
+
+    private static void addVillagerChatSpacer(Minecraft minecraft) {
+        // Insert a blank line without any chat tag so no provider/system band is rendered.
+        minecraft.gui.getChat().addMessage(Component.literal(" "), null, null);
     }
 
     private static boolean shouldSeparateVillagerChatMessage() {
