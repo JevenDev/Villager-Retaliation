@@ -19,7 +19,6 @@ import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
-import com.mojang.datafixers.util.Pair;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -29,11 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderSet;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -45,10 +40,6 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
-import net.minecraft.world.level.levelgen.structure.Structure;
-import net.minecraft.world.level.levelgen.structure.StructurePiece;
-import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerQuestService {
@@ -187,7 +178,9 @@ public final class VillagerQuestService {
                         "quest.updated",
                         "Quest updated: {quest}");
             }
-            if (!progress.visitedTarget() && isAtQuestTarget(level, player.blockPosition(), definition, progress) && progress.markVisitedTarget()) {
+            if (!progress.visitedTarget()
+                    && VillagerQuestTargets.isAtQuestTarget(level, player.blockPosition(), definition, progress)
+                    && progress.markVisitedTarget()) {
                 changed = true;
                 progressNotice = true;
                 questProgressChanged = true;
@@ -328,8 +321,9 @@ public final class VillagerQuestService {
                     replacements(context, definition, progress));
         }
 
-        LocatedTarget target = locateInitialTarget(context, definition).orElse(null);
-        if (target == null && requiresLocatedTarget(definition)) {
+        VillagerQuestTargets.LocatedTarget target =
+                VillagerQuestTargets.locateInitialTarget(context, definition).orElse(null);
+        if (target == null && VillagerQuestTargets.requiresLocatedTarget(definition)) {
             return result(
                     "locate_failed",
                     lineId(definition, "locate_failed"),
@@ -748,166 +742,6 @@ public final class VillagerQuestService {
                 && requiredObjectivesComplete(context.player(), context, definition, progress);
     }
 
-    private static boolean requiresLocatedTarget(QuestDefinition definition) {
-        return definition.target().hasStructureTarget()
-                || definition.objectives().stream()
-                .anyMatch(objective -> !objective.optional()
-                        && objective.type() == QuestDefinition.ObjectiveType.STRUCTURE_VISIT);
-    }
-
-    private static Optional<LocatedTarget> locateInitialTarget(DialogueContext context, QuestDefinition definition) {
-        if (definition.target().hasStructureTarget()) {
-            return locateTarget(context.level(), context.villager().blockPosition(), definition)
-                    .map(pos -> new LocatedTarget(pos.pos(), ""));
-        }
-        Optional<QuestDefinition.Objective> structureObjective = definition.objectives().stream()
-                .filter(objective -> objective.type() == QuestDefinition.ObjectiveType.STRUCTURE_VISIT)
-                .findFirst();
-        if (structureObjective.isPresent()) {
-            QuestDefinition.Objective objective = structureObjective.get();
-            return locateTarget(context.level(), context.villager().blockPosition(), objective)
-                    .map(pos -> new LocatedTarget(pos.pos(), objective.id()));
-        }
-        return Optional.empty();
-    }
-
-    private static Optional<LocatedTarget> locateTarget(ServerLevel level, BlockPos origin, QuestDefinition definition) {
-        if (!definition.target().hasStructureTarget() || !level.getServer().getWorldData().worldGenOptions().generateStructures()) {
-            return Optional.empty();
-        }
-        Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-        ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, definition.target().structure());
-        Optional<Holder.Reference<Structure>> holder = registry.getHolder(structureKey);
-        if (holder.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Pair<BlockPos, Holder<Structure>> nearest = level.getChunkSource().getGenerator().findNearestMapStructure(
-                level,
-                HolderSet.direct(holder.get()),
-                origin,
-                definition.target().searchRadius(),
-                false
-        );
-        return nearest == null ? Optional.empty() : Optional.of(new LocatedTarget(nearest.getFirst()));
-    }
-
-    private static Optional<LocatedTarget> locateTarget(ServerLevel level, BlockPos origin, QuestDefinition.Objective objective) {
-        if (objective.structure() == null || !level.getServer().getWorldData().worldGenOptions().generateStructures()) {
-            return Optional.empty();
-        }
-        Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-        ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, objective.structure());
-        Optional<Holder.Reference<Structure>> holder = registry.getHolder(structureKey);
-        if (holder.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Pair<BlockPos, Holder<Structure>> nearest = level.getChunkSource().getGenerator().findNearestMapStructure(
-                level,
-                HolderSet.direct(holder.get()),
-                origin,
-                objective.searchRadius(),
-                false
-        );
-        return nearest == null ? Optional.empty() : Optional.of(new LocatedTarget(nearest.getFirst(), objective.id()));
-    }
-
-    private static boolean isAtQuestTarget(
-            ServerLevel level,
-            BlockPos playerPos,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
-        if (progress.targetDimension() == null
-                || progress.targetPos() == null
-                || level.dimension() != progress.targetDimension()
-                || !definition.target().hasStructureTarget()) {
-            return false;
-        }
-        double targetTolerance = Math.max(512.0D, (double) definition.target().discoveryRadius() * 4.0D);
-        if (playerPos.distSqr(progress.targetPos()) > targetTolerance * targetTolerance) {
-            return false;
-        }
-
-        Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-        ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, definition.target().structure());
-        Optional<Holder.Reference<Structure>> holder = registry.getHolder(structureKey);
-        if (holder.isEmpty()) {
-            return false;
-        }
-
-        StructureStart start = level.structureManager().getStructureWithPieceAt(playerPos, HolderSet.direct(holder.get()));
-        if (!start.isValid()) {
-            return false;
-        }
-        if (definition.target().pieces().isEmpty()) {
-            return true;
-        }
-        for (StructurePiece piece : start.getPieces()) {
-            if (!piece.getBoundingBox().isInside(playerPos)) {
-                continue;
-            }
-            if (matchesStructurePiece(piece, definition.target().pieces())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean isAtObjectiveTarget(
-            ServerLevel level,
-            BlockPos playerPos,
-            QuestDefinition.Objective objective,
-            VillagerQuestSavedData.QuestProgress progress) {
-        if (progress.targetDimension() == null
-                || progress.targetPos() == null
-                || level.dimension() != progress.targetDimension()
-                || objective.structure() == null
-                || !objective.id().equals(progress.targetObjectiveId())) {
-            return false;
-        }
-        double targetTolerance = Math.max(512.0D, (double) objective.discoveryRadius() * 4.0D);
-        if (playerPos.distSqr(progress.targetPos()) > targetTolerance * targetTolerance) {
-            return false;
-        }
-
-        Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-        ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, objective.structure());
-        Optional<Holder.Reference<Structure>> holder = registry.getHolder(structureKey);
-        if (holder.isEmpty()) {
-            return false;
-        }
-
-        StructureStart start = level.structureManager().getStructureWithPieceAt(playerPos, HolderSet.direct(holder.get()));
-        if (!start.isValid()) {
-            return false;
-        }
-        if (objective.pieces().isEmpty()) {
-            return true;
-        }
-        for (StructurePiece piece : start.getPieces()) {
-            if (!piece.getBoundingBox().isInside(playerPos)) {
-                continue;
-            }
-            if (matchesStructurePiece(piece, objective.pieces())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean matchesStructurePiece(StructurePiece piece, List<String> expectedPieces) {
-        String pieceDescription = piece instanceof PoolElementStructurePiece poolPiece
-                ? poolPiece.getElement().toString()
-                : piece.toString();
-        for (String expectedPiece : expectedPieces) {
-            if (!expectedPiece.isBlank() && pieceDescription.contains(expectedPiece)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private static boolean hasRequiredProof(ServerPlayer player, QuestDefinition definition) {
         if (!definition.target().hasProofItem()) {
             return true;
@@ -980,7 +814,8 @@ public final class VillagerQuestService {
         if (next.isEmpty()) {
             return false;
         }
-        LocatedTarget target = locateTarget(level, player.blockPosition(), next.get()).orElse(null);
+        VillagerQuestTargets.LocatedTarget target =
+                VillagerQuestTargets.locateTarget(level, player.blockPosition(), next.get()).orElse(null);
         if (target == null) {
             return false;
         }
@@ -1012,7 +847,7 @@ public final class VillagerQuestService {
             return true;
         }
         return switch (objective.type()) {
-            case STRUCTURE_VISIT -> isAtObjectiveTarget(level, player.blockPosition(), objective, progress);
+            case STRUCTURE_VISIT -> VillagerQuestTargets.isAtObjectiveTarget(level, player.blockPosition(), objective, progress);
             case ITEM_CHECK -> hasItemCount(player, objective.item(), objective.count());
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
@@ -1890,12 +1725,6 @@ public final class VillagerQuestService {
 
     private static String lineId(QuestDefinition definition, String stage) {
         return "quest_" + definition.id().toString().replace(':', '_').replace('/', '_') + "_" + stage;
-    }
-
-    private record LocatedTarget(BlockPos pos, String objectiveId) {
-        private LocatedTarget(BlockPos pos) {
-            this(pos, "");
-        }
     }
 
     public record DebugStartResult(boolean started, String message) {
