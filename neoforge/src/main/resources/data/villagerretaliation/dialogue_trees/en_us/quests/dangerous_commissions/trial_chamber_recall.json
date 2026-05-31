@@ -108,7 +108,7 @@
       "responses": [
         {
           "id": "details",
-          "label": "Remind me what to do.",
+          "label": "Remind me what to do",
           "next": "reminder_details",
           "order": 0
         },
@@ -169,7 +169,7 @@
       "responses": [
         {
           "id": "accept",
-          "label": "I will test the chamber.",
+          "label": "I will test the chamber",
           "next": "start_quest"
         },
         {
@@ -229,7 +229,7 @@
       "responses": [
         {
           "id": "complete",
-          "label": "Show what I brought.",
+          "label": "Show what I brought",
           "next": "complete_quest",
           "order": 0
         },

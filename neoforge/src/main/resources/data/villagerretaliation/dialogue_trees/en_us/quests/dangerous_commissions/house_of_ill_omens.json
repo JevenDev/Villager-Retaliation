@@ -108,7 +108,7 @@
       "responses": [
         {
           "id": "details",
-          "label": "Remind me what to do.",
+          "label": "Remind me what to do",
           "next": "reminder_details",
           "order": 0
         },
@@ -169,7 +169,7 @@
       "responses": [
         {
           "id": "accept",
-          "label": "I will enter the mansion.",
+          "label": "I will enter the mansion",
           "next": "start_quest"
         },
         {
@@ -188,7 +188,7 @@
               "The conditions for this quest are not right at the moment."
             ],
             "reminder": [
-              "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to close the mouths that helped us."
+              "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to pay the informants who helped us."
             ],
             "unavailable": [
               "That quest is not in your hands right now."
@@ -229,7 +229,7 @@
       "responses": [
         {
           "id": "complete",
-          "label": "Show what I brought.",
+          "label": "Show what I brought",
           "next": "complete_quest",
           "order": 0
         },

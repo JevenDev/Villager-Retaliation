@@ -7,25 +7,25 @@
       "The conditions for this quest are not right at the moment."
     ],
     "locate_failed": [
-      "I cannot find a clean mark for that place today."
+      "I cannot post that request right now."
     ],
     "missing_proof": [
-      "Bring back the proof item before we close this."
+      "Bring the lanterns before we close this."
     ],
     "missing_target": [
-      "You still need to reach the place I marked."
+      "We still need all 6 lanterns for the watch."
     ],
     "reminder": [
-      "Six lanterns, and sooner is better. Darkness does not wait politely."
+      "Six lanterns, and sooner is better. Darkness will not wait."
     ],
     "start": [
-      "Six lanterns. Bring them soon; this request matters less after the next couple of days."
+      "Bring 6 lanterns soon; this request matters less after a couple of days."
     ],
     "turn_in": [
       "That will hold the corners of the village a little brighter. Good work."
     ],
     "unavailable": [
-      "The watch is not ready to place that request right now."
+      "The watch is not ready to post that request right now."
     ]
   },
   "display": {
@@ -61,11 +61,11 @@
   },
   "questline": "village_supply",
   "rewards": {
-    "experience": 70,
-    "gossip_reputation": 2,
+    "experience": 100,
+    "gossip_reputation": 3,
     "loot_table": "villagerretaliation:quest/lanterns_for_the_long_night",
     "memory_event": "player_completed_quest",
-    "reputation": 6
+    "reputation": 8
   },
   "rules": {
     "abandonment": "cooldown",

@@ -63,11 +63,11 @@
   },
   "questline": "dangerous_commissions",
   "rewards": {
-    "experience": 260,
-    "gossip_reputation": 7,
+    "experience": 340,
+    "gossip_reputation": 10,
     "loot_table": "villagerretaliation:quest/nether_wart_warranty",
     "memory_event": "player_completed_quest",
-    "reputation": 16
+    "reputation": 20
   },
   "rules": {
     "abandonment": "cooldown",

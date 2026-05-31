@@ -64,11 +64,11 @@
   },
   "questline": "dangerous_commissions",
   "rewards": {
-    "experience": 360,
-    "gossip_reputation": -3,
+    "experience": 450,
+    "gossip_reputation": -2,
     "loot_table": "villagerretaliation:quest/gilded_debt",
     "memory_event": "player_completed_quest",
-    "reputation": 12
+    "reputation": 15
   },
   "rules": {
     "abandonment": "remove_forever",

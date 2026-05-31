@@ -7,16 +7,16 @@
       "The conditions for this quest are not right at the moment."
     ],
     "locate_failed": [
-      "I cannot find a clean mark for that place today."
+      "I cannot post that request right now."
     ],
     "missing_proof": [
-      "Bring back the proof item before we close this."
+      "Bring the bread before we close this."
     ],
     "missing_target": [
-      "You still need to reach the place I marked."
+      "We still need all 16 bread for the stores."
     ],
     "reminder": [
-      "Sixteen bread, if you can spare it. The larder does not need heroics today, just weight on the shelf."
+      "Sixteen bread, if you can spare it. No heroics today, just weight on the shelf."
     ],
     "start": [
       "Bring me 16 bread. Simple work, but it keeps people steady."
@@ -25,7 +25,7 @@
       "Good. A full shelf makes brave talk sound less hollow. Take this with my thanks."
     ],
     "unavailable": [
-      "This is not the right season for that request."
+      "This request is closed for now."
     ]
   },
   "display": {
@@ -60,11 +60,11 @@
   },
   "questline": "village_supply",
   "rewards": {
-    "experience": 45,
-    "gossip_reputation": 1,
+    "experience": 60,
+    "gossip_reputation": 2,
     "loot_table": "villagerretaliation:quest/ready_the_larder",
     "memory_event": "player_completed_quest",
-    "reputation": 4
+    "reputation": 5
   },
   "rules": {
     "abandonment": "allow_repickup",

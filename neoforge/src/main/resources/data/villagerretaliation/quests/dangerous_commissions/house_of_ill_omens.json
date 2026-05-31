@@ -16,7 +16,7 @@
       "The totem needs the mansion behind it. I need the place confirmed."
     ],
     "reminder": [
-      "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to close the mouths that helped us."
+      "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to pay the informants who helped us."
     ],
     "start": [
       "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Bring a Totem of Undying and 12 emeralds for informants."
@@ -64,11 +64,11 @@
   },
   "questline": "dangerous_commissions",
   "rewards": {
-    "experience": 420,
-    "gossip_reputation": 12,
+    "experience": 520,
+    "gossip_reputation": 15,
     "loot_table": "villagerretaliation:quest/house_of_ill_omens",
     "memory_event": "player_completed_quest",
-    "reputation": 24
+    "reputation": 28
   },
   "rules": {
     "abandonment": "cooldown",

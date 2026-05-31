@@ -117,10 +117,10 @@
     }
   ],
   "rewards": {
-    "experience": 350,
-    "gossip_reputation": 8,
+    "experience": 430,
+    "gossip_reputation": 10,
     "loot_table": "villagerretaliation:quest/tales_of_a_lost_civilization",
     "memory_event": "player_completed_quest",
-    "reputation": 18
+    "reputation": 22
   }
 }

@@ -63,11 +63,11 @@
   },
   "questline": "village_defense",
   "rewards": {
-    "experience": 160,
-    "gossip_reputation": 5,
+    "experience": 220,
+    "gossip_reputation": 7,
     "loot_table": "villagerretaliation:quest/fletchers_countermark",
     "memory_event": "player_completed_quest",
-    "reputation": 12
+    "reputation": 15
   },
   "rules": {
     "abandonment": "cooldown",

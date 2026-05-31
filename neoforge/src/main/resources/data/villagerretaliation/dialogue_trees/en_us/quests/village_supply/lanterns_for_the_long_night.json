@@ -108,7 +108,7 @@
       "responses": [
         {
           "id": "details",
-          "label": "Remind me what to do.",
+          "label": "Remind me what to do",
           "next": "reminder_details",
           "order": 0
         },
@@ -141,10 +141,10 @@
               "I need 6 lanterns, not promises shaped like lanterns."
             ],
             "missing_proof": [
-              "Bring back the proof item before we close this."
+              "Bring the lanterns before we close this."
             ],
             "missing_target": [
-              "You still need to reach the place I marked."
+              "We still need all 6 lanterns for the watch."
             ],
             "unavailable": [
               "This quest is not ready to close yet."
@@ -169,7 +169,7 @@
       "responses": [
         {
           "id": "accept",
-          "label": "I will bring lanterns.",
+          "label": "I will bring lanterns",
           "next": "start_quest"
         },
         {
@@ -188,7 +188,7 @@
               "The conditions for this quest are not right at the moment."
             ],
             "reminder": [
-              "Six lanterns, and sooner is better. Darkness does not wait politely."
+              "Six lanterns, and sooner is better. Darkness will not wait."
             ],
             "unavailable": [
               "That quest is not in your hands right now."
@@ -208,13 +208,13 @@
               "Lanterns for the Long Night is already settled."
             ],
             "locate_failed": [
-              "I cannot find a clean mark for that place today."
+              "I cannot post that request right now."
             ],
             "started": [
-              "Six lanterns. Bring them soon; this request matters less after the next couple of days."
+              "Bring 6 lanterns soon; this request matters less after a couple of days."
             ],
             "unavailable": [
-              "The watch is not ready to place that request right now."
+              "The watch is not ready to post that request right now."
             ]
           },
           "type": "quest"
@@ -229,7 +229,7 @@
       "responses": [
         {
           "id": "complete",
-          "label": "Show what I brought.",
+          "label": "Show what I brought",
           "next": "complete_quest",
           "order": 0
         },

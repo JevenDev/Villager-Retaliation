@@ -64,11 +64,11 @@
   },
   "questline": "dangerous_commissions",
   "rewards": {
-    "experience": 300,
-    "gossip_reputation": 8,
+    "experience": 380,
+    "gossip_reputation": 11,
     "loot_table": "villagerretaliation:quest/trial_chamber_recall",
     "memory_event": "player_completed_quest",
-    "reputation": 17
+    "reputation": 21
   },
   "rules": {
     "abandonment": "cooldown",

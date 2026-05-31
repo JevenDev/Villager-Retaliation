@@ -64,11 +64,11 @@
   },
   "questline": "lost_civilization",
   "rewards": {
-    "experience": 600,
-    "gossip_reputation": 16,
+    "experience": 720,
+    "gossip_reputation": 20,
     "loot_table": "villagerretaliation:quest/end_city_survey",
     "memory_event": "player_completed_quest",
-    "reputation": 30
+    "reputation": 36
   },
   "rules": {
     "abandonment": "cooldown",

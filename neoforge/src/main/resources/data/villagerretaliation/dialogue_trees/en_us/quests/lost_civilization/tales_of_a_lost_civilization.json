@@ -116,7 +116,7 @@
       "responses": [
         {
           "id": "directions",
-          "label": "Remind me where to go.",
+          "label": "Remind me where to go",
           "order": 0,
           "next": "reminder_details"
         },
@@ -243,7 +243,7 @@
       "responses": [
         {
           "id": "complete",
-          "label": "Show the Echo Shard.",
+          "label": "Show the Echo Shard",
           "order": 0,
           "next": "complete_quest"
         },

@@ -108,7 +108,7 @@
       "responses": [
         {
           "id": "details",
-          "label": "Remind me what to do.",
+          "label": "Remind me what to do",
           "next": "reminder_details",
           "order": 0
         },
@@ -141,10 +141,10 @@
               "I still count fewer than 16 bread. Close, maybe, but hungry math is strict."
             ],
             "missing_proof": [
-              "Bring back the proof item before we close this."
+              "Bring the bread before we close this."
             ],
             "missing_target": [
-              "You still need to reach the place I marked."
+              "We still need all 16 bread for the stores."
             ],
             "unavailable": [
               "This quest is not ready to close yet."
@@ -169,7 +169,7 @@
       "responses": [
         {
           "id": "accept",
-          "label": "I can help stock the larder.",
+          "label": "I can help stock the larder",
           "next": "start_quest"
         },
         {
@@ -188,7 +188,7 @@
               "The conditions for this quest are not right at the moment."
             ],
             "reminder": [
-              "Sixteen bread, if you can spare it. The larder does not need heroics today, just weight on the shelf."
+              "Sixteen bread, if you can spare it. No heroics today, just weight on the shelf."
             ],
             "unavailable": [
               "That quest is not in your hands right now."
@@ -208,13 +208,13 @@
               "Ready the Larder is already settled."
             ],
             "locate_failed": [
-              "I cannot find a clean mark for that place today."
+              "I cannot post that request right now."
             ],
             "started": [
               "Bring me 16 bread. Simple work, but it keeps people steady."
             ],
             "unavailable": [
-              "This is not the right season for that request."
+              "This request is closed for now."
             ]
           },
           "type": "quest"
@@ -229,7 +229,7 @@
       "responses": [
         {
           "id": "complete",
-          "label": "Show what I brought.",
+          "label": "Show what I brought",
           "next": "complete_quest",
           "order": 0
         },

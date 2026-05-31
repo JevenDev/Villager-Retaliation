@@ -64,11 +64,11 @@
   },
   "questline": "old_roads",
   "rewards": {
-    "experience": 140,
-    "gossip_reputation": 4,
+    "experience": 180,
+    "gossip_reputation": 5,
     "loot_table": "villagerretaliation:quest/sunken_ledger",
     "memory_event": "player_completed_quest",
-    "reputation": 10
+    "reputation": 12
   },
   "rules": {
     "abandonment": "cooldown",

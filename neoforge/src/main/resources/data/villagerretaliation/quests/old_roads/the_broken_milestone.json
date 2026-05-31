@@ -64,11 +64,11 @@
   },
   "questline": "old_roads",
   "rewards": {
-    "experience": 110,
-    "gossip_reputation": 3,
+    "experience": 140,
+    "gossip_reputation": 4,
     "loot_table": "villagerretaliation:quest/the_broken_milestone",
     "memory_event": "player_completed_quest",
-    "reputation": 9
+    "reputation": 11
   },
   "rules": {
     "abandonment": "allow_repickup",
