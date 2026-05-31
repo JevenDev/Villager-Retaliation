@@ -54,7 +54,7 @@ final class VillagerInteractionOptionList {
     static float optionOffset(Context context, int optionIndex) {
         float offset = 0.0F;
         for (int index = 0; index < optionIndex; index++) {
-            offset += optionHeight(context, index);
+            offset += optionHeight(context, index) + optionGap(context);
         }
         return offset;
     }
@@ -67,8 +67,15 @@ final class VillagerInteractionOptionList {
         float height = 0.0F;
         for (int index = 0; index < context.optionCount(); index++) {
             height += optionHeight(context, index);
+            if (index < context.optionCount() - 1) {
+                height += optionGap(context);
+            }
         }
         return height;
+    }
+
+    private static int optionGap(Context context) {
+        return Math.max(0, context.optionStride() - context.optionHeight());
     }
 
     static List<String> wrappedOptionLabelLines(Context context, String label, float scale) {

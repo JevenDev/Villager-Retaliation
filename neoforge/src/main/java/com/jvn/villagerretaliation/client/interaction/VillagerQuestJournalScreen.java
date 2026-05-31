@@ -25,6 +25,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final float DETAIL_SCROLL_STEP = 16.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
     private static final float OPTION_SELECTED_SCALE = 0.02F;
+    private static final int QUEST_OPTION_GAP = 4;
 
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
     private final OptionListContext optionListContext = new OptionListContext();
@@ -32,6 +33,9 @@ public final class VillagerQuestJournalScreen extends Screen {
     private boolean draggingDetailsScrollbar;
     private float scrollbarDragOffset;
     private float detailsScrollbarDragOffset;
+    private float visualOptionScroll;
+    private float visualDetailsScroll;
+    private long lastScrollRenderMillis;
     private int detailsSelectedOption = Integer.MIN_VALUE;
     private long detailsAnimationStartMillis = -1L;
     private boolean closingWithAnimation;
@@ -43,6 +47,9 @@ public final class VillagerQuestJournalScreen extends Screen {
     @Override
     protected void init() {
         this.state.resetOptions(!entries().isEmpty());
+        this.visualOptionScroll = this.state.optionScroll();
+        this.visualDetailsScroll = this.state.detailsScroll();
+        this.lastScrollRenderMillis = Util.getMillis();
         this.detailsAnimationStartMillis = Util.getMillis();
         VillagerInteractionExperimentalChrome.resetAnimation();
     }
@@ -62,10 +69,11 @@ public final class VillagerQuestJournalScreen extends Screen {
             return;
         }
         clampSelectedOption();
+        updateVisualScrolls();
 
         renderExperimentalBackdrop(graphics, mouseX, mouseY);
         VillagerInteractionOptionList.render(this.optionListContext, graphics, mouseX, mouseY);
-        renderSelectedUnderline(graphics, mouseX, mouseY);
+        renderSelectedUnderlineClipped(graphics, mouseX, mouseY);
         renderQuestDetails(graphics);
     }
 
@@ -136,6 +144,7 @@ public final class VillagerQuestJournalScreen extends Screen {
             }
             setTargetOptionScroll(ToucanScrollbars.scrollFromThumbDrag(mouseY, this.scrollbarDragOffset, scrollbarThumb, maxOptionScroll()));
             this.state.jumpOptionScrollToTarget();
+            this.visualOptionScroll = this.state.targetOptionScroll();
             return true;
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingDetailsScrollbar) {
@@ -150,6 +159,7 @@ public final class VillagerQuestJournalScreen extends Screen {
                     detailsScrollbarThumb,
                     maxDetailsScroll()));
             this.state.jumpDetailsScrollToTarget();
+            this.visualDetailsScroll = this.state.targetDetailsScroll();
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -219,29 +229,51 @@ public final class VillagerQuestJournalScreen extends Screen {
         if (this.state.selectedOption() < 0 || this.state.selectedOption() >= entries().size()) {
             return;
         }
+        QuestTrackerSyncPayload.Entry selected = entries().get(this.state.selectedOption());
+        if (!"active".equalsIgnoreCase(selected.state())) {
+            return;
+        }
 
         int rowHeight = VillagerInteractionOptionList.optionHeight(this.optionListContext, this.state.selectedOption());
-        float rowTop = optionsTop() + VillagerInteractionOptionList.optionOffset(this.optionListContext, this.state.selectedOption()) - this.state.optionScroll();
+        float rowTop = optionsTop() + VillagerInteractionOptionList.optionOffset(this.optionListContext, this.state.selectedOption()) - optionRenderScroll();
         int viewportTop = optionsTop();
         int viewportBottom = viewportTop + optionViewportHeight();
         if (rowTop + rowHeight < viewportTop || rowTop > viewportBottom) {
             return;
         }
 
-        float alpha = edgeFadeAlpha(rowTop, viewportTop, viewportBottom);
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         float hoverMix = hovered == this.state.selectedOption() ? this.optionListContext.hoverIntensity(mouseX, mouseY, optionsLeft(), rowTop) : 0.0F;
         float textScale = VillagerInteractionExperimentalLayout.scaleFactor();
         float shiftX = hoverMix > 0.0F ? this.optionListContext.hoverShift(mouseX, optionsLeft(), optionWidth(), 3.2F * textScale) * hoverMix : 0.0F;
         float shiftY = hoverMix > 0.0F ? this.optionListContext.hoverShift(mouseY, rowTop, rowHeight, 1.6F * textScale) * hoverMix : 0.0F;
         int left = Mth.floor(optionsLeft() - experimentalUnitAtLeast(12, 8) + shiftX);
-        int top = Mth.floor(rowTop + rowHeight - experimentalUnitAtLeast(1, 1) + shiftY) + experimentalUnitAtLeast(2, 1);
+        int top = Mth.floor(rowTop + rowHeight - experimentalUnitAtLeast(1, 1) + shiftY) + experimentalUnitAtLeast(3, 2);
         int right = Mth.floor(Math.min(optionsScrollbarLeft() - experimentalUnitAtLeast(8, 5), optionsLeft() + optionWidth() - experimentalUnitAtLeast(8, 5)) + shiftX);
         int bottom = top + experimentalUnitAtLeast(2, 1);
         if (right <= left) {
             return;
         }
+        if (top < viewportTop || bottom > viewportBottom) {
+            return;
+        }
+        float alpha = VillagerInteractionUiUtil.edgeFadeAlpha(
+                optionRenderScroll(),
+                maxOptionScroll(),
+                top,
+                bottom,
+                viewportTop,
+                viewportBottom,
+                26.0F);
         VillagerQuestUi.renderAccentBar(graphics, left, top, right, bottom, alpha, experimentalTicks(), false);
+    }
+
+    private void renderSelectedUnderlineClipped(GuiGraphics graphics, int mouseX, int mouseY) {
+        int top = optionsTop();
+        int bottom = top + optionViewportHeight();
+        graphics.enableScissor(Math.max(0, optionsLeft() - optionWidth()), top, optionsScrollbarLeft() - 4, bottom);
+        renderSelectedUnderline(graphics, mouseX, mouseY);
+        graphics.disableScissor();
     }
 
     private void renderQuestDetails(GuiGraphics graphics) {
@@ -273,7 +305,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         int contentHeight = detailContentHeight(detailLines, lineStep);
         float maxScroll = ToucanScrollState.maxScroll(contentHeight, viewportHeight);
         setTargetDetailsScroll(this.state.targetDetailsScroll());
-        float scroll = Mth.clamp(this.state.detailsScroll(), 0.0F, maxScroll);
+        float scroll = Mth.clamp(detailsRenderScroll(), 0.0F, maxScroll);
 
         graphics.enableScissor(left - skillsContainerPaddingX(), top, right + experimentalUnitAtLeast(4, 2), textBottom);
         for (QuestDetailLine line : detailLines) {
@@ -410,7 +442,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         int viewportBottom = top + optionViewportHeight();
         for (int index = 0; index < entries().size(); index++) {
             int rowHeight = VillagerInteractionOptionList.optionHeight(this.optionListContext, index);
-            float y = top + VillagerInteractionOptionList.optionOffset(this.optionListContext, index) - this.state.optionScroll();
+            float y = top + VillagerInteractionOptionList.optionOffset(this.optionListContext, index) - optionRenderScroll();
             if (y + rowHeight < viewportTop || y > viewportBottom) {
                 continue;
             }
@@ -458,8 +490,8 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> buildExitFadeRectElements() {
         List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements = new ArrayList<>();
-        addScrollbarExitFadeRects(rectElements, scrollbarThumb(), this.state.optionScroll(), maxOptionScroll());
-        addScrollbarExitFadeRects(rectElements, detailsScrollbarThumb(), this.state.detailsScroll(), maxDetailsScroll());
+        addScrollbarExitFadeRects(rectElements, scrollbarThumb(), optionRenderScroll(), maxOptionScroll());
+        addScrollbarExitFadeRects(rectElements, detailsScrollbarThumb(), detailsRenderScroll(), maxDetailsScroll());
         return rectElements;
     }
 
@@ -541,14 +573,29 @@ public final class VillagerQuestJournalScreen extends Screen {
             return;
         }
         setSelectedOption(Mth.clamp(this.state.selectedOption(), 0, entries().size() - 1));
-        setTargetOptionScroll(this.state.targetOptionScroll());
-        setTargetDetailsScroll(this.state.targetDetailsScroll());
+        clampTargetOptionScroll();
+        clampTargetDetailsScroll();
+    }
+
+    private void clampTargetOptionScroll() {
+        float clamped = Mth.clamp(this.state.targetOptionScroll(), 0.0F, maxOptionScroll());
+        if (Math.abs(clamped - this.state.targetOptionScroll()) > 0.01F) {
+            setTargetOptionScroll(clamped);
+        }
+    }
+
+    private void clampTargetDetailsScroll() {
+        float clamped = Mth.clamp(this.state.targetDetailsScroll(), 0.0F, maxDetailsScroll());
+        if (Math.abs(clamped - this.state.targetDetailsScroll()) > 0.01F) {
+            setTargetDetailsScroll(clamped);
+        }
     }
 
     private void setSelectedOption(int selectedOption) {
         if (this.state.selectedOption() != selectedOption) {
             this.detailsSelectedOption = selectedOption;
             this.state.resetDetailsScroll();
+            this.visualDetailsScroll = 0.0F;
         }
         this.state.setSelectedOption(selectedOption);
     }
@@ -559,6 +606,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
         this.detailsSelectedOption = this.state.selectedOption();
         this.state.resetDetailsScroll();
+        this.visualDetailsScroll = 0.0F;
     }
 
     private QuestTrackerSyncPayload.Entry selectedEntry() {
@@ -578,7 +626,7 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
         return VillagerInteractionUiUtil.edgeFadeAlpha(
-                this.state.optionScroll(),
+                optionRenderScroll(),
                 maxOptionScroll(),
                 optionY,
                 optionY + optionHeight(),
@@ -592,7 +640,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         ToucanScrollbars.renderFadedThumb(
                 graphics,
                 scrollbarThumb(),
-                this.state.optionScroll(),
+                optionRenderScroll(),
                 maxOptionScroll(),
                 0xBFFFFFFF,
                 VillagerInteractionExperimentalChrome.chromeAlpha());
@@ -608,7 +656,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         ToucanScrollbars.renderFadedThumb(
                 graphics,
                 detailsScrollbarThumb(viewportTop, viewportHeight, contentHeight, maxScroll),
-                this.state.detailsScroll(),
+                detailsRenderScroll(),
                 maxScroll,
                 0xAFFFFFFF,
                 alpha);
@@ -622,7 +670,7 @@ public final class VillagerQuestJournalScreen extends Screen {
                 optionScrollbarWidth(),
                 optionScrollbarHitWidth(),
                 optionHeight(),
-                this.state.optionScroll(),
+                optionRenderScroll(),
                 maxOptionScroll(),
                 optionContentHeight()
         );
@@ -655,9 +703,35 @@ public final class VillagerQuestJournalScreen extends Screen {
                 optionScrollbarWidth(),
                 optionScrollbarHitWidth(),
                 experimentalUnitAtLeast(18, 10),
-                this.state.detailsScroll(),
+                detailsRenderScroll(),
                 maxScroll,
                 contentHeight);
+    }
+
+    private void updateVisualScrolls() {
+        long now = Util.getMillis();
+        float frames = Mth.clamp((now - this.lastScrollRenderMillis) / 16.6667F, 0.0F, 4.0F);
+        this.lastScrollRenderMillis = now;
+        this.visualOptionScroll = smoothScroll(this.visualOptionScroll, this.state.targetOptionScroll(), frames, maxOptionScroll());
+        this.visualDetailsScroll = smoothScroll(this.visualDetailsScroll, this.state.targetDetailsScroll(), frames, maxDetailsScroll());
+    }
+
+    private static float smoothScroll(float current, float target, float frames, float maxScroll) {
+        current = Mth.clamp(current, 0.0F, maxScroll);
+        target = Mth.clamp(target, 0.0F, maxScroll);
+        if (Math.abs(target - current) < 0.08F || frames <= 0.0F) {
+            return target;
+        }
+        float retain = (float) Math.pow(0.68D, frames);
+        return Mth.lerp(1.0F - retain, current, target);
+    }
+
+    private float optionRenderScroll() {
+        return Mth.clamp(this.visualOptionScroll, 0.0F, maxOptionScroll());
+    }
+
+    private float detailsRenderScroll() {
+        return Mth.clamp(this.visualDetailsScroll, 0.0F, maxDetailsScroll());
     }
 
     private float maxOptionScroll() {
@@ -709,7 +783,8 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private int optionStride() {
-        return VillagerInteractionLayoutMetrics.optionStride();
+        return VillagerInteractionLayoutMetrics.optionHeight()
+                + VillagerInteractionExperimentalLayout.unitAtLeast(QUEST_OPTION_GAP, 2);
     }
 
     private int optionsLeft() {
@@ -879,7 +954,7 @@ public final class VillagerQuestJournalScreen extends Screen {
 
         @Override
         public float optionScroll() {
-            return VillagerQuestJournalScreen.this.state.optionScroll();
+            return VillagerQuestJournalScreen.this.optionRenderScroll();
         }
 
         @Override

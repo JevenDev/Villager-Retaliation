@@ -156,6 +156,7 @@ public final class VillagerRetaliationEvents {
             broadcastVillagerDeathMessage(villager, event.getSource());
             VillagerCombatSurvivalService.onVillagerDeath(villager);
             VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
+            VillagerQuestService.onVillagerDeath(villager);
         }
         VillagerRetaliationHandler.onLivingDeath(event);
         WanderingTraderRetaliationHandler.onLivingDeath(event);

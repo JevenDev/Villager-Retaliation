@@ -122,6 +122,21 @@ public class VillagerQuestSavedData extends SavedData {
                 .computeIfAbsent(questId, ignored -> new QuestProgress());
     }
 
+    public QuestProgress remove(UUID playerId, ResourceLocation questId) {
+        Map<ResourceLocation, QuestProgress> playerEntries = this.entries.get(playerId);
+        if (playerEntries == null) {
+            return null;
+        }
+        QuestProgress removed = playerEntries.remove(questId);
+        if (playerEntries.isEmpty()) {
+            this.entries.remove(playerId);
+        }
+        if (removed != null) {
+            setDirty();
+        }
+        return removed;
+    }
+
     public List<Map.Entry<ResourceLocation, QuestProgress>> activeProgress(UUID playerId) {
         Map<ResourceLocation, QuestProgress> playerEntries = this.entries.get(playerId);
         if (playerEntries == null || playerEntries.isEmpty()) {
@@ -131,6 +146,22 @@ public class VillagerQuestSavedData extends SavedData {
         for (Map.Entry<ResourceLocation, QuestProgress> entry : playerEntries.entrySet()) {
             if (entry.getValue().state() == QuestState.ACTIVE) {
                 active.add(entry);
+            }
+        }
+        return List.copyOf(active);
+    }
+
+    public List<QuestEntry> activeProgressStartedBy(UUID villagerId) {
+        if (villagerId == null || this.entries.isEmpty()) {
+            return List.of();
+        }
+        List<QuestEntry> active = new ArrayList<>();
+        for (Map.Entry<UUID, Map<ResourceLocation, QuestProgress>> playerEntry : this.entries.entrySet()) {
+            for (Map.Entry<ResourceLocation, QuestProgress> questEntry : playerEntry.getValue().entrySet()) {
+                QuestProgress progress = questEntry.getValue();
+                if (progress.state() == QuestState.ACTIVE && villagerId.equals(progress.startedVillagerId())) {
+                    active.add(new QuestEntry(playerEntry.getKey(), questEntry.getKey(), progress));
+                }
             }
         }
         return List.copyOf(active);
@@ -194,6 +225,9 @@ public class VillagerQuestSavedData extends SavedData {
                 return NOT_STARTED;
             }
         }
+    }
+
+    public record QuestEntry(UUID playerId, ResourceLocation questId, QuestProgress progress) {
     }
 
     public static class QuestProgress {

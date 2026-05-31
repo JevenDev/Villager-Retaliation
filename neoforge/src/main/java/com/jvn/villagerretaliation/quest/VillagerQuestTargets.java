@@ -19,6 +19,9 @@ import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 final class VillagerQuestTargets {
+    private static final int MIN_SPARSE_STRUCTURE_SEARCH_RADIUS = 1024;
+    private static final int MIN_VERY_SPARSE_STRUCTURE_SEARCH_RADIUS = 2048;
+
     private VillagerQuestTargets() {
     }
 
@@ -155,10 +158,25 @@ final class VillagerQuestTargets {
                 level,
                 HolderSet.direct(holder.get()),
                 origin,
-                searchRadius,
+                effectiveSearchRadius(structureId, searchRadius),
                 false
         );
         return nearest == null ? Optional.empty() : Optional.of(nearest.getFirst());
+    }
+
+    private static int effectiveSearchRadius(ResourceLocation structureId, int searchRadius) {
+        if (structureId == null) {
+            return searchRadius;
+        }
+        return Math.max(searchRadius, switch (structureId.toString()) {
+            case "minecraft:woodland_mansion" -> MIN_VERY_SPARSE_STRUCTURE_SEARCH_RADIUS;
+            case "minecraft:ancient_city",
+                    "minecraft:bastion_remnant",
+                    "minecraft:end_city",
+                    "minecraft:fortress",
+                    "minecraft:trial_chambers" -> MIN_SPARSE_STRUCTURE_SEARCH_RADIUS;
+            default -> searchRadius;
+        });
     }
 
     private static BlockPos projectedOrigin(

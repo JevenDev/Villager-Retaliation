@@ -216,6 +216,44 @@ public final class VillagerQuestService {
         }
     }
 
+    public static void onVillagerDeath(Villager villager) {
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        List<VillagerQuestSavedData.QuestEntry> affected = data.activeProgressStartedBy(villager.getUUID());
+        if (affected.isEmpty()) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        boolean changed = false;
+        for (VillagerQuestSavedData.QuestEntry entry : affected) {
+            QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.questId()).orElse(null);
+            if (definition != null && !definition.rules().lockedToVillager()) {
+                continue;
+            }
+
+            entry.progress().expire(gameTime, false);
+            changed = true;
+            if (entry.questId().equals(data.getTrackedQuest(entry.playerId()))) {
+                data.clearTrackedQuest(entry.playerId());
+            }
+
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(entry.playerId());
+            if (player != null) {
+                if (definition != null) {
+                    sendQuestIssuerDeathNotification(player, definition, entry.progress());
+                }
+                sendTrackerSync(player, true);
+            }
+        }
+        if (changed) {
+            data.setDirty();
+        }
+    }
+
     public static boolean isReadyToTurnIn(DialogueContext context, ResourceLocation questId) {
         QuestDefinition definition = VillagerQuestResources.quest(context.level().getServer(), questId).orElse(null);
         if (definition == null) {
@@ -291,6 +329,32 @@ public final class VillagerQuestService {
                         + " at " + pos.getX() + " " + pos.getY() + " " + pos.getZ()
                         + ". Offer requirements were bypassed for debug."
                         + replaced);
+    }
+
+    public static DebugRemoveResult debugRemoveQuest(ServerPlayer player, ResourceLocation questId) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugRemoveResult(false, "This debug command must be run by a player so quest state can be resolved.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugRemoveResult(false, "Unknown quest: " + questId);
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        VillagerQuestSavedData.QuestProgress removed = data.remove(player.getUUID(), definition.id());
+        if (removed == null) {
+            return new DebugRemoveResult(false, "No saved quest state exists for " + definition.title()
+                    + " on " + player.getGameProfile().getName() + ".");
+        }
+
+        clearTrackedQuestIf(data, player, definition.id());
+        sendTrackerSync(player, true);
+
+        return new DebugRemoveResult(
+                true,
+                "Removed quest " + definition.title()
+                        + " for " + player.getGameProfile().getName()
+                        + ". Previous state was " + removed.state().name().toLowerCase(Locale.ROOT) + ".");
     }
 
     private static QuestActionOutcome startQuest(DialogueContext context, QuestDefinition definition) {
@@ -1069,6 +1133,17 @@ public final class VillagerQuestService {
                 VillagerReputationNoticeKind.QUEST);
     }
 
+    private static void sendQuestIssuerDeathNotification(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        Map<String, String> replacements = trackerReplacements(player, definition, progress, true);
+        VillagerReputationNetworking.sendNotice(
+                player,
+                VillagerDialogueResources.resolveTemplate("Quest expired: {quest}", replacements),
+                VillagerReputationNoticeKind.QUEST);
+    }
+
     private static Villager startedVillager(ServerLevel level, VillagerQuestSavedData.QuestProgress progress) {
         if (progress == null || progress.startedVillagerId() == null) {
             return null;
@@ -1743,6 +1818,12 @@ public final class VillagerQuestService {
 
     public record DebugStartResult(boolean started, String message) {
         public DebugStartResult {
+            message = message == null ? "" : message;
+        }
+    }
+
+    public record DebugRemoveResult(boolean removed, String message) {
+        public DebugRemoveResult {
             message = message == null ? "" : message;
         }
     }

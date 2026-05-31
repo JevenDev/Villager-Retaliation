@@ -186,6 +186,9 @@ public final class VillagerRetaliationCommands {
                                                                 context,
                                                                 DoubleArgumentType.getDouble(context, "radius"),
                                                                 false))))))
+                        .then(literal("remove")
+                                .then(questIdArgument()
+                                        .executes(VillagerRetaliationCommands::removeQuestDebug)))
                         .then(literal("force_start")
                                 .then(questIdArgument()
                                         .then(providerNameArgument()
@@ -289,6 +292,30 @@ public final class VillagerRetaliationCommands {
                 quest.questId(),
                 force);
         if (!result.started()) {
+            source.sendFailure(Component.literal(result.message()));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal(result.message()), true);
+        return 1;
+    }
+
+    private static int removeQuestDebug(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
+            return 0;
+        }
+
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+
+        VillagerQuestService.DebugRemoveResult result = VillagerQuestService.debugRemoveQuest(
+                player,
+                quest.questId());
+        if (!result.removed()) {
             source.sendFailure(Component.literal(result.message()));
             return 0;
         }

@@ -19,7 +19,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerQuestTrackerOverlay {
-    private static final int FLASH_LIFETIME_TICKS = 96;
+    private static final int FLASH_LIFETIME_TICKS = 180;
 
     private static List<QuestTrackerSyncPayload.Entry> entries = List.of();
     private static int flashTicks;
@@ -100,7 +100,7 @@ public final class VillagerQuestTrackerOverlay {
         RenderSystem.defaultBlendFunc();
         Optional<QuestTrackerSyncPayload.Entry> trackedEntry = trackedEntry();
         if (notificationAlpha > 0.01F && trackedEntry.isPresent()) {
-            renderNotification(graphics, font, trackedEntry.get(), screenHeight);
+            renderNotification(graphics, font, trackedEntry.get(), screenWidth, screenHeight);
         }
         if (trackerAlpha <= 0.01F || minecraft.screen instanceof VillagerQuestJournalScreen) {
             return;
@@ -249,12 +249,16 @@ public final class VillagerQuestTrackerOverlay {
             GuiGraphics graphics,
             Font font,
             QuestTrackerSyncPayload.Entry entry,
+            int screenWidth,
             int screenHeight) {
-        int width = VillagerQuestHudRenderer.notificationWidth(font, entry);
-        int x = VillagerAdaptiveGuiScale.unit(12) - Math.round((1.0F - notificationAlpha) * VillagerQuestHudRenderer.slideDistance());
-        int y = Math.max(VillagerAdaptiveGuiScale.unit(10), screenHeight / 2 - VillagerQuestHudRenderer.notificationHeight() / 2);
+        int width = VillagerQuestHudRenderer.notificationWidth(font, entry, screenWidth);
+        int height = VillagerQuestHudRenderer.notificationHeight(font, entry, width, screenHeight);
+        int margin = VillagerAdaptiveGuiScale.unit(12);
+        int x = margin - Math.round((1.0F - notificationAlpha) * VillagerQuestHudRenderer.slideDistance());
+        x = Math.min(x, screenWidth - width - margin);
+        int y = Math.max(VillagerAdaptiveGuiScale.unit(10), screenHeight / 2 - height / 2);
         float alpha = notificationAlpha;
 
-        VillagerQuestHudRenderer.renderNotification(graphics, font, entry, x, y, width, alpha, notificationAge);
+        VillagerQuestHudRenderer.renderNotification(graphics, font, entry, x, y, width, height, alpha, notificationAge);
     }
 }
