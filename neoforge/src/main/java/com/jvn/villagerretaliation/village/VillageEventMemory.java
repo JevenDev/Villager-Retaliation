@@ -34,7 +34,6 @@ public final class VillageEventMemory {
     private static final long RECENT_QUERY_CACHE_TICKS = 20L;
     private static final int MAX_EVENTS_PER_DIMENSION = 80;
     private static final double RELEVANT_EVENT_RADIUS_SQR = 48.0D * 48.0D;
-    private static final Map<ResourceKey<Level>, ArrayDeque<MemoryEvent>> EVENTS = new HashMap<>();
     private static final Map<ResourceKey<Level>, Long> NEXT_PRUNE_TICKS = new HashMap<>();
     private static final Map<RecentQueryKey, CachedRecentEvents> RECENT_QUERY_CACHE = new HashMap<>();
 
@@ -219,7 +218,7 @@ public final class VillageEventMemory {
 
     private static List<MemoryEvent> recentNearUncached(ServerLevel level, BlockPos pos) {
         pruneIfReady(level);
-        ArrayDeque<MemoryEvent> events = EVENTS.get(level.dimension());
+        ArrayDeque<MemoryEvent> events = VillageEventMemorySavedData.get(level).events(level.dimension());
         if (events == null || events.isEmpty()) {
             return List.of();
         }
@@ -235,7 +234,7 @@ public final class VillageEventMemory {
 
     private static List<MemoryEvent> recentForAreaUncached(ServerLevel level, BlockPos fallbackPos, VillageMembership.VillageArea area) {
         pruneIfReady(level);
-        ArrayDeque<MemoryEvent> events = EVENTS.get(level.dimension());
+        ArrayDeque<MemoryEvent> events = VillageEventMemorySavedData.get(level).events(level.dimension());
         if (events == null || events.isEmpty()) {
             return List.of();
         }
@@ -269,44 +268,56 @@ public final class VillageEventMemory {
         Objects.requireNonNull(event, "event");
         Objects.requireNonNull(event.tagId(), "event tag id");
         Objects.requireNonNull(event.pos(), "event position");
-        ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
-        pruneIfReady(level);
+        VillageEventMemorySavedData data = VillageEventMemorySavedData.get(level);
+        ArrayDeque<MemoryEvent> events = data.eventsForWrite(level.dimension());
+        pruneIfReady(level, data, events);
         if (isDuplicateEvent(events, event)) {
             return;
         }
         events.addLast(event);
         trimToMaxEvents(events);
+        data.markChanged();
         invalidateRecentCache(level.dimension());
         VillagerEventTriggerService.onMemoryWritten(level, event);
     }
 
     public static void clear() {
-        EVENTS.clear();
         NEXT_PRUNE_TICKS.clear();
         RECENT_QUERY_CACHE.clear();
     }
 
     private static void pruneIfReady(ServerLevel level) {
-        ArrayDeque<MemoryEvent> events = EVENTS.get(level.dimension());
+        VillageEventMemorySavedData data = VillageEventMemorySavedData.get(level);
+        ArrayDeque<MemoryEvent> events = data.events(level.dimension());
         if (events == null) {
             return;
         }
+        pruneIfReady(level, data, events);
+    }
 
+    private static void pruneIfReady(ServerLevel level, VillageEventMemorySavedData data, ArrayDeque<MemoryEvent> events) {
         long gameTime = level.getGameTime();
         long nextPrune = NEXT_PRUNE_TICKS.getOrDefault(level.dimension(), 0L);
         if (gameTime < nextPrune && events.size() <= MAX_EVENTS_PER_DIMENSION) {
             return;
         }
 
-        pruneNow(level, events, gameTime);
+        if (pruneNow(level.dimension(), events, gameTime)) {
+            data.removeDimensionIfEmpty(level.dimension());
+            data.markChanged();
+            invalidateRecentCache(level.dimension());
+        }
     }
 
-    private static void pruneNow(ServerLevel level, ArrayDeque<MemoryEvent> events, long gameTime) {
-        long oldestAllowed = level.getGameTime() - EVENT_TTL_TICKS;
+    private static boolean pruneNow(ResourceKey<Level> dimension, ArrayDeque<MemoryEvent> events, long gameTime) {
+        boolean removed = false;
+        long oldestAllowed = gameTime - EVENT_TTL_TICKS;
         while (!events.isEmpty() && (events.peekFirst().gameTime() < oldestAllowed || events.size() > MAX_EVENTS_PER_DIMENSION)) {
             events.removeFirst();
+            removed = true;
         }
-        NEXT_PRUNE_TICKS.put(level.dimension(), gameTime + EVENT_PRUNE_INTERVAL_TICKS);
+        NEXT_PRUNE_TICKS.put(dimension, gameTime + EVENT_PRUNE_INTERVAL_TICKS);
+        return removed;
     }
 
     private static void trimToMaxEvents(ArrayDeque<MemoryEvent> events) {

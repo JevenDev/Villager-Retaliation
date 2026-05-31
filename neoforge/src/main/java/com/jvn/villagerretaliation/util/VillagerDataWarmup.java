@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.trade.SkillTradeResources;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.village.VillageEventMemorySavedData;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -46,6 +47,7 @@ public final class VillagerDataWarmup {
         VillagerSocialGraphSavedData.get(server.overworld());
         VillagerQuestSavedData.get(server.overworld());
         VillagerEventTriggerSavedData.get(server.overworld());
+        VillageEventMemorySavedData.get(server.overworld());
     }
 
     public static void clearCaches() {
