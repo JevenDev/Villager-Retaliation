@@ -1,0 +1,121 @@
+package com.jvn.villagerretaliation.dialogue;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
+import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.Optional;
+import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.packs.resources.Resource;
+
+public final class GeneratedContainerLootResources {
+    private static final String RESOURCE_ROOT = "generated_containers";
+    private static final Set<String> ROOT_KEYS = Set.of(
+            "metadata",
+            "id",
+            "entries",
+            "loot_table",
+            "loot_tables",
+            "LootTable",
+            "LootTables");
+    private static volatile CachedGeneratedContainers cachedContainers = CachedGeneratedContainers.empty();
+
+    private GeneratedContainerLootResources() {
+    }
+
+    public static void warm(MinecraftServer server) {
+        lootTables(server);
+    }
+
+    public static void clearCache() {
+        cachedContainers = CachedGeneratedContainers.empty();
+    }
+
+    public static boolean isVillagePropertyLootTable(MinecraftServer server, ResourceLocation lootTable) {
+        return lootTable != null && lootTables(server).contains(lootTable);
+    }
+
+    private static Set<ResourceLocation> lootTables(MinecraftServer server) {
+        CachedGeneratedContainers current = cachedContainers;
+        if (current.server() == server) {
+            return current.lootTables();
+        }
+
+        synchronized (GeneratedContainerLootResources.class) {
+            current = cachedContainers;
+            if (current.server() == server) {
+                return current.lootTables();
+            }
+
+            Set<ResourceLocation> lootTables = read(server);
+            cachedContainers = new CachedGeneratedContainers(server, lootTables);
+            return lootTables;
+        }
+    }
+
+    private static Set<ResourceLocation> read(MinecraftServer server) {
+        Set<ResourceLocation> lootTables = new LinkedHashSet<>();
+        server.getResourceManager()
+                .listResources(RESOURCE_ROOT, location -> location.getPath().endsWith(".json"))
+                .entrySet()
+                .stream()
+                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
+                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), lootTables));
+        return Set.copyOf(lootTables);
+    }
+
+    private static void readFile(
+            ResourceLocation location,
+            Resource resource,
+            Set<ResourceLocation> lootTables) {
+        try (Reader reader = resource.openAsReader()) {
+            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            DatapackDiagnostics.warnUnknownRootKeys(location, "generated container", root, ROOT_KEYS);
+            JsonArray entries = root.getAsJsonArray("entries");
+            if (entries != null) {
+                for (JsonElement element : entries) {
+                    if (element.isJsonObject()) {
+                        readLootTables(element.getAsJsonObject(), lootTables);
+                    }
+                }
+                return;
+            }
+
+            readLootTables(root, lootTables);
+        } catch (IOException | IllegalStateException | JsonParseException exception) {
+            DatapackDiagnostics.warnSkippedFile(location, "generated container", exception);
+        }
+    }
+
+    private static void readLootTables(JsonObject entry, Set<ResourceLocation> lootTables) {
+        for (String value : DatapackJsonReader.readStringList(entry, "loot_table", "loot_tables", "LootTable", "LootTables")) {
+            parseLootTable(value).ifPresent(lootTables::add);
+        }
+    }
+
+    private static Optional<ResourceLocation> parseLootTable(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isBlank()) {
+            return Optional.empty();
+        }
+        if (!normalized.contains(":")) {
+            normalized = ResourceLocation.DEFAULT_NAMESPACE + ":" + normalized;
+        }
+        return Optional.ofNullable(ResourceLocation.tryParse(normalized));
+    }
+
+    private record CachedGeneratedContainers(MinecraftServer server, Set<ResourceLocation> lootTables) {
+        private static CachedGeneratedContainers empty() {
+            return new CachedGeneratedContainers(null, Set.of());
+        }
+    }
+}

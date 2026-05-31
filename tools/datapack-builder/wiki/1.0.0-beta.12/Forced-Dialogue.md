@@ -496,21 +496,32 @@ Fires when a player breaks a watched container, using the same watched-container
 
 When a `container_broken` entry matches, the mod applies the configured `containerBreakReputationLoss` to the witnessing villager. If the container has a generated loot table, the mod unpacks it before the break snapshot and also applies `generatedContainerBreakItemReputationLoss` once per dropped item count. Any `reputation` value on the forced-dialogue entry is added on top of that built-in penalty.
 
-Watched containers:
+`ALL_WATCHED_CONTAINERS` watches the default blocks in `#villagerretaliation:watched_containers`, which datapacks can extend:
 
 ```text
 chests
 barrels
 shulker boxes
+dispensers
+droppers
+hoppers
 ```
 
 The built-in events require a villager witness with line of sight to the player and the container block. If no adult villager can witness the event, no forced dialogue starts.
 
 Server config controls whether generated watched containers trigger on actual theft or on opening. By default, Villager Retaliation watches `OPENING`, so the built-in village chest confrontation fires when a player opens a generated village chest. The mod records the container's original loot table the first time it sees one, allowing later opens to keep matching generated-container forced dialogue after Minecraft unpacks and clears the live loot table. Servers can switch back to theft-only behavior.
 
-Generated-container detection initially checks for an unresolved loot table through Minecraft's `RandomizableContainer` interface, so modded generated containers can participate when they expose loot tables the same way vanilla generated containers do.
+Generated-container detection initially checks for an unresolved loot table through Minecraft's `RandomizableContainer` interface, so modded generated containers can participate when they expose loot tables the same way vanilla generated containers do. A generated container counts as village property when its loot table appears in `data/<namespace>/generated_containers/*.json`:
 
-The built-in `default.json` includes village-specific entries for vanilla village chest loot tables, plus lower-priority generic theft and break fallbacks for packs or configs that still want broad detection.
+```json
+{
+  "LootTable": "chests/village/village_armorer"
+}
+```
+
+The lower-case fields `loot_table` and `loot_tables` are also accepted, and unnamespaced values default to `minecraft`.
+
+The built-in `default.json` includes village-specific entries for vanilla village chest loot tables, plus lower-priority generic theft and break fallbacks for listed generated containers and broad watched-container mode.
 
 ### `retaliation_started`
 

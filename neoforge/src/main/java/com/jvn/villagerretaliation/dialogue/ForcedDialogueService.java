@@ -131,7 +131,7 @@ public final class ForcedDialogueService {
         BlockPos pos = event.getPos();
         BlockState state = level.getBlockState(pos);
         ResourceLocation lootTable = ForcedDialogueContainers.generatedLootTable(level, pos);
-        if (!ForcedDialogueContainers.isEligibleWatchedContainer(state, lootTable)) {
+        if (!ForcedDialogueContainers.isEligibleWatchedContainer(level, state, lootTable)) {
             return;
         }
 
@@ -156,14 +156,14 @@ public final class ForcedDialogueService {
         }
 
         BlockState state = level.getBlockState(click.pos());
-        if (!ForcedDialogueContainers.isEligibleWatchedContainer(state, click.lootTable())) {
+        if (!ForcedDialogueContainers.isEligibleWatchedContainer(level, state, click.lootTable())) {
             return;
         }
         PacketDistributor.sendToPlayer(
                 player,
                 new GeneratedContainerTooltipPayload(
                         event.getContainer().containerId,
-                        ForcedDialogueContainers.hasGeneratedLootTable(click.lootTable())));
+                        ForcedDialogueContainers.isVillagePropertyLootTable(level, click.lootTable())));
 
         int itemCount = ForcedDialogueContainers.countItems(event.getContainer());
         ContainerSnapshot snapshot = new ContainerSnapshot(
@@ -242,7 +242,7 @@ public final class ForcedDialogueService {
         BlockPos pos = event.getPos();
         BlockState state = event.getState();
         ResourceLocation lootTable = ForcedDialogueContainers.generatedLootTable(level, pos);
-        if (!ForcedDialogueContainers.isEligibleWatchedContainer(state, lootTable)) {
+        if (!ForcedDialogueContainers.isEligibleWatchedContainer(level, state, lootTable)) {
             return;
         }
         ForcedDialogueContainers.unpackLootTable(level, pos, player);
@@ -2944,8 +2944,7 @@ public final class ForcedDialogueService {
         ContainerSnapshot snapshot = containerSnapshot(session, level);
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || session.definition().trigger() != ForcedDialogueTrigger.CONTAINER_OPENED
-                || snapshot.lootTable() == null
-                || !snapshot.lootTable().getPath().startsWith("chests/village/")) {
+                || !ForcedDialogueContainers.isVillagePropertyLootTable(level, snapshot.lootTable())) {
             return false;
         }
 

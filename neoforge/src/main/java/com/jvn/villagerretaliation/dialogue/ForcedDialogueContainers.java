@@ -28,16 +28,16 @@ final class ForcedDialogueContainers {
     private ForcedDialogueContainers() {
     }
 
-    static boolean isEligibleWatchedContainer(BlockState state, ResourceLocation lootTable) {
-        if (!isWatchedContainer(state) && lootTable == null) {
-            return false;
+    static boolean isEligibleWatchedContainer(ServerLevel level, BlockState state, ResourceLocation lootTable) {
+        if (isVillagePropertyLootTable(level, lootTable)) {
+            return true;
         }
-        return lootTable != null
-                || VillagerRetaliationConfig.CONTAINER_WATCH_MODE.get() == ContainerWatchMode.ALL_WATCHED_CONTAINERS;
+        return isWatchedContainer(state)
+                && VillagerRetaliationConfig.CONTAINER_WATCH_MODE.get() == ContainerWatchMode.ALL_WATCHED_CONTAINERS;
     }
 
-    static boolean hasGeneratedLootTable(ResourceLocation lootTable) {
-        return lootTable != null;
+    static boolean isVillagePropertyLootTable(ServerLevel level, ResourceLocation lootTable) {
+        return GeneratedContainerLootResources.isVillagePropertyLootTable(level.getServer(), lootTable);
     }
 
     static ResourceLocation generatedLootTable(ServerLevel level, BlockPos pos) {

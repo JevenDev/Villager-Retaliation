@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.dialogue.BiomeStoryResources;
 import com.jvn.villagerretaliation.dialogue.DangerousStructureStoryResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
+import com.jvn.villagerretaliation.dialogue.GeneratedContainerLootResources;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
@@ -37,6 +38,7 @@ public final class VillagerDataWarmup {
         VillagerPacifyPaymentResources.warm(server);
         VillagerNotificationResources.warm(server);
         ForcedDialogueResources.warm(server);
+        GeneratedContainerLootResources.warm(server);
         BiomeStoryResources.warm(server);
         DangerousStructureStoryResources.warm(server);
         VillagerQuestResources.warm(server);
@@ -66,6 +68,7 @@ public final class VillagerDataWarmup {
         VillagerPacifyPaymentResources.clearCache();
         VillagerNotificationResources.clearCache();
         ForcedDialogueResources.clearCache();
+        GeneratedContainerLootResources.clearCache();
         BiomeStoryResources.clearCache();
         DangerousStructureStoryResources.clearCache();
         VillagerQuestResources.clearCache();

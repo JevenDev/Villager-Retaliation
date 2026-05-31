@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.dialogue.GeneratedContainerSavedData;
+import com.jvn.villagerretaliation.dialogue.GeneratedContainerLootResources;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,7 +39,6 @@ final class VillagerInventoryOverflowService {
     private static final int SCAN_INTERVAL_TICKS = 100;
     private static final int SCAN_RADIUS = 12;
     private static final int CONTAINER_CLOSE_DELAY_TICKS = 20;
-    private static final String VILLAGE_CHEST_PATH_PREFIX = "chests/village/";
     private static final String OWNER_ITEM_TAG = "VillagerRetaliationOwner";
     private static final String OWNER_UUID_TAG = "Villager";
     private static final String OWNER_NAME_TAG = "VillagerName";
@@ -127,7 +127,7 @@ final class VillagerInventoryOverflowService {
             }
 
             ResourceLocation lootTable = GeneratedContainerSavedData.generatedContainerLootTable(level, pos).orElse(null);
-            if (!isVillageChestLootTable(lootTable)) {
+            if (!GeneratedContainerLootResources.isVillagePropertyLootTable(level.getServer(), lootTable)) {
                 continue;
             }
             containers.add(new ContainerCandidate(pos.immutable(), container));
@@ -135,12 +135,6 @@ final class VillagerInventoryOverflowService {
 
         containers.sort(Comparator.comparingDouble(candidate -> candidate.pos().distSqr(center)));
         return containers;
-    }
-
-    private static boolean isVillageChestLootTable(ResourceLocation lootTable) {
-        return lootTable != null
-                && lootTable.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)
-                && lootTable.getPath().startsWith(VILLAGE_CHEST_PATH_PREFIX);
     }
 
     private static ItemStack markOwnedByVillager(ItemStack stack, Villager villager) {
