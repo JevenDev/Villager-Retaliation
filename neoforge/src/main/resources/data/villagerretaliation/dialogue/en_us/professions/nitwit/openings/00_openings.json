@@ -1,27 +1,28 @@
 {
-    "openings":  [
-                     {
-                         "id":  "nitwit_opening",
-                         "lines":  [
-                                       "Mind the sunny corner. What do you need?",
-                                       "Step clear of the sunny corner. What do you need?",
-                                       "Mind the sunny corner; I am listening.",
-                                       "There you are. I was just near the wherever people are busy, trying to keep the day sensible.",
-                                       "Morning. Or afternoon. The work makes the hours blur if I let it.",
-                                       "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-                                       "If you need me, speak up. If you need gossip, speak quieter.",
-                                       "You caught me before the next little disaster. That is rare timing.",
-                                       "Hello. Try not to bring the whole village into this unless it is important.",
-                                       "I have a moment. Not a long one, but a real one."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.nitwit",
-                                  "section.openings"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.nitwit",
+      "section.openings"
+    ],
+    "topic": "professions.nitwit.openings"
+  },
+  "openings": [
+    {
+      "id": "nitwit_opening",
+      "lines": [
+        "Mind the sunny corner. What do you need?",
+        "Step clear of the sunny corner. What do you need?",
+        "Mind the sunny corner; I am listening.",
+        "There you are. I was just near the wherever people are busy, trying to keep the day sensible.",
+        "Morning. Or afternoon. The work makes the hours blur if I let it.",
+        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
+        "If you need me, speak up. If you need gossip, speak quieter.",
+        "You caught me before the next little disaster. That is rare timing.",
+        "Hello. Try not to bring the whole village into this unless it is important.",
+        "I have a moment. Not a long one, but a real one."
+      ]
+    }
+  ]
 }

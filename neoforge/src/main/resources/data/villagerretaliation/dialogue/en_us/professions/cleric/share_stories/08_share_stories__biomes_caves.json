@@ -1,68 +1,70 @@
 {
-    "lines":  [
-                  {
-                      "id":  "cleric_share_story_deep_dark",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:deep_dark",
-                      "lines":  [
-                                    "{target}? Sound travels farther than sense. I would keep milk and bottles ready.",
-                                    "If anyone heads for Deep Dark, tell them: Walk soft and do not open every chest. I will be at the brewing stand.",
-                                    "Sculk hears what pride forgets. I\u0027ll remember that when I set out the bottles.",
-                                    "Deep Dark is no small story. Some hurts reach deeper than skin.",
-                                    "I\u0027ll remember Deep Dark as darkness that listens back. I\u0027ll keep a remedy close.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "cleric_share_story_dripstone_caves",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:dripstone_caves",
-                      "lines":  [
-                                    "{target}? Stone teeth hang above and wait below. I would keep milk and bottles ready.",
-                                    "If anyone heads for Dripstone Caves, tell them: Look up as often as you look down. I will be at the brewing stand.",
-                                    "Pointed stone makes every stumble serious. I\u0027ll remember that when I set out the bottles.",
-                                    "Dripstone Caves is no small story. Some hurts reach deeper than skin.",
-                                    "I will remember Dripstone Caves as a cave that bites from both directions. I will keep a remedy close.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "cleric_share_story_lush_caves",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:lush_caves",
-                      "lines":  [
-                                    "{target}? Pretty caves still have long drops. I would keep milk and bottles ready.",
-                                    "If anyone heads for Lush Caves, tell them: Watch the vines and the holes between them. I will be at the brewing stand.",
-                                    "Glow berries light paths that may not be safe. I\u0027ll remember that when I set out the bottles.",
-                                    "Lush Caves is no small story. Some hurts reach deeper than skin.",
-                                    "I\u0027ll remember Lush Caves as a cave trying very hard to look harmless. I\u0027ll keep a remedy close.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "cleric_share_story_deep_dark",
+      "request": "share_story",
+      "lines": [
+        "{target}? Sound travels farther than sense. I would keep milk and bottles ready.",
+        "If anyone heads for Deep Dark, tell them: Walk soft and do not open every chest. I will be at the brewing stand.",
+        "Sculk hears what pride forgets. I'll remember that when I set out the bottles.",
+        "Deep Dark is no small story. Some hurts reach deeper than skin.",
+        "I'll remember Deep Dark as darkness that listens back. I'll keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:deep_dark",
+      "weight": 120
+    },
+    {
+      "id": "cleric_share_story_dripstone_caves",
+      "request": "share_story",
+      "lines": [
+        "{target}? Stone teeth hang above and wait below. I would keep milk and bottles ready.",
+        "If anyone heads for Dripstone Caves, tell them: Look up as often as you look down. I will be at the brewing stand.",
+        "Pointed stone makes every stumble serious. I'll remember that when I set out the bottles.",
+        "Dripstone Caves is no small story. Some hurts reach deeper than skin.",
+        "I will remember Dripstone Caves as a cave that bites from both directions. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:dripstone_caves",
+      "weight": 120
+    },
+    {
+      "id": "cleric_share_story_lush_caves",
+      "request": "share_story",
+      "lines": [
+        "{target}? Pretty caves still have long drops. I would keep milk and bottles ready.",
+        "If anyone heads for Lush Caves, tell them: Watch the vines and the holes between them. I will be at the brewing stand.",
+        "Glow berries light paths that may not be safe. I'll remember that when I set out the bottles.",
+        "Lush Caves is no small story. Some hurts reach deeper than skin.",
+        "I'll remember Lush Caves as a cave trying very hard to look harmless. I'll keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:lush_caves",
+      "weight": 120
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cleric.share_stories",
+      "section.lines"
+    ],
+    "topic": "professions.cleric.share_stories.share_stories__biomes_caves"
+  }
 }

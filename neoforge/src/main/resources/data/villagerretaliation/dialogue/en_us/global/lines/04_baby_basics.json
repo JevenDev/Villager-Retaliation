@@ -1,151 +1,152 @@
 {
-    "lines":  [
-                  {
-                      "id":  "combat_survival_global_breath",
-                      "request":  "combat_survival_report",
-                      "option":  "combat_survival_report",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "I did. Still breathing, still standing. That counts for more than it sounds.",
-                                    "Back to the village in one piece. I will remember who helped make that true.",
-                                    "I am here, breathing, and trying not to \u003cshake\u003eshake\u003c/shake\u003e. That is enough for now.",
-                                    "The danger passed close, but it did not take me with it.",
-                                    "I made it through. My hands are still catching up to that fact.",
-                                    "I am alive, and right now that feels like a full day\u0027s work.",
-                                    "I heard the noise, felt the fear, and still found my way back.",
-                                    "My legs held, my breath held, and somehow so did I.",
-                                    "I would like a quieter day after that, if the world is taking requests.",
-                                    "Surviving does not feel heroic yet. Mostly it feels like breathing again."
-                                ],
-                      "weight":  52
-                  },
-                  {
-                      "id":  "baby_today_question_hiding_place",
-                      "request":  "question",
-                      "option":  "baby_today_question",
-                      "show_for_adults":  false,
-                      "lines":  [
-                                    "I found a really good hiding place, but I cannot tell you or it stops being good.",
-                                    "The bell is loud up close. I learned that by mistake.",
-                                    "Today I found a place where grown-ups forget to look down.",
-                                    "I saw a chicken walk like it had important business.",
-                                    "I found a puddle shaped almost like a potato.",
-                                    "I practiced sneaking, but my shoes kept telling on me.",
-                                    "I learned that if you look busy, grown-ups give you fewer chores.",
-                                    "There is a spot behind the fence where nobody checks first.",
-                                    "I found a stick that is probably important. I am keeping it safe.",
-                                    "Today I ran very fast and only almost fell down."
-                                ],
-                      "weight":  47
-                  },
-                  {
-                      "id":  "baby_greeting_hi_again",
-                      "request":  "greeting",
-                      "option":  "baby_greeting",
-                      "show_for_adults":  false,
-                      "weight":  25,
-                      "lines":  [
-                                    "\u003cjump\u003eHi again!\u003c/jump\u003e",
-                                    "Hi! I remember your face a little.",
-                                    "Hello again! I was practicing saying hello first.",
-                                    "Hi! I saw you before, I think.",
-                                    "\u003cjump\u003eHello!\u003c/jump\u003e I said it before you did.",
-                                    "Hi again! I am taller than last time, maybe.",
-                                    "Hello! I was not hiding. I was just standing somewhere secret.",
-                                    "Hi! Did you come back on purpose?",
-                                    "Hello again! I know this greeting now.",
-                                    "\u003cjump\u003eHi!\u003c/jump\u003e I was just about to do something important."
-                                ]
-                  },
-                  {
-                      "id":  "baby_greeting_from_here",
-                      "request":  "greeting",
-                      "option":  "baby_greeting",
-                      "show_for_adults":  false,
-                      "dispositions":  [
-                                           "cautious",
-                                           "rude",
-                                           "hostile",
-                                           "fearful"
-                                       ],
-                      "weight":  24,
-                      "lines":  [
-                                    "I can say hello from here.",
-                                    "Hello from this safe distance.",
-                                    "I can \u003cwavy\u003ewave\u003c/wavy\u003e from here. That counts.",
-                                    "Hi. I am staying right here.",
-                                    "Hello. This spot feels far enough.",
-                                    "I heard you. I am not coming closer yet.",
-                                    "I can see you from here, so this is close enough.",
-                                    "Hello, but I am keeping my feet where they are.",
-                                    "I will wave. Talking closer is for braver people.",
-                                    "Hi. I am near the grown-ups, which is where I am staying."
-                                ]
-                  },
-                  {
-                      "id":  "baby_question_doors_bells",
-                      "request":  "question",
-                      "option":  "baby_question",
-                      "show_for_adults":  false,
-                      "lines":  [
-                                    "A question? I know three things: doors, bells, and which path has puddles.",
-                                    "Ask a grown-up. They like sounding certain.",
-                                    "I know where the puddles are and which door creaks loudest.",
-                                    "I can answer if it is about hiding, running, or snacks.",
-                                    "I know some things, but not the boring ones.",
-                                    "If the question is hard, I can point at someone taller.",
-                                    "I know the bell is loud, doors are sneaky, and mud follows you inside.",
-                                    "I might know. Is it about games?",
-                                    "Grown-ups know answers. I know shortcuts.",
-                                    "I can tell you which corner of the square is best for not being noticed."
-                                ],
-                      "weight":  46
-                  },
-                  {
-                      "id":  "baby_story_well",
-                      "request":  "story",
-                      "option":  "baby_story",
-                      "show_for_adults":  false,
-                      "lines":  [
-                                    "Once I ran all the way around the well and did not fall in. That is the whole story, but it was \u003cjump\u003every exciting\u003c/jump\u003e.",
-                                    "I had a \u003cwavy\u003edream\u003c/wavy\u003e I was tall enough to see over every fence.",
-                                    "I counted every door on this side of the square. Then I forgot the number and had to start over.",
-                                    "One time I found a beetle and followed it until it went somewhere too boring.",
-                                    "I tried to jump over a puddle, but the puddle was bigger than my plan.",
-                                    "I saw two chickens argue. I do not know who won, but one walked away proudly.",
-                                    "I hid behind a barrel for so long that I forgot I was hiding.",
-                                    "I made a tower of pebbles, and then the wind was rude to it.",
-                                    "One time I ran faster than my shadow. Only for a little bit.",
-                                    "I found the best stick in the village, but then someone said it was just a stick."
-                                ],
-                      "weight":  42
-                  },
-                  {
-                      "id":  "baby_joke_bell",
-                      "request":  "joke",
-                      "option":  "baby_joke",
-                      "show_for_adults":  false,
-                      "lines":  [
-                                    "Why did the bell ring? Because it had something \u003cjump\u003eimportant\u003c/jump\u003e to say!",
-                                    "If I stand very still, chores cannot see me.",
-                                    "Why did the door close? Because the wind was bossy.",
-                                    "Why did the chicken cross the square? Because I was chasing it.",
-                                    "What do you call a muddy boot? Mine, usually.",
-                                    "Why did the fence stay still? Because it was very good at its job.",
-                                    "I told a joke to a sheep once. It said baa. I think that means funny.",
-                                    "Why did the puddle laugh? Because I stepped in it by accident.",
-                                    "What is faster than a grown-up calling chores? Me, going the other way.",
-                                    "Why did the bed look tired? Because everyone keeps sleeping on it."
-                                ],
-                      "weight":  44
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.global",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "combat_survival_global_breath",
+      "request": "combat_survival_report",
+      "lines": [
+        "I did. Still breathing, still standing. That counts for more than it sounds.",
+        "Back to the village in one piece. I will remember who helped make that true.",
+        "I am here, breathing, and trying not to <shake>shake</shake>. That is enough for now.",
+        "The danger passed close, but it did not take me with it.",
+        "I made it through. My hands are still catching up to that fact.",
+        "I am alive, and right now that feels like a full day's work.",
+        "I heard the noise, felt the fear, and still found my way back.",
+        "My legs held, my breath held, and somehow so did I.",
+        "I would like a quieter day after that, if the world is taking requests.",
+        "Surviving does not feel heroic yet. Mostly it feels like breathing again."
+      ],
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "weight": 52
+    },
+    {
+      "id": "baby_today_question_hiding_place",
+      "request": "question",
+      "lines": [
+        "I found a really good hiding place, but I cannot tell you or it stops being good.",
+        "The bell is loud up close. I learned that by mistake.",
+        "Today I found a place where grown-ups forget to look down.",
+        "I saw a chicken walk like it had important business.",
+        "I found a puddle shaped almost like a potato.",
+        "I practiced sneaking, but my shoes kept telling on me.",
+        "I learned that if you look busy, grown-ups give you fewer chores.",
+        "There is a spot behind the fence where nobody checks first.",
+        "I found a stick that is probably important. I am keeping it safe.",
+        "Today I ran very fast and only almost fell down."
+      ],
+      "option": "baby_today_question",
+      "show_for_adults": false,
+      "weight": 47
+    },
+    {
+      "id": "baby_greeting_hi_again",
+      "request": "greeting",
+      "lines": [
+        "<jump>Hi again!</jump>",
+        "Hi! I remember your face a little.",
+        "Hello again! I was practicing saying hello first.",
+        "Hi! I saw you before, I think.",
+        "<jump>Hello!</jump> I said it before you did.",
+        "Hi again! I am taller than last time, maybe.",
+        "Hello! I was not hiding. I was just standing somewhere secret.",
+        "Hi! Did you come back on purpose?",
+        "Hello again! I know this greeting now.",
+        "<jump>Hi!</jump> I was just about to do something important."
+      ],
+      "option": "baby_greeting",
+      "show_for_adults": false,
+      "weight": 25
+    },
+    {
+      "id": "baby_greeting_from_here",
+      "request": "greeting",
+      "lines": [
+        "I can say hello from here.",
+        "Hello from this safe distance.",
+        "I can <wavy>wave</wavy> from here. That counts.",
+        "Hi. I am staying right here.",
+        "Hello. This spot feels far enough.",
+        "I heard you. I am not coming closer yet.",
+        "I can see you from here, so this is close enough.",
+        "Hello, but I am keeping my feet where they are.",
+        "I will wave. Talking closer is for braver people.",
+        "Hi. I am near the grown-ups, which is where I am staying."
+      ],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "option": "baby_greeting",
+      "show_for_adults": false,
+      "weight": 24
+    },
+    {
+      "id": "baby_question_doors_bells",
+      "request": "question",
+      "lines": [
+        "A question? I know three things: doors, bells, and which path has puddles.",
+        "Ask a grown-up. They like sounding certain.",
+        "I know where the puddles are and which door creaks loudest.",
+        "I can answer if it is about hiding, running, or snacks.",
+        "I know some things, but not the boring ones.",
+        "If the question is hard, I can point at someone taller.",
+        "I know the bell is loud, doors are sneaky, and mud follows you inside.",
+        "I might know. Is it about games?",
+        "Grown-ups know answers. I know shortcuts.",
+        "I can tell you which corner of the square is best for not being noticed."
+      ],
+      "option": "baby_question",
+      "show_for_adults": false,
+      "weight": 46
+    },
+    {
+      "id": "baby_story_well",
+      "request": "story",
+      "lines": [
+        "Once I ran all the way around the well and did not fall in. That is the whole story, but it was <jump>very exciting</jump>.",
+        "I had a <wavy>dream</wavy> I was tall enough to see over every fence.",
+        "I counted every door on this side of the square. Then I forgot the number and had to start over.",
+        "One time I found a beetle and followed it until it went somewhere too boring.",
+        "I tried to jump over a puddle, but the puddle was bigger than my plan.",
+        "I saw two chickens argue. I do not know who won, but one walked away proudly.",
+        "I hid behind a barrel for so long that I forgot I was hiding.",
+        "I made a tower of pebbles, and then the wind was rude to it.",
+        "One time I ran faster than my shadow. Only for a little bit.",
+        "I found the best stick in the village, but then someone said it was just a stick."
+      ],
+      "option": "baby_story",
+      "show_for_adults": false,
+      "weight": 42
+    },
+    {
+      "id": "baby_joke_bell",
+      "request": "joke",
+      "lines": [
+        "Why did the bell ring? Because it had something <jump>important</jump> to say!",
+        "If I stand very still, chores cannot see me.",
+        "Why did the door close? Because the wind was bossy.",
+        "Why did the chicken cross the square? Because I was chasing it.",
+        "What do you call a muddy boot? Mine, usually.",
+        "Why did the fence stay still? Because it was very good at its job.",
+        "I told a joke to a sheep once. It said baa. I think that means funny.",
+        "Why did the puddle laugh? Because I stepped in it by accident.",
+        "What is faster than a grown-up calling chores? Me, going the other way.",
+        "Why did the bed look tired? Because everyone keeps sleeping on it."
+      ],
+      "option": "baby_joke",
+      "show_for_adults": false,
+      "weight": 44
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.baby_basics"
+  }
 }

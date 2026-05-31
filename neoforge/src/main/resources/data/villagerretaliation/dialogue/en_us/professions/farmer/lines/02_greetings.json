@@ -1,29 +1,30 @@
 {
-    "lines":  [
-                  {
-                      "id":  "farmer_new_greeting_rows",
-                      "request":  "greeting",
-                      "weight":  26,
-                      "lines":  [
-                                    "Stay off the rows if you can. The crops remember boots.",
-                                    "Give the fields room. Farming works better without elbows in it.",
-                                    "Step carefully near the fields. I would rather greet you than patch you up.",
-                                    "There you are. I was just near the fields, trying to keep the day sensible.",
-                                    "Morning. Or afternoon. The work makes the hours blur if I let it.",
-                                    "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-                                    "If you need me, speak up. If you need gossip, speak quieter.",
-                                    "You caught me before the next little disaster. That is rare timing.",
-                                    "Hello. Try not to bring the whole village into this unless it is important.",
-                                    "I have a moment. Not a long one, but a real one."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.farmer",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "farmer_new_greeting_rows",
+      "request": "greeting",
+      "lines": [
+        "Stay off the rows if you can. The crops remember boots.",
+        "Give the fields room. Farming works better without elbows in it.",
+        "Step carefully near the fields. I would rather greet you than patch you up.",
+        "There you are. I was just near the fields, trying to keep the day sensible.",
+        "Morning. Or afternoon. The work makes the hours blur if I let it.",
+        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
+        "If you need me, speak up. If you need gossip, speak quieter.",
+        "You caught me before the next little disaster. That is rare timing.",
+        "Hello. Try not to bring the whole village into this unless it is important.",
+        "I have a moment. Not a long one, but a real one."
+      ],
+      "weight": 26
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.farmer",
+      "section.lines"
+    ],
+    "topic": "professions.farmer.greetings"
+  }
 }

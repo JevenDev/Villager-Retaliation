@@ -1,97 +1,98 @@
 {
-    "lines":  [
-                  {
-                      "id":  "butcher_question_work_variants",
-                      "request":  "question",
-                      "lines":  [
-                                    "A smokehouse tells you fast who understands patience.",
-                                    "Empty hooks before supper can \u003cshake\u003efrighten\u003c/shake\u003e a village more than thunder.",
-                                    "Salt is patient. That\u0027s why it keeps food better than most people keep promises.",
-                                    "Empty hooks tell a village to start worrying before anyone says it aloud.",
-                                    "People think about courage until supper is late. Then they think about supper.",
-                                    "A village with good stores can make careful choices instead of desperate ones.",
-                                    "Most days, I am at the smoker, trying to keep clean cuts from becoming everyone else\u0027s problem.",
-                                    "People think meat is simple until something goes wrong and suddenly it is very important.",
-                                    "A village runs on small work. Nobody praises it until it stops happening.",
-                                    "I trust a good cleaver more than a loud promise. The cleaver has less to prove."
-                                ],
-                      "weight":  172
-                  },
-                  {
-                      "id":  "question_follow_memory_butcher",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  3,
-                      "lines":  [
-                                    "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
-                                    "I remember following you through that road. My feet remember it even better.",
-                                    "That trip across that road taught me to ask more questions before walking.",
-                                    "Following you taught me that plans sound much safer before anyone starts walking.",
-                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
-                                    "Next time, warn me before the road becomes a test of character.",
-                                    "I learned two things out there: stay close, and ask better questions earlier.",
-                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
-                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
-                                    "If I followed you again, I would pack more food and fewer assumptions."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "excludes_ocean_crossing":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_butcher_boat",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  3,
-                      "lines":  [
-                                    "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water.",
-                                    "That boat trip still sits oddly in my memory, but at least it floated.",
-                                    "A boat can make a bad plan quieter. It can\u0027t make me forget it.",
-                                    "Following you taught me that plans sound much safer before anyone starts walking.",
-                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
-                                    "Next time, warn me before the road becomes a test of character.",
-                                    "I learned two things out there: stay close, and ask better questions earlier.",
-                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
-                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
-                                    "If I followed you again, I would pack more food and fewer assumptions."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "default_profession_butcher_careful_work",
-                      "request":  "question",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "Sharp knives are not angry knives. That\u0027s the first lesson.",
-                                    "A village eats better when nobody mistakes haste for skill.",
-                                    "I know every sound a clean cut should make. I also know when the street sounds wrong.",
-                                    "Most days, I am at the smoker, trying to keep clean cuts from becoming everyone else\u0027s problem.",
-                                    "People think meat is simple until something goes wrong and suddenly it is very important.",
-                                    "A village runs on small work. Nobody praises it until it stops happening.",
-                                    "I trust a good cleaver more than a loud promise. The cleaver has less to prove.",
-                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-                                    "I notice the little things. That is either a skill or what the smoker has done to me."
-                                ],
-                      "weight":  18
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.butcher",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "butcher_question_work_variants",
+      "request": "question",
+      "lines": [
+        "A smokehouse tells you fast who understands patience.",
+        "Empty hooks before supper can <shake>frighten</shake> a village more than thunder.",
+        "Salt is patient. That's why it keeps food better than most people keep promises.",
+        "Empty hooks tell a village to start worrying before anyone says it aloud.",
+        "People think about courage until supper is late. Then they think about supper.",
+        "A village with good stores can make careful choices instead of desperate ones.",
+        "Most days, I am at the smoker, trying to keep clean cuts from becoming everyone else's problem.",
+        "People think meat is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good cleaver more than a loud promise. The cleaver has less to prove."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "question_follow_memory_butcher",
+      "request": "question",
+      "lines": [
+        "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "question_follow_memory_butcher_boat",
+      "request": "question",
+      "lines": [
+        "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It can't make me forget it.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "default_profession_butcher_careful_work",
+      "request": "question",
+      "lines": [
+        "Sharp knives are not angry knives. That's the first lesson.",
+        "A village eats better when nobody mistakes haste for skill.",
+        "I know every sound a clean cut should make. I also know when the street sounds wrong.",
+        "Most days, I am at the smoker, trying to keep clean cuts from becoming everyone else's problem.",
+        "People think meat is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good cleaver more than a loud promise. The cleaver has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the smoker has done to me."
+      ],
+      "show_for_babies": false,
+      "weight": 18
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.butcher",
+      "section.lines"
+    ],
+    "topic": "professions.butcher.questions"
+  }
 }

@@ -1,29 +1,30 @@
 {
-    "lines":  [
-                  {
-                      "id":  "mason_new_joke_dense",
-                      "request":  "joke",
-                      "weight":  18,
-                      "lines":  [
-                                    "Mason jokes are solid. Sometimes too solid to move.",
-                                    "I tried a lighter mason joke once. It still landed like a brick.",
-                                    "My best jokes have foundations. The punchline usually needs \u003cjump\u003escaffolding\u003c/jump\u003e.",
-                                    "I told a joke at the stonecutter once. The workstation took it better than the villagers did.",
-                                    "People say I work too much. I say the work is the only one here that listens.",
-                                    "If confidence could be traded, this village would be rich and still somehow underprepared.",
-                                    "I tried taking a day off. The village immediately treated it like an emergency drill.",
-                                    "A good joke needs timing. Around here, timing usually trips over a chicken.",
-                                    "I would laugh louder, but someone would ask me to explain it and ruin everything.",
-                                    "The bell has one joke. It screams, and everyone suddenly remembers they have legs."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.mason",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "mason_new_joke_dense",
+      "request": "joke",
+      "lines": [
+        "Mason jokes are solid. Sometimes too solid to move.",
+        "I tried a lighter mason joke once. It still landed like a brick.",
+        "My best jokes have foundations. The punchline usually needs <jump>scaffolding</jump>.",
+        "I told a joke at the stonecutter once. The workstation took it better than the villagers did.",
+        "People say I work too much. I say the work is the only one here that listens.",
+        "If confidence could be traded, this village would be rich and still somehow underprepared.",
+        "I tried taking a day off. The village immediately treated it like an emergency drill.",
+        "A good joke needs timing. Around here, timing usually trips over a chicken.",
+        "I would laugh louder, but someone would ask me to explain it and ruin everything.",
+        "The bell has one joke. It screams, and everyone suddenly remembers they have legs."
+      ],
+      "weight": 18
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.mason",
+      "section.lines"
+    ],
+    "topic": "professions.mason.jokes"
+  }
 }

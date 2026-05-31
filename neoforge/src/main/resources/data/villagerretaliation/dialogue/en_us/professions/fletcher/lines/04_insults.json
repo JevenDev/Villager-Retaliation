@@ -1,50 +1,51 @@
 {
-    "lines":  [
-                  {
-                      "id":  "fletcher_new_insult_blunt",
-                      "request":  "insult",
-                      "weight":  18,
-                      "lines":  [
-                                    "That was blunt enough to disappoint an arrow.",
-                                    "I have seen crooked shots with more sense than that.",
-                                    "Careful. Even feather looks softer than your manners right now.",
-                                    "You walk in like trouble forgot to close the door behind it.",
-                                    "I have seen broken arrows with better instincts than you.",
-                                    "Careful. The village has long memories and very little patience today.",
-                                    "You are not as frightening as you think. That may be the problem.",
-                                    "If foolishness made noise, you would drown out the bell.",
-                                    "Do not test me just because I am speaking in complete sentences.",
-                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
-                                ]
-                  },
-                  {
-                      "id":  "fletcher_new_hostile_warning",
-                      "request":  "insult",
-                      "dispositions":  [
-                                           "hostile",
-                                           "rude"
-                                       ],
-                      "weight":  30,
-                      "lines":  [
-                                    "Keep testing patience and you will learn how warnings travel.",
-                                    "I have seen crooked shots with more sense than that.",
-                                    "Careful. Even feather looks softer than your manners right now.",
-                                    "You walk in like trouble forgot to close the door behind it.",
-                                    "I have seen broken arrows with better instincts than you.",
-                                    "Careful. The village has long memories and very little patience today.",
-                                    "You are not as frightening as you think. That may be the problem.",
-                                    "If foolishness made noise, you would drown out the bell.",
-                                    "Do not test me just because I am speaking in complete sentences.",
-                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.fletcher",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "fletcher_new_insult_blunt",
+      "request": "insult",
+      "lines": [
+        "That was blunt enough to disappoint an arrow.",
+        "I have seen crooked shots with more sense than that.",
+        "Careful. Even feather looks softer than your manners right now.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken arrows with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
+      ],
+      "weight": 18
+    },
+    {
+      "id": "fletcher_new_hostile_warning",
+      "request": "insult",
+      "lines": [
+        "Keep testing patience and you will learn how warnings travel.",
+        "I have seen crooked shots with more sense than that.",
+        "Careful. Even feather looks softer than your manners right now.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken arrows with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
+      ],
+      "dispositions": [
+        "hostile",
+        "rude"
+      ],
+      "weight": 30
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.fletcher",
+      "section.lines"
+    ],
+    "topic": "professions.fletcher.insults"
+  }
 }

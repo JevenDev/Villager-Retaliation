@@ -1,29 +1,30 @@
 {
-    "lines":  [
-                  {
-                      "id":  "nitwit_new_insult_hat",
-                      "request":  "insult",
-                      "weight":  18,
-                      "lines":  [
-                                    "Your hat looks like it is thinking harder than you.",
-                                    "I have seen bad guesses with more sense than that.",
-                                    "Careful. Even muddle looks softer than your manners right now.",
-                                    "You walk in like trouble forgot to close the door behind it.",
-                                    "I have seen broken opinions with better instincts than you.",
-                                    "Careful. The village has long memories and very little patience today.",
-                                    "You are not as frightening as you think. That may be the problem.",
-                                    "If foolishness made noise, you would drown out the bell.",
-                                    "Do not test me just because I am speaking in complete sentences.",
-                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.nitwit",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "nitwit_new_insult_hat",
+      "request": "insult",
+      "lines": [
+        "Your hat looks like it is thinking harder than you.",
+        "I have seen bad guesses with more sense than that.",
+        "Careful. Even muddle looks softer than your manners right now.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken opinions with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
+      ],
+      "weight": 18
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.nitwit",
+      "section.lines"
+    ],
+    "topic": "professions.nitwit.insults"
+  }
 }

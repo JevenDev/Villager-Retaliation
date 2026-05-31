@@ -1,76 +1,77 @@
 {
-    "lines":  [
-                  {
-                      "id":  "fletcher_cured_recognition_warm",
-                      "request":  "cured_recognition",
-                      "dispositions":  [
-                                           "friendly",
-                                           "respectful"
-                                       ],
-                      "lines":  [
-                                    "I remember the cure flying true when everything else had gone crooked.",
-                                    "You set me back on the string and did not let me snap.",
-                                    "You helped pull me back when even my name felt far away.",
-                                    "I remember cold, hunger, and then your face cutting through the fog.",
-                                    "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
-                                    "Some part of me still listens for that old \u003cshake\u003egroan\u003c/shake\u003e. I hate that part.",
-                                    "You helped me back. I may not say it gracefully, but I know what that means.",
-                                    "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
-                                    "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
-                                    "Do not make a ceremony of it. Just know I remember."
-                                ],
-                      "weight":  60
-                  },
-                  {
-                      "id":  "fletcher_cured_recognition_confused",
-                      "request":  "cured_recognition",
-                      "dispositions":  [
-                                           "neutral",
-                                           "cautious"
-                                       ],
-                      "lines":  [
-                                    "Your face lands near the target, but the rest of the memory wobbles.",
-                                    "There was a hiss, a bite of gold, and then my thoughts found their fletching.",
-                                    "The memory is rough around the edges, but your face stayed in it.",
-                                    "I remember cold, hunger, and then your face cutting through the fog.",
-                                    "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
-                                    "Some part of me still listens for that old \u003cshake\u003egroan\u003c/shake\u003e. I hate that part.",
-                                    "You helped me back. I may not say it gracefully, but I know what that means.",
-                                    "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
-                                    "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
-                                    "Do not make a ceremony of it. Just know I remember."
-                                ],
-                      "weight":  60
-                  },
-                  {
-                      "id":  "fletcher_cured_recognition_uneasy_1",
-                      "request":  "cured_recognition",
-                      "dispositions":  [
-                                           "rude",
-                                           "hostile",
-                                           "fearful"
-                                       ],
-                      "weight":  30,
-                      "lines":  [
-                                    "I remember you. The arrow of it still shakes in the target.",
-                                    "I know you helped. I also remember why my hands still shake.",
-                                    "The cure left echoes behind. Stand where I can breathe around them.",
-                                    "You walk in like trouble forgot to close the door behind it.",
-                                    "I have seen broken arrows with better instincts than you.",
-                                    "Careful. The village has long memories and very little patience today.",
-                                    "You are not as frightening as you think. That may be the problem.",
-                                    "If foolishness made noise, you would drown out the bell.",
-                                    "Do not test me just because I am speaking in complete sentences.",
-                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.fletcher",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "fletcher_cured_recognition_warm",
+      "request": "cured_recognition",
+      "lines": [
+        "I remember the cure flying true when everything else had gone crooked.",
+        "You set me back on the string and did not let me snap.",
+        "You helped pull me back when even my name felt far away.",
+        "I remember cold, hunger, and then your face cutting through the fog.",
+        "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
+        "Some part of me still listens for that old <shake>groan</shake>. I hate that part.",
+        "You helped me back. I may not say it gracefully, but I know what that means.",
+        "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
+        "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
+        "Do not make a ceremony of it. Just know I remember."
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "weight": 60
+    },
+    {
+      "id": "fletcher_cured_recognition_confused",
+      "request": "cured_recognition",
+      "lines": [
+        "Your face lands near the target, but the rest of the memory wobbles.",
+        "There was a hiss, a bite of gold, and then my thoughts found their fletching.",
+        "The memory is rough around the edges, but your face stayed in it.",
+        "I remember cold, hunger, and then your face cutting through the fog.",
+        "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
+        "Some part of me still listens for that old <shake>groan</shake>. I hate that part.",
+        "You helped me back. I may not say it gracefully, but I know what that means.",
+        "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
+        "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
+        "Do not make a ceremony of it. Just know I remember."
+      ],
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "weight": 60
+    },
+    {
+      "id": "fletcher_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "lines": [
+        "I remember you. The arrow of it still shakes in the target.",
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken arrows with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
+      ],
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.fletcher",
+      "section.lines"
+    ],
+    "topic": "professions.fletcher.cured_recognition"
+  }
 }

@@ -1,139 +1,140 @@
 {
-    "lines":  [
-                  {
-                      "id":  "fisherman_village_event_thunderstorm",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "thunderstorm"
-                                     ],
-                      "lines":  [
-                                    "Thunder shook the barrel so hard the docks creaked under the thunder, but everyone near me is still standing.",
-                                    "I checked nets, barrels, and dock posts after the lightning, then counted heads. No one should be alone after a sky like that.",
-                                    "Near the barrel, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
-                                    "That thunder made everyone quiet. I checked the barrels twice.",
-                                    "The sky can keep its lightning. I have barrels to set right.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "fisherman_village_event_fire",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "village_fire"
-                                     ],
-                      "lines":  [
-                                    "I checked tarred rope and dry dock planks for sparks first, then checked faces for smoke and fear.",
-                                    "We passed water hand to hand and kept people away from the smoke. I checked the dock planks after.",
-                                    "The nets can wait. People come first.",
-                                    "We saved what we could reach around the barrel, then stopped pretending things matter more than neighbors.",
-                                    "The smoke is thinning near the barrel, but everyone is still sniffing the air like it might lie.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "fisherman_village_event_raid",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "raid",
-                                         "player_defended_raid"
-                                     ],
-                      "lines":  [
-                                    "During a raid, the nets can dry crooked; who makes it behind a door matters more.",
-                                    "The horns stopped, but my hands near the barrel still expect another wave from the road.",
-                                    "We counted living neighbors before nets, barrels, and dock posts. That\u0027s the only count worth starting with.",
-                                    "Raiders came looking for easy emeralds. They found barred doors near the barrel and a bell that would not stop ringing.",
-                                    "From the barrel, I saw fear cross the square; then I saw courage get there first.",
-                                    "Fine. I can let this cool, but do not mistake calm for forgetting.",
-                                    "That helps. Keep your hands peaceful and we may still end this properly.",
-                                    "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-                                    "You are short. A nervous apology does not settle a public mistake.",
-                                    "No. I am too angry to bargain while you are standing there like that."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "fisherman_village_event_night_attack",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "night_attack"
-                                     ],
-                      "lines":  [
-                                    "Night trouble tests the loose latch by the barrel first. We are fixing those before sunset.",
-                                    "I stayed near the water past the lanterns and listened for anyone calling from the dark.",
-                                    "Dawn gave the barrel enough light to count wounds, missing blocks, and who made it home.",
-                                    "The dark tested everyone. Most of us passed by keeping a coil of rope between us and teeth.",
-                                    "We are safe enough near the barrel, though every shadow is being inspected twice.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "fisherman_village_event_sandstorm",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "sandstorm"
-                                     ],
-                      "lines":  [
-                                    "The wind threw sand through every crack. I am still cleaning sand out of the barrels.",
-                                    "I checked nets, barrels, and dock posts, then checked who was coughing too hard to answer.",
-                                    "Sand reached the barrel, the hinges, and half our eyes, but no one has been reported missing.",
-                                    "A hard wind teaches a fisherman which doors actually close and which ones only pretend.",
-                                    "We are safe enough near the barrel, though the whole village sounds like it is chewing gravel.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "fisherman_village_event_snowstorm",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "snowstorm"
-                                     ],
-                      "lines":  [
-                                    "The nets can dry crooked. Warm hands, clear paths, and full hearths come first.",
-                                    "Snow piled against the doors, but everyone near the barrel found shelter.",
-                                    "Cold works quietly around the barrel. We are checking on anyone who stayed quiet too long.",
-                                    "I am clearing ice from the dock edge and watching for footprints that stop too soon.",
-                                    "We are alright for now near the barrel. Keep the fires fed and the paths open.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.fisherman",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "fisherman_village_event_thunderstorm",
+      "request": "village_event_report",
+      "lines": [
+        "Thunder shook the barrel so hard the docks creaked under the thunder, but everyone near me is still standing.",
+        "I checked nets, barrels, and dock posts after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the barrel, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked the barrels twice.",
+        "The sky can keep its lightning. I have barrels to set right.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_fire",
+      "request": "village_event_report",
+      "lines": [
+        "I checked tarred rope and dry dock planks for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the dock planks after.",
+        "The nets can wait. People come first.",
+        "We saved what we could reach around the barrel, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the barrel, but everyone is still sniffing the air like it might lie.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "village_fire"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_raid",
+      "request": "village_event_report",
+      "lines": [
+        "During a raid, the nets can dry crooked; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the barrel still expect another wave from the road.",
+        "We counted living neighbors before nets, barrels, and dock posts. That's the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the barrel and a bell that would not stop ringing.",
+        "From the barrel, I saw fear cross the square; then I saw courage get there first.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that."
+      ],
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_night_attack",
+      "request": "village_event_report",
+      "lines": [
+        "Night trouble tests the loose latch by the barrel first. We are fixing those before sunset.",
+        "I stayed near the water past the lanterns and listened for anyone calling from the dark.",
+        "Dawn gave the barrel enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping a coil of rope between us and teeth.",
+        "We are safe enough near the barrel, though every shadow is being inspected twice.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "night_attack"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_sandstorm",
+      "request": "village_event_report",
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning sand out of the barrels.",
+        "I checked nets, barrels, and dock posts, then checked who was coughing too hard to answer.",
+        "Sand reached the barrel, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a fisherman which doors actually close and which ones only pretend.",
+        "We are safe enough near the barrel, though the whole village sounds like it is chewing gravel.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "sandstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_snowstorm",
+      "request": "village_event_report",
+      "lines": [
+        "The nets can dry crooked. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the barrel found shelter.",
+        "Cold works quietly around the barrel. We are checking on anyone who stayed quiet too long.",
+        "I am clearing ice from the dock edge and watching for footprints that stop too soon.",
+        "We are alright for now near the barrel. Keep the fires fed and the paths open.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "snowstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.fisherman",
+      "section.lines"
+    ],
+    "topic": "professions.fisherman.village_events"
+  }
 }

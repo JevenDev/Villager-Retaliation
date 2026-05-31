@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "apology_leatherworker_stitch",
-                      "request":  "apology",
-                      "option":  "apologize_for_harm",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "A clean stitch still leaves a seam. I accept the stitch. I remember the cut.",
-                                    "Hard things can soften with work. Start there.",
-                                    "Trust is not leather, but it still stretches thin when treated badly.",
-                                    "Fine. Let us see whether your next touch is gentler.",
-                                    "You made a tear. The apology is a needle, not the whole repair.",
-                                    "I\u0027ll accept the first stitch. Keep sewing.",
-                                    "Rough handling leaves marks. I heard you admit that.",
-                                    "Don\u0027t pull at a mending place before it has strength.",
-                                    "I was wrong. I would rather say it plainly than dress it up.",
-                                    "That came out sharper than it should have. I am sorry."
-                                ],
-                      "weight":  234
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.leatherworker",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "apology_leatherworker_stitch",
+      "request": "apology",
+      "lines": [
+        "A clean stitch still leaves a seam. I accept the stitch. I remember the cut.",
+        "Hard things can soften with work. Start there.",
+        "Trust is not leather, but it still stretches thin when treated badly.",
+        "Fine. Let us see whether your next touch is gentler.",
+        "You made a tear. The apology is a needle, not the whole repair.",
+        "I'll accept the first stitch. Keep sewing.",
+        "Rough handling leaves marks. I heard you admit that.",
+        "Don't pull at a mending place before it has strength.",
+        "I was wrong. I would rather say it plainly than dress it up.",
+        "That came out sharper than it should have. I am sorry."
+      ],
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "weight": 234
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.leatherworker",
+      "section.lines"
+    ],
+    "topic": "professions.leatherworker.apologies"
+  }
 }

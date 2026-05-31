@@ -1,144 +1,146 @@
 {
-    "lines":  [
-                  {
-                      "id":  "unemployed_share_story_badlands",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:badlands",
-                      "lines":  [
-                                    "{target}? Dry cliffs make every mistake echo. I would help whoever is closest.",
-                                    "If anyone heads for Badlands, tell them: Carry water and watch the ledges. I\u0027ll be at the square.",
-                                    "Red sand and terracotta do not soften a fall. I\u0027ll keep that in mind by the square.",
-                                    "Badlands is no small story. A village survives by hands, not titles.",
-                                    "I will remember Badlands as hard country with old color in its bones. I will keep my hands free to help.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "unemployed_share_story_desert",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:desert",
-                      "lines":  [
-                                    "{target}? Heat makes thirst louder than judgment. I would help whoever is closest.",
-                                    "If anyone heads for Desert, tell them: Carry water and travel by shade when you can. I will be at the square.",
-                                    "Sand hides holes, husks, and bad footing. I\u0027ll keep that in mind by the square.",
-                                    "Desert is no small story. A village survives by hands, not titles.",
-                                    "I will remember Desert as dry land that asks too much of the mouth. I will keep my hands free to help.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "unemployed_share_story_eroded_badlands",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:eroded_badlands",
-                      "lines":  [
-                                    "{target}? Wind has carved the land into bad footing. I would help whoever is closest.",
-                                    "If anyone heads for Eroded Badlands, tell them: Stay off narrow spires unless you can fly. I will be at the square.",
-                                    "Red towers look sturdy until the path narrows. I\u0027ll keep that in mind by the square.",
-                                    "Eroded Badlands is no small story. A village survives by hands, not titles.",
-                                    "I will remember Eroded Badlands as badlands worn sharp by weather. I will keep my hands free to help.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "unemployed_share_story_savanna",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:savanna",
-                      "lines":  [
-                                    "{target}? Dry grass takes warning from the wind. I would help whoever is closest.",
-                                    "If anyone heads for Savanna, tell them: Mind fire and travel while the sun is kind. I will be at the square.",
-                                    "Acacia trees lean like they heard bad news. I\u0027ll keep that in mind by the square.",
-                                    "Savanna is no small story. A village survives by hands, not titles.",
-                                    "I will remember Savanna as warm grassland where the wind talks first. I will keep my hands free to help.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "unemployed_share_story_savanna_plateau",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:savanna_plateau",
-                      "lines":  [
-                                    "{target}? High dry ground lets trouble see far. I would help whoever is closest.",
-                                    "If anyone heads for Savanna Plateau, tell them: Watch cliffs and keep water close. I will be at the square.",
-                                    "Acacia shade is thin comfort. I\u0027ll keep that in mind by the square.",
-                                    "Savanna Plateau is no small story. A village survives by hands, not titles.",
-                                    "I will remember Savanna Plateau as dry high land with a long view of danger. I will keep my hands free to help.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "unemployed_share_story_windswept_savanna",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:windswept_savanna",
-                      "lines":  [
-                                    "{target}? Dry grass and hard wind share the same warning. I would help whoever is closest.",
-                                    "If anyone heads for Windswept Savanna, tell them: Mind fire, cliffs, and the road back. I will be at the square.",
-                                    "Acacia trees look like they are leaning away from trouble. I\u0027ll keep that in mind by the square.",
-                                    "Windswept Savanna is no small story. A village survives by hands, not titles.",
-                                    "I will remember Windswept Savanna as savanna country pulled sharp by wind. I will keep my hands free to help.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "unemployed_share_story_wooded_badlands",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:wooded_badlands",
-                      "lines":  [
-                                    "{target}? Trees on badlands still grow in hard country. I would help whoever is closest.",
-                                    "If anyone heads for Wooded Badlands, tell them: Watch the drops between trunks. I will be at the square.",
-                                    "Wood and red stone make strange neighbors. I\u0027ll keep that in mind by the square.",
-                                    "Wooded Badlands is no small story. A village survives by hands, not titles.",
-                                    "I will remember Wooded Badlands as badlands with enough trees to hide the edge. I will keep my hands free to help.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "unemployed_share_story_badlands",
+      "request": "share_story",
+      "lines": [
+        "{target}? Dry cliffs make every mistake echo. I would help whoever is closest.",
+        "If anyone heads for Badlands, tell them: Carry water and watch the ledges. I'll be at the square.",
+        "Red sand and terracotta do not soften a fall. I'll keep that in mind by the square.",
+        "Badlands is no small story. A village survives by hands, not titles.",
+        "I will remember Badlands as hard country with old color in its bones. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:badlands",
+      "weight": 120
+    },
+    {
+      "id": "unemployed_share_story_desert",
+      "request": "share_story",
+      "lines": [
+        "{target}? Heat makes thirst louder than judgment. I would help whoever is closest.",
+        "If anyone heads for Desert, tell them: Carry water and travel by shade when you can. I will be at the square.",
+        "Sand hides holes, husks, and bad footing. I'll keep that in mind by the square.",
+        "Desert is no small story. A village survives by hands, not titles.",
+        "I will remember Desert as dry land that asks too much of the mouth. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:desert",
+      "weight": 120
+    },
+    {
+      "id": "unemployed_share_story_eroded_badlands",
+      "request": "share_story",
+      "lines": [
+        "{target}? Wind has carved the land into bad footing. I would help whoever is closest.",
+        "If anyone heads for Eroded Badlands, tell them: Stay off narrow spires unless you can fly. I will be at the square.",
+        "Red towers look sturdy until the path narrows. I'll keep that in mind by the square.",
+        "Eroded Badlands is no small story. A village survives by hands, not titles.",
+        "I will remember Eroded Badlands as badlands worn sharp by weather. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:eroded_badlands",
+      "weight": 120
+    },
+    {
+      "id": "unemployed_share_story_savanna",
+      "request": "share_story",
+      "lines": [
+        "{target}? Dry grass takes warning from the wind. I would help whoever is closest.",
+        "If anyone heads for Savanna, tell them: Mind fire and travel while the sun is kind. I will be at the square.",
+        "Acacia trees lean like they heard bad news. I'll keep that in mind by the square.",
+        "Savanna is no small story. A village survives by hands, not titles.",
+        "I will remember Savanna as warm grassland where the wind talks first. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:savanna",
+      "weight": 120
+    },
+    {
+      "id": "unemployed_share_story_savanna_plateau",
+      "request": "share_story",
+      "lines": [
+        "{target}? High dry ground lets trouble see far. I would help whoever is closest.",
+        "If anyone heads for Savanna Plateau, tell them: Watch cliffs and keep water close. I will be at the square.",
+        "Acacia shade is thin comfort. I'll keep that in mind by the square.",
+        "Savanna Plateau is no small story. A village survives by hands, not titles.",
+        "I will remember Savanna Plateau as dry high land with a long view of danger. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:savanna_plateau",
+      "weight": 120
+    },
+    {
+      "id": "unemployed_share_story_windswept_savanna",
+      "request": "share_story",
+      "lines": [
+        "{target}? Dry grass and hard wind share the same warning. I would help whoever is closest.",
+        "If anyone heads for Windswept Savanna, tell them: Mind fire, cliffs, and the road back. I will be at the square.",
+        "Acacia trees look like they are leaning away from trouble. I'll keep that in mind by the square.",
+        "Windswept Savanna is no small story. A village survives by hands, not titles.",
+        "I will remember Windswept Savanna as savanna country pulled sharp by wind. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:windswept_savanna",
+      "weight": 120
+    },
+    {
+      "id": "unemployed_share_story_wooded_badlands",
+      "request": "share_story",
+      "lines": [
+        "{target}? Trees on badlands still grow in hard country. I would help whoever is closest.",
+        "If anyone heads for Wooded Badlands, tell them: Watch the drops between trunks. I will be at the square.",
+        "Wood and red stone make strange neighbors. I'll keep that in mind by the square.",
+        "Wooded Badlands is no small story. A village survives by hands, not titles.",
+        "I will remember Wooded Badlands as badlands with enough trees to hide the edge. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:wooded_badlands",
+      "weight": 120
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.unemployed.share_stories",
+      "section.lines"
+    ],
+    "topic": "professions.unemployed.share_stories.share_stories__biomes_hot_dry"
+  }
 }

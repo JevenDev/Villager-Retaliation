@@ -1,96 +1,97 @@
 {
-    "lines":  [
-                  {
-                      "id":  "toolsmith_question_handles_variants",
-                      "request":  "question",
-                      "lines":  [
-                                    "Cracked handles are small \u003cshake\u003ewarnings\u003c/shake\u003e with expensive timing.",
-                                    "A dull edge makes every simple job into a bad plan.",
-                                    "A handle should fit the hand, not argue with it.",
-                                    "A sharp edge is useful. A careless one is just trouble with shine.",
-                                    "The bench hears every complaint before the finished tool gets praised.",
-                                    "Cracked handles are warnings. Ignore them and they become stories.",
-                                    "Most days, I am at the smithing table, trying to keep edges and handles from becoming everyone else\u0027s problem.",
-                                    "People think tools is simple until something goes wrong and suddenly it is very important.",
-                                    "A village runs on small work. Nobody praises it until it stops happening.",
-                                    "I trust a good file more than a loud promise. The file has less to prove."
-                                ],
-                      "weight":  172
-                  },
-                  {
-                      "id":  "question_follow_memory_toolsmith",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  3,
-                      "lines":  [
-                                    "That time I followed you, the whole plan could have used a better handle.",
-                                    "I remember following you through that road. My feet remember it even better.",
-                                    "That trip across that road taught me to ask more questions before walking.",
-                                    "Following you taught me that plans sound much safer before anyone starts walking.",
-                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
-                                    "Next time, warn me before the road becomes a test of character.",
-                                    "I learned two things out there: stay close, and ask better questions earlier.",
-                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
-                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
-                                    "If I followed you again, I would pack more food and fewer assumptions."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_toolsmith_boat",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  3,
-                      "lines":  [
-                                    "A boat is just a tool with a nervous floor. Yours worked, mostly.",
-                                    "That boat trip still sits oddly in my memory, but at least it floated.",
-                                    "A boat can make a bad plan quieter. It can\u0027t make me forget it.",
-                                    "Following you taught me that plans sound much safer before anyone starts walking.",
-                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
-                                    "Next time, warn me before the road becomes a test of character.",
-                                    "I learned two things out there: stay close, and ask better questions earlier.",
-                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
-                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
-                                    "If I followed you again, I would pack more food and fewer assumptions."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "default_profession_toolsmith_repair_logic",
-                      "request":  "question",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "A tool breaks loudly only after whispering for days.",
-                                    "Good tools make hard work honest. Bad tools make honest work dangerous.",
-                                    "I can fix a cracked handle. A cracked habit takes longer.",
-                                    "Most days, I am at the smithing table, trying to keep edges and handles from becoming everyone else\u0027s problem.",
-                                    "People think tools is simple until something goes wrong and suddenly it is very important.",
-                                    "A village runs on small work. Nobody praises it until it stops happening.",
-                                    "I trust a good file more than a loud promise. The file has less to prove.",
-                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-                                    "I notice the little things. That is either a skill or what the smithing table has done to me."
-                                ],
-                      "weight":  18
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.toolsmith",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "toolsmith_question_handles_variants",
+      "request": "question",
+      "lines": [
+        "Cracked handles are small <shake>warnings</shake> with expensive timing.",
+        "A dull edge makes every simple job into a bad plan.",
+        "A handle should fit the hand, not argue with it.",
+        "A sharp edge is useful. A careless one is just trouble with shine.",
+        "The bench hears every complaint before the finished tool gets praised.",
+        "Cracked handles are warnings. Ignore them and they become stories.",
+        "Most days, I am at the smithing table, trying to keep edges and handles from becoming everyone else's problem.",
+        "People think tools is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good file more than a loud promise. The file has less to prove."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "question_follow_memory_toolsmith",
+      "request": "question",
+      "lines": [
+        "That time I followed you, the whole plan could have used a better handle.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "question_follow_memory_toolsmith_boat",
+      "request": "question",
+      "lines": [
+        "A boat is just a tool with a nervous floor. Yours worked, mostly.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It can't make me forget it.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "default_profession_toolsmith_repair_logic",
+      "request": "question",
+      "lines": [
+        "A tool breaks loudly only after whispering for days.",
+        "Good tools make hard work honest. Bad tools make honest work dangerous.",
+        "I can fix a cracked handle. A cracked habit takes longer.",
+        "Most days, I am at the smithing table, trying to keep edges and handles from becoming everyone else's problem.",
+        "People think tools is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good file more than a loud promise. The file has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the smithing table has done to me."
+      ],
+      "show_for_babies": false,
+      "weight": 18
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.toolsmith",
+      "section.lines"
+    ],
+    "topic": "professions.toolsmith.questions"
+  }
 }

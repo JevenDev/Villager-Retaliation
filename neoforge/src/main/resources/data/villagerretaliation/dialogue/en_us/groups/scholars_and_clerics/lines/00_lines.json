@@ -1,161 +1,162 @@
 {
-    "lines":  [
-                  {
-                      "id":  "default_cured_recognition_scholars",
-                      "request":  "cured_recognition",
-                      "professions":  [
-                                          "cleric",
-                                          "librarian",
-                                          "cartographer"
-                                      ],
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "I remember pieces. Your face is one of the pieces that does not hurt.",
-                                    "There was hunger, then noise, then a hand pulling me back toward my \u003cpulse\u003ename\u003c/pulse\u003e.",
-                                    "I was far from myself. You left a trail I could follow home.",
-                                    "I remember being lost inside my own body, and then I remember you.",
-                                    "The cure felt like waking from a nightmare that still knew my name.",
-                                    "I do not remember everything clearly, but I remember who helped me return.",
-                                    "There was a point where I thought I was only hunger. You proved otherwise.",
-                                    "Some memories are broken, but gratitude survived them.",
-                                    "You brought me back gently from something that had no gentleness in it.",
-                                    "I was nearly erased. You helped write me back into the village."
-                                ],
-                      "weight":  34
-                  },
-                  {
-                      "id":  "default_event_baby_born_recordkeepers",
-                      "request":  "village_event_report",
-                      "professions":  [
-                                          "librarian",
-                                          "cartographer"
-                                      ],
-                      "event_tags":  [
-                                         "baby_born"
-                                     ],
-                      "lines":  [
-                                    "I wrote the birth down. A village should know when its future arrives.",
-                                    "A new \u003cpulse\u003ename\u003c/pulse\u003e belongs on our records and our maps, even if their feet cannot reach the road yet.",
-                                    "The village grew by one heartbeat. That changes every calculation.",
-                                    "Another little life has joined us. The records feel warmer for it.",
-                                    "I marked the day carefully. Some dates deserve a gentler hand.",
-                                    "A child was born, and suddenly the village feels a little more worth protecting.",
-                                    "The map has not changed, but the meaning of this place has.",
-                                    "A new name, a new bed, a new reason for everyone to speak a little softer.",
-                                    "I added them to the records before the ink had fully dried on the news.",
-                                    "One more voice will grow into this village. That is no small thing."
-                                ],
-                      "weight":  30
-                  },
-                  {
-                      "id":  "default_event_player_cured_villager_witnesses",
-                      "request":  "village_event_report",
-                      "professions":  [
-                                          "cleric",
-                                          "librarian",
-                                          "cartographer"
-                                      ],
-                      "event_tags":  [
-                                         "player_cured_villager"
-                                     ],
-                      "player_event_tags":  [
-                                                "player_cured_villager"
-                                            ],
-                      "lines":  [
-                                    "You brought someone back from the hunger. The village will speak of that softly.",
-                                    "Curing is not just medicine. It is refusing to let a name be \u003citalic\u003eerased\u003c/italic\u003e.",
-                                    "I saw hope do practical work today.",
-                                    "You gave someone back their voice, their work, and their place among us.",
-                                    "That was not a small kindness. It was a rescue with a heartbeat at the end.",
-                                    "The village remembers wounds, but it remembers healing even longer.",
-                                    "You pulled them back from a darkness most of us only fear from a distance.",
-                                    "There are many ways to protect a village. Today, you chose one of the rarest.",
-                                    "I will write this down carefully. Some deeds should not be left to rumor.",
-                                    "Someone who was almost gone is standing among us again because of you."
-                                ],
-                      "weight":  38
-                  },
-                  {
-                      "id":  "default_event_retaliation_started_civic_trades",
-                      "request":  "village_event_report",
-                      "professions":  [
-                                          "cleric",
-                                          "librarian",
-                                          "cartographer",
-                                          "farmer"
-                                      ],
-                      "event_tags":  [
-                                         "villager_retaliation_started"
-                                     ],
-                      "lines":  [
-                                    "A peaceful place can still reach its limit.",
-                                    "The village remembers \u003cshake\u003eharm\u003c/shake\u003e before it remembers courage.",
-                                    "Nobody likes when anger becomes necessary. Necessary things rarely ask to be liked.",
-                                    "There is a point where patience stops being wisdom and starts being surrender.",
-                                    "The village did not choose violence lightly. That is what makes it heavy.",
-                                    "When people are pushed far enough, even quiet hands learn what to hold.",
-                                    "Retaliation is not pride. It is what happens when safety runs out of room.",
-                                    "We would rather trade, farm, read, and pray. But we would also rather survive.",
-                                    "A village can forgive many things. It cannot live by forgiveness alone.",
-                                    "Today, peace stepped aside because no one left it another path."
-                                ],
-                      "weight":  34
-                  },
-                  {
-                      "id":  "default_event_reputation_changed_librarian_notes",
-                      "request":  "village_event_report",
-                      "professions":  [
-                                          "librarian",
-                                          "cartographer",
-                                          "cleric"
-                                      ],
-                      "event_tags":  [
-                                         "reputation_changed"
-                                     ],
-                      "lines":  [
-                                    "Reputation is not a number to us. It is how quickly the room relaxes when you enter.",
-                                    "The village has adjusted its memory of you. Try to deserve the better version.",
-                                    "People think trust changes loudly. Usually it moves one \u003cpulse\u003equiet inch\u003c/pulse\u003e at a time.",
-                                    "What people think of you here is shifting. That can be a warning or a gift.",
-                                    "A reputation is written by many hands, but yours keeps choosing the ink.",
-                                    "The village is watching more carefully now. Whether that is good depends on you.",
-                                    "Trust does not vanish all at once, and it does not return that way either.",
-                                    "People have started speaking of you differently. Listen to the difference.",
-                                    "Every action becomes part of the story people tell when you are not in the room.",
-                                    "The village has a long memory. Make sure it has a reason to be kind."
-                                ],
-                      "weight":  28
-                  },
-                  {
-                      "id":  "default_joke_profession_scholars",
-                      "request":  "joke",
-                      "professions":  [
-                                          "librarian",
-                                          "cartographer",
-                                          "cleric"
-                                      ],
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "I will record that under humor, with a cautious footnote.",
-                                    "The setup had a road. The ending wandered into a swamp.",
-                                    "I laughed internally. \u003citalic\u003eVery\u003c/italic\u003e internally.",
-                                    "That joke requires further study, preferably by someone else.",
-                                    "I see the structure. I question the conclusion.",
-                                    "The map of that joke had no clear destination.",
-                                    "I will not call it bad. I will call it historically interesting.",
-                                    "There may have been wisdom in that joke, but it escaped before I could cite it.",
-                                    "A bold attempt. Not a successful one, but bold.",
-                                    "I would shelve that under fiction, far from the good material."
-                                ],
-                      "weight":  22
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.group.scholars_and_clerics",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "default_cured_recognition_scholars",
+      "request": "cured_recognition",
+      "lines": [
+        "I remember pieces. Your face is one of the pieces that does not hurt.",
+        "There was hunger, then noise, then a hand pulling me back toward my <pulse>name</pulse>.",
+        "I was far from myself. You left a trail I could follow home.",
+        "I remember being lost inside my own body, and then I remember you.",
+        "The cure felt like waking from a nightmare that still knew my name.",
+        "I do not remember everything clearly, but I remember who helped me return.",
+        "There was a point where I thought I was only hunger. You proved otherwise.",
+        "Some memories are broken, but gratitude survived them.",
+        "You brought me back gently from something that had no gentleness in it.",
+        "I was nearly erased. You helped write me back into the village."
+      ],
+      "professions": [
+        "cleric",
+        "librarian",
+        "cartographer"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "default_event_baby_born_recordkeepers",
+      "request": "village_event_report",
+      "lines": [
+        "I wrote the birth down. A village should know when its future arrives.",
+        "A new <pulse>name</pulse> belongs on our records and our maps, even if their feet cannot reach the road yet.",
+        "The village grew by one heartbeat. That changes every calculation.",
+        "Another little life has joined us. The records feel warmer for it.",
+        "I marked the day carefully. Some dates deserve a gentler hand.",
+        "A child was born, and suddenly the village feels a little more worth protecting.",
+        "The map has not changed, but the meaning of this place has.",
+        "A new name, a new bed, a new reason for everyone to speak a little softer.",
+        "I added them to the records before the ink had fully dried on the news.",
+        "One more voice will grow into this village. That is no small thing."
+      ],
+      "event_tags": [
+        "baby_born"
+      ],
+      "professions": [
+        "librarian",
+        "cartographer"
+      ],
+      "weight": 30
+    },
+    {
+      "id": "default_event_player_cured_villager_witnesses",
+      "request": "village_event_report",
+      "lines": [
+        "You brought someone back from the hunger. The village will speak of that softly.",
+        "Curing is not just medicine. It is refusing to let a name be <italic>erased</italic>.",
+        "I saw hope do practical work today.",
+        "You gave someone back their voice, their work, and their place among us.",
+        "That was not a small kindness. It was a rescue with a heartbeat at the end.",
+        "The village remembers wounds, but it remembers healing even longer.",
+        "You pulled them back from a darkness most of us only fear from a distance.",
+        "There are many ways to protect a village. Today, you chose one of the rarest.",
+        "I will write this down carefully. Some deeds should not be left to rumor.",
+        "Someone who was almost gone is standing among us again because of you."
+      ],
+      "event_tags": [
+        "player_cured_villager"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "professions": [
+        "cleric",
+        "librarian",
+        "cartographer"
+      ],
+      "weight": 38
+    },
+    {
+      "id": "default_event_retaliation_started_civic_trades",
+      "request": "village_event_report",
+      "lines": [
+        "A peaceful place can still reach its limit.",
+        "The village remembers <shake>harm</shake> before it remembers courage.",
+        "Nobody likes when anger becomes necessary. Necessary things rarely ask to be liked.",
+        "There is a point where patience stops being wisdom and starts being surrender.",
+        "The village did not choose violence lightly. That is what makes it heavy.",
+        "When people are pushed far enough, even quiet hands learn what to hold.",
+        "Retaliation is not pride. It is what happens when safety runs out of room.",
+        "We would rather trade, farm, read, and pray. But we would also rather survive.",
+        "A village can forgive many things. It cannot live by forgiveness alone.",
+        "Today, peace stepped aside because no one left it another path."
+      ],
+      "event_tags": [
+        "villager_retaliation_started"
+      ],
+      "professions": [
+        "cleric",
+        "librarian",
+        "cartographer",
+        "farmer"
+      ],
+      "weight": 34
+    },
+    {
+      "id": "default_event_reputation_changed_librarian_notes",
+      "request": "village_event_report",
+      "lines": [
+        "Reputation is not a number to us. It is how quickly the room relaxes when you enter.",
+        "The village has adjusted its memory of you. Try to deserve the better version.",
+        "People think trust changes loudly. Usually it moves one <pulse>quiet inch</pulse> at a time.",
+        "What people think of you here is shifting. That can be a warning or a gift.",
+        "A reputation is written by many hands, but yours keeps choosing the ink.",
+        "The village is watching more carefully now. Whether that is good depends on you.",
+        "Trust does not vanish all at once, and it does not return that way either.",
+        "People have started speaking of you differently. Listen to the difference.",
+        "Every action becomes part of the story people tell when you are not in the room.",
+        "The village has a long memory. Make sure it has a reason to be kind."
+      ],
+      "event_tags": [
+        "reputation_changed"
+      ],
+      "professions": [
+        "librarian",
+        "cartographer",
+        "cleric"
+      ],
+      "weight": 28
+    },
+    {
+      "id": "default_joke_profession_scholars",
+      "request": "joke",
+      "lines": [
+        "I will record that under humor, with a cautious footnote.",
+        "The setup had a road. The ending wandered into a swamp.",
+        "I laughed internally. <italic>Very</italic> internally.",
+        "That joke requires further study, preferably by someone else.",
+        "I see the structure. I question the conclusion.",
+        "The map of that joke had no clear destination.",
+        "I will not call it bad. I will call it historically interesting.",
+        "There may have been wisdom in that joke, but it escaped before I could cite it.",
+        "A bold attempt. Not a successful one, but bold.",
+        "I would shelve that under fiction, far from the good material."
+      ],
+      "professions": [
+        "librarian",
+        "cartographer",
+        "cleric"
+      ],
+      "show_for_babies": false,
+      "weight": 22
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.scholars_and_clerics",
+      "section.lines"
+    ],
+    "topic": "groups.scholars_and_clerics.lines"
+  }
 }

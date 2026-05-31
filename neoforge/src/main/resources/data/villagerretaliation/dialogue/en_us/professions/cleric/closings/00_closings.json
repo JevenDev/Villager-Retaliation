@@ -1,27 +1,28 @@
 {
-    "closings":  [
-                     {
-                         "id":  "cleric_closing",
-                         "lines":  [
-                                       "I should return to the remedies and \u003cpulse\u003equiet prayers\u003c/pulse\u003e.",
-                                       "Best I get back to the healing shelf before someone waits too long.",
-                                       "That tincture still needs another careful stir.",
-                                       "I have a patient\u0027s notes to look over before nightfall.",
-                                       "The chapel bells are nearly at the hour. I should not keep them waiting.",
-                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to grinding herbs and offering calm words.",
-                                       "I need to see who still needs bread and bandages.",
-                                       "There is a prayer unfinished, and a poultice beside it.",
-                                       "I\u0027ll be back where the candles burn steady.",
-                                       "Time to finish my rounds and mend what I can."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.cleric",
-                                  "section.closings"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cleric",
+      "section.closings"
+    ],
+    "topic": "professions.cleric.closings"
+  },
+  "closings": [
+    {
+      "id": "cleric_closing",
+      "lines": [
+        "I should return to the remedies and <pulse>quiet prayers</pulse>.",
+        "Best I get back to the healing shelf before someone waits too long.",
+        "That tincture still needs another careful stir.",
+        "I have a patient's notes to look over before nightfall.",
+        "The chapel bells are nearly at the hour. I should not keep them waiting.",
+        "<pulse>Back</pulse> to grinding herbs and offering calm words.",
+        "I need to see who still needs bread and bandages.",
+        "There is a prayer unfinished, and a poultice beside it.",
+        "I'll be back where the candles burn steady.",
+        "Time to finish my rounds and mend what I can."
+      ]
+    }
+  ]
 }

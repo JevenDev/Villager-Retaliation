@@ -1,106 +1,108 @@
 {
-    "lines":  [
-                  {
-                      "id":  "shepherd_share_story_basalt_deltas",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:basalt_deltas",
-                      "lines":  [
-                                    "{target}? Black stone and lava leave little mercy. I would count everyone twice.",
-                                    "If anyone heads for Basalt Deltas, tell them: Step like every block wants an argument. I will be at the loom.",
-                                    "Ash and basalt make the Nether feel broken twice. I\u0027ll remember that when I count everyone.",
-                                    "Basalt Deltas is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Basalt Deltas as as jagged black country with heat in its cracks. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_crimson_forest",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:crimson_forest",
-                      "lines":  [
-                                    "{target}? Red Nether trees grow among hoglins and worse. I would count everyone twice.",
-                                    "If anyone heads for Crimson Forest, tell them: Keep gold on and eyes open. I\u0027ll be at the loom.",
-                                    "The whole forest looks like it has a pulse. I\u0027ll remember that when I count everyone.",
-                                    "Crimson Forest is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Crimson Forest as a red forest that feels too alive. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_nether_wastes",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:nether_wastes",
-                      "lines":  [
-                                    "{target}? The Nether wastes neither heat nor cruelty. I would count everyone twice.",
-                                    "If anyone heads for Nether Wastes, tell them: Watch ghasts, cliffs, and every pool of lava. I will be at the loom.",
-                                    "Netherrack crumbles like it enjoys the fall. I\u0027ll remember that when I count everyone.",
-                                    "Nether Wastes is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Nether Wastes as red stone and fire with no decent sky. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_soul_sand_valley",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:soul_sand_valley",
-                      "lines":  [
-                                    "{target}? The ground pulls back when you try to leave. I would count everyone twice.",
-                                    "If anyone heads for Soul Sand Valley, tell them: Wear good boots and keep ghasts in mind. I will be at the loom.",
-                                    "Soul sand makes every step feel watched. I\u0027ll remember that when I count everyone.",
-                                    "Soul Sand Valley is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Soul Sand Valley as a valley where the floor does not want guests. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_warped_forest",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:warped_forest",
-                      "lines":  [
-                                    "{target}? Blue Nether trees make sense feel optional. I would count everyone twice.",
-                                    "If anyone heads for Warped Forest, tell them: Keep gold on and eyes off trouble. I will be at the loom.",
-                                    "Warped wood looks wrong even before it moves. I\u0027ll remember that when I count everyone.",
-                                    "Warped Forest is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Warped Forest as a blue forest that forgot what forests are for. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "shepherd_share_story_basalt_deltas",
+      "request": "share_story",
+      "lines": [
+        "{target}? Black stone and lava leave little mercy. I would count everyone twice.",
+        "If anyone heads for Basalt Deltas, tell them: Step like every block wants an argument. I will be at the loom.",
+        "Ash and basalt make the Nether feel broken twice. I'll remember that when I count everyone.",
+        "Basalt Deltas is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Basalt Deltas as as jagged black country with heat in its cracks. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:basalt_deltas",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_crimson_forest",
+      "request": "share_story",
+      "lines": [
+        "{target}? Red Nether trees grow among hoglins and worse. I would count everyone twice.",
+        "If anyone heads for Crimson Forest, tell them: Keep gold on and eyes open. I'll be at the loom.",
+        "The whole forest looks like it has a pulse. I'll remember that when I count everyone.",
+        "Crimson Forest is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Crimson Forest as a red forest that feels too alive. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:crimson_forest",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_nether_wastes",
+      "request": "share_story",
+      "lines": [
+        "{target}? The Nether wastes neither heat nor cruelty. I would count everyone twice.",
+        "If anyone heads for Nether Wastes, tell them: Watch ghasts, cliffs, and every pool of lava. I will be at the loom.",
+        "Netherrack crumbles like it enjoys the fall. I'll remember that when I count everyone.",
+        "Nether Wastes is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Nether Wastes as red stone and fire with no decent sky. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:nether_wastes",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_soul_sand_valley",
+      "request": "share_story",
+      "lines": [
+        "{target}? The ground pulls back when you try to leave. I would count everyone twice.",
+        "If anyone heads for Soul Sand Valley, tell them: Wear good boots and keep ghasts in mind. I will be at the loom.",
+        "Soul sand makes every step feel watched. I'll remember that when I count everyone.",
+        "Soul Sand Valley is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Soul Sand Valley as a valley where the floor does not want guests. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:soul_sand_valley",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_warped_forest",
+      "request": "share_story",
+      "lines": [
+        "{target}? Blue Nether trees make sense feel optional. I would count everyone twice.",
+        "If anyone heads for Warped Forest, tell them: Keep gold on and eyes off trouble. I will be at the loom.",
+        "Warped wood looks wrong even before it moves. I'll remember that when I count everyone.",
+        "Warped Forest is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Warped Forest as a blue forest that forgot what forests are for. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:warped_forest",
+      "weight": 120
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.shepherd.share_stories",
+      "section.lines"
+    ],
+    "topic": "professions.shepherd.share_stories.share_stories__biomes_nether"
+  }
 }

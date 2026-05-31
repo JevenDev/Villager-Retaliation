@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "apology_shepherd_count",
-                      "request":  "apology",
-                      "option":  "apologize_for_harm",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "I count losses carefully. I can count an apology too, if it is real.",
-                                    "Rough hands ruin good wool. Gentle choices from here, yes?",
-                                    "A frightened heart remembers rough handling. Be gentler from here.",
-                                    "Fine. I\u0027ll count the apology, but I\u0027ll also count what follows.",
-                                    "Trust scatters quickly. Gather it patiently.",
-                                    "Don\u0027t chase forgiveness. Walk steady and let it come closer.",
-                                    "I hear you. Keep your hands calm around this village.",
-                                    "Words can be soft. Make your choices soft too.",
-                                    "I was wrong. I would rather say it plainly than dress it up.",
-                                    "That came out sharper than it should have. I am sorry."
-                                ],
-                      "weight":  234
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.shepherd",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "apology_shepherd_count",
+      "request": "apology",
+      "lines": [
+        "I count losses carefully. I can count an apology too, if it is real.",
+        "Rough hands ruin good wool. Gentle choices from here, yes?",
+        "A frightened heart remembers rough handling. Be gentler from here.",
+        "Fine. I'll count the apology, but I'll also count what follows.",
+        "Trust scatters quickly. Gather it patiently.",
+        "Don't chase forgiveness. Walk steady and let it come closer.",
+        "I hear you. Keep your hands calm around this village.",
+        "Words can be soft. Make your choices soft too.",
+        "I was wrong. I would rather say it plainly than dress it up.",
+        "That came out sharper than it should have. I am sorry."
+      ],
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "weight": 234
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.shepherd",
+      "section.lines"
+    ],
+    "topic": "professions.shepherd.apologies"
+  }
 }

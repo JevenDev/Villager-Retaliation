@@ -1,27 +1,28 @@
 {
-    "closings":  [
-                     {
-                         "id":  "leatherworker_closing",
-                         "lines":  [
-                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to the drying racks before the hides get ahead of me.",
-                                       "I should return to the seams while the leather still has some give.",
-                                       "A few cuts need reinforcing before the client comes back.",
-                                       "I have wax to work in and buckles to test.",
-                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to smoothing grain and trimming edges.",
-                                       "I promised a set of straps by this afternoon, and they are not done yet.",
-                                       "The thread is still coiled, waiting for my hand.",
-                                       "I need to check my tools. Somehow they have wandered again.",
-                                       "No glove stitches itself, and I have one waiting.",
-                                       "Time to get back to the workshop and finish these pieces properly."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.leatherworker",
-                                  "section.closings"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.leatherworker",
+      "section.closings"
+    ],
+    "topic": "professions.leatherworker.closings"
+  },
+  "closings": [
+    {
+      "id": "leatherworker_closing",
+      "lines": [
+        "<pulse>Back</pulse> to the drying racks before the hides get ahead of me.",
+        "I should return to the seams while the leather still has some give.",
+        "A few cuts need reinforcing before the client comes back.",
+        "I have wax to work in and buckles to test.",
+        "<pulse>Back</pulse> to smoothing grain and trimming edges.",
+        "I promised a set of straps by this afternoon, and they are not done yet.",
+        "The thread is still coiled, waiting for my hand.",
+        "I need to check my tools. Somehow they have wandered again.",
+        "No glove stitches itself, and I have one waiting.",
+        "Time to get back to the workshop and finish these pieces properly."
+      ]
+    }
+  ]
 }

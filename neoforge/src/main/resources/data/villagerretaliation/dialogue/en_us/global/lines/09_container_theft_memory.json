@@ -1,76 +1,77 @@
 {
-    "lines":  [
-                  {
-                      "id":  "village_event_sandstorm_shared_1",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "sandstorm"
-                                     ],
-                      "lines":  [
-                                    "The wind came in \u003cwavy\u003ehard enough\u003c/wavy\u003e to make the whole village taste like dust.",
-                                    "No rain here, just grit in the shutters and everyone checking their eyes.",
-                                    "The sand got everywhere, but people found their way indoors.",
-                                    "Harsh wind can scare a village nearly as well as thunder. We are still here.",
-                                    "We are sweeping doorways and counting heads after that wall of dust.",
-                                    "The storm turned every path into a guess for a while.",
-                                    "People are still shaking sand from their clothes and worry from their voices.",
-                                    "The wind has passed, but the dust is taking its time leaving.",
-                                    "A sandstorm makes even familiar doors feel far away.",
-                                    "We kept low, covered our faces, and waited for the village to reappear."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "village_event_sandstorm_baby_1",
-                      "request":  "village_event_report",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "event_tags":  [
-                                         "sandstorm"
-                                     ],
-                      "lines":  [
-                                    "The wind threw sand at the windows. I did not like the sound.",
-                                    "I got dust in my mouth even inside. How does it do that?",
-                                    "The grown-ups said cover my face, so I did.",
-                                    "It was like the ground tried to \u003cwavy\u003efly away\u003c/wavy\u003e.",
-                                    "I am okay, but my hair feels crunchy.",
-                                    "The outside disappeared, and I thought that was very rude.",
-                                    "I tried to look out, but the window only showed angry dust.",
-                                    "The wind sounded like it was scratching the whole house.",
-                                    "I stayed inside because the sand was being mean.",
-                                    "Next time the ground starts flying, I am hiding under a blanket."
-                                ],
-                      "weight":  160
-                  },
-                  {
-                      "id":  "village_event_snowstorm_shared_1",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "snowstorm"
-                                     ],
-                      "lines":  [
-                                    "The snow came down hard, but the hearths held and the doors stayed shut.",
-                                    "Cold frightens \u003cpulse\u003eslowly\u003c/pulse\u003e. We are checking fingers, roofs, and firewood.",
-                                    "The village went white and quiet for a while. \u003citalic\u003eQuiet is not always peace.\u003c/italic\u003e",
-                                    "Everyone is chilled, but accounted for. Warmth matters now.",
-                                    "We are clearing paths before the snow hides what people need.",
-                                    "The storm made every roof carry more than it should.",
-                                    "People are sharing firewood and pretending they are not worried about the next gust.",
-                                    "Snow softens sound, but it does not soften danger.",
-                                    "The paths are buried, so we are making new ones one shovel at a time.",
-                                    "We made it through the worst of it. Now comes the cold work after."
-                                ],
-                      "weight":  140
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.global",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "village_event_sandstorm_shared_1",
+      "request": "village_event_report",
+      "lines": [
+        "The wind came in <wavy>hard enough</wavy> to make the whole village taste like dust.",
+        "No rain here, just grit in the shutters and everyone checking their eyes.",
+        "The sand got everywhere, but people found their way indoors.",
+        "Harsh wind can scare a village nearly as well as thunder. We are still here.",
+        "We are sweeping doorways and counting heads after that wall of dust.",
+        "The storm turned every path into a guess for a while.",
+        "People are still shaking sand from their clothes and worry from their voices.",
+        "The wind has passed, but the dust is taking its time leaving.",
+        "A sandstorm makes even familiar doors feel far away.",
+        "We kept low, covered our faces, and waited for the village to reappear."
+      ],
+      "event_tags": [
+        "sandstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 140
+    },
+    {
+      "id": "village_event_sandstorm_baby_1",
+      "request": "village_event_report",
+      "lines": [
+        "The wind threw sand at the windows. I did not like the sound.",
+        "I got dust in my mouth even inside. How does it do that?",
+        "The grown-ups said cover my face, so I did.",
+        "It was like the ground tried to <wavy>fly away</wavy>.",
+        "I am okay, but my hair feels crunchy.",
+        "The outside disappeared, and I thought that was very rude.",
+        "I tried to look out, but the window only showed angry dust.",
+        "The wind sounded like it was scratching the whole house.",
+        "I stayed inside because the sand was being mean.",
+        "Next time the ground starts flying, I am hiding under a blanket."
+      ],
+      "event_tags": [
+        "sandstorm"
+      ],
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 160
+    },
+    {
+      "id": "village_event_snowstorm_shared_1",
+      "request": "village_event_report",
+      "lines": [
+        "The snow came down hard, but the hearths held and the doors stayed shut.",
+        "Cold frightens <pulse>slowly</pulse>. We are checking fingers, roofs, and firewood.",
+        "The village went white and quiet for a while. <italic>Quiet is not always peace.</italic>",
+        "Everyone is chilled, but accounted for. Warmth matters now.",
+        "We are clearing paths before the snow hides what people need.",
+        "The storm made every roof carry more than it should.",
+        "People are sharing firewood and pretending they are not worried about the next gust.",
+        "Snow softens sound, but it does not soften danger.",
+        "The paths are buried, so we are making new ones one shovel at a time.",
+        "We made it through the worst of it. Now comes the cold work after."
+      ],
+      "event_tags": [
+        "snowstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 140
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.container_theft_memory"
+  }
 }

@@ -1,96 +1,97 @@
 {
-    "lines":  [
-                  {
-                      "id":  "recruitment_left_behind_deep_dark",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me in the Deep Dark. I do not want to learn what \u003cpulse\u003ehears me first\u003c/pulse\u003e down there.",
-                                    "The Deep Dark is not a place for patience. It is a place for \u003cshake\u003epanic whispered quietly\u003c/shake\u003e.",
-                                    "I stood in the Deep Dark afraid even my \u003cpulse\u003ebreathing\u003c/pulse\u003e was too loud once you were gone.",
-                                    "If you disappear in the Deep Dark, I am left measuring every sound like it might be my last.",
-                                    "Every step down there felt like a mistake waiting to be noticed.",
-                                    "I kept still for so long that even my own heartbeat felt dangerous.",
-                                    "Please do not leave me somewhere silence feels alive.",
-                                    "The Deep Dark made darkness feel heavy enough to press on my chest.",
-                                    "I was afraid to move, afraid to speak, and even more afraid to stay alone.",
-                                    "Down there, being left behind does not feel careless. It feels like a sentence."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:deep_dark"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_left_behind_dripstone_caves",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me in the Dripstone Caves. One wrong step and the cave does the rest.",
-                                    "The Dripstone Caves are all sharp ceilings and sharper floors. I hated waiting there alone.",
-                                    "I was stuck in the Dripstone Caves watching every spike like it had chosen me \u003citalic\u003epersonally\u003c/italic\u003e.",
-                                    "If you vanish in the Dripstone Caves, I am left between falling stone and bad footing.",
-                                    "Every drip sounded louder once I realized I was alone.",
-                                    "I kept looking up, then down, then up again. None of it helped.",
-                                    "Please do not leave me somewhere the cave has teeth on both sides.",
-                                    "The stone points made every path look like a warning.",
-                                    "I could not relax with sharp rock above me and sharper rock below.",
-                                    "I was standing in a cave that looked ready to punish the first bad step."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:dripstone_caves"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_left_behind_lush_caves",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me in the Lush Caves. Pretty moss does not make caves any safer.",
-                                    "The Lush Caves are beautiful until you remember how easy it is to get lost underground.",
-                                    "I was waiting in the Lush Caves with dripping water and too many unseen corners.",
-                                    "If you vanish in the Lush Caves, I am left admiring plants while worrying about monsters.",
-                                    "The glow berries helped me see just enough to know how much I could not see.",
-                                    "I kept hearing water, leaves, and every sound that might have been footsteps.",
-                                    "Please do not leave me somewhere beautiful enough to distract from the danger.",
-                                    "The moss softened the cave, but it did not make me feel safe.",
-                                    "Every opening looked like it could lead deeper, and deeper was not where I wanted to be.",
-                                    "I was alone underground, surrounded by green light and too many places for trouble to hide."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:lush_caves"
-                                         }
-                                     ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.group.recruitment_left_behind",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "recruitment_left_behind_deep_dark",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me in the Deep Dark. I do not want to learn what <pulse>hears me first</pulse> down there.",
+        "The Deep Dark is not a place for patience. It is a place for <shake>panic whispered quietly</shake>.",
+        "I stood in the Deep Dark afraid even my <pulse>breathing</pulse> was too loud once you were gone.",
+        "If you disappear in the Deep Dark, I am left measuring every sound like it might be my last.",
+        "Every step down there felt like a mistake waiting to be noticed.",
+        "I kept still for so long that even my own heartbeat felt dangerous.",
+        "Please do not leave me somewhere silence feels alive.",
+        "The Deep Dark made darkness feel heavy enough to press on my chest.",
+        "I was afraid to move, afraid to speak, and even more afraid to stay alone.",
+        "Down there, being left behind does not feel careless. It feels like a sentence."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:deep_dark",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_dripstone_caves",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me in the Dripstone Caves. One wrong step and the cave does the rest.",
+        "The Dripstone Caves are all sharp ceilings and sharper floors. I hated waiting there alone.",
+        "I was stuck in the Dripstone Caves watching every spike like it had chosen me <italic>personally</italic>.",
+        "If you vanish in the Dripstone Caves, I am left between falling stone and bad footing.",
+        "Every drip sounded louder once I realized I was alone.",
+        "I kept looking up, then down, then up again. None of it helped.",
+        "Please do not leave me somewhere the cave has teeth on both sides.",
+        "The stone points made every path look like a warning.",
+        "I could not relax with sharp rock above me and sharper rock below.",
+        "I was standing in a cave that looked ready to punish the first bad step."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:dripstone_caves",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_lush_caves",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me in the Lush Caves. Pretty moss does not make caves any safer.",
+        "The Lush Caves are beautiful until you remember how easy it is to get lost underground.",
+        "I was waiting in the Lush Caves with dripping water and too many unseen corners.",
+        "If you vanish in the Lush Caves, I am left admiring plants while worrying about monsters.",
+        "The glow berries helped me see just enough to know how much I could not see.",
+        "I kept hearing water, leaves, and every sound that might have been footsteps.",
+        "Please do not leave me somewhere beautiful enough to distract from the danger.",
+        "The moss softened the cave, but it did not make me feel safe.",
+        "Every opening looked like it could lead deeper, and deeper was not where I wanted to be.",
+        "I was alone underground, surrounded by green light and too many places for trouble to hide."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:lush_caves",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.lines"
+    ],
+    "topic": "groups.recruitment_left_behind.biomes_caves"
+  }
 }

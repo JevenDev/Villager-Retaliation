@@ -1,158 +1,160 @@
 {
-    "lines":  [
-                  {
-                      "id":  "baby_share_story_badlands",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:badlands",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Badlands sounds too big for me.",
-                                    "Badlands sounds scary because dry cliffs make every mistake echo. I would stay near a grown-up.",
-                                    "If I saw Badlands, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Badlands from the safe part, where you got home.",
-                                    "I am not going to Badlands. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "baby_share_story_desert",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:desert",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Desert sounds too big for me.",
-                                    "Desert sounds scary because heat makes thirst louder than judgment. I would stay near a grown-up.",
-                                    "If I saw Desert, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Desert from the safe part, where you got home.",
-                                    "I am not going to Desert. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "baby_share_story_eroded_badlands",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:eroded_badlands",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Eroded Badlands sounds too big for me.",
-                                    "Eroded Badlands sounds scary because wind has carved the land into bad footing. I would stay near a grown-up.",
-                                    "If I saw Eroded Badlands, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Eroded Badlands from the safe part, where you got home.",
-                                    "I am not going to Eroded Badlands. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "baby_share_story_savanna",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:savanna",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Savanna sounds too big for me.",
-                                    "Savanna sounds scary because dry grass takes warning from the wind. I would stay near a grown-up.",
-                                    "If I saw Savanna, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Savanna from the safe part, where you got home.",
-                                    "I am not going to Savanna. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "baby_share_story_savanna_plateau",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:savanna_plateau",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Savanna Plateau sounds too big for me.",
-                                    "Savanna Plateau sounds scary because high dry ground lets trouble see far. I would stay near a grown-up.",
-                                    "If I saw Savanna Plateau, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Savanna Plateau from the safe part, where you got home.",
-                                    "I am not going to Savanna Plateau. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "baby_share_story_windswept_savanna",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:windswept_savanna",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Windswept Savanna sounds too big for me.",
-                                    "Windswept Savanna sounds scary because dry grass and hard wind share the same warning. I would stay near a grown-up.",
-                                    "If I saw Windswept Savanna, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Windswept Savanna from the safe part, where you got home.",
-                                    "I am not going to Windswept Savanna. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "baby_share_story_wooded_badlands",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:wooded_badlands",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Wooded Badlands sounds too big for me.",
-                                    "Wooded Badlands sounds scary because trees on badlands still grow in hard country. I would stay near a grown-up.",
-                                    "If I saw Wooded Badlands, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Wooded Badlands from the safe part, where you got home.",
-                                    "I am not going to Wooded Badlands. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "baby_share_story_badlands",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Badlands sounds too big for me.",
+        "Badlands sounds scary because dry cliffs make every mistake echo. I would stay near a grown-up.",
+        "If I saw Badlands, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Badlands from the safe part, where you got home.",
+        "I am not going to Badlands. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:badlands",
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_desert",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Desert sounds too big for me.",
+        "Desert sounds scary because heat makes thirst louder than judgment. I would stay near a grown-up.",
+        "If I saw Desert, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Desert from the safe part, where you got home.",
+        "I am not going to Desert. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:desert",
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_eroded_badlands",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Eroded Badlands sounds too big for me.",
+        "Eroded Badlands sounds scary because wind has carved the land into bad footing. I would stay near a grown-up.",
+        "If I saw Eroded Badlands, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Eroded Badlands from the safe part, where you got home.",
+        "I am not going to Eroded Badlands. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:eroded_badlands",
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_savanna",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Savanna sounds too big for me.",
+        "Savanna sounds scary because dry grass takes warning from the wind. I would stay near a grown-up.",
+        "If I saw Savanna, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Savanna from the safe part, where you got home.",
+        "I am not going to Savanna. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:savanna",
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_savanna_plateau",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Savanna Plateau sounds too big for me.",
+        "Savanna Plateau sounds scary because high dry ground lets trouble see far. I would stay near a grown-up.",
+        "If I saw Savanna Plateau, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Savanna Plateau from the safe part, where you got home.",
+        "I am not going to Savanna Plateau. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:savanna_plateau",
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_windswept_savanna",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Windswept Savanna sounds too big for me.",
+        "Windswept Savanna sounds scary because dry grass and hard wind share the same warning. I would stay near a grown-up.",
+        "If I saw Windswept Savanna, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Windswept Savanna from the safe part, where you got home.",
+        "I am not going to Windswept Savanna. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:windswept_savanna",
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_wooded_badlands",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Wooded Badlands sounds too big for me.",
+        "Wooded Badlands sounds scary because trees on badlands still grow in hard country. I would stay near a grown-up.",
+        "If I saw Wooded Badlands, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Wooded Badlands from the safe part, where you got home.",
+        "I am not going to Wooded Badlands. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:wooded_badlands",
+      "weight": 140
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.unemployed.baby_share_stories",
+      "section.lines"
+    ],
+    "topic": "professions.unemployed.baby_share_stories.baby_share_stories__biomes_hot_dry"
+  }
 }

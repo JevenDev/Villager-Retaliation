@@ -1,95 +1,97 @@
 {
-    "lines":  [
-                  {
-                      "id":  "baby_share_story_meadow",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:meadow",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Meadow sounds too big for me.",
-                                    "Meadow sounds scary because gentle ground can make travelers careless. I would stay near a grown-up.",
-                                    "If I saw Meadow, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Meadow from the safe part, where you got home.",
-                                    "I am not going to Meadow. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "baby_share_story_stony_peaks",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:stony_peaks",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Stony Peaks sounds too big for me.",
-                                    "Stony Peaks sounds scary because stone peaks make every fall honest. I would stay near a grown-up.",
-                                    "If I saw Stony Peaks, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Stony Peaks from the safe part, where you got home.",
-                                    "I am not going to Stony Peaks. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "baby_share_story_windswept_gravelly_hills",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:windswept_gravelly_hills",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Windswept Gravelly Hills sounds too big for me.",
-                                    "Windswept Gravelly Hills sounds scary because gravel moves when you most need it still. I would stay near a grown-up.",
-                                    "If I saw Windswept Gravelly Hills, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Windswept Gravelly Hills from the safe part, where you got home.",
-                                    "I am not going to Windswept Gravelly Hills. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  },
-                  {
-                      "id":  "baby_share_story_windswept_hills",
-                      "request":  "share_story",
-                      "option":  "baby_share_story",
-                      "show_for_adults":  false,
-                      "show_for_babies":  true,
-                      "story_biome":  "minecraft:windswept_hills",
-                      "lines":  [
-                                    "You went to {target}? I am glad you came back. Windswept Hills sounds too big for me.",
-                                    "Windswept Hills sounds scary because hard wind turns every edge into advice. I would stay near a grown-up.",
-                                    "If I saw Windswept Hills, I would hold my bread tight and keep the village bell in mind.",
-                                    "Please tell the story of Windswept Hills from the safe part, where you got home.",
-                                    "I am not going to Windswept Hills. I am very good at not going there.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  140
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "baby_share_story_meadow",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Meadow sounds too big for me.",
+        "Meadow sounds scary because gentle ground can make travelers careless. I would stay near a grown-up.",
+        "If I saw Meadow, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Meadow from the safe part, where you got home.",
+        "I am not going to Meadow. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:meadow",
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_stony_peaks",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Stony Peaks sounds too big for me.",
+        "Stony Peaks sounds scary because stone peaks make every fall honest. I would stay near a grown-up.",
+        "If I saw Stony Peaks, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Stony Peaks from the safe part, where you got home.",
+        "I am not going to Stony Peaks. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:stony_peaks",
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_windswept_gravelly_hills",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Windswept Gravelly Hills sounds too big for me.",
+        "Windswept Gravelly Hills sounds scary because gravel moves when you most need it still. I would stay near a grown-up.",
+        "If I saw Windswept Gravelly Hills, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Windswept Gravelly Hills from the safe part, where you got home.",
+        "I am not going to Windswept Gravelly Hills. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:windswept_gravelly_hills",
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_windswept_hills",
+      "request": "share_story",
+      "lines": [
+        "You went to {target}? I am glad you came back. Windswept Hills sounds too big for me.",
+        "Windswept Hills sounds scary because hard wind turns every edge into advice. I would stay near a grown-up.",
+        "If I saw Windswept Hills, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Windswept Hills from the safe part, where you got home.",
+        "I am not going to Windswept Hills. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:windswept_hills",
+      "weight": 140
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.unemployed.baby_share_stories",
+      "section.lines"
+    ],
+    "topic": "professions.unemployed.baby_share_stories.baby_share_stories__biomes_mountains"
+  }
 }

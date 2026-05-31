@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "apology_cleric",
-                      "request":  "apology",
-                      "option":  "apologize_for_harm",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "Remorse is useful only if it changes the next choice. I hope yours does.",
-                                    "Repentance is not a speech. It is a repair repeated until trust returns.",
-                                    "Contrition is a door. Walk through it, do not stand in front of it.",
-                                    "I accept the words. Make the next act worthy of them.",
-                                    "Mercy is not forgetfulness. It is a chance to choose better.",
-                                    "A wounded trust heals slowly. Still, healing can begin here.",
-                                    "If remorse has roots, we will see fruit.",
-                                    "I\u0027ll hold this apology with care. Don\u0027t make it lonely.",
-                                    "I was wrong. I would rather say it plainly than dress it up.",
-                                    "That came out sharper than it should have. I am sorry."
-                                ],
-                      "weight":  234
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.cleric",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "apology_cleric",
+      "request": "apology",
+      "lines": [
+        "Remorse is useful only if it changes the next choice. I hope yours does.",
+        "Repentance is not a speech. It is a repair repeated until trust returns.",
+        "Contrition is a door. Walk through it, do not stand in front of it.",
+        "I accept the words. Make the next act worthy of them.",
+        "Mercy is not forgetfulness. It is a chance to choose better.",
+        "A wounded trust heals slowly. Still, healing can begin here.",
+        "If remorse has roots, we will see fruit.",
+        "I'll hold this apology with care. Don't make it lonely.",
+        "I was wrong. I would rather say it plainly than dress it up.",
+        "That came out sharper than it should have. I am sorry."
+      ],
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "weight": 234
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cleric",
+      "section.lines"
+    ],
+    "topic": "professions.cleric.apologies"
+  }
 }

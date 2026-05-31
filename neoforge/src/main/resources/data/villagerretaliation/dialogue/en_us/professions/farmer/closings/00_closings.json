@@ -1,27 +1,28 @@
 {
-    "closings":  [
-                     {
-                         "id":  "farmer_closing",
-                         "lines":  [
-                                       "I should get back to checking the beds before the weeds get comfortable.",
-                                       "Best I return to the rows before the sun slips too low.",
-                                       "The crops will not tend themselves.",
-                                       "There is feed to split and a fence that has been leaning at me all morning.",
-                                       "I promised a helper I would look over the south patch.",
-                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to watering, tilling, and straightening what has gone crooked.",
-                                       "I need to see if the goats stayed out of the beans this time.",
-                                       "The soil is waiting, and it does not like to be kept waiting.",
-                                       "I have seed to sort and tools to put away before dusk.",
-                                       "I\u0027ll be back in the fields once we are done here."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.farmer",
-                                  "section.closings"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.farmer",
+      "section.closings"
+    ],
+    "topic": "professions.farmer.closings"
+  },
+  "closings": [
+    {
+      "id": "farmer_closing",
+      "lines": [
+        "I should get back to checking the beds before the weeds get comfortable.",
+        "Best I return to the rows before the sun slips too low.",
+        "The crops will not tend themselves.",
+        "There is feed to split and a fence that has been leaning at me all morning.",
+        "I promised a helper I would look over the south patch.",
+        "<pulse>Back</pulse> to watering, tilling, and straightening what has gone crooked.",
+        "I need to see if the goats stayed out of the beans this time.",
+        "The soil is waiting, and it does not like to be kept waiting.",
+        "I have seed to sort and tools to put away before dusk.",
+        "I'll be back in the fields once we are done here."
+      ]
+    }
+  ]
 }

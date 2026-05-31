@@ -1,29 +1,30 @@
 {
-    "lines":  [
-                  {
-                      "id":  "shepherd_story_wool_variants",
-                      "request":  "story",
-                      "lines":  [
-                                    "Clean wool feels ordinary until winter reminds you it is not.",
-                                    "A spilled dye pot once made half the village look \u003cgradient:#55ff55:#ff55ff\u003efestive\u003c/gradient\u003e by mistake.",
-                                    "One late evening, the whole loom jammed because I trusted a knot.",
-                                    "There is a story from the loom, but it sounds smaller unless you were standing there.",
-                                    "Most stories here begin with someone saying, \u0027It will only take a moment.\u0027 They are always wrong.",
-                                    "I remember the smell of rain, the sound of the bell, and everyone suddenly pretending they had a plan.",
-                                    "The funny part came later. At the time, nobody was laughing.",
-                                    "A village story changes depending on who got embarrassed in it.",
-                                    "I could make it grand, but honestly, it was mostly mud, noise, and bad timing.",
-                                    "Still, we tell it because we made it through, and that makes people stand a little straighter."
-                                ],
-                      "weight":  74
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.shepherd",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "shepherd_story_wool_variants",
+      "request": "story",
+      "lines": [
+        "Clean wool feels ordinary until winter reminds you it is not.",
+        "A spilled dye pot once made half the village look <gradient:#55ff55:#ff55ff>festive</gradient> by mistake.",
+        "One late evening, the whole loom jammed because I trusted a knot.",
+        "There is a story from the loom, but it sounds smaller unless you were standing there.",
+        "Most stories here begin with someone saying, 'It will only take a moment.' They are always wrong.",
+        "I remember the smell of rain, the sound of the bell, and everyone suddenly pretending they had a plan.",
+        "The funny part came later. At the time, nobody was laughing.",
+        "A village story changes depending on who got embarrassed in it.",
+        "I could make it grand, but honestly, it was mostly mud, noise, and bad timing.",
+        "Still, we tell it because we made it through, and that makes people stand a little straighter."
+      ],
+      "weight": 74
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.shepherd",
+      "section.lines"
+    ],
+    "topic": "professions.shepherd.stories"
+  }
 }

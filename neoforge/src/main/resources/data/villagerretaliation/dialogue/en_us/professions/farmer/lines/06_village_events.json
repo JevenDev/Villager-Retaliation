@@ -1,160 +1,161 @@
 {
-    "lines":  [
-                  {
-                      "id":  "farmer_village_event_thunderstorm",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "thunderstorm"
-                                     ],
-                      "lines":  [
-                                    "Thunder shook the composter so hard the animals kicked at every thunderclap, but everyone near me is still standing.",
-                                    "I checked fields, pens, and seed chests after the lightning, then counted heads. No one should be alone after a sky like that.",
-                                    "Near the composter, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
-                                    "That thunder made everyone quiet. I checked the pens twice.",
-                                    "The sky can keep its lightning. I have pens to set right.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "farmer_village_event_fire",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "village_fire"
-                                     ],
-                      "lines":  [
-                                    "I checked hay bales and fence posts for sparks first, then checked faces for smoke and fear.",
-                                    "We passed water hand to hand and kept people away from the smoke. I checked the hay bales after.",
-                                    "The rows can wait. People come first.",
-                                    "We saved what we could reach around the composter, then stopped pretending things matter more than neighbors.",
-                                    "The smoke is thinning near the composter, but everyone is still sniffing the air like it might lie.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "farmer_village_event_raid",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "raid",
-                                         "player_defended_raid"
-                                     ],
-                      "lines":  [
-                                    "During a raid, the rows can wait; who makes it behind a door matters more.",
-                                    "The horns stopped, but my hands near the composter still expect another wave from the road.",
-                                    "We counted living neighbors before fields, pens, and seed chests. That\u0027s the only count worth starting with.",
-                                    "Raiders came looking for easy emeralds. They found barred doors near the fields and a bell that would not stop ringing.",
-                                    "From the fields, I saw fear cross the square; then I saw courage get there first.",
-                                    "Fine. I can let this cool, but do not mistake calm for forgetting.",
-                                    "That helps. Keep your hands peaceful and we may still end this properly.",
-                                    "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-                                    "You are short. A nervous apology does not settle a public mistake.",
-                                    "No. I am too angry to bargain while you are standing there like that."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "farmer_village_event_night_attack",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "night_attack"
-                                     ],
-                      "lines":  [
-                                    "Night trouble tests the loose latch by the composter first. We are fixing those before sunset.",
-                                    "I stayed near the crop rows beyond the torchlight and listened for anyone calling from the dark.",
-                                    "Dawn gave the composter enough light to count wounds, missing blocks, and who made it home.",
-                                    "The dark tested everyone. Most of us passed by keeping a loaf of bread between us and teeth.",
-                                    "We are safe enough near the composter, though every shadow is being inspected twice.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "farmer_village_event_sandstorm",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "sandstorm"
-                                     ],
-                      "lines":  [
-                                    "The wind threw sand through every crack. I am still cleaning sand out of the wheat.",
-                                    "I checked fields, pens, and seed chests, then checked who was coughing too hard to answer.",
-                                    "Sand reached the composter, the hinges, and half our eyes, but no one has been reported missing.",
-                                    "A hard wind teaches a farmer which doors actually close and which ones only pretend.",
-                                    "We are safe enough near the composter, though the whole village sounds like it is chewing gravel.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "farmer_village_event_snowstorm",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "snowstorm"
-                                     ],
-                      "lines":  [
-                                    "The rows can wait. Warm hands, clear paths, and full hearths come first.",
-                                    "Snow piled against the doors, but everyone near the fields found shelter.",
-                                    "Cold works quietly around the composter. We are checking on anyone who stayed quiet too long.",
-                                    "I am clearing snow off the paths to the pens and watching for footprints that stop too soon.",
-                                    "We are alright for now near the composter. Keep the fires fed and the paths open.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "event_night_attack_farmer_1",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "night_attack"
-                                     ],
-                      "weight":  30,
-                      "lines":  [
-                                    "I can replant crops. I can\u0027t replant a night\u0027s sleep.",
-                                    "I am still sorting what happened. The village feels different after it.",
-                                    "That event left marks. We are counting people before we count damage.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark.",
-                                    "I would rather hear boring news tomorrow. Boring keeps people alive.",
-                                    "Everyone has an opinion now. Most of them arrived before the facts did."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.farmer",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "farmer_village_event_thunderstorm",
+      "request": "village_event_report",
+      "lines": [
+        "Thunder shook the composter so hard the animals kicked at every thunderclap, but everyone near me is still standing.",
+        "I checked fields, pens, and seed chests after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the composter, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked the pens twice.",
+        "The sky can keep its lightning. I have pens to set right.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_fire",
+      "request": "village_event_report",
+      "lines": [
+        "I checked hay bales and fence posts for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the hay bales after.",
+        "The rows can wait. People come first.",
+        "We saved what we could reach around the composter, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the composter, but everyone is still sniffing the air like it might lie.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "village_fire"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_raid",
+      "request": "village_event_report",
+      "lines": [
+        "During a raid, the rows can wait; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the composter still expect another wave from the road.",
+        "We counted living neighbors before fields, pens, and seed chests. That's the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the fields and a bell that would not stop ringing.",
+        "From the fields, I saw fear cross the square; then I saw courage get there first.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that."
+      ],
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_night_attack",
+      "request": "village_event_report",
+      "lines": [
+        "Night trouble tests the loose latch by the composter first. We are fixing those before sunset.",
+        "I stayed near the crop rows beyond the torchlight and listened for anyone calling from the dark.",
+        "Dawn gave the composter enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping a loaf of bread between us and teeth.",
+        "We are safe enough near the composter, though every shadow is being inspected twice.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "night_attack"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_sandstorm",
+      "request": "village_event_report",
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning sand out of the wheat.",
+        "I checked fields, pens, and seed chests, then checked who was coughing too hard to answer.",
+        "Sand reached the composter, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a farmer which doors actually close and which ones only pretend.",
+        "We are safe enough near the composter, though the whole village sounds like it is chewing gravel.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "sandstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_snowstorm",
+      "request": "village_event_report",
+      "lines": [
+        "The rows can wait. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the fields found shelter.",
+        "Cold works quietly around the composter. We are checking on anyone who stayed quiet too long.",
+        "I am clearing snow off the paths to the pens and watching for footprints that stop too soon.",
+        "We are alright for now near the composter. Keep the fires fed and the paths open.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "snowstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "event_night_attack_farmer_1",
+      "request": "village_event_report",
+      "lines": [
+        "I can replant crops. I can't replant a night's sleep.",
+        "I am still sorting what happened. The village feels different after it.",
+        "That event left marks. We are counting people before we count damage.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark.",
+        "I would rather hear boring news tomorrow. Boring keeps people alive.",
+        "Everyone has an opinion now. Most of them arrived before the facts did."
+      ],
+      "event_tags": [
+        "night_attack"
+      ],
+      "show_for_babies": false,
+      "weight": 30
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.farmer",
+      "section.lines"
+    ],
+    "topic": "professions.farmer.village_events"
+  }
 }

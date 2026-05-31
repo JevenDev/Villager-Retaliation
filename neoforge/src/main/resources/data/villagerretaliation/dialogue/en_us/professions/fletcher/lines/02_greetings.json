@@ -1,29 +1,30 @@
 {
-    "lines":  [
-                  {
-                      "id":  "fletcher_new_greeting_table",
-                      "request":  "greeting",
-                      "weight":  26,
-                      "lines":  [
-                                    "Mind the fletching table. Straight arrows do not happen by accident.",
-                                    "Give the fletching table room. Arrows works better without elbows in it.",
-                                    "Step carefully near the fletching table. I would rather greet you than patch you up.",
-                                    "There you are. I was just near the fletching table, trying to keep the day sensible.",
-                                    "Morning. Or afternoon. The work makes the hours blur if I let it.",
-                                    "Good to see you walking in calmly. That usually means nothing is on fire yet.",
-                                    "If you need me, speak up. If you need gossip, speak quieter.",
-                                    "You caught me before the next little disaster. That is rare timing.",
-                                    "Hello. Try not to bring the whole village into this unless it is important.",
-                                    "I have a moment. Not a long one, but a real one."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.fletcher",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "fletcher_new_greeting_table",
+      "request": "greeting",
+      "lines": [
+        "Mind the fletching table. Straight arrows do not happen by accident.",
+        "Give the fletching table room. Arrows works better without elbows in it.",
+        "Step carefully near the fletching table. I would rather greet you than patch you up.",
+        "There you are. I was just near the fletching table, trying to keep the day sensible.",
+        "Morning. Or afternoon. The work makes the hours blur if I let it.",
+        "Good to see you walking in calmly. That usually means nothing is on fire yet.",
+        "If you need me, speak up. If you need gossip, speak quieter.",
+        "You caught me before the next little disaster. That is rare timing.",
+        "Hello. Try not to bring the whole village into this unless it is important.",
+        "I have a moment. Not a long one, but a real one."
+      ],
+      "weight": 26
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.fletcher",
+      "section.lines"
+    ],
+    "topic": "professions.fletcher.greetings"
+  }
 }

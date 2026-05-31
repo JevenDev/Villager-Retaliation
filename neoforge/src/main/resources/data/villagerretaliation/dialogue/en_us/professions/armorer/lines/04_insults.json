@@ -1,50 +1,51 @@
 {
-    "lines":  [
-                  {
-                      "id":  "armorer_new_insult_rust",
-                      "request":  "insult",
-                      "weight":  18,
-                      "lines":  [
-                                    "That remark had the polish of wet rust.",
-                                    "I have seen loose straps with more sense than that.",
-                                    "Careful. Even iron looks softer than your manners right now.",
-                                    "You walk in like trouble forgot to close the door behind it.",
-                                    "I have seen broken armor with better instincts than you.",
-                                    "Careful. The village has long memories and very little patience today.",
-                                    "You are not as frightening as you think. That may be the problem.",
-                                    "If foolishness made noise, you would drown out the bell.",
-                                    "Do not test me just because I am speaking in complete sentences.",
-                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
-                                ]
-                  },
-                  {
-                      "id":  "armorer_new_hostile_tools",
-                      "request":  "insult",
-                      "dispositions":  [
-                                           "rude",
-                                           "hostile"
-                                       ],
-                      "weight":  30,
-                      "lines":  [
-                                    "Don\u0027t sneer at my tools. They protect better people than you.",
-                                    "I have seen loose straps with more sense than that.",
-                                    "Careful. Even iron looks softer than your manners right now.",
-                                    "You walk in like trouble forgot to close the door behind it.",
-                                    "I have seen broken armor with better instincts than you.",
-                                    "Careful. The village has long memories and very little patience today.",
-                                    "You are not as frightening as you think. That may be the problem.",
-                                    "If foolishness made noise, you would drown out the bell.",
-                                    "Do not test me just because I am speaking in complete sentences.",
-                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.armorer",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "armorer_new_insult_rust",
+      "request": "insult",
+      "lines": [
+        "That remark had the polish of wet rust.",
+        "I have seen loose straps with more sense than that.",
+        "Careful. Even iron looks softer than your manners right now.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken armor with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
+      ],
+      "weight": 18
+    },
+    {
+      "id": "armorer_new_hostile_tools",
+      "request": "insult",
+      "lines": [
+        "Don't sneer at my tools. They protect better people than you.",
+        "I have seen loose straps with more sense than that.",
+        "Careful. Even iron looks softer than your manners right now.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken armor with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
+      ],
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.armorer",
+      "section.lines"
+    ],
+    "topic": "professions.armorer.insults"
+  }
 }

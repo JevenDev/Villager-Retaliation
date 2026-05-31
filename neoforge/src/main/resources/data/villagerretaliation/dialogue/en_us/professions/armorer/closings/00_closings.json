@@ -1,27 +1,28 @@
 {
-    "closings":  [
-                     {
-                         "id":  "armorer_closing",
-                         "lines":  [
-                                       "I should get back before that \u003cpulse\u003eplate\u003c/pulse\u003e cools wrong.",
-                                       "That cuirass will not fit itself, and the \u003cpulse\u003ehammer\u003c/pulse\u003e is still warm.",
-                                       "The smithy will be wondering where I wandered off to.",
-                                       "I have straps to tighten and buckles to argue with.",
-                                       "Someone is expecting their mail patched before nightfall.",
-                                       "I promised to finish a cracked helm before dusk.",
-                                       "Best I get back before somebody walks around in loose armor.",
-                                       "I have tools to oil and steel to settle.",
-                                       "The forge is still \u003cpulse\u003ewarm\u003c/pulse\u003e. Shame to waste good heat.",
-                                       "You will know where to find me. I\u0027ll be near the anvil."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.armorer",
-                                  "section.closings"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.armorer",
+      "section.closings"
+    ],
+    "topic": "professions.armorer.closings"
+  },
+  "closings": [
+    {
+      "id": "armorer_closing",
+      "lines": [
+        "I should get back before that <pulse>plate</pulse> cools wrong.",
+        "That cuirass will not fit itself, and the <pulse>hammer</pulse> is still warm.",
+        "The smithy will be wondering where I wandered off to.",
+        "I have straps to tighten and buckles to argue with.",
+        "Someone is expecting their mail patched before nightfall.",
+        "I promised to finish a cracked helm before dusk.",
+        "Best I get back before somebody walks around in loose armor.",
+        "I have tools to oil and steel to settle.",
+        "The forge is still <pulse>warm</pulse>. Shame to waste good heat.",
+        "You will know where to find me. I'll be near the anvil."
+      ]
+    }
+  ]
 }

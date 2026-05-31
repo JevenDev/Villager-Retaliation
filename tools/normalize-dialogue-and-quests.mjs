@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const metadataTagPattern = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const roots = {
   dialogue: path.join(root, "neoforge/src/main/resources/data/villagerretaliation/dialogue/en_us"),
   dialogueTrees: path.join(root, "neoforge/src/main/resources/data/villagerretaliation/dialogue_trees/en_us"),
@@ -68,7 +69,7 @@ async function normalizeDialogueFiles() {
 
     const relativePath = path.relative(roots.dialogue, file).replaceAll("\\", "/");
     const relativeSegments = relativePath.split("/");
-    const section = dialogueSectionFromPath(relativeSegments) ?? inferDialogueSection(data) ?? "lines";
+    const section = dialogueSectionFromPath(relativeSegments) || inferDialogueSection(data) || "lines";
     const stem = cleanStem(path.basename(file, ".json"));
     const scope = scopeInfo(relativeSegments, section);
     const topic = [scope.topicRoot, stem].filter(Boolean).join(".");
@@ -325,7 +326,7 @@ function mergeStringLists(...lists) {
   for (const list of lists) {
     if (typeof list === "string") {
       const value = list.trim();
-      if (value) {
+      if (value && metadataTagPattern.test(value)) {
         values.add(value);
       }
       continue;
@@ -338,7 +339,7 @@ function mergeStringLists(...lists) {
         continue;
       }
       const value = entry.trim();
-      if (value) {
+      if (value && metadataTagPattern.test(value)) {
         values.add(value);
       }
     }

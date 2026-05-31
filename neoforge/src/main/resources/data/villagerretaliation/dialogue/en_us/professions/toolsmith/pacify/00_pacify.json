@@ -1,69 +1,70 @@
 {
-    "pacify":  [
-                   {
-                       "id":  "toolsmith_pacify_success",
-                       "outcomes":  [
-                                        "success"
-                                    ],
-                       "weight":  26,
-                       "lines":  [
-                                     "Fine. I\u0027ll put the edge away, for now.",
-                                     "Fine. I\u0027ll set this down before it gets heavier.",
-                                     "Fine. I can step back, but do not make me regret it.",
-                                     "Fine. I can let this cool, but do not mistake calm for forgetting.",
-                                     "That helps. Keep your hands peaceful and we may still end this properly.",
-                                     "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-                                     "You are short. A nervous apology does not settle a public mistake.",
-                                     "No. I am too angry to bargain while you are standing there like that.",
-                                     "Put the weapon away first. I will not discuss peace with steel in my face.",
-                                     "This can still end quietly. Do not make me \u003cshake\u003eregret\u003c/shake\u003e offering that chance."
-                                 ]
-                   },
-                   {
-                       "id":  "toolsmith_pacify_short",
-                       "outcomes":  [
-                                        "not_enough_emeralds"
-                                    ],
-                       "weight":  26,
-                       "lines":  [
-                                     "Wrong measure. It takes {emerald_cost} {emeralds} to set this right.",
-                                     "That\u0027s short of the full repair. Bring {emerald_cost} {emeralds}.",
-                                     "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
-                                     "Fine. I can let this cool, but do not mistake calm for forgetting.",
-                                     "That helps. Keep your hands peaceful and we may still end this properly.",
-                                     "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-                                     "You are short. A nervous apology does not settle a public mistake.",
-                                     "No. I am too angry to bargain while you are standing there like that.",
-                                     "Put the weapon away first. I will not discuss peace with steel in my face.",
-                                     "This can still end quietly. Do not make me \u003cshake\u003eregret\u003c/shake\u003e offering that chance."
-                                 ]
-                   },
-                   {
-                       "id":  "toolsmith_pacify_blocked",
-                       "outcomes":  [
-                                        "blocked_by_reputation"
-                                    ],
-                       "weight":  26,
-                       "lines":  [
-                                     "No. You are using {payment_items} like the wrong tool.",
-                                     "No. Some damage has to cool before payment matters. {payment_items}",
-                                     "No. Keep {payment_items}; trust is not ready to trade.",
-                                     "Fine. I can let this cool, but do not mistake calm for forgetting.",
-                                     "That helps. Keep your hands peaceful and we may still end this properly.",
-                                     "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-                                     "You are short. A nervous apology does not settle a public mistake.",
-                                     "No. I am too angry to bargain while you are standing there like that.",
-                                     "Put the weapon away first. I will not discuss peace with steel in my face.",
-                                     "This can still end quietly. Do not make me \u003cshake\u003eregret\u003c/shake\u003e offering that chance."
-                                 ]
-                   }
-               ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.toolsmith",
-                                  "section.pacify"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.toolsmith",
+      "section.pacify"
+    ],
+    "topic": "professions.toolsmith.pacify"
+  },
+  "pacify": [
+    {
+      "id": "toolsmith_pacify_success",
+      "lines": [
+        "Fine. I'll put the edge away, for now.",
+        "Fine. I'll set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+      ],
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26
+    },
+    {
+      "id": "toolsmith_pacify_short",
+      "lines": [
+        "Wrong measure. It takes {emerald_cost} {emeralds} to set this right.",
+        "That's short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+      ],
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26
+    },
+    {
+      "id": "toolsmith_pacify_blocked",
+      "lines": [
+        "No. You are using {payment_items} like the wrong tool.",
+        "No. Some damage has to cool before payment matters. {payment_items}",
+        "No. Keep {payment_items}; trust is not ready to trade.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+      ],
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26
+    }
+  ]
 }

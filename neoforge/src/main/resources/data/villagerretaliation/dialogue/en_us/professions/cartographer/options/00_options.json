@@ -1,21 +1,22 @@
 {
-    "options":  [
-                    {
-                        "id":  "cartographer_map_report",
-                        "label":  "Report Discovery",
-                        "type":  "dialogue_option",
-                        "request":  "map_report",
-                        "order":  4,
-                        "show_for_babies":  false,
-                        "requires_unreported_cartographer_map_discovery":  true
-                    }
-                ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.cartographer",
-                                  "section.options"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cartographer",
+      "section.options"
+    ],
+    "topic": "professions.cartographer.options"
+  },
+  "options": [
+    {
+      "id": "cartographer_map_report",
+      "label": "Report Discovery",
+      "type": "dialogue_option",
+      "request": "map_report",
+      "order": 4,
+      "requires_unreported_cartographer_map_discovery": true,
+      "show_for_babies": false
+    }
+  ]
 }

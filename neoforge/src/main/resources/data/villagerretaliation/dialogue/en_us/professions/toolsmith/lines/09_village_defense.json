@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "village_defense_toolsmith_respect",
-                      "request":  "village_defense_report",
-                      "option":  "village_defense_report",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "Good hands under pressure are rare. Yours were useful when the village needed them.",
-                                    "A tool proves itself under strain. So did you.",
-                                    "You were the right tool in a terrible moment.",
-                                    "When pressure came down, you did not warp.",
-                                    "The village needed more than sharp edges. It needed steady hands.",
-                                    "You made yourself useful where usefulness mattered most.",
-                                    "I saw the kind of work no bench can teach.",
-                                    "Good work leaves marks. Yours left people alive to notice.",
-                                    "When danger came close, nobody had time to sound brave first.",
-                                    "You learn a lot about a village when everyone hears the bell at once."
-                                ],
-                      "weight":  250
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.toolsmith",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "village_defense_toolsmith_respect",
+      "request": "village_defense_report",
+      "lines": [
+        "Good hands under pressure are rare. Yours were useful when the village needed them.",
+        "A tool proves itself under strain. So did you.",
+        "You were the right tool in a terrible moment.",
+        "When pressure came down, you did not warp.",
+        "The village needed more than sharp edges. It needed steady hands.",
+        "You made yourself useful where usefulness mattered most.",
+        "I saw the kind of work no bench can teach.",
+        "Good work leaves marks. Yours left people alive to notice.",
+        "When danger came close, nobody had time to sound brave first.",
+        "You learn a lot about a village when everyone hears the bell at once."
+      ],
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "weight": 250
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.toolsmith",
+      "section.lines"
+    ],
+    "topic": "professions.toolsmith.village_defense"
+  }
 }

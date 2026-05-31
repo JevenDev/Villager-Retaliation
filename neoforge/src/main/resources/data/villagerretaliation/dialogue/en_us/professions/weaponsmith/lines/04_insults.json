@@ -1,50 +1,51 @@
 {
-    "lines":  [
-                  {
-                      "id":  "weaponsmith_new_insult_dull",
-                      "request":  "insult",
-                      "weight":  18,
-                      "lines":  [
-                                    "That was dull enough to be safe, at least.",
-                                    "I have seen careless steel with more sense than that.",
-                                    "Careful. Even steel looks softer than your manners right now.",
-                                    "You walk in like trouble forgot to close the door behind it.",
-                                    "I have seen broken weapons with better instincts than you.",
-                                    "Careful. The village has long memories and very little patience today.",
-                                    "You are not as frightening as you think. That may be the problem.",
-                                    "If foolishness made noise, you would drown out the bell.",
-                                    "Do not test me just because I am speaking in complete sentences.",
-                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
-                                ]
-                  },
-                  {
-                      "id":  "weaponsmith_new_hostile_distance",
-                      "request":  "insult",
-                      "dispositions":  [
-                                           "rude",
-                                           "hostile"
-                                       ],
-                      "weight":  30,
-                      "lines":  [
-                                    "Stand back. I know the sound trouble makes when it wants to be casual.",
-                                    "I have seen careless steel with more sense than that.",
-                                    "Careful. Even steel looks softer than your manners right now.",
-                                    "You walk in like trouble forgot to close the door behind it.",
-                                    "I have seen broken weapons with better instincts than you.",
-                                    "Careful. The village has long memories and very little patience today.",
-                                    "You are not as frightening as you think. That may be the problem.",
-                                    "If foolishness made noise, you would drown out the bell.",
-                                    "Do not test me just because I am speaking in complete sentences.",
-                                    "Your confidence is \u003cshake\u003elouder\u003c/shake\u003e than your sense."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.weaponsmith",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "weaponsmith_new_insult_dull",
+      "request": "insult",
+      "lines": [
+        "That was dull enough to be safe, at least.",
+        "I have seen careless steel with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken weapons with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
+      ],
+      "weight": 18
+    },
+    {
+      "id": "weaponsmith_new_hostile_distance",
+      "request": "insult",
+      "lines": [
+        "Stand back. I know the sound trouble makes when it wants to be casual.",
+        "I have seen careless steel with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken weapons with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
+      ],
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.weaponsmith",
+      "section.lines"
+    ],
+    "topic": "professions.weaponsmith.insults"
+  }
 }

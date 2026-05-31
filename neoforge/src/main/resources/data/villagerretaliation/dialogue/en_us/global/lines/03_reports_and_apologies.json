@@ -1,165 +1,166 @@
 {
-    "lines":  [
-                  {
-                      "id":  "gear_report_global_unused",
-                      "request":  "gear_report",
-                      "option":  "gear_report",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "I have not needed it yet. That is the best kind of preparation.",
-                                    "It is ready. I would rather carry caution than regret.",
-                                    "The {gear_kind} is still waiting. I hope it stays that way.",
-                                    "I have not had to use it. Still, walking home feels a little easier.",
-                                    "Good gear does not need to prove itself every day to be worth carrying.",
-                                    "The {gear_kind} has stayed quiet so far, and I am grateful for that.",
-                                    "I hope it keeps gathering dust instead of stories.",
-                                    "Prepared and unused is better than unprepared and sorry.",
-                                    "I know it is there if the day turns sharp.",
-                                    "The {gear_kind} gives me one less thing to fear on the road."
-                                ],
-                      "weight":  112,
-                      "conditions":  [
-                                         {
-                                             "type":  "memory",
-                                             "kind":  "gear_report_unused_in_combat"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "village_defense_global_counted",
-                      "request":  "village_defense_report",
-                      "option":  "village_defense_report",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "We saw what you did when the raiders came. People count that sort of courage carefully.",
-                                    "The bell rang and you ran toward the danger. That is not nothing.",
-                                    "You stood where many would have run. Villages remember that.",
-                                    "When the gates shook, you did not turn away.",
-                                    "The village is still standing, and your hands helped make that true.",
-                                    "People are breathing easier because you chose to fight.",
-                                    "Courage looks different up close. Yours looked useful.",
-                                    "You gave the raiders something harder to break than a door.",
-                                    "We remember who stood with us when the horn sounded.",
-                                    "That kind of help does not fade quickly around here."
-                                ],
-                      "weight":  60
-                  },
-                  {
-                      "id":  "village_defense_cautious_shaken",
-                      "request":  "village_defense_report",
-                      "option":  "village_defense_report",
-                      "show_for_babies":  false,
-                      "dispositions":  [
-                                           "cautious",
-                                           "rude",
-                                           "hostile",
-                                           "fearful"
-                                       ],
-                      "lines":  [
-                                    "You helped. I know that. I am still hearing the horns in my head.",
-                                    "Maybe you saved us. Maybe I need another day before I can say that without \u003cshake\u003eshaking\u003c/shake\u003e.",
-                                    "You stood where many would have run. Villages remember that.",
-                                    "I saw what you did, but my hands are still not steady enough to thank you properly.",
-                                    "The raid is over, but my heart has not been told yet.",
-                                    "You were useful when it mattered. I am not ready to call that comfort.",
-                                    "I know we owe you something. I just need the smoke to clear first.",
-                                    "You helped keep the village standing. That does not make the fear vanish.",
-                                    "I am grateful, I think. It is hard to sort gratitude from panic right now.",
-                                    "The danger passed, but it left its sound behind."
-                                ],
-                      "weight":  72
-                  },
-                  {
-                      "id":  "apology_global_not_forgotten",
-                      "request":  "apology",
-                      "option":  "apologize_for_harm",
-                      "lines":  [
-                                    "I hear you. I have not forgotten, but I hear you.",
-                                    "An apology is a start. Let your hands \u003cpulse\u003eprove the rest\u003c/pulse\u003e.",
-                                    "I hear the apology. Trust will need more than hearing.",
-                                    "Words can open the door, but they do not rebuild the house.",
-                                    "I will not pretend it did not happen. I can still notice that you said this.",
-                                    "That is the right first step. Do not mistake it for the whole road.",
-                                    "I can accept the words without being ready to relax.",
-                                    "If you mean it, time will make that clearer than your mouth can.",
-                                    "I am willing to remember this apology alongside what came before.",
-                                    "Say it less with words next time, and more with what you choose after."
-                                ],
-                      "weight":  56
-                  },
-                  {
-                      "id":  "apology_global_cautious",
-                      "request":  "apology",
-                      "option":  "apologize_for_harm",
-                      "dispositions":  [
-                                           "cautious",
-                                           "rude",
-                                           "hostile",
-                                           "fearful"
-                                       ],
-                      "weight":  34,
-                      "lines":  [
-                                    "Words mend less than actions, but I will remember that you said them.",
-                                    "An apology is a start. The rest has to walk behind it.",
-                                    "I will remember the words. Now give them something true to stand on.",
-                                    "I am listening, but I am not lowering my guard yet.",
-                                    "You can say sorry. Living sorry takes longer.",
-                                    "I will not throw the apology away, but I will not lean on it either.",
-                                    "That may be a beginning. It is not repair.",
-                                    "If you mean it, stop giving us reasons to doubt you.",
-                                    "I hear you. I am still keeping distance.",
-                                    "Do better long enough, and maybe these words will start to matter."
-                                ]
-                  },
-                  {
-                      "id":  "apology_global_friendly",
-                      "request":  "apology",
-                      "option":  "apologize_for_harm",
-                      "dispositions":  [
-                                           "respectful",
-                                           "friendly",
-                                           "neutral"
-                                       ],
-                      "weight":  34,
-                      "lines":  [
-                                    "Thank you for saying it plainly. Do better by us, and this can pass.",
-                                    "That was the right thing to say. The next right thing matters too.",
-                                    "Thank you. Let the apology become a habit, not a moment.",
-                                    "I believe you want to mend this. Now let time see it too.",
-                                    "A clear apology is worth something. Clear actions are worth more.",
-                                    "Thank you for not hiding behind excuses.",
-                                    "I can work with an honest apology.",
-                                    "Then let us start again carefully, with better steps this time.",
-                                    "That helps. It does not erase everything, but it helps.",
-                                    "Keep choosing better, and the village will notice."
-                                ]
-                  },
-                  {
-                      "id":  "apology_child_telling",
-                      "request":  "apology",
-                      "option":  "apologize_for_harm",
-                      "show_for_adults":  false,
-                      "weight":  28,
-                      "lines":  [
-                                    "Okay. I am still telling someone older, though.",
-                                    "Okay. But I am not promising not to mention it.",
-                                    "I heard you. I am still staying near someone taller.",
-                                    "You said sorry. I am going to stand over there now.",
-                                    "Okay, but I am still watching your hands.",
-                                    "I can hear sorry. I also hear my feet wanting to leave.",
-                                    "Maybe that helps. I still want a grown-up nearby.",
-                                    "I am glad you said it, but I am not ready to be close.",
-                                    "Okay. I will remember, but I am still being careful.",
-                                    "Sorry is good. Not doing it again is better."
-                                ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.global",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "gear_report_global_unused",
+      "request": "gear_report",
+      "lines": [
+        "I have not needed it yet. That is the best kind of preparation.",
+        "It is ready. I would rather carry caution than regret.",
+        "The {gear_kind} is still waiting. I hope it stays that way.",
+        "I have not had to use it. Still, walking home feels a little easier.",
+        "Good gear does not need to prove itself every day to be worth carrying.",
+        "The {gear_kind} has stayed quiet so far, and I am grateful for that.",
+        "I hope it keeps gathering dust instead of stories.",
+        "Prepared and unused is better than unprepared and sorry.",
+        "I know it is there if the day turns sharp.",
+        "The {gear_kind} gives me one less thing to fear on the road."
+      ],
+      "conditions": [
+        {
+          "kind": "gear_report_unused_in_combat",
+          "type": "memory"
+        }
+      ],
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 112
+    },
+    {
+      "id": "village_defense_global_counted",
+      "request": "village_defense_report",
+      "lines": [
+        "We saw what you did when the raiders came. People count that sort of courage carefully.",
+        "The bell rang and you ran toward the danger. That is not nothing.",
+        "You stood where many would have run. Villages remember that.",
+        "When the gates shook, you did not turn away.",
+        "The village is still standing, and your hands helped make that true.",
+        "People are breathing easier because you chose to fight.",
+        "Courage looks different up close. Yours looked useful.",
+        "You gave the raiders something harder to break than a door.",
+        "We remember who stood with us when the horn sounded.",
+        "That kind of help does not fade quickly around here."
+      ],
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "weight": 60
+    },
+    {
+      "id": "village_defense_cautious_shaken",
+      "request": "village_defense_report",
+      "lines": [
+        "You helped. I know that. I am still hearing the horns in my head.",
+        "Maybe you saved us. Maybe I need another day before I can say that without <shake>shaking</shake>.",
+        "You stood where many would have run. Villages remember that.",
+        "I saw what you did, but my hands are still not steady enough to thank you properly.",
+        "The raid is over, but my heart has not been told yet.",
+        "You were useful when it mattered. I am not ready to call that comfort.",
+        "I know we owe you something. I just need the smoke to clear first.",
+        "You helped keep the village standing. That does not make the fear vanish.",
+        "I am grateful, I think. It is hard to sort gratitude from panic right now.",
+        "The danger passed, but it left its sound behind."
+      ],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "weight": 72
+    },
+    {
+      "id": "apology_global_not_forgotten",
+      "request": "apology",
+      "lines": [
+        "I hear you. I have not forgotten, but I hear you.",
+        "An apology is a start. Let your hands <pulse>prove the rest</pulse>.",
+        "I hear the apology. Trust will need more than hearing.",
+        "Words can open the door, but they do not rebuild the house.",
+        "I will not pretend it did not happen. I can still notice that you said this.",
+        "That is the right first step. Do not mistake it for the whole road.",
+        "I can accept the words without being ready to relax.",
+        "If you mean it, time will make that clearer than your mouth can.",
+        "I am willing to remember this apology alongside what came before.",
+        "Say it less with words next time, and more with what you choose after."
+      ],
+      "option": "apologize_for_harm",
+      "weight": 56
+    },
+    {
+      "id": "apology_global_cautious",
+      "request": "apology",
+      "lines": [
+        "Words mend less than actions, but I will remember that you said them.",
+        "An apology is a start. The rest has to walk behind it.",
+        "I will remember the words. Now give them something true to stand on.",
+        "I am listening, but I am not lowering my guard yet.",
+        "You can say sorry. Living sorry takes longer.",
+        "I will not throw the apology away, but I will not lean on it either.",
+        "That may be a beginning. It is not repair.",
+        "If you mean it, stop giving us reasons to doubt you.",
+        "I hear you. I am still keeping distance.",
+        "Do better long enough, and maybe these words will start to matter."
+      ],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "option": "apologize_for_harm",
+      "weight": 34
+    },
+    {
+      "id": "apology_global_friendly",
+      "request": "apology",
+      "lines": [
+        "Thank you for saying it plainly. Do better by us, and this can pass.",
+        "That was the right thing to say. The next right thing matters too.",
+        "Thank you. Let the apology become a habit, not a moment.",
+        "I believe you want to mend this. Now let time see it too.",
+        "A clear apology is worth something. Clear actions are worth more.",
+        "Thank you for not hiding behind excuses.",
+        "I can work with an honest apology.",
+        "Then let us start again carefully, with better steps this time.",
+        "That helps. It does not erase everything, but it helps.",
+        "Keep choosing better, and the village will notice."
+      ],
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "option": "apologize_for_harm",
+      "weight": 34
+    },
+    {
+      "id": "apology_child_telling",
+      "request": "apology",
+      "lines": [
+        "Okay. I am still telling someone older, though.",
+        "Okay. But I am not promising not to mention it.",
+        "I heard you. I am still staying near someone taller.",
+        "You said sorry. I am going to stand over there now.",
+        "Okay, but I am still watching your hands.",
+        "I can hear sorry. I also hear my feet wanting to leave.",
+        "Maybe that helps. I still want a grown-up nearby.",
+        "I am glad you said it, but I am not ready to be close.",
+        "Okay. I will remember, but I am still being careful.",
+        "Sorry is good. Not doing it again is better."
+      ],
+      "option": "apologize_for_harm",
+      "show_for_adults": false,
+      "weight": 28
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.reports_and_apologies"
+  }
 }

@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "village_defense_butcher_smoke",
-                      "request":  "village_defense_report",
-                      "option":  "village_defense_report",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "I know the smell of fear and smoke. You pushed both back from our doors.",
-                                    "There are clean cuts and ugly fights. That was ugly, but you helped finish it.",
-                                    "You kept the raid from reaching more kitchens than mine. I noticed.",
-                                    "The village smelled of smoke and fear. Then it smelled like survival.",
-                                    "You did hard work when hard work was needed. That matters.",
-                                    "I saw raiders turn from our doors because you were there.",
-                                    "No one wants that kind of fight, but someone had to answer it.",
-                                    "You helped keep families at their tables. That\u0027s worth saying aloud.",
-                                    "When danger came close, nobody had time to sound brave first.",
-                                    "You learn a lot about a village when everyone hears the bell at once."
-                                ],
-                      "weight":  246
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.butcher",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "village_defense_butcher_smoke",
+      "request": "village_defense_report",
+      "lines": [
+        "I know the smell of fear and smoke. You pushed both back from our doors.",
+        "There are clean cuts and ugly fights. That was ugly, but you helped finish it.",
+        "You kept the raid from reaching more kitchens than mine. I noticed.",
+        "The village smelled of smoke and fear. Then it smelled like survival.",
+        "You did hard work when hard work was needed. That matters.",
+        "I saw raiders turn from our doors because you were there.",
+        "No one wants that kind of fight, but someone had to answer it.",
+        "You helped keep families at their tables. That's worth saying aloud.",
+        "When danger came close, nobody had time to sound brave first.",
+        "You learn a lot about a village when everyone hears the bell at once."
+      ],
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "weight": 246
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.butcher",
+      "section.lines"
+    ],
+    "topic": "professions.butcher.village_defense"
+  }
 }

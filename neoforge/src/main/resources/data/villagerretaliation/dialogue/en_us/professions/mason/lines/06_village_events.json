@@ -1,139 +1,140 @@
 {
-    "lines":  [
-                  {
-                      "id":  "mason_village_event_thunderstorm",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "thunderstorm"
-                                     ],
-                      "lines":  [
-                                    "Thunder shook the stonecutter so hard loose stones rattled in the wall, but everyone near me is still standing.",
-                                    "I checked walls, steps, and cracked blocks after the lightning, then counted heads. No one should be alone after a sky like that.",
-                                    "Near the stonecutter, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
-                                    "That thunder made everyone quiet. I checked the doorframes twice.",
-                                    "The sky can keep its lightning. I have doorframes to set right.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "mason_village_event_fire",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "village_fire"
-                                     ],
-                      "lines":  [
-                                    "I checked wooden beams set into stone for sparks first, then checked faces for smoke and fear.",
-                                    "We passed water hand to hand and kept people away from the smoke. I checked the stonecutter after.",
-                                    "The stonecutter can wait. People come first.",
-                                    "We saved what we could reach around the stonecutter, then stopped pretending things matter more than neighbors.",
-                                    "The smoke is thinning near the stonecutter, but everyone is still sniffing the air like it might lie.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "mason_village_event_raid",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "raid",
-                                         "player_defended_raid"
-                                     ],
-                      "lines":  [
-                                    "During a raid, the stonecutter can sit silent; who makes it behind a door matters more.",
-                                    "The horns stopped, but my hands near the stonecutter still expect another wave from the road.",
-                                    "We counted living neighbors before walls, steps, and cracked blocks. That\u0027s the only count worth starting with.",
-                                    "Raiders came looking for easy emeralds. They found barred doors near the stonecutter and a bell that would not stop ringing.",
-                                    "From the stonecutter, I saw fear cross the square; then I saw courage get there first.",
-                                    "Fine. I can let this cool, but do not mistake calm for forgetting.",
-                                    "That helps. Keep your hands peaceful and we may still end this properly.",
-                                    "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-                                    "You are short. A nervous apology does not settle a public mistake.",
-                                    "No. I am too angry to bargain while you are standing there like that."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "mason_village_event_night_attack",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "night_attack"
-                                     ],
-                      "lines":  [
-                                    "Night trouble tests the loose latch by the stonecutter first. We are fixing those before sunset.",
-                                    "I stayed near the wall with the missing block and listened for anyone calling from the dark.",
-                                    "Dawn gave the stonecutter enough light to count wounds, missing blocks, and who made it home.",
-                                    "The dark tested everyone. Most of us passed by keeping a stack of spare stone between us and teeth.",
-                                    "We are safe enough near the stonecutter, though every shadow is being inspected twice.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "mason_village_event_sandstorm",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "sandstorm"
-                                     ],
-                      "lines":  [
-                                    "The wind threw sand through every crack. I am still cleaning sand from the mortar lines.",
-                                    "I checked walls, steps, and cracked blocks, then checked who was coughing too hard to answer.",
-                                    "Sand reached the stonecutter, the hinges, and half our eyes, but no one has been reported missing.",
-                                    "A hard wind teaches a mason which doors actually close and which ones only pretend.",
-                                    "We are safe enough near the stonecutter, though the whole village sounds like it is chewing gravel.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  },
-                  {
-                      "id":  "mason_village_event_snowstorm",
-                      "request":  "village_event_report",
-                      "show_for_babies":  false,
-                      "event_tags":  [
-                                         "snowstorm"
-                                     ],
-                      "lines":  [
-                                    "The stonecutter can sit silent. Warm hands, clear paths, and full hearths come first.",
-                                    "Snow piled against the doors, but everyone near the stonecutter found shelter.",
-                                    "Cold works quietly around the stonecutter. We are checking on anyone who stayed quiet too long.",
-                                    "I am clearing ice off the steps and watching for footprints that stop too soon.",
-                                    "We are alright for now near the stonecutter. Keep the fires fed and the paths open.",
-                                    "The village has been noisy lately, and not in the harmless market-day way.",
-                                    "I heard about that. Around here, news grows legs before breakfast.",
-                                    "People are pretending they are calm. That usually means they are not.",
-                                    "One event becomes ten versions by sunset. I am trying to remember the first one.",
-                                    "The bell, the gossip, the running feet... it all leaves a mark."
-                                ],
-                      "weight":  170
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.mason",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "mason_village_event_thunderstorm",
+      "request": "village_event_report",
+      "lines": [
+        "Thunder shook the stonecutter so hard loose stones rattled in the wall, but everyone near me is still standing.",
+        "I checked walls, steps, and cracked blocks after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the stonecutter, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked the doorframes twice.",
+        "The sky can keep its lightning. I have doorframes to set right.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "mason_village_event_fire",
+      "request": "village_event_report",
+      "lines": [
+        "I checked wooden beams set into stone for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the stonecutter after.",
+        "The stonecutter can wait. People come first.",
+        "We saved what we could reach around the stonecutter, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the stonecutter, but everyone is still sniffing the air like it might lie.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "village_fire"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "mason_village_event_raid",
+      "request": "village_event_report",
+      "lines": [
+        "During a raid, the stonecutter can sit silent; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the stonecutter still expect another wave from the road.",
+        "We counted living neighbors before walls, steps, and cracked blocks. That's the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the stonecutter and a bell that would not stop ringing.",
+        "From the stonecutter, I saw fear cross the square; then I saw courage get there first.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that."
+      ],
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "mason_village_event_night_attack",
+      "request": "village_event_report",
+      "lines": [
+        "Night trouble tests the loose latch by the stonecutter first. We are fixing those before sunset.",
+        "I stayed near the wall with the missing block and listened for anyone calling from the dark.",
+        "Dawn gave the stonecutter enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping a stack of spare stone between us and teeth.",
+        "We are safe enough near the stonecutter, though every shadow is being inspected twice.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "night_attack"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "mason_village_event_sandstorm",
+      "request": "village_event_report",
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning sand from the mortar lines.",
+        "I checked walls, steps, and cracked blocks, then checked who was coughing too hard to answer.",
+        "Sand reached the stonecutter, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a mason which doors actually close and which ones only pretend.",
+        "We are safe enough near the stonecutter, though the whole village sounds like it is chewing gravel.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "sandstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    },
+    {
+      "id": "mason_village_event_snowstorm",
+      "request": "village_event_report",
+      "lines": [
+        "The stonecutter can sit silent. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the stonecutter found shelter.",
+        "Cold works quietly around the stonecutter. We are checking on anyone who stayed quiet too long.",
+        "I am clearing ice off the steps and watching for footprints that stop too soon.",
+        "We are alright for now near the stonecutter. Keep the fires fed and the paths open.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
+      ],
+      "event_tags": [
+        "snowstorm"
+      ],
+      "show_for_babies": false,
+      "weight": 170
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.mason",
+      "section.lines"
+    ],
+    "topic": "professions.mason.village_events"
+  }
 }

@@ -1,269 +1,270 @@
 {
-    "options":  [
-                    {
-                        "id":  "adult_general_question",
-                        "label":  "Small Talk",
-                        "type":  "dialogue_option",
-                        "request":  "question",
-                        "order":  1,
-                        "show_for_babies":  false
-                    },
-                    {
-                        "id":  "adult_greeting",
-                        "label":  "Greet",
-                        "type":  "dialogue_option",
-                        "request":  "greeting",
-                        "order":  0,
-                        "show_for_babies":  false
-                    },
-                    {
-                        "id":  "adult_question",
-                        "label":  "Ask Question",
-                        "type":  "dialogue_option",
-                        "request":  "question",
-                        "order":  2,
-                        "show_for_babies":  false
-                    },
-                    {
-                        "id":  "trade_refresh.special_order.status",
-                        "label":  "Ask about orders",
-                        "type":  "dialogue_option",
-                        "request":  "question",
-                        "order":  1,
-                        "show_for_babies":  false,
-                        "requires_active_special_orders":  true
-                    },
-                    {
-                        "id":  "adult_family",
-                        "label":  "Ask About Family",
-                        "type":  "dialogue_option",
-                        "request":  "question",
-                        "order":  2,
-                        "show_for_babies":  false,
-                        "conditions":  [
-                                           {
-                                               "type":  "family"
-                                           }
-                                       ]
-                    },
-                    {
-                        "id":  "adult_relationships",
-                        "label":  "Ask About Relationships",
-                        "type":  "dialogue_option",
-                        "request":  "question",
-                        "order":  3,
-                        "show_for_babies":  false,
-                        "conditions":  [
-                                           {
-                                               "type":  "relationship"
-                                           }
-                                       ]
-                    },
-                    {
-                        "id":  "adult_gift_preferences",
-                        "label":  "Ask About Gifts",
-                        "type":  "dialogue_option",
-                        "request":  "gift_preferences",
-                        "order":  3,
-                        "show_for_babies":  false
-                    },
-                    {
-                        "id":  "cured_recognition",
-                        "label":  "Do you remember me?",
-                        "type":  "dialogue_option",
-                        "request":  "cured_recognition",
-                        "order":  -6,
-                        "show_for_babies":  false,
-                        "requires_unreported_cured_recognition":  true
-                    },
-                    {
-                        "id":  "village_event_report",
-                        "label":  "Are you alright?",
-                        "type":  "dialogue_option",
-                        "request":  "village_event_report",
-                        "order":  -5,
-                        "requires_recent_village_event":  true
-                    },
-                    {
-                        "id":  "gift_advice_followup",
-                        "label":  "About that gift advice...",
-                        "type":  "dialogue_option",
-                        "request":  "gift_advice_followup",
-                        "order":  -5,
-                        "show_for_babies":  false,
-                        "requires_unreported_gift_advice_result":  true
-                    },
-                    {
-                        "id":  "combat_survival_report",
-                        "label":  "You made it back",
-                        "type":  "dialogue_option",
-                        "request":  "combat_survival_report",
-                        "order":  -1,
-                        "show_for_babies":  false,
-                        "requires_unreported_combat_survival_report":  true
-                    },
-                    {
-                        "id":  "gear_report",
-                        "label":  "How is the gear?",
-                        "type":  "dialogue_option",
-                        "request":  "gear_report",
-                        "order":  -1,
-                        "show_for_babies":  false,
-                        "requires_unreported_gear_report":  true
-                    },
-                    {
-                        "id":  "recruitment_followup",
-                        "label":  "About the trip...",
-                        "type":  "dialogue_option",
-                        "request":  "recruitment_followup",
-                        "order":  -1,
-                        "show_for_babies":  false,
-                        "requires_unreported_recruitment_followup":  true
-                    },
-                    {
-                        "id":  "apologize_for_harm",
-                        "label":  "Apologize",
-                        "type":  "dialogue_option",
-                        "request":  "apology",
-                        "order":  -2,
-                        "requires_unapologized_remembered_harm":  true
-                    },
-                    {
-                        "id":  "village_defense_report",
-                        "label":  "About the attack...",
-                        "type":  "dialogue_option",
-                        "request":  "village_defense_report",
-                        "order":  -3,
-                        "show_for_babies":  false,
-                        "requires_unreported_village_defense":  true
-                    },
-                    {
-                        "id":  "story_hint_report",
-                        "label":  "I found that place",
-                        "type":  "dialogue_option",
-                        "request":  "story_hint_report",
-                        "order":  -4,
-                        "show_for_babies":  false,
-                        "requires_unreported_story_hint_discovery":  true
-                    },
-                    {
-                        "id":  "adult_story",
-                        "label":  "Ask for Story",
-                        "type":  "dialogue_option",
-                        "request":  "story",
-                        "order":  4,
-                        "show_for_babies":  false
-                    },
-                    {
-                        "id":  "adult_share_story",
-                        "label":  "Share a Story",
-                        "type":  "dialogue_option",
-                        "request":  "share_story",
-                        "order":  5,
-                        "show_for_babies":  false,
-                        "requires_shareable_story":  true
-                    },
-                    {
-                        "id":  "adult_joke",
-                        "label":  "Tell Joke",
-                        "type":  "dialogue_option",
-                        "request":  "joke",
-                        "order":  6,
-                        "show_for_babies":  false
-                    },
-                    {
-                        "id":  "adult_insult",
-                        "label":  "Insult",
-                        "type":  "dialogue_option",
-                        "request":  "insult",
-                        "order":  7,
-                        "show_for_babies":  false
-                    },
-                    {
-                        "id":  "baby_greeting",
-                        "label":  "Say Hello",
-                        "type":  "dialogue_option",
-                        "request":  "greeting",
-                        "order":  0,
-                        "show_for_adults":  false
-                    },
-                    {
-                        "id":  "baby_today_question",
-                        "label":  "Ask About Today",
-                        "type":  "dialogue_option",
-                        "request":  "question",
-                        "order":  1,
-                        "show_for_adults":  false
-                    },
-                    {
-                        "id":  "baby_question",
-                        "label":  "Ask What They Know",
-                        "type":  "dialogue_option",
-                        "request":  "question",
-                        "order":  2,
-                        "show_for_adults":  false
-                    },
-                    {
-                        "id":  "baby_family",
-                        "label":  "Ask About Family",
-                        "type":  "dialogue_option",
-                        "request":  "question",
-                        "order":  2,
-                        "show_for_adults":  false,
-                        "conditions":  [
-                                           {
-                                               "type":  "family"
-                                           }
-                                       ]
-                    },
-                    {
-                        "id":  "baby_gift_preferences",
-                        "label":  "Ask About Gifts",
-                        "type":  "dialogue_option",
-                        "request":  "gift_preferences",
-                        "order":  3,
-                        "show_for_adults":  false
-                    },
-                    {
-                        "id":  "baby_story",
-                        "label":  "Ask for a Story",
-                        "type":  "dialogue_option",
-                        "request":  "story",
-                        "order":  4,
-                        "show_for_adults":  false
-                    },
-                    {
-                        "id":  "baby_share_story",
-                        "label":  "Share a Story",
-                        "type":  "dialogue_option",
-                        "request":  "share_story",
-                        "order":  5,
-                        "show_for_adults":  false,
-                        "requires_shareable_story":  true
-                    },
-                    {
-                        "id":  "baby_joke",
-                        "label":  "Tell Joke",
-                        "type":  "dialogue_option",
-                        "request":  "joke",
-                        "order":  6,
-                        "show_for_adults":  false
-                    },
-                    {
-                        "id":  "baby_insult",
-                        "label":  "Be Mean",
-                        "type":  "dialogue_option",
-                        "request":  "insult",
-                        "order":  7,
-                        "show_for_adults":  false
-                    }
-                ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.global",
-                                  "section.options"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.options"
+    ],
+    "topic": "global.menu_options"
+  },
+  "options": [
+    {
+      "id": "adult_general_question",
+      "label": "Small Talk",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 1,
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_greeting",
+      "label": "Greet",
+      "type": "dialogue_option",
+      "request": "greeting",
+      "order": 0,
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_question",
+      "label": "Ask Question",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 2,
+      "show_for_babies": false
+    },
+    {
+      "id": "trade_refresh.special_order.status",
+      "label": "Ask about orders",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 1,
+      "requires_active_special_orders": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_family",
+      "label": "Ask About Family",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 2,
+      "conditions": [
+        {
+          "type": "family"
+        }
+      ],
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_relationships",
+      "label": "Ask About Relationships",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 3,
+      "conditions": [
+        {
+          "type": "relationship"
+        }
+      ],
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_gift_preferences",
+      "label": "Ask About Gifts",
+      "type": "dialogue_option",
+      "request": "gift_preferences",
+      "order": 3,
+      "show_for_babies": false
+    },
+    {
+      "id": "cured_recognition",
+      "label": "Do you remember me?",
+      "type": "dialogue_option",
+      "request": "cured_recognition",
+      "order": -6,
+      "requires_unreported_cured_recognition": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_report",
+      "label": "Are you alright?",
+      "type": "dialogue_option",
+      "request": "village_event_report",
+      "order": -5,
+      "requires_recent_village_event": true
+    },
+    {
+      "id": "gift_advice_followup",
+      "label": "About that gift advice...",
+      "type": "dialogue_option",
+      "request": "gift_advice_followup",
+      "order": -5,
+      "requires_unreported_gift_advice_result": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "combat_survival_report",
+      "label": "You made it back",
+      "type": "dialogue_option",
+      "request": "combat_survival_report",
+      "order": -1,
+      "requires_unreported_combat_survival_report": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "gear_report",
+      "label": "How is the gear?",
+      "type": "dialogue_option",
+      "request": "gear_report",
+      "order": -1,
+      "requires_unreported_gear_report": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "recruitment_followup",
+      "label": "About the trip...",
+      "type": "dialogue_option",
+      "request": "recruitment_followup",
+      "order": -1,
+      "requires_unreported_recruitment_followup": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "apologize_for_harm",
+      "label": "Apologize",
+      "type": "dialogue_option",
+      "request": "apology",
+      "order": -2,
+      "requires_unapologized_remembered_harm": true
+    },
+    {
+      "id": "village_defense_report",
+      "label": "About the attack...",
+      "type": "dialogue_option",
+      "request": "village_defense_report",
+      "order": -3,
+      "requires_unreported_village_defense": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "story_hint_report",
+      "label": "I found that place",
+      "type": "dialogue_option",
+      "request": "story_hint_report",
+      "order": -4,
+      "requires_unreported_story_hint_discovery": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_story",
+      "label": "Ask for Story",
+      "type": "dialogue_option",
+      "request": "story",
+      "order": 4,
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_share_story",
+      "label": "Share a Story",
+      "type": "dialogue_option",
+      "request": "share_story",
+      "order": 5,
+      "requires_shareable_story": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_joke",
+      "label": "Tell Joke",
+      "type": "dialogue_option",
+      "request": "joke",
+      "order": 6,
+      "show_for_babies": false
+    },
+    {
+      "id": "adult_insult",
+      "label": "Insult",
+      "type": "dialogue_option",
+      "request": "insult",
+      "order": 7,
+      "show_for_babies": false
+    },
+    {
+      "id": "baby_greeting",
+      "label": "Say Hello",
+      "type": "dialogue_option",
+      "request": "greeting",
+      "order": 0,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_today_question",
+      "label": "Ask About Today",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 1,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_question",
+      "label": "Ask What They Know",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 2,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_family",
+      "label": "Ask About Family",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 2,
+      "conditions": [
+        {
+          "type": "family"
+        }
+      ],
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_gift_preferences",
+      "label": "Ask About Gifts",
+      "type": "dialogue_option",
+      "request": "gift_preferences",
+      "order": 3,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_story",
+      "label": "Ask for a Story",
+      "type": "dialogue_option",
+      "request": "story",
+      "order": 4,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_share_story",
+      "label": "Share a Story",
+      "type": "dialogue_option",
+      "request": "share_story",
+      "order": 5,
+      "requires_shareable_story": true,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_joke",
+      "label": "Tell Joke",
+      "type": "dialogue_option",
+      "request": "joke",
+      "order": 6,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_insult",
+      "label": "Be Mean",
+      "type": "dialogue_option",
+      "request": "insult",
+      "order": 7,
+      "show_for_adults": false
+    }
+  ]
 }

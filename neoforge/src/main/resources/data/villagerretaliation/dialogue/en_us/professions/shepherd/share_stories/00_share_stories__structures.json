@@ -1,334 +1,336 @@
 {
-    "lines":  [
-                  {
-                      "id":  "shepherd_share_story_ancient_city",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:ancient_city",
-                      "lines":  [
-                                    "{target}? Sound itself can \u003cshake\u003ewake trouble\u003c/shake\u003e. I would count everyone twice.",
-                                    "If anyone heads for Ancient City, tell them: \u003cpulse\u003eStep softly\u003c/pulse\u003e and leave the shiny things alone. I will be at the loom.",
-                                    "Sculk does not need eyes to notice you. I\u0027ll remember that when I count everyone.",
-                                    "Ancient City is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Ancient City as a city where \u003cpulse\u003esilence matters\u003c/pulse\u003e more than armor. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_bastion_remnant",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:bastion_remnant",
-                      "lines":  [
-                                    "{target}? Old gold still has guards. I would count everyone twice.",
-                                    "If anyone heads for Bastion Remnant, tell them: Do not touch \u003ccolor:gold\u003egold\u003c/color\u003e unless you are ready for angry piglins. I will be at the loom.",
-                                    "Blackstone halls do not forgive greed. I\u0027ll remember that when I count everyone.",
-                                    "Bastion Remnant is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Bastion Remnant as a broken stronghold where greed still has teeth. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_buried_treasure",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:buried_treasure",
-                      "lines":  [
-                                    "{target}? Treasure makes people dig past good sense. I would count everyone twice.",
-                                    "If anyone heads for Buried Treasure, tell them: Watch the \u003cwavy\u003etide\u003c/wavy\u003e and the shovel both. I will be at the loom.",
-                                    "Sand hides holes as well as chests. I\u0027ll remember that when I count everyone.",
-                                    "Buried Treasure is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Buried Treasure as a chest under sand that can make friends argue. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_desert_pyramid",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:desert_pyramid",
-                      "lines":  [
-                                    "{target}? Sandstone can hide a trap under your feet. I would count everyone twice.",
-                                    "If anyone heads for Desert Pyramid, tell them: Break floors carefully and listen before stepping down. I will be at the loom.",
-                                    "Old pressure plates wait patiently. I\u0027ll remember that when I count everyone.",
-                                    "Desert Pyramid is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Desert Pyramid as a quiet pyramid with a loud mistake under it. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_end_city",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:end_city",
-                      "lines":  [
-                                    "{target}? The sky is open and the ground is not always there. I would count everyone twice.",
-                                    "If anyone heads for End City, tell them: Watch every \u003cshake\u003ebridge\u003c/shake\u003e and every shulker box. I will be at the loom.",
-                                    "Purple towers make falling feel too easy. I\u0027ll remember that when I count everyone.",
-                                    "End City is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember End City as a tall city built where home feels very far away. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_fortress",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:fortress",
-                      "lines":  [
-                                    "{target}? Bridges hang over lava and worse things patrol them. I would count everyone twice.",
-                                    "If anyone heads for Nether Fortress, tell them: Keep \u003ccolor:red\u003efire protection\u003c/color\u003e close and pride far away. I will be at the loom.",
-                                    "Blazes turn hallways into ovens. I\u0027ll remember that when I count everyone.",
-                                    "Nether Fortress is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Nether Fortress as a black bridge where the air itself wants a fight. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_igloo",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:igloo",
-                      "lines":  [
-                                    "{target}? A little shelter can keep a strange secret below. I would count everyone twice.",
-                                    "If anyone heads for Igloo, tell them: Check the trapdoor before trusting the bed. I will be at the loom.",
-                                    "Snow can cover kindness and trouble both. I\u0027ll remember that when I count everyone.",
-                                    "Igloo is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Igloo as a small white house with more beneath it than above it. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_jungle_pyramid",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:jungle_pyramid",
-                      "lines":  [
-                                    "{target}? Vines and stone hide tripwires well. I would count everyone twice.",
-                                    "If anyone heads for Jungle Pyramid, tell them: Move slow and keep hands off strange levers. I will be at the loom.",
-                                    "Mossy stone is good at pretending nothing happened. I\u0027ll remember that when I count everyone.",
-                                    "Jungle Pyramid is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Jungle Pyramid as a jungle ruin that waits with string pulled tight. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_mineshaft",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:mineshaft",
-                      "lines":  [
-                                    "{target}? Old supports and cave spiders both like the dark. I would count everyone twice.",
-                                    "If anyone heads for Mineshaft, tell them: Mind the webs and never trust quiet rails. I will be at the loom.",
-                                    "Wood below ground means someone left in a hurry. I\u0027ll remember that when I count everyone.",
-                                    "Mineshaft is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Mineshaft as a tunnel where every beam sounds tired. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_mineshaft_mesa",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:mineshaft_mesa",
-                      "lines":  [
-                                    "{target}? Gold country draws danger underground. I would count everyone twice.",
-                                    "If anyone heads for Mesa Mineshaft, tell them: Watch the rails and the drops between red stone walls. I will be at the loom.",
-                                    "Badlands dust follows you into every tunnel. I\u0027ll remember that when I count everyone.",
-                                    "Mesa Mineshaft is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Mesa Mineshaft as a red-earth mine where greed dug too deep. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_monument",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:monument",
-                      "lines":  [
-                                    "{target}? Guardians watch the water from every side. I would count everyone twice.",
-                                    "If anyone heads for Ocean Monument, tell them: Bring milk, doors, and enough air to regret nothing. I will be at the loom.",
-                                    "Prismarine looks pretty until the beams start. I\u0027ll remember that when I count everyone.",
-                                    "Ocean Monument is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Ocean Monument as a drowned temple with eyes in the walls. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_nether_fossil",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:nether_fossil",
-                      "lines":  [
-                                    "{target}? Even old bones can sit in bad air. I would count everyone twice.",
-                                    "If anyone heads for Nether Fossil, tell them: Mind the soul sand and anything burning nearby. I will be at the loom.",
-                                    "White bone in the Nether never feels peaceful. I\u0027ll remember that when I count everyone.",
-                                    "Nether Fossil is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Nether Fossil as a dead thing the Nether refused to bury kindly. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_ocean_ruin_cold",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:ocean_ruin_cold",
-                      "lines":  [
-                                    "{target}? Cold water steals strength fast. I would count everyone twice.",
-                                    "If anyone heads for Cold Ocean Ruin, tell them: Watch for \u003cshake\u003edrowned hands\u003c/shake\u003e below the stone. I will be at the loom.",
-                                    "Ruined blocks under ice do not mean empty blocks. I\u0027ll remember that when I count everyone.",
-                                    "Cold Ocean Ruin is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Cold Ocean Ruin as a sunken ruin where the water bites first. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_ocean_ruin_warm",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:ocean_ruin_warm",
-                      "lines":  [
-                                    "{target}? Warm water can still hide drowned trouble. I would count everyone twice.",
-                                    "If anyone heads for Warm Ocean Ruin, tell them: Don\u0027t mistake coral colors for safety. I will be at the loom.",
-                                    "Bright water makes danger look inviting. I\u0027ll remember that when I count everyone.",
-                                    "Warm Ocean Ruin is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Warm Ocean Ruin as a pretty ruin with lungs full of warning. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_pillager_outpost",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:pillager_outpost",
-                      "lines":  [
-                                    "{target}? Banners mean \u003cshake\u003ecrossbows\u003c/shake\u003e are near. I would count everyone twice.",
-                                    "If anyone heads for Pillager Outpost, tell them: Stay low and do not let patrols follow you home. I will be at the loom.",
-                                    "A tower sees farther than a villager wants. I\u0027ll remember that when I count everyone.",
-                                    "Pillager Outpost is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Pillager Outpost as a wooden tower that points trouble at villages. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_ruined_portal",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:ruined_portal",
-                      "lines":  [
-                                    "{target}? Broken obsidian still remembers the Nether. I would count everyone twice.",
-                                    "If anyone heads for Ruined Portal, tell them: Keep clear of lava and do not rebuild it casually. I will be at the loom.",
-                                    "Even cold portal stones make the air feel warmer. I\u0027ll remember that when I count everyone.",
-                                    "Ruined Portal is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Ruined Portal as a broken doorway that still points somewhere bad. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "shepherd_share_story_ruined_portal_desert",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_structure":  "minecraft:ruined_portal_desert",
-                      "lines":  [
-                                    "{target}? Nether heat and desert heat make poor company. I would count everyone twice.",
-                                    "If anyone heads for Desert Ruined Portal, tell them: Watch lava pockets and broken obsidian. I will be at the loom.",
-                                    "Sand around a portal never feels innocent. I\u0027ll remember that when I count everyone.",
-                                    "Desert Ruined Portal is no small story. Fear scatters folk like a loose flock.",
-                                    "I will remember Desert Ruined Portal as a hot ruin with one foot in a worse world. I will count heads before I count sheep.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "shepherd_share_story_ancient_city",
+      "request": "share_story",
+      "lines": [
+        "{target}? Sound itself can <shake>wake trouble</shake>. I would count everyone twice.",
+        "If anyone heads for Ancient City, tell them: <pulse>Step softly</pulse> and leave the shiny things alone. I will be at the loom.",
+        "Sculk does not need eyes to notice you. I'll remember that when I count everyone.",
+        "Ancient City is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Ancient City as a city where <pulse>silence matters</pulse> more than armor. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ancient_city",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_bastion_remnant",
+      "request": "share_story",
+      "lines": [
+        "{target}? Old gold still has guards. I would count everyone twice.",
+        "If anyone heads for Bastion Remnant, tell them: Do not touch <color:gold>gold</color> unless you are ready for angry piglins. I will be at the loom.",
+        "Blackstone halls do not forgive greed. I'll remember that when I count everyone.",
+        "Bastion Remnant is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Bastion Remnant as a broken stronghold where greed still has teeth. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:bastion_remnant",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_buried_treasure",
+      "request": "share_story",
+      "lines": [
+        "{target}? Treasure makes people dig past good sense. I would count everyone twice.",
+        "If anyone heads for Buried Treasure, tell them: Watch the <wavy>tide</wavy> and the shovel both. I will be at the loom.",
+        "Sand hides holes as well as chests. I'll remember that when I count everyone.",
+        "Buried Treasure is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Buried Treasure as a chest under sand that can make friends argue. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:buried_treasure",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_desert_pyramid",
+      "request": "share_story",
+      "lines": [
+        "{target}? Sandstone can hide a trap under your feet. I would count everyone twice.",
+        "If anyone heads for Desert Pyramid, tell them: Break floors carefully and listen before stepping down. I will be at the loom.",
+        "Old pressure plates wait patiently. I'll remember that when I count everyone.",
+        "Desert Pyramid is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Desert Pyramid as a quiet pyramid with a loud mistake under it. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:desert_pyramid",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_end_city",
+      "request": "share_story",
+      "lines": [
+        "{target}? The sky is open and the ground is not always there. I would count everyone twice.",
+        "If anyone heads for End City, tell them: Watch every <shake>bridge</shake> and every shulker box. I will be at the loom.",
+        "Purple towers make falling feel too easy. I'll remember that when I count everyone.",
+        "End City is no small story. Fear scatters folk like a loose flock.",
+        "I will remember End City as a tall city built where home feels very far away. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:end_city",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_fortress",
+      "request": "share_story",
+      "lines": [
+        "{target}? Bridges hang over lava and worse things patrol them. I would count everyone twice.",
+        "If anyone heads for Nether Fortress, tell them: Keep <color:red>fire protection</color> close and pride far away. I will be at the loom.",
+        "Blazes turn hallways into ovens. I'll remember that when I count everyone.",
+        "Nether Fortress is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Nether Fortress as a black bridge where the air itself wants a fight. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:fortress",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_igloo",
+      "request": "share_story",
+      "lines": [
+        "{target}? A little shelter can keep a strange secret below. I would count everyone twice.",
+        "If anyone heads for Igloo, tell them: Check the trapdoor before trusting the bed. I will be at the loom.",
+        "Snow can cover kindness and trouble both. I'll remember that when I count everyone.",
+        "Igloo is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Igloo as a small white house with more beneath it than above it. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:igloo",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_jungle_pyramid",
+      "request": "share_story",
+      "lines": [
+        "{target}? Vines and stone hide tripwires well. I would count everyone twice.",
+        "If anyone heads for Jungle Pyramid, tell them: Move slow and keep hands off strange levers. I will be at the loom.",
+        "Mossy stone is good at pretending nothing happened. I'll remember that when I count everyone.",
+        "Jungle Pyramid is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Jungle Pyramid as a jungle ruin that waits with string pulled tight. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:jungle_pyramid",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_mineshaft",
+      "request": "share_story",
+      "lines": [
+        "{target}? Old supports and cave spiders both like the dark. I would count everyone twice.",
+        "If anyone heads for Mineshaft, tell them: Mind the webs and never trust quiet rails. I will be at the loom.",
+        "Wood below ground means someone left in a hurry. I'll remember that when I count everyone.",
+        "Mineshaft is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Mineshaft as a tunnel where every beam sounds tired. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:mineshaft",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_mineshaft_mesa",
+      "request": "share_story",
+      "lines": [
+        "{target}? Gold country draws danger underground. I would count everyone twice.",
+        "If anyone heads for Mesa Mineshaft, tell them: Watch the rails and the drops between red stone walls. I will be at the loom.",
+        "Badlands dust follows you into every tunnel. I'll remember that when I count everyone.",
+        "Mesa Mineshaft is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Mesa Mineshaft as a red-earth mine where greed dug too deep. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:mineshaft_mesa",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_monument",
+      "request": "share_story",
+      "lines": [
+        "{target}? Guardians watch the water from every side. I would count everyone twice.",
+        "If anyone heads for Ocean Monument, tell them: Bring milk, doors, and enough air to regret nothing. I will be at the loom.",
+        "Prismarine looks pretty until the beams start. I'll remember that when I count everyone.",
+        "Ocean Monument is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Ocean Monument as a drowned temple with eyes in the walls. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:monument",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_nether_fossil",
+      "request": "share_story",
+      "lines": [
+        "{target}? Even old bones can sit in bad air. I would count everyone twice.",
+        "If anyone heads for Nether Fossil, tell them: Mind the soul sand and anything burning nearby. I will be at the loom.",
+        "White bone in the Nether never feels peaceful. I'll remember that when I count everyone.",
+        "Nether Fossil is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Nether Fossil as a dead thing the Nether refused to bury kindly. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:nether_fossil",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_ocean_ruin_cold",
+      "request": "share_story",
+      "lines": [
+        "{target}? Cold water steals strength fast. I would count everyone twice.",
+        "If anyone heads for Cold Ocean Ruin, tell them: Watch for <shake>drowned hands</shake> below the stone. I will be at the loom.",
+        "Ruined blocks under ice do not mean empty blocks. I'll remember that when I count everyone.",
+        "Cold Ocean Ruin is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Cold Ocean Ruin as a sunken ruin where the water bites first. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ocean_ruin_cold",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_ocean_ruin_warm",
+      "request": "share_story",
+      "lines": [
+        "{target}? Warm water can still hide drowned trouble. I would count everyone twice.",
+        "If anyone heads for Warm Ocean Ruin, tell them: Don't mistake coral colors for safety. I will be at the loom.",
+        "Bright water makes danger look inviting. I'll remember that when I count everyone.",
+        "Warm Ocean Ruin is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Warm Ocean Ruin as a pretty ruin with lungs full of warning. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ocean_ruin_warm",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_pillager_outpost",
+      "request": "share_story",
+      "lines": [
+        "{target}? Banners mean <shake>crossbows</shake> are near. I would count everyone twice.",
+        "If anyone heads for Pillager Outpost, tell them: Stay low and do not let patrols follow you home. I will be at the loom.",
+        "A tower sees farther than a villager wants. I'll remember that when I count everyone.",
+        "Pillager Outpost is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Pillager Outpost as a wooden tower that points trouble at villages. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:pillager_outpost",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_ruined_portal",
+      "request": "share_story",
+      "lines": [
+        "{target}? Broken obsidian still remembers the Nether. I would count everyone twice.",
+        "If anyone heads for Ruined Portal, tell them: Keep clear of lava and do not rebuild it casually. I will be at the loom.",
+        "Even cold portal stones make the air feel warmer. I'll remember that when I count everyone.",
+        "Ruined Portal is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Ruined Portal as a broken doorway that still points somewhere bad. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ruined_portal",
+      "weight": 120
+    },
+    {
+      "id": "shepherd_share_story_ruined_portal_desert",
+      "request": "share_story",
+      "lines": [
+        "{target}? Nether heat and desert heat make poor company. I would count everyone twice.",
+        "If anyone heads for Desert Ruined Portal, tell them: Watch lava pockets and broken obsidian. I will be at the loom.",
+        "Sand around a portal never feels innocent. I'll remember that when I count everyone.",
+        "Desert Ruined Portal is no small story. Fear scatters folk like a loose flock.",
+        "I will remember Desert Ruined Portal as a hot ruin with one foot in a worse world. I will count heads before I count sheep.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ruined_portal_desert",
+      "weight": 120
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.shepherd.share_stories",
+      "section.lines"
+    ],
+    "topic": "professions.shepherd.share_stories.share_stories__structures"
+  }
 }

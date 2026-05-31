@@ -1,122 +1,123 @@
 {
-    "lines":  [
-                  {
-                      "id":  "leatherworker_question_stitching_variants",
-                      "request":  "question",
-                      "lines":  [
-                                    "Bad stitching in the rain tells on itself quickly.",
-                                    "Gear that lasts is mostly patience made visible.",
-                                    "A stitch done poorly waits for the \u003cshake\u003eworst time\u003c/shake\u003e to confess.",
-                                    "Good leather is patience you can wear.",
-                                    "Rain tells the truth about gear faster than any seller will.",
-                                    "A pack should carry weight without reminding you every step.",
-                                    "Most days, I am at the cauldron, trying to keep stitching and straps from becoming everyone else\u0027s problem.",
-                                    "People think leather is simple until something goes wrong and suddenly it is very important.",
-                                    "A village runs on small work. Nobody praises it until it stops happening.",
-                                    "I trust a good needle more than a loud promise. The needle has less to prove."
-                                ],
-                      "weight":  172
-                  },
-                  {
-                      "id":  "question_follow_memory_leatherworker_boat",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  3,
-                      "lines":  [
-                                    "I still remember that boat trip. Wet leather complains longer than villagers do.",
-                                    "That boat trip still sits oddly in my memory, but at least it floated.",
-                                    "A boat can make a bad plan quieter. It can\u0027t make me forget it.",
-                                    "Following you taught me that plans sound much safer before anyone starts walking.",
-                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
-                                    "Next time, warn me before the road becomes a test of character.",
-                                    "I learned two things out there: stay close, and ask better questions earlier.",
-                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
-                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
-                                    "If I followed you again, I would pack more food and fewer assumptions."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_leatherworker",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  3,
-                      "lines":  [
-                                    "I still think about that walk. My boots forgave you before my feet did.",
-                                    "I remember following you through that road. My feet remember it even better.",
-                                    "That trip across that road taught me to ask more questions before walking.",
-                                    "Following you taught me that plans sound much safer before anyone starts walking.",
-                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
-                                    "Next time, warn me before the road becomes a test of character.",
-                                    "I learned two things out there: stay close, and ask better questions earlier.",
-                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
-                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
-                                    "If I followed you again, I would pack more food and fewer assumptions."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "excludes_ocean_crossing":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_leatherworker_ocean_swim",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  4,
-                      "lines":  [
-                                    "Ocean swimming is terrible for leather and worse for my mood.",
-                                    "Crossing ocean water without a boat is not a memory I recommend keeping.",
-                                    "I remember every wave from that crossing, and none of them kindly.",
-                                    "Following you taught me that plans sound much safer before anyone starts walking.",
-                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
-                                    "Next time, warn me before the road becomes a test of character.",
-                                    "I learned two things out there: stay close, and ask better questions earlier.",
-                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
-                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
-                                    "If I followed you again, I would pack more food and fewer assumptions."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "swim_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "default_profession_leatherworker_weatherproof",
-                      "request":  "question",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "Leather takes the shape of use. So do people, if the days are rough enough.",
-                                    "A good pair of boots is not glamorous. Neither is arriving alive.",
-                                    "Rain, snow, mud, fear. I make straps for all the things that try to loosen.",
-                                    "Most days, I am at the cauldron, trying to keep stitching and straps from becoming everyone else\u0027s problem.",
-                                    "People think leather is simple until something goes wrong and suddenly it is very important.",
-                                    "A village runs on small work. Nobody praises it until it stops happening.",
-                                    "I trust a good needle more than a loud promise. The needle has less to prove.",
-                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-                                    "I notice the little things. That is either a skill or what the cauldron has done to me."
-                                ],
-                      "weight":  18
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.leatherworker",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "leatherworker_question_stitching_variants",
+      "request": "question",
+      "lines": [
+        "Bad stitching in the rain tells on itself quickly.",
+        "Gear that lasts is mostly patience made visible.",
+        "A stitch done poorly waits for the <shake>worst time</shake> to confess.",
+        "Good leather is patience you can wear.",
+        "Rain tells the truth about gear faster than any seller will.",
+        "A pack should carry weight without reminding you every step.",
+        "Most days, I am at the cauldron, trying to keep stitching and straps from becoming everyone else's problem.",
+        "People think leather is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good needle more than a loud promise. The needle has less to prove."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "question_follow_memory_leatherworker_boat",
+      "request": "question",
+      "lines": [
+        "I still remember that boat trip. Wet leather complains longer than villagers do.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It can't make me forget it.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "question_follow_memory_leatherworker",
+      "request": "question",
+      "lines": [
+        "I still think about that walk. My boots forgave you before my feet did.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "question_follow_memory_leatherworker_ocean_swim",
+      "request": "question",
+      "lines": [
+        "Ocean swimming is terrible for leather and worse for my mood.",
+        "Crossing ocean water without a boat is not a memory I recommend keeping.",
+        "I remember every wave from that crossing, and none of them kindly.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
+      ],
+      "conditions": [
+        {
+          "swim_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "default_profession_leatherworker_weatherproof",
+      "request": "question",
+      "lines": [
+        "Leather takes the shape of use. So do people, if the days are rough enough.",
+        "A good pair of boots is not glamorous. Neither is arriving alive.",
+        "Rain, snow, mud, fear. I make straps for all the things that try to loosen.",
+        "Most days, I am at the cauldron, trying to keep stitching and straps from becoming everyone else's problem.",
+        "People think leather is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good needle more than a loud promise. The needle has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the cauldron has done to me."
+      ],
+      "show_for_babies": false,
+      "weight": 18
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.leatherworker",
+      "section.lines"
+    ],
+    "topic": "professions.leatherworker.questions"
+  }
 }

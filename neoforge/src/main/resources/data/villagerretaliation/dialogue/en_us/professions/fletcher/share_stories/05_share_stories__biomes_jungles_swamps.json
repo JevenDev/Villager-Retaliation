@@ -1,106 +1,108 @@
 {
-    "lines":  [
-                  {
-                      "id":  "fletcher_share_story_bamboo_jungle",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:bamboo_jungle",
-                      "lines":  [
-                                    "{target}? Green stalks can hide quick trouble. I would count arrows and find cover.",
-                                    "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I will be at the fletching table.",
-                                    "Bamboo crowds the eye and the feet. I\u0027ll remember that when I count arrows.",
-                                    "Bamboo Jungle is no small story. Range helps only if you see trouble first.",
-                                    "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will keep dry string and straight arrows ready.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "fletcher_share_story_jungle",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:jungle",
-                      "lines":  [
-                                    "{target}? Leaves crowd close enough to hide anything. I would count arrows and find cover.",
-                                    "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the fletching table.",
-                                    "The green is loud even when nothing moves. I\u0027ll remember that when I count arrows.",
-                                    "Jungle is no small story. Range helps only if you see trouble first.",
-                                    "I will remember Jungle as a hot forest that keeps secrets well. I will keep dry string and straight arrows ready.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "fletcher_share_story_mangrove_swamp",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:mangrove_swamp",
-                      "lines":  [
-                                    "{target}? Mud holds boots longer than plans. I would count arrows and find cover.",
-                                    "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the fletching table.",
-                                    "Thick roots make every hurry foolish. I\u0027ll remember that when I count arrows.",
-                                    "Mangrove Swamp is no small story. Range helps only if you see trouble first.",
-                                    "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will keep dry string and straight arrows ready.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "fletcher_share_story_sparse_jungle",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:sparse_jungle",
-                      "lines":  [
-                                    "{target}? Thin jungle still keeps thick surprises. I would count arrows and find cover.",
-                                    "If anyone heads for Sparse Jungle, tell them: Don\u0027t trust open patches too quickly. I will be at the fletching table.",
-                                    "Vines and shadows take turns hiding things. I\u0027ll remember that when I count arrows.",
-                                    "Sparse Jungle is no small story. Range helps only if you see trouble first.",
-                                    "I will remember Sparse Jungle as green country pretending to be easier than it is. I will keep dry string and straight arrows ready.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  },
-                  {
-                      "id":  "fletcher_share_story_swamp",
-                      "request":  "share_story",
-                      "option":  "adult_share_story",
-                      "story_biome":  "minecraft:swamp",
-                      "lines":  [
-                                    "{target}? Mud and water both remember footsteps. I would count arrows and find cover.",
-                                    "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the fletching table.",
-                                    "Fog makes close things feel far. I\u0027ll remember that when I count arrows.",
-                                    "Swamp is no small story. Range helps only if you see trouble first.",
-                                    "I will remember Swamp as wet land that grabs at ankles and plans. I will keep dry string and straight arrows ready.",
-                                    "{target}? I would not rush toward it without telling someone where you are going first.",
-                                    "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
-                                    "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
-                                    "If you go there, come back with the story and not just the scratches. The village remembers both.",
-                                    "A place like {target} can turn confidence into \u003cshake\u003epanic\u003c/shake\u003e very quickly."
-                                ],
-                      "weight":  120
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "fletcher_share_story_bamboo_jungle",
+      "request": "share_story",
+      "lines": [
+        "{target}? Green stalks can hide quick trouble. I would count arrows and find cover.",
+        "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I will be at the fletching table.",
+        "Bamboo crowds the eye and the feet. I'll remember that when I count arrows.",
+        "Bamboo Jungle is no small story. Range helps only if you see trouble first.",
+        "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will keep dry string and straight arrows ready.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:bamboo_jungle",
+      "weight": 120
+    },
+    {
+      "id": "fletcher_share_story_jungle",
+      "request": "share_story",
+      "lines": [
+        "{target}? Leaves crowd close enough to hide anything. I would count arrows and find cover.",
+        "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the fletching table.",
+        "The green is loud even when nothing moves. I'll remember that when I count arrows.",
+        "Jungle is no small story. Range helps only if you see trouble first.",
+        "I will remember Jungle as a hot forest that keeps secrets well. I will keep dry string and straight arrows ready.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:jungle",
+      "weight": 120
+    },
+    {
+      "id": "fletcher_share_story_mangrove_swamp",
+      "request": "share_story",
+      "lines": [
+        "{target}? Mud holds boots longer than plans. I would count arrows and find cover.",
+        "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the fletching table.",
+        "Thick roots make every hurry foolish. I'll remember that when I count arrows.",
+        "Mangrove Swamp is no small story. Range helps only if you see trouble first.",
+        "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will keep dry string and straight arrows ready.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:mangrove_swamp",
+      "weight": 120
+    },
+    {
+      "id": "fletcher_share_story_sparse_jungle",
+      "request": "share_story",
+      "lines": [
+        "{target}? Thin jungle still keeps thick surprises. I would count arrows and find cover.",
+        "If anyone heads for Sparse Jungle, tell them: Don't trust open patches too quickly. I will be at the fletching table.",
+        "Vines and shadows take turns hiding things. I'll remember that when I count arrows.",
+        "Sparse Jungle is no small story. Range helps only if you see trouble first.",
+        "I will remember Sparse Jungle as green country pretending to be easier than it is. I will keep dry string and straight arrows ready.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:sparse_jungle",
+      "weight": 120
+    },
+    {
+      "id": "fletcher_share_story_swamp",
+      "request": "share_story",
+      "lines": [
+        "{target}? Mud and water both remember footsteps. I would count arrows and find cover.",
+        "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the fletching table.",
+        "Fog makes close things feel far. I'll remember that when I count arrows.",
+        "Swamp is no small story. Range helps only if you see trouble first.",
+        "I will remember Swamp as wet land that grabs at ankles and plans. I will keep dry string and straight arrows ready.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
+      ],
+      "option": "adult_share_story",
+      "story_biome": "minecraft:swamp",
+      "weight": 120
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.fletcher.share_stories",
+      "section.lines"
+    ],
+    "topic": "professions.fletcher.share_stories.share_stories__biomes_jungles_swamps"
+  }
 }

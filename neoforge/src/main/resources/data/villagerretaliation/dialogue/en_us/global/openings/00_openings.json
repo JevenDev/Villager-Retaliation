@@ -1,226 +1,227 @@
 {
-    "openings":  [
-                     {
-                         "id":  "global_new_village_opening",
-                         "show_for_babies":  false,
-                         "first_village_interaction_only":  true,
-                         "dispositions":  [
-                                              "respectful",
-                                              "friendly",
-                                              "neutral",
-                                              "cautious"
-                                          ],
-                         "lines":  [
-                                       "You must be new here. What brings you to our \u003cpulse\u003evillage\u003c/pulse\u003e?",
-                                       "I do not know your face yet. What brings you here?",
-                                       "New footsteps in the village. What do you need?",
-                                       "I have not seen you around these paths before.",
-                                       "You are new to this village, aren\u0027t you? Looking for someone?",
-                                       "Fresh face at the square. Are you passing through?",
-                                       "The village notices new arrivals. What brings you to us?",
-                                       "You do not look familiar. Are you here for trade, shelter, or trouble?",
-                                       "Welcome, if you mean well. What do you need?",
-                                       "New faces make people curious. Yours has done that already."
-                                   ]
-                     },
-                     {
-                         "id":  "global_new_villager_opening",
-                         "show_for_babies":  false,
-                         "first_conversation_only":  true,
-                         "dispositions":  [
-                                              "respectful",
-                                              "friendly",
-                                              "neutral",
-                                              "cautious"
-                                          ],
-                         "lines":  [
-                                       "I have not seen you before. What brings you here?",
-                                       "I do not know your face yet. What brings you here?",
-                                       "New \u003cpulse\u003efootsteps\u003c/pulse\u003e in the village. What do you need?",
-                                       "I do not think we have spoken before.",
-                                       "You are new to me. What can I do for you?",
-                                       "First time talking, is it? Then speak plainly.",
-                                       "I remember most faces. Yours is not one of them yet.",
-                                       "You have my attention. Let us see what kind of first impression this is.",
-                                       "I do not know you yet, but I can listen.",
-                                       "New voice, new face. What brings you to my door?"
-                                   ]
-                     },
-                     {
-                         "id":  "baby_new_village_opening",
-                         "show_for_adults":  false,
-                         "first_village_interaction_only":  true,
-                         "dispositions":  [
-                                              "respectful",
-                                              "friendly",
-                                              "neutral",
-                                              "cautious"
-                                          ],
-                         "lines":  [
-                                       "\u003cjump\u003eYou must be new here.\u003c/jump\u003e Are you visiting?",
-                                       "I do not know your face yet. Are you new?",
-                                       "New footsteps in the village! Did you come from far away?",
-                                       "I have not seen you before. I would remember, probably.",
-                                       "Are you visiting our village, or did you get lost?",
-                                       "You are new! I can tell because I stared first.",
-                                       "Did the road bring you here on purpose?",
-                                       "Are you here to meet people? I am people.",
-                                       "You look like someone the grown-ups have not explained yet.",
-                                       "\u003cjump\u003eHi!\u003c/jump\u003e Are you new to our village?"
-                                   ]
-                     },
-                     {
-                         "id":  "baby_new_villager_opening",
-                         "show_for_adults":  false,
-                         "first_conversation_only":  true,
-                         "dispositions":  [
-                                              "respectful",
-                                              "friendly",
-                                              "neutral",
-                                              "cautious"
-                                          ],
-                         "lines":  [
-                                       "I have not seen you before. Are you \u003cjump\u003enew\u003c/jump\u003e?",
-                                       "I do not know your face yet. What are you doing here?",
-                                       "New footsteps! Are you here to talk?",
-                                       "I think this is the first time I talked to you.",
-                                       "You are new to me. Do you know games?",
-                                       "I would remember you if we talked before. I think.",
-                                       "Hello! Are you a visitor?",
-                                       "Did you come here from somewhere exciting?",
-                                       "You have a new face. Not a bad one, just new.",
-                                       "\u003cjump\u003eHi!\u003c/jump\u003e I am saying hello first this time."
-                                   ]
-                     },
-                     {
-                         "id":  "global_friendly_opening",
-                         "show_for_babies":  false,
-                         "dispositions":  [
-                                              "respectful",
-                                              "friendly"
-                                          ],
-                         "lines":  [
-                                       "Good to \u003cpulse\u003esee you\u003c/pulse\u003e. What can I do for you?",
-                                       "Good to see you. What do you need?",
-                                       "Hello again. How can I help?",
-                                       "There you are. What brings you by?",
-                                       "Always easier to greet a familiar face.",
-                                       "Good timing. I can spare a moment.",
-                                       "Welcome back. What is on your mind?",
-                                       "You are a welcome sight today. Need something?",
-                                       "Come closer, then. What can I help with?",
-                                       "Good to see you walking these paths again."
-                                   ]
-                     },
-                     {
-                         "id":  "global_neutral_opening",
-                         "show_for_babies":  false,
-                         "dispositions":  [
-                                              "neutral",
-                                              "cautious"
-                                          ],
-                         "lines":  [
-                                       "Hello. What brings you here?",
-                                       "Hello. What do you need?",
-                                       "You have my attention for a moment.",
-                                       "Speak, then. I can listen.",
-                                       "What is it?",
-                                       "I have a little time. Use it well.",
-                                       "If you need something, say it plainly.",
-                                       "I am listening, for now.",
-                                       "You came over with purpose. What is it?",
-                                       "All right. What brings you to me?"
-                                   ]
-                     },
-                     {
-                         "id":  "global_hostile_opening",
-                         "show_for_babies":  false,
-                         "dispositions":  [
-                                              "rude",
-                                              "hostile",
-                                              "fearful"
-                                          ],
-                         "lines":  [
-                                       "You should make this quick.",
-                                       "Say what you need and keep it brief.",
-                                       "Speak \u003cshake\u003equickly\u003c/shake\u003e. I am listening for now.",
-                                       "I am not in the mood for a long talk with you.",
-                                       "You have a moment. Do not waste it.",
-                                       "Keep your hands where I can see them and say what you came to say.",
-                                       "I will hear you out, but only briefly.",
-                                       "This had better be important.",
-                                       "Say it from there. That is close enough.",
-                                       "I am listening, but do not mistake that for welcome."
-                                   ]
-                     },
-                     {
-                         "id":  "baby_friendly_opening",
-                         "show_for_adults":  false,
-                         "dispositions":  [
-                                              "respectful",
-                                              "friendly"
-                                          ],
-                         "lines":  [
-                                       "\u003cjump\u003eHi!\u003c/jump\u003e Did you come to visit?",
-                                       "Hi! Are you here to say hello?",
-                                       "Hello! Did you come to visit me?",
-                                       "Hi again! I was not doing anything suspicious.",
-                                       "\u003cjump\u003eHello!\u003c/jump\u003e Do you want to talk?",
-                                       "Hi! I saw you coming and remembered to wave.",
-                                       "Are you here because I am interesting?",
-                                       "Hello! I can talk for a little bit.",
-                                       "Hi! Did you bring a story?",
-                                       "\u003cjump\u003eHi!\u003c/jump\u003e I was just about to be very busy."
-                                   ]
-                     },
-                     {
-                         "id":  "baby_cautious_opening",
-                         "show_for_adults":  false,
-                         "dispositions":  [
-                                              "neutral",
-                                              "cautious",
-                                              "rude"
-                                          ],
-                         "lines":  [
-                                       "\u003cwavy\u003eUm.\u003c/wavy\u003e Are you here to talk?",
-                                       "Um. I can listen if you are nice.",
-                                       "Are we talking safely?",
-                                       "I can talk, but I am staying right here.",
-                                       "Hello. I think.",
-                                       "You can say something, but not too loud.",
-                                       "I am listening from this spot.",
-                                       "Are you going to be nice this time?",
-                                       "I can answer if it is not scary.",
-                                       "\u003cwavy\u003eUm...\u003c/wavy\u003e what do you need?"
-                                   ]
-                     },
-                     {
-                         "id":  "baby_afraid_opening",
-                         "show_for_adults":  false,
-                         "dispositions":  [
-                                              "hostile",
-                                              "fearful"
-                                          ],
-                         "lines":  [
-                                       "I can listen, but then I am going back inside.",
-                                       "I can talk for a little bit, but I am staying near the door.",
-                                       "You can say something, but I am keeping \u003cshake\u003espace\u003c/shake\u003e.",
-                                       "I am staying where the grown-ups can see me.",
-                                       "You can talk from there.",
-                                       "I do not want to come closer.",
-                                       "Say it quickly, please.",
-                                       "I am listening, but my feet want to leave.",
-                                       "I will answer if you do not sound scary.",
-                                       "\u003cshake\u003eOkay...\u003c/shake\u003e but I am going inside after this."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.global",
-                                  "section.openings"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.openings"
+    ],
+    "topic": "global.openings"
+  },
+  "openings": [
+    {
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_village_interaction_only": true,
+      "id": "global_new_village_opening",
+      "lines": [
+        "You must be new here. What brings you to our <pulse>village</pulse>?",
+        "I do not know your face yet. What brings you here?",
+        "New footsteps in the village. What do you need?",
+        "I have not seen you around these paths before.",
+        "You are new to this village, aren't you? Looking for someone?",
+        "Fresh face at the square. Are you passing through?",
+        "The village notices new arrivals. What brings you to us?",
+        "You do not look familiar. Are you here for trade, shelter, or trouble?",
+        "Welcome, if you mean well. What do you need?",
+        "New faces make people curious. Yours has done that already."
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_conversation_only": true,
+      "id": "global_new_villager_opening",
+      "lines": [
+        "I have not seen you before. What brings you here?",
+        "I do not know your face yet. What brings you here?",
+        "New <pulse>footsteps</pulse> in the village. What do you need?",
+        "I do not think we have spoken before.",
+        "You are new to me. What can I do for you?",
+        "First time talking, is it? Then speak plainly.",
+        "I remember most faces. Yours is not one of them yet.",
+        "You have my attention. Let us see what kind of first impression this is.",
+        "I do not know you yet, but I can listen.",
+        "New voice, new face. What brings you to my door?"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_village_interaction_only": true,
+      "id": "baby_new_village_opening",
+      "lines": [
+        "<jump>You must be new here.</jump> Are you visiting?",
+        "I do not know your face yet. Are you new?",
+        "New footsteps in the village! Did you come from far away?",
+        "I have not seen you before. I would remember, probably.",
+        "Are you visiting our village, or did you get lost?",
+        "You are new! I can tell because I stared first.",
+        "Did the road bring you here on purpose?",
+        "Are you here to meet people? I am people.",
+        "You look like someone the grown-ups have not explained yet.",
+        "<jump>Hi!</jump> Are you new to our village?"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_conversation_only": true,
+      "id": "baby_new_villager_opening",
+      "lines": [
+        "I have not seen you before. Are you <jump>new</jump>?",
+        "I do not know your face yet. What are you doing here?",
+        "New footsteps! Are you here to talk?",
+        "I think this is the first time I talked to you.",
+        "You are new to me. Do you know games?",
+        "I would remember you if we talked before. I think.",
+        "Hello! Are you a visitor?",
+        "Did you come here from somewhere exciting?",
+        "You have a new face. Not a bad one, just new.",
+        "<jump>Hi!</jump> I am saying hello first this time."
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "id": "global_friendly_opening",
+      "lines": [
+        "Good to <pulse>see you</pulse>. What can I do for you?",
+        "Good to see you. What do you need?",
+        "Hello again. How can I help?",
+        "There you are. What brings you by?",
+        "Always easier to greet a familiar face.",
+        "Good timing. I can spare a moment.",
+        "Welcome back. What is on your mind?",
+        "You are a welcome sight today. Need something?",
+        "Come closer, then. What can I help with?",
+        "Good to see you walking these paths again."
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "id": "global_neutral_opening",
+      "lines": [
+        "Hello. What brings you here?",
+        "Hello. What do you need?",
+        "You have my attention for a moment.",
+        "Speak, then. I can listen.",
+        "What is it?",
+        "I have a little time. Use it well.",
+        "If you need something, say it plainly.",
+        "I am listening, for now.",
+        "You came over with purpose. What is it?",
+        "All right. What brings you to me?"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "id": "global_hostile_opening",
+      "lines": [
+        "You should make this quick.",
+        "Say what you need and keep it brief.",
+        "Speak <shake>quickly</shake>. I am listening for now.",
+        "I am not in the mood for a long talk with you.",
+        "You have a moment. Do not waste it.",
+        "Keep your hands where I can see them and say what you came to say.",
+        "I will hear you out, but only briefly.",
+        "This had better be important.",
+        "Say it from there. That is close enough.",
+        "I am listening, but do not mistake that for welcome."
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "id": "baby_friendly_opening",
+      "lines": [
+        "<jump>Hi!</jump> Did you come to visit?",
+        "Hi! Are you here to say hello?",
+        "Hello! Did you come to visit me?",
+        "Hi again! I was not doing anything suspicious.",
+        "<jump>Hello!</jump> Do you want to talk?",
+        "Hi! I saw you coming and remembered to wave.",
+        "Are you here because I am interesting?",
+        "Hello! I can talk for a little bit.",
+        "Hi! Did you bring a story?",
+        "<jump>Hi!</jump> I was just about to be very busy."
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "neutral",
+        "cautious",
+        "rude"
+      ],
+      "id": "baby_cautious_opening",
+      "lines": [
+        "<wavy>Um.</wavy> Are you here to talk?",
+        "Um. I can listen if you are nice.",
+        "Are we talking safely?",
+        "I can talk, but I am staying right here.",
+        "Hello. I think.",
+        "You can say something, but not too loud.",
+        "I am listening from this spot.",
+        "Are you going to be nice this time?",
+        "I can answer if it is not scary.",
+        "<wavy>Um...</wavy> what do you need?"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "id": "baby_afraid_opening",
+      "lines": [
+        "I can listen, but then I am going back inside.",
+        "I can talk for a little bit, but I am staying near the door.",
+        "You can say something, but I am keeping <shake>space</shake>.",
+        "I am staying where the grown-ups can see me.",
+        "You can talk from there.",
+        "I do not want to come closer.",
+        "Say it quickly, please.",
+        "I am listening, but my feet want to leave.",
+        "I will answer if you do not sound scary.",
+        "<shake>Okay...</shake> but I am going inside after this."
+      ],
+      "show_for_adults": false
+    }
+  ]
 }

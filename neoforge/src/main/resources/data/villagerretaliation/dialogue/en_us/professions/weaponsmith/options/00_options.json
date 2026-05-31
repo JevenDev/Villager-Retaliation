@@ -1,26 +1,27 @@
 {
-    "options":  [
-                    {
-                        "id":  "weaponsmith_inspect_weapon",
-                        "label":  "Check my weapon",
-                        "type":  "dialogue_option",
-                        "request":  "question",
-                        "player_items":  [
-                                             "#minecraft:swords",
-                                             "#minecraft:axes"
-                                         ],
-                        "player_item_slots":  [
-                                                  "main_hand"
-                                              ],
-                        "order":  28
-                    }
-                ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.weaponsmith",
-                                  "section.options"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.weaponsmith",
+      "section.options"
+    ],
+    "topic": "professions.weaponsmith.options"
+  },
+  "options": [
+    {
+      "id": "weaponsmith_inspect_weapon",
+      "label": "Check my weapon",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 28,
+      "player_item_slots": [
+        "main_hand"
+      ],
+      "player_items": [
+        "#minecraft:swords",
+        "#minecraft:axes"
+      ]
+    }
+  ]
 }

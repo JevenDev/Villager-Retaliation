@@ -1,69 +1,70 @@
 {
-    "pacify":  [
-                   {
-                       "id":  "librarian_pacify_success",
-                       "outcomes":  [
-                                        "success"
-                                    ],
-                       "weight":  26,
-                       "lines":  [
-                                     "Fine. I\u0027ll close this chapter, but I am not tearing out the page.",
-                                     "Fine. I\u0027ll set this down before it gets heavier.",
-                                     "Fine. I can step back, but do not make me regret it.",
-                                     "Fine. I can let this cool, but do not mistake calm for forgetting.",
-                                     "That helps. Keep your hands peaceful and we may still end this properly.",
-                                     "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-                                     "You are short. A nervous apology does not settle a public mistake.",
-                                     "No. I am too angry to bargain while you are standing there like that.",
-                                     "Put the weapon away first. I will not discuss peace with steel in my face.",
-                                     "This can still end quietly. Do not make me \u003cshake\u003eregret\u003c/shake\u003e offering that chance."
-                                 ]
-                   },
-                   {
-                       "id":  "librarian_pacify_short",
-                       "outcomes":  [
-                                        "not_enough_emeralds"
-                                    ],
-                       "weight":  26,
-                       "lines":  [
-                                     "The account is incomplete. It requires {emerald_cost} {emeralds}.",
-                                     "That\u0027s short of the full repair. Bring {emerald_cost} {emeralds}.",
-                                     "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
-                                     "Fine. I can let this cool, but do not mistake calm for forgetting.",
-                                     "That helps. Keep your hands peaceful and we may still end this properly.",
-                                     "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-                                     "You are short. A nervous apology does not settle a public mistake.",
-                                     "No. I am too angry to bargain while you are standing there like that.",
-                                     "Put the weapon away first. I will not discuss peace with steel in my face.",
-                                     "This can still end quietly. Do not make me \u003cshake\u003eregret\u003c/shake\u003e offering that chance."
-                                 ]
-                   },
-                   {
-                       "id":  "librarian_pacify_blocked",
-                       "outcomes":  [
-                                        "blocked_by_reputation"
-                                    ],
-                       "weight":  26,
-                       "lines":  [
-                                     "No. The record is too fresh, and not in your favor.",
-                                     "No. Some damage has to cool before payment matters.",
-                                     "No. Keep {payment_items}; trust is not ready to trade.",
-                                     "Fine. I can let this cool, but do not mistake calm for forgetting.",
-                                     "That helps. Keep your hands peaceful and we may still end this properly.",
-                                     "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
-                                     "You are short. A nervous apology does not settle a public mistake.",
-                                     "No. I am too angry to bargain while you are standing there like that.",
-                                     "Put the weapon away first. I will not discuss peace with steel in my face.",
-                                     "This can still end quietly. Do not make me \u003cshake\u003eregret\u003c/shake\u003e offering that chance."
-                                 ]
-                   }
-               ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.librarian",
-                                  "section.pacify"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.librarian",
+      "section.pacify"
+    ],
+    "topic": "professions.librarian.pacify"
+  },
+  "pacify": [
+    {
+      "id": "librarian_pacify_success",
+      "lines": [
+        "Fine. I'll close this chapter, but I am not tearing out the page.",
+        "Fine. I'll set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+      ],
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26
+    },
+    {
+      "id": "librarian_pacify_short",
+      "lines": [
+        "The account is incomplete. It requires {emerald_cost} {emeralds}.",
+        "That's short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+      ],
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26
+    },
+    {
+      "id": "librarian_pacify_blocked",
+      "lines": [
+        "No. The record is too fresh, and not in your favor.",
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
+      ],
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26
+    }
+  ]
 }

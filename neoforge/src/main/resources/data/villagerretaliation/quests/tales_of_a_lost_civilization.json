@@ -1,146 +1,146 @@
 {
-    "id":  "villagerretaliation:tales_of_a_lost_civilization",
-    "display":  {
-                    "title":  "Tales of a Lost Civilization",
-                    "description":  "Follow a cartographer\u0027s rumor to an Ancient City and return with an Echo Shard."
-                },
-    "questline":  "lost_civilization",
-    "offer":  {
-                  "professions":  [
-                                      "minecraft:cartographer"
-                                  ],
-                  "min_villager_level":  "journeyman",
-                  "skills":  {
-                                 "cartography":  {
-                                                     "min":  50
-                                                 }
-                             }
-              },
-    "target":  {
-                   "structure":  "minecraft:ancient_city",
-                   "pieces":  [
-                                  "ancient_city/city_center/city_center_1",
-                                  "ancient_city/city_center/city_center_2",
-                                  "ancient_city/city_center/city_center_3"
-                              ],
-                   "search_radius":  256,
-                   "discovery_radius":  128,
-                   "proof_item":  "minecraft:echo_shard"
-               },
-    "objectives":  [
-                       {
-                           "id":  "recover_echo_shard",
-                           "type":  "item_check",
-                           "item":  "minecraft:echo_shard",
-                           "count":  1,
-                           "tracker":  {
-                                           "text":  "Recover {objective_item} as proof of the journey.",
-                                           "complete_text":  "Recovered {objective_item}.",
-                                           "show_progress":  true,
-                                           "progress":  0.66,
-                                           "metadata":  {
-                                                            "hint":  "City center visited"
-                                                        }
-                                       }
-                       }
-                   ],
-    "rules":  {
-                  "repeatable":  false,
-                  "locked_to_villager":  true,
-                  "cross_villager_compatible":  false,
-                  "max_starts":  0,
-                  "max_completions":  1,
-                  "abandonment":  "cooldown",
-                  "abandonment_cooldown_days":  1,
-                  "consume_on_completion":  true,
-                  "consume_on_abandonment":  false
-              },
-    "tracker":  {
-                    "title":  "Tales of a Lost Civilization",
-                    "metadata":  {
-                                     "source":  "Cartographer commission"
-                                 },
-                    "steps":  {
-                                  "travel":  {
-                                                 "text":  "Reach the Ancient City center near {target_x}, {target_z}.",
-                                                 "show_progress":  true,
-                                                 "progress":  0.25,
-                                                 "metadata":  {
-                                                                  "hint":  "{distance} blocks {direction}"
-                                                              }
-                                             },
-                                  "proof":  {
-                                                "text":  "Recover {proof_item} as proof of the journey.",
-                                                "show_progress":  true,
-                                                "progress":  0.66,
-                                                "metadata":  {
-                                                                 "hint":  "City center visited"
-                                                             }
-                                            },
-                                  "return":  {
-                                                 "text":  "Return to the cartographer with {proof_item}.",
-                                                 "show_progress":  true,
-                                                 "progress":  1.0,
-                                                 "metadata":  {
-                                                                  "hint":  "Ready to turn in"
-                                                              }
-                                             }
-                              }
-                },
-    "triggers":  [
-                     {
-                         "id":  "storm_reminder",
-                         "event":  "proximity",
-                         "radius":  10,
-                         "repeatable":  false,
-                         "cooldown_seconds":  120,
-                         "conditions":  [
-                                            {
-                                                "type":  "quest",
-                                                "quest":  "villagerretaliation:tales_of_a_lost_civilization",
-                                                "state":  "active"
-                                            },
-                                            {
-                                                "type":  "time",
-                                                "value":  "night"
-                                            },
-                                            {
-                                                "type":  "weather",
-                                                "state":  "thunder"
-                                            }
-                                        ],
-                         "actions":  [
-                                         {
-                                             "type":  "forced_dialogue",
-                                             "forced_dialogue":  "quest.lost_civilization.storm_reminder"
-                                         }
-                                     ]
-                     }
-                 ],
-    "rewards":  {
-                    "experience":  350,
-                    "reputation":  18,
-                    "gossip_reputation":  8,
-                    "memory_event":  "player_completed_quest",
-                    "loot_table":  "villagerretaliation:quest/tales_of_a_lost_civilization"
-                },
-    "metadata":  {
-                     "topic":  "quests.lost_civilization",
-                     "questline":  "lost_civilization",
-                     "quest":  "villagerretaliation:tales_of_a_lost_civilization",
-                     "tags":  [
-                                  "content.quest",
-                                  "dialogue.linked",
-                                  "questline.lost_civilization"
-                              ]
-                 },
-    "links":  {
-                  "dialogue_tree":  "villagerretaliation:tales_of_a_lost_civilization",
-                  "offer":  "offer",
-                  "reminder":  "reminder",
-                  "turn_in":  "turn_in",
-                  "forced_dialogue":  [
-                                          "quest.lost_civilization.storm_reminder"
-                                      ]
-              }
+  "id": "villagerretaliation:tales_of_a_lost_civilization",
+  "display": {
+    "description": "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard.",
+    "title": "Tales of a Lost Civilization"
+  },
+  "metadata": {
+    "quest": "villagerretaliation:tales_of_a_lost_civilization",
+    "questline": "lost_civilization",
+    "tags": [
+      "content.quest",
+      "dialogue.linked",
+      "questline.lost_civilization"
+    ],
+    "topic": "quests.lost_civilization"
+  },
+  "links": {
+    "dialogue_tree": "villagerretaliation:tales_of_a_lost_civilization",
+    "forced_dialogue": [
+      "quest.lost_civilization.storm_reminder"
+    ],
+    "offer": "offer",
+    "reminder": "reminder",
+    "turn_in": "turn_in"
+  },
+  "questline": "lost_civilization",
+  "offer": {
+    "min_villager_level": "journeyman",
+    "professions": [
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "cartography": {
+        "min": 50
+      }
+    }
+  },
+  "target": {
+    "discovery_radius": 128,
+    "pieces": [
+      "ancient_city/city_center/city_center_1",
+      "ancient_city/city_center/city_center_2",
+      "ancient_city/city_center/city_center_3"
+    ],
+    "proof_item": "minecraft:echo_shard",
+    "search_radius": 256,
+    "structure": "minecraft:ancient_city"
+  },
+  "objectives": [
+    {
+      "count": 1,
+      "id": "recover_echo_shard",
+      "item": "minecraft:echo_shard",
+      "tracker": {
+        "complete_text": "Recovered {objective_item}.",
+        "metadata": {
+          "hint": "City center visited"
+        },
+        "progress": 0.66,
+        "show_progress": true,
+        "text": "Recover {objective_item} as proof of the journey."
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 1,
+    "consume_on_abandonment": false,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Cartographer commission"
+    },
+    "steps": {
+      "proof": {
+        "metadata": {
+          "hint": "City center visited"
+        },
+        "progress": 0.66,
+        "show_progress": true,
+        "text": "Recover {proof_item} as proof of the journey."
+      },
+      "return": {
+        "metadata": {
+          "hint": "Ready to turn in"
+        },
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the cartographer with {proof_item}."
+      },
+      "travel": {
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        },
+        "progress": 0.25,
+        "show_progress": true,
+        "text": "Reach the Ancient City center near {target_x}, {target_z}."
+      }
+    },
+    "title": "Tales of a Lost Civilization"
+  },
+  "triggers": [
+    {
+      "actions": [
+        {
+          "forced_dialogue": "quest.lost_civilization.storm_reminder",
+          "type": "forced_dialogue"
+        }
+      ],
+      "conditions": [
+        {
+          "quest": "villagerretaliation:tales_of_a_lost_civilization",
+          "state": "active",
+          "type": "quest"
+        },
+        {
+          "type": "time",
+          "value": "night"
+        },
+        {
+          "state": "thunder",
+          "type": "weather"
+        }
+      ],
+      "cooldown_seconds": 120,
+      "event": "proximity",
+      "id": "storm_reminder",
+      "radius": 10,
+      "repeatable": false
+    }
+  ],
+  "rewards": {
+    "experience": 350,
+    "gossip_reputation": 8,
+    "loot_table": "villagerretaliation:quest/tales_of_a_lost_civilization",
+    "memory_event": "player_completed_quest",
+    "reputation": 18
+  }
 }

@@ -1,97 +1,98 @@
 {
-    "lines":  [
-                  {
-                      "id":  "shepherd_question_flock_variants",
-                      "request":  "question",
-                      "lines":  [
-                                    "Scattered sheep make the whole day longer than it needs to be.",
-                                    "Wolves near the pens change how everyone \u003cpulse\u003elistens after dark\u003c/pulse\u003e.",
-                                    "Clean wool is quiet proof that somebody did the dull work well.",
-                                    "Warmth is easy to praise after someone else made it.",
-                                    "A good blanket is village peace you can fold.",
-                                    "Patterns are easier to see when you stop yanking the thread.",
-                                    "Most days, I am at the loom, trying to keep flocks and weather from becoming everyone else\u0027s problem.",
-                                    "People think wool is simple until something goes wrong and suddenly it is very important.",
-                                    "A village runs on small work. Nobody praises it until it stops happening.",
-                                    "I trust a good shears more than a loud promise. The shears has less to prove."
-                                ],
-                      "weight":  172
-                  },
-                  {
-                      "id":  "question_follow_memory_shepherd_boat",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  3,
-                      "lines":  [
-                                    "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
-                                    "That boat trip still sits oddly in my memory, but at least it floated.",
-                                    "A boat can make a bad plan quieter. It can\u0027t make me forget it.",
-                                    "Following you taught me that plans sound much safer before anyone starts walking.",
-                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
-                                    "Next time, warn me before the road becomes a test of character.",
-                                    "I learned two things out there: stay close, and ask better questions earlier.",
-                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
-                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
-                                    "If I followed you again, I would pack more food and fewer assumptions."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_shepherd",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  3,
-                      "lines":  [
-                                    "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
-                                    "I remember following you through {follow_biome}. My feet remember it even better.",
-                                    "That trip across {follow_biome} taught me to ask more questions before walking.",
-                                    "Following you taught me that plans sound much safer before anyone starts walking.",
-                                    "I kept up, mostly. My feet have a harsher opinion of the trip.",
-                                    "Next time, warn me before the road becomes a test of character.",
-                                    "I learned two things out there: stay close, and ask better questions earlier.",
-                                    "You move like danger is a normal part of the route. I am still adjusting to that.",
-                                    "It was not all bad. Some views are worth sore legs and nervous glances.",
-                                    "If I followed you again, I would pack more food and fewer assumptions."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "excludes_ocean_crossing":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "default_profession_shepherd_flock_mood",
-                      "request":  "question",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "A flock knows danger before pride admits it. I listen to the woolly experts.",
-                                    "Dye work teaches patience. So does convincing sheep that the gate is not a puzzle.",
-                                    "Warm beds start as quiet animals and careful hands.",
-                                    "Most days, I am at the loom, trying to keep flocks and weather from becoming everyone else\u0027s problem.",
-                                    "People think wool is simple until something goes wrong and suddenly it is very important.",
-                                    "A village runs on small work. Nobody praises it until it stops happening.",
-                                    "I trust a good shears more than a loud promise. The shears has less to prove.",
-                                    "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
-                                    "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-                                    "I notice the little things. That is either a skill or what the loom has done to me."
-                                ],
-                      "weight":  18
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.shepherd",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "shepherd_question_flock_variants",
+      "request": "question",
+      "lines": [
+        "Scattered sheep make the whole day longer than it needs to be.",
+        "Wolves near the pens change how everyone <pulse>listens after dark</pulse>.",
+        "Clean wool is quiet proof that somebody did the dull work well.",
+        "Warmth is easy to praise after someone else made it.",
+        "A good blanket is village peace you can fold.",
+        "Patterns are easier to see when you stop yanking the thread.",
+        "Most days, I am at the loom, trying to keep flocks and weather from becoming everyone else's problem.",
+        "People think wool is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good shears more than a loud promise. The shears has less to prove."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "question_follow_memory_shepherd_boat",
+      "request": "question",
+      "lines": [
+        "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It can't make me forget it.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "question_follow_memory_shepherd",
+      "request": "question",
+      "lines": [
+        "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
+        "I remember following you through {follow_biome}. My feet remember it even better.",
+        "That trip across {follow_biome} taught me to ask more questions before walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "default_profession_shepherd_flock_mood",
+      "request": "question",
+      "lines": [
+        "A flock knows danger before pride admits it. I listen to the woolly experts.",
+        "Dye work teaches patience. So does convincing sheep that the gate is not a puzzle.",
+        "Warm beds start as quiet animals and careful hands.",
+        "Most days, I am at the loom, trying to keep flocks and weather from becoming everyone else's problem.",
+        "People think wool is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good shears more than a loud promise. The shears has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the loom has done to me."
+      ],
+      "show_for_babies": false,
+      "weight": 18
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.shepherd",
+      "section.lines"
+    ],
+    "topic": "professions.shepherd.questions"
+  }
 }

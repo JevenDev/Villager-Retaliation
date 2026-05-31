@@ -502,6 +502,7 @@ const knownPlaceholders = new Set([
 ]);
 
 const errors = [];
+const warnings = [];
 const questDefinitions = new Map();
 const dialogueTreeDefinitions = new Map();
 const forcedDialogueDefinitions = new Map();
@@ -550,6 +551,12 @@ if (errors.length > 0) {
   process.exitCode = 1;
 } else {
   console.log("Built-in dialogue data validation passed.");
+}
+
+if (warnings.length > 0) {
+  for (const warning of warnings) {
+    console.warn(warning);
+  }
 }
 
 async function jsonFiles(directory) {
@@ -648,6 +655,7 @@ function checkQuest(file, data) {
   checkQuestTriggers(file, data.triggers, "triggers");
   checkQuestRewards(file, data.rewards, "rewards");
   checkQuestDialogue(file, data.dialogue, "dialogue");
+  warnQuestDialogueLinkCoexistence(file, data);
 }
 
 function checkDisplayObject(file, display, location) {
@@ -744,6 +752,7 @@ function checkQuestObjectives(file, objectives, location) {
       "tracker"
     ]));
     checkStringValues(file, objective, objectiveLocation, ["type"], questObjectiveTypes, "quest objective type", { requireAny: true });
+    const type = normalizedString(objective.type);
     checkOptionalBoolean(file, objective, objectiveLocation, "optional");
     checkOptionalString(file, objective, objectiveLocation, "structure");
     checkStringList(file, objective, objectiveLocation, ["pieces"], "structure piece");
@@ -753,6 +762,16 @@ function checkQuestObjectives(file, objectives, location) {
     checkOptionalInteger(file, objective, objectiveLocation, "count", { min: 1 });
     checkConditions(file, objective, objectiveLocation);
     checkQuestObjectiveTracker(file, objective.tracker, `${objectiveLocation}.tracker`);
+
+    if (type === "structure_visit" && !stringValue(objective.structure) && readValues(objective, ["pieces"]).length === 0) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must define structure or pieces for a structure_visit objective.`);
+    }
+    if (type === "item_check" && !stringValue(objective.item)) {
+      errors.push(`${relative(file)}: ${objectiveLocation}.item is required for an item_check objective.`);
+    }
+    if (type === "condition" && (!Array.isArray(objective.conditions) || objective.conditions.length === 0)) {
+      errors.push(`${relative(file)}: ${objectiveLocation}.conditions is required for a condition objective.`);
+    }
   }
 }
 
@@ -911,6 +930,7 @@ function checkQuestTriggers(file, triggers, location) {
       "repeatable"
     ]));
     checkStringValues(file, trigger, triggerLocation, ["event"], questTriggerEvents, "quest trigger event", { requireAny: true });
+    const event = normalizedString(trigger.event);
     checkConditions(file, trigger, triggerLocation);
     checkDialogueTreeActions(file, trigger.actions, `${triggerLocation}.actions`);
     for (const key of ["cooldown_ticks", "cooldown_seconds", "cooldown_days"]) {
@@ -918,6 +938,13 @@ function checkQuestTriggers(file, triggers, location) {
     }
     checkOptionalNumber(file, trigger, triggerLocation, "radius", { min: 0 });
     checkOptionalBoolean(file, trigger, triggerLocation, "repeatable");
+
+    if ((event === "player_tick" || event === "proximity") && (!Array.isArray(trigger.actions) || trigger.actions.length === 0)) {
+      errors.push(`${relative(file)}: ${triggerLocation}.actions must not be empty for continuous quest triggers.`);
+    }
+    if (event === "proximity" && typeof trigger.radius !== "number") {
+      errors.push(`${relative(file)}: ${triggerLocation}.radius is required for a proximity quest trigger.`);
+    }
   }
 }
 
@@ -1009,6 +1036,10 @@ function checkQuestDialogue(file, dialogue, location) {
     "missing_proof",
     "locate_failed"
   ]));
+
+  for (const key of ["start", "reminder", "turn_in", "already_completed", "unavailable", "inactive", "missing_target", "missing_proof", "locate_failed"]) {
+    checkStringList(file, dialogue, location, [key], "quest dialogue line");
+  }
 }
 
 function checkDialogueTree(file, data) {
@@ -1150,6 +1181,9 @@ function checkForcedDialogue(file, data) {
   const entries = entriesFor(data);
   checkIds(file, entries, "forced dialogue entry");
   for (const [entryIndex, entry] of entries.entries()) {
+    if (Object.hasOwn(entry, "event") && !Object.hasOwn(entry, "trigger")) {
+      warnings.push(`${relative(file)}: entries[${entryIndex}].event is a legacy alias for trigger; prefer trigger in new data.`);
+    }
     checkDialogueMetadata(file, entry, `entries[${entryIndex}]`);
     checkForcedDialogueOptions(file, entry.options, `entries[${entryIndex}].options`);
     checkForcedDialogueOptions(file, entry.leave_options, `entries[${entryIndex}].leave_options`);
@@ -1797,5 +1831,27 @@ function validateCrossReferences() {
     if (link.metadataQuest && tree.metadataQuest && tree.metadataQuest !== link.metadataQuest) {
       errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree points to "${link.treeId}" but its metadata.quest is "${tree.metadataQuest}" instead of "${link.metadataQuest}".`);
     }
+  }
+}
+
+function warnQuestDialogueLinkCoexistence(file, data) {
+  const links = data && typeof data === "object" && !Array.isArray(data) && data.links && typeof data.links === "object" && !Array.isArray(data.links)
+    ? data.links
+    : null;
+  const dialogue = data && typeof data === "object" && !Array.isArray(data) && data.dialogue && typeof data.dialogue === "object" && !Array.isArray(data.dialogue)
+    ? data.dialogue
+    : null;
+  if (!links || !dialogue) {
+    return;
+  }
+
+  const hasLifecycleLinks = ["offer", "reminder", "turn_in"].some((key) => stringValue(links[key]));
+  const hasInlineLifecycleDialogue = ["start", "reminder", "turn_in"].some((key) => readValues(dialogue, [key]).length > 0);
+
+  if (hasLifecycleLinks && hasInlineLifecycleDialogue) {
+    warnings.push(`${relative(file)}: quest defines both links and inline dialogue lifecycle text. This is supported, but keep them in sync because runtime quest speech still comes from inline dialogue and quest actions.`);
+  }
+  if (hasLifecycleLinks && !hasInlineLifecycleDialogue) {
+    warnings.push(`${relative(file)}: quest defines dialogue links without inline lifecycle dialogue text. Runtime will fall back to default quest speech for missing stages.`);
   }
 }

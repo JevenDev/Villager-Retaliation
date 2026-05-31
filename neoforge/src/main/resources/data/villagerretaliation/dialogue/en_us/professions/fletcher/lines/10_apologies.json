@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "apology_fletcher_straight",
-                      "request":  "apology",
-                      "option":  "apologize_for_harm",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "Straight words are worth more than crooked excuses. Keep them straight.",
-                                    "You missed the mark badly. The apology lands closer. Don\u0027t waste it.",
-                                    "The apology flies straighter than the harm did. That\u0027s something.",
-                                    "Don\u0027t notch the same mistake twice.",
-                                    "I hear the words. Now keep your aim away from us.",
-                                    "A bent shaft can be corrected if it has not split. Prove you have not split.",
-                                    "Fine. Let this be the shot you meant to take.",
-                                    "Trust is easy to miss and hard to hit again. Try carefully.",
-                                    "I was wrong. I would rather say it plainly than dress it up.",
-                                    "That came out sharper than it should have. I am sorry."
-                                ],
-                      "weight":  234
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.fletcher",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "apology_fletcher_straight",
+      "request": "apology",
+      "lines": [
+        "Straight words are worth more than crooked excuses. Keep them straight.",
+        "You missed the mark badly. The apology lands closer. Don't waste it.",
+        "The apology flies straighter than the harm did. That's something.",
+        "Don't notch the same mistake twice.",
+        "I hear the words. Now keep your aim away from us.",
+        "A bent shaft can be corrected if it has not split. Prove you have not split.",
+        "Fine. Let this be the shot you meant to take.",
+        "Trust is easy to miss and hard to hit again. Try carefully.",
+        "I was wrong. I would rather say it plainly than dress it up.",
+        "That came out sharper than it should have. I am sorry."
+      ],
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "weight": 234
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.fletcher",
+      "section.lines"
+    ],
+    "topic": "professions.fletcher.apologies"
+  }
 }

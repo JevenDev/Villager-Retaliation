@@ -1,27 +1,28 @@
 {
-    "closings":  [
-                     {
-                         "id":  "unemployed_closing",
-                         "lines":  [
-                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to finding a small task I can finish properly.",
-                                       "I should look around and lend a hand where I can.",
-                                       "There are always chores worth doing, even without being asked.",
-                                       "I\u0027ll go see if anyone needs help before evening.",
-                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to making today useful however I can.",
-                                       "I still need to bring a few things in from the yard.",
-                                       "There is always something nearby that needs sweeping or mending.",
-                                       "I\u0027ll be back once I have done someone a proper little favor.",
-                                       "Helping one person is still helping the village.",
-                                       "I\u0027ll stay busy for now and make the day count."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.unemployed",
-                                  "section.closings"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.unemployed",
+      "section.closings"
+    ],
+    "topic": "professions.unemployed.closings"
+  },
+  "closings": [
+    {
+      "id": "unemployed_closing",
+      "lines": [
+        "<pulse>Back</pulse> to finding a small task I can finish properly.",
+        "I should look around and lend a hand where I can.",
+        "There are always chores worth doing, even without being asked.",
+        "I'll go see if anyone needs help before evening.",
+        "<pulse>Back</pulse> to making today useful however I can.",
+        "I still need to bring a few things in from the yard.",
+        "There is always something nearby that needs sweeping or mending.",
+        "I'll be back once I have done someone a proper little favor.",
+        "Helping one person is still helping the village.",
+        "I'll stay busy for now and make the day count."
+      ]
+    }
+  ]
 }

@@ -1,27 +1,28 @@
 {
-    "closings":  [
-                     {
-                         "id":  "cartographer_closing",
-                         "lines":  [
-                                       "I should get back to tracing roads on fresh \u003cpulse\u003eparchment\u003c/pulse\u003e.",
-                                       "Best I mark that next road before the shape slips my mind.",
-                                       "A few landmarks still need notes while I remember them clearly.",
-                                       "The map on my table is waiting for a steadier hand than mine was this morning.",
-                                       "I promised a captain I would check a border before the week is out.",
-                                       "Back to plotting paths and keeping the records clear.",
-                                       "I need to redraw the creek line before the next trader follows the wrong bend.",
-                                       "Somewhere out there is a trail I have not named yet.",
-                                       "I will return to \u003cpulse\u003eink\u003c/pulse\u003e, compass, and patience now.",
-                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to it before night makes every path look the same."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.cartographer",
-                                  "section.closings"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cartographer",
+      "section.closings"
+    ],
+    "topic": "professions.cartographer.closings"
+  },
+  "closings": [
+    {
+      "id": "cartographer_closing",
+      "lines": [
+        "I should get back to tracing roads on fresh <pulse>parchment</pulse>.",
+        "Best I mark that next road before the shape slips my mind.",
+        "A few landmarks still need notes while I remember them clearly.",
+        "The map on my table is waiting for a steadier hand than mine was this morning.",
+        "I promised a captain I would check a border before the week is out.",
+        "Back to plotting paths and keeping the records clear.",
+        "I need to redraw the creek line before the next trader follows the wrong bend.",
+        "Somewhere out there is a trail I have not named yet.",
+        "I will return to <pulse>ink</pulse>, compass, and patience now.",
+        "<pulse>Back</pulse> to it before night makes every path look the same."
+      ]
+    }
+  ]
 }

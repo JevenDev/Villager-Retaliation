@@ -1,27 +1,28 @@
 {
-    "closings":  [
-                     {
-                         "id":  "shepherd_closing",
-                         "lines":  [
-                                       "I should get back to the sheep before they find trouble.",
-                                       "Best I return to sorting fleece while it is still soft.",
-                                       "There is wool to card and thread to spin.",
-                                       "I promised a neighbor a new piece before moonrise.",
-                                       "The gate needs checking before I can settle for the evening.",
-                                       "\u003cpulse\u003eBack\u003c/pulse\u003e to counting heads and finding the stragglers.",
-                                       "I have a loom set up and waiting on me.",
-                                       "The little ones need a shepherd\u0027s eye.",
-                                       "I should head out and make sure everyone is still with the flock.",
-                                       "Time to tend the flock and keep things calm."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.shepherd",
-                                  "section.closings"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.shepherd",
+      "section.closings"
+    ],
+    "topic": "professions.shepherd.closings"
+  },
+  "closings": [
+    {
+      "id": "shepherd_closing",
+      "lines": [
+        "I should get back to the sheep before they find trouble.",
+        "Best I return to sorting fleece while it is still soft.",
+        "There is wool to card and thread to spin.",
+        "I promised a neighbor a new piece before moonrise.",
+        "The gate needs checking before I can settle for the evening.",
+        "<pulse>Back</pulse> to counting heads and finding the stragglers.",
+        "I have a loom set up and waiting on me.",
+        "The little ones need a shepherd's eye.",
+        "I should head out and make sure everyone is still with the flock.",
+        "Time to tend the flock and keep things calm."
+      ]
+    }
+  ]
 }

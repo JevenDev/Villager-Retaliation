@@ -1,516 +1,517 @@
 {
-    "lines":  [
-                  {
-                      "id":  "recruitment_followup_safe_home",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "safe"
-                                                         ],
-                      "weight":  36,
-                      "lines":  [
-                                    "Thank you for keeping me with you. A short road feels longer when the night has \u003cshake\u003eteeth\u003c/shake\u003e.",
-                                    "You brought me through that trip safely. That turns a long road into a remembered kindness.",
-                                    "I am still here in one piece, and that matters more than I can say \u003cpulse\u003eneatly\u003c/pulse\u003e.",
-                                    "The road could have gone worse. It did not, and I know who helped with that.",
-                                    "I was not sure what waited out there, but you made sure I came home.",
-                                    "Safe steps are easy to forget until someone gives them to you.",
-                                    "I will remember that you did not leave me behind.",
-                                    "A journey feels different when someone is watching your back.",
-                                    "I came home with my breath steady. That is worth thanking you for.",
-                                    "You made a hard road feel possible, and I will not forget it."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "excludes_ocean_crossing":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_followup_safe_ready",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "safe"
-                                                         ],
-                      "weight":  34,
-                      "lines":  [
-                                    "I came back in one piece. That is the kind of help people remember.",
-                                    "You brought me through that trip safely. That turns a long road into a remembered kindness.",
-                                    "I am still here in one piece, and that matters more than I can say neatly.",
-                                    "The road was long, but it did not break us.",
-                                    "You kept your word well enough for me to stand here and say so.",
-                                    "There is comfort in arriving with nothing worse than tired feet.",
-                                    "I trusted you for that journey, and you gave me reason to be glad I did.",
-                                    "A safe return is not a small thing, not out there.",
-                                    "I know better than to take a quiet road for granted.",
-                                    "You saw me through. That matters."
-                                ]
-                  },
-                  {
-                      "id":  "recruitment_followup_injured_shaken",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "injured"
-                                                         ],
-                      "lines":  [
-                                    "I made it back, but not cleanly. Next time, we move slower or fight sooner.",
-                                    "I am still feeling that road. Do not mistake thanks for \u003citalic\u003eforgetting\u003c/italic\u003e.",
-                                    "I returned, but the road left bruises in the story.",
-                                    "I am grateful to be home, but I would rather not pay that price twice.",
-                                    "The journey ended, but my ribs seem to be holding a meeting about it.",
-                                    "Next time, I would like fewer wounds between here and there.",
-                                    "I followed you through it, and I came back hurt. Both parts matter.",
-                                    "A safe ending does not erase a rough middle.",
-                                    "I am standing, yes, but do not call that the same as unharmed.",
-                                    "We made it through. Let us make better choices before we need to do that again."
-                                ],
-                      "weight":  68,
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "excludes_ocean_crossing":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_followup_betrayed_cut",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "betrayed"
-                                                         ],
-                      "lines":  [
-                                    "You asked me to follow, then turned your hand against me. That is not a small thing.",
-                                    "I followed because I thought you meant to protect me. Now I know to measure that \u003cpulse\u003epromise\u003c/pulse\u003e twice.",
-                                    "Following you was trust. Being struck after that was a lesson I did not ask for.",
-                                    "A road is dangerous enough without the guide becoming part of the danger.",
-                                    "You made yourself the reason I should have stayed home.",
-                                    "I remember the hit more clearly than the road now. That should tell you enough.",
-                                    "Trust walks slowly after betrayal, if it walks at all.",
-                                    "You led me out there, then taught me to fear your hand.",
-                                    "I will think carefully before I follow you anywhere again.",
-                                    "What you broke was not only skin. Remember that."
-                                ],
-                      "weight":  82
-                  },
-                  {
-                      "id":  "recruitment_followup_boat_safe",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "safe"
-                                                         ],
-                      "weight":  44,
-                      "lines":  [
-                                    "The boat helped. I will admit, being carried home by water is easier on the knees.",
-                                    "Floating beat walking the whole way. I will admit that.",
-                                    "The boat did honest work carrying us along.",
-                                    "A boat underfoot makes a long road feel kinder.",
-                                    "I was glad for the water once it stopped looking so wide.",
-                                    "My legs thank you for choosing a boat.",
-                                    "That boat saved us time, trouble, and more than a few complaints from me.",
-                                    "The river carried its share, and I respect good help when I see it.",
-                                    "I prefer solid ground, but the boat made a fair argument.",
-                                    "If every journey had a boat for the worst stretch, I would complain less."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_followup_ocean_boat_safe",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "safe"
-                                                         ],
-                      "weight":  50,
-                      "lines":  [
-                                    "Crossing ocean by boat was a better idea than swimming it. Thank you for keeping me dry.",
-                                    "The ocean looked less \u003cwavy\u003eendless\u003c/wavy\u003e with a boat under us. Thank you for that much.",
-                                    "A boat between me and the deep water was the correct kind of wisdom.",
-                                    "I have never trusted the ocean, but I trusted the boat enough.",
-                                    "The water was too wide for comfort, but the boat kept its promise.",
-                                    "I am grateful we crossed the ocean without asking my arms to do all the work.",
-                                    "A boat makes deep water feel less like a threat and more like a road.",
-                                    "The ocean stayed below us, which is where I prefer it.",
-                                    "I did not enjoy the crossing, but I enjoyed arriving dry.",
-                                    "Next time we cross water that wide, I will still vote for a boat."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true,
-                                             "ocean_crossing":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_followup_ocean_swim_safe",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "safe"
-                                                         ],
-                      "weight":  50,
-                      "lines":  [
-                                    "I crossed ocean water without a boat and still made it through. Next time, please find wood before waves.",
-                                    "I made it across, but my bones still vote for boats next time.",
-                                    "Swimming the ocean was not bravery. It was a shortage of better planning.",
-                                    "I am proud we survived that, but I do not want practice.",
-                                    "The ocean is too large to treat like a puddle.",
-                                    "I have never missed a boat more than I did out there.",
-                                    "The waves kept asking if I was tired. I was.",
-                                    "I made it across, but every splash felt like an argument against the plan.",
-                                    "Next time, let the boat do the swimming.",
-                                    "I am glad to be dry now. I would like to stay that way."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "swim_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_followup_boat_injured",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "injured"
-                                                         ],
-                      "weight":  44,
-                      "lines":  [
-                                    "The boat ride was the quiet part. Getting hurt before or after it spoiled the memory.",
-                                    "The water stayed calm. The rest of the journey did not.",
-                                    "I would remember the boat more kindly if the hurt had not come with it.",
-                                    "The boat helped, yes, but it did not make the whole trip gentle.",
-                                    "I sat in that boat hoping the worst was behind us. It was not.",
-                                    "Water carried us for a while. Pain carried the rest.",
-                                    "I can thank the boat and still be angry about the bruises.",
-                                    "The trip had one peaceful stretch, and then the road corrected that.",
-                                    "A boat can carry a body, but it cannot keep trouble from waiting on shore.",
-                                    "Next time, I would like the boat ride without the injury attached."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_followup_ocean_boat_injured",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "injured"
-                                                         ],
-                      "weight":  50,
-                      "lines":  [
-                                    "The ocean crossing by boat was manageable. The part where I got hurt was less impressive.",
-                                    "The water stayed calm. The rest of the journey did not.",
-                                    "I would remember the boat more kindly if the hurt had not come with it.",
-                                    "The ocean was not the worst part, which is saying something.",
-                                    "The boat kept me above water, but not away from trouble.",
-                                    "Crossing the ocean was frightening enough without adding bruises to it.",
-                                    "I was grateful for the boat and less grateful for what happened around it.",
-                                    "The deep water behaved better than the rest of the trip.",
-                                    "I came back hurt, but at least the ocean did not get to keep me.",
-                                    "Next time, let the boat be the most difficult part. That would be enough."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true,
-                                             "ocean_crossing":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_followup_ocean_swim_injured",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "injured"
-                                                         ],
-                      "weight":  50,
-                      "lines":  [
-                                    "Swimming across ocean and coming home hurt is not an adventure I want repeated.",
-                                    "Ocean swimming while hurt is a memory I would like to leave behind.",
-                                    "The \u003cwavy\u003ewaves\u003c/wavy\u003e did not help the bruises. Neither did the plan.",
-                                    "I had enough trouble staying above water without pain joining in.",
-                                    "That crossing asked too much from a body already having a bad day.",
-                                    "The ocean was wide, cold, and entirely too interested in my injuries.",
-                                    "I made it through, but that does not make it a good idea.",
-                                    "Next time, if I am hurt, we find a boat or we wait.",
-                                    "I still feel that journey when I move too quickly.",
-                                    "There are safer ways to cross water, and I would like to try one."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "swim_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_followup_boat_betrayed",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_followup",
-                      "show_for_babies":  false,
-                      "recruitment_followup_scenarios":  [
-                                                             "betrayed"
-                                                         ],
-                      "weight":  46,
-                      "lines":  [
-                                    "You put me in a boat, took me along, and then broke trust. Strange journey, worse ending.",
-                                    "Being carried over \u003cwavy\u003ewater\u003c/wavy\u003e did not make betrayal lighter.",
-                                    "The boat brought us along. You broke the part that mattered.",
-                                    "A calm ride does not excuse a cruel hand.",
-                                    "I remember the water, but I remember what you did more.",
-                                    "The boat carried me safely. You did not.",
-                                    "Trust should not sink after reaching shore.",
-                                    "I thought the water was the danger. I was wrong.",
-                                    "You made even that quiet boat ride feel foolish in hindsight.",
-                                    "Next time, I will think twice before sharing a boat with you."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_biome",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  4,
-                      "lines":  [
-                                    "Remember when you made me follow you across {follow_biome}? I still know that road by ache alone.",
-                                    "I remember {follow_biome}. Some places stay in your feet after you leave.",
-                                    "{follow_biome} was a long lesson in asking where we are going first.",
-                                    "I still think about {follow_biome} when my legs start complaining.",
-                                    "You led me through {follow_biome}, and I learned that scenery can be tiring.",
-                                    "{follow_biome} looked different once I had to cross it on foot.",
-                                    "I remember the sounds of {follow_biome} more than I expected.",
-                                    "Some paths through {follow_biome} feel longer after you have already walked them.",
-                                    "I know {follow_biome} better than I planned to.",
-                                    "Next time you mention {follow_biome}, I may sit down first."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "excludes_ocean_crossing":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_long_walk",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  5,
-                      "lines":  [
-                                    "Remember when you made me follow you over {follow_distance} blocks? My legs complained for days.",
-                                    "{follow_distance} blocks is a long way to wonder if you chose the right guide.",
-                                    "My legs remember those {follow_distance} blocks with unnecessary detail.",
-                                    "After {follow_distance} blocks, even flat ground starts feeling personal.",
-                                    "I learned exactly how long {follow_distance} blocks can feel when you are following someone.",
-                                    "{follow_distance} blocks gave me plenty of time to question your sense of direction.",
-                                    "I still think my feet should have been thanked after that walk.",
-                                    "There are shorter ways to build trust than dragging someone {follow_distance} blocks.",
-                                    "That walk made every bed in the village look like a miracle.",
-                                    "Next time we go that far, I am asking about the destination first."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "min_follow_distance":  500,
-                                             "excludes_ocean_crossing":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_boat",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  4,
-                      "lines":  [
-                                    "Remember when you took me along in a boat? I was not sure whether to thank you or ask where the oars had gone.",
-                                    "I remember that boat. Sitting still while the world moved was strange comfort.",
-                                    "The oars had a plan. I wish the rest of us had one too.",
-                                    "That boat trip was quieter than walking, which I appreciated.",
-                                    "I still remember watching the shore move like it had somewhere to be.",
-                                    "A boat is a strange thing. You sit, and somehow distance happens.",
-                                    "I was glad for the boat, even if I pretended not to be nervous.",
-                                    "The water carried us, and for once my feet were not responsible.",
-                                    "I remember wondering if boats always sound that uncertain.",
-                                    "If nothing else, that boat gave my legs a fine argument for resting."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "boat_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_ocean_swim",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  5,
-                      "lines":  [
-                                    "Remember when you took me across ocean water without a boat? I remember every splash.",
-                                    "No boat, ocean water, and too much time to think. I remember.",
-                                    "I still remember the ocean trying to make every step impossible.",
-                                    "The ocean is much larger when you are inside it.",
-                                    "I learned that day that waves have no manners.",
-                                    "Crossing ocean water without a boat is not something I recommend.",
-                                    "I remember looking for shore and finding more water instead.",
-                                    "Every wave seemed to ask why we had no boat. I had no answer.",
-                                    "I still feel tired when I think about that crossing.",
-                                    "Next time the ocean is involved, I would like wood beneath me."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "swim_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_boat_long",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  4,
-                      "lines":  [
-                                    "That boat trip was part of a {follow_distance} block outing. Water did some of the work, but not enough.",
-                                    "That boat helped with {follow_distance} blocks of trouble, but not enough to make it easy.",
-                                    "{follow_distance} blocks sounds shorter when water does some of the carrying.",
-                                    "Even with a boat, {follow_distance} blocks is a long way to follow someone.",
-                                    "The boat spared my feet for a while, then the road asked for payment anyway.",
-                                    "I appreciated the boat more with every block after it ended.",
-                                    "{follow_distance} blocks is still {follow_distance} blocks, even with a floating shortcut.",
-                                    "The boat made part of the trip peaceful. The rest made up for it.",
-                                    "Water carried us for some of those blocks, and I thank it for its service.",
-                                    "Next time we travel that far, I want to know how much of it floats."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "min_follow_distance":  500,
-                                             "boat_trip":  true
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_betrayed",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  5,
-                      "lines":  [
-                                    "Remember when I followed you and you hit me? I do. Still hurts.",
-                                    "I followed because I thought you meant safety. The hit changed that sentence.",
-                                    "Some memories hurt before anyone says another word.",
-                                    "I remember trusting you on that road. I remember regretting it.",
-                                    "You made following you feel like a mistake.",
-                                    "That kind of hurt stays longer than the bruise.",
-                                    "I learned something about your promises that day.",
-                                    "Being led somewhere and then struck is not easy to forget.",
-                                    "I can still hear the part of me that should have turned back.",
-                                    "If you wonder why I hesitate, remember what you taught me."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "betrayed"
-                                                           ]
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "question_follow_memory_injured",
-                      "request":  "question",
-                      "option":  "adult_general_question",
-                      "show_for_babies":  false,
-                      "weight":  4,
-                      "lines":  [
-                                    "I remember following you home hurt. I was grateful, but not exactly comfortable.",
-                                    "I was grateful to get home and angry that getting home hurt. Both fit.",
-                                    "That journey ended here, but the ache took longer to arrive.",
-                                    "I remember each step better than I wanted to.",
-                                    "Getting home mattered. Getting hurt on the way mattered too.",
-                                    "I tried not to slow us down, but pain has its own pace.",
-                                    "That road felt longer once I was limping through it.",
-                                    "I was glad to see the village again, even through the hurt.",
-                                    "A safe return can still leave a sore memory.",
-                                    "Next time, I would rather arrive without counting every bruise."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "injured"
-                                                           ]
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "gear_report_global_used",
-                      "request":  "gear_report",
-                      "option":  "gear_report",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "It held when trouble came close. That matters more than shine.",
-                                    "I had to trust it in a fight. I am glad you thought ahead.",
-                                    "The {gear_kind} earned its place. I noticed that more than I expected.",
-                                    "When it mattered, I was better prepared than I would have been alone.",
-                                    "Good gear makes fear easier to carry.",
-                                    "The {gear_kind} did what it needed to do when the moment turned sharp.",
-                                    "I will not pretend I was fearless, but I was ready.",
-                                    "That {gear_kind} made the difference between panic and action.",
-                                    "It is one thing to be given gear. It is another for it to hold under pressure.",
-                                    "I trust the {gear_kind} more now. It proved itself when it counted."
-                                ],
-                      "weight":  112,
-                      "conditions":  [
-                                         {
-                                             "type":  "memory",
-                                             "kind":  "gear_report_used_in_combat"
-                                         }
-                                     ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.global",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "recruitment_followup_safe_home",
+      "request": "recruitment_followup",
+      "lines": [
+        "Thank you for keeping me with you. A short road feels longer when the night has <shake>teeth</shake>.",
+        "You brought me through that trip safely. That turns a long road into a remembered kindness.",
+        "I am still here in one piece, and that matters more than I can say <pulse>neatly</pulse>.",
+        "The road could have gone worse. It did not, and I know who helped with that.",
+        "I was not sure what waited out there, but you made sure I came home.",
+        "Safe steps are easy to forget until someone gives them to you.",
+        "I will remember that you did not leave me behind.",
+        "A journey feels different when someone is watching your back.",
+        "I came home with my breath steady. That is worth thanking you for.",
+        "You made a hard road feel possible, and I will not forget it."
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 36
+    },
+    {
+      "id": "recruitment_followup_safe_ready",
+      "request": "recruitment_followup",
+      "lines": [
+        "I came back in one piece. That is the kind of help people remember.",
+        "You brought me through that trip safely. That turns a long road into a remembered kindness.",
+        "I am still here in one piece, and that matters more than I can say neatly.",
+        "The road was long, but it did not break us.",
+        "You kept your word well enough for me to stand here and say so.",
+        "There is comfort in arriving with nothing worse than tired feet.",
+        "I trusted you for that journey, and you gave me reason to be glad I did.",
+        "A safe return is not a small thing, not out there.",
+        "I know better than to take a quiet road for granted.",
+        "You saw me through. That matters."
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "recruitment_followup_injured_shaken",
+      "request": "recruitment_followup",
+      "lines": [
+        "I made it back, but not cleanly. Next time, we move slower or fight sooner.",
+        "I am still feeling that road. Do not mistake thanks for <italic>forgetting</italic>.",
+        "I returned, but the road left bruises in the story.",
+        "I am grateful to be home, but I would rather not pay that price twice.",
+        "The journey ended, but my ribs seem to be holding a meeting about it.",
+        "Next time, I would like fewer wounds between here and there.",
+        "I followed you through it, and I came back hurt. Both parts matter.",
+        "A safe ending does not erase a rough middle.",
+        "I am standing, yes, but do not call that the same as unharmed.",
+        "We made it through. Let us make better choices before we need to do that again."
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 68
+    },
+    {
+      "id": "recruitment_followup_betrayed_cut",
+      "request": "recruitment_followup",
+      "lines": [
+        "You asked me to follow, then turned your hand against me. That is not a small thing.",
+        "I followed because I thought you meant to protect me. Now I know to measure that <pulse>promise</pulse> twice.",
+        "Following you was trust. Being struck after that was a lesson I did not ask for.",
+        "A road is dangerous enough without the guide becoming part of the danger.",
+        "You made yourself the reason I should have stayed home.",
+        "I remember the hit more clearly than the road now. That should tell you enough.",
+        "Trust walks slowly after betrayal, if it walks at all.",
+        "You led me out there, then taught me to fear your hand.",
+        "I will think carefully before I follow you anywhere again.",
+        "What you broke was not only skin. Remember that."
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "show_for_babies": false,
+      "weight": 82
+    },
+    {
+      "id": "recruitment_followup_boat_safe",
+      "request": "recruitment_followup",
+      "lines": [
+        "The boat helped. I will admit, being carried home by water is easier on the knees.",
+        "Floating beat walking the whole way. I will admit that.",
+        "The boat did honest work carrying us along.",
+        "A boat underfoot makes a long road feel kinder.",
+        "I was glad for the water once it stopped looking so wide.",
+        "My legs thank you for choosing a boat.",
+        "That boat saved us time, trouble, and more than a few complaints from me.",
+        "The river carried its share, and I respect good help when I see it.",
+        "I prefer solid ground, but the boat made a fair argument.",
+        "If every journey had a boat for the worst stretch, I would complain less."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 44
+    },
+    {
+      "id": "recruitment_followup_ocean_boat_safe",
+      "request": "recruitment_followup",
+      "lines": [
+        "Crossing ocean by boat was a better idea than swimming it. Thank you for keeping me dry.",
+        "The ocean looked less <wavy>endless</wavy> with a boat under us. Thank you for that much.",
+        "A boat between me and the deep water was the correct kind of wisdom.",
+        "I have never trusted the ocean, but I trusted the boat enough.",
+        "The water was too wide for comfort, but the boat kept its promise.",
+        "I am grateful we crossed the ocean without asking my arms to do all the work.",
+        "A boat makes deep water feel less like a threat and more like a road.",
+        "The ocean stayed below us, which is where I prefer it.",
+        "I did not enjoy the crossing, but I enjoyed arriving dry.",
+        "Next time we cross water that wide, I will still vote for a boat."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_ocean_swim_safe",
+      "request": "recruitment_followup",
+      "lines": [
+        "I crossed ocean water without a boat and still made it through. Next time, please find wood before waves.",
+        "I made it across, but my bones still vote for boats next time.",
+        "Swimming the ocean was not bravery. It was a shortage of better planning.",
+        "I am proud we survived that, but I do not want practice.",
+        "The ocean is too large to treat like a puddle.",
+        "I have never missed a boat more than I did out there.",
+        "The waves kept asking if I was tired. I was.",
+        "I made it across, but every splash felt like an argument against the plan.",
+        "Next time, let the boat do the swimming.",
+        "I am glad to be dry now. I would like to stay that way."
+      ],
+      "conditions": [
+        {
+          "swim_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_boat_injured",
+      "request": "recruitment_followup",
+      "lines": [
+        "The boat ride was the quiet part. Getting hurt before or after it spoiled the memory.",
+        "The water stayed calm. The rest of the journey did not.",
+        "I would remember the boat more kindly if the hurt had not come with it.",
+        "The boat helped, yes, but it did not make the whole trip gentle.",
+        "I sat in that boat hoping the worst was behind us. It was not.",
+        "Water carried us for a while. Pain carried the rest.",
+        "I can thank the boat and still be angry about the bruises.",
+        "The trip had one peaceful stretch, and then the road corrected that.",
+        "A boat can carry a body, but it cannot keep trouble from waiting on shore.",
+        "Next time, I would like the boat ride without the injury attached."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 44
+    },
+    {
+      "id": "recruitment_followup_ocean_boat_injured",
+      "request": "recruitment_followup",
+      "lines": [
+        "The ocean crossing by boat was manageable. The part where I got hurt was less impressive.",
+        "The water stayed calm. The rest of the journey did not.",
+        "I would remember the boat more kindly if the hurt had not come with it.",
+        "The ocean was not the worst part, which is saying something.",
+        "The boat kept me above water, but not away from trouble.",
+        "Crossing the ocean was frightening enough without adding bruises to it.",
+        "I was grateful for the boat and less grateful for what happened around it.",
+        "The deep water behaved better than the rest of the trip.",
+        "I came back hurt, but at least the ocean did not get to keep me.",
+        "Next time, let the boat be the most difficult part. That would be enough."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_ocean_swim_injured",
+      "request": "recruitment_followup",
+      "lines": [
+        "Swimming across ocean and coming home hurt is not an adventure I want repeated.",
+        "Ocean swimming while hurt is a memory I would like to leave behind.",
+        "The <wavy>waves</wavy> did not help the bruises. Neither did the plan.",
+        "I had enough trouble staying above water without pain joining in.",
+        "That crossing asked too much from a body already having a bad day.",
+        "The ocean was wide, cold, and entirely too interested in my injuries.",
+        "I made it through, but that does not make it a good idea.",
+        "Next time, if I am hurt, we find a boat or we wait.",
+        "I still feel that journey when I move too quickly.",
+        "There are safer ways to cross water, and I would like to try one."
+      ],
+      "conditions": [
+        {
+          "swim_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_boat_betrayed",
+      "request": "recruitment_followup",
+      "lines": [
+        "You put me in a boat, took me along, and then broke trust. Strange journey, worse ending.",
+        "Being carried over <wavy>water</wavy> did not make betrayal lighter.",
+        "The boat brought us along. You broke the part that mattered.",
+        "A calm ride does not excuse a cruel hand.",
+        "I remember the water, but I remember what you did more.",
+        "The boat carried me safely. You did not.",
+        "Trust should not sink after reaching shore.",
+        "I thought the water was the danger. I was wrong.",
+        "You made even that quiet boat ride feel foolish in hindsight.",
+        "Next time, I will think twice before sharing a boat with you."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "show_for_babies": false,
+      "weight": 46
+    },
+    {
+      "id": "question_follow_memory_biome",
+      "request": "question",
+      "lines": [
+        "Remember when you made me follow you across {follow_biome}? I still know that road by ache alone.",
+        "I remember {follow_biome}. Some places stay in your feet after you leave.",
+        "{follow_biome} was a long lesson in asking where we are going first.",
+        "I still think about {follow_biome} when my legs start complaining.",
+        "You led me through {follow_biome}, and I learned that scenery can be tiring.",
+        "{follow_biome} looked different once I had to cross it on foot.",
+        "I remember the sounds of {follow_biome} more than I expected.",
+        "Some paths through {follow_biome} feel longer after you have already walked them.",
+        "I know {follow_biome} better than I planned to.",
+        "Next time you mention {follow_biome}, I may sit down first."
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "question_follow_memory_long_walk",
+      "request": "question",
+      "lines": [
+        "Remember when you made me follow you over {follow_distance} blocks? My legs complained for days.",
+        "{follow_distance} blocks is a long way to wonder if you chose the right guide.",
+        "My legs remember those {follow_distance} blocks with unnecessary detail.",
+        "After {follow_distance} blocks, even flat ground starts feeling personal.",
+        "I learned exactly how long {follow_distance} blocks can feel when you are following someone.",
+        "{follow_distance} blocks gave me plenty of time to question your sense of direction.",
+        "I still think my feet should have been thanked after that walk.",
+        "There are shorter ways to build trust than dragging someone {follow_distance} blocks.",
+        "That walk made every bed in the village look like a miracle.",
+        "Next time we go that far, I am asking about the destination first."
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "min_follow_distance": 500,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "question_follow_memory_boat",
+      "request": "question",
+      "lines": [
+        "Remember when you took me along in a boat? I was not sure whether to thank you or ask where the oars had gone.",
+        "I remember that boat. Sitting still while the world moved was strange comfort.",
+        "The oars had a plan. I wish the rest of us had one too.",
+        "That boat trip was quieter than walking, which I appreciated.",
+        "I still remember watching the shore move like it had somewhere to be.",
+        "A boat is a strange thing. You sit, and somehow distance happens.",
+        "I was glad for the boat, even if I pretended not to be nervous.",
+        "The water carried us, and for once my feet were not responsible.",
+        "I remember wondering if boats always sound that uncertain.",
+        "If nothing else, that boat gave my legs a fine argument for resting."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "question_follow_memory_ocean_swim",
+      "request": "question",
+      "lines": [
+        "Remember when you took me across ocean water without a boat? I remember every splash.",
+        "No boat, ocean water, and too much time to think. I remember.",
+        "I still remember the ocean trying to make every step impossible.",
+        "The ocean is much larger when you are inside it.",
+        "I learned that day that waves have no manners.",
+        "Crossing ocean water without a boat is not something I recommend.",
+        "I remember looking for shore and finding more water instead.",
+        "Every wave seemed to ask why we had no boat. I had no answer.",
+        "I still feel tired when I think about that crossing.",
+        "Next time the ocean is involved, I would like wood beneath me."
+      ],
+      "conditions": [
+        {
+          "swim_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "question_follow_memory_boat_long",
+      "request": "question",
+      "lines": [
+        "That boat trip was part of a {follow_distance} block outing. Water did some of the work, but not enough.",
+        "That boat helped with {follow_distance} blocks of trouble, but not enough to make it easy.",
+        "{follow_distance} blocks sounds shorter when water does some of the carrying.",
+        "Even with a boat, {follow_distance} blocks is a long way to follow someone.",
+        "The boat spared my feet for a while, then the road asked for payment anyway.",
+        "I appreciated the boat more with every block after it ended.",
+        "{follow_distance} blocks is still {follow_distance} blocks, even with a floating shortcut.",
+        "The boat made part of the trip peaceful. The rest made up for it.",
+        "Water carried us for some of those blocks, and I thank it for its service.",
+        "Next time we travel that far, I want to know how much of it floats."
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "min_follow_distance": 500,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "question_follow_memory_betrayed",
+      "request": "question",
+      "lines": [
+        "Remember when I followed you and you hit me? I do. Still hurts.",
+        "I followed because I thought you meant safety. The hit changed that sentence.",
+        "Some memories hurt before anyone says another word.",
+        "I remember trusting you on that road. I remember regretting it.",
+        "You made following you feel like a mistake.",
+        "That kind of hurt stays longer than the bruise.",
+        "I learned something about your promises that day.",
+        "Being led somewhere and then struck is not easy to forget.",
+        "I can still hear the part of me that should have turned back.",
+        "If you wonder why I hesitate, remember what you taught me."
+      ],
+      "conditions": [
+        {
+          "scenarios": [
+            "betrayed"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "question_follow_memory_injured",
+      "request": "question",
+      "lines": [
+        "I remember following you home hurt. I was grateful, but not exactly comfortable.",
+        "I was grateful to get home and angry that getting home hurt. Both fit.",
+        "That journey ended here, but the ache took longer to arrive.",
+        "I remember each step better than I wanted to.",
+        "Getting home mattered. Getting hurt on the way mattered too.",
+        "I tried not to slow us down, but pain has its own pace.",
+        "That road felt longer once I was limping through it.",
+        "I was glad to see the village again, even through the hurt.",
+        "A safe return can still leave a sore memory.",
+        "Next time, I would rather arrive without counting every bruise."
+      ],
+      "conditions": [
+        {
+          "scenarios": [
+            "injured"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "gear_report_global_used",
+      "request": "gear_report",
+      "lines": [
+        "It held when trouble came close. That matters more than shine.",
+        "I had to trust it in a fight. I am glad you thought ahead.",
+        "The {gear_kind} earned its place. I noticed that more than I expected.",
+        "When it mattered, I was better prepared than I would have been alone.",
+        "Good gear makes fear easier to carry.",
+        "The {gear_kind} did what it needed to do when the moment turned sharp.",
+        "I will not pretend I was fearless, but I was ready.",
+        "That {gear_kind} made the difference between panic and action.",
+        "It is one thing to be given gear. It is another for it to hold under pressure.",
+        "I trust the {gear_kind} more now. It proved itself when it counted."
+      ],
+      "conditions": [
+        {
+          "kind": "gear_report_used_in_combat",
+          "type": "memory"
+        }
+      ],
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 112
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.recruitment_memories"
+  }
 }

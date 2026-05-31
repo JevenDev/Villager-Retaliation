@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "village_defense_mason_wall",
-                      "request":  "village_defense_report",
-                      "option":  "village_defense_report",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "Walls help, but walls do not swing back. You did.",
-                                    "A village stands on more than stone. Yesterday, it stood on nerve.",
-                                    "The wall held better because someone stood beyond it.",
-                                    "You gave the village another layer of stone when it needed one.",
-                                    "I saw raiders hit our edge and fail to break through.",
-                                    "Good work under pressure keeps structures standing. So does courage.",
-                                    "The village is still square on its foundation because people held firm.",
-                                    "You helped keep the center from cracking.",
-                                    "When danger came close, nobody had time to sound brave first.",
-                                    "You learn a lot about a village when everyone hears the bell at once."
-                                ],
-                      "weight":  246
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.mason",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "village_defense_mason_wall",
+      "request": "village_defense_report",
+      "lines": [
+        "Walls help, but walls do not swing back. You did.",
+        "A village stands on more than stone. Yesterday, it stood on nerve.",
+        "The wall held better because someone stood beyond it.",
+        "You gave the village another layer of stone when it needed one.",
+        "I saw raiders hit our edge and fail to break through.",
+        "Good work under pressure keeps structures standing. So does courage.",
+        "The village is still square on its foundation because people held firm.",
+        "You helped keep the center from cracking.",
+        "When danger came close, nobody had time to sound brave first.",
+        "You learn a lot about a village when everyone hears the bell at once."
+      ],
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "weight": 246
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.mason",
+      "section.lines"
+    ],
+    "topic": "professions.mason.village_defense"
+  }
 }

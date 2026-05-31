@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "combat_survival_cleric",
-                      "request":  "combat_survival_report",
-                      "option":  "combat_survival_report",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "A little faith, a little medicine, and a very fast prayer. Yes, I made it back.",
-                                    "I kept one candle burning and one foot moving. Somehow both worked.",
-                                    "I returned with a prayer half-finished and gratitude fully earned.",
-                                    "My hands shook too much for the bell afterward, but I was alive to hear it.",
-                                    "There are nights that make faith very practical. I survived one.",
-                                    "I kept repeating the same blessing until my feet reached home.",
-                                    "The altar looked brighter after that road back.",
-                                    "I made it, though my voice may need a quiet hour.",
-                                    "When danger came close, nobody had time to sound brave first.",
-                                    "You learn a lot about a village when everyone hears the bell at once."
-                                ],
-                      "weight":  234
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.cleric",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "combat_survival_cleric",
+      "request": "combat_survival_report",
+      "lines": [
+        "A little faith, a little medicine, and a very fast prayer. Yes, I made it back.",
+        "I kept one candle burning and one foot moving. Somehow both worked.",
+        "I returned with a prayer half-finished and gratitude fully earned.",
+        "My hands shook too much for the bell afterward, but I was alive to hear it.",
+        "There are nights that make faith very practical. I survived one.",
+        "I kept repeating the same blessing until my feet reached home.",
+        "The altar looked brighter after that road back.",
+        "I made it, though my voice may need a quiet hour.",
+        "When danger came close, nobody had time to sound brave first.",
+        "You learn a lot about a village when everyone hears the bell at once."
+      ],
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "weight": 234
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cleric",
+      "section.lines"
+    ],
+    "topic": "professions.cleric.combat_survival_reports"
+  }
 }

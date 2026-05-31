@@ -1,44 +1,45 @@
 {
-    "messages":  [
-                     {
-                         "key":  "container_theft_memory.direct",
-                         "lines":  [
-                                       "I still \u003cpulse\u003eremember\u003c/pulse\u003e you trying to take my {stolen_stack}.",
-                                       "That {stolen_item} from the {stolen_container}? I have not forgotten.",
-                                       "You put your hands on village stores once. I am \u003cpulse\u003ewatching\u003c/pulse\u003e them now.",
-                                       "Trust is counted in small things. Last time, it was counted in {stolen_stack}.",
-                                       "I remember the {stolen_container}, the missing {stolen_item}, and your face beside both.",
-                                       "If you came to make right with the {stolen_item}, start by keeping your hands visible.",
-                                       "The {stolen_stack} was not yours, and pretending otherwise will not help you here.",
-                                       "I keep my things closer now. You can guess why.",
-                                       "A stolen {stolen_item} leaves more behind than an empty space.",
-                                       "Speak if you need to, but understand why I am still \u003cshake\u003ecareful\u003c/shake\u003e."
-                                   ],
-                         "weight":  155
-                     },
-                     {
-                         "key":  "container_theft_memory.village",
-                         "lines":  [
-                                       "\u003caqua\u003e{theft_witness}\u003c/aqua\u003e told me about you stealing {stolen_stack}. Not wise.",
-                                       "Word travels faster than full pockets. \u003caqua\u003e{theft_witness}\u003c/aqua\u003e \u003cpulse\u003esaw\u003c/pulse\u003e the {stolen_item}.",
-                                       "Around here, a missing {stolen_item} becomes everybody\u0027s story.",
-                                       "\u003caqua\u003e{theft_witness_possessive}\u003c/aqua\u003e \u003cshake\u003ewarning\u003c/shake\u003e reached more doors than you opened.",
-                                       "People here share bread, tools, and warnings. After that {stolen_stack}, you became the warning.",
-                                       "I was not there, but \u003caqua\u003e{theft_witness}\u003c/aqua\u003e was. That is enough for me to watch the {stolen_container}.",
-                                       "A theft from one villager has a way of reaching every counter in the village.",
-                                       "You may think {stolen_stack} was a small thing. Villages do not measure trust that way.",
-                                       "The story of that {stolen_item} arrived before you did.",
-                                       "I will speak with you, but I will also keep one eye on my \u003cpulse\u003estores\u003c/pulse\u003e."
-                                   ],
-                         "weight":  154
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.global",
-                                  "section.messages"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.container_theft_memory"
+  },
+  "messages": [
+    {
+      "key": "container_theft_memory.direct",
+      "lines": [
+        "I still <pulse>remember</pulse> you trying to take my {stolen_stack}.",
+        "That {stolen_item} from the {stolen_container}? I have not forgotten.",
+        "You put your hands on village stores once. I am <pulse>watching</pulse> them now.",
+        "Trust is counted in small things. Last time, it was counted in {stolen_stack}.",
+        "I remember the {stolen_container}, the missing {stolen_item}, and your face beside both.",
+        "If you came to make right with the {stolen_item}, start by keeping your hands visible.",
+        "The {stolen_stack} was not yours, and pretending otherwise will not help you here.",
+        "I keep my things closer now. You can guess why.",
+        "A stolen {stolen_item} leaves more behind than an empty space.",
+        "Speak if you need to, but understand why I am still <shake>careful</shake>."
+      ],
+      "weight": 155
+    },
+    {
+      "key": "container_theft_memory.village",
+      "lines": [
+        "<aqua>{theft_witness}</aqua> told me about you stealing {stolen_stack}. Not wise.",
+        "Word travels faster than full pockets. <aqua>{theft_witness}</aqua> <pulse>saw</pulse> the {stolen_item}.",
+        "Around here, a missing {stolen_item} becomes everybody's story.",
+        "<aqua>{theft_witness_possessive}</aqua> <shake>warning</shake> reached more doors than you opened.",
+        "People here share bread, tools, and warnings. After that {stolen_stack}, you became the warning.",
+        "I was not there, but <aqua>{theft_witness}</aqua> was. That is enough for me to watch the {stolen_container}.",
+        "A theft from one villager has a way of reaching every counter in the village.",
+        "You may think {stolen_stack} was a small thing. Villages do not measure trust that way.",
+        "The story of that {stolen_item} arrived before you did.",
+        "I will speak with you, but I will also keep one eye on my <pulse>stores</pulse>."
+      ],
+      "weight": 154
+    }
+  ]
 }

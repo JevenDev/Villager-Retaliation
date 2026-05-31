@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "apology_armorer",
-                      "request":  "apology",
-                      "option":  "apologize_for_harm",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "Fine. I know what can be repaired. I also know what keeps the dent.",
-                                    "I\u0027ll loosen the straps a little. Earn the rest with what you do next.",
-                                    "I can repair damage when someone brings it to the anvil. You have brought yours.",
-                                    "Don\u0027t mistake acceptance for softness. I heard you, and I\u0027ll be watching.",
-                                    "A dent tells me where the strike landed. Your apology tells me you know it landed.",
-                                    "Words are light. Better choices have weight. Bring those next.",
-                                    "I\u0027ll set this aside for now, not throw it away.",
-                                    "Fine. Let the next thing you make be trust, not trouble.",
-                                    "I was wrong. I would rather say it plainly than dress it up.",
-                                    "That came out sharper than it should have. I am sorry."
-                                ],
-                      "weight":  234
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.armorer",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "apology_armorer",
+      "request": "apology",
+      "lines": [
+        "Fine. I know what can be repaired. I also know what keeps the dent.",
+        "I'll loosen the straps a little. Earn the rest with what you do next.",
+        "I can repair damage when someone brings it to the anvil. You have brought yours.",
+        "Don't mistake acceptance for softness. I heard you, and I'll be watching.",
+        "A dent tells me where the strike landed. Your apology tells me you know it landed.",
+        "Words are light. Better choices have weight. Bring those next.",
+        "I'll set this aside for now, not throw it away.",
+        "Fine. Let the next thing you make be trust, not trouble.",
+        "I was wrong. I would rather say it plainly than dress it up.",
+        "That came out sharper than it should have. I am sorry."
+      ],
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "weight": 234
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.armorer",
+      "section.lines"
+    ],
+    "topic": "professions.armorer.apologies"
+  }
 }

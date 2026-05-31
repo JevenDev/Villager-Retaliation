@@ -1,31 +1,32 @@
 {
-    "lines":  [
-                  {
-                      "id":  "village_defense_nitwit_ducked",
-                      "request":  "village_defense_report",
-                      "option":  "village_defense_report",
-                      "show_for_babies":  false,
-                      "lines":  [
-                                    "I ducked very professionally. You did the scarier part, which was nice.",
-                                    "The horn went bwaa and everyone ran. You ran the useful direction.",
-                                    "You ran toward the loud part. That seemed important and extremely bold.",
-                                    "I was under a table, but I heard useful fighting. Yours, probably.",
-                                    "The village is still here, and I am very attached to that outcome.",
-                                    "You made the raiders stop doing raid things near us. Excellent choice.",
-                                    "I did morale from a safe place. You did the dangerous part.",
-                                    "When the horn sounded, you became part of the answer. I liked that.",
-                                    "When danger came close, nobody had time to sound brave first.",
-                                    "You learn a lot about a village when everyone hears the bell at once."
-                                ],
-                      "weight":  246
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.profession.nitwit",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "village_defense_nitwit_ducked",
+      "request": "village_defense_report",
+      "lines": [
+        "I ducked very professionally. You did the scarier part, which was nice.",
+        "The horn went bwaa and everyone ran. You ran the useful direction.",
+        "You ran toward the loud part. That seemed important and extremely bold.",
+        "I was under a table, but I heard useful fighting. Yours, probably.",
+        "The village is still here, and I am very attached to that outcome.",
+        "You made the raiders stop doing raid things near us. Excellent choice.",
+        "I did morale from a safe place. You did the dangerous part.",
+        "When the horn sounded, you became part of the answer. I liked that.",
+        "When danger came close, nobody had time to sound brave first.",
+        "You learn a lot about a village when everyone hears the bell at once."
+      ],
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "weight": 246
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.nitwit",
+      "section.lines"
+    ],
+    "topic": "professions.nitwit.village_defense"
+  }
 }

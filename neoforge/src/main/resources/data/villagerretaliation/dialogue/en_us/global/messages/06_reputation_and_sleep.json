@@ -1,170 +1,171 @@
 {
-    "messages":  [
-                     {
-                         "key":  "sleep.disturbance",
-                         "lines":  [
-                                       "\u003cwavy\u003eMmph...\u003c/wavy\u003e let me sleep.",
-                                       "Come back when the sun is up.",
-                                       "Mmph... I was sleeping.",
-                                       "Unless the village is on fire, this can wait until morning.",
-                                       "The bed had just started feeling warm.",
-                                       "I am awake now, which is not the same as grateful.",
-                                       "Please let the night stay quiet.",
-                                       "I was in the middle of a perfectly good dream.",
-                                       "If this is not urgent, it can wait for daylight.",
-                                       "\u003cwavy\u003eMmph...\u003c/wavy\u003e ask me when my eyes agree to open."
-                                   ],
-                         "weight":  20
-                     },
-                     {
-                         "key":  "sleep.repeated_disturbance",
-                         "lines":  [
-                                       "I already woke up once for you tonight.",
-                                       "You have bothered me \u003cshake\u003eenough\u003c/shake\u003e for one night.",
-                                       "Again? I was sleeping again.",
-                                       "The sun is still down, and so should I be.",
-                                       "How many times can one person need me awake?",
-                                       "I went back to sleep for a reason.",
-                                       "This had better be important, and it probably is not.",
-                                       "Let me have the rest of the night, please.",
-                                       "You are making the bed feel farther away every time.",
-                                       "\u003cshake\u003eEnough.\u003c/shake\u003e I need sleep."
-                                   ],
-                         "weight":  20
-                     },
-                     {
-                         "key":  "sleep.broken_bed",
-                         "lines":  [
-                                       "\u003cshake\u003eMy bed!\u003c/shake\u003e What is wrong with you?",
-                                       "That was my bed. I will remember this.",
-                                       "My bed! Why would you do that?",
-                                       "A bed is where the night is supposed to feel safe.",
-                                       "You broke the one place I was meant to rest.",
-                                       "Do you understand how cruel that feels?",
-                                       "That was not just wood and wool. That was mine.",
-                                       "You made the whole night feel colder.",
-                                       "\u003cshake\u003eWhy would you break it?\u003c/shake\u003e",
-                                       "Fix it, or do not expect me to forget."
-                                   ],
-                         "weight":  20
-                     },
-                     {
-                         "key":  "reputation.insult_child",
-                         "show_for_adults":  false,
-                         "lines":  [
-                                       "That was \u003cshake\u003emean\u003c/shake\u003e. I am telling someone.",
-                                       "That was mean. I am finding a grown-up.",
-                                       "You should not say things like that.",
-                                       "I do not like when people talk sharp.",
-                                       "That made my stomach feel small.",
-                                       "I am going over there now.",
-                                       "You sound like trouble.",
-                                       "I am not staying here if you talk like that.",
-                                       "That was not funny. It was mean.",
-                                       "\u003cshake\u003eI want someone older.\u003c/shake\u003e"
-                                   ]
-                     },
-                     {
-                         "key":  "retaliation.royalty_aggro_bypass",
-                         "lines":  [
-                                       "My liege... how could you?",
-                                       "But why? After all the trust we placed in you?",
-                                       "I will not raise a hand against you, my liege. Please do not make me regret that.",
-                                       "You are still our royalty, but this hurts.",
-                                       "If anyone else had done that, I would fight. For you, I can only ask why.",
-                                       "The village trusted your hands to protect us, not harm us.",
-                                       "I do not know how to hold respect and fear in the same breath.",
-                                       "My liege, please. Do not turn our loyalty into something painful.",
-                                       "You carry our trust. Do not make it \u003cshake\u003etremble\u003c/shake\u003e like this.",
-                                       "I will stand down, but my heart will not forget."
-                                   ]
-                     },
-                     {
-                         "key":  "reputation.positive",
-                         "lines":  [
-                                       "You know, you are not so bad to talk to.",
-                                       "It is good to speak with someone who \u003cpulse\u003elistens\u003c/pulse\u003e.",
-                                       "Talking to you is better than I expected.",
-                                       "You make conversation feel easy enough.",
-                                       "I do not mind your company today.",
-                                       "You listen better than most travelers.",
-                                       "A good talk can change the shape of a day.",
-                                       "I am glad we spoke.",
-                                       "You have a steady way of hearing people out.",
-                                       "This was a \u003cpulse\u003epleasant\u003c/pulse\u003e surprise."
-                                   ],
-                         "weight":  20
-                     },
-                     {
-                         "key":  "reputation.angry",
-                         "lines":  [
-                                       "I should have known better than to speak with you.",
-                                       "\u003cpulse\u003eCareful.\u003c/pulse\u003e Villages remember cruelty.",
-                                       "Speaking with you was a mistake.",
-                                       "You have a way of making patience feel wasted.",
-                                       "I am done giving this conversation room.",
-                                       "Every word from you makes the air colder.",
-                                       "You keep proving why people warn each other.",
-                                       "I should have kept my door shut and my mouth closed.",
-                                       "This talk has gone exactly as badly as I feared.",
-                                       "\u003cshake\u003eEnough.\u003c/shake\u003e I am angry, and you know why."
-                                   ],
-                         "weight":  20
-                     },
-                     {
-                         "key":  "reputation.repeated_question",
-                         "lines":  [
-                                       "You have asked enough questions for one day.",
-                                       "I have work to do. Ask something else.",
-                                       "That is enough questions for now.",
-                                       "My answers are getting thinner by the question.",
-                                       "Give my thoughts a moment to breathe.",
-                                       "You are turning curiosity into a chore.",
-                                       "Ask again later, if it still matters.",
-                                       "I have said what I can for now.",
-                                       "The next answer will not be better just because you ask again.",
-                                       "Enough. My patience is \u003cpulse\u003erunning low\u003c/pulse\u003e."
-                                   ],
-                         "weight":  20
-                     },
-                     {
-                         "key":  "reputation.repeated_dialogue",
-                         "lines":  [
-                                       "Enough of that for now.",
-                                       "Try something else. My patience has limits.",
-                                       "Enough talking for now.",
-                                       "We have gone over this already.",
-                                       "That subject has worn out its welcome.",
-                                       "Say something new, or let the silence work.",
-                                       "I would rather not keep circling the same words.",
-                                       "Let this rest for a while.",
-                                       "This conversation is starting to feel like a stuck gate.",
-                                       "Enough. The words are going \u003cwavy\u003earound in circles\u003c/wavy\u003e."
-                                   ],
-                         "weight":  20
-                     },
-                     {
-                         "key":  "reputation.joke_missed",
-                         "lines":  [
-                                       "Hmph. Maybe do not quit your day job.",
-                                       "I have heard better from a door hinge.",
-                                       "That joke needed more \u003cjump\u003ework\u003c/jump\u003e before release.",
-                                       "It almost became funny. Almost.",
-                                       "That one fell over before it reached the punchline.",
-                                       "I admire the courage, if not the joke.",
-                                       "You aimed for laughter and hit the floor.",
-                                       "Maybe let that one rest and try another.",
-                                       "The joke wandered off before the funny part arrived.",
-                                       "That was a brave little disaster."
-                                   ]
-                     }
-                 ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.global",
-                                  "section.messages"
-                              ]
-                 }
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.reputation_and_sleep"
+  },
+  "messages": [
+    {
+      "key": "sleep.disturbance",
+      "lines": [
+        "<wavy>Mmph...</wavy> let me sleep.",
+        "Come back when the sun is up.",
+        "Mmph... I was sleeping.",
+        "Unless the village is on fire, this can wait until morning.",
+        "The bed had just started feeling warm.",
+        "I am awake now, which is not the same as grateful.",
+        "Please let the night stay quiet.",
+        "I was in the middle of a perfectly good dream.",
+        "If this is not urgent, it can wait for daylight.",
+        "<wavy>Mmph...</wavy> ask me when my eyes agree to open."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "sleep.repeated_disturbance",
+      "lines": [
+        "I already woke up once for you tonight.",
+        "You have bothered me <shake>enough</shake> for one night.",
+        "Again? I was sleeping again.",
+        "The sun is still down, and so should I be.",
+        "How many times can one person need me awake?",
+        "I went back to sleep for a reason.",
+        "This had better be important, and it probably is not.",
+        "Let me have the rest of the night, please.",
+        "You are making the bed feel farther away every time.",
+        "<shake>Enough.</shake> I need sleep."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "sleep.broken_bed",
+      "lines": [
+        "<shake>My bed!</shake> What is wrong with you?",
+        "That was my bed. I will remember this.",
+        "My bed! Why would you do that?",
+        "A bed is where the night is supposed to feel safe.",
+        "You broke the one place I was meant to rest.",
+        "Do you understand how cruel that feels?",
+        "That was not just wood and wool. That was mine.",
+        "You made the whole night feel colder.",
+        "<shake>Why would you break it?</shake>",
+        "Fix it, or do not expect me to forget."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.insult_child",
+      "lines": [
+        "That was <shake>mean</shake>. I am telling someone.",
+        "That was mean. I am finding a grown-up.",
+        "You should not say things like that.",
+        "I do not like when people talk sharp.",
+        "That made my stomach feel small.",
+        "I am going over there now.",
+        "You sound like trouble.",
+        "I am not staying here if you talk like that.",
+        "That was not funny. It was mean.",
+        "<shake>I want someone older.</shake>"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "key": "retaliation.royalty_aggro_bypass",
+      "lines": [
+        "My liege... how could you?",
+        "But why? After all the trust we placed in you?",
+        "I will not raise a hand against you, my liege. Please do not make me regret that.",
+        "You are still our royalty, but this hurts.",
+        "If anyone else had done that, I would fight. For you, I can only ask why.",
+        "The village trusted your hands to protect us, not harm us.",
+        "I do not know how to hold respect and fear in the same breath.",
+        "My liege, please. Do not turn our loyalty into something painful.",
+        "You carry our trust. Do not make it <shake>tremble</shake> like this.",
+        "I will stand down, but my heart will not forget."
+      ]
+    },
+    {
+      "key": "reputation.positive",
+      "lines": [
+        "You know, you are not so bad to talk to.",
+        "It is good to speak with someone who <pulse>listens</pulse>.",
+        "Talking to you is better than I expected.",
+        "You make conversation feel easy enough.",
+        "I do not mind your company today.",
+        "You listen better than most travelers.",
+        "A good talk can change the shape of a day.",
+        "I am glad we spoke.",
+        "You have a steady way of hearing people out.",
+        "This was a <pulse>pleasant</pulse> surprise."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.angry",
+      "lines": [
+        "I should have known better than to speak with you.",
+        "<pulse>Careful.</pulse> Villages remember cruelty.",
+        "Speaking with you was a mistake.",
+        "You have a way of making patience feel wasted.",
+        "I am done giving this conversation room.",
+        "Every word from you makes the air colder.",
+        "You keep proving why people warn each other.",
+        "I should have kept my door shut and my mouth closed.",
+        "This talk has gone exactly as badly as I feared.",
+        "<shake>Enough.</shake> I am angry, and you know why."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.repeated_question",
+      "lines": [
+        "You have asked enough questions for one day.",
+        "I have work to do. Ask something else.",
+        "That is enough questions for now.",
+        "My answers are getting thinner by the question.",
+        "Give my thoughts a moment to breathe.",
+        "You are turning curiosity into a chore.",
+        "Ask again later, if it still matters.",
+        "I have said what I can for now.",
+        "The next answer will not be better just because you ask again.",
+        "Enough. My patience is <pulse>running low</pulse>."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.repeated_dialogue",
+      "lines": [
+        "Enough of that for now.",
+        "Try something else. My patience has limits.",
+        "Enough talking for now.",
+        "We have gone over this already.",
+        "That subject has worn out its welcome.",
+        "Say something new, or let the silence work.",
+        "I would rather not keep circling the same words.",
+        "Let this rest for a while.",
+        "This conversation is starting to feel like a stuck gate.",
+        "Enough. The words are going <wavy>around in circles</wavy>."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.joke_missed",
+      "lines": [
+        "Hmph. Maybe do not quit your day job.",
+        "I have heard better from a door hinge.",
+        "That joke needed more <jump>work</jump> before release.",
+        "It almost became funny. Almost.",
+        "That one fell over before it reached the punchline.",
+        "I admire the courage, if not the joke.",
+        "You aimed for laughter and hit the floor.",
+        "Maybe let that one rest and try another.",
+        "The joke wandered off before the funny part arrived.",
+        "That was a brave little disaster."
+      ]
+    }
+  ]
 }

@@ -1,236 +1,237 @@
 {
-    "lines":  [
-                  {
-                      "id":  "recruitment_left_behind_beach",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me stranded on the Beach. Open sand makes every threat feel close.",
-                                    "A Beach sounds peaceful until you are alone on it with nowhere solid to retreat to.",
-                                    "I was waiting on the Beach wondering what was coming out of the water next.",
-                                    "If you go missing on a Beach, I get the waves, the wind, and no cover at all.",
-                                    "The sand gave me nowhere to hide and nowhere steady to stand.",
-                                    "I kept watching the waterline, hoping the next movement was you and not something worse.",
-                                    "Please do not leave me somewhere so open that every direction feels exposed.",
-                                    "The Beach looked calm, but calm does not help much when I am alone.",
-                                    "Every wave sounded closer once I realized you were gone.",
-                                    "I was standing between the sea and the open sand, wishing either one felt safe."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:beach"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_left_behind_deep_lukewarm_ocean",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me near the Deep Lukewarm Ocean. Deep water is still deep water even when it feels mild.",
-                                    "The Deep Lukewarm Ocean sounded gentler than it felt once I was alone beside it.",
-                                    "I was stranded near the Deep Lukewarm Ocean with too much water and too little certainty.",
-                                    "If you wander off by a Deep Lukewarm Ocean, I still have to worry about what is moving below.",
-                                    "That water looked calm enough to trick someone careless. I was trying not to be careless.",
-                                    "I kept staring past the surface, which only made me think about how far down it went.",
-                                    "Please do not leave me beside deep water just because it looks warm and harmless.",
-                                    "The air felt mild, but the ocean still felt too large.",
-                                    "Every ripple made me wonder what I could not see underneath it.",
-                                    "I was alone by deep water, trying not to let my thoughts sink with it."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:deep_lukewarm_ocean"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_left_behind_deep_ocean",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me beside the Deep Ocean. Looking into water that dark does nothing good for my nerves.",
-                                    "The Deep Ocean made every wave sound enormous once I realized you had stopped leading.",
-                                    "I waited by the Deep Ocean trying not to imagine what might be rising from below.",
-                                    "If you disappear near the Deep Ocean, all I am left with is open water and bad thoughts.",
-                                    "The water was so dark it felt like it could keep secrets forever.",
-                                    "I kept backing away from the edge, even when I was already far enough.",
-                                    "Please do not leave me beside water that looks like it has no bottom.",
-                                    "The Deep Ocean made the world feel too wide and too empty.",
-                                    "Every sound from the waves felt heavier than it should have.",
-                                    "I was alone with dark water, and my imagination did not stay kind."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:deep_ocean"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_left_behind_lukewarm_ocean",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me by the Lukewarm Ocean. Calm water still hides problems underneath it.",
-                                    "The Lukewarm Ocean looked gentle right up until I had to wait beside it alone.",
-                                    "I stood near the Lukewarm Ocean wondering what was moving below the surface while you were gone.",
-                                    "If you wander off beside a Lukewarm Ocean, I still have to fear what I cannot see.",
-                                    "The water was pleasant enough to look at, which made it worse when I started worrying.",
-                                    "I kept watching the surface for shapes that were not there until they were.",
-                                    "Please do not leave me where calm waves can make danger look polite.",
-                                    "The Lukewarm Ocean was quiet, but not quiet enough to comfort me.",
-                                    "Every little splash made me turn my head.",
-                                    "I was alone beside calm water, trying to remember that calm does not mean safe."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:lukewarm_ocean"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_left_behind_ocean",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me by the Ocean. Open water gives me too many things to worry about.",
-                                    "The Ocean felt far too large once I realized I was standing there alone.",
-                                    "I waited beside the Ocean trying not to imagine what might surface while you were gone.",
-                                    "If you wander off near the Ocean, I am left with waves, wind, and no walls at all.",
-                                    "The horizon did not help. It only made everything feel farther away.",
-                                    "I kept watching the water because it felt wrong to look anywhere else.",
-                                    "Please do not leave me where the world opens up and gives me nowhere to shelter.",
-                                    "The Ocean made waiting feel small and exposed.",
-                                    "Every wave kept arriving, and none of them brought you back.",
-                                    "I was alone beside too much water, hoping you remembered where you left me."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:ocean"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_left_behind_river",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me by the River. Banks get slippery fast when I have to move in a hurry.",
-                                    "The River sounded peaceful until I was alone beside it waiting for you.",
-                                    "I stood near the River trying to watch the water and the shoreline at the same time.",
-                                    "If you wander off at a River, I am left with mud, current, and no clear advantage.",
-                                    "The current kept moving like it knew exactly where it was going. I did not.",
-                                    "I kept checking the bank, because one bad step would make everything worse.",
-                                    "Please do not leave me where the ground is slick and the water is faster than it looks.",
-                                    "The River made every route feel like it could turn muddy in a hurry.",
-                                    "I could hear the water, the grass, and every sound that was not you.",
-                                    "I was alone by the bank, hoping I would not have to move quickly."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:river"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_left_behind_stony_shore",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me on the Stony Shore. Wet stone and open water are a poor pair.",
-                                    "The Stony Shore gave me nowhere soft to stand and nowhere safe to retreat to.",
-                                    "I waited on the Stony Shore trying not to slip while I kept watch for you.",
-                                    "If you disappear on a Stony Shore, I am left on slick rocks listening to the water grow louder.",
-                                    "Every rock looked stable until I had to trust it.",
-                                    "I kept my feet careful, but my nerves were less cooperative.",
-                                    "Please do not leave me somewhere the shore itself feels like a hazard.",
-                                    "The waves made the stones shine, and that only made me trust them less.",
-                                    "I had water on one side, hard rock under me, and no sign of you anywhere.",
-                                    "I was balancing on slick stone, hoping nothing forced me to move fast."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:stony_shore"
-                                         }
-                                     ]
-                  },
-                  {
-                      "id":  "recruitment_left_behind_warm_ocean",
-                      "request":  "recruitment_followup",
-                      "option":  "recruitment_left_behind",
-                      "show_for_babies":  false,
-                      "weight":  20,
-                      "lines":  [
-                                    "Don\u0027t leave me near the Warm Ocean. Warm water still hides things I do not want to meet.",
-                                    "The Warm Ocean seemed pleasant until I had to watch it alone.",
-                                    "I waited by the Warm Ocean wondering what might rise from below while you were gone.",
-                                    "If you wander off beside a Warm Ocean, I am still left with open water and no cover.",
-                                    "The water looked inviting, which only made me wonder what else it was inviting.",
-                                    "I kept staring at the bright surface, trying not to think about what lived under it.",
-                                    "Please do not leave me somewhere that looks safe just because it is beautiful.",
-                                    "The Warm Ocean was too calm to trust and too open to ignore.",
-                                    "Every splash made me remember I was alone.",
-                                    "I was standing by warm water, but there was nothing warm about being left there."
-                                ],
-                      "conditions":  [
-                                         {
-                                             "type":  "recruitment_memory",
-                                             "scenarios":  [
-                                                               "left_behind"
-                                                           ],
-                                             "biome":  "minecraft:warm_ocean"
-                                         }
-                                     ]
-                  }
-              ],
-    "metadata":  {
-                     "tags":  [
-                                  "content.dialogue",
-                                  "dialogue.ambient",
-                                  "scope.group.recruitment_left_behind",
-                                  "section.lines"
-                              ]
-                 }
+  "lines": [
+    {
+      "id": "recruitment_left_behind_beach",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me stranded on the Beach. Open sand makes every threat feel close.",
+        "A Beach sounds peaceful until you are alone on it with nowhere solid to retreat to.",
+        "I was waiting on the Beach wondering what was coming out of the water next.",
+        "If you go missing on a Beach, I get the waves, the wind, and no cover at all.",
+        "The sand gave me nowhere to hide and nowhere steady to stand.",
+        "I kept watching the waterline, hoping the next movement was you and not something worse.",
+        "Please do not leave me somewhere so open that every direction feels exposed.",
+        "The Beach looked calm, but calm does not help much when I am alone.",
+        "Every wave sounded closer once I realized you were gone.",
+        "I was standing between the sea and the open sand, wishing either one felt safe."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:beach",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_deep_lukewarm_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me near the Deep Lukewarm Ocean. Deep water is still deep water even when it feels mild.",
+        "The Deep Lukewarm Ocean sounded gentler than it felt once I was alone beside it.",
+        "I was stranded near the Deep Lukewarm Ocean with too much water and too little certainty.",
+        "If you wander off by a Deep Lukewarm Ocean, I still have to worry about what is moving below.",
+        "That water looked calm enough to trick someone careless. I was trying not to be careless.",
+        "I kept staring past the surface, which only made me think about how far down it went.",
+        "Please do not leave me beside deep water just because it looks warm and harmless.",
+        "The air felt mild, but the ocean still felt too large.",
+        "Every ripple made me wonder what I could not see underneath it.",
+        "I was alone by deep water, trying not to let my thoughts sink with it."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:deep_lukewarm_ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_deep_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me beside the Deep Ocean. Looking into water that dark does nothing good for my nerves.",
+        "The Deep Ocean made every wave sound enormous once I realized you had stopped leading.",
+        "I waited by the Deep Ocean trying not to imagine what might be rising from below.",
+        "If you disappear near the Deep Ocean, all I am left with is open water and bad thoughts.",
+        "The water was so dark it felt like it could keep secrets forever.",
+        "I kept backing away from the edge, even when I was already far enough.",
+        "Please do not leave me beside water that looks like it has no bottom.",
+        "The Deep Ocean made the world feel too wide and too empty.",
+        "Every sound from the waves felt heavier than it should have.",
+        "I was alone with dark water, and my imagination did not stay kind."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:deep_ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_lukewarm_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me by the Lukewarm Ocean. Calm water still hides problems underneath it.",
+        "The Lukewarm Ocean looked gentle right up until I had to wait beside it alone.",
+        "I stood near the Lukewarm Ocean wondering what was moving below the surface while you were gone.",
+        "If you wander off beside a Lukewarm Ocean, I still have to fear what I cannot see.",
+        "The water was pleasant enough to look at, which made it worse when I started worrying.",
+        "I kept watching the surface for shapes that were not there until they were.",
+        "Please do not leave me where calm waves can make danger look polite.",
+        "The Lukewarm Ocean was quiet, but not quiet enough to comfort me.",
+        "Every little splash made me turn my head.",
+        "I was alone beside calm water, trying to remember that calm does not mean safe."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:lukewarm_ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me by the Ocean. Open water gives me too many things to worry about.",
+        "The Ocean felt far too large once I realized I was standing there alone.",
+        "I waited beside the Ocean trying not to imagine what might surface while you were gone.",
+        "If you wander off near the Ocean, I am left with waves, wind, and no walls at all.",
+        "The horizon did not help. It only made everything feel farther away.",
+        "I kept watching the water because it felt wrong to look anywhere else.",
+        "Please do not leave me where the world opens up and gives me nowhere to shelter.",
+        "The Ocean made waiting feel small and exposed.",
+        "Every wave kept arriving, and none of them brought you back.",
+        "I was alone beside too much water, hoping you remembered where you left me."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_river",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me by the River. Banks get slippery fast when I have to move in a hurry.",
+        "The River sounded peaceful until I was alone beside it waiting for you.",
+        "I stood near the River trying to watch the water and the shoreline at the same time.",
+        "If you wander off at a River, I am left with mud, current, and no clear advantage.",
+        "The current kept moving like it knew exactly where it was going. I did not.",
+        "I kept checking the bank, because one bad step would make everything worse.",
+        "Please do not leave me where the ground is slick and the water is faster than it looks.",
+        "The River made every route feel like it could turn muddy in a hurry.",
+        "I could hear the water, the grass, and every sound that was not you.",
+        "I was alone by the bank, hoping I would not have to move quickly."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:river",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_stony_shore",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me on the Stony Shore. Wet stone and open water are a poor pair.",
+        "The Stony Shore gave me nowhere soft to stand and nowhere safe to retreat to.",
+        "I waited on the Stony Shore trying not to slip while I kept watch for you.",
+        "If you disappear on a Stony Shore, I am left on slick rocks listening to the water grow louder.",
+        "Every rock looked stable until I had to trust it.",
+        "I kept my feet careful, but my nerves were less cooperative.",
+        "Please do not leave me somewhere the shore itself feels like a hazard.",
+        "The waves made the stones shine, and that only made me trust them less.",
+        "I had water on one side, hard rock under me, and no sign of you anywhere.",
+        "I was balancing on slick stone, hoping nothing forced me to move fast."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:stony_shore",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_warm_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "Don't leave me near the Warm Ocean. Warm water still hides things I do not want to meet.",
+        "The Warm Ocean seemed pleasant until I had to watch it alone.",
+        "I waited by the Warm Ocean wondering what might rise from below while you were gone.",
+        "If you wander off beside a Warm Ocean, I am still left with open water and no cover.",
+        "The water looked inviting, which only made me wonder what else it was inviting.",
+        "I kept staring at the bright surface, trying not to think about what lived under it.",
+        "Please do not leave me somewhere that looks safe just because it is beautiful.",
+        "The Warm Ocean was too calm to trust and too open to ignore.",
+        "Every splash made me remember I was alone.",
+        "I was standing by warm water, but there was nothing warm about being left there."
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:warm_ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.lines"
+    ],
+    "topic": "groups.recruitment_left_behind.biomes_oceans_rivers"
+  }
 }
