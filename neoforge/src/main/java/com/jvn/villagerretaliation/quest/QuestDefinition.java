@@ -6,13 +6,15 @@ import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
-import java.util.Locale;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.level.Level;
 
 public record QuestDefinition(
         ResourceLocation id,
@@ -105,12 +107,13 @@ public record QuestDefinition(
 
     public record Target(
             ResourceLocation structure,
+            ResourceKey<Level> dimension,
             List<String> pieces,
             int searchRadius,
             int discoveryRadius,
             ResourceLocation proofItem
     ) {
-        public static final Target EMPTY = new Target(null, List.of(), 128, 128, null);
+        public static final Target EMPTY = new Target(null, null, List.of(), 128, 128, null);
 
         public Target {
             pieces = pieces == null ? List.of() : List.copyOf(pieces);
@@ -142,6 +145,7 @@ public record QuestDefinition(
             ObjectiveType type,
             boolean optional,
             ResourceLocation structure,
+            ResourceKey<Level> dimension,
             List<String> pieces,
             int searchRadius,
             int discoveryRadius,

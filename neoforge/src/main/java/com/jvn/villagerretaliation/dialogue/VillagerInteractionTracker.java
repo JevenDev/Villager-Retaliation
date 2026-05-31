@@ -162,13 +162,14 @@ public final class VillagerInteractionTracker {
             ResourceLocation targetId,
             String targetName,
             BlockPos targetPos,
+            ResourceLocation targetDimension,
             long expiresAtGameTime,
             int discoveryRadius) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         if (data.rememberStoryHint(
                 villager.getUUID(),
                 player.getUUID(),
-                level.dimension().location(),
+                targetDimension == null ? level.dimension().location() : targetDimension,
                 kind,
                 targetId,
                 targetName,
@@ -179,6 +180,29 @@ public final class VillagerInteractionTracker {
         )) {
             data.setDirty();
         }
+    }
+
+    public static void rememberStoryHint(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            StoryHintKind kind,
+            ResourceLocation targetId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime,
+            int discoveryRadius) {
+        rememberStoryHint(
+                level,
+                villager,
+                player,
+                kind,
+                targetId,
+                targetName,
+                targetPos,
+                level.dimension().location(),
+                expiresAtGameTime,
+                discoveryRadius);
     }
 
     public static List<StoryHintReport> markStoryHintDiscoveriesNear(

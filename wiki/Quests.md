@@ -36,6 +36,7 @@ Quest JSON is canonical in beta.12. Older advancement-style `criteria` / `requir
   },
   "target": {
     "structure": "minecraft:ancient_city",
+    "dimension": "minecraft:overworld",
     "pieces": ["ancient_city/city_center/city_center_1"],
     "search_radius": 256,
     "discovery_radius": 128,
@@ -127,7 +128,7 @@ Use `objectives` for extra completion rules beyond the top-level `target` visit/
 | `id` | string | Stable objective id. |
 | `type` | enum | `structure_visit`, `item_check`, or `condition`. |
 | `optional` | boolean | Optional objectives can complete and show progress without blocking turn-in. |
-| `structure`, `pieces`, `search_radius`, `discovery_radius` | target fields | Used by `structure_visit`. |
+| `structure`, `dimension`, `pieces`, `search_radius`, `discovery_radius` | target fields | Used by `structure_visit`. `dimension` is optional; when omitted, the quest searches the villager's current dimension first and then other server dimensions. |
 | `item`, `count` | item fields | Used by `item_check`. |
 | `conditions` | array | Used by `condition`; all conditions must match. |
 | `tracker` | object | Optional objective-specific tracker text. |

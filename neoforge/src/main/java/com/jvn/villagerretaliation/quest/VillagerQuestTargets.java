@@ -12,6 +12,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
@@ -42,16 +43,26 @@ final class VillagerQuestTargets {
         if (!definition.target().hasStructureTarget()) {
             return Optional.empty();
         }
-        return locateStructure(level, origin, definition.target().structure(), definition.target().searchRadius())
-                .map(LocatedTarget::new);
+        return locateStructure(
+                level,
+                origin,
+                definition.target().structure(),
+                definition.target().dimension(),
+                definition.target().searchRadius(),
+                "");
     }
 
     static Optional<LocatedTarget> locateTarget(
             ServerLevel level,
             BlockPos origin,
             QuestDefinition.Objective objective) {
-        return locateStructure(level, origin, objective.structure(), objective.searchRadius())
-                .map(pos -> new LocatedTarget(pos, objective.id()));
+        return locateStructure(
+                level,
+                origin,
+                objective.structure(),
+                objective.dimension(),
+                objective.searchRadius(),
+                objective.id());
     }
 
     static boolean isAtQuestTarget(
@@ -90,14 +101,49 @@ final class VillagerQuestTargets {
                 objective.pieces());
     }
 
-    private static Optional<BlockPos> locateStructure(
+    private static Optional<LocatedTarget> locateStructure(
+            ServerLevel level,
+            BlockPos origin,
+            ResourceLocation structureId,
+            ResourceKey<Level> targetDimension,
+            int searchRadius,
+            String objectiveId) {
+        if (structureId == null || !level.getServer().getWorldData().worldGenOptions().generateStructures()) {
+            return Optional.empty();
+        }
+        if (targetDimension != null) {
+            ServerLevel targetLevel = level.getServer().getLevel(targetDimension);
+            return targetLevel == null
+                    ? Optional.empty()
+                    : locateStructureInLevel(targetLevel, projectedOrigin(origin, level.dimension(), targetLevel.dimension()), structureId, searchRadius)
+                    .map(pos -> new LocatedTarget(targetLevel.dimension(), pos, objectiveId));
+        }
+
+        Optional<BlockPos> current = locateStructureInLevel(level, origin, structureId, searchRadius);
+        if (current.isPresent()) {
+            return current.map(pos -> new LocatedTarget(level.dimension(), pos, objectiveId));
+        }
+        for (ServerLevel candidate : level.getServer().getAllLevels()) {
+            if (candidate == level) {
+                continue;
+            }
+            Optional<BlockPos> found = locateStructureInLevel(
+                    candidate,
+                    projectedOrigin(origin, level.dimension(), candidate.dimension()),
+                    structureId,
+                    searchRadius);
+            if (found.isPresent()) {
+                return found.map(pos -> new LocatedTarget(candidate.dimension(), pos, objectiveId));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<BlockPos> locateStructureInLevel(
             ServerLevel level,
             BlockPos origin,
             ResourceLocation structureId,
             int searchRadius) {
-        if (structureId == null || !level.getServer().getWorldData().worldGenOptions().generateStructures()) {
-            return Optional.empty();
-        }
         Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
         ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, structureId);
         Optional<Holder.Reference<Structure>> holder = registry.getHolder(structureKey);
@@ -113,6 +159,19 @@ final class VillagerQuestTargets {
                 false
         );
         return nearest == null ? Optional.empty() : Optional.of(nearest.getFirst());
+    }
+
+    private static BlockPos projectedOrigin(
+            BlockPos origin,
+            ResourceKey<Level> sourceDimension,
+            ResourceKey<Level> targetDimension) {
+        if (sourceDimension == Level.OVERWORLD && targetDimension == Level.NETHER) {
+            return new BlockPos(origin.getX() >> 3, origin.getY(), origin.getZ() >> 3);
+        }
+        if (sourceDimension == Level.NETHER && targetDimension == Level.OVERWORLD) {
+            return new BlockPos(origin.getX() << 3, origin.getY(), origin.getZ() << 3);
+        }
+        return origin;
     }
 
     private static boolean isAtStructureTarget(
@@ -172,9 +231,6 @@ final class VillagerQuestTargets {
         return false;
     }
 
-    record LocatedTarget(BlockPos pos, String objectiveId) {
-        private LocatedTarget(BlockPos pos) {
-            this(pos, "");
-        }
+    record LocatedTarget(ResourceKey<Level> dimension, BlockPos pos, String objectiveId) {
     }
 }

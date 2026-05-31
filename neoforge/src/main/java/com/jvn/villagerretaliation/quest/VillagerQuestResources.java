@@ -20,10 +20,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.level.Level;
 
 public final class VillagerQuestResources {
     private static final String RESOURCE_ROOT = "quests";
@@ -182,6 +185,9 @@ public final class VillagerQuestResources {
         ResourceLocation structure = target == null
                 ? null
                 : DatapackJsonReader.readResourceLocation(target, "structure").orElse(null);
+        ResourceKey<Level> dimension = target == null
+                ? null
+                : readDimension(target);
         List<String> pieces = target == null
                 ? List.of()
                 : DatapackJsonReader.readStringList(target, "pieces");
@@ -195,7 +201,7 @@ public final class VillagerQuestResources {
                 ? null
                 : DatapackJsonReader.readResourceLocation(target, "proof_item").orElse(null);
 
-        return new QuestDefinition.Target(structure, pieces, searchRadius, discoveryRadius, proofItem);
+        return new QuestDefinition.Target(structure, dimension, pieces, searchRadius, discoveryRadius, proofItem);
     }
 
     private static List<QuestDefinition.Objective> readObjectives(
@@ -237,6 +243,7 @@ public final class VillagerQuestResources {
         }
 
         ResourceLocation structure = DatapackJsonReader.readResourceLocation(entry, "structure").orElse(null);
+        ResourceKey<Level> dimension = readDimension(entry);
         ResourceLocation item = DatapackJsonReader.readResourceLocation(entry, "item").orElse(null);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
         if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
@@ -257,6 +264,7 @@ public final class VillagerQuestResources {
                 type,
                 DatapackJsonReader.readBoolean(entry, "optional", false),
                 structure,
+                dimension,
                 DatapackJsonReader.readStringList(entry, "pieces"),
                 DatapackJsonReader.readInt(entry, "search_radius", DEFAULT_STRUCTURE_SEARCH_RADIUS),
                 DatapackJsonReader.readInt(entry, "discovery_radius", DEFAULT_DISCOVERY_RADIUS),
@@ -264,6 +272,12 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readInt(entry, "count", 1),
                 conditions,
                 readObjectiveTracker(entry)));
+    }
+
+    private static ResourceKey<Level> readDimension(JsonObject object) {
+        return DatapackJsonReader.readResourceLocation(object, "dimension")
+                .map(id -> ResourceKey.create(Registries.DIMENSION, id))
+                .orElse(null);
     }
 
     private static QuestDefinition.ObjectiveTracker readObjectiveTracker(JsonObject objective) {

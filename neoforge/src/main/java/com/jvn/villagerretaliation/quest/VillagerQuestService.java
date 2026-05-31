@@ -334,7 +334,7 @@ public final class VillagerQuestService {
         VillagerQuestSavedData.QuestProgress started = data.getOrCreate(context.player().getUUID(), definition.id());
         started.start(
                 context.villager().getUUID(),
-                context.level().dimension(),
+                target == null ? context.level().dimension() : target.dimension(),
                 target == null ? null : target.pos(),
                 context.level().getGameTime());
         started.setIssuer(
@@ -344,7 +344,7 @@ public final class VillagerQuestService {
                 context.level().dimension(),
                 context.villager().blockPosition());
         if (target != null && !target.objectiveId().isBlank()) {
-            started.setTarget(context.villager().getUUID(), context.level().dimension(), target.pos(), target.objectiveId());
+            started.setTarget(context.villager().getUUID(), target.dimension(), target.pos(), target.objectiveId());
         }
         markContinuousTriggersUsed(started, definition, context.level().getGameTime());
         if (definition.target().hasProofItem() && hasRequiredProof(context.player(), definition)) {
@@ -353,7 +353,7 @@ public final class VillagerQuestService {
         data.setDirty();
         data.setTrackedQuest(context.player().getUUID(), definition.id());
         if (target != null) {
-            rememberQuestStoryHint(context, definition, target.pos());
+            rememberQuestStoryHint(context, definition, target);
         }
         sendQuestNotification(context, "quest.started", definition, started, "Quest started: {quest}");
         if (dispatchQuestTriggers(context, definition, started, QuestDefinition.TriggerEvent.STARTED)) {
@@ -819,7 +819,7 @@ public final class VillagerQuestService {
         if (target == null) {
             return false;
         }
-        progress.setTarget(progress.startedVillagerId(), level.dimension(), target.pos(), target.objectiveId());
+        progress.setTarget(progress.startedVillagerId(), target.dimension(), target.pos(), target.objectiveId());
         return true;
     }
 
@@ -877,7 +877,10 @@ public final class VillagerQuestService {
         context.villager().playSound(SoundEvents.PLAYER_LEVELUP, 0.55F, 1.1F);
     }
 
-    private static void rememberQuestStoryHint(DialogueContext context, QuestDefinition definition, BlockPos targetPos) {
+    private static void rememberQuestStoryHint(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestTargets.LocatedTarget target) {
         if (!definition.target().hasStructureTarget()) {
             return;
         }
@@ -888,7 +891,8 @@ public final class VillagerQuestService {
                 VillagerInteractionTracker.StoryHintKind.STRUCTURE,
                 definition.target().structure(),
                 targetName(definition),
-                targetPos,
+                target.pos(),
+                target.dimension().location(),
                 context.level().getGameTime() + QUEST_STORY_HINT_TICKS,
                 definition.target().discoveryRadius()
         );
@@ -1338,6 +1342,7 @@ public final class VillagerQuestService {
         addIssuerReplacements(values, player, progress);
 
         BlockPos targetPos = progress == null ? null : progress.targetPos();
+        values.put("target_dimension", targetDimensionText(progress));
         if (targetPos != null) {
             values.put("target_x", Integer.toString(roundCoordinate(targetPos.getX())));
             values.put("target_z", Integer.toString(roundCoordinate(targetPos.getZ())));
@@ -1407,6 +1412,7 @@ public final class VillagerQuestService {
         addIssuerReplacements(values, context, progress);
 
         BlockPos targetPos = progress == null ? null : progress.targetPos();
+        values.put("target_dimension", targetDimensionText(progress));
         if (targetPos != null) {
             values.put("target_x", Integer.toString(roundCoordinate(targetPos.getX())));
             values.put("target_z", Integer.toString(roundCoordinate(targetPos.getZ())));
@@ -1460,6 +1466,7 @@ public final class VillagerQuestService {
             values.put("objective_target_x", "unknown");
             values.put("objective_target_y", "unknown");
             values.put("objective_target_z", "unknown");
+            values.put("objective_target_dimension", "unknown");
             return;
         }
 
@@ -1481,10 +1488,12 @@ public final class VillagerQuestService {
             values.put("objective_target_x", "unknown");
             values.put("objective_target_y", "unknown");
             values.put("objective_target_z", "unknown");
+            values.put("objective_target_dimension", "unknown");
         } else {
             values.put("objective_target_x", Integer.toString(roundCoordinate(targetPos.getX())));
             values.put("objective_target_y", Integer.toString(roundCoordinate(targetPos.getY())));
             values.put("objective_target_z", Integer.toString(roundCoordinate(targetPos.getZ())));
+            values.put("objective_target_dimension", targetDimensionText(progress));
         }
     }
 
@@ -1670,6 +1679,11 @@ public final class VillagerQuestService {
             return villager.level().dimension().location().toString();
         }
         ResourceKey<Level> dimension = progress == null ? null : progress.issuerDimension();
+        return dimension == null ? "unknown" : dimension.location().toString();
+    }
+
+    private static String targetDimensionText(VillagerQuestSavedData.QuestProgress progress) {
+        ResourceKey<Level> dimension = progress == null ? null : progress.targetDimension();
         return dimension == null ? "unknown" : dimension.location().toString();
     }
 
