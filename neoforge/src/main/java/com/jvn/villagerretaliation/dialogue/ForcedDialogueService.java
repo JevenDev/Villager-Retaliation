@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.ContainerForcedDialogueTrigger;
-import com.jvn.villagerretaliation.config.ContainerWatchMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueContext;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueDefinition;
@@ -38,25 +37,15 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.AbstractChestBlock;
-import net.minecraft.world.level.block.BarrelBlock;
-import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -141,8 +130,8 @@ public final class ForcedDialogueService {
 
         BlockPos pos = event.getPos();
         BlockState state = level.getBlockState(pos);
-        ResourceLocation lootTable = generatedContainerLootTable(level, pos);
-        if (!isEligibleWatchedContainer(state, lootTable)) {
+        ResourceLocation lootTable = ForcedDialogueContainers.generatedLootTable(level, pos);
+        if (!ForcedDialogueContainers.isEligibleWatchedContainer(state, lootTable)) {
             return;
         }
 
@@ -167,19 +156,19 @@ public final class ForcedDialogueService {
         }
 
         BlockState state = level.getBlockState(click.pos());
-        if (!isEligibleWatchedContainer(state, click.lootTable())) {
+        if (!ForcedDialogueContainers.isEligibleWatchedContainer(state, click.lootTable())) {
             return;
         }
         PacketDistributor.sendToPlayer(player, new GeneratedContainerTooltipPayload(event.getContainer().containerId, true));
 
-        int itemCount = countContainerItems(event.getContainer());
+        int itemCount = ForcedDialogueContainers.countItems(event.getContainer());
         ContainerSnapshot snapshot = new ContainerSnapshot(
                 click.dimension(),
                 click.pos(),
                 click.containerName(),
                 click.lootTable(),
                 itemCount,
-                snapshotContainerItems(event.getContainer()),
+                ForcedDialogueContainers.snapshotItems(event.getContainer()),
                 level.getGameTime()
         );
         OPEN_CONTAINER_SNAPSHOTS.put(
@@ -206,14 +195,14 @@ public final class ForcedDialogueService {
         }
 
         ItemStack tossedStack = event.getEntity().getItem();
-        boolean removedFromContainer = removedContainerStacks(snapshot.itemStacks(), player.containerMenu).stream()
+        boolean removedFromContainer = ForcedDialogueContainers.removedStacks(snapshot.itemStacks(), player.containerMenu).stream()
                 .anyMatch(removedStack -> ItemStack.isSameItemSameComponents(removedStack, tossedStack)
                         && removedStack.getCount() >= tossedStack.getCount());
         if (!removedFromContainer) {
             return;
         }
 
-        if (restoreToOpenContainer(player.containerMenu, tossedStack.copy()).isEmpty()) {
+        if (ForcedDialogueContainers.restoreToOpenMenu(player.containerMenu, tossedStack.copy()).isEmpty()) {
             event.setCanceled(true);
         }
     }
@@ -230,7 +219,7 @@ public final class ForcedDialogueService {
             return;
         }
 
-        List<ItemStack> removedStacks = removedContainerStacks(snapshot.itemStacks(), event.getContainer());
+        List<ItemStack> removedStacks = ForcedDialogueContainers.removedStacks(snapshot.itemStacks(), event.getContainer());
         int removedCount = removedStacks.stream().mapToInt(ItemStack::getCount).sum();
         if (removedCount <= 0) {
             return;
@@ -248,19 +237,19 @@ public final class ForcedDialogueService {
 
         BlockPos pos = event.getPos();
         BlockState state = event.getState();
-        ResourceLocation lootTable = generatedContainerLootTable(level, pos);
-        if (!isEligibleWatchedContainer(state, lootTable)) {
+        ResourceLocation lootTable = ForcedDialogueContainers.generatedLootTable(level, pos);
+        if (!ForcedDialogueContainers.isEligibleWatchedContainer(state, lootTable)) {
             return;
         }
-        unpackContainerLootTable(level, pos, player);
+        ForcedDialogueContainers.unpackLootTable(level, pos, player);
 
         ContainerSnapshot snapshot = new ContainerSnapshot(
                 level.dimension(),
                 pos.immutable(),
                 state.getBlock().getName(),
                 lootTable,
-                countContainerItems(level, pos),
-                snapshotContainerItems(level, pos),
+                ForcedDialogueContainers.countItems(level, pos),
+                ForcedDialogueContainers.snapshotItems(level, pos),
                 level.getGameTime()
         );
         OPEN_CONTAINER_SNAPSHOTS.remove(player.getUUID());
@@ -3157,7 +3146,7 @@ public final class ForcedDialogueService {
             return false;
         }
 
-        ItemStack representativeStack = representativeRemovedStack(removedStacks);
+        ItemStack representativeStack = ForcedDialogueContainers.representativeStack(removedStacks);
         ForcedDialogueContext context = new ForcedDialogueContext(
                 VillagerPresetNameRegistry.resolveDisplayName(witness).getString(),
                 player.getDisplayName().getString(),
@@ -3167,8 +3156,8 @@ public final class ForcedDialogueService {
                 representativeStack.isEmpty() ? "items" : representativeStack.getHoverName().getString(),
                 representativeStack.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(representativeStack.getItem()).toString(),
                 representativeStack.isEmpty() ? removedCount : representativeStack.getCount(),
-                representativeStack.isEmpty() ? "items" : itemStackName(representativeStack),
-                removedStacks.isEmpty() ? "items" : itemListName(removedStacks),
+                representativeStack.isEmpty() ? "items" : ForcedDialogueContainers.stackName(representativeStack),
+                removedStacks.isEmpty() ? "items" : ForcedDialogueContainers.stackListName(removedStacks),
                 snapshot.containerName().getString(),
                 snapshot.lootTable() == null ? "" : snapshot.lootTable().toString(),
                 priorContainerThefts,
@@ -3212,7 +3201,7 @@ public final class ForcedDialogueService {
             return false;
         }
 
-        ItemStack representativeStack = representativeRemovedStack(removedStacks);
+        ItemStack representativeStack = ForcedDialogueContainers.representativeStack(removedStacks);
         ForcedDialogueContext context = new ForcedDialogueContext(
                 VillagerPresetNameRegistry.resolveDisplayName(witness).getString(),
                 player.getDisplayName().getString(),
@@ -3222,8 +3211,8 @@ public final class ForcedDialogueService {
                 representativeStack.isEmpty() ? "items" : representativeStack.getHoverName().getString(),
                 representativeStack.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(representativeStack.getItem()).toString(),
                 representativeStack.isEmpty() ? removedCount : representativeStack.getCount(),
-                representativeStack.isEmpty() ? "items" : itemStackName(representativeStack),
-                removedStacks.isEmpty() ? "items" : itemListName(removedStacks),
+                representativeStack.isEmpty() ? "items" : ForcedDialogueContainers.stackName(representativeStack),
+                removedStacks.isEmpty() ? "items" : ForcedDialogueContainers.stackListName(removedStacks),
                 snapshot.containerName().getString(),
                 snapshot.lootTable() == null ? "" : snapshot.lootTable().toString(),
                 priorContainerThefts,
@@ -3235,7 +3224,7 @@ public final class ForcedDialogueService {
         boolean royaltyAggroBypass = isRoyaltyFor(level, witness, player);
         int reputationDelta = definition.reputationDelta();
         if (definition.trigger() == ForcedDialogueTrigger.CONTAINER_BROKEN) {
-            reputationDelta += containerBreakReputationDelta(snapshot);
+            reputationDelta += ForcedDialogueContainers.breakReputationDelta(snapshot);
         }
         if (reputationDelta != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             if (definition.trigger() == ForcedDialogueTrigger.CONTAINER_BROKEN) {
@@ -3804,20 +3793,6 @@ public final class ForcedDialogueService {
         return result.getType() == HitResult.Type.MISS || result.getBlockPos().equals(pos);
     }
 
-    private static boolean isWatchedContainer(BlockState state) {
-        return state.getBlock() instanceof AbstractChestBlock<?>
-                || state.getBlock() instanceof BarrelBlock
-                || state.getBlock() instanceof ShulkerBoxBlock;
-    }
-
-    private static boolean isEligibleWatchedContainer(BlockState state, ResourceLocation lootTable) {
-        if (!isWatchedContainer(state) && lootTable == null) {
-            return false;
-        }
-        return lootTable != null
-                || VillagerRetaliationConfig.CONTAINER_WATCH_MODE.get() == ContainerWatchMode.ALL_WATCHED_CONTAINERS;
-    }
-
     private static boolean containerForcedDialogueEnabled() {
         return VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
                 && VillagerRetaliationConfig.ENABLE_CONTAINER_FORCED_DIALOGUE.get();
@@ -3833,146 +3808,6 @@ public final class ForcedDialogueService {
                 && VillagerRetaliationConfig.ENABLE_PLAYER_ITEM_PROXIMITY_FORCED_DIALOGUE.get();
     }
 
-    private static ResourceLocation generatedContainerLootTable(ServerLevel level, BlockPos pos) {
-        return GeneratedContainerSavedData.generatedContainerLootTable(level, pos).orElse(null);
-    }
-
-    private static void unpackContainerLootTable(ServerLevel level, BlockPos pos, ServerPlayer player) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof RandomizableContainer container) {
-            container.unpackLootTable(player);
-        }
-    }
-
-    private static int containerBreakReputationDelta(ContainerSnapshot snapshot) {
-        int delta = VillagerRetaliationConfig.CONTAINER_BREAK_REPUTATION_LOSS.get();
-        if (snapshot.lootTable() != null && snapshot.itemCount() > 0) {
-            delta += snapshot.itemCount() * VillagerRetaliationConfig.GENERATED_CONTAINER_BREAK_ITEM_REPUTATION_LOSS.get();
-        }
-        return delta;
-    }
-
-    private static int countContainerItems(AbstractContainerMenu menu) {
-        int count = 0;
-        for (Slot slot : menu.slots) {
-            if (slot.container instanceof Inventory) {
-                continue;
-            }
-            ItemStack stack = slot.getItem();
-            if (!stack.isEmpty()) {
-                count += stack.getCount();
-            }
-        }
-        return count;
-    }
-
-    private static List<ItemStack> snapshotContainerItems(AbstractContainerMenu menu) {
-        List<ItemStack> stacks = new ArrayList<>();
-        for (Slot slot : menu.slots) {
-            if (slot.container instanceof Inventory) {
-                continue;
-            }
-            ItemStack stack = slot.getItem();
-            if (!stack.isEmpty()) {
-                stacks.add(stack.copy());
-            }
-        }
-        return List.copyOf(stacks);
-    }
-
-    private static int countContainerItems(ServerLevel level, BlockPos pos) {
-        if (!(level.getBlockEntity(pos) instanceof Container container)) {
-            return 0;
-        }
-        int count = 0;
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            ItemStack stack = container.getItem(slot);
-            if (!stack.isEmpty()) {
-                count += stack.getCount();
-            }
-        }
-        return count;
-    }
-
-    private static List<ItemStack> snapshotContainerItems(ServerLevel level, BlockPos pos) {
-        if (!(level.getBlockEntity(pos) instanceof Container container)) {
-            return List.of();
-        }
-        List<ItemStack> stacks = new ArrayList<>();
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            ItemStack stack = container.getItem(slot);
-            if (!stack.isEmpty()) {
-                stacks.add(stack.copy());
-            }
-        }
-        return List.copyOf(stacks);
-    }
-
-    private static ItemStack restoreToOpenContainer(AbstractContainerMenu menu, ItemStack stack) {
-        ItemStack remainder = stack.copy();
-        for (Slot slot : menu.slots) {
-            if (remainder.isEmpty()) {
-                return ItemStack.EMPTY;
-            }
-            if (slot.container instanceof Inventory) {
-                continue;
-            }
-            ItemStack existing = slot.getItem();
-            if (existing.isEmpty()
-                    || !ItemStack.isSameItemSameComponents(existing, remainder)
-                    || !slot.mayPlace(remainder)) {
-                continue;
-            }
-
-            int maxStackSize = Math.min(existing.getMaxStackSize(), slot.getMaxStackSize(remainder));
-            int moveCount = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
-            if (moveCount > 0) {
-                existing.grow(moveCount);
-                remainder.shrink(moveCount);
-                slot.setChanged();
-            }
-        }
-
-        for (Slot slot : menu.slots) {
-            if (remainder.isEmpty()) {
-                return ItemStack.EMPTY;
-            }
-            if (slot.container instanceof Inventory || !slot.getItem().isEmpty() || !slot.mayPlace(remainder)) {
-                continue;
-            }
-
-            int moveCount = Math.min(remainder.getCount(), Math.min(remainder.getMaxStackSize(), slot.getMaxStackSize(remainder)));
-            slot.set(remainder.copyWithCount(moveCount));
-            slot.setChanged();
-            remainder.shrink(moveCount);
-        }
-        return remainder;
-    }
-
-    private static List<ItemStack> removedContainerStacks(List<ItemStack> beforeStacks, AbstractContainerMenu menu) {
-        List<ItemStack> remainingCurrent = new ArrayList<>(snapshotContainerItems(menu));
-        List<ItemStack> removed = new ArrayList<>();
-        for (ItemStack beforeStack : beforeStacks) {
-            int missingCount = beforeStack.getCount();
-            for (ItemStack currentStack : remainingCurrent) {
-                if (missingCount <= 0) {
-                    break;
-                }
-                if (currentStack.isEmpty() || !ItemStack.isSameItemSameComponents(beforeStack, currentStack)) {
-                    continue;
-                }
-
-                int matched = Math.min(missingCount, currentStack.getCount());
-                currentStack.shrink(matched);
-                missingCount -= matched;
-            }
-            if (missingCount > 0) {
-                removed.add(beforeStack.copyWithCount(missingCount));
-            }
-        }
-        return List.copyOf(removed);
-    }
-
     private static void rememberContainerTheft(
             ServerLevel level,
             Villager witness,
@@ -3980,7 +3815,7 @@ public final class ForcedDialogueService {
             ContainerSnapshot snapshot,
             List<ItemStack> removedStacks,
             int removedCount) {
-        ItemStack representative = representativeRemovedStack(removedStacks);
+        ItemStack representative = ForcedDialogueContainers.representativeStack(removedStacks);
         String itemName = representative.isEmpty() ? "items" : representative.getHoverName().getString();
         String itemId = representative.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(representative.getItem()).toString();
         int itemCount = representative.isEmpty() ? removedCount : representative.getCount();
@@ -3996,43 +3831,6 @@ public final class ForcedDialogueService {
                 snapshot.containerName().getString(),
                 snapshot.lootTable() == null ? "" : snapshot.lootTable().toString()
         );
-    }
-
-    private static ItemStack representativeRemovedStack(List<ItemStack> removedStacks) {
-        return removedStacks.stream()
-                .max(Comparator.comparingInt(ItemStack::getCount))
-                .map(ItemStack::copy)
-                .orElse(ItemStack.EMPTY);
-    }
-
-    private static String itemStackName(ItemStack stack) {
-        String name = stack.getHoverName().getString();
-        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
-    }
-
-    private static String itemListName(List<ItemStack> stacks) {
-        return stacks.stream()
-                .map(ForcedDialogueService::itemStackName)
-                .reduce((left, right) -> left + ", " + right)
-                .orElse("items");
-    }
-
-    private record RecentContainerClick(
-            net.minecraft.resources.ResourceKey<Level> dimension,
-            BlockPos pos,
-            long gameTime,
-            Component containerName,
-            ResourceLocation lootTable) {
-    }
-
-    private record ContainerSnapshot(
-            net.minecraft.resources.ResourceKey<Level> dimension,
-            BlockPos pos,
-            Component containerName,
-            ResourceLocation lootTable,
-            int itemCount,
-            List<ItemStack> itemStacks,
-            long gameTime) {
     }
 
     private record ContainerWitnessCandidate(

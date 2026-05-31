@@ -331,7 +331,7 @@ final class ForcedDialogueItemTransfers {
             slots.add(container.getItem(slot).copy());
         }
         for (ItemStack stack : stacks) {
-            ItemStack remainder = insertIntoSimulatedSlots(container, slots, stack);
+            ItemStack remainder = insertIntoSlots(simulatedSlots(container, slots), stack);
             if (!remainder.isEmpty()) {
                 return false;
             }
@@ -341,8 +341,9 @@ final class ForcedDialogueItemTransfers {
 
     private static List<ItemStack> insertAll(Container container, List<ItemStack> stacks) {
         List<ItemStack> remainders = new ArrayList<>();
+        ItemSlots slots = containerSlots(container);
         for (ItemStack stack : stacks) {
-            ItemStack remainder = insertIntoContainer(container, stack);
+            ItemStack remainder = insertIntoSlots(slots, stack);
             if (!remainder.isEmpty()) {
                 remainders.add(remainder);
             }
@@ -351,43 +352,7 @@ final class ForcedDialogueItemTransfers {
         return List.copyOf(remainders);
     }
 
-    private static ItemStack insertIntoContainer(Container container, ItemStack stack) {
-        ItemStack remainder = stack.copy();
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            if (remainder.isEmpty()) {
-                return ItemStack.EMPTY;
-            }
-            ItemStack existing = container.getItem(slot);
-            if (existing.isEmpty()
-                    || !ItemStack.isSameItemSameComponents(existing, remainder)
-                    || !container.canPlaceItem(slot, remainder)) {
-                continue;
-            }
-
-            int maxStackSize = Math.min(existing.getMaxStackSize(), container.getMaxStackSize());
-            int moveCount = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
-            if (moveCount > 0) {
-                existing.grow(moveCount);
-                remainder.shrink(moveCount);
-            }
-        }
-
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            if (remainder.isEmpty()) {
-                return ItemStack.EMPTY;
-            }
-            if (!container.getItem(slot).isEmpty() || !container.canPlaceItem(slot, remainder)) {
-                continue;
-            }
-
-            int moveCount = Math.min(remainder.getCount(), Math.min(remainder.getMaxStackSize(), container.getMaxStackSize()));
-            container.setItem(slot, remainder.copyWithCount(moveCount));
-            remainder.shrink(moveCount);
-        }
-        return remainder;
-    }
-
-    private static ItemStack insertIntoSimulatedSlots(Container container, List<ItemStack> slots, ItemStack stack) {
+    private static ItemStack insertIntoSlots(ItemSlots slots, ItemStack stack) {
         ItemStack remainder = stack.copy();
         for (int slot = 0; slot < slots.size(); slot++) {
             if (remainder.isEmpty()) {
@@ -396,11 +361,11 @@ final class ForcedDialogueItemTransfers {
             ItemStack existing = slots.get(slot);
             if (existing.isEmpty()
                     || !ItemStack.isSameItemSameComponents(existing, remainder)
-                    || !container.canPlaceItem(slot, remainder)) {
+                    || !slots.canPlace(slot, remainder)) {
                 continue;
             }
 
-            int maxStackSize = Math.min(existing.getMaxStackSize(), container.getMaxStackSize());
+            int maxStackSize = Math.min(existing.getMaxStackSize(), slots.maxStackSize(slot, remainder));
             int moveCount = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
             if (moveCount > 0) {
                 existing.grow(moveCount);
@@ -412,15 +377,73 @@ final class ForcedDialogueItemTransfers {
             if (remainder.isEmpty()) {
                 return ItemStack.EMPTY;
             }
-            if (!slots.get(slot).isEmpty() || !container.canPlaceItem(slot, remainder)) {
+            if (!slots.get(slot).isEmpty() || !slots.canPlace(slot, remainder)) {
                 continue;
             }
 
-            int moveCount = Math.min(remainder.getCount(), Math.min(remainder.getMaxStackSize(), container.getMaxStackSize()));
+            int moveCount = Math.min(remainder.getCount(), Math.min(remainder.getMaxStackSize(), slots.maxStackSize(slot, remainder)));
             slots.set(slot, remainder.copyWithCount(moveCount));
             remainder.shrink(moveCount);
         }
         return remainder;
+    }
+
+    private static ItemSlots containerSlots(Container container) {
+        return new ItemSlots() {
+            @Override
+            public int size() {
+                return container.getContainerSize();
+            }
+
+            @Override
+            public ItemStack get(int slot) {
+                return container.getItem(slot);
+            }
+
+            @Override
+            public void set(int slot, ItemStack stack) {
+                container.setItem(slot, stack);
+            }
+
+            @Override
+            public boolean canPlace(int slot, ItemStack stack) {
+                return container.canPlaceItem(slot, stack);
+            }
+
+            @Override
+            public int maxStackSize(int slot, ItemStack stack) {
+                return container.getMaxStackSize();
+            }
+        };
+    }
+
+    private static ItemSlots simulatedSlots(Container container, List<ItemStack> slots) {
+        return new ItemSlots() {
+            @Override
+            public int size() {
+                return slots.size();
+            }
+
+            @Override
+            public ItemStack get(int slot) {
+                return slots.get(slot);
+            }
+
+            @Override
+            public void set(int slot, ItemStack stack) {
+                slots.set(slot, stack);
+            }
+
+            @Override
+            public boolean canPlace(int slot, ItemStack stack) {
+                return container.canPlaceItem(slot, stack);
+            }
+
+            @Override
+            public int maxStackSize(int slot, ItemStack stack) {
+                return container.getMaxStackSize();
+            }
+        };
     }
 
     record SourceContainer(ResourceKey<Level> dimension, BlockPos pos) {
@@ -430,5 +453,17 @@ final class ForcedDialogueItemTransfers {
         boolean canAccept(List<ItemStack> stacks);
 
         List<ItemStack> accept(List<ItemStack> stacks);
+    }
+
+    private interface ItemSlots {
+        int size();
+
+        ItemStack get(int slot);
+
+        void set(int slot, ItemStack stack);
+
+        boolean canPlace(int slot, ItemStack stack);
+
+        int maxStackSize(int slot, ItemStack stack);
     }
 }
