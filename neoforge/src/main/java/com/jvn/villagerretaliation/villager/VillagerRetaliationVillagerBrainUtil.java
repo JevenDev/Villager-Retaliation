@@ -1,9 +1,11 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.Behavior;
@@ -23,6 +25,8 @@ public final class VillagerRetaliationVillagerBrainUtil {
     private static final float FLEE_SPEED_MODIFIER = 0.75F;
     private static final int FLEE_HORIZONTAL_RANGE = 16;
     private static final int FLEE_VERTICAL_RANGE = 7;
+    private static final long TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS = 20L * 10L;
+    private static final Map<UUID, Long> NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS = new HashMap<>();
 
     private VillagerRetaliationVillagerBrainUtil() {
     }
@@ -40,6 +44,39 @@ public final class VillagerRetaliationVillagerBrainUtil {
     }
 
     public static void removeTradePreviewBehavior(ServerLevel level, Villager villager) {
+        removeTradePreviewBehaviorNow(level, villager);
+        NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.put(
+                villager.getUUID(),
+                level.getGameTime() + TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS + scanStagger(villager.getUUID(), TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS)
+        );
+    }
+
+    public static void removeTradePreviewBehaviorIfDue(ServerLevel level, Villager villager) {
+        UUID villagerId = villager.getUUID();
+        long gameTime = level.getGameTime();
+        long nextCheck = NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.getOrDefault(villagerId, Long.MIN_VALUE);
+        if (nextCheck == Long.MIN_VALUE) {
+            nextCheck = gameTime + scanStagger(villagerId, TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS);
+            if (nextCheck > gameTime) {
+                NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.put(villagerId, nextCheck);
+                return;
+            }
+        } else if (gameTime < nextCheck) {
+            return;
+        }
+
+        removeTradePreviewBehavior(level, villager);
+    }
+
+    public static void clearRuntimeState() {
+        NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.clear();
+    }
+
+    public static void clearRuntimeState(Villager villager) {
+        NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.remove(villager.getUUID());
+    }
+
+    private static void removeTradePreviewBehaviorNow(ServerLevel level, Villager villager) {
         Brain<Villager> brain = villager.getBrain();
         long gameTime = level.getGameTime();
         for (Map<Activity, Set<BehaviorControl<? super Villager>>> behaviorsByActivity : brain.availableBehaviorsByPriority.values()) {
@@ -56,6 +93,13 @@ public final class VillagerRetaliationVillagerBrainUtil {
                 }
             }
         }
+    }
+
+    private static long scanStagger(UUID villagerId, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 
     public static void enterFleeState(Villager villager, @Nullable LivingEntity hostile, long gameTime) {

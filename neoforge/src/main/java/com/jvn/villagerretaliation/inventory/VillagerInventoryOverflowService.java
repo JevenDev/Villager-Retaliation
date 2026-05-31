@@ -43,6 +43,7 @@ final class VillagerInventoryOverflowService {
     private static final String OWNER_UUID_TAG = "Villager";
     private static final String OWNER_NAME_TAG = "VillagerName";
     private static final Map<ContainerFeedbackKey, Long> PENDING_CONTAINER_CLOSES = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Long> LAST_PENDING_CONTAINER_CLOSE_CHECK_TICKS = new HashMap<>();
 
     private VillagerInventoryOverflowService() {
     }
@@ -52,7 +53,7 @@ final class VillagerInventoryOverflowService {
             return;
         }
 
-        closePendingContainers(level);
+        closePendingContainersIfDue(level);
         if (villager.isBaby()
                 || VillagerInventoryContainer.hasOpenInventory(villager)
                 || level.getGameTime() % SCAN_INTERVAL_TICKS != spreadTickOffset(villager)) {
@@ -276,6 +277,21 @@ final class VillagerInventoryOverflowService {
             closeContainerFeedback(level, key.pos());
             iterator.remove();
         }
+    }
+
+    private static void closePendingContainersIfDue(ServerLevel level) {
+        if (PENDING_CONTAINER_CLOSES.isEmpty()) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        Long lastCheck = LAST_PENDING_CONTAINER_CLOSE_CHECK_TICKS.get(level.dimension());
+        if (lastCheck != null && lastCheck == gameTime) {
+            return;
+        }
+
+        LAST_PENDING_CONTAINER_CLOSE_CHECK_TICKS.put(level.dimension(), gameTime);
+        closePendingContainers(level);
     }
 
     private static void closeContainerFeedback(ServerLevel level, BlockPos pos) {

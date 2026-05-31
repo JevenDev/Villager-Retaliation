@@ -1809,7 +1809,8 @@ public final class ForcedDialogueService {
     }
 
     public static void tickSharedForcedDialogueParticipant(ServerLevel level, Villager villager) {
-        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+        if (FORCED_SESSIONS.isEmpty()
+                || !VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
                 || !villager.isAlive()
                 || villager.isBaby()
                 || villager.isTrading()) {

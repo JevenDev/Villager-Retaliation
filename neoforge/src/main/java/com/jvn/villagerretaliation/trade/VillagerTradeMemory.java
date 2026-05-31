@@ -2,8 +2,11 @@ package com.jvn.villagerretaliation.trade;
 
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -23,12 +26,39 @@ public final class VillagerTradeMemory {
     private static final int CURRENT_POOL_VERSION = 1;
     private static final ResourceLocation NONE_PROFESSION = ResourceLocation.withDefaultNamespace("none");
     private static final ResourceLocation NITWIT_PROFESSION = ResourceLocation.withDefaultNamespace("nitwit");
+    private static final Map<UUID, ResourceLocation> ENSURED_PROFESSION_POOLS = new HashMap<>();
 
     private VillagerTradeMemory() {
     }
 
     public static Optional<ProfessionTradePool> ensureProfessionPool(ServerLevel level, Villager villager) {
         return ensureProfessionPool(level, villager, VillagerProfessionUtil.id(villager.getVillagerData().getProfession()));
+    }
+
+    public static void ensureProfessionPoolIfNeeded(ServerLevel level, Villager villager) {
+        ResourceLocation professionId = VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
+        UUID villagerId = villager.getUUID();
+        if (!isTradeProfession(professionId)) {
+            ENSURED_PROFESSION_POOLS.remove(villagerId);
+            return;
+        }
+        if (professionId.equals(ENSURED_PROFESSION_POOLS.get(villagerId))) {
+            return;
+        }
+
+        if (ensureProfessionPool(level, villager, professionId).isPresent()) {
+            ENSURED_PROFESSION_POOLS.put(villagerId, professionId);
+        } else {
+            ENSURED_PROFESSION_POOLS.remove(villagerId);
+        }
+    }
+
+    public static void clearRuntimeState() {
+        ENSURED_PROFESSION_POOLS.clear();
+    }
+
+    public static void clearRuntimeState(Villager villager) {
+        ENSURED_PROFESSION_POOLS.remove(villager.getUUID());
     }
 
     public static Optional<ProfessionTradePool> ensureProfessionPool(

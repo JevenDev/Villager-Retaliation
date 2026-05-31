@@ -52,6 +52,7 @@ public final class VillagerRecruitmentService {
     private static final double FOLLOW_TARGET_MOVED_DISTANCE_SQR = 1.0D;
     private static final long FOLLOW_TRAVEL_MEMORY_INTERVAL_TICKS = 20L;
     private static final long FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS = 40L;
+    private static final long LEFT_BEHIND_PROXIMITY_SCAN_INTERVAL_TICKS = 20L;
     private static final double FOLLOW_VEHICLE_BOARD_DISTANCE_SQR = 4.0D * 4.0D;
     private static final long RECENT_BETRAYED_FOLLOWER_DEATH_NOTICE_TICKS = 200L;
     private static final String LEFT_BEHIND_SCENARIO = "left_behind";
@@ -59,6 +60,7 @@ public final class VillagerRecruitmentService {
     private static final Map<UUID, RecentRecruitmentOwner> RECENT_BETRAYED_FOLLOWERS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_FOLLOW_TRAVEL_MEMORY_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_FOLLOW_REPUTATION_CHECK_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> LAST_FOLLOWER_AI_SUPPRESSION_TICKS = new HashMap<>();
     private static final Map<UUID, FollowPathState> FOLLOW_PATH_STATES = new HashMap<>();
     private static final Map<RecruitmentDialogueKey, Long> LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES = new HashMap<>();
@@ -270,6 +272,11 @@ public final class VillagerRecruitmentService {
         if (!(player.level() instanceof ServerLevel level) || !player.isAlive() || player.isSpectator()) {
             return;
         }
+        long gameTime = level.getGameTime();
+        UUID playerId = player.getUUID();
+        if (!consumePlayerScanSlot(playerId, gameTime, NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS, LEFT_BEHIND_PROXIMITY_SCAN_INTERVAL_TICKS)) {
+            return;
+        }
 
         double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         double maxDistanceSqr = maxDistance * maxDistance;
@@ -330,6 +337,7 @@ public final class VillagerRecruitmentService {
         RECENT_BETRAYED_FOLLOWERS.clear();
         NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.clear();
         NEXT_FOLLOW_REPUTATION_CHECK_TICKS.clear();
+        NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS.clear();
         LAST_FOLLOWER_AI_SUPPRESSION_TICKS.clear();
         FOLLOW_PATH_STATES.clear();
         LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES.clear();
@@ -447,6 +455,33 @@ public final class VillagerRecruitmentService {
         if (!villager.getNavigation().isDone()) {
             villager.getNavigation().stop();
         }
+    }
+
+    private static boolean consumePlayerScanSlot(
+            UUID playerId,
+            long gameTime,
+            Map<UUID, Long> nextScanTicks,
+            long intervalTicks) {
+        Long nextScan = nextScanTicks.get(playerId);
+        if (nextScan == null) {
+            long firstScan = gameTime + scanStagger(playerId, intervalTicks);
+            if (firstScan > gameTime) {
+                nextScanTicks.put(playerId, firstScan);
+                return false;
+            }
+        } else if (gameTime < nextScan) {
+            return false;
+        }
+
+        nextScanTicks.put(playerId, gameTime + Math.max(1L, intervalTicks));
+        return true;
+    }
+
+    private static long scanStagger(UUID playerId, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(playerId.getMostSignificantBits() ^ playerId.getLeastSignificantBits(), intervalTicks);
     }
 
     private static boolean isValidFollowTarget(ServerLevel level, Villager villager, ServerPlayer player) {

@@ -29,6 +29,7 @@ import net.minecraft.world.phys.AABB;
 public final class VillagerRetaliationRetaliationUtil {
     private static final String PERSISTENT_TARGET_UUID = "Target";
     private static final String PERSISTENT_LAST_SEEN_TICK = "LastSeenTick";
+    private static final long PERSISTENT_ANGER_REFRESH_INTERVAL_TICKS = 20L;
     private static final double MAX_RETALIATION_PURSUIT_DISTANCE_SQR = 1024.0D;
     private static final int MIN_PATH_RECALCULATION_TICKS = 4;
     private static final int RANDOM_PATH_RECALCULATION_TICKS = 7;
@@ -175,7 +176,9 @@ public final class VillagerRetaliationRetaliationUtil {
     ) {
         AngerTarget refreshedTarget = angerTarget.withLastSeenGameTick(gameTime);
         angerTargets.put(villager.getUUID(), refreshedTarget);
-        persistAnger(villager, persistentTagRoot, refreshedTarget);
+        if (shouldPersistAngerRefresh(villager, gameTime)) {
+            persistAnger(villager, persistentTagRoot, refreshedTarget);
+        }
     }
 
     public static <T extends AbstractVillager> boolean isHostileTowards(
@@ -482,6 +485,11 @@ public final class VillagerRetaliationRetaliationUtil {
         hostilityTag.putUUID(PERSISTENT_TARGET_UUID, angerTarget.targetId());
         hostilityTag.putLong(PERSISTENT_LAST_SEEN_TICK, angerTarget.lastSeenGameTick());
         villager.getPersistentData().put(persistentTagRoot, hostilityTag);
+    }
+
+    private static boolean shouldPersistAngerRefresh(AbstractVillager villager, long gameTime) {
+        return gameTime % PERSISTENT_ANGER_REFRESH_INTERVAL_TICKS
+                == Math.floorMod(villager.getUUID().getLeastSignificantBits(), PERSISTENT_ANGER_REFRESH_INTERVAL_TICKS);
     }
 
     private static float currentCombatWeaponDropChance() {

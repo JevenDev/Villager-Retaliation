@@ -16,7 +16,12 @@ public final class VillagerFleeBehaviorHandler {
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         if (!(event.getEntity() instanceof Villager villager)
-                || villager.level().isClientSide
+                || villager.level().isClientSide) {
+            return;
+        }
+
+        Brain<Villager> brain = villager.getBrain();
+        if (!hasAnyFleeState(levelOrNull(villager), brain)
                 || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)) {
             return;
         }
@@ -32,6 +37,10 @@ public final class VillagerFleeBehaviorHandler {
         }
 
         Brain<Villager> brain = villager.getBrain();
+        if (!hasAnyFleeState(level, brain)) {
+            return;
+        }
+
         boolean keepFleeingBehavior = VillagerRetaliationVillagerRules.shouldKeepFleeingBehavior(villager);
         if (keepFleeingBehavior) {
             maybeAnnounceFlee(level, villager, brain);
@@ -69,6 +78,17 @@ public final class VillagerFleeBehaviorHandler {
         return VillagerRetaliationVillagerBrainUtil.hasThreatMemories(brain)
                 || brain.hasMemoryValue(MemoryModuleType.HEARD_BELL_TIME)
                 || brain.hasMemoryValue(MemoryModuleType.HIDING_PLACE);
+    }
+
+    private static boolean hasAnyFleeState(ServerLevel level, Brain<Villager> brain) {
+        return hasFleeMemory(brain)
+                || brain.isActive(Activity.PANIC)
+                || brain.isActive(Activity.HIDE)
+                || level != null && brain.isActive(Activity.RAID);
+    }
+
+    private static ServerLevel levelOrNull(Villager villager) {
+        return villager.level() instanceof ServerLevel level ? level : null;
     }
 
     private static void maybeAnnounceFlee(ServerLevel level, Villager villager, Brain<Villager> brain) {

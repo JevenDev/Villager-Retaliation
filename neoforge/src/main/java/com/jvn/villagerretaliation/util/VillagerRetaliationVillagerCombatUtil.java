@@ -55,12 +55,13 @@ public final class VillagerRetaliationVillagerCombatUtil {
                 .range(radius)
                 .selector(target -> isNaturalHostileTarget(villager, target));
         LivingEntity closestVisible = level.getNearestEntity(
-                level.getEntitiesOfClass(Mob.class, searchArea, target -> isNaturalHostileTarget(villager, target)),
+                Mob.class,
                 targetingConditions,
                 villager,
                 villager.getX(),
                 villager.getEyeY(),
-                villager.getZ()
+                villager.getZ(),
+                searchArea
         );
 
         return Optional.ofNullable(closestVisible);
@@ -87,17 +88,18 @@ public final class VillagerRetaliationVillagerCombatUtil {
         }
 
         AABB searchArea = villager.getBoundingBox().inflate(radius);
-        Creeper closestVisible = null;
-        double closestVisibleDistance = Double.MAX_VALUE;
-        double maxDistanceSqr = radius * radius;
-
-        for (Creeper creeper : level.getEntitiesOfClass(Creeper.class, searchArea, LivingEntity::isAlive)) {
-            double distance = villager.distanceToSqr(creeper);
-            if (distance <= maxDistanceSqr && villager.hasLineOfSight(creeper) && distance < closestVisibleDistance) {
-                closestVisibleDistance = distance;
-                closestVisible = creeper;
-            }
-        }
+        TargetingConditions targetingConditions = TargetingConditions.forCombat()
+                .range(radius)
+                .selector(LivingEntity::isAlive);
+        Creeper closestVisible = level.getNearestEntity(
+                Creeper.class,
+                targetingConditions,
+                villager,
+                villager.getX(),
+                villager.getEyeY(),
+                villager.getZ(),
+                searchArea
+        );
 
         return Optional.ofNullable(closestVisible);
     }

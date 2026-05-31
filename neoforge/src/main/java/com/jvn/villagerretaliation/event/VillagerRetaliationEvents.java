@@ -38,6 +38,7 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -87,10 +88,12 @@ public final class VillagerRetaliationEvents {
 
     public static void onServerStopping(ServerStoppingEvent event) {
         VillagerDataWarmup.clearCaches();
+        VillagerRetaliationVillagerBrainUtil.clearRuntimeState();
         VillagerRetaliationVillagerRules.clearCachedChecks();
         VillagerGossipHooks.clear();
         VillagerReputationManager.clearSyncState();
         VillagerRecruitmentService.clearRuntimeState();
+        VillagerTradeMemory.clearRuntimeState();
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -193,7 +196,7 @@ public final class VillagerRetaliationEvents {
             VillagerRecruitmentService.onVillagerTickPost(villager);
             rememberWeatherEventNearVillager(villager);
             if (villager.level() instanceof ServerLevel level) {
-                VillagerTradeMemory.ensureProfessionPool(level, villager);
+                VillagerTradeMemory.ensureProfessionPoolIfNeeded(level, villager);
                 ForcedDialogueService.tickSharedForcedDialogueParticipant(level, villager);
                 ForcedDialogueService.maybeTriggerTradeRefreshReadyProximity(level, villager);
                 ForcedDialogueService.maybeTriggerPlayerItemProximity(level, villager);
@@ -424,7 +427,9 @@ public final class VillagerRetaliationEvents {
         }
         if (event.getEntity() instanceof Villager villager) {
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
+            VillagerRetaliationVillagerBrainUtil.clearRuntimeState(villager);
             VillagerRetaliationVillagerRules.clearCachedChecks(villager);
+            VillagerTradeMemory.clearRuntimeState(villager);
         }
     }
 

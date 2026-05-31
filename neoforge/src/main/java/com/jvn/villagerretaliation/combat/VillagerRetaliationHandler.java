@@ -70,6 +70,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 public final class VillagerRetaliationHandler {
     private static final long NATURAL_TARGET_SCAN_INTERVAL_TICKS = 20L;
     private static final long CREEPER_AVOIDANCE_SCAN_INTERVAL_TICKS = 10L;
+    private static final long ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS = 40L;
     private static final double HOSTILE_HARASS_THROW_MAX_DISTANCE_SQR = 144.0D;
     private static final long ARMORER_SHIELD_AXE_BREAK_TICKS = 100L;
     private static final int ARMORER_COUNTER_SWINGS_AFTER_BLOCK = 1;
@@ -97,6 +98,7 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_CREEPER_AVOIDANCE_SCAN_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_HOSTILE_HARASS_THROW_TICKS = new HashMap<>();
     private static final Map<UUID, Long> ARMORER_SHIELD_DISABLED_UNTIL_TICKS = new HashMap<>();
     private static final Map<UUID, Integer> ARMORER_PENDING_COUNTER_SWINGS = new HashMap<>();
@@ -322,7 +324,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (villager.level() instanceof ServerLevel level) {
-            VillagerRetaliationVillagerBrainUtil.removeTradePreviewBehavior(level, villager);
+            VillagerRetaliationVillagerBrainUtil.removeTradePreviewBehaviorIfDue(level, villager);
         }
 
         if (shouldSuppressFleeingForRetaliation(villager)) {
@@ -339,12 +341,16 @@ public final class VillagerRetaliationHandler {
         if (villager.level().isClientSide) {
             return;
         }
+        ServerLevel serverLevel = (ServerLevel) villager.level();
 
         ensureArmorerSpawnShieldRoll(villager);
-        if (!VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
+        if (!VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                && VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
             VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager);
         }
-        ensureProfessionMainHand(villager);
+        if (shouldMaintainProfessionMainHand(villager, serverLevel.getGameTime())) {
+            ensureProfessionMainHand(villager);
+        }
 
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()) {
             clearAnger(villager);
@@ -1494,6 +1500,7 @@ public final class VillagerRetaliationHandler {
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
         NEXT_CREEPER_AVOIDANCE_SCAN_TICKS.remove(villager.getUUID());
+        NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.remove(villager.getUUID());
         NEXT_HOSTILE_HARASS_THROW_TICKS.remove(villager.getUUID());
         NEXT_IRON_GOLEM_REPAIR_TICKS.remove(villager.getUUID());
         WAVERING_UNARMED_COUNTERS.keySet().removeIf(key -> key.villagerId().equals(villager.getUUID()));
@@ -1556,6 +1563,23 @@ public final class VillagerRetaliationHandler {
         }
 
         nextScanTicks.put(villagerId, gameTime + Math.max(1L, intervalTicks));
+        return true;
+    }
+
+    private static boolean shouldMaintainProfessionMainHand(Villager villager, long gameTime) {
+        UUID villagerId = villager.getUUID();
+        Long nextCheck = NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.get(villagerId);
+        if (nextCheck == null) {
+            long firstCheck = gameTime + scanStagger(villagerId, ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS);
+            if (firstCheck > gameTime) {
+                NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.put(villagerId, firstCheck);
+                return false;
+            }
+        } else if (gameTime < nextCheck) {
+            return false;
+        }
+
+        NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.put(villagerId, gameTime + ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS);
         return true;
     }
 
