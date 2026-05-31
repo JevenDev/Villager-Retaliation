@@ -159,7 +159,11 @@ public final class ForcedDialogueService {
         if (!ForcedDialogueContainers.isEligibleWatchedContainer(state, click.lootTable())) {
             return;
         }
-        PacketDistributor.sendToPlayer(player, new GeneratedContainerTooltipPayload(event.getContainer().containerId, true));
+        PacketDistributor.sendToPlayer(
+                player,
+                new GeneratedContainerTooltipPayload(
+                        event.getContainer().containerId,
+                        ForcedDialogueContainers.hasGeneratedLootTable(click.lootTable())));
 
         int itemCount = ForcedDialogueContainers.countItems(event.getContainer());
         ContainerSnapshot snapshot = new ContainerSnapshot(

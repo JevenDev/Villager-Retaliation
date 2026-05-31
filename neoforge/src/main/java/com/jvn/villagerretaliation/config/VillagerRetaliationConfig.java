@@ -324,7 +324,7 @@ public final class VillagerRetaliationConfig {
                 .translation("villagerretaliation.configuration.dialogue.containerForcedDialogueTrigger")
                 .defineEnum("containerForcedDialogueTrigger", ContainerForcedDialogueTrigger.OPENING);
         CONTAINER_WATCH_MODE = BUILDER
-                .comment("Which containers can trigger watched-container dialogue: GENERATED_LOOT_ONLY only watches containers with remembered loot tables, ALL_WATCHED_CONTAINERS also watches chests, barrels, and shulker boxes without loot tables.")
+                .comment("Which containers can trigger watched-container dialogue: GENERATED_LOOT_ONLY only watches containers with remembered loot tables, ALL_WATCHED_CONTAINERS also watches blocks in #villagerretaliation:watched_containers without loot tables.")
                 .translation("villagerretaliation.configuration.dialogue.containerWatchMode")
                 .defineEnum("containerWatchMode", ContainerWatchMode.GENERATED_LOOT_ONLY);
         DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS = BUILDER.comment("Minimum Minecraft day changes between positive dialogue reputation gains for the same player and villager.")

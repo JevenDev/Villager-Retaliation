@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.config.ContainerWatchMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.util.VillagerRetaliationTags;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -33,6 +34,10 @@ final class ForcedDialogueContainers {
         }
         return lootTable != null
                 || VillagerRetaliationConfig.CONTAINER_WATCH_MODE.get() == ContainerWatchMode.ALL_WATCHED_CONTAINERS;
+    }
+
+    static boolean hasGeneratedLootTable(ResourceLocation lootTable) {
+        return lootTable != null;
     }
 
     static ResourceLocation generatedLootTable(ServerLevel level, BlockPos pos) {
@@ -205,7 +210,8 @@ final class ForcedDialogueContainers {
     }
 
     private static boolean isWatchedContainer(BlockState state) {
-        return state.getBlock() instanceof AbstractChestBlock<?>
+        return state.is(VillagerRetaliationTags.Blocks.WATCHED_CONTAINERS)
+                || state.getBlock() instanceof AbstractChestBlock<?>
                 || state.getBlock() instanceof BarrelBlock
                 || state.getBlock() instanceof ShulkerBoxBlock;
     }
