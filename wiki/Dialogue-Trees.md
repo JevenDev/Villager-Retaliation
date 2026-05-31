@@ -6,7 +6,10 @@ Ambient chatter still belongs in `dialogue/<locale>/`. Narrative scenes should u
 
 ```text
 data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
+data/<namespace>/dialogue_trees/<locale>/quests/<questline>/<quest_id>.json
 ```
+
+Use the second path for quest-owned scenes. Trees under `dialogue_trees/<locale>/quests/` are quest-scoped: local quest conditions and quest actions can inherit the tree id as the default quest id.
 
 ## Minimal Shape
 
@@ -17,17 +20,10 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
     "title": "Lost Civilization Intro",
     "description": "Cartographer quest offer and follow-up scene."
   },
-  "metadata": {
-    "topic": "ancient_city",
-    "tags": ["content.dialogue", "dialogue.scene", "quest.linked", "questline.lost_civilization", "scope.quest_scene"],
-    "questline": "lost_civilization",
-    "quest": "example:tales_of_a_lost_civilization"
-  },
   "entries": [
     {
       "id": "offer",
       "label": "Lost Civilization",
-      "professions": ["minecraft:cartographer"],
       "request": "story",
       "order": 18,
       "conditions": [
@@ -67,13 +63,13 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
 }
 ```
 
-Because this tree declares `metadata.quest`, local quest conditions and quest actions inherit `example:tales_of_a_lost_civilization`. Add an explicit `quest` or `quest_id` only when a condition or action intentionally references a different quest.
+Because this example is a quest-scoped tree, local quest conditions and quest actions inherit the tree id. If the tree id is different from the owning quest id, add `metadata.quest`. Add an explicit `quest` or `quest_id` only when a condition or action intentionally references a different quest.
 
 ## Entries
 
 `entries` generate Talk menu options. A tree can have several entries pointing at different starting nodes, which is useful for quest offer, reminder, and turn-in states.
 
-When a quest file declares `links.dialogue_tree`, `links.offer`, `links.reminder`, or `links.turn_in`, those values should point at this tree id and these entry ids exactly. The current runtime still enters the scene through the tree entry and quest action path, but the validator now treats the quest links as the authoring contract.
+When a quest file declares `links.dialogue_tree`, `links.offer`, `links.reminder`, or `links.turn_in`, those values should point at this tree id and these entry ids exactly. Links are optional authoring metadata; runtime enters the scene through the tree entry and quest action path.
 
 Common fields:
 
@@ -108,7 +104,7 @@ Supported action types:
 
 | Type | Fields |
 | --- | --- |
-| `quest` / `quest_action` | Optional `quest`, `quest_id`, or `id` when `metadata.quest` supplies the owning quest; `action`: `start`/`accept`/`begin`, `remind`/`details`, `turn_in`/`complete`/`claim`, or `abandon`/`drop`/`cancel`; optional status-keyed `lines`. |
+| `quest` / `quest_action` | Optional `quest`, `quest_id`, or `id` when a quest-scoped path or `metadata.quest` supplies the owning quest; `action`: `start`/`accept`/`begin`, `remind`/`details`, `turn_in`/`complete`/`claim`, or `abandon`/`drop`/`cancel`; optional status-keyed `lines`. |
 | `experience` / `xp` | `amount` or `experience` |
 | `reputation` / `rep` | `amount` or `reputation` |
 | `gossip` / `gossip_reputation` | `amount`, `gossip`, or `gossip_reputation` |

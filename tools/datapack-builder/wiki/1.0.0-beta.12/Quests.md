@@ -6,11 +6,14 @@ Quests live under:
 
 ```text
 data/<namespace>/quests/<quest_id>.json
+data/<namespace>/quests/<questline>/<quest_id>.json
 ```
 
 Each quest owns its display text, offer gates, target rules, explicit objectives, lifecycle limits, rewards, and optional tracker text. Branching offer, reminder, turn-in, and abandon conversations should live in matching [Dialogue Tree JSON](Dialogue-Trees.md) files.
 
-Quest `links` are pack-author-facing metadata and validation hooks. They are parsed by the loader and checked by the validator, but the current runtime still uses dialogue-tree quest actions and quest trigger actions to actually start, remind, turn in, abandon, or force quest dialogue.
+For new quest/dialogue content, prefer the module layout from [Dialogue And Quests](Dialogue-And-Quests.md): put the quest under `quests/<questline>/<quest>.json` and put its branching scene under `dialogue_trees/<locale>/quests/<questline>/<quest>.json`.
+
+Quest `links` are optional pack-author-facing metadata and validation hooks. They are parsed by the loader and checked by the validator when present, but runtime uses dialogue-tree quest actions and quest trigger actions to actually start, remind, turn in, abandon, or force quest dialogue.
 
 Quest JSON is canonical in beta.12. Older advancement-style `criteria` / `requirements` blocks and alias fields are not loaded by the quest system.
 
@@ -49,7 +52,7 @@ Quest JSON is canonical in beta.12. Older advancement-style `criteria` / `requir
 }
 ```
 
-Add a `metadata` block and `links` block when the quest owns dialogue surfaces:
+Optionally add a `metadata` block and `links` block when the quest owns dialogue surfaces and you want the quest file to document them explicitly:
 
 ```json
 {
@@ -75,7 +78,7 @@ Add a `metadata` block and `links` block when the quest owns dialogue surfaces:
 }
 ```
 
-`links.offer`, `links.reminder`, and `links.turn_in` must match real `entries[].id` values in the linked dialogue tree. `links.forced_dialogue` must list real forced-dialogue entry ids, not file names.
+When present, `links.offer`, `links.reminder`, and `links.turn_in` must match real `entries[].id` values in the linked dialogue tree. `links.forced_dialogue` must list real forced-dialogue entry ids, not file names.
 
 `offer.professions` is always an array, and `offer.skills` is an object keyed by villager skill id. Skill requirements use `{ "min": number }` so future skill gates can grow without changing shape.
 

@@ -3163,7 +3163,7 @@ function inferPackVersionFromFiles(files) {
   ));
   if (hasBeta12DialogueField) return "1.0.0-beta.12";
   const hasBeta11Path = paths.some((path) => (
-    /^data\/villagerretaliation\/forced_dialogue\/.+\.json$/.test(path)
+    /^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)
     || /^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)
     || /^data\/villagerretaliation\/villager_names\/preset_names\.json$/.test(path)
     || /^data\/[^/]+\/story_(structures|biomes)\/.+\.json$/.test(path)
@@ -6162,7 +6162,7 @@ function previewIssueEntries(path) {
         .map(({ entry }) => ({ section: "dialogue", kind, entry }))
     ));
   }
-  if (/^data\/villagerretaliation\/forced_dialogue\/.+\.json$/.test(path)) {
+  if (/^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)) {
     return state.forcedDialogue.entries
       .filter((entry) => (entry.__sourcePath || forcedDialoguePath()) === path)
       .map((entry) => ({ section: "forcedDialogue", kind: "entries", entry }));
@@ -8752,7 +8752,7 @@ function applyEditedFile(path, source) {
     return true;
   }
 
-  const forcedDialogueMatch = path.match(/^data\/villagerretaliation\/forced_dialogue\/(.+)\.json$/);
+  const forcedDialogueMatch = path.match(/^data\/[^/]+\/forced_dialogue\/(.+)\.json$/);
   if (forcedDialogueMatch) {
     const json = parseEditedJson(source);
     if (!json) return false;
@@ -8878,7 +8878,7 @@ function replaceDialogueFile(path, json) {
 }
 
 function replaceForcedDialogueFile(path, json) {
-  const forcedDialogueMatch = path.match(/^data\/villagerretaliation\/forced_dialogue\/(.+)\.json$/);
+  const forcedDialogueMatch = path.match(/^data\/[^/]+\/forced_dialogue\/(.+)\.json$/);
   state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
   state.forcedDialogue.entries = state.forcedDialogue.entries.filter((entry) => (entry.__sourcePath || forcedDialoguePath()) !== path);
   state.forcedDialogue.entries.push(...cleanArray(normalizeForcedDialogueEntries(json)).map((entry) => ({ ...entry, __sourcePath: path })));
@@ -8979,7 +8979,7 @@ function isTextPath(path) {
 
 function importedKnownKind(path) {
   if (/^data\/villagerretaliation\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
-  if (/^data\/villagerretaliation\/forced_dialogue\/.+\.json$/.test(path)) return "forced_dialogue";
+  if (/^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)) return "forced_dialogue";
   if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
   if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
   if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
@@ -9153,7 +9153,7 @@ function ingestKnownJson(path, source) {
     return true;
   }
 
-  const forcedDialogueMatch = path.match(/^data\/villagerretaliation\/forced_dialogue\/(.+)\.json$/);
+  const forcedDialogueMatch = path.match(/^data\/[^/]+\/forced_dialogue\/(.+)\.json$/);
   if (forcedDialogueMatch) {
     state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
     mergeArray("forcedDialogue", "entries", normalizeForcedDialogueEntries(json), path);

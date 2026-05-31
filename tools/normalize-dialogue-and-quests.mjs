@@ -14,6 +14,7 @@ const roots = {
 const dialogueTreeIds = new Map();
 const dialogueTreeEntries = new Map();
 const forcedDialogueQuestIds = new Map();
+const forcedDialogueModuleIds = new Map();
 
 await indexDialogueTrees();
 await indexForcedDialogue();
@@ -29,24 +30,26 @@ async function indexDialogueTrees() {
       continue;
     }
     const basename = path.basename(file, ".json");
-    const id = typeof data.id === "string" && data.id.trim() ? data.id.trim() : basename;
-    dialogueTreeIds.set(basename, id);
-    dialogueTreeEntries.set(
-      basename,
-      Array.isArray(data.entries)
-        ? data.entries
-            .filter((entry) => isObject(entry) && typeof entry.id === "string" && entry.id.trim())
-            .map((entry) => entry.id.trim())
-        : []
-    );
+    const moduleKey = dialogueTreeModuleKey(file);
+    const id = typeof data.id === "string" && data.id.trim() ? data.id.trim() : `villagerretaliation:${moduleKey}`;
+    const entries = Array.isArray(data.entries)
+      ? data.entries
+          .filter((entry) => isObject(entry) && typeof entry.id === "string" && entry.id.trim())
+          .map((entry) => entry.id.trim())
+      : [];
+    for (const key of new Set([basename, moduleKey].filter(Boolean))) {
+      dialogueTreeIds.set(key, id);
+      dialogueTreeEntries.set(key, entries);
+    }
   }
 }
 
 async function indexForcedDialogue() {
   for (const file of await jsonFiles(roots.forcedDialogue)) {
     const relativePath = path.relative(roots.forcedDialogue, file).replaceAll("\\", "/");
-    const questline = relativePath.startsWith("quest/") ? cleanToken(path.basename(file, ".json")) : "";
-    if (!questline) {
+    const moduleKey = forcedDialogueModuleKey(file);
+    const questline = forcedDialogueQuestline(relativePath);
+    if (!questline && !moduleKey) {
       continue;
     }
 
@@ -55,7 +58,12 @@ async function indexForcedDialogue() {
       .filter((entry) => isObject(entry) && typeof entry.id === "string" && entry.id.trim())
       .map((entry) => entry.id.trim());
     if (entryIds.length > 0) {
-      forcedDialogueQuestIds.set(questline, entryIds);
+      if (questline) {
+        forcedDialogueQuestIds.set(questline, entryIds);
+      }
+      if (moduleKey) {
+        forcedDialogueModuleIds.set(moduleKey, entryIds);
+      }
     }
   }
 }
@@ -90,20 +98,22 @@ async function normalizeDialogueTrees() {
     const segments = relativePath.split("/");
     const stem = cleanStem(path.basename(file, ".json"));
     const topic = [segments.slice(0, -1).map(cleanToken).filter(Boolean).join("."), stem].filter(Boolean).join(".");
-    const existingMetadata = normalizeMetadata(data.metadata);
-    const tags = ["content.dialogue", "dialogue.scene"];
-    if (segments[0] === "quests") {
-      tags.push("scope.quest_scene", "quest.linked");
+    if (isObject(data.metadata)) {
+      const existingMetadata = normalizeMetadata(data.metadata);
+      const tags = ["content.dialogue", "dialogue.scene"];
+      if (segments[0] === "quests") {
+        tags.push("scope.quest_scene", "quest.linked");
+      }
+      if (existingMetadata.questline) {
+        tags.push(`questline.${existingMetadata.questline}`);
+      }
+      data.metadata = mergeMetadata(data.metadata, {
+        topic,
+        questline: existingMetadata.questline,
+        quest: existingMetadata.quest,
+        tags
+      });
     }
-    if (existingMetadata.questline) {
-      tags.push(`questline.${existingMetadata.questline}`);
-    }
-    data.metadata = mergeMetadata(data.metadata, {
-      topic,
-      questline: existingMetadata.questline,
-      quest: existingMetadata.quest,
-      tags
-    });
     await writeJson(file, data);
   }
 }
@@ -118,16 +128,18 @@ async function normalizeForcedDialogue() {
     const relativePath = path.relative(roots.forcedDialogue, file).replaceAll("\\", "/");
     const segments = relativePath.split("/");
     const stem = cleanStem(path.basename(file, ".json"));
-    const questline = segments[0] === "quest" ? cleanToken(path.basename(file, ".json")) : "";
+    const questline = forcedDialogueQuestline(relativePath);
     const tags = ["content.dialogue", "dialogue.forced"];
     if (questline) {
       tags.push("quest.linked", `questline.${questline}`);
     }
-    data.metadata = mergeMetadata(data.metadata, {
-      topic: [segments.slice(0, -1).map(cleanToken).filter(Boolean).join("."), stem].filter(Boolean).join("."),
-      questline,
-      tags
-    });
+    if (isObject(data.metadata)) {
+      data.metadata = mergeMetadata(data.metadata, {
+        topic: [segments.slice(0, -1).map(cleanToken).filter(Boolean).join("."), stem].filter(Boolean).join("."),
+        questline,
+        tags
+      });
+    }
     await writeJson(file, data);
   }
 }
@@ -140,39 +152,42 @@ async function normalizeQuests() {
     }
 
     const basename = path.basename(file, ".json");
-    const questline = cleanToken(typeof data.questline === "string" ? data.questline : basename);
-    const questId = typeof data.id === "string" && data.id.trim() ? data.id.trim() : `villagerretaliation:${basename}`;
-    const linkedTreeId = dialogueTreeIds.get(basename) ?? "";
-    const linkedTreeEntries = dialogueTreeEntries.get(basename) ?? [];
-    const forcedIds = forcedDialogueQuestIds.get(questline) ?? [];
+    const moduleKey = questModuleKey(file);
+    const questline = cleanToken(typeof data.questline === "string" ? data.questline : moduleKey.split("/")[0] || basename);
+    const questId = typeof data.id === "string" && data.id.trim() ? data.id.trim() : `villagerretaliation:${moduleKey || basename}`;
+    const linkedTreeId = dialogueTreeIds.get(moduleKey) ?? dialogueTreeIds.get(basename) ?? "";
+    const linkedTreeEntries = dialogueTreeEntries.get(moduleKey) ?? dialogueTreeEntries.get(basename) ?? [];
+    const forcedIds = mergeStringLists(forcedDialogueModuleIds.get(moduleKey) ?? [], forcedDialogueQuestIds.get(questline) ?? []);
 
-    data.metadata = mergeMetadata(data.metadata, {
-      topic: ["quests", questline].filter(Boolean).join("."),
-      questline,
-      quest: questId,
-      tags: ["content.quest", "dialogue.linked", `questline.${questline}`]
-    });
+    if (isObject(data.metadata)) {
+      data.metadata = mergeMetadata(data.metadata, {
+        topic: ["quests", questline].filter(Boolean).join("."),
+        questline,
+        quest: questId,
+        tags: ["content.quest", "dialogue.linked", `questline.${questline}`]
+      });
+    }
 
-    const links = isObject(data.links) ? { ...data.links } : {};
-    if (linkedTreeId) {
-      links.dialogue_tree = typeof links.dialogue_tree === "string" && links.dialogue_tree.trim()
-        ? links.dialogue_tree
-        : linkedTreeId;
-    }
-    if (linkedTreeEntries.includes("offer") && !stringValue(links.offer)) {
-      links.offer = "offer";
-    }
-    if (linkedTreeEntries.includes("reminder") && !stringValue(links.reminder)) {
-      links.reminder = "reminder";
-    }
-    if (linkedTreeEntries.includes("turn_in") && !stringValue(links.turn_in)) {
-      links.turn_in = "turn_in";
-    }
-    const mergedForcedIds = mergeStringLists(links.forced_dialogue, forcedIds);
-    if (mergedForcedIds.length > 0) {
-      links.forced_dialogue = mergedForcedIds;
-    }
-    if (Object.keys(links).length > 0) {
+    if (isObject(data.links)) {
+      const links = { ...data.links };
+      if (linkedTreeId) {
+        links.dialogue_tree = typeof links.dialogue_tree === "string" && links.dialogue_tree.trim()
+          ? links.dialogue_tree
+          : linkedTreeId;
+      }
+      if (linkedTreeEntries.includes("offer") && !stringValue(links.offer)) {
+        links.offer = "offer";
+      }
+      if (linkedTreeEntries.includes("reminder") && !stringValue(links.reminder)) {
+        links.reminder = "reminder";
+      }
+      if (linkedTreeEntries.includes("turn_in") && !stringValue(links.turn_in)) {
+        links.turn_in = "turn_in";
+      }
+      const mergedForcedIds = mergeStringLists(links.forced_dialogue, forcedIds);
+      if (mergedForcedIds.length > 0) {
+        links.forced_dialogue = mergedForcedIds;
+      }
       data.links = sortObjectKeys(links, ["dialogue_tree", "offer", "reminder", "turn_in", "forced_dialogue"]);
     }
 
@@ -188,6 +203,42 @@ function entriesFor(data) {
     return data.entries.filter((entry) => isObject(entry));
   }
   return [data];
+}
+
+function questModuleKey(file) {
+  return moduleKeyFromRoot(file, roots.quests);
+}
+
+function dialogueTreeModuleKey(file) {
+  const key = moduleKeyFromRoot(file, roots.dialogueTrees);
+  return key.startsWith("quests/") ? key.slice("quests/".length) : key;
+}
+
+function forcedDialogueModuleKey(file) {
+  const key = moduleKeyFromRoot(file, roots.forcedDialogue);
+  if (key.startsWith("quests/")) {
+    return key.slice("quests/".length);
+  }
+  if (key.startsWith("quest/")) {
+    return key.slice("quest/".length);
+  }
+  return "";
+}
+
+function forcedDialogueQuestline(relativePath) {
+  const segments = relativePath.split("/");
+  if (segments[0] === "quest") {
+    return cleanToken(path.basename(relativePath, ".json"));
+  }
+  if (segments[0] === "quests") {
+    return cleanToken(segments[1] || path.basename(relativePath, ".json"));
+  }
+  return "";
+}
+
+function moduleKeyFromRoot(file, rootDirectory) {
+  const relativePath = path.relative(rootDirectory, file).replaceAll("\\", "/");
+  return relativePath.endsWith(".json") ? relativePath.slice(0, -".json".length) : relativePath;
 }
 
 function scopeInfo(relativeSegments, section) {

@@ -143,7 +143,7 @@ public final class DialogueTreeResources {
             return null;
         }
         JsonObject display = DatapackJsonReader.readObject(root, "display");
-        ResourceLocation defaultQuestId = defaultQuestId(location, root, null);
+        ResourceLocation defaultQuestId = defaultQuestId(location, root, defaultQuestIdFromQuestPath(location, id));
         Map<String, DialogueTreeDefinition.Node> nodes = readNodes(location, root, defaultQuestId);
         if (nodes.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "tree must define at least one node.");
@@ -342,12 +342,39 @@ public final class DialogueTreeResources {
     }
 
     private static ResourceLocation fallbackTreeId(ResourceLocation location, String locale) {
+        ResourceLocation questPathId = questPathId(location);
+        if (questPathId != null) {
+            return questPathId;
+        }
         String root = RESOURCE_ROOT + locale + "/";
         String path = location.getPath();
         if (!path.startsWith(root) || !path.endsWith(".json")) {
             return null;
         }
         String idPath = path.substring(root.length(), path.length() - ".json".length());
+        return idPath.isBlank() ? null : ResourceLocation.fromNamespaceAndPath(location.getNamespace(), idPath);
+    }
+
+    private static ResourceLocation defaultQuestIdFromQuestPath(ResourceLocation location, ResourceLocation treeId) {
+        return questPathId(location) == null ? null : treeId;
+    }
+
+    private static ResourceLocation questPathId(ResourceLocation location) {
+        String path = location.getPath();
+        if (!path.startsWith(RESOURCE_ROOT) || !path.endsWith(".json")) {
+            return null;
+        }
+        String remainder = path.substring(RESOURCE_ROOT.length());
+        int localeEnd = remainder.indexOf('/');
+        if (localeEnd < 0 || localeEnd + 1 >= remainder.length()) {
+            return null;
+        }
+        String localizedPath = remainder.substring(localeEnd + 1);
+        String questPrefix = "quests/";
+        if (!localizedPath.startsWith(questPrefix)) {
+            return null;
+        }
+        String idPath = localizedPath.substring(questPrefix.length(), localizedPath.length() - ".json".length());
         return idPath.isBlank() ? null : ResourceLocation.fromNamespaceAndPath(location.getNamespace(), idPath);
     }
 

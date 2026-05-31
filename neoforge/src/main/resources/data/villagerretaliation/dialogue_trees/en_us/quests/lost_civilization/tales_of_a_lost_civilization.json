@@ -4,18 +4,6 @@
     "description": "A branching cartographer conversation that starts, reminds, and turns in the Ancient City quest.",
     "title": "Tales of a Lost Civilization"
   },
-  "metadata": {
-    "quest": "villagerretaliation:tales_of_a_lost_civilization",
-    "questline": "lost_civilization",
-    "tags": [
-      "content.dialogue",
-      "dialogue.scene",
-      "quest.linked",
-      "questline.lost_civilization",
-      "scope.quest_scene"
-    ],
-    "topic": "ancient_city"
-  },
   "entries": [
     {
       "id": "offer",
@@ -24,21 +12,9 @@
       "order": -20,
       "conditions": [
         {
-          "min": "journeyman",
-          "type": "villager_level"
-        },
-        {
-          "min": 50,
-          "skill": "cartography",
-          "type": "skill"
-        },
-        {
           "state": "available",
           "type": "quest"
         }
-      ],
-      "professions": [
-        "minecraft:cartographer"
       ],
       "show_for_babies": false,
       "start": "offer"
@@ -54,9 +30,6 @@
           "type": "quest"
         }
       ],
-      "professions": [
-        "minecraft:cartographer"
-      ],
       "show_for_babies": false,
       "start": "active_menu"
     },
@@ -70,9 +43,6 @@
           "state": "ready",
           "type": "quest"
         }
-      ],
-      "professions": [
-        "minecraft:cartographer"
       ],
       "show_for_babies": false,
       "start": "turn_in"

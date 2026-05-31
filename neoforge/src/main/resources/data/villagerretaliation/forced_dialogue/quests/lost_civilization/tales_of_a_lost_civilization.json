@@ -1,14 +1,4 @@
 {
-  "metadata": {
-    "questline": "lost_civilization",
-    "tags": [
-      "content.dialogue",
-      "dialogue.forced",
-      "quest.linked",
-      "questline.lost_civilization"
-    ],
-    "topic": "quest.lost_civilization.storm_reminder"
-  },
   "entries": [
     {
       "options": [

@@ -78,7 +78,7 @@ Selection is entry-first: filters and `chance` are checked, `weight` chooses a m
 
 ## Quests
 
-Quest files live in `data/<namespace>/quests/`. They combine explicit display, offer, target, objective, reward, tracker, lifecycle rule, and trigger sections. Dialogue trees run quest actions and show or hide entries with `conditions` using `type: "quest"`.
+Quest files live in `data/<namespace>/quests/`. They combine explicit display, offer, target, objective, reward, tracker, lifecycle rule, and trigger sections. For quest-owned content, prefer `data/<namespace>/quests/<questline>/<quest>.json` and mirror that path under dialogue trees, ambient dialogue, and forced dialogue.
 
 Quest `triggers` provide the reusable event foundation for later quest features. A trigger can watch quest lifecycle events, active-player ticks, or proximity to the starting villager, then stack existing dialogue conditions such as time, weather, memory, reputation, skill, and quest state before running notification, tracker, or `trigger: "quest"` forced-dialogue actions.
 
@@ -86,7 +86,7 @@ See [Quest JSON](Quests.md) for the first supported quest schema and the built-i
 
 ## Dialogue Trees
 
-Dialogue tree files live in `data/<namespace>/dialogue_trees/<locale>/`. Use them for authored branching scenes, quest offers, reminders, turn-ins, and future questline chapters. Ambient reusable villager lines still live in `data/villagerretaliation/dialogue/<locale>/`.
+Dialogue tree files live in `data/<namespace>/dialogue_trees/<locale>/`. Use them for authored branching scenes, quest offers, reminders, turn-ins, and future questline chapters. Quest-owned trees under `dialogue_trees/<locale>/quests/` can infer the owning quest id for local quest conditions and actions. Ambient reusable villager lines still live in `data/villagerretaliation/dialogue/<locale>/`.
 
 See [Dialogue Tree JSON](Dialogue-Trees.md) for entries, nodes, responses, actions, and quest action status lines.
 
@@ -324,7 +324,7 @@ For the full field reference, trigger behavior, and examples, see [Forced Dialog
 Forced dialogue files live under:
 
 ```text
-data/villagerretaliation/forced_dialogue/*.json
+data/<namespace>/forced_dialogue/*.json
 ```
 
 They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, `container_opened`, fired when the server config watches container opening instead of theft, `container_broken`, fired when a player breaks a watched container, `retaliation_started`, fired when a villager acquires the current player as a retaliation target, `player_item_proximity`, fired when a nearby visible player carries a matching held or worn item, and `trade_refresh`, used internally by the beta.12 trade-refresh button to load data-driven forced-dialogue option sets. The default config watches opening and breaking of generated containers, applies a large break reputation penalty plus additional loss per generated item dropped, and the built-in default pack targets vanilla village chest loot tables. Built-in opening prompts are reputation-gated: neutral/suspicious players get the standard opening warning, hostile/despised/feared players get harsher responses, and trusted or better players can receive a reputation-scaled vouch allow/deny chat outcome before any locked opening prompt starts.

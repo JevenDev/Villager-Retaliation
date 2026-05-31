@@ -9,6 +9,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 - [Pack Format Changes](Pack-Format-Changes.md) - pack-facing added, modified, deprecated, and removed fields, tags, triggers, paths, and manual retargeting notes.
 - [JSON Reference](JSON-Reference.md) - shared conventions, text/line variation rules, enum values, filters, ids, weights, colors, and common pitfalls.
 - [Dialogue JSON](Dialogue.md) - conversation options, dialogue lines, line variations, openings, closings, pacify lines, keyed messages, localization overlays, and story placeholders.
+- [Dialogue And Quests](Dialogue-And-Quests.md) - the module layout and quest-scoped shorthand for keeping quest, dialogue tree, ambient text, and forced scenes together.
 - [Quest JSON](Quests.md) - quest lifecycle rules, repeat limits, abandonment policies, rewards, tracker text, and event triggers.
 - [Forced Dialogue JSON](Forced-Dialogue.md) - event-driven locked dialogue moments, including witnessed container theft outcomes and aggro choices.
 - [Dialogue Requests](Dialogue-Requests.md) - every current dialogue `request` value, with simple and expanded dropdown examples.
@@ -30,8 +31,9 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 | Area | Pack type | Root path |
 | --- | --- | --- |
 | Dialogue | Datapack | `data/villagerretaliation/dialogue/<locale>/` |
+| Quests | Datapack | `data/<namespace>/quests/` |
 | Dialogue mood and Social Attribute filters | Datapack | `data/villagerretaliation/dialogue/<locale>/` |
-| Forced dialogue and chat event lines | Datapack | `data/villagerretaliation/forced_dialogue/` |
+| Forced dialogue and chat event lines | Datapack | `data/<namespace>/forced_dialogue/` |
 | Notifications and world text | Datapack | `data/villagerretaliation/notifications/<locale>/` |
 | Interaction GUI and reputation UI text | Resource pack | `assets/villagerretaliation/lang/<locale>.json` |
 | Gifts and rewards | Datapack | `data/villagerretaliation/gifts/` |

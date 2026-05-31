@@ -4,25 +4,6 @@
     "description": "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard.",
     "title": "Tales of a Lost Civilization"
   },
-  "metadata": {
-    "quest": "villagerretaliation:tales_of_a_lost_civilization",
-    "questline": "lost_civilization",
-    "tags": [
-      "content.quest",
-      "dialogue.linked",
-      "questline.lost_civilization"
-    ],
-    "topic": "quests.lost_civilization"
-  },
-  "links": {
-    "dialogue_tree": "villagerretaliation:tales_of_a_lost_civilization",
-    "forced_dialogue": [
-      "quest.lost_civilization.storm_reminder"
-    ],
-    "offer": "offer",
-    "reminder": "reminder",
-    "turn_in": "turn_in"
-  },
   "questline": "lost_civilization",
   "offer": {
     "min_villager_level": "journeyman",

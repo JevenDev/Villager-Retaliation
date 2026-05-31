@@ -4,11 +4,12 @@ Forced dialogue JSON controls event-driven conversation moments and event-driven
 
 ## Paths
 
-Forced dialogue files must be in the `villagerretaliation` namespace:
+Forced dialogue files can live in any datapack namespace:
 
 ```text
 data/villagerretaliation/forced_dialogue/default.json
 data/villagerretaliation/forced_dialogue/my_pack_events.json
+data/example/forced_dialogue/quests/lost_civilization/tales.json
 ```
 
 Use a unique file name for addon entries. A datapack file at `data/villagerretaliation/forced_dialogue/default.json` replaces the mod's built-in default file at the Minecraft resource layer, so only use that exact path when you intentionally want a full-file override.
@@ -17,7 +18,7 @@ Forced dialogue text is server-side datapack text. Button labels and villager re
 
 The built-in trade-refresh UI also uses forced-dialogue data for its locked follow-up conversations. Those entries live under the same `forced_dialogue` path and use `trigger: "trade_refresh"`, but they are selected by the trade-refresh service rather than by a world event witness search.
 
-Quest triggers can also call forced-dialogue entries. Use `trigger: "quest"` on the forced-dialogue entry, then reference its `id` from a quest trigger action. The quest decides when the scene is eligible, such as proximity, night, thunder, completion, or another condition stack; the forced-dialogue entry decides what the villager says and which locked options appear.
+Quest triggers can also call forced-dialogue entries. Use `trigger: "quest"` on the forced-dialogue entry, then reference its `id` from a quest trigger action. The quest decides when the scene is eligible, such as proximity, night, thunder, completion, or another condition stack; the forced-dialogue entry decides what the villager says and which locked options appear. For quest-owned scenes, prefer `forced_dialogue/quests/<questline>/<quest>.json`.
 
 ## Top-Level Shape
 
@@ -266,7 +267,7 @@ If a `container_theft` entry does not define `leave_option` or `leave_options`, 
 | `take_items` | object | none | Removes a configured payment from the player's inventory before the option succeeds. |
 | `take_stolen_items` | boolean or object | none | For `container_theft`, removes the specific item stacks stolen from the source container before the option succeeds. |
 
-Use reputation filters on entries to swap the whole event by rank, or on options to change the choices available inside one event. For example, the built-in container opening prompts only catch neutral and suspicious players on opening, hostile/despised/feared players get harsher opening responses, and trusted or better players can open watched containers until they actually remove items.
+Use reputation filters on entries to swap the whole event by rank, or on options to change the choices available inside one event. For example, the built-in container opening prompts only catch neutral and suspicious players on opening, hostile/despised/feared players get harsher opening responses, and trusted or better players can get a nearby trusted villager to vouch for them instead of starting a locked confrontation.
 
 Use `conditions` on options for personality-aware or skill-aware choices. For example, a deception option can require a low-intellect witness:
 
@@ -485,7 +486,7 @@ Fires when a player opens a watched container and closes it with fewer items tha
 
 Fires when a player opens a watched container. This trigger is used when the server config's container forced-dialogue trigger is set to `OPENING`.
 
-The built-in default pack gates opening prompts by reputation: neutral and suspicious players are stopped with the standard warning before they can continue browsing, hostile/despised/feared players get more severe warnings, and trusted or better players can open watched village containers without an opening prompt. Taking items still triggers `container_theft` for every rank.
+The built-in default pack gates opening prompts by reputation: neutral and suspicious players are stopped with the standard warning before they can continue browsing, hostile/despised/feared players get more severe warnings, and trusted or better players can have a nearby trusted villager vouch for them. The vouch roll scales with exact reputation: an allowed vouch leaves the chest open, while a denied vouch closes it with a short chat line and no locked forced-dialogue prompt. Royalty always receives a deferential vouch on opening and bypasses forced-dialogue aggro while still losing reputation for theft or other bad choices. Taking items still triggers `container_theft` for every rank.
 
 Additional nearby witnesses can join an active container confrontation. Theft backups use `container_theft.backup_interjection`; opening-only backups use `container_opened.backup_interjection`. Like trade-refresh interjections, second and third speakers try `.second` and `.third` message-key suffixes before falling back to the base key. Each additional theft witness applies the matching forced-dialogue definition's witness consequences, including reputation and theft memory.
 

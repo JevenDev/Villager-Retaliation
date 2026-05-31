@@ -5,8 +5,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
@@ -37,6 +37,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class ForcedDialogueResources {
     private static final String RESOURCE_ROOT = "forced_dialogue";
+    private static final String DEFAULT_NAMESPACE = "villagerretaliation";
     private static final String LEAVE_OPTION_ID = "leave";
     private static final Set<String> ROOT_KEYS = Set.of(
             "entries", "notifications", "messages", "openings", "closings", "pacify",
@@ -132,8 +133,7 @@ public final class ForcedDialogueResources {
     private static List<ForcedDialogueDefinition> read(MinecraftServer server) {
         Map<String, ForcedDialogueDefinition> definitions = new LinkedHashMap<>();
         server.getResourceManager()
-                .listResources(RESOURCE_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
-                        && location.getPath().endsWith(".json"))
+                .listResources(RESOURCE_ROOT, location -> location.getPath().endsWith(".json"))
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
@@ -154,12 +154,13 @@ public final class ForcedDialogueResources {
                     "closings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
                     "pacify", "data/villagerretaliation/dialogue/<locale>/<file>.json"));
             DatapackDiagnostics.warnUnknownRootKeys(location, "forced dialogue", root, ROOT_KEYS);
+            ResourceLocation defaultQuestId = defaultQuestId(location, root, null);
             JsonArray entries = root.getAsJsonArray("entries");
             if (entries != null) {
                 int index = 0;
                 for (JsonElement element : entries) {
                     if (element.isJsonObject()) {
-                        readEntry(location, element.getAsJsonObject(), index)
+                        readEntry(location, element.getAsJsonObject(), index, defaultQuestId)
                                 .ifPresent(definition -> putDefinition(location, definitions, definition));
                     }
                     index++;
@@ -167,7 +168,7 @@ public final class ForcedDialogueResources {
                 return;
             }
 
-            readEntry(location, root, 0).ifPresent(definition -> putDefinition(location, definitions, definition));
+            readEntry(location, root, 0, defaultQuestId).ifPresent(definition -> putDefinition(location, definitions, definition));
         } catch (IOException | IllegalStateException | JsonParseException exception) {
             DatapackDiagnostics.warnSkippedFile(location, "forced dialogue", exception);
         }
@@ -183,9 +184,14 @@ public final class ForcedDialogueResources {
         }
     }
 
-    private static Optional<ForcedDialogueDefinition> readEntry(ResourceLocation location, JsonObject entry, int index) {
+    private static Optional<ForcedDialogueDefinition> readEntry(
+            ResourceLocation location,
+            JsonObject entry,
+            int index,
+            ResourceLocation defaultQuestId) {
         DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue", entryContext(entry, index), entry, ENTRY_KEYS);
         DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext(entry, index), entry);
+        ResourceLocation entryQuestId = defaultQuestId(location, entry, defaultQuestId);
         Optional<ForcedDialogueTrigger> trigger = readEnum(entry, "trigger", ForcedDialogueTrigger.class);
         if (trigger.isEmpty()) {
             trigger = readEnum(entry, "event", ForcedDialogueTrigger.class);
@@ -203,9 +209,9 @@ public final class ForcedDialogueResources {
             id = fallbackId(location, index);
         }
 
-        List<ForcedDialogueOption> leaveOptions = readLeaveOptions(location, entry, trigger.get());
+        List<ForcedDialogueOption> leaveOptions = readLeaveOptions(location, entry, trigger.get(), entryQuestId);
         ForcedDialogueOption leaveOption = leaveOptions.stream().findFirst().orElse(defaultLeaveOption());
-        List<ForcedDialogueOption> options = readOptions(location, entry, leaveOption);
+        List<ForcedDialogueOption> options = readOptions(location, entry, leaveOption, entryQuestId);
         String leaveOptionId = leaveOption.id();
         leaveOption = options.stream()
                 .filter(option -> option.id().equals(leaveOptionId))
@@ -338,7 +344,11 @@ public final class ForcedDialogueResources {
                 .toList();
     }
 
-    private static List<ForcedDialogueOption> readOptions(ResourceLocation location, JsonObject entry, ForcedDialogueOption leaveOption) {
+    private static List<ForcedDialogueOption> readOptions(
+            ResourceLocation location,
+            JsonObject entry,
+            ForcedDialogueOption leaveOption,
+            ResourceLocation defaultQuestId) {
         JsonArray entries = entry.getAsJsonArray("options");
         if (entries == null) {
             return List.of(leaveOption);
@@ -361,7 +371,7 @@ public final class ForcedDialogueResources {
                 index++;
                 continue;
             }
-            options.add(readOption(location, optionContext(option, index), option, id, label, index));
+            options.add(readOption(location, optionContext(option, index), option, id, label, index, defaultQuestId));
             index++;
         }
         if (options.stream().noneMatch(option -> option.id().equals(leaveOption.id()))) {
@@ -370,7 +380,11 @@ public final class ForcedDialogueResources {
         return List.copyOf(options);
     }
 
-    private static List<ForcedDialogueOption> readLeaveOptions(ResourceLocation location, JsonObject entry, ForcedDialogueTrigger trigger) {
+    private static List<ForcedDialogueOption> readLeaveOptions(
+            ResourceLocation location,
+            JsonObject entry,
+            ForcedDialogueTrigger trigger,
+            ResourceLocation defaultQuestId) {
         JsonArray options = entry.getAsJsonArray("leave_options");
         if (options != null) {
             List<ForcedDialogueOption> leaveOptions = new ArrayList<>();
@@ -382,7 +396,14 @@ public final class ForcedDialogueResources {
                         DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue leave option", optionContext(option, index), option, OPTION_KEYS);
                     }
                     String label = readString(option, "label");
-                    leaveOptions.add(readOption(location, optionContext(option, index), option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000 + index));
+                    leaveOptions.add(readOption(
+                            location,
+                            optionContext(option, index),
+                            option,
+                            LEAVE_OPTION_ID,
+                            label.isBlank() ? "Leave" : label,
+                            1000 + index,
+                            defaultQuestId));
                 }
                 index++;
             }
@@ -400,7 +421,14 @@ public final class ForcedDialogueResources {
         }
         JsonObject option = element != null && element.isJsonObject() ? element.getAsJsonObject() : new JsonObject();
         String label = readString(option, "label");
-        return List.of(readOption(location, optionContext(option, 0), option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000));
+        return List.of(readOption(
+                location,
+                optionContext(option, 0),
+                option,
+                LEAVE_OPTION_ID,
+                label.isBlank() ? "Leave" : label,
+                1000,
+                defaultQuestId));
     }
 
     static ForcedDialogueOption defaultLeaveOption() {
@@ -468,7 +496,7 @@ public final class ForcedDialogueResources {
     }
 
     private static ForcedDialogueOption readOption(JsonObject option, String id, String label, int fallbackOrder) {
-        return readOption(null, optionContext(option, fallbackOrder), option, id, label, fallbackOrder);
+        return readOption(null, optionContext(option, fallbackOrder), option, id, label, fallbackOrder, null);
     }
 
     private static ForcedDialogueOption readOption(
@@ -477,7 +505,8 @@ public final class ForcedDialogueResources {
             JsonObject option,
             String id,
             String label,
-            int fallbackOrder) {
+            int fallbackOrder,
+            ResourceLocation defaultQuestId) {
         return new ForcedDialogueOption(
                 id,
                 label,
@@ -491,23 +520,23 @@ public final class ForcedDialogueResources {
                 readItemPayment(option),
                 VillagerReputationCondition.read(option),
                 readSocialAttributeCondition(option),
-                DialogueCondition.readList(location, context, option),
-                readFollowUp(option)
+                DialogueCondition.readList(location, context, option, defaultQuestId),
+                readFollowUp(option, defaultQuestId)
         );
     }
 
-    private static ForcedDialogueFollowUp readFollowUp(JsonObject option) {
+    private static ForcedDialogueFollowUp readFollowUp(JsonObject option, ResourceLocation defaultQuestId) {
         JsonElement element = option.get("follow_up");
         if (element == null || !element.isJsonObject()) {
             return ForcedDialogueFollowUp.empty();
         }
 
         JsonObject followUp = element.getAsJsonObject();
-        ForcedDialogueOption leaveOption = readLeaveOptions(null, followUp, ForcedDialogueTrigger.CONTAINER_OPENED)
+        ForcedDialogueOption leaveOption = readLeaveOptions(null, followUp, ForcedDialogueTrigger.CONTAINER_OPENED, defaultQuestId)
                 .stream()
                 .findFirst()
                 .orElse(defaultLeaveOption());
-        List<ForcedDialogueOption> options = readOptions(null, followUp, leaveOption);
+        List<ForcedDialogueOption> options = readOptions(null, followUp, leaveOption, defaultQuestId);
         String leaveOptionId = leaveOption.id();
         leaveOption = options.stream()
                 .filter(candidate -> candidate.id().equals(leaveOptionId))
@@ -615,6 +644,15 @@ public final class ForcedDialogueResources {
         return DatapackJsonReader.readEnum(entry, key, enumClass);
     }
 
+    private static ResourceLocation defaultQuestId(ResourceLocation location, JsonObject entry, ResourceLocation fallback) {
+        JsonObject metadata = DatapackJsonReader.readObject(entry, "metadata");
+        if (metadata == null) {
+            return fallback;
+        }
+        ResourceLocation questId = QuestIds.parse(DatapackJsonReader.readString(metadata, "quest"), location);
+        return questId == null ? fallback : questId;
+    }
+
     private static String readString(JsonObject entry, String key) {
         return DatapackJsonReader.readString(entry, key);
     }
@@ -674,7 +712,8 @@ public final class ForcedDialogueResources {
     }
 
     private static String fallbackId(ResourceLocation location, int index) {
-        return location.getPath().replace('/', '_').replace(".json", "") + "_" + index;
+        String id = location.getPath().replace('/', '_').replace(".json", "") + "_" + index;
+        return DEFAULT_NAMESPACE.equals(location.getNamespace()) ? id : location.getNamespace() + "." + id;
     }
 
     private static void warnWrongForcedTriggerFamily(ResourceLocation location, JsonObject entry, int index) {
