@@ -217,6 +217,17 @@ Use `tracker` to define the middle-left quest tracker copy. The runtime chooses 
 
 Tracker text supports `{quest}`, `{quest_id}`, `{target}`, `{target_x}`, `{target_z}`, `{direction}`, `{distance}`, `{proof_item}`, `{visited_target}`, `{has_proof}`, `{active_conditions}`, `{objective}`, `{objective_id}`, `{objective_type}`, `{objective_item}`, `{objective_item_id}`, `{objective_count}`, `{objective_complete}`, `{objective_progress}`, `{objective_target_x}`, `{objective_target_y}`, and `{objective_target_z}`.
 
+## Quest Journal And Tracker
+
+Accepted quests sync to the client quest journal and tracker UI. The default keybinds are:
+
+```text
+J - Open Quest Journal
+L - Toggle Quest Tracker
+```
+
+The journal lists active quest state and detail text. The tracker uses the quest `tracker.title`, current tracker step, objective tracker text, and quest placeholders documented above. Active quest proof items can also receive quest-item highlighting in inventories, item tooltips, and dropped item labels when the server syncs them as quest-relevant items.
+
 ## Quest Triggers
 
 Use `triggers` when a quest should react to world state or quest lifecycle events without hardcoding a new Java hook each time. A trigger has an `event`, optional `conditions`, a cooldown, and one or more `actions`.
@@ -277,9 +288,9 @@ Quest triggers and dialogue trees use the same shared action parser. Prefer expl
 
 | Type | Fields | Behavior |
 | --- | --- | --- |
-| `notification` / `notify` | `notification` or `trigger`, optional `text` | Sends a quest-styled HUD notification through the normal notification system. |
+| `notification` / `notify` | `notification` or `trigger`, optional `text` | Sends a quest-kind HUD notification through the normal notification system. |
 | `tracker` / `flash_tracker` | optional `flash_tracker` | Syncs the quest tracker and optionally flashes it. |
-| `forced_dialogue` / `dialogue` | `forced_dialogue` | Runs a matching forced-dialogue entry with `trigger: "quest"`. This supports proximity dialogue, reminder scenes, and future event-driven quest scenes. |
+| `forced_dialogue` / `dialogue` | `forced_dialogue` | Runs a matching forced-dialogue entry with `trigger: "quest"`. This supports proximity dialogue, reminder scenes, and other authored quest scenes. |
 | `quest` / `quest_action` | Optional `quest`, `quest_id`, or `id` for another quest; `action` | Starts, reminds, turns in, or abandons a quest by using the same outcomes as dialogue tree quest actions. |
 | `experience` / `xp` | `amount` or `experience` | Gives player experience. |
 | `reputation` / `rep` | `amount` or `reputation` | Changes direct reputation with the acting villager. |

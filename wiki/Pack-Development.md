@@ -16,6 +16,7 @@ Use a datapack for server-side behavior and text pools:
   data/
     villagerretaliation/
       dialogue/
+      dialogue_trees/
       forced_dialogue/
       notifications/
       gifts/
@@ -24,6 +25,10 @@ Use a datapack for server-side behavior and text pools:
       loot_table/
         villager/profession/
     <your_namespace>/
+      dialogue/
+      dialogue_trees/
+      forced_dialogue/
+      quests/
       skill_trades/
       loot_table/
       story_structures/
@@ -58,17 +63,19 @@ Most Villager Retaliation data is intentionally scoped to the mod namespace:
 
 | System | Required namespace |
 | --- | --- |
-| Dialogue | `villagerretaliation` |
-| Forced dialogue | `villagerretaliation` |
 | Notifications | `villagerretaliation` |
 | Gifts | `villagerretaliation` |
 | Profession loot rules | `villagerretaliation` |
 | Preset names | `villagerretaliation` |
 | Resource-pack models/textures | `villagerretaliation` or the vanilla texture paths documented on the model page |
 
-Skill trades, story discovery files, and referenced loot tables are the exceptions. Skill-trade files can live in any namespace under `data/<namespace>/skill_trades/`. Structure and biome story entries are also loaded from any namespace:
+Dialogue, dialogue trees, quests, forced dialogue, skill trades, story discovery files, and referenced loot tables can live in any datapack namespace. The built-in pack and generator default to `villagerretaliation`, but addon packs can use their own namespace for these systems:
 
 ```text
+data/my_pack/dialogue/en_us/quests/lost_civilization/tales/lines/rumors.json
+data/my_pack/dialogue_trees/en_us/quests/lost_civilization/tales.json
+data/my_pack/forced_dialogue/quests/lost_civilization/tales.json
+data/my_pack/quests/lost_civilization/tales.json
 data/my_pack/skill_trades/alchemist.json
 data/my_pack/story_structures/ancient_places.json
 data/my_pack/story_biomes/rare_biomes.json

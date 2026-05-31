@@ -33,6 +33,7 @@ Adult villagers can defend themselves, react to crimes they witness, use profess
 - Let villagers confront players for opening or stealing from generated village chests
 - Give gifts, discover preferences, and see trusted villagers keep favorite items as keepsakes
 - Learn village stories, follow villager map hints, and build family or relationship history
+- Follow data-driven villager quests with branching dialogue, tracker text, quest-item highlighting, and HUD notifications
 - Keep babies defenseless and nitwits cowardly as intended
 
 ![features](https://cdn.modrinth.com/data/cached_images/ec0e4dc78ec1a652eb11b233dd2926f7461fe770.png)
@@ -84,6 +85,10 @@ Villagers now also keep a persistent per-player last-seen memory across world le
 Trusted villagers may greet you warmly, suspicious villagers may be cold, and hostile villagers may insult or refuse you. The goal is to make each villager feel more personal without breaking the vanilla feel.
 
 Villagers can also share stories about discovered structures and biomes, give unreliable or reputation-aware gift advice, remember family and romantic relationships, and be recruited to follow or help the player when conditions allow.
+
+Quest scenes can use authored dialogue trees for offers, reminders, turn-ins, abandonment, and event-driven follow-ups. The built-in Tales of a Lost Civilization quest sends players to an Ancient City, tracks proof items, highlights quest items, and can surface a middle-left quest tracker or quest journal entry.
+
+Default quest keybinds are `J` for the Quest Journal and `L` for the Quest Tracker.
 
 Villagers can confront players for opening, breaking, or stealing from watched containers, including generated village chests. Breaking generated containers unpacks and counts the dropped loot before applying reputation loss, so smashing fuller village stores is worse than cracking an empty box. Data packs can customize the event dialogue, target specific loot tables, require item payments, and show different responses based on the player's current reputation with the witnessing villager.
 
@@ -213,6 +218,15 @@ Requires operator.
 /villagerretaliation setNearestRelationship <crush|dating|engaged|married|separated>
 /villagerretaliation dialogue explain <villager> <request> [option_id]
 /villagerretaliation datapack diagnostics
+/villagerretaliation quest debug providers [radius]
+/villagerretaliation quest debug start <quest_id> <provider_name>
+/villagerretaliation quest debug start_near <radius> <quest_id> <provider_name>
+/villagerretaliation quest debug force_start <quest_id> <provider_name>
+/villagerretaliation quest debug force_start_near <radius> <quest_id> <provider_name>
+/villagerretaliation profile get|reroll|export <villager>
+/villagerretaliation profile set <villager> <knowledge|guts|proficiency|kindness|charm> <1-100>
+/villagerretaliation skill get|reroll|export <villager>
+/villagerretaliation skill set <villager> <skill> <1-100>
 ```
 
 This sets nearby villagers' and wandering traders' reputation toward the executing player. It is mainly useful for testing tiers, trade pricing, despised behavior, feared behavior, pacification, and the debug overlay.
@@ -222,6 +236,10 @@ This sets nearby villagers' and wandering traders' reputation toward the executi
 `dialogue explain` is a datapack authoring command for normal villager dialogue lines. It reports matched candidates, top rejection reasons, effective weights, specificity scores, recent-line state, and neutral fallback behavior for the chosen villager, request, and optional option id.
 
 `datapack diagnostics` prints recent Villager Retaliation datapack warnings since the last resource reload, so pack authors can inspect ignored fields, skipped files, duplicate ids, and folder mistakes in game.
+
+The quest debug commands list nearby valid quest providers and can start or force-start a loaded quest from a chosen villager for testing offer gates, tracker text, objective progress, trigger actions, and turn-in dialogue.
+
+The profile and skill commands inspect, reroll, export, or set villager Social Attributes and Skills. They are intended for balancing dialogue filters, mood behavior, trade quality, and Special Order availability.
 
 Example:
 
@@ -248,11 +266,16 @@ Main config file:
 Config categories include:
 
 - `general` - master feature toggles
+- `dialogue` - interaction screen, forced dialogue, watched containers, chat delivery, camera focus, and dialogue reputation timing
+- `notifications` - world text, ambient murmurs, sleep indicators, damage/combat alerts, and trade/gift text
+- `gifts` - gift interactions, high-reputation rewards, and keepsakes
+- `social` - Social Attributes, moods, family rules, relationship behavior, and inherited reputation
 - `balance` - loot and drop rates
-- `retaliation` - anger rules, aggro radius, duration, line-of-sight witnesses
-- `reputation` - penalties, gains, thresholds, gossip, trade pricing
-- `combat` - profession combat toggles, hostile mob targeting/retaliation, weapon pickup, armorer shields, clerics, farmers
+- `retaliation` - anger rules, aggro radius, duration, and line-of-sight witnesses
+- `reputation` - penalties, gains, thresholds, gossip, decay, and trade pricing
+- `trade` - skill-trade overhaul, Special Orders, quality scaling, and skill growth from trading
 - `debugOverlay` - optional reputation display for testing
+- `combat` - profession combat toggles, hostile mob targeting/retaliation, weapon pickup, armorer shields, clerics, farmers
 - `wanderer` - wandering trader drop behavior
 
 Pack creators can tune monster-defense behavior independently with `combat.villagersTargetHostileMobs`, `combat.villagersRetaliateAgainstHostileMobs`, `combat.villagersStandGroundAgainstHostileMobs`, `combat.villagersPickUpGroundWeapons`, and the equivalent wandering trader options. `combat.naturalHostileTargetRadius` still controls the scan distance when proactive hostile mob targeting is enabled.
@@ -271,7 +294,7 @@ This is disabled by default and is mainly intended for testing and balancing.
 
 Villager Retaliation! has built-in datapack and resource-pack support for creators who want to tune the experience without writing Java.
 
-Datapacks can add or replace villager dialogue, forced dialogue events, chat event lines, notification text, ambient world text, gift preferences, pacification payments, profession loot, story discoveries, and preset villager names. Forced dialogue can cover watched-container events, retaliation-started barks, and nearby player item reactions through `player_item_proximity`. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
+Datapacks can add or replace villager dialogue, dialogue trees, quests, forced dialogue events, chat event lines, notification text, ambient world text, gift preferences, pacification payments, profession loot, skill trades, story discoveries, and preset villager names. Forced dialogue can cover watched-container events, retaliation-started barks, nearby player item reactions through `player_item_proximity`, trade-refresh option sets, and quest-triggered locked scenes. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
 
 Resource packs can translate the interaction GUI and reputation UI, replace normal and combat villager textures, customize wandering trader textures, and override the combat-capable villager model used when villagers need independent arms for weapons, shields, bows, potions, and throwing animations.
 
@@ -281,7 +304,7 @@ There is also a local browser-based datapack generator included in the GitHub re
 tools/datapack-builder/index.html
 ```
 
-Open it in a browser to create, import, preview, validate, and export Villager Retaliation datapacks. It can generate the current datapack paths for dialogue, forced dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`. Dialogue, forced-opening, and notification text fields accept one variation per line where the runtime supports `lines`.
+Open it in a browser to create, import, preview, validate, and export Villager Retaliation datapacks. It can generate the current datapack paths for dialogue, forced dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`. It also includes versioned wiki snapshots for quest, dialogue-tree, skill-trade, and resource-pack authoring reference. Dialogue, forced-opening, and notification text fields accept one variation per line where the runtime supports `lines`.
 
 The generator and runtime both use strict system folders: dialogue, forced dialogue, and notifications are loaded from their documented roots, and recent versions log warnings for common misplaced sections or ignored fields.
 
@@ -303,8 +326,12 @@ For full pack-author documentation, examples, JSON references, and model notes, 
 - [JSON Reference](wiki/JSON-Reference.md)
 - [Forced Dialogue JSON](wiki/Forced-Dialogue.md)
 - [Dialogue JSON](wiki/Dialogue.md)
+- [Dialogue Trees](wiki/Dialogue-Trees.md)
+- [Dialogue And Quests](wiki/Dialogue-And-Quests.md)
+- [Quest JSON](wiki/Quests.md)
 - [Event Tags](wiki/Event-Tags.md)
 - [Notifications JSON](wiki/Notifications.md)
+- [Skill Trades](wiki/Skill-Trades.md)
 
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 
@@ -356,6 +383,6 @@ For any general queries/unlisted questions, DM me on Twitter (@prodbyjvn) / Disc
 
 <div align="center">
 
-  <p><strong>⚠ <em>This mod ONLY exists on Modrinth & CurseForge as of May 2026. Any sites hosting this mod outside of Modrinth/CurseForge are not official releases.</em> ⚠</strong></p>
+  <p><strong><em>Warning: this mod ONLY exists on Modrinth & CurseForge as of May 2026. Any sites hosting this mod outside of Modrinth/CurseForge are not official releases.</em></strong></p>
 
 </div>

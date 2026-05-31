@@ -30,9 +30,10 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 
 | Area | Pack type | Root path |
 | --- | --- | --- |
-| Dialogue | Datapack | `data/villagerretaliation/dialogue/<locale>/` |
+| Dialogue | Datapack | `data/<namespace>/dialogue/<locale>/` |
 | Quests | Datapack | `data/<namespace>/quests/` |
-| Dialogue mood and Social Attribute filters | Datapack | `data/villagerretaliation/dialogue/<locale>/` |
+| Dialogue trees | Datapack | `data/<namespace>/dialogue_trees/<locale>/` |
+| Dialogue mood and Social Attribute filters | Datapack | `data/<namespace>/dialogue/<locale>/` |
 | Forced dialogue and chat event lines | Datapack | `data/<namespace>/forced_dialogue/` |
 | Notifications and world text | Datapack | `data/villagerretaliation/notifications/<locale>/` |
 | Interaction GUI and reputation UI text | Resource pack | `assets/villagerretaliation/lang/<locale>.json` |

@@ -22,11 +22,247 @@ Entries can use `text` for one output or `lines` for several equal variations. F
 }
 ```
 
-Quest HUD triggers use the `quest` notice kind and support quest placeholders such as `{quest}`, `{quest_id}`, `{target}`, `{proof_item}`, `{target_x}`, `{target_z}`, `{direction}`, and `{distance}` when the trigger is sent from quest dialogue. Built-in quest triggers are `quest.started`, `quest.updated`, `quest.location_reached`, `quest.completed`, and `quest.abandoned`.
+Quest HUD triggers use the `quest` notice kind and support quest placeholders such as `{quest}`, `{quest_id}`, `{target}`, `{proof_item}`, `{target_x}`, `{target_z}`, `{direction}`, and `{distance}` when the trigger is sent from quest dialogue, quest progress, or a quest action. Built-in quest triggers are `quest.started`, `quest.updated`, `quest.location_reached`, `quest.completed`, `quest.abandoned`, and `quest.expired`.
 
 ## Dropdown Examples
 
 Each dropdown includes a minimal notification and an expanded version with useful filters, styling, or placeholders.
+
+<details>
+<summary><strong>quest.started</strong></summary>
+
+Fires when a quest starts. Supports quest placeholders such as `{quest}`, `{quest_id}`, `{target_x}`, `{target_z}`, `{direction}`, `{distance}`, and `{proof_item}`.
+
+Simple:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_started.simple",
+      "trigger": "quest.started",
+      "text": "Quest started: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_started.destination",
+      "trigger": "quest.started",
+      "text": "{quest}: travel {direction} toward {target_x}, {target_z}.",
+      "kind": "quest",
+      "color": "#FFD166",
+      "weight": 20
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><strong>quest.updated</strong></summary>
+
+Fires when quest progress updates, such as proof or objective state changing.
+
+Simple:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_updated.simple",
+      "trigger": "quest.updated",
+      "text": "Quest updated: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_updated.objective",
+      "trigger": "quest.updated",
+      "text": "{objective}: {objective_progress}",
+      "kind": "quest",
+      "color": "#FFD166",
+      "chance": 0.8
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><strong>quest.location_reached</strong></summary>
+
+Fires when the player reaches a quest target location.
+
+Simple:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_location.simple",
+      "trigger": "quest.location_reached",
+      "text": "Quest location reached: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_location.target",
+      "trigger": "quest.location_reached",
+      "text": "You reached {target}. Recover {proof_item}, then return.",
+      "kind": "quest",
+      "color": "#FFD166"
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><strong>quest.completed</strong></summary>
+
+Fires after a quest turn-in completes.
+
+Simple:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_completed.simple",
+      "trigger": "quest.completed",
+      "text": "Quest completed: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_completed.reward",
+      "trigger": "quest.completed",
+      "text": "{quest} complete. The village will remember this.",
+      "kind": "quest",
+      "color": "#FFE29A"
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><strong>quest.abandoned</strong></summary>
+
+Fires after a quest is abandoned.
+
+Simple:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_abandoned.simple",
+      "trigger": "quest.abandoned",
+      "text": "Quest abandoned: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_abandoned.cooldown",
+      "trigger": "quest.abandoned",
+      "text": "{quest} is set aside for now.",
+      "kind": "quest",
+      "color": "#C8A85A"
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><strong>quest.expired</strong></summary>
+
+Fires when a quest expiration rule expires an active quest.
+
+Simple:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_expired.simple",
+      "trigger": "quest.expired",
+      "text": "Quest expired: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.quest_expired.repickup",
+      "trigger": "quest.expired",
+      "text": "{quest} slipped away. Ask again if the trail still matters.",
+      "kind": "quest",
+      "color": "#C8A85A"
+    }
+  ]
+}
+```
+
+</details>
 
 <details>
 <summary><strong>gift.liked</strong></summary>

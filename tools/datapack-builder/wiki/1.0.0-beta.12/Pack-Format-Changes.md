@@ -95,7 +95,7 @@ The website and Datapack Generator do not provide beta.11 to beta.12 migration s
 
 - Removed the Datapack Generator's beta.11 to beta.12 Convert workflow. The site no longer offers automated pack-version migration for this boundary.
 - Removed quest JSON compatibility aliases and advancement-style `criteria` / `requirements` inference. Beta.12 quest files use `display`, plural `offer.professions`, object-shaped `offer.skills`, explicit `objectives`, canonical reward keys, and `repeatable` trigger behavior.
-- Removed quest/dialogue-tree action aliases from the beta.12 action reader. Actions now use canonical `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker` fields.
+- Removed beta.11-only quest/action compatibility shapes from the beta.12 quest surface. The maintained action fields are `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker`; documented shorthand such as `xp`, `rep`, `notify`, and inline unique action fields still load where the shared action parser lists them.
 - Removed top-level dialogue metadata aliases from the maintained beta.12 authoring shape. Dialogue and dialogue tree metadata now lives under a nested `metadata` object with `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`.
 - No beta.12 runtime JSON fields, triggers, or placeholders are removed solely because of the folderized dialogue layout.
 

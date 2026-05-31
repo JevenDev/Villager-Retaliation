@@ -82,11 +82,11 @@ Quest files live in `data/<namespace>/quests/`. They combine explicit display, o
 
 Quest `triggers` provide the reusable event foundation for later quest features. A trigger can watch quest lifecycle events, active-player ticks, or proximity to the starting villager, then stack existing dialogue conditions such as time, weather, memory, reputation, skill, and quest state before running notification, tracker, or `trigger: "quest"` forced-dialogue actions.
 
-See [Quest JSON](Quests.md) for the first supported quest schema and the built-in `Tales of a Lost Civilization` pattern.
+See [Quest JSON](Quests.md) for the current quest schema and the built-in `Tales of a Lost Civilization` pattern.
 
 ## Dialogue Trees
 
-Dialogue tree files live in `data/<namespace>/dialogue_trees/<locale>/`. Use them for authored branching scenes, quest offers, reminders, turn-ins, and future questline chapters. Quest-owned trees under `dialogue_trees/<locale>/quests/` can infer the owning quest id for local quest conditions and actions. Ambient reusable villager lines still live in `data/villagerretaliation/dialogue/<locale>/`.
+Dialogue tree files live in `data/<namespace>/dialogue_trees/<locale>/`. Use them for authored branching scenes, quest offers, reminders, turn-ins, and questline chapters. Quest-owned trees under `dialogue_trees/<locale>/quests/` can infer the owning quest id for local quest conditions and actions. Ambient reusable villager lines still live in `data/villagerretaliation/dialogue/<locale>/`.
 
 See [Dialogue Tree JSON](Dialogue-Trees.md) for entries, nodes, responses, actions, and quest action status lines.
 
@@ -408,7 +408,7 @@ That entry passes its random chance gate roughly 25 percent of the time before w
 
 ## Dialogue Narrative Metadata
 
-Dialogue options, lines, messages, openings, closings, pacify entries, and dialogue trees can include beta.12 author metadata. These fields are inert today: they help pack maintainers group story material and prepare stable ids for future quest systems, but they do not change matching or selection.
+Dialogue options, lines, messages, openings, closings, pacify entries, and dialogue trees can include beta.12 author metadata. These fields help pack maintainers group story material, mirror quest module ownership, and give validators or external tools stable ids to inspect, but they do not change matching or selection.
 
 Accepted nested fields are `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`. Place them under a `metadata` object.
 

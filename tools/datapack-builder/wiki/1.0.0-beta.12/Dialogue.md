@@ -10,7 +10,7 @@ For event-driven locked conversations such as a villager catching the player ste
 
 ## Paths
 
-Dialogue files must be in the `villagerretaliation` namespace:
+Dialogue files can live in any datapack namespace. The built-in data and Datapack Generator use `villagerretaliation`, but addon packs can keep their own namespace when they want ids and paths grouped with the rest of the pack:
 
 ```text
 data/villagerretaliation/dialogue/en_us/global/options/menu.json
@@ -20,6 +20,7 @@ data/villagerretaliation/dialogue/en_us/groups/smiths/lines/repairs.json
 data/villagerretaliation/dialogue/en_us/professions/farmer/lines/greetings.json
 data/villagerretaliation/dialogue/en_us/professions/farmer/share_stories/ancient_city.json
 data/villagerretaliation/dialogue/en_us/professions/examplemod/alchemist/lines/reagents.json
+data/example/dialogue/en_us/quests/lost_civilization/tales_of_a_lost_civilization/lines/rumors.json
 data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
 ```
 
@@ -425,7 +426,7 @@ Use `text_key` when one rule should resolve text from `messages` instead of carr
 
 ### Narrative Metadata
 
-Dialogue options, lines, messages, openings, closings, and pacify entries can carry author-facing metadata. The fields are intentionally inert in beta.12: they do not make an entry match, hide, sort, or win selection. They exist so large packs can group story material now, and so future quest and questline systems have stable ids to build on.
+Dialogue options, lines, messages, openings, closings, and pacify entries can carry author-facing metadata. These fields do not make an entry match, hide, sort, or win selection. They exist so large packs can group story material, mirror quest module ownership, and give validators or external tools stable story ids to inspect.
 
 Use nested `metadata` to keep author notes and story grouping separate from matching rules:
 
