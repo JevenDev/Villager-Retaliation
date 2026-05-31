@@ -17,6 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class DialogueTreeService {
     private static final String ENTRY_OPTION_PREFIX = "dt:";
     private static final String RESPONSE_OPTION_PREFIX = "dr:";
+    public static final String LEAVE_OPTION_ID = "dt:leave";
     private static final long SESSION_TTL_TICKS = 20L * 60L * 5L;
     private static final Map<SessionKey, Session> SESSIONS = new ConcurrentHashMap<>();
 
@@ -85,6 +86,10 @@ public final class DialogueTreeService {
             return selectResponse(context, reference.treeId(), reference.responseId());
         }
         return Optional.empty();
+    }
+
+    public static boolean leaveActiveSession(DialogueContext context) {
+        return SESSIONS.remove(key(context)) != null;
     }
 
     private static Optional<VillagerDialogueService.DialogueResult> startEntry(

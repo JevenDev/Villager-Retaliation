@@ -62,6 +62,11 @@ public final class VillagerDialogueRequestHandler {
         ServerLevel level = target.level();
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        if (DialogueTreeService.LEAVE_OPTION_ID.equals(optionId)) {
+            DialogueTreeService.leaveActiveSession(context);
+            VillagerInteractionService.sendDialogueReputation(player, villager, level);
+            return;
+        }
         DialogueOptionDefinition dialogueOption = VillagerDialogueResources.dialogueOption(context, optionId).orElse(null);
         if (dialogueOption == null) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.unknown_dialogue_option");

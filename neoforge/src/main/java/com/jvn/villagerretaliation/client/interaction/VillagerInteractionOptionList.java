@@ -77,6 +77,12 @@ final class VillagerInteractionOptionList {
         return wrapPlainText(context.font(), label, wrapWidth, WRAPPED_OPTION_MAX_LINES);
     }
 
+    private static float wrappedLayoutScale(Context context) {
+        return (EXPERIMENTAL_OPTION_BASE_SCALE
+                + context.optionSelectedScale()
+                + context.optionHoverScale()) * context.experimentalTextScale();
+    }
+
     private static void renderOption(
             Context context,
             GuiGraphics graphics,
@@ -147,7 +153,7 @@ final class VillagerInteractionOptionList {
             int viewportBottom,
             boolean shadow) {
         int textLeft = left + context.optionTextInset();
-        List<String> lines = wrappedOptionLabelLines(context, label, scale);
+        List<String> lines = wrappedOptionLabelLines(context, label, wrappedLayoutScale(context));
         int baseHeight = context.optionHeight();
         float textTop = top + optionTextYOffset(baseHeight);
         float lineStep = context.font().lineHeight + 1.0F;
@@ -188,7 +194,7 @@ final class VillagerInteractionOptionList {
     }
 
     private static int wrappedExtraHeight(Context context, int optionIndex) {
-        float scale = EXPERIMENTAL_OPTION_BASE_SCALE * context.experimentalTextScale();
+        float scale = wrappedLayoutScale(context);
         return wrappedOptionLabelLines(context, context.optionLabel(optionIndex), scale).size() > 1
                 ? context.optionHeight()
                 : 0;

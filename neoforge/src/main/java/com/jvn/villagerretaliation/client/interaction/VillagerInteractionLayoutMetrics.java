@@ -67,8 +67,7 @@ final class VillagerInteractionLayoutMetrics {
     }
 
     static int optionViewportHeight(int optionCount) {
-        int visibleRows = Math.min(OPTION_VIEWPORT_ROWS, Math.max(1, optionCount));
-        return visibleRows * optionHeight() + Math.max(0, visibleRows - 1) * OPTION_GAP;
+        return fullOptionViewportHeight();
     }
 
     static int fullOptionViewportHeight() {

@@ -61,7 +61,6 @@ public final class VillagerQuestJournalScreen extends Screen {
             Minecraft.getInstance().setScreen(null);
             return;
         }
-        updateMouseSelection(mouseX, mouseY);
         clampSelectedOption();
 
         renderExperimentalBackdrop(graphics, mouseX, mouseY);
@@ -102,7 +101,11 @@ public final class VillagerQuestJournalScreen extends Screen {
 
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0) {
-            setSelectedOption(hovered);
+            if (hovered != this.state.selectedOption()) {
+                setSelectedOption(hovered);
+                ensureSelectedVisible();
+                return true;
+            }
             VillagerQuestTrackerOverlay.toggleTracking(entries().get(hovered));
             ensureSelectedVisible();
             return true;
@@ -506,13 +509,6 @@ public final class VillagerQuestJournalScreen extends Screen {
         ensureSelectedVisible();
     }
 
-    private void updateMouseSelection(int mouseX, int mouseY) {
-        int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
-        if (hovered >= 0) {
-            setSelectedOption(hovered);
-        }
-    }
-
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
         int left = optionsLeft() - experimentalUnitAtLeast(18, 10);
         int right = optionsLeft() + optionWidth() + experimentalUnitAtLeast(4, 2);
@@ -544,7 +540,6 @@ public final class VillagerQuestJournalScreen extends Screen {
         if (this.state.selectedOption() != selectedOption) {
             this.detailsSelectedOption = selectedOption;
             this.state.resetDetailsScroll();
-            this.detailsAnimationStartMillis = Util.getMillis();
         }
         this.state.setSelectedOption(selectedOption);
     }
@@ -555,7 +550,6 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
         this.detailsSelectedOption = this.state.selectedOption();
         this.state.resetDetailsScroll();
-        this.detailsAnimationStartMillis = Util.getMillis();
     }
 
     private QuestTrackerSyncPayload.Entry selectedEntry() {

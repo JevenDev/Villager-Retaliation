@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
@@ -52,6 +53,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
     private static final String BACK_LABEL_KEY = GUI_KEY_PREFIX + "back";
     private static final String FORCED_LEAVE_OPTION_ID = "leave";
+    private static final String DIALOGUE_TREE_LEAVE_OPTION_ID = DialogueTreeService.LEAVE_OPTION_ID;
     private static final int OPTION_HEIGHT = 18;
     private static final int INFO_PANEL_CHAT_PADDING = 20;
     private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
@@ -671,9 +673,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.forcedDialogue) {
             return;
         }
+        boolean leavingTalk = this.page == DialoguePage.TALK;
         if (this.page != DialoguePage.ROOT) {
             this.selectedInventorySlot = -1;
             openPage(DialoguePage.ROOT);
+        }
+        if (leavingTalk) {
+            requestDialogue(DIALOGUE_TREE_LEAVE_OPTION_ID);
         }
     }
 
