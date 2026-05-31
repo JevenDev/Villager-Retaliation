@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -45,6 +46,7 @@ public record DialogueContext(
         long lastJokeReputationGameTime,
         long lastApologyDialogueGameTime,
         long lastVillageDefenseReportGameTime,
+        long lastVillageEventReportGameTime,
         boolean badFirstImpression,
         long lastBrokenBedGameTime,
         long lastDirectHitGameTime,
@@ -68,6 +70,18 @@ public record DialogueContext(
     private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long DIALOGUE_MOOD_MEMORY_TICKS = 20L * 60L * 5L;
     private static final int HIGH_SOCIAL_ATTRIBUTE_THRESHOLD = 60;
+    private static final Set<VillageEventMemory.EventTag> HOSTILE_VILLAGE_EVENT_TAGS = EnumSet.of(
+            VillageEventMemory.EventTag.IRON_GOLEM_DEFEATED_MOB,
+            VillageEventMemory.EventTag.NIGHT_ATTACK,
+            VillageEventMemory.EventTag.RAID,
+            VillageEventMemory.EventTag.VILLAGER_DEATH,
+            VillageEventMemory.EventTag.VILLAGER_ATTACKED,
+            VillageEventMemory.EventTag.BABY_VILLAGER_ATTACKED,
+            VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER,
+            VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE,
+            VillageEventMemory.EventTag.PLAYER_DEFENDED_RAID,
+            VillageEventMemory.EventTag.GOLEM_KILLED,
+            VillageEventMemory.EventTag.VILLAGER_RETALIATION_STARTED);
 
     public boolean hasKnownLastSeenDay() {
         return this.lastSeenDay != Long.MIN_VALUE;
@@ -119,6 +133,17 @@ public record DialogueContext(
 
     public boolean hasRecentEventTag(Set<ResourceLocation> tagIds) {
         return VillageEventMemory.hasAnyTag(this.recentEvents, tagIds);
+    }
+
+    public Optional<VillageEventMemory.MemoryEvent> recentUnreportedHostileVillageEventConcern() {
+        return this.recentEvents.stream()
+                .filter(event -> HOSTILE_VILLAGE_EVENT_TAGS.contains(event.tag()))
+                .filter(event -> event.gameTime() > this.lastVillageEventReportGameTime)
+                .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
+    }
+
+    public boolean hasUnreportedHostileVillageEventConcern() {
+        return recentUnreportedHostileVillageEventConcern().isPresent();
     }
 
     public int socialAttributeValue(VillagerSocialAttribute attribute) {

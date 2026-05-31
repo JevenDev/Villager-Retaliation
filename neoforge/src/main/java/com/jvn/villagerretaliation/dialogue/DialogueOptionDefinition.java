@@ -120,7 +120,7 @@ public record DialogueOptionDefinition(
         if (this.requiresUnreportedCuredRecognition && !context.hasUnreportedCuredRecognition()) {
             return false;
         }
-        if (this.requiresRecentVillageEvent && !context.hasRecentVillageEventConcern()) {
+        if (this.requiresRecentVillageEvent && !matchesRequiredRecentVillageEvent(context)) {
             return false;
         }
         if (this.requiresUnreportedGiftAdviceResult && !context.hasUnreportedGiftAdviceResult()) {
@@ -208,6 +208,13 @@ public record DialogueOptionDefinition(
             return false;
         }
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
+    }
+
+    private boolean matchesRequiredRecentVillageEvent(DialogueContext context) {
+        if (this.requestType == DialogueRequestType.VILLAGE_EVENT_REPORT) {
+            return context.hasUnreportedHostileVillageEventConcern();
+        }
+        return context.hasRecentVillageEventConcern();
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {

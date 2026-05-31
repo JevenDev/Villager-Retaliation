@@ -61,6 +61,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.INSULT, gameTime, day, optionResetTicks),
                 entry.lastDialogueGameTime(DialogueRequestType.APOLOGY),
                 entry.lastDialogueGameTime(DialogueRequestType.VILLAGE_DEFENSE_REPORT),
+                entry.lastDialogueGameTime(DialogueRequestType.VILLAGE_EVENT_REPORT),
                 entry.lastBrokenBedGameTime(),
                 entry.lastDirectHitGameTime(),
                 entry.lastDirectHitWeapon()
@@ -619,6 +620,7 @@ public final class VillagerInteractionTracker {
             int insultUseCount,
             long lastApologyDialogueGameTime,
             long lastVillageDefenseReportGameTime,
+            long lastVillageEventReportGameTime,
             long lastBrokenBedGameTime,
             long lastDirectHitGameTime,
             String lastDirectHitWeapon

@@ -370,6 +370,7 @@ public final class VillagerInteractionService {
                 interactionState.lastJokeReputationGameTime(),
                 interactionState.lastApologyDialogueGameTime(),
                 interactionState.lastVillageDefenseReportGameTime(),
+                interactionState.lastVillageEventReportGameTime(),
                 interactionState.badFirstImpression(),
                 interactionState.lastBrokenBedGameTime(),
                 interactionState.lastDirectHitGameTime(),

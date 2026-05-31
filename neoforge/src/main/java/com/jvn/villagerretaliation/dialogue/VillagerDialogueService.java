@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.UUID;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 
@@ -390,6 +391,7 @@ public final class VillagerDialogueService {
         List<DialogueLine> preferred = preferRequestedOptionCandidates(requestedOptionId, matched);
         preferred = preferDirectHitMemoryCandidates(context, requestType, preferred);
         preferred = preferBrokenBedMemoryCandidates(context, requestType, preferred);
+        preferred = preferVillageEventCandidates(context, requestType, preferred);
         Set<String> preferredIds = preferred.stream()
                 .map(DialogueLine::id)
                 .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
@@ -676,6 +678,30 @@ public final class VillagerDialogueService {
             case MAP_REPORT, STORY_HINT_REPORT, SHARE_STORY, COMBAT_SURVIVAL_REPORT, GEAR_REPORT, RECRUITMENT_FOLLOWUP, GIFT_ADVICE_FOLLOWUP, APOLOGY, VILLAGE_DEFENSE_REPORT -> candidates;
             default -> candidates;
         };
+    }
+
+    private static List<DialogueLine> preferVillageEventCandidates(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            List<DialogueLine> candidates) {
+        if (requestType != DialogueRequestType.VILLAGE_EVENT_REPORT || candidates.isEmpty()) {
+            return candidates;
+        }
+
+        Optional<VillageEventMemory.MemoryEvent> event = context.recentUnreportedHostileVillageEventConcern();
+        if (event.isEmpty()) {
+            return candidates;
+        }
+
+        VillageEventMemory.EventTag tag = event.get().tag();
+        ResourceLocation tagId = event.get().tagId();
+        List<DialogueLine> eventCandidates = candidates.stream()
+                .filter(line -> line.eventTags().contains(tag)
+                        || line.eventTagIds().contains(tagId)
+                        || line.playerEventTags().contains(tag)
+                        || line.playerEventTagIds().contains(tagId))
+                .toList();
+        return eventCandidates.isEmpty() ? candidates : eventCandidates;
     }
 
     private static List<DialogueLine> memoryCandidates(
