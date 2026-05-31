@@ -228,7 +228,7 @@ final class VillagerInteractionExperimentalChrome {
 
         for (ExitTextElement element : exitTextElements) {
             int color = ToucanColors.multiplyAlpha(element.color(), fade);
-            float x = element.x();
+            float x = element.x() + element.driftX() * fall;
             if (element.rightAligned()) {
                 x -= font.width(element.text()) * element.scale();
             }

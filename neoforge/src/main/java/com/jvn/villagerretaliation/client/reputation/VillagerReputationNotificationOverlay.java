@@ -33,6 +33,8 @@ public final class VillagerReputationNotificationOverlay {
     private static final int EXPERIMENTAL_ENTRY_HEIGHT = 18;
     private static final int EXPERIMENTAL_TEXT_PADDING_X = 12;
     private static final int EXPERIMENTAL_TEXT_PADDING_Y = 5;
+    private static final int EXPERIMENTAL_TEXT_CENTER_BIAS_Y = 2;
+    private static final int TEXT_OFFSET_X = 2;
     private static final int EXPERIMENTAL_EXTRA_WIDTH = 20;
     private static final int TEXT_PADDING_X = 8;
     private static final int TEXT_PADDING_Y = 3;
@@ -225,14 +227,15 @@ public final class VillagerReputationNotificationOverlay {
                         direction));
 
         int textColor = VillagerClientUiUtil.withAlphaRound(textColor(entry), alpha);
+        int textY = centeredTextTop(y, height, font, VillagerAdaptiveGuiScale.unitAtLeast(EXPERIMENTAL_TEXT_CENTER_BIAS_Y, 1));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         VillagerClientUiUtil.drawScaledStringAtZ(
                 graphics,
                 font,
                 entry.text,
-                x + experimentalTextPaddingX(),
-                y + experimentalTextPaddingY(),
+                x + experimentalTextPaddingX() + textOffsetX(),
+                textY,
                 textColor,
                 true,
                 textScale(),
@@ -259,14 +262,15 @@ public final class VillagerReputationNotificationOverlay {
         }
         graphics.fill(x, y + height, x + width, y + height + VillagerAdaptiveGuiScale.unitAtLeast(1, 1), shadow);
 
+        int textY = centeredTextTop(y, height, font, 0);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         VillagerClientUiUtil.drawScaledStringAtZ(
                 graphics,
                 font,
                 entry.text,
-                x + textPaddingX(),
-                y + textPaddingY(),
+                x + textPaddingX() + textOffsetX(),
+                textY,
                 textColor,
                 true,
                 textScale(),
@@ -299,6 +303,15 @@ public final class VillagerReputationNotificationOverlay {
 
     private static int textPaddingY() {
         return VillagerAdaptiveGuiScale.unit(TEXT_PADDING_Y);
+    }
+
+    private static int textOffsetX() {
+        return VillagerAdaptiveGuiScale.unitAtLeast(TEXT_OFFSET_X, 1);
+    }
+
+    private static int centeredTextTop(int y, int height, Font font, int biasY) {
+        int lineHeight = VillagerClientUiUtil.scaledLineStep(font, textScale());
+        return y + Math.max(0, (height - lineHeight) / 2) + biasY;
     }
 
     private static int slideDistance() {

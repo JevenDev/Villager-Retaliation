@@ -421,8 +421,17 @@ public final class VillagerQuestJournalScreen extends Screen {
             float delay = 120.0F + index * 28.0F;
             int textY = Mth.floor(y + optionHeight() * (5.0F / 18.0F));
             if (selected) {
+                int arrowX = textLeft - optionTextInset() - 7;
                 textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                        ">", textLeft - optionTextInset() - 7, textY, 0xFFFFFFFF, scale, delay, 0.0F, this.height - textY + 72.0F, false));
+                        ">",
+                        arrowX,
+                        textY,
+                        0xFFFFFFFF,
+                        scale,
+                        delay,
+                        this.width - arrowX + 72.0F,
+                        0.0F,
+                        false));
             }
             List<String> labelLines = VillagerInteractionOptionList.wrappedOptionLabelLines(this.optionListContext, entries().get(index).title(), scale);
             for (int lineIndex = 0; lineIndex < labelLines.size(); lineIndex++) {
@@ -434,8 +443,8 @@ public final class VillagerQuestJournalScreen extends Screen {
                         color,
                         scale,
                         delay + 24.0F,
+                        this.width - textLeft + 88.0F,
                         0.0F,
-                        this.height - lineY + 88.0F,
                         false));
             }
         }

@@ -64,7 +64,12 @@ void main() {
     float lowerSlash = smoothstep(0.45, 1.0, uv.x) * (1.0 - smoothstep(0.0, 0.22, abs(uv.y - (0.74 - uv.x * 0.18))));
     float topEdge = 1.0 - smoothstep(0.0, 1.0, p.y);
     float bottomEdge = 1.0 - smoothstep(0.0, 1.0, size.y - p.y);
-    float accentBar = 1.0 - smoothstep(0.0, 7.0, dir > 0.0 ? p.x : size.x - p.x);
+    float edgeX = dir > 0.0 ? mix(a.x, d.x, uv.y) : mix(b.x, c.x, uv.y);
+    float edgeDistance = dir > 0.0 ? p.x - edgeX : edgeX - p.x;
+    float rightEdgeX = dir > 0.0 ? mix(b.x, c.x, uv.y) : mix(a.x, d.x, uv.y);
+    float rightEdgeDistance = rightEdgeX - p.x;
+    float accentBar = 1.0 - smoothstep(0.0, 4.0, max(0.0, edgeDistance));
+    float rightEdge = 1.0 - smoothstep(0.0, 1.0, max(0.0, rightEdgeDistance));
 
     vec3 color = vec3(0.02, 0.02, 0.025);
     float alpha = 0.78;
@@ -73,6 +78,7 @@ void main() {
     composite(color, alpha, premultipliedColor, composedAlpha);
     composite(accent, accentBar * 0.82, premultipliedColor, composedAlpha);
     composite(accent, (topEdge + bottomEdge) * 0.18, premultipliedColor, composedAlpha);
+    composite(accent, rightEdge * 0.18, premultipliedColor, composedAlpha);
     composite(accent, lowerSlash * 0.18, premultipliedColor, composedAlpha);
     composite(vec3(1.0), shine * 0.025, premultipliedColor, composedAlpha);
 
