@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import vm from "node:vm";
 
 function stubElement() {
@@ -117,13 +118,16 @@ function createAppHarness() {
   };
   context.globalThis = context;
 
-  const source = `${fs.readFileSync("tools/datapack-builder/app.js", "utf8")}
+  const source = `${fs.readFileSync("tools/datapack-builder/backend.js", "utf8")}
+${fs.readFileSync("tools/datapack-builder/app.js", "utf8")}
 globalThis.__test = {
   get state() { return state; },
   set state(value) { state = value; },
+  backend: datapackBackend,
   createInitialState,
   generatedFiles,
   dialoguePathInfo,
+  applyEditedFile,
   ingestKnownJson,
   validate,
   dialogueFolderTemplateFiles,
@@ -248,6 +252,99 @@ function testDialogueFolderTemplate(app) {
   }
 }
 
+function testCheckedInTemplateMatchesBuilder(app) {
+  const root = "example-packs/dialogue-folder-template";
+  const generated = app.dialogueFolderTemplateFiles();
+  const actual = Object.fromEntries(walkFiles(root).map((file) => [
+    file.slice(root.length + 1).replaceAll(path.sep, "/"),
+    fs.readFileSync(file, "utf8")
+  ]));
+  const paths = new Set([...Object.keys(generated), ...Object.keys(actual)]);
+  for (const filePath of paths) {
+    assert(Object.hasOwn(generated, filePath), `Checked-in template has stale extra file: ${filePath}`);
+    assert(Object.hasOwn(actual, filePath), `Checked-in template is missing generated file: ${filePath}`);
+    assert(actual[filePath] === generated[filePath], `Checked-in template differs from builder output: ${filePath}`);
+  }
+}
+
+function walkFiles(root) {
+  return fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(root, entry.name);
+    return entry.isDirectory() ? walkFiles(entryPath) : [entryPath];
+  });
+}
+
+function testAllSurfaceGeneration(app) {
+  app.state = app.createInitialState();
+  app.state.dialogue.options.push({ id: "ask_trade", label: "Trade?", request: "trade" });
+  app.state.forcedDialogue.entries.push({ trigger: "theft", line: "Put that back." });
+  app.state.notifications.notifications.push({ trigger: "quest.expired", text: "Too late.", kind: "quest" });
+  app.state.gifts.preferences.push({ reaction: "liked", item: "minecraft:apple" });
+  app.state.gifts.rewards.push({ item: "minecraft:emerald", min_count: 1, max_count: 2, weight: 1 });
+  app.state.pacification.payments.push({ item: "minecraft:emerald", count: 3 });
+  app.state.stories.structures.push({ structure: "minecraft:village_plains", lines: ["The village is near."] });
+  app.state.stories.biomes.push({ biome: "minecraft:plains", lines: ["The grassland is familiar."] });
+  app.state.names.male_names.push("Alden");
+  app.state.names.female_names.push("Mira");
+  app.state.extraFiles["data/my_pack/functions/setup.mcfunction"] = "say ready\n";
+
+  const files = app.generatedFiles();
+  jsonFile(files, "pack.mcmeta");
+  jsonFile(files, "data/villagerretaliation/dialogue/en_us/my_pack/options/00_trade.json");
+  jsonFile(files, "data/villagerretaliation/forced_dialogue/my_pack_forced_dialogue.json");
+  jsonFile(files, "data/villagerretaliation/notifications/en_us/my_pack_notifications.json");
+  jsonFile(files, "data/villagerretaliation/gifts/my_pack_gifts.json");
+  jsonFile(files, "data/villagerretaliation/pacification/my_pack_pacification.json");
+  jsonFile(files, "data/my_pack/story_structures/my_pack_structures.json");
+  jsonFile(files, "data/my_pack/story_biomes/my_pack_biomes.json");
+  jsonFile(files, "data/villagerretaliation/villager_names/preset_names.json");
+  assert(files["data/my_pack/functions/setup.mcfunction"] === "say ready\n", "Extra file was not preserved in generated output.");
+}
+
+function testSurfaceImportsAndEdits(app) {
+  app.state = app.createInitialState();
+  const imports = [
+    ["data/villagerretaliation/forced_dialogue/theft.json", { entries: [{ trigger: "theft", line: "Stop." }] }],
+    ["data/villagerretaliation/notifications/en_us/events.json", { notifications: [{ trigger: "quest.expired", text: "Expired.", kind: "quest" }] }],
+    ["data/villagerretaliation/gifts/custom.json", { preferences: [{ reaction: "liked", item: "minecraft:bread" }], rewards: [{ item: "minecraft:emerald" }] }],
+    ["data/villagerretaliation/pacification/payments.json", { payments: [{ item: "minecraft:emerald", count: 4 }] }],
+    ["data/storypack/story_structures/places.json", { radius: 64, entries: [{ structure: "minecraft:village_savanna" }] }],
+    ["data/storypack/story_biomes/biomes.json", { entries: [{ biome: "minecraft:savanna" }] }],
+    ["data/villagerretaliation/villager_names/preset_names.json", { names: ["Rowan"], female_names: ["Iris"] }]
+  ];
+
+  for (const [path, payload] of imports) {
+    assert(app.ingestKnownJson(path, JSON.stringify(payload)), `Import failed for ${path}.`);
+  }
+
+  assert(app.state.forcedDialogue.entries.length === 1, "Forced dialogue import missed entries.");
+  assert(app.state.notifications.notifications[0].trigger === "quest.expired", "Notification import missed quest trigger.");
+  assert(app.state.gifts.preferences[0].item === "minecraft:bread", "Gift import missed preference.");
+  assert(app.state.pacification.payments[0].count === 4, "Pacification import missed payment.");
+  assert(app.state.stories.namespace === "storypack", "Story import did not update namespace.");
+  assert(app.state.names.male_names.includes("Rowan"), "Name import missed legacy names field.");
+
+  assert(app.applyEditedFile("data/villagerretaliation/notifications/en_us/events.json", JSON.stringify({
+    notifications: [{ trigger: "gift_given", text: "Thanks.", kind: "hud" }]
+  })), "Notification preview edit was rejected.");
+  assert(app.state.notifications.notifications.length === 1, "Notification preview edit did not replace entries.");
+  assert(app.state.notifications.notifications[0].trigger === "gift_given", "Notification preview edit did not apply new trigger.");
+}
+
+function testBackendPathNormalization(app) {
+  const normalized = app.backend.normalizeImportedPaths({
+    "Example Pack/pack.mcmeta": "{}",
+    "Example Pack/data/villagerretaliation/gifts/gifts.json": "{\"preferences\":[]}"
+  });
+  assert(Object.hasOwn(normalized, "pack.mcmeta"), "Root pack.mcmeta was not normalized.");
+  assert(Object.hasOwn(normalized, "data/villagerretaliation/gifts/gifts.json"), "Nested data path was not normalized.");
+
+  const namespaceRoot = app.backend.normalizeImportedPaths({
+    "villagerretaliation/gifts/gifts.json": "{\"preferences\":[]}"
+  });
+  assert(Object.hasOwn(namespaceRoot, "data/villagerretaliation/gifts/gifts.json"), "Namespace-root import was not lifted under data/.");
+}
+
 const app = createAppHarness();
 testTypedFolderOutput(app);
 testTypedImportAndProfessionDefaults(app);
@@ -255,5 +352,9 @@ testBundleImport(app);
 testTypedOptionWithoutType(app);
 testReservedFolderValidation(app);
 testDialogueFolderTemplate(app);
+testCheckedInTemplateMatchesBuilder(app);
+testAllSurfaceGeneration(app);
+testSurfaceImportsAndEdits(app);
+testBackendPathNormalization(app);
 
 console.log("Datapack builder schema/import smoke test passed.");

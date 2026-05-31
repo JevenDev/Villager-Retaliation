@@ -4,6 +4,8 @@ Open [Villager Retaliation Datapack Generator](https://jevendev.github.io/Villag
 
 The builder is a static site. It emits the selected Villager Retaliation pack version's wiki paths for dialogue, forced dialogue events, chat event lines, notifications, gifts, pacification payments, story discovery, preset names, and `pack.mcmeta`, then exports them as a datapack zip with root-level `pack.mcmeta`.
 
+The generator backend lives in `backend.js`. `app.js` owns interaction and rendering, while `backend.js` owns initial state, pack metadata, path derivation, JSON generation, import normalization, preview edit application, known-kind detection, and zip creation across every datapack surface.
+
 The Wiki button opens a versioned, built-in wiki snapshot for the selected Villager Retaliation pack version. Press `Alt+Q` to open or close it. The wiki window can be dragged, resized, closed, and reopened at its previous position. Beta.11 and beta.12 snapshots are kept separate so beta.11 authors do not see beta.12-only mood and Social Attribute fields as current for their target.
 
 When editing files under `tools/datapack-builder/wiki/`, regenerate the bundled snapshot with:

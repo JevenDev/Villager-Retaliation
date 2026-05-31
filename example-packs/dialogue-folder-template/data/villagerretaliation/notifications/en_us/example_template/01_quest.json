@@ -1,0 +1,12 @@
+{
+  "notifications": [
+    {
+      "id": "example_template.notification.quest_expired",
+      "trigger": "quest.expired",
+      "kind": "quest",
+      "text": "example",
+      "color": "#FFD166",
+      "weight": 10
+    }
+  ]
+}

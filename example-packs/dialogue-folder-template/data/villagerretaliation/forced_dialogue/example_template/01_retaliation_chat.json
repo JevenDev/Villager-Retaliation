@@ -1,0 +1,22 @@
+{
+  "entries": [
+    {
+      "id": "example_template.forced.retaliation_chat",
+      "trigger": "retaliation_started",
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      },
+      "lines": [
+        "example"
+      ],
+      "target_entity_types": [
+        "minecraft:player"
+      ],
+      "witness_radius": 24,
+      "requires_line_of_sight": false,
+      "priority": 20,
+      "chance": 0.75
+    }
+  ]
+}

@@ -817,6 +817,14 @@ const BETA_13_PLANNED_DIALOGUE_DEPRECATION_REPLACEMENT = "`conditions` blocks";
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const PREVIEW_EXACT_WRAP_LINE_LIMIT = 2500;
+const datapackBackend = window.VR_DATAPACK_BACKEND.create({
+  constants: CONSTANTS,
+  dialogueKindKeys: DIALOGUE_KIND_KEYS,
+  packVersions: PACK_VERSIONS,
+  currentPackVersion: CURRENT_PACK_VERSION,
+  packVersionNamespace: PACK_VERSION_NAMESPACE,
+  packVersionStorageKey: PACK_VERSION_STORAGE_KEY
+});
 
 let state = createInitialState();
 let activeSection = "overview";
@@ -984,58 +992,7 @@ const TOOLBAR_HINTS = [
 let toolbarHintIndex = 0;
 
 function createInitialState() {
-  return {
-    meta: {
-      packName: "Villager Retaliation Pack",
-      description: "Custom Villager Retaliation datapack",
-      packVersion: CURRENT_PACK_VERSION,
-      packFormat: 34,
-      namespace: "my_pack",
-      slug: "my_pack",
-      locale: "en_us"
-    },
-    dialogue: {
-      layout: "folders",
-      fileName: "my_pack_dialogue",
-      folderName: "my_pack",
-      options: [],
-      lines: [],
-      messages: [],
-      openings: [],
-      closings: [],
-      pacify: []
-    },
-    forcedDialogue: {
-      fileName: "my_pack_forced_dialogue",
-      entries: []
-    },
-    notifications: {
-      fileName: "my_pack_notifications",
-      notifications: []
-    },
-    gifts: {
-      fileName: "my_pack_gifts",
-      preferences: [],
-      rewards: []
-    },
-    pacification: {
-      fileName: "my_pack_pacification",
-      payments: []
-    },
-    stories: {
-      namespace: "my_pack",
-      structureFileName: "my_pack_structures",
-      biomeFileName: "my_pack_biomes",
-      radius: 96,
-      structures: [],
-      biomes: []
-    },
-    names: {
-      male_names: [],
-      female_names: []
-    },
-    extraFiles: {}
-  };
+  return datapackBackend.createInitialState();
 }
 
 function escapeHtml(value) {
@@ -3020,23 +2977,15 @@ function tooltipForTag(fieldId, value) {
 }
 
 function slugify(value, fallback = "my_pack") {
-  const slug = String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/['"]/g, "")
-    .replace(/[^a-z0-9_./-]+/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "");
-  return slug || fallback;
+  return datapackBackend.slugify(value, fallback);
 }
 
 function namespaceify(value, fallback = "my_pack") {
-  const namespace = slugify(value, fallback).replace(/[^a-z0-9_.-]/g, "_");
-  return namespace || fallback;
+  return datapackBackend.namespaceify(value, fallback);
 }
 
 function normalizeFileName(value, fallback) {
-  return slugify(value, fallback).replace(/\.json$/i, "");
+  return datapackBackend.normalizeFileName(value, fallback);
 }
 
 function capitalize(value) {
@@ -3051,14 +3000,7 @@ function humanize(value) {
 }
 
 function parseList(value) {
-  if (Array.isArray(value)) return value.map(String).map((item) => item.trim()).filter(Boolean);
-  if (typeof value === "string") {
-    return value
-      .split(/[\n,]+/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return [];
+  return datapackBackend.parseList(value);
 }
 
 function listToText(value) {
@@ -3085,25 +3027,15 @@ function parseInteger(value) {
 }
 
 function packVersionInfo(version = state.meta.packVersion) {
-  return PACK_VERSIONS.find((candidate) => candidate.id === version) || PACK_VERSIONS[PACK_VERSIONS.length - 1];
+  return datapackBackend.packVersionInfo(version);
 }
 
 function normalizePackVersion(value) {
-  if (typeof value !== "string") return "";
-  const text = value.trim();
-  if (!text) return "";
-  const lower = text.toLowerCase();
-  return PACK_VERSION_IDS.find((id) => id.toLowerCase() === lower || id.toLowerCase().endsWith(lower)) || "";
+  return datapackBackend.normalizePackVersion(value);
 }
 
 function readPackVersion(json) {
-  const vr = json?.[PACK_VERSION_NAMESPACE] || json?.villager_retaliation || json?.vr;
-  return normalizePackVersion(
-    vr?.[PACK_VERSION_STORAGE_KEY]
-      || vr?.packVersion
-      || json?.[PACK_VERSION_STORAGE_KEY]
-      || json?.packVersion
-  );
+  return datapackBackend.readPackVersion(json);
 }
 
 function packVersionIndex(version) {
@@ -3111,13 +3043,11 @@ function packVersionIndex(version) {
 }
 
 function packVersionAtLeast(version, minimumVersion) {
-  const versionIndex = packVersionIndex(version);
-  const minimumIndex = packVersionIndex(minimumVersion);
-  return versionIndex >= 0 && minimumIndex >= 0 && versionIndex >= minimumIndex;
+  return datapackBackend.packVersionAtLeast(version, minimumVersion);
 }
 
 function supportsBeta12DialogueFields(version = state.meta.packVersion) {
-  return packVersionAtLeast(version, "1.0.0-beta.12");
+  return datapackBackend.supportsBeta12DialogueFields(version);
 }
 
 function isValidDialogueOptionType(entry) {
@@ -3146,66 +3076,19 @@ function authoredDialogueFlags(flags, kind) {
 }
 
 function inferPackVersionFromFiles(files) {
-  for (const [path, value] of Object.entries(files)) {
-    if (path.replace(/^\/+/, "") === "pack.mcmeta" && typeof value === "string") {
-      try {
-        const version = readPackVersion(JSON.parse(value));
-        if (version) return version;
-      } catch {
-        // A malformed pack.mcmeta will be kept as an extra file by the importer.
-      }
-    }
-  }
-  const paths = Object.keys(files).map((path) => path.replace(/^\/+/, ""));
-  const hasBeta12DialogueField = Object.entries(files).some(([path, value]) => (
-    /^data\/villagerretaliation\/dialogue\/.+\.json$/.test(path.replace(/^\/+/, ""))
-    && typeof value === "string"
-    && jsonContainsAnyKey(value, BETA_12_ONLY_DIALOGUE_KEYS)
-  ));
-  if (hasBeta12DialogueField) return "1.0.0-beta.12";
-  const hasBeta11Path = paths.some((path) => (
-    /^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)
-    || /^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)
-    || /^data\/villagerretaliation\/villager_names\/preset_names\.json$/.test(path)
-    || /^data\/[^/]+\/story_(structures|biomes)\/.+\.json$/.test(path)
-  ));
-  return hasBeta11Path ? "1.0.0-beta.11" : "";
+  return datapackBackend.inferPackVersionFromFiles(files, BETA_12_ONLY_DIALOGUE_KEYS);
 }
 
 function jsonContainsAnyKey(source, keys) {
-  try {
-    return valueContainsAnyKey(JSON.parse(stripTextBom(source)), new Set(keys));
-  } catch {
-    return false;
-  }
+  return datapackBackend.jsonContainsAnyKey(source, keys);
 }
 
 function valueContainsAnyKey(value, keys) {
-  if (Array.isArray(value)) return value.some((item) => valueContainsAnyKey(item, keys));
-  if (!value || typeof value !== "object") return false;
-  return Object.entries(value).some(([key, child]) => keys.has(key) || valueContainsAnyKey(child, keys));
+  return datapackBackend.valueContainsAnyKey(value, keys);
 }
 
 function cleanObject(value) {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => cleanObject(item))
-      .filter((item) => item !== undefined && !(Array.isArray(item) && item.length === 0));
-  }
-  if (value && typeof value === "object" && !(value instanceof Uint8Array)) {
-    const result = {};
-    for (const [key, child] of Object.entries(value)) {
-      if (key.startsWith("__")) continue;
-      const cleaned = cleanObject(child);
-      const emptyArray = Array.isArray(cleaned) && cleaned.length === 0;
-      const emptyObject = cleaned && typeof cleaned === "object" && !Array.isArray(cleaned) && Object.keys(cleaned).length === 0;
-      if (cleaned !== undefined && cleaned !== "" && !emptyArray && !emptyObject) {
-        result[key] = cleaned;
-      }
-    }
-    return result;
-  }
-  return value === null ? undefined : value;
+  return datapackBackend.cleanObject(value);
 }
 
 function hasAnyEntries(section, keys) {
@@ -3213,20 +3096,11 @@ function hasAnyEntries(section, keys) {
 }
 
 function makePackMeta() {
-  const version = packVersionInfo();
-  return cleanObject({
-    pack: {
-      pack_format: state.meta.packFormat || version.packFormat,
-      description: state.meta.description || state.meta.packName || "Villager Retaliation datapack"
-    },
-    [PACK_VERSION_NAMESPACE]: {
-      [PACK_VERSION_STORAGE_KEY]: version.id
-    }
-  });
+  return datapackBackend.makePackMeta(state);
 }
 
 function safeJson(value) {
-  return JSON.stringify(cleanObject(value), null, 2) + "\n";
+  return datapackBackend.safeJson(value);
 }
 
 function dialogueKindIndex(segments) {
@@ -3252,75 +3126,39 @@ function professionFromDialoguePathSegments(segments) {
 }
 
 function dialoguePathInfo(path) {
-  const match = path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/);
-  if (!match) return null;
-  const relative = match[2];
-  const segments = relative.split("/");
-  const kindIndex = dialogueKindIndex(segments);
-  const kind = kindIndex >= 0 ? segments[kindIndex] : "";
-  return {
-    locale: match[1],
-    relative,
-    kind,
-    folderName: kindIndex > 0 ? segments.slice(0, kindIndex).join("/") : "",
-    profession: professionFromDialoguePathSegments(segments)
-  };
+  return datapackBackend.dialoguePathInfo(path);
 }
 
 function dialogueEntriesFromJson(json, kind) {
-  if (Array.isArray(json?.[kind])) return cleanArray(json[kind]);
-  if (Array.isArray(json)) return cleanArray(json);
-  if (!json || typeof json !== "object") return [];
-  const entry = cleanObject(json);
-  return Object.keys(entry).length > 0 ? [entry] : [];
+  return datapackBackend.dialogueEntriesFromJson(json, kind);
 }
 
 function dialogueOutputEntry(path, entry) {
-  const result = cleanObject(entry);
-  const profession = dialoguePathInfo(path)?.profession;
-  if (profession && Array.isArray(result.professions) && result.professions.length === 1 && result.professions[0] === profession) {
-    delete result.professions;
-  }
-  return result;
+  return datapackBackend.dialogueOutputEntry(path, entry);
 }
 
 function dialogueFilePayload(path, value) {
-  const info = dialoguePathInfo(path);
-  const payload = Object.fromEntries(DIALOGUE_KIND_KEYS
-    .filter((key) => Array.isArray(value[key]) && value[key].length > 0)
-    .map((key) => [key, value[key].map((entry) => dialogueOutputEntry(path, entry))]));
-  const kind = info?.kind;
-  if (!kind) return payload;
-  const nonEmptyKinds = Object.keys(payload);
-  if (nonEmptyKinds.length !== 1 || nonEmptyKinds[0] !== kind) return payload;
-  return payload[kind].length === 1 ? payload[kind][0] : { [kind]: payload[kind] };
+  return datapackBackend.dialogueFilePayload(path, value);
 }
 
 function dialogueUsesFolderLayout() {
-  return supportsBeta12DialogueFields() && state.dialogue.layout !== "bundle";
+  return datapackBackend.dialogueUsesFolderLayout(state);
 }
 
 function dialogueBundlePath() {
-  return `data/villagerretaliation/dialogue/${state.meta.locale}/${state.dialogue.fileName}.json`;
+  return datapackBackend.dialogueBundlePath(state);
 }
 
 function dialogueFolderName() {
-  return normalizeFileName(state.dialogue.folderName || state.meta.slug, state.meta.slug || "my_pack");
+  return datapackBackend.dialogueFolderName(state);
 }
 
 function dialogueFileStem(value, fallback) {
-  return normalizeFileName(value, fallback)
-    .replace(/[:/]+/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "") || fallback;
+  return datapackBackend.dialogueFileStem(value, fallback);
 }
 
 function defaultDialogueEntryPath(kind = activeDialogueKind, entry = {}, index = 0) {
-  if (!dialogueUsesFolderLayout()) return dialogueBundlePath();
-  const stemSource = entry.request || entry.key || entry.id || kind;
-  const stem = dialogueFileStem(stemSource, kind);
-  const order = String(Math.max(0, index)).padStart(2, "0");
-  return `data/villagerretaliation/dialogue/${state.meta.locale}/${dialogueFolderName()}/${kind}/${order}_${stem}.json`;
+  return datapackBackend.defaultDialogueEntryPath(state, kind, entry, index);
 }
 
 function dialoguePath(kind = activeDialogueKind, entry = {}, index = 0) {
@@ -3328,79 +3166,35 @@ function dialoguePath(kind = activeDialogueKind, entry = {}, index = 0) {
 }
 
 function forcedDialoguePath() {
-  return `data/villagerretaliation/forced_dialogue/${state.forcedDialogue.fileName}.json`;
+  return datapackBackend.forcedDialoguePath(state);
 }
 
 function notificationsPath() {
-  return `data/villagerretaliation/notifications/${state.meta.locale}/${state.notifications.fileName}.json`;
+  return datapackBackend.notificationsPath(state);
 }
 
 function giftsPath() {
-  return `data/villagerretaliation/gifts/${state.gifts.fileName}.json`;
+  return datapackBackend.giftsPath(state);
 }
 
 function pacificationPath() {
-  return `data/villagerretaliation/pacification/${state.pacification.fileName}.json`;
+  return datapackBackend.pacificationPath(state);
 }
 
 function structurePath() {
-  return `data/${state.stories.namespace}/story_structures/${state.stories.structureFileName}.json`;
+  return datapackBackend.structurePath(state);
 }
 
 function biomePath() {
-  return `data/${state.stories.namespace}/story_biomes/${state.stories.biomeFileName}.json`;
+  return datapackBackend.biomePath(state);
 }
 
 function namesPath() {
-  return "data/villagerretaliation/villager_names/preset_names.json";
+  return datapackBackend.namesPath(state);
 }
 
 function generatedFiles() {
-  const files = { ...state.extraFiles };
-  files["pack.mcmeta"] = safeJson(makePackMeta());
-
-  if (hasAnyEntries("dialogue", ["options", "lines", "messages", "openings", "closings", "pacify"])) {
-    Object.assign(files, generatedDialogueFiles());
-  }
-
-  if (state.forcedDialogue.entries.length > 0) {
-    Object.assign(files, generatedForcedDialogueFiles());
-  }
-
-  if (state.notifications.notifications.length > 0) {
-    files[notificationsPath()] = safeJson({ notifications: state.notifications.notifications });
-  }
-
-  if (hasAnyEntries("gifts", ["preferences", "rewards"])) {
-    files[giftsPath()] = safeJson({
-      preferences: state.gifts.preferences,
-      rewards: state.gifts.rewards
-    });
-  }
-
-  if (state.pacification.payments.length > 0) {
-    files[pacificationPath()] = safeJson({ payments: state.pacification.payments });
-  }
-
-  if (state.stories.structures.length > 0) {
-    files[structurePath()] = safeJson({
-      radius: state.stories.radius || 96,
-      entries: state.stories.structures
-    });
-  }
-
-  if (state.stories.biomes.length > 0) {
-    files[biomePath()] = safeJson({ entries: state.stories.biomes });
-  }
-
-  if (state.names.male_names.length > 0 || state.names.female_names.length > 0) {
-    files[namesPath()] = safeJson({
-      male_names: state.names.male_names,
-      female_names: state.names.female_names
-    });
-  }
-
-  return files;
+  return datapackBackend.generatedFiles(state);
 }
 
 function currentViewFiles() {
@@ -3457,34 +3251,11 @@ function applyTemporaryDraftEntry() {
 }
 
 function generatedDialogueFiles() {
-  const grouped = new Map();
-  for (const kind of DIALOGUE_KIND_KEYS) {
-    for (const [index, entry] of state.dialogue[kind].entries()) {
-      const path = entry.__sourcePath || dialoguePath(kind, entry, index);
-      if (!grouped.has(path)) {
-        grouped.set(path, {
-          options: [],
-          lines: [],
-          messages: [],
-          openings: [],
-          closings: [],
-          pacify: []
-        });
-      }
-      grouped.get(path)[kind].push(entry);
-    }
-  }
-  return Object.fromEntries([...grouped.entries()].map(([path, value]) => [path, safeJson(dialogueFilePayload(path, value))]));
+  return datapackBackend.generatedDialogueFiles(state);
 }
 
 function generatedForcedDialogueFiles() {
-  const grouped = new Map();
-  for (const entry of state.forcedDialogue.entries) {
-    const path = entry.__sourcePath || forcedDialoguePath();
-    if (!grouped.has(path)) grouped.set(path, { entries: [] });
-    grouped.get(path).entries.push(entry);
-  }
-  return Object.fromEntries([...grouped.entries()].map(([path, value]) => [path, safeJson(value)]));
+  return datapackBackend.generatedForcedDialogueFiles(state);
 }
 
 function pathsFromGeneratedFiles(fileMap, fallbackPath) {
@@ -3813,7 +3584,7 @@ function hasNotificationText(entry) {
 }
 
 function forcedTriggerValue(entry) {
-  return entry?.trigger ?? entry?.event ?? "";
+  return datapackBackend.forcedTriggerValue(entry);
 }
 
 function socialAttributeRangeKeys(prefix) {
@@ -8133,12 +7904,24 @@ function templateRequestFileName(index, request) {
 
 function dialogueFolderTemplateFiles() {
   const files = {
+    "pack.mcmeta": safeJson({
+      pack: {
+        pack_format: packVersionInfo(CURRENT_PACK_VERSION).packFormat,
+        description: "Folderized Villager Retaliation beta.12 dialogue template"
+      },
+      villagerretaliation: {
+        pack_version: CURRENT_PACK_VERSION
+      }
+    }),
     "README.md": [
       "# Villager Retaliation Dialogue Folder Template",
       "",
       "This beta.12 template gives pack developers a folder-first starting point.",
       "Every dialogue request has one custom option and one response line with the text `example`.",
-      "Replace ids, labels, filters, and text as your pack grows."
+      "Replace ids, labels, filters, and text as your pack grows.",
+      "",
+      "The template intentionally uses focused single-entry files so translators and pack authors can work in small, readable chunks.",
+      "It also includes compact examples for beta.12 text keys, nested metadata, compound conditions, mood and Social Attribute filters, forced-dialogue chat output, quest notifications, gifts, pacification payments, story discovery, profession loot, and preset names."
     ].join("\n") + "\n"
   };
   const dialogueRoot = "data/villagerretaliation/dialogue/en_us/example_template";
@@ -8170,6 +7953,12 @@ function dialogueFolderTemplateFiles() {
     text: "example",
     weight: 10
   });
+  files[`${dialogueRoot}/messages/01_beta12_filters.json`] = safeJson({
+    id: "example_template.message.beta12_filters",
+    key: "example_template.message.beta12_filters",
+    lines: ["example"],
+    weight: 10
+  });
   files[`${dialogueRoot}/openings/00_example.json`] = safeJson({
     id: "example_template.opening.example",
     text: "example",
@@ -8191,6 +7980,35 @@ function dialogueFolderTemplateFiles() {
     request: "question",
     professions: ["farmer", "librarian"],
     text: "example",
+    weight: 10
+  });
+  files[`${dialogueRoot}/groups/example_group/lines/01_beta12_filters.json`] = safeJson({
+    id: "example_template.group.beta12_filters",
+    request: "question",
+    option: "example_template.option.question",
+    text_key: "example_template.message.beta12_filters",
+    conditions: [
+      {
+        type: "any_of",
+        conditions: [
+          { type: "weather", weather: "rain" },
+          { type: "quest", quest: "example_template:first_steps", state: "active" }
+        ]
+      }
+    ],
+    mood: "grateful",
+    min_mood_intensity: 25,
+    requires_high_kindness: true,
+    priority: 20,
+    category: "beta12_filters",
+    metadata: {
+      topic: "Example beta.12 filters",
+      tags: ["example", "beta12"],
+      questline: "example_template",
+      quest: "first_steps",
+      stage: "intro",
+      notes: "Shows text_key, conditions, mood, Social Attribute shorthand, priority, category, and nested metadata."
+    },
     weight: 10
   });
   files[`${dialogueRoot}/professions/farmer/options/00_example.json`] = safeJson({
@@ -8287,6 +8105,24 @@ function dialogueFolderTemplateFiles() {
       }
     ]
   });
+  files["data/villagerretaliation/forced_dialogue/example_template/01_retaliation_chat.json"] = safeJson({
+    entries: [
+      {
+        id: "example_template.forced.retaliation_chat",
+        trigger: "retaliation_started",
+        output: {
+          mode: "chat",
+          radius: 24
+        },
+        lines: ["example"],
+        target_entity_types: ["minecraft:player"],
+        witness_radius: 24,
+        requires_line_of_sight: false,
+        priority: 20,
+        chance: 0.75
+      }
+    ]
+  });
   files["data/villagerretaliation/notifications/en_us/example_template/00_ambient.json"] = safeJson({
     notifications: [
       {
@@ -8294,6 +8130,18 @@ function dialogueFolderTemplateFiles() {
         trigger: "ambient.murmur",
         text: "example",
         world_text_kind: "murmur",
+        weight: 10
+      }
+    ]
+  });
+  files["data/villagerretaliation/notifications/en_us/example_template/01_quest.json"] = safeJson({
+    notifications: [
+      {
+        id: "example_template.notification.quest_expired",
+        trigger: "quest.expired",
+        kind: "quest",
+        text: "example",
+        color: "#FFD166",
         weight: 10
       }
     ]
@@ -8322,9 +8170,11 @@ function dialogueFolderTemplateFiles() {
   files["data/villagerretaliation/pacification/example_template/00_payments.json"] = safeJson({
     payments: [
       {
+        id: "example_template.pacification.emerald",
         items: ["minecraft:emerald"],
         min_count: 1,
-        max_count: 1
+        max_count: 1,
+        priority: 10
       }
     ]
   });
@@ -8595,7 +8445,7 @@ function loadTemplateChoice(id) {
 }
 
 function unique(values) {
-  return [...new Set(values.filter(Boolean))];
+  return datapackBackend.unique(values);
 }
 
 function updateOverviewFromInput(target) {
@@ -8734,105 +8584,15 @@ function applyPreviewEdit() {
 }
 
 function applyEditedFile(path, source) {
-  if (path === "pack.mcmeta") {
-    const json = parseEditedJson(source);
-    if (!json) return false;
-    const pack = json.pack || {};
-    if (Object.hasOwn(pack, "description")) state.meta.description = pack.description || "";
-    if (Object.hasOwn(pack, "pack_format")) {
-      const packFormat = Number(pack.pack_format);
-      state.meta.packFormat = Number.isFinite(packFormat) ? Math.trunc(packFormat) : pack.pack_format;
-    }
-    return true;
-  }
-
-  if (path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/)) {
-    const json = parseEditedJson(source);
-    if (!json) return false;
-    replaceDialogueFile(path, json);
-    return true;
-  }
-
-  const forcedDialogueMatch = path.match(/^data\/[^/]+\/forced_dialogue\/(.+)\.json$/);
-  if (forcedDialogueMatch) {
-    const json = parseEditedJson(source);
-    if (!json) return false;
-    replaceForcedDialogueFile(path, json);
-    return true;
-  }
-
-  const notificationMatch = path.match(/^data\/villagerretaliation\/notifications\/([^/]+)\/(.+)\.json$/);
-  if (notificationMatch) {
-    const json = parseEditedJson(source);
-    if (!json) return false;
-    state.meta.locale = notificationMatch[1];
-    state.notifications.fileName = normalizeFileName(notificationMatch[2].split("/").pop(), state.notifications.fileName);
-    state.notifications.notifications = cleanArray(normalizeNotificationEntries(json));
-    return true;
-  }
-
-  const giftMatch = path.match(/^data\/villagerretaliation\/gifts\/(.+)\.json$/);
-  if (giftMatch) {
-    const json = parseEditedJson(source);
-    if (!json) return false;
-    state.gifts.fileName = normalizeFileName(giftMatch[1].split("/").pop(), state.gifts.fileName);
-    state.gifts.preferences = cleanArray(json.preferences);
-    state.gifts.rewards = cleanArray(json.rewards);
-    return true;
-  }
-
-  const pacificationMatch = path.match(/^data\/villagerretaliation\/pacification\/(.+)\.json$/);
-  if (pacificationMatch) {
-    const json = parseEditedJson(source);
-    if (!json) return false;
-    state.pacification.fileName = normalizeFileName(pacificationMatch[1].split("/").pop(), state.pacification.fileName);
-    state.pacification.payments = cleanArray(json.payments);
-    return true;
-  }
-
-  const structureMatch = path.match(/^data\/([^/]+)\/story_structures\/(.+)\.json$/);
-  if (structureMatch) {
-    const json = parseEditedJson(source);
-    if (!json) return false;
-    state.stories.namespace = structureMatch[1];
-    state.stories.structureFileName = normalizeFileName(structureMatch[2].split("/").pop(), state.stories.structureFileName);
-    state.stories.radius = parseInteger(json.radius) || state.stories.radius;
-    state.stories.structures = cleanArray(normalizeStoryEntries(json, "structure"));
-    return true;
-  }
-
-  const biomeMatch = path.match(/^data\/([^/]+)\/story_biomes\/(.+)\.json$/);
-  if (biomeMatch) {
-    const json = parseEditedJson(source);
-    if (!json) return false;
-    state.stories.namespace = biomeMatch[1];
-    state.stories.biomeFileName = normalizeFileName(biomeMatch[2].split("/").pop(), state.stories.biomeFileName);
-    state.stories.biomes = cleanArray(normalizeStoryEntries(json, "biome"));
-    return true;
-  }
-
-  if (path === namesPath()) {
-    const json = parseEditedJson(source);
-    if (!json) return false;
-    state.names.male_names = unique([...parseList(json.male_names), ...parseList(json.names)]);
-    state.names.female_names = parseList(json.female_names);
-    return true;
-  }
-
-  state.extraFiles[path] = source;
-  return true;
+  return datapackBackend.applyEditedFile(state, path, source);
 }
 
 function parseEditedJson(source) {
-  try {
-    return JSON.parse(stripTextBom(source));
-  } catch {
-    return null;
-  }
+  return datapackBackend.parseEditedJson(source);
 }
 
 function stripTextBom(source) {
-  return String(source ?? "").replace(/^\uFEFF/, "");
+  return datapackBackend.stripTextBom(source);
 }
 
 function decodeTextFile(bytes) {
@@ -8840,49 +8600,15 @@ function decodeTextFile(bytes) {
 }
 
 function cleanArray(entries) {
-  return Array.isArray(entries) ? entries.map((entry) => cleanObject(entry)) : [];
+  return datapackBackend.cleanArray(entries);
 }
 
 function replaceDialogueFile(path, json) {
-  const info = dialoguePathInfo(path);
-  state.meta.locale = info.locale;
-  state.dialogue.fileName = normalizeFileName(info.relative.split("/").pop(), state.dialogue.fileName);
-  if (info.kind) {
-    state.dialogue.layout = "folders";
-    if (info.folderName) state.dialogue.folderName = normalizeFileName(info.folderName, state.dialogue.folderName || state.meta.slug);
-  }
-  state.notifications.notifications = state.notifications.notifications.filter((entry) => entry.__sourcePath !== path);
-  const routedNotifications = isNotificationEntry(json) ? [json] : [];
-  if (info.kind) {
-    state.dialogue[info.kind] = state.dialogue[info.kind].filter((entry, index) => (entry.__sourcePath || dialoguePath(info.kind, entry, index)) !== path);
-    state.dialogue[info.kind].push(...withDefaultProfession(dialogueEntriesFromJson(json, info.kind), info.profession).map((entry) => ({ ...entry, __sourcePath: path })));
-    delete state.extraFiles[path];
-    return;
-  }
-  for (const kind of DIALOGUE_KIND_KEYS) {
-    state.dialogue[kind] = state.dialogue[kind].filter((entry, index) => (entry.__sourcePath || dialoguePath(kind, entry, index)) !== path);
-    const entries = cleanArray(json[kind]);
-    const dialogueEntries = [];
-    for (const entry of entries) {
-      if (isNotificationEntry(entry)) {
-        routedNotifications.push(entry);
-      } else {
-        dialogueEntries.push(entry);
-      }
-    }
-    state.dialogue[kind].push(...dialogueEntries.map((entry) => ({ ...entry, __sourcePath: path })));
-  }
-  if (routedNotifications.length > 0) {
-    mergeArray("notifications", "notifications", routedNotifications, path);
-  }
-  delete state.extraFiles[path];
+  datapackBackend.replaceDialogueFile(state, path, json);
 }
 
 function replaceForcedDialogueFile(path, json) {
-  const forcedDialogueMatch = path.match(/^data\/[^/]+\/forced_dialogue\/(.+)\.json$/);
-  state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
-  state.forcedDialogue.entries = state.forcedDialogue.entries.filter((entry) => (entry.__sourcePath || forcedDialoguePath()) !== path);
-  state.forcedDialogue.entries.push(...cleanArray(normalizeForcedDialogueEntries(json)).map((entry) => ({ ...entry, __sourcePath: path })));
+  datapackBackend.replaceForcedDialogueFile(state, path, json);
 }
 
 async function exportZip() {
@@ -8935,59 +8661,23 @@ function closeExportIssueDialog(confirmed) {
 }
 
 function normalizeImportedPaths(fileMap) {
-  const normalizedInput = {};
-  for (const [path, value] of Object.entries(fileMap)) {
-    normalizedInput[path.replaceAll("\\", "/").replace(/^\/+/, "")] = value;
-  }
-  const paths = Object.keys(normalizedInput);
-  const packPath = paths.find((path) => path === "pack.mcmeta" || path.endsWith("/pack.mcmeta"));
-  const normalized = {};
-  if (!packPath || packPath === "pack.mcmeta") {
-    Object.assign(normalized, normalizedInput);
-  } else {
-    const prefix = packPath.slice(0, -"pack.mcmeta".length);
-    for (const [path, value] of Object.entries(normalizedInput)) {
-      normalized[path.startsWith(prefix) ? path.slice(prefix.length) : path] = value;
-    }
-  }
-
-  return normalizeNamespaceRootImportPaths(normalized);
+  return datapackBackend.normalizeImportedPaths(fileMap);
 }
 
 function normalizeNamespaceRootImportPaths(fileMap) {
-  const paths = Object.keys(fileMap);
-  if (paths.some((path) => path.startsWith("data/"))) return fileMap;
-  const namespaceRoots = new Set(paths
-    .filter(isNamespaceRootDataPath)
-    .map((path) => path.split("/")[0]));
-  if (namespaceRoots.size === 0) return fileMap;
-
-  const normalized = {};
-  for (const [path, value] of Object.entries(fileMap)) {
-    const namespaceRoot = path.split("/")[0];
-    normalized[namespaceRoots.has(namespaceRoot) ? `data/${path}` : path] = value;
-  }
-  return normalized;
+  return datapackBackend.normalizeNamespaceRootImportPaths(fileMap);
 }
 
 function isNamespaceRootDataPath(path) {
-  return /^[a-z0-9_.-]+\/(?:dialogue|forced_dialogue|notifications|gifts|pacification|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
+  return datapackBackend.isNamespaceRootDataPath(path);
 }
 
 function isTextPath(path) {
-  return /\.(json|mcmeta|mcfunction|txt|md|lang)$/i.test(path);
+  return datapackBackend.isTextPath(path);
 }
 
 function importedKnownKind(path) {
-  if (/^data\/villagerretaliation\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
-  if (/^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)) return "forced_dialogue";
-  if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
-  if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
-  if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
-  if (/^data\/[^/]+\/story_structures\/.+\.json$/.test(path)) return "story_structures";
-  if (/^data\/[^/]+\/story_biomes\/.+\.json$/.test(path)) return "story_biomes";
-  if (path === namesPath()) return "names";
-  return "";
+  return datapackBackend.importedKnownKind(state, path);
 }
 
 async function handleImport(files, replaceProject = false) {
@@ -9089,188 +8779,23 @@ async function importDroppedFiles(dataTransfer) {
 }
 
 function ingestFiles(files) {
-  const extra = {};
-  for (const [path, value] of Object.entries(files)) {
-    const normalizedPath = path.replace(/^\/+/, "");
-    if (normalizedPath.endsWith("/")) continue;
-    if (normalizedPath === "pack.mcmeta" && typeof value === "string") {
-      try {
-        const json = JSON.parse(stripTextBom(value));
-        state.meta.description = json.pack?.description || state.meta.description;
-        state.meta.packFormat = Number(json.pack?.pack_format) || state.meta.packFormat;
-        state.meta.packVersion = readPackVersion(json) || state.meta.packVersion;
-      } catch {
-        extra[normalizedPath] = value;
-      }
-      continue;
-    }
-    if (typeof value === "string" && ingestKnownJson(normalizedPath, value)) {
-      continue;
-    }
-    extra[normalizedPath] = value;
-  }
-  state.extraFiles = { ...state.extraFiles, ...extra };
+  datapackBackend.ingestFiles(state, files);
 }
 
 function ingestKnownJson(path, source) {
-  let json;
-  try {
-    json = JSON.parse(stripTextBom(source));
-  } catch {
-    return false;
-  }
-
-  const dialogueInfo = dialoguePathInfo(path);
-  if (dialogueInfo) {
-    state.meta.locale = dialogueInfo.locale;
-    state.dialogue.fileName = normalizeFileName(dialogueInfo.relative.split("/").pop(), state.dialogue.fileName);
-    if (dialogueInfo.kind) {
-      state.dialogue.layout = "folders";
-      if (dialogueInfo.folderName) state.dialogue.folderName = normalizeFileName(dialogueInfo.folderName, state.dialogue.folderName || state.meta.slug);
-    }
-    if (dialogueInfo.kind) {
-      const entries = withDefaultProfession(dialogueEntriesFromJson(json, dialogueInfo.kind), dialogueInfo.profession);
-      if (entries.length > 0) {
-        mergeArray("dialogue", dialogueInfo.kind, entries, path);
-        return true;
-      }
-      return false;
-    }
-    let importedDialogue = false;
-    for (const kind of DIALOGUE_KIND_KEYS) {
-      const entries = withDefaultProfession(json[kind], dialogueInfo.profession);
-      if (!Array.isArray(entries)) continue;
-      mergeArray("dialogue", kind, entries, path);
-      importedDialogue = true;
-    }
-    return importedDialogue;
-  }
-
-  const notificationMatch = path.match(/^data\/villagerretaliation\/notifications\/([^/]+)\/(.+)\.json$/);
-  if (notificationMatch) {
-    state.meta.locale = notificationMatch[1];
-    state.notifications.fileName = normalizeFileName(notificationMatch[2].split("/").pop(), state.notifications.fileName);
-    mergeArray("notifications", "notifications", normalizeNotificationEntries(json), path);
-    return true;
-  }
-
-  const forcedDialogueMatch = path.match(/^data\/[^/]+\/forced_dialogue\/(.+)\.json$/);
-  if (forcedDialogueMatch) {
-    state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
-    mergeArray("forcedDialogue", "entries", normalizeForcedDialogueEntries(json), path);
-    return true;
-  }
-
-  const giftMatch = path.match(/^data\/villagerretaliation\/gifts\/(.+)\.json$/);
-  if (giftMatch) {
-    state.gifts.fileName = normalizeFileName(giftMatch[1].split("/").pop(), state.gifts.fileName);
-    mergeArray("gifts", "preferences", json.preferences);
-    mergeArray("gifts", "rewards", json.rewards);
-    return true;
-  }
-
-  const pacificationMatch = path.match(/^data\/villagerretaliation\/pacification\/(.+)\.json$/);
-  if (pacificationMatch) {
-    state.pacification.fileName = normalizeFileName(pacificationMatch[1].split("/").pop(), state.pacification.fileName);
-    mergeArray("pacification", "payments", json.payments);
-    return true;
-  }
-
-  const structureMatch = path.match(/^data\/([^/]+)\/story_structures\/(.+)\.json$/);
-  if (structureMatch) {
-    state.stories.namespace = structureMatch[1];
-    state.stories.structureFileName = normalizeFileName(structureMatch[2].split("/").pop(), state.stories.structureFileName);
-    if (json.radius) state.stories.radius = json.radius;
-    mergeArray("stories", "structures", normalizeStoryEntries(json, "structure"));
-    return true;
-  }
-
-  const biomeMatch = path.match(/^data\/([^/]+)\/story_biomes\/(.+)\.json$/);
-  if (biomeMatch) {
-    state.stories.namespace = biomeMatch[1];
-    state.stories.biomeFileName = normalizeFileName(biomeMatch[2].split("/").pop(), state.stories.biomeFileName);
-    mergeArray("stories", "biomes", normalizeStoryEntries(json, "biome"));
-    return true;
-  }
-
-  if (path === namesPath()) {
-    state.names.male_names = unique([...state.names.male_names, ...parseList(json.male_names), ...parseList(json.names)]);
-    state.names.female_names = unique([...state.names.female_names, ...parseList(json.female_names)]);
-    return true;
-  }
-
-  const forcedEntries = normalizeForcedDialogueEntries(json);
-  if (forcedEntries.length > 0) {
-    mergeArray("forcedDialogue", "entries", forcedEntries);
-    return true;
-  }
-
-  const notificationEntries = normalizeNotificationEntries(json);
-  if (notificationEntries.length > 0) {
-    mergeArray("notifications", "notifications", notificationEntries);
-    return true;
-  }
-
-  if (Array.isArray(json.options) || Array.isArray(json.lines) || Array.isArray(json.messages) || Array.isArray(json.openings) || Array.isArray(json.closings) || Array.isArray(json.pacify)) {
-    mergeArray("dialogue", "options", json.options);
-    mergeArray("dialogue", "lines", json.lines);
-    mergeArray("dialogue", "messages", json.messages);
-    mergeArray("dialogue", "openings", json.openings);
-    mergeArray("dialogue", "closings", json.closings);
-    mergeArray("dialogue", "pacify", json.pacify);
-    return true;
-  }
-
-  if (Array.isArray(json.male_names) || Array.isArray(json.female_names) || Array.isArray(json.names)) {
-    state.names.male_names = unique([...state.names.male_names, ...parseList(json.male_names), ...parseList(json.names)]);
-    state.names.female_names = unique([...state.names.female_names, ...parseList(json.female_names)]);
-    return true;
-  }
-
-  let matchedTopLevelPackJson = false;
-  if (Array.isArray(json.notifications)) {
-    mergeArray("notifications", "notifications", normalizeNotificationEntries(json));
-    matchedTopLevelPackJson = true;
-  }
-  if (Array.isArray(json.preferences)) {
-    mergeArray("gifts", "preferences", json.preferences);
-    matchedTopLevelPackJson = true;
-  }
-  if (Array.isArray(json.rewards)) {
-    mergeArray("gifts", "rewards", json.rewards);
-    matchedTopLevelPackJson = true;
-  }
-  if (Array.isArray(json.payments)) {
-    mergeArray("pacification", "payments", json.payments);
-    matchedTopLevelPackJson = true;
-  }
-  if (matchedTopLevelPackJson) return true;
-
-  const detected = detectJsonKind(json);
-  if (detected) {
-    mergeArray(detected.section, detected.kind, json[detected.key]);
-    return true;
-  }
-
-  return false;
+  return datapackBackend.ingestKnownJson(state, path, source);
 }
 
 function detectJsonKind(json) {
-  if (Array.isArray(json.entries) && json.entries.some(isForcedDialogueEntry)) return { section: "forcedDialogue", kind: "entries", key: "entries" };
-  if (Array.isArray(json.notifications)) return { section: "notifications", kind: "notifications", key: "notifications" };
-  if (Array.isArray(json.preferences)) return { section: "gifts", kind: "preferences", key: "preferences" };
-  if (Array.isArray(json.rewards)) return { section: "gifts", kind: "rewards", key: "rewards" };
-  if (Array.isArray(json.payments)) return { section: "pacification", kind: "payments", key: "payments" };
-  return null;
+  return datapackBackend.detectJsonKind(json);
 }
 
 function isForcedDialogueEntry(entry) {
-  if (isNotificationEntry(entry)) return false;
-  return Boolean(entry && typeof entry === "object" && forcedTriggerValue(entry) && (hasForcedDialogueLine(entry) || Array.isArray(entry.options)));
+  return datapackBackend.isForcedDialogueEntry(entry);
 }
 
 function hasForcedDialogueLine(entry) {
-  return Boolean(entry?.line || (Array.isArray(entry?.lines) && entry.lines.some((line) => String(line ?? "").trim())));
+  return datapackBackend.hasForcedDialogueLine(entry);
 }
 
 function forcedOutputMode(entry) {
@@ -9318,89 +8843,27 @@ function readForcedDialogueLines() {
 }
 
 function normalizeForcedDialogueEntries(json) {
-  if (Array.isArray(json.entries) && json.entries.some(isForcedDialogueEntry)) return json.entries;
-  if (isForcedDialogueEntry(json)) return [json];
-  return [];
+  return datapackBackend.normalizeForcedDialogueEntries(json);
 }
 
 function isNotificationEntry(entry) {
-  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
-  if (!entry.trigger || !hasNotificationText(entry)) return false;
-  if (CONSTANTS.forcedDialogueTriggers.includes(forcedTriggerValue(entry))) return false;
-  const notificationKeys = [
-    "id",
-    "kind",
-    "world_text_kind",
-    "style",
-    "weight",
-    "professions",
-    "player_item",
-    "player_items",
-    "player_item_tag",
-    "player_item_tags",
-    "player_item_slot",
-    "player_item_slots",
-    "min_player_item_durability",
-    "max_player_item_durability",
-    "min_player_item_durability_percent",
-    "max_player_item_durability_percent",
-    "min_held_item_durability",
-    "max_held_item_durability",
-    "min_held_item_durability_percent",
-    "max_held_item_durability_percent",
-    "player_item_enchantment",
-    "player_item_enchantments",
-    "held_item_enchantment",
-    "held_item_enchantments",
-    "min_player_item_enchantment_level",
-    "max_player_item_enchantment_level",
-    "min_held_item_enchantment_level",
-    "max_held_item_enchantment_level",
-    "target_entity_type",
-    "target_entity",
-    "target_entity_types",
-    "target_entities",
-    "reputation_level",
-    "reputation_levels",
-    "min_reputation",
-    "max_reputation",
-    "color",
-    "text_color",
-    "chat_color"
-  ];
-  return notificationKeys.some((key) => Object.hasOwn(entry, key));
+  return datapackBackend.isNotificationEntry(entry);
 }
 
 function normalizeNotificationEntries(json) {
-  if (Array.isArray(json?.notifications)) return json.notifications;
-  if (Array.isArray(json?.entries) && json.entries.some(isNotificationEntry)) return json.entries;
-  if (Array.isArray(json?.lines) && json.lines.some(isNotificationEntry)) return json.lines;
-  if (Array.isArray(json) && json.some(isNotificationEntry)) return json;
-  if (isNotificationEntry(json)) return [json];
-  return [];
+  return datapackBackend.normalizeNotificationEntries(json);
 }
 
 function normalizeStoryEntries(json, type) {
-  if (Array.isArray(json.entries)) return json.entries;
-  if (type === "structure" && (json.structure || json.structures)) return [json];
-  if (type === "biome" && (json.biome || json.biomes)) return [json];
-  return [];
+  return datapackBackend.normalizeStoryEntries(json, type);
 }
 
 function withDefaultProfession(entries, profession) {
-  if (!Array.isArray(entries) || !profession) return entries;
-  return entries.map((entry) => entry.professions ? entry : { ...entry, professions: [profession] });
+  return datapackBackend.withDefaultProfession(entries, profession);
 }
 
 function mergeArray(section, kind, entries, sourcePath = "") {
-  if (!Array.isArray(entries)) return;
-  state[section][kind].push(...entries.map((entry) => {
-    const cleaned = cleanObject(entry);
-    if (sourcePath && cleaned && typeof cleaned === "object") {
-      cleaned.__sourcePath = sourcePath;
-    }
-    return cleaned;
-  }));
+  datapackBackend.mergeArray(state, section, kind, entries, sourcePath);
 }
 
 function readUint16(bytes, offset) {
@@ -9467,69 +8930,7 @@ async function decompressZipEntry(data, method) {
 }
 
 function createZip(files) {
-  const localParts = [];
-  const centralParts = [];
-  let offset = 0;
-  const now = new Date();
-  const { dosTime, dosDate } = toDosDateTime(now);
-
-  for (const [path, value] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
-    const nameBytes = encoder.encode(path);
-    const data = value instanceof Uint8Array ? value : encoder.encode(String(value));
-    const crc = crc32(data);
-    const localHeader = concatBytes(
-      u32(0x04034b50),
-      u16(20),
-      u16(0x0800),
-      u16(0),
-      u16(dosTime),
-      u16(dosDate),
-      u32(crc),
-      u32(data.length),
-      u32(data.length),
-      u16(nameBytes.length),
-      u16(0),
-      nameBytes
-    );
-    localParts.push(localHeader, data);
-    const centralHeader = concatBytes(
-      u32(0x02014b50),
-      u16(20),
-      u16(20),
-      u16(0x0800),
-      u16(0),
-      u16(dosTime),
-      u16(dosDate),
-      u32(crc),
-      u32(data.length),
-      u32(data.length),
-      u16(nameBytes.length),
-      u16(0),
-      u16(0),
-      u16(0),
-      u16(0),
-      u32(0),
-      u32(offset),
-      nameBytes
-    );
-    centralParts.push(centralHeader);
-    offset += localHeader.length + data.length;
-  }
-
-  const centralOffset = offset;
-  const centralDirectory = concatBytes(...centralParts);
-  const end = concatBytes(
-    u32(0x06054b50),
-    u16(0),
-    u16(0),
-    u16(centralParts.length),
-    u16(centralParts.length),
-    u32(centralDirectory.length),
-    u32(centralOffset),
-    u16(0)
-  );
-
-  return concatBytes(...localParts, centralDirectory, end);
+  return datapackBackend.createZip(files);
 }
 
 function toDosDateTime(date) {

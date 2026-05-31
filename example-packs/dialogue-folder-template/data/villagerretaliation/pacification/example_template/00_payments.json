@@ -1,11 +1,13 @@
 {
   "payments": [
     {
+      "id": "example_template.pacification.emerald",
       "items": [
         "minecraft:emerald"
       ],
       "min_count": 1,
-      "max_count": 1
+      "max_count": 1,
+      "priority": 10
     }
   ]
 }

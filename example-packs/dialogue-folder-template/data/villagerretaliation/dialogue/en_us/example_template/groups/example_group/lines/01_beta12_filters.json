@@ -1,0 +1,39 @@
+{
+  "id": "example_template.group.beta12_filters",
+  "request": "question",
+  "option": "example_template.option.question",
+  "text_key": "example_template.message.beta12_filters",
+  "conditions": [
+    {
+      "type": "any_of",
+      "conditions": [
+        {
+          "type": "weather",
+          "weather": "rain"
+        },
+        {
+          "type": "quest",
+          "quest": "example_template:first_steps",
+          "state": "active"
+        }
+      ]
+    }
+  ],
+  "mood": "grateful",
+  "min_mood_intensity": 25,
+  "requires_high_kindness": true,
+  "priority": 20,
+  "category": "beta12_filters",
+  "metadata": {
+    "topic": "Example beta.12 filters",
+    "tags": [
+      "example",
+      "beta12"
+    ],
+    "questline": "example_template",
+    "quest": "first_steps",
+    "stage": "intro",
+    "notes": "Shows text_key, conditions, mood, Social Attribute shorthand, priority, category, and nested metadata."
+  },
+  "weight": 10
+}
