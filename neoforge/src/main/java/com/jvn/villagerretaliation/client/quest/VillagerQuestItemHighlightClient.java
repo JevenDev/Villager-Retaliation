@@ -1,9 +1,8 @@
 package com.jvn.villagerretaliation.client.quest;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -17,7 +16,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -26,51 +24,13 @@ import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 public final class VillagerQuestItemHighlightClient {
     private static final int HIGHLIGHT_FILL = 0x18F6C453;
     private static final int HIGHLIGHT_EDGE = 0xFFF6C453;
-    private static final double WORLD_GLOW_RADIUS = 64.0D;
-    private static final double WORLD_GLOW_RADIUS_SQUARED = WORLD_GLOW_RADIUS * WORLD_GLOW_RADIUS;
-    private static final Map<Integer, Boolean> LOCALLY_GLOWING_ITEM_ENTITIES = new HashMap<>();
+    public static final int QUEST_OUTLINE_RED = 246;
+    public static final int QUEST_OUTLINE_GREEN = 196;
+    public static final int QUEST_OUTLINE_BLUE = 83;
+    public static final int QUEST_OUTLINE_ALPHA = 255;
+    public static final int QUEST_OUTLINE_RGB = 0xF6C453;
 
     private VillagerQuestItemHighlightClient() {
-    }
-
-    public static void onClientTick(ClientTickEvent.Post event) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.level == null) {
-            clearLocalItemGlows(minecraft);
-            return;
-        }
-
-        List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries = activeQuestItemEntries();
-        if (activeQuestItemEntries.isEmpty()) {
-            clearLocalItemGlows(minecraft);
-            return;
-        }
-
-        Map<Integer, Boolean> stillGlowing = new HashMap<>();
-        for (ItemEntity itemEntity : minecraft.level.getEntities(
-                net.minecraft.world.entity.EntityType.ITEM,
-                minecraft.player.getBoundingBox().inflate(WORLD_GLOW_RADIUS),
-                entity -> entity.isAlive() && entity.distanceToSqr(minecraft.player) <= WORLD_GLOW_RADIUS_SQUARED)) {
-            if (questEntryForStack(itemEntity.getItem(), activeQuestItemEntries).isEmpty()) {
-                continue;
-            }
-            int entityId = itemEntity.getId();
-            if (!itemEntity.hasGlowingTag()) {
-                LOCALLY_GLOWING_ITEM_ENTITIES.putIfAbsent(entityId, false);
-                itemEntity.setGlowingTag(true);
-            }
-            if (LOCALLY_GLOWING_ITEM_ENTITIES.containsKey(entityId)) {
-                stillGlowing.put(entityId, LOCALLY_GLOWING_ITEM_ENTITIES.get(entityId));
-            }
-        }
-
-        LOCALLY_GLOWING_ITEM_ENTITIES.keySet().removeIf(entityId -> {
-            if (stillGlowing.containsKey(entityId)) {
-                return false;
-            }
-            restoreItemGlowState(minecraft, entityId);
-            return true;
-        });
     }
 
     public static void onItemTooltip(ItemTooltipEvent event) {
@@ -136,9 +96,23 @@ public final class VillagerQuestItemHighlightClient {
             ItemStack stack,
             ItemDisplayContext displayContext) {
         Minecraft minecraft = Minecraft.getInstance();
-        return entity == minecraft.player
+        return questItemShaderHighlightsEnabled()
+                && entity == minecraft.player
                 && isHeldDisplayContext(displayContext)
                 && matchesActiveQuestItem(stack);
+    }
+
+    public static boolean shouldOutlineDroppedQuestItem(ItemEntity itemEntity) {
+        Minecraft minecraft = Minecraft.getInstance();
+        return questItemShaderHighlightsEnabled()
+                && minecraft.player != null
+                && minecraft.level != null
+                && itemEntity.isAlive()
+                && matchesActiveQuestItem(itemEntity.getItem());
+    }
+
+    private static boolean questItemShaderHighlightsEnabled() {
+        return VillagerRetaliationConfig.ENABLE_QUEST_ITEM_SHADER_HIGHLIGHTS.get();
     }
 
     private static boolean matchesTrackedQuestItem(ItemStack stack, QuestTrackerSyncPayload.Entry entry) {
@@ -192,28 +166,8 @@ public final class VillagerQuestItemHighlightClient {
     }
 
     private static boolean isHeldDisplayContext(ItemDisplayContext displayContext) {
-        return displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
-                || displayContext == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
-                || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+        return displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
                 || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
-    }
-
-    private static void clearLocalItemGlows(Minecraft minecraft) {
-        LOCALLY_GLOWING_ITEM_ENTITIES.keySet().removeIf(entityId -> {
-            restoreItemGlowState(minecraft, entityId);
-            return true;
-        });
-    }
-
-    private static void restoreItemGlowState(Minecraft minecraft, int entityId) {
-        Boolean previous = LOCALLY_GLOWING_ITEM_ENTITIES.get(entityId);
-        if (minecraft.level == null) {
-            return;
-        }
-        net.minecraft.world.entity.Entity entity = minecraft.level.getEntity(entityId);
-        if (entity instanceof ItemEntity itemEntity && previous != null) {
-            itemEntity.setGlowingTag(previous);
-        }
     }
 
     private static void renderSlotHighlight(GuiGraphics graphics, int left, int top) {

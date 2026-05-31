@@ -4,6 +4,8 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "client.ChatComponentMixin",
+    "client.QuestItemEntityGlowMixin",
+    "client.QuestItemEntityOutlineColorMixin",
     "client.QuestItemHeldGlowMixin"
   ],
   "injectors": {

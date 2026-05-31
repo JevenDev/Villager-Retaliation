@@ -36,7 +36,6 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay::onRenderGuiLayer);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay::onLoggingOut);
-        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onRenderGuiLayer);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onContainerForeground);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onItemTooltip);

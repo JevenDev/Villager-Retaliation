@@ -162,6 +162,8 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS;
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_ONLY_WHEN_SNEAKING;
 
+    public static final ModConfigSpec.BooleanValue ENABLE_QUEST_ITEM_SHADER_HIGHLIGHTS;
+
     public static final ModConfigSpec.BooleanValue WEAPONSMITHS_FIGHT_BACK;
     public static final ModConfigSpec.BooleanValue TOOLSMITHS_FIGHT_BACK;
     public static final ModConfigSpec.BooleanValue ARMORERS_FIGHT_BACK;
@@ -824,6 +826,13 @@ public final class VillagerRetaliationConfig {
                 .comment("When true, villager chat ignores animated and styled dialogue text effects and renders as normal chat text for this client.")
                 .translation("villagerretaliation.configuration.dialogue.disableDialogueTextEffects")
                 .define("disableDialogueTextEffects", false);
+        CLIENT_BUILDER.pop();
+
+        CLIENT_BUILDER.push("quest");
+        ENABLE_QUEST_ITEM_SHADER_HIGHLIGHTS = CLIENT_BUILDER
+                .comment("Renders vanilla-style outline shader highlights on dropped quest items and third-person held quest items for this client.")
+                .translation("villagerretaliation.configuration.quest.enableQuestItemShaderHighlights")
+                .define("enableQuestItemShaderHighlights", true);
         CLIENT_BUILDER.pop();
 
         CLIENT_SPEC = CLIENT_BUILDER.build();
