@@ -52,11 +52,12 @@ public final class VillagerReputationAdvancements {
     private static final double STORY_HINT_FOUND_RADIUS = 256.0D;
     private static final double DANGEROUS_STORY_VILLAGER_RADIUS = 64.0D;
     private static final long DISCOVERY_SCAN_INTERVAL_TICKS = 20L;
-    private static final long DANGEROUS_STORY_SCAN_INTERVAL_TICKS = 20L * 5L;
-    private static final long DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS = 20L * 10L;
-    private static final int DANGEROUS_STORY_STRUCTURES_PER_SCAN = 2;
+    private static final long BIOME_STORY_SCAN_INTERVAL_TICKS = 20L * 5L;
+    private static final long DANGEROUS_STRUCTURE_STORY_SCAN_INTERVAL_TICKS = 20L * 60L;
+    private static final long DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS = 20L * 30L;
+    private static final int DANGEROUS_STORY_STRUCTURES_PER_SCAN = 1;
     private static final int STRUCTURE_SEARCH_BLOCKS_PER_CHUNK = 16;
-    private static final long STRUCTURE_STORY_CACHE_TICKS = 20L * 30L;
+    private static final long STRUCTURE_STORY_CACHE_TICKS = 20L * 60L * 10L;
     private static final int MAX_STRUCTURE_STORY_CACHE_ENTRIES = 256;
     private static final long DANGEROUS_STORY_SHARE_TICKS = 20L * 60L * 60L * 6L;
 
@@ -167,7 +168,7 @@ public final class VillagerReputationAdvancements {
             }
         }
 
-        if (consumePlayerScanSlot(playerId, NEXT_BIOME_STORY_SCAN, gameTime, DANGEROUS_STORY_SCAN_INTERVAL_TICKS)) {
+        if (consumePlayerScanSlot(playerId, NEXT_BIOME_STORY_SCAN, gameTime, BIOME_STORY_SCAN_INTERVAL_TICKS)) {
             if (currentBiomeId == null) {
                 currentBiomeId = currentBiomeId(level, player.blockPosition());
             }
@@ -227,14 +228,14 @@ public final class VillagerReputationAdvancements {
             NEXT_DANGEROUS_STORY_SCAN.put(
                     playerId,
                     gameTime + DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS
-                            + scanStagger(playerId, DANGEROUS_STORY_SCAN_INTERVAL_TICKS)
+                            + scanStagger(playerId, DANGEROUS_STRUCTURE_STORY_SCAN_INTERVAL_TICKS)
             );
             return;
         }
         if (nextScan != null && nextScan > gameTime) {
             return;
         }
-        NEXT_DANGEROUS_STORY_SCAN.put(playerId, gameTime + DANGEROUS_STORY_SCAN_INTERVAL_TICKS);
+        NEXT_DANGEROUS_STORY_SCAN.put(playerId, gameTime + DANGEROUS_STRUCTURE_STORY_SCAN_INTERVAL_TICKS);
 
         List<DangerousStructureStoryResources.Entry> storyStructures = DangerousStructureStoryResources.entries(level.getServer());
         if (storyStructures.isEmpty()) {
