@@ -1,0 +1,97 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Ready the Larder is already settled."
+    ],
+    "inactive": [
+      "The conditions for this quest are not right at the moment."
+    ],
+    "locate_failed": [
+      "I cannot find a clean mark for that place today."
+    ],
+    "missing_proof": [
+      "Bring back the proof item before we close this."
+    ],
+    "missing_target": [
+      "You still need to reach the place I marked."
+    ],
+    "reminder": [
+      "Sixteen bread, if you can spare it. The larder does not need heroics today, just weight on the shelf."
+    ],
+    "start": [
+      "Bring me 16 bread. Simple work, but it keeps people steady."
+    ],
+    "turn_in": [
+      "Good. A full shelf makes brave talk sound less hollow. Take this with my thanks."
+    ],
+    "unavailable": [
+      "This is not the right season for that request."
+    ]
+  },
+  "display": {
+    "description": "Bring bread so the village can stretch its stores through a hard night.",
+    "title": "Ready the Larder"
+  },
+  "id": "villagerretaliation:ready_the_larder",
+  "objectives": [
+    {
+      "count": 16,
+      "id": "bring_bread",
+      "item": "minecraft:bread",
+      "tracker": {
+        "complete_text": "The bread is packed and ready.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Gather 16 bread for the village stores."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:farmer"
+    ],
+    "skills": {
+      "farming": {
+        "min": 8
+      }
+    }
+  },
+  "questline": "village_supply",
+  "rewards": {
+    "experience": 45,
+    "gossip_reputation": 1,
+    "loot_table": "villagerretaliation:quest/ready_the_larder",
+    "memory_event": "player_completed_quest",
+    "reputation": 4
+  },
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 1,
+    "consume_on_completion": false,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Larder Supplies"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 16 bread back to the quest giver."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the bread."
+      }
+    },
+    "title": "Ready the Larder"
+  }
+}

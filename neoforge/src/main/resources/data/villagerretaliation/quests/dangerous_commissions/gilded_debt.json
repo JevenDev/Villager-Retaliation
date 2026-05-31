@@ -1,0 +1,120 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Gilded Debt is already settled."
+    ],
+    "inactive": [
+      "The conditions for this quest are not right at the moment."
+    ],
+    "locate_failed": [
+      "The bastion will not show itself. I refuse to chase a debt blind."
+    ],
+    "missing_proof": [
+      "Gilded Blackstone is the proof. Without it, this is only an expensive apology."
+    ],
+    "missing_target": [
+      "Do not hand me gold and call it courage. Reach the bastion first."
+    ],
+    "reminder": [
+      "Bastion near {target_x}, {target_z}. Gilded Blackstone for proof, one gold block for settlement. No second ledger."
+    ],
+    "start": [
+      "The bastion is {direction}, about {distance} blocks away, near {target_x}, {target_z}. Bring Gilded Blackstone and one gold block. If you abandon this, I close the matter for good."
+    ],
+    "turn_in": [
+      "Settled. The village gains relief, and a few whispers it will deserve. Some rewards are complicated."
+    ],
+    "unavailable": [
+      "No. This ledger opens only for someone already trusted with sharp endings."
+    ]
+  },
+  "display": {
+    "description": "Reach a Bastion Remnant and bring back Gilded Blackstone for a risky settlement.",
+    "title": "Gilded Debt"
+  },
+  "id": "villagerretaliation:gilded_debt",
+  "objectives": [
+    {
+      "count": 1,
+      "id": "bring_gold_block",
+      "item": "minecraft:gold_block",
+      "tracker": {
+        "complete_text": "The settlement gold is ready.",
+        "progress": 0.85,
+        "show_progress": true,
+        "text": "Bring 1 gold block to settle the debt cleanly."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "master",
+    "professions": [
+      "minecraft:armorer",
+      "minecraft:weaponsmith"
+    ],
+    "skills": {
+      "survival": {
+        "min": 65
+      },
+      "trading": {
+        "min": 45
+      }
+    }
+  },
+  "questline": "dangerous_commissions",
+  "rewards": {
+    "experience": 360,
+    "gossip_reputation": -3,
+    "loot_table": "villagerretaliation:quest/gilded_debt",
+    "memory_event": "player_completed_quest",
+    "reputation": 12
+  },
+  "rules": {
+    "abandonment": "remove_forever",
+    "consume_on_abandonment": true,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 1,
+    "repeatable": false
+  },
+  "target": {
+    "discovery_radius": 160,
+    "proof_item": "minecraft:gilded_blackstone",
+    "search_radius": 256,
+    "structure": "minecraft:bastion_remnant"
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Gilded Debt"
+    },
+    "steps": {
+      "bring_gold_block": {
+        "progress": 0.85,
+        "show_progress": true,
+        "text": "Add 1 gold block to settle the old debt."
+      },
+      "proof": {
+        "progress": 0.66,
+        "show_progress": true,
+        "text": "Bring Gilded Blackstone and 1 gold block."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the gilded proof."
+      },
+      "travel": {
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        },
+        "progress": 0.25,
+        "show_progress": true,
+        "text": "Find the Bastion Remnant near {target_x}, {target_z}."
+      }
+    },
+    "title": "Gilded Debt"
+  }
+}

@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "Lanterns for the Long Night quest offer, reminder, and turn-in scene.",
+    "title": "Lanterns for the Long Night"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "Long Night Lanterns",
+      "order": -18,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About Lanterns for the Long Night",
+      "order": -18,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About Lanterns for the Long Night",
+      "order": -18,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:lanterns_for_the_long_night",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. Some work only looks lighter after you pick it back up."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Are you sure you want me to put this quest aside?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "Then I will set this aside. Come back if the work still matters."
+            ],
+            "abandoned_cooldown": [
+              "Then I will set this aside for a while. Let the trail cool before asking again."
+            ],
+            "abandoned_forever": [
+              "Then this matter is closed. I will not reopen it."
+            ],
+            "unavailable": [
+              "There is no active trail here for me to fold away."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the work close until you are ready."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "Lanterns for the Long Night is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do.",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "That will hold the corners of the village a little brighter. Good work."
+            ],
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "missing_objectives": [
+              "I need 6 lanterns, not promises shaped like lanterns."
+            ],
+            "missing_proof": [
+              "Bring back the proof item before we close this."
+            ],
+            "missing_target": [
+              "You still need to reach the place I marked."
+            ],
+            "unavailable": [
+              "This quest is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Then we keep the old ones burning and hope they do not blink first."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "The watch posts need light, not speeches. Six lanterns would do more than ten warnings.",
+        "Night has been leaning too close to the doors. We need more lanterns before habit becomes fear."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I will bring lanterns.",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "reminder": [
+              "Six lanterns, and sooner is better. Darkness does not wait politely."
+            ],
+            "unavailable": [
+              "That quest is not in your hands right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "Lanterns for the Long Night is already settled."
+            ],
+            "locate_failed": [
+              "I cannot find a clean mark for that place today."
+            ],
+            "started": [
+              "Six lanterns. Bring them soon; this request matters less after the next couple of days."
+            ],
+            "unavailable": [
+              "The watch is not ready to place that request right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "Tell me those are lanterns and not another clever excuse."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought.",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Then hold onto it until you are ready to settle the matter."
+      ]
+    }
+  }
+}

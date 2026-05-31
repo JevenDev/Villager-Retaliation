@@ -1,0 +1,120 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "House of Ill Omens is already settled."
+    ],
+    "inactive": [
+      "The conditions for this quest are not right at the moment."
+    ],
+    "locate_failed": [
+      "The mansion is beyond my reach today. The woods are keeping their mouth shut."
+    ],
+    "missing_proof": [
+      "Bring the Totem. Nothing else carries enough of that house on it."
+    ],
+    "missing_target": [
+      "The totem needs the mansion behind it. I need the place confirmed."
+    ],
+    "reminder": [
+      "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to close the mouths that helped us."
+    ],
+    "start": [
+      "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Bring a Totem of Undying and 12 emeralds for informants."
+    ],
+    "turn_in": [
+      "A Totem of Undying. That is not proof of safety, but it is proof the village has a shield with a name."
+    ],
+    "unavailable": [
+      "This is not a request for someone the village only half trusts."
+    ]
+  },
+  "display": {
+    "description": "Enter a Woodland Mansion and return with a Totem of Undying.",
+    "title": "House of Ill Omens"
+  },
+  "id": "villagerretaliation:house_of_ill_omens",
+  "objectives": [
+    {
+      "count": 12,
+      "id": "bring_emeralds",
+      "item": "minecraft:emerald",
+      "tracker": {
+        "complete_text": "The informant payment is ready.",
+        "progress": 0.86,
+        "show_progress": true,
+        "text": "Bring 12 emeralds to repay informants after the mansion run."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "master",
+    "professions": [
+      "minecraft:leatherworker",
+      "minecraft:cleric"
+    ],
+    "skills": {
+      "guarding": {
+        "min": 70
+      },
+      "survival": {
+        "min": 55
+      }
+    }
+  },
+  "questline": "dangerous_commissions",
+  "rewards": {
+    "experience": 420,
+    "gossip_reputation": 12,
+    "loot_table": "villagerretaliation:quest/house_of_ill_omens",
+    "memory_event": "player_completed_quest",
+    "reputation": 24
+  },
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 3,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "target": {
+    "discovery_radius": 192,
+    "proof_item": "minecraft:totem_of_undying",
+    "search_radius": 384,
+    "structure": "minecraft:woodland_mansion"
+  },
+  "tracker": {
+    "metadata": {
+      "source": "House of Ill Omens"
+    },
+    "steps": {
+      "bring_emeralds": {
+        "progress": 0.86,
+        "show_progress": true,
+        "text": "Set aside 12 emeralds for informants."
+      },
+      "proof": {
+        "progress": 0.66,
+        "show_progress": true,
+        "text": "Bring a Totem of Undying and 12 emeralds."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the mansion proof."
+      },
+      "travel": {
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        },
+        "progress": 0.25,
+        "show_progress": true,
+        "text": "Enter the Woodland Mansion near {target_x}, {target_z}."
+      }
+    },
+    "title": "House of Ill Omens"
+  }
+}

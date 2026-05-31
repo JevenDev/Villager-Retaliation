@@ -1,0 +1,119 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "The Broken Milestone is already settled."
+    ],
+    "inactive": [
+      "The conditions for this quest are not right at the moment."
+    ],
+    "locate_failed": [
+      "The road is too quiet today. I cannot find the broken marker from here."
+    ],
+    "missing_proof": [
+      "Bring a brush from the work. A clean story needs its dust on it."
+    ],
+    "missing_target": [
+      "The stone is useful, but I need you to reach the ruins near the marker first."
+    ],
+    "reminder": [
+      "Trail ruins near {target_x}, {target_z}. I need a brush for the old dust and 12 smooth stone for the new face."
+    ],
+    "start": [
+      "The old mark is about {distance} blocks {direction}, near {target_x}, {target_z}. Bring a brush and 12 smooth stone so we can set the route right."
+    ],
+    "turn_in": [
+      "Good. A repaired road is a quiet promise that someone can still come home."
+    ],
+    "unavailable": [
+      "That route is not ready for your hands yet."
+    ]
+  },
+  "display": {
+    "description": "Find nearby Trail Ruins and bring a brush and stone to restore the road marker.",
+    "title": "The Broken Milestone"
+  },
+  "id": "villagerretaliation:the_broken_milestone",
+  "objectives": [
+    {
+      "count": 12,
+      "id": "bring_smooth_stone",
+      "item": "minecraft:smooth_stone",
+      "tracker": {
+        "complete_text": "The replacement stone is ready.",
+        "progress": 0.78,
+        "show_progress": true,
+        "text": "Bring 12 smooth stone for the repaired marker."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "apprentice",
+    "professions": [
+      "minecraft:mason",
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "cartography": {
+        "min": 10
+      },
+      "masonry": {
+        "min": 18
+      }
+    }
+  },
+  "questline": "old_roads",
+  "rewards": {
+    "experience": 110,
+    "gossip_reputation": 3,
+    "loot_table": "villagerretaliation:quest/the_broken_milestone",
+    "memory_event": "player_completed_quest",
+    "reputation": 9
+  },
+  "rules": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "target": {
+    "discovery_radius": 96,
+    "proof_item": "minecraft:brush",
+    "search_radius": 160,
+    "structure": "minecraft:trail_ruins"
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Broken Milestone"
+    },
+    "steps": {
+      "bring_smooth_stone": {
+        "progress": 0.78,
+        "show_progress": true,
+        "text": "Gather 12 smooth stone for the repair."
+      },
+      "proof": {
+        "progress": 0.66,
+        "show_progress": true,
+        "text": "Bring a brush and 12 smooth stone."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the brush and stone."
+      },
+      "travel": {
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        },
+        "progress": 0.25,
+        "show_progress": true,
+        "text": "Reach the old road mark near {target_x}, {target_z}."
+      }
+    },
+    "title": "The Broken Milestone"
+  }
+}

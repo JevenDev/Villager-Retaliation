@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "Trial Chamber Recall quest offer, reminder, and turn-in scene.",
+    "title": "Trial Chamber Recall"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "Trial Chamber Recall",
+      "order": -13,
+      "request": "village_defense_report",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About Trial Chamber Recall",
+      "order": -13,
+      "request": "village_defense_report",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About Trial Chamber Recall",
+      "order": -13,
+      "request": "village_defense_report",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:trial_chamber_recall",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. Some work only looks lighter after you pick it back up."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Are you sure you want me to put this quest aside?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "Then I will set this aside. Come back if the work still matters."
+            ],
+            "abandoned_cooldown": [
+              "Then I will set this aside for a while. Let the trail cool before asking again."
+            ],
+            "abandoned_forever": [
+              "Then this matter is closed. I will not reopen it."
+            ],
+            "unavailable": [
+              "There is no active trail here for me to fold away."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the work close until you are ready."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "Trial Chamber Recall is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do.",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "A key and a Breeze Rod. Good. That chamber can stay mysterious, but not unmeasured."
+            ],
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "missing_objectives": [
+              "I also need one Breeze Rod for the recall."
+            ],
+            "missing_proof": [
+              "Bring a Trial Key. It is the chamber admitting you were there."
+            ],
+            "missing_target": [
+              "The items matter after you set foot in the chamber itself."
+            ],
+            "unavailable": [
+              "This quest is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Then the chamber keeps its opinion of us to itself. For now."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "There is a chamber underground that tests people without asking permission. I want a report before it tests us.",
+        "A Trial Chamber has been marked nearby. Bring proof, and we decide whether to avoid it or learn from it."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I will test the chamber.",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "reminder": [
+              "Trial Chamber near {target_x}, {target_z}. Key, Breeze Rod, return alive enough to explain both."
+            ],
+            "unavailable": [
+              "That quest is not in your hands right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "Trial Chamber Recall is already settled."
+            ],
+            "locate_failed": [
+              "No chamber answers the map today. Maybe that is mercy."
+            ],
+            "started": [
+              "The chamber is {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod."
+            ],
+            "unavailable": [
+              "This request needs a better equipped ally."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "You look like a room argued with you. Did you win anything useful?"
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought.",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Then hold onto it until you are ready to settle the matter."
+      ]
+    }
+  }
+}

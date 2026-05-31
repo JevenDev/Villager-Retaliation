@@ -1,0 +1,105 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Lanterns for the Long Night is already settled."
+    ],
+    "inactive": [
+      "The conditions for this quest are not right at the moment."
+    ],
+    "locate_failed": [
+      "I cannot find a clean mark for that place today."
+    ],
+    "missing_proof": [
+      "Bring back the proof item before we close this."
+    ],
+    "missing_target": [
+      "You still need to reach the place I marked."
+    ],
+    "reminder": [
+      "Six lanterns, and sooner is better. Darkness does not wait politely."
+    ],
+    "start": [
+      "Six lanterns. Bring them soon; this request matters less after the next couple of days."
+    ],
+    "turn_in": [
+      "That will hold the corners of the village a little brighter. Good work."
+    ],
+    "unavailable": [
+      "The watch is not ready to place that request right now."
+    ]
+  },
+  "display": {
+    "description": "Bring lanterns before the watch loses the edges of the village to darkness.",
+    "title": "Lanterns for the Long Night"
+  },
+  "id": "villagerretaliation:lanterns_for_the_long_night",
+  "objectives": [
+    {
+      "count": 6,
+      "id": "bring_lanterns",
+      "item": "minecraft:lantern",
+      "tracker": {
+        "complete_text": "The lanterns are ready for hanging.",
+        "progress": 0.75,
+        "show_progress": true,
+        "text": "Bring 6 lanterns for the village watch."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "apprentice",
+    "professions": [
+      "minecraft:cleric",
+      "minecraft:mason"
+    ],
+    "skills": {
+      "crafting": {
+        "min": 15
+      }
+    }
+  },
+  "questline": "village_supply",
+  "rewards": {
+    "experience": 70,
+    "gossip_reputation": 2,
+    "loot_table": "villagerretaliation:quest/lanterns_for_the_long_night",
+    "memory_event": "player_completed_quest",
+    "reputation": 6
+  },
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_seconds": 600,
+    "completion_cooldown_days": 3,
+    "cross_villager_compatible": true,
+    "expiration": {
+      "after_days": 2,
+      "allow_repickup": true,
+      "consume": false,
+      "notification": "quest.expired",
+      "text": "Quest expired: {quest}"
+    },
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Long Night Lanterns"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 6 lanterns before the request goes stale."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the lanterns."
+      }
+    },
+    "title": "Lanterns for the Long Night"
+  }
+}

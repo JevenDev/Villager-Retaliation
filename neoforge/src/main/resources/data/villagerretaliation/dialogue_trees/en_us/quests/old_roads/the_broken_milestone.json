@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "The Broken Milestone quest offer, reminder, and turn-in scene.",
+    "title": "The Broken Milestone"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "Broken Milestone",
+      "order": -17,
+      "request": "story",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About The Broken Milestone",
+      "order": -17,
+      "request": "story",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About The Broken Milestone",
+      "order": -17,
+      "request": "story",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:the_broken_milestone",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. Some work only looks lighter after you pick it back up."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Are you sure you want me to put this quest aside?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "Then I will set this aside. Come back if the work still matters."
+            ],
+            "abandoned_cooldown": [
+              "Then I will set this aside for a while. Let the trail cool before asking again."
+            ],
+            "abandoned_forever": [
+              "Then this matter is closed. I will not reopen it."
+            ],
+            "unavailable": [
+              "There is no active trail here for me to fold away."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the work close until you are ready."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "The Broken Milestone is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do.",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "Good. A repaired road is a quiet promise that someone can still come home."
+            ],
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "missing_objectives": [
+              "The repair still needs 12 smooth stone."
+            ],
+            "missing_proof": [
+              "Bring a brush from the work. A clean story needs its dust on it."
+            ],
+            "missing_target": [
+              "The stone is useful, but I need you to reach the ruins near the marker first."
+            ],
+            "unavailable": [
+              "This quest is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Then the road keeps its crooked little secret."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "A road marker broke near some old ruins. Without it, travelers follow bad guesses.",
+        "There is a milestone out there that stopped doing its job. I would like it corrected."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "Mark the road for me.",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "reminder": [
+              "Trail ruins near {target_x}, {target_z}. I need a brush for the old dust and 12 smooth stone for the new face."
+            ],
+            "unavailable": [
+              "That quest is not in your hands right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "The Broken Milestone is already settled."
+            ],
+            "locate_failed": [
+              "The road is too quiet today. I cannot find the broken marker from here."
+            ],
+            "started": [
+              "The old mark is about {distance} blocks {direction}, near {target_x}, {target_z}. Bring a brush and 12 smooth stone so we can set the route right."
+            ],
+            "unavailable": [
+              "That route is not ready for your hands yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "Did you find the broken marker, or only a reason to dislike old roads?"
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought.",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Then hold onto it until you are ready to settle the matter."
+      ]
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "pools": [
+    {
+      "bonus_rolls": 0,
+      "entries": [
+        {
+          "functions": [
+            {
+              "count": {
+                "max": 12,
+                "min": 7,
+                "type": "minecraft:uniform"
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "minecraft:emerald",
+          "type": "minecraft:item",
+          "weight": 2
+        },
+        {
+          "functions": [
+            {
+              "count": {
+                "max": 14,
+                "min": 6,
+                "type": "minecraft:uniform"
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "minecraft:prismarine_shard",
+          "type": "minecraft:item",
+          "weight": 1
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "type": "minecraft:generic"
+}

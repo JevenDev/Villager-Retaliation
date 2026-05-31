@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "End City Survey quest offer, reminder, and turn-in scene.",
+    "title": "End City Survey"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "End City Survey",
+      "order": -9,
+      "request": "story",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About End City Survey",
+      "order": -9,
+      "request": "story",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About End City Survey",
+      "order": -9,
+      "request": "story",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:end_city_survey",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. Some work only looks lighter after you pick it back up."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Are you sure you want me to put this quest aside?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "Then I will set this aside. Come back if the work still matters."
+            ],
+            "abandoned_cooldown": [
+              "Then I will set this aside for a while. Let the trail cool before asking again."
+            ],
+            "abandoned_forever": [
+              "Then this matter is closed. I will not reopen it."
+            ],
+            "unavailable": [
+              "There is no active trail here for me to fold away."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the work close until you are ready."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "End City Survey is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do.",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "A shell and a Chorus Flower. The village has heard stories. Now it has evidence. Your name will travel farther than the road."
+            ],
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "missing_objectives": [
+              "I also need one Chorus Flower, intact if possible."
+            ],
+            "missing_proof": [
+              "Bring a Shulker Shell. The city has to leave a hard signature."
+            ],
+            "missing_target": [
+              "A shell alone is not a survey. Reach the End City itself."
+            ],
+            "unavailable": [
+              "This quest is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Sanity remains undefeated for another day. A rare result."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "The last map edge is not an edge. It is a dare written in empty ink.",
+        "I have a survey no sane cartographer files twice: an End City, a shell, and a living sample."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I will survey the End City.",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "reminder": [
+              "End City near {target_x}, {target_z}. Shulker Shell for proof, Chorus Flower for study. Try not to let the void edit the report."
+            ],
+            "unavailable": [
+              "That quest is not in your hands right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "End City Survey is already settled."
+            ],
+            "locate_failed": [
+              "The End refuses a clean mark today. Even maps know when to hesitate."
+            ],
+            "started": [
+              "The city mark is {direction}, about {distance} blocks from here, near {target_x}, {target_z}. Bring a Shulker Shell and one Chorus Flower."
+            ],
+            "unavailable": [
+              "This survey waits for someone the village can trust with impossible directions."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "You have the look of someone who saw the map run out and kept walking. Did you bring proof?"
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought.",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Then hold onto it until you are ready to settle the matter."
+      ]
+    }
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Sunken Ledger is already settled."
+    ],
+    "inactive": [
+      "The conditions for this quest are not right at the moment."
+    ],
+    "locate_failed": [
+      "The coast is not answering. I cannot find a wreck worth sending you to."
+    ],
+    "missing_proof": [
+      "Bring me a compass from the wreck. Direction is the point of this errand."
+    ],
+    "missing_target": [
+      "The compass matters after you reach the wreck itself."
+    ],
+    "reminder": [
+      "Shipwreck near {target_x}, {target_z}. Compass for proof, paper for the ledger."
+    ],
+    "start": [
+      "The wreck should be {direction}, about {distance} blocks away, near {target_x}, {target_z}. Bring a compass and 8 paper for the copy."
+    ],
+    "turn_in": [
+      "A compass from the wreck and pages to save the route. Good. The water can keep the rest."
+    ],
+    "unavailable": [
+      "Not every villager should trust you with drowned records yet."
+    ]
+  },
+  "display": {
+    "description": "Search a shipwreck and return with a compass and paper before the route is forgotten.",
+    "title": "Sunken Ledger"
+  },
+  "id": "villagerretaliation:sunken_ledger",
+  "objectives": [
+    {
+      "count": 8,
+      "id": "bring_paper",
+      "item": "minecraft:paper",
+      "tracker": {
+        "complete_text": "The blank pages are dry and ready.",
+        "progress": 0.74,
+        "show_progress": true,
+        "text": "Bring 8 paper to copy the damaged ledger."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "journeyman",
+    "professions": [
+      "minecraft:fisherman",
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "cartography": {
+        "min": 20
+      },
+      "fishing": {
+        "min": 30
+      }
+    }
+  },
+  "questline": "old_roads",
+  "rewards": {
+    "experience": 140,
+    "gossip_reputation": 4,
+    "loot_table": "villagerretaliation:quest/sunken_ledger",
+    "memory_event": "player_completed_quest",
+    "reputation": 10
+  },
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_seconds": 1200,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "target": {
+    "discovery_radius": 128,
+    "proof_item": "minecraft:compass",
+    "search_radius": 192,
+    "structure": "minecraft:shipwreck"
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Sunken Ledger"
+    },
+    "steps": {
+      "bring_paper": {
+        "progress": 0.74,
+        "show_progress": true,
+        "text": "Collect 8 paper for a clean copy."
+      },
+      "proof": {
+        "progress": 0.66,
+        "show_progress": true,
+        "text": "Bring a compass and 8 paper."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the compass and paper."
+      },
+      "travel": {
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        },
+        "progress": 0.25,
+        "show_progress": true,
+        "text": "Reach the shipwreck near {target_x}, {target_z}."
+      }
+    },
+    "title": "Sunken Ledger"
+  }
+}

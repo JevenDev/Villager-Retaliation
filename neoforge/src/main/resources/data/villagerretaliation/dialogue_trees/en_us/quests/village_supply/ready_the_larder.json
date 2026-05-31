@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "Ready the Larder quest offer, reminder, and turn-in scene.",
+    "title": "Ready the Larder"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "Larder Supplies",
+      "order": -19,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About Ready the Larder",
+      "order": -19,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About Ready the Larder",
+      "order": -19,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:ready_the_larder",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. Some work only looks lighter after you pick it back up."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Are you sure you want me to put this quest aside?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "Then I will set this aside. Come back if the work still matters."
+            ],
+            "abandoned_cooldown": [
+              "Then I will set this aside for a while. Let the trail cool before asking again."
+            ],
+            "abandoned_forever": [
+              "Then this matter is closed. I will not reopen it."
+            ],
+            "unavailable": [
+              "There is no active trail here for me to fold away."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the work close until you are ready."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "Ready the Larder is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do.",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "Good. A full shelf makes brave talk sound less hollow. Take this with my thanks."
+            ],
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "missing_objectives": [
+              "I still count fewer than 16 bread. Close, maybe, but hungry math is strict."
+            ],
+            "missing_proof": [
+              "Bring back the proof item before we close this."
+            ],
+            "missing_target": [
+              "You still need to reach the place I marked."
+            ],
+            "unavailable": [
+              "This quest is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Then I will keep counting crumbs and pretending it is planning."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "The bins are low. Nothing dramatic, which is usually when it becomes dramatic.",
+        "A few good loaves would quiet half the village by sunset."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I can help stock the larder.",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The conditions for this quest are not right at the moment."
+            ],
+            "reminder": [
+              "Sixteen bread, if you can spare it. The larder does not need heroics today, just weight on the shelf."
+            ],
+            "unavailable": [
+              "That quest is not in your hands right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "Ready the Larder is already settled."
+            ],
+            "locate_failed": [
+              "I cannot find a clean mark for that place today."
+            ],
+            "started": [
+              "Bring me 16 bread. Simple work, but it keeps people steady."
+            ],
+            "unavailable": [
+              "This is not the right season for that request."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "If that pack smells like fresh bread, you may have saved me an argument."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought.",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Then hold onto it until you are ready to settle the matter."
+      ]
+    }
+  }
+}
