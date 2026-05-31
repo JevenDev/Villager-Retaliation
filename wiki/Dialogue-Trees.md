@@ -31,7 +31,7 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
       "request": "story",
       "order": 18,
       "conditions": [
-        { "type": "quest", "quest": "example:tales_of_a_lost_civilization", "state": "available" }
+        { "type": "quest", "state": "available" }
       ],
       "start": "offer"
     }
@@ -50,7 +50,6 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
       "actions": [
         {
           "type": "quest",
-          "quest": "example:tales_of_a_lost_civilization",
           "action": "start",
           "lines": {
             "started": ["Travel {direction} toward {target_x}, {target_z}. Bring back {proof_item}."],
@@ -67,6 +66,8 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
   }
 }
 ```
+
+Because this tree declares `metadata.quest`, local quest conditions and quest actions inherit `example:tales_of_a_lost_civilization`. Add an explicit `quest` or `quest_id` only when a condition or action intentionally references a different quest.
 
 ## Entries
 
@@ -107,7 +108,7 @@ Supported action types:
 
 | Type | Fields |
 | --- | --- |
-| `quest` / `quest_action` | `quest`, `quest_id`, or `id`; `action`: `start`/`accept`/`begin`, `remind`/`details`, `turn_in`/`complete`/`claim`, or `abandon`/`drop`/`cancel`; optional status-keyed `lines`. |
+| `quest` / `quest_action` | Optional `quest`, `quest_id`, or `id` when `metadata.quest` supplies the owning quest; `action`: `start`/`accept`/`begin`, `remind`/`details`, `turn_in`/`complete`/`claim`, or `abandon`/`drop`/`cancel`; optional status-keyed `lines`. |
 | `experience` / `xp` | `amount` or `experience` |
 | `reputation` / `rep` | `amount` or `reputation` |
 | `gossip` / `gossip_reputation` | `amount`, `gossip`, or `gossip_reputation` |

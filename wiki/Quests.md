@@ -232,7 +232,6 @@ The event says when the trigger is checked. The conditions reuse the same condit
       "conditions": [
         {
           "type": "quest",
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "state": "active"
         },
         {
@@ -255,6 +254,8 @@ The event says when the trigger is checked. The conditions reuse the same condit
 }
 ```
 
+Inside a quest file, quest trigger conditions and quest actions inherit the current quest id. Add `quest` or `quest_id` only when the trigger intentionally checks or mutates a different quest.
+
 Events:
 
 | Event | When it is checked |
@@ -276,7 +277,7 @@ Quest triggers and dialogue trees use the same shared action parser. Prefer expl
 | `notification` / `notify` | `notification` or `trigger`, optional `text` | Sends a quest-styled HUD notification through the normal notification system. |
 | `tracker` / `flash_tracker` | optional `flash_tracker` | Syncs the quest tracker and optionally flashes it. |
 | `forced_dialogue` / `dialogue` | `forced_dialogue` | Runs a matching forced-dialogue entry with `trigger: "quest"`. This supports proximity dialogue, reminder scenes, and future event-driven quest scenes. |
-| `quest` / `quest_action` | `quest`, `quest_id`, or `id`; `action` | Starts, reminds, turns in, or abandons a quest by using the same outcomes as dialogue tree quest actions. |
+| `quest` / `quest_action` | Optional `quest`, `quest_id`, or `id` for another quest; `action` | Starts, reminds, turns in, or abandons a quest by using the same outcomes as dialogue tree quest actions. |
 | `experience` / `xp` | `amount` or `experience` | Gives player experience. |
 | `reputation` / `rep` | `amount` or `reputation` | Changes direct reputation with the acting villager. |
 | `gossip` / `gossip_reputation` | `amount`, `gossip`, or `gossip_reputation` | Spreads village gossip reputation. |

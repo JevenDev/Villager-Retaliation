@@ -2,6 +2,8 @@
 
 Dialogue JSON controls ambient conversation choices, villager replies, one-off messages, opening lines, closing lines, and pacification responses.
 
+For the shared metadata, tag, and quest-linking rules that now apply across dialogue, dialogue trees, forced dialogue, and quests, read [Dialogue And Quests](Dialogue-And-Quests.md) first.
+
 For authored branching scenes such as quest offers, quest turn-ins, and narrative conversations, use [Dialogue Tree JSON](Dialogue-Trees.md). Dialogue trees keep one scene in one file and can run quest, reward, reputation, memory, and loot actions.
 
 For event-driven locked conversations such as a villager catching the player stealing from a chest, see [Forced Dialogue JSON](Forced-Dialogue.md). Forced dialogue uses a separate datapack path and does not add normal Talk menu options.
@@ -76,6 +78,14 @@ Use a bundle file when several related entries belong together:
 ```
 
 Typed folders are `options`, `lines`, `messages`, `openings`, `closings`, and `pacify`. They can be nested anywhere below the locale folder, including below profession and group folders.
+
+For a questline or story module, it is also valid to use a module folder with one bundled file:
+
+```text
+data/villagerretaliation/dialogue/en_us/quests/lost_civilization/00_cartographer_rumors.json
+```
+
+Use that shape when the bundled `options`, `lines`, and `messages` are easier to maintain together than as separate typed files. If the module grows long, split it back into typed folders under the same module path, such as `quests/lost_civilization/options/` and `quests/lost_civilization/lines/`.
 
 Those six names are reserved as section folders anywhere below `dialogue/<locale>/`. Do not use `options`, `lines`, `messages`, `openings`, `closings`, or `pacify` as a normal topic folder name unless you intend that path to define the file's dialogue section.
 

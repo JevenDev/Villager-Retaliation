@@ -1,5 +1,7 @@
 # Quest JSON
 
+For the shared metadata, tag, and dialogue-linking rules that now apply across quests, dialogue trees, forced dialogue, and ambient dialogue, read [Dialogue And Quests](Dialogue-And-Quests.md) first.
+
 Quests live under:
 
 ```text
@@ -7,6 +9,8 @@ data/<namespace>/quests/<quest_id>.json
 ```
 
 Each quest owns its display text, offer gates, target rules, explicit objectives, lifecycle limits, rewards, and optional tracker text. Branching offer, reminder, turn-in, and abandon conversations should live in matching [Dialogue Tree JSON](Dialogue-Trees.md) files.
+
+Quest `links` are pack-author-facing metadata and validation hooks. They are parsed by the loader and checked by the validator, but the current runtime still uses dialogue-tree quest actions and quest trigger actions to actually start, remind, turn in, abandon, or force quest dialogue.
 
 Quest JSON is canonical in beta.12. Older advancement-style `criteria` / `requirements` blocks and alias fields are not loaded by the quest system.
 
@@ -44,6 +48,34 @@ Quest JSON is canonical in beta.12. Older advancement-style `criteria` / `requir
   ]
 }
 ```
+
+Add a `metadata` block and `links` block when the quest owns dialogue surfaces:
+
+```json
+{
+  "metadata": {
+    "topic": "quests.lost_civilization",
+    "questline": "lost_civilization",
+    "quest": "example:tales_of_a_lost_civilization",
+    "tags": [
+      "content.quest",
+      "dialogue.linked",
+      "questline.lost_civilization"
+    ]
+  },
+  "links": {
+    "dialogue_tree": "example:tales_of_a_lost_civilization",
+    "offer": "offer",
+    "reminder": "reminder",
+    "turn_in": "turn_in",
+    "forced_dialogue": [
+      "quest.lost_civilization.storm_reminder"
+    ]
+  }
+}
+```
+
+`links.offer`, `links.reminder`, and `links.turn_in` must match real `entries[].id` values in the linked dialogue tree. `links.forced_dialogue` must list real forced-dialogue entry ids, not file names.
 
 `offer.professions` is always an array, and `offer.skills` is an object keyed by villager skill id. Skill requirements use `{ "min": number }` so future skill gates can grow without changing shape.
 
@@ -200,7 +232,6 @@ The event says when the trigger is checked. The conditions reuse the same condit
       "conditions": [
         {
           "type": "quest",
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "state": "active"
         },
         {
@@ -223,6 +254,8 @@ The event says when the trigger is checked. The conditions reuse the same condit
 }
 ```
 
+Inside a quest file, quest trigger conditions and quest actions inherit the current quest id. Add `quest` or `quest_id` only when the trigger intentionally checks or mutates a different quest.
+
 Events:
 
 | Event | When it is checked |
@@ -237,11 +270,19 @@ Events:
 
 Actions:
 
+Quest triggers and dialogue trees use the same shared action parser. Prefer explicit `type` values for readability, or omit `type` when a unique action field identifies the kind.
+
 | Type | Fields | Behavior |
 | --- | --- | --- |
-| `notification` | `notification` or `trigger`, optional `text` | Sends a quest-styled HUD notification through the normal notification system. |
-| `tracker` | optional `flash_tracker` | Syncs the quest tracker and optionally flashes it. |
-| `forced_dialogue` | `forced_dialogue` | Runs a matching forced-dialogue entry with `trigger: "quest"`. This supports proximity dialogue, reminder scenes, and future event-driven quest scenes. |
+| `notification` / `notify` | `notification` or `trigger`, optional `text` | Sends a quest-styled HUD notification through the normal notification system. |
+| `tracker` / `flash_tracker` | optional `flash_tracker` | Syncs the quest tracker and optionally flashes it. |
+| `forced_dialogue` / `dialogue` | `forced_dialogue` | Runs a matching forced-dialogue entry with `trigger: "quest"`. This supports proximity dialogue, reminder scenes, and future event-driven quest scenes. |
+| `quest` / `quest_action` | Optional `quest`, `quest_id`, or `id` for another quest; `action` | Starts, reminds, turns in, or abandons a quest by using the same outcomes as dialogue tree quest actions. |
+| `experience` / `xp` | `amount` or `experience` | Gives player experience. |
+| `reputation` / `rep` | `amount` or `reputation` | Changes direct reputation with the acting villager. |
+| `gossip` / `gossip_reputation` | `amount`, `gossip`, or `gossip_reputation` | Spreads village gossip reputation. |
+| `memory` / `memory_event` | `memory_event` | Records a village event memory. |
+| `loot` / `loot_table` | `loot_table` | Gives loot from the referenced loot table. |
 
 Continuous triggers default to a 30-second cooldown if no `cooldown_ticks`, `cooldown_seconds`, or `cooldown_days` value is set. Lifecycle triggers default to no cooldown.
 

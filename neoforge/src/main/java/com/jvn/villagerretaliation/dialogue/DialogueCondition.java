@@ -31,23 +31,36 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     int specificityScore();
 
     static List<DialogueCondition> readList(ResourceLocation location, String context, JsonObject entry) {
+        return readList(location, context, entry, null);
+    }
+
+    static List<DialogueCondition> readList(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            ResourceLocation defaultQuestId) {
         List<DialogueCondition> conditions = new ArrayList<>();
-        conditions.addAll(readConditionArray(location, context, entry, "conditions"));
+        conditions.addAll(readConditionArray(location, context, entry, "conditions", defaultQuestId));
 
         JsonObject availability = entry == null ? null : readObject(entry, "availability");
         if (availability != null) {
-            conditions.addAll(readConditionArray(location, context + " availability", availability, "conditions"));
+            conditions.addAll(readConditionArray(location, context + " availability", availability, "conditions", defaultQuestId));
         }
         JsonObject availableWhen = entry == null ? null : readObject(entry, "available_when");
         if (availableWhen != null) {
-            conditions.addAll(readConditionArray(location, context + " available_when", availableWhen, "conditions"));
+            conditions.addAll(readConditionArray(location, context + " available_when", availableWhen, "conditions", defaultQuestId));
         } else if (entry != null && entry.has("available_when")) {
-            conditions.addAll(readConditionArray(location, context + " available_when", entry, "available_when"));
+            conditions.addAll(readConditionArray(location, context + " available_when", entry, "available_when", defaultQuestId));
         }
         return List.copyOf(conditions);
     }
 
-    private static List<DialogueCondition> readConditionArray(ResourceLocation location, String context, JsonObject entry, String key) {
+    private static List<DialogueCondition> readConditionArray(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            String key,
+            ResourceLocation defaultQuestId) {
         if (entry == null) {
             return List.of();
         }
@@ -66,13 +79,17 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         List<DialogueCondition> conditions = new ArrayList<>();
         int index = 0;
         for (JsonElement child : element.getAsJsonArray()) {
-            read(location, context + " conditions[" + index + "]", child).ifPresent(conditions::add);
+            read(location, context + " conditions[" + index + "]", child, defaultQuestId).ifPresent(conditions::add);
             index++;
         }
         return List.copyOf(conditions);
     }
 
-    private static Optional<DialogueCondition> read(ResourceLocation location, String context, JsonElement element) {
+    private static Optional<DialogueCondition> read(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
         if (element == null || !element.isJsonObject()) {
             warnInvalid(location, context, "condition must be an object.");
             return Optional.empty();
@@ -81,9 +98,9 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         JsonObject condition = element.getAsJsonObject();
         String type = readString(condition, "type").toLowerCase(Locale.ROOT);
         return switch (type) {
-            case "all", "all_of", "and" -> readChildren(location, context, condition).map(AllOf::new);
-            case "any", "any_of", "or" -> readChildren(location, context, condition).map(AnyOf::new);
-            case "not" -> read(location, context + ".condition", condition.get("condition")).map(Not::new);
+            case "all", "all_of", "and" -> readChildren(location, context, condition, defaultQuestId).map(AllOf::new);
+            case "any", "any_of", "or" -> readChildren(location, context, condition, defaultQuestId).map(AnyOf::new);
+            case "not" -> read(location, context + ".condition", condition.get("condition"), defaultQuestId).map(Not::new);
             case "reputation" -> Optional.of(readReputation(condition));
             case "memory" -> readMemory(location, context, condition);
             case "family" -> Optional.of(readFamily(condition));
@@ -93,7 +110,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             case "social_attribute", "attribute", "stat" -> readSocialAttribute(location, context, condition);
             case "skill" -> readSkill(location, context, condition);
             case "villager_level", "trade_level" -> readVillagerLevel(location, context, condition);
-            case "quest" -> readQuest(location, context, condition);
+            case "quest" -> readQuest(location, context, condition, defaultQuestId);
             case "weather" -> readWeather(condition);
             case "time", "time_of_day" -> readTime(condition);
             default -> {
@@ -103,7 +120,11 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         };
     }
 
-    private static Optional<List<DialogueCondition>> readChildren(ResourceLocation location, String context, JsonObject condition) {
+    private static Optional<List<DialogueCondition>> readChildren(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
         JsonElement element = condition.get("conditions");
         if (element == null || !element.isJsonArray()) {
             warnInvalid(location, context, "compound condition must contain a conditions array.");
@@ -113,7 +134,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         List<DialogueCondition> children = new ArrayList<>();
         int index = 0;
         for (JsonElement child : element.getAsJsonArray()) {
-            read(location, context + ".conditions[" + index + "]", child).ifPresent(children::add);
+            read(location, context + ".conditions[" + index + "]", child, defaultQuestId).ifPresent(children::add);
             index++;
         }
         return children.isEmpty() ? Optional.empty() : Optional.of(List.copyOf(children));
@@ -299,8 +320,12 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         return Optional.of(new VillagerLevel(Set.copyOf(levels), min, max));
     }
 
-    private static Optional<DialogueCondition> readQuest(ResourceLocation location, String context, JsonObject condition) {
-        ResourceLocation questId = null;
+    private static Optional<DialogueCondition> readQuest(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = defaultQuestId;
         for (String key : List.of("quest", "quest_id", "id")) {
             String value = readString(condition, key);
             if (!value.isBlank()) {
@@ -309,7 +334,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             }
         }
         if (questId == null) {
-            warnInvalid(location, context, "quest condition must define quest or quest_id.");
+            warnInvalid(location, context, "quest condition must define quest or quest_id unless a default quest is available.");
             return Optional.empty();
         }
         Set<String> states = readNormalizedStrings(condition, "state", "states");

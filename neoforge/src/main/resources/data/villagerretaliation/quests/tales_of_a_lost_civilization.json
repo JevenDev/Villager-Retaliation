@@ -116,7 +116,6 @@
       ],
       "conditions": [
         {
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "state": "active",
           "type": "quest"
         },

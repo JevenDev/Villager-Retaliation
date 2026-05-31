@@ -19,9 +19,9 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
   },
   "metadata": {
     "topic": "ancient_city",
-    "tags": ["quest", "exploration"],
+    "tags": ["content.dialogue", "dialogue.scene", "quest.linked", "questline.lost_civilization", "scope.quest_scene"],
     "questline": "lost_civilization",
-    "quest": "tales_of_a_lost_civilization"
+    "quest": "example:tales_of_a_lost_civilization"
   },
   "entries": [
     {
@@ -31,7 +31,7 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
       "request": "story",
       "order": 18,
       "conditions": [
-        { "type": "quest", "quest": "example:tales_of_a_lost_civilization", "state": "available" }
+        { "type": "quest", "state": "available" }
       ],
       "start": "offer"
     }
@@ -50,7 +50,6 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
       "actions": [
         {
           "type": "quest",
-          "quest": "example:tales_of_a_lost_civilization",
           "action": "start",
           "lines": {
             "started": ["Travel {direction} toward {target_x}, {target_z}. Bring back {proof_item}."],
@@ -68,9 +67,13 @@ data/<namespace>/dialogue_trees/<locale>/<tree_id>.json
 }
 ```
 
+Because this tree declares `metadata.quest`, local quest conditions and quest actions inherit `example:tales_of_a_lost_civilization`. Add an explicit `quest` or `quest_id` only when a condition or action intentionally references a different quest.
+
 ## Entries
 
 `entries` generate Talk menu options. A tree can have several entries pointing at different starting nodes, which is useful for quest offer, reminder, and turn-in states.
+
+When a quest file declares `links.dialogue_tree`, `links.offer`, `links.reminder`, or `links.turn_in`, those values should point at this tree id and these entry ids exactly. The current runtime still enters the scene through the tree entry and quest action path, but the validator now treats the quest links as the authoring contract.
 
 Common fields:
 
@@ -99,19 +102,21 @@ For active quest menu nodes, keep destructive choices near the bottom: use an `A
 
 Actions let dialogue mutate game state without adding new Java handlers for every feature.
 
+Dialogue trees and quest triggers share the same action parser. Use explicit `type` values for clarity, or omit `type` when a unique action field identifies the kind. For example, `{ "experience": 25 }`, `{ "forced_dialogue": "quest.scene" }`, `{ "quest_id": "example:quest", "action": "accept" }`, and `{ "trigger": "quest.updated", "text": "Quest updated: {quest}" }` are all valid shorthand forms.
+
 Supported action types:
 
 | Type | Fields |
 | --- | --- |
-| `quest` | `quest`, `action`: `start`, `remind`, `turn_in`, or `abandon`; optional status-keyed `lines`. |
-| `experience` | `amount` |
-| `reputation` | `amount` |
-| `gossip` | `amount` |
-| `memory` | `memory_event` |
-| `loot` | `loot_table` |
-| `notification` | `notification` or `text` |
-| `tracker` | `flash_tracker` |
-| `forced_dialogue` | `forced_dialogue` |
+| `quest` / `quest_action` | Optional `quest`, `quest_id`, or `id` when `metadata.quest` supplies the owning quest; `action`: `start`/`accept`/`begin`, `remind`/`details`, `turn_in`/`complete`/`claim`, or `abandon`/`drop`/`cancel`; optional status-keyed `lines`. |
+| `experience` / `xp` | `amount` or `experience` |
+| `reputation` / `rep` | `amount` or `reputation` |
+| `gossip` / `gossip_reputation` | `amount`, `gossip`, or `gossip_reputation` |
+| `memory` / `memory_event` | `memory_event` |
+| `loot` / `loot_table` | `loot_table` |
+| `notification` / `notify` | `notification` or `trigger`, optional `text` |
+| `tracker` / `flash_tracker` | `flash_tracker` |
+| `forced_dialogue` / `dialogue` | `forced_dialogue` |
 
 Quest actions return a status such as `started`, `reminder`, `inactive`, `completed`, `missing_target`, `missing_proof`, `abandoned`, `abandoned_cooldown`, `abandoned_forever`, `unavailable`, `already_completed`, or `locate_failed`. When an action defines `lines`, the matching status selects the spoken line.
 

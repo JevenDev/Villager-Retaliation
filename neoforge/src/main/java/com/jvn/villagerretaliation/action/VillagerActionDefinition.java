@@ -35,6 +35,14 @@ public record VillagerActionDefinition(
     }
 
     public static List<VillagerActionDefinition> readList(ResourceLocation location, String context, JsonObject entry) {
+        return readList(location, context, entry, null);
+    }
+
+    public static List<VillagerActionDefinition> readList(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            ResourceLocation defaultQuestId) {
         JsonElement element = entry.get("actions");
         if (element == null || element.isJsonNull()) {
             return List.of();
@@ -48,7 +56,7 @@ public record VillagerActionDefinition(
         int index = 0;
         for (JsonElement child : element.getAsJsonArray()) {
             if (child.isJsonObject()) {
-                read(location, context + ".actions[" + index + "]", child.getAsJsonObject()).ifPresent(actions::add);
+                read(location, context + ".actions[" + index + "]", child.getAsJsonObject(), defaultQuestId).ifPresent(actions::add);
             }
             index++;
         }
@@ -56,11 +64,19 @@ public record VillagerActionDefinition(
     }
 
     public static List<VillagerActionDefinition> readListOrInline(ResourceLocation location, String context, JsonObject entry) {
-        List<VillagerActionDefinition> actions = readList(location, context, entry);
+        return readListOrInline(location, context, entry, null);
+    }
+
+    public static List<VillagerActionDefinition> readListOrInline(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            ResourceLocation defaultQuestId) {
+        List<VillagerActionDefinition> actions = readList(location, context, entry, defaultQuestId);
         if (!actions.isEmpty() || entry.has("actions") || !hasInlineAction(entry)) {
             return actions;
         }
-        return read(location, context + ".action", entry).map(List::of).orElse(List.of());
+        return read(location, context + ".action", entry, defaultQuestId).map(List::of).orElse(List.of());
     }
 
     public static boolean hasInlineAction(JsonObject entry) {
@@ -81,14 +97,22 @@ public record VillagerActionDefinition(
                 || entry.has("loot_table");
     }
 
-    private static java.util.Optional<VillagerActionDefinition> read(ResourceLocation location, String context, JsonObject entry) {
-        Kind kind = inferKind(entry);
+    private static java.util.Optional<VillagerActionDefinition> read(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            ResourceLocation defaultQuestId) {
+        Kind kind = inferKind(entry, defaultQuestId);
         if (kind == Kind.NONE) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "action must define a supported type.");
             return java.util.Optional.empty();
         }
 
+        boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
+        if (questId == null && kind == Kind.QUEST && !hasExplicitQuestId) {
+            questId = defaultQuestId;
+        }
         QuestAction questAction = QuestAction.bySerializedName(
                 DatapackJsonReader.readString(entry, "action"));
         int amount = readAmount(kind, entry);
@@ -118,12 +142,15 @@ public record VillagerActionDefinition(
                 readLinesByStatus(entry)));
     }
 
-    private static Kind inferKind(JsonObject entry) {
+    private static Kind inferKind(JsonObject entry, ResourceLocation defaultQuestId) {
         Kind explicit = Kind.bySerializedName(DatapackJsonReader.readString(entry, "type"));
         if (explicit != Kind.NONE) {
             return explicit;
         }
-        if (entry.has("quest") || entry.has("quest_id")) {
+        if (hasQuestIdField(entry)) {
+            return Kind.QUEST;
+        }
+        if (defaultQuestId != null && entry.has("action")) {
             return Kind.QUEST;
         }
         if (entry.has("forced_dialogue")) {
@@ -151,6 +178,10 @@ public record VillagerActionDefinition(
             return Kind.NOTIFICATION;
         }
         return Kind.NONE;
+    }
+
+    private static boolean hasQuestIdField(JsonObject entry) {
+        return entry.has("quest") || entry.has("quest_id") || entry.has("id");
     }
 
     private static int readAmount(Kind kind, JsonObject entry) {

@@ -390,3 +390,19 @@ No runtime ids or file paths were renamed in this pass.
 - Put any triggered reminder scene in `forced_dialogue`.
 - Add `metadata.questline` and a `quest.linked` tag.
 - Reference the forced-dialogue id from the quest `links.forced_dialogue` array and from the relevant quest trigger action.
+
+## Testing Checklist
+
+- Parse every JSON file after edits.
+- Run `node tools/validate-dialogue-data.mjs` when Node is available.
+- Run `./gradlew compileJava` and `./gradlew test` when Java is available.
+- Check for `metadata.tags: null` or `links.forced_dialogue: null`.
+- Confirm each quest with dialogue has a `links` block.
+- Confirm each quest-linked dialogue tree has `metadata.questline` and `metadata.quest`.
+- Confirm each quest-triggered forced-dialogue file carries questline metadata.
+- Check for duplicate quest ids.
+- Check for duplicate dialogue tree ids.
+- Check that every `links.dialogue_tree` id resolves to a real dialogue tree and that `links.offer`, `links.reminder`, and `links.turn_in` resolve to real entry ids inside that tree.
+- Check for dialogue tree entry ids that no longer match quest `links.offer`, `links.reminder`, or `links.turn_in`.
+- Check for forced-dialogue ids in `links.forced_dialogue` that no longer exist.
+- Validate that ambient dialogue still loads when a file has only root metadata plus bundled entries.

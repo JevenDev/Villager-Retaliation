@@ -33,7 +33,6 @@
           "type": "skill"
         },
         {
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "state": "available",
           "type": "quest"
         }
@@ -51,7 +50,6 @@
       "order": -20,
       "conditions": [
         {
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "state": "in_progress",
           "type": "quest"
         }
@@ -69,7 +67,6 @@
       "order": -20,
       "conditions": [
         {
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "state": "ready",
           "type": "quest"
         }
@@ -129,7 +126,6 @@
               "There is no active trail here for me to fold away."
             ]
           },
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "type": "quest"
         }
       ],
@@ -191,7 +187,6 @@
               "Something is missing from the story."
             ]
           },
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "type": "quest"
         }
       ],
@@ -237,7 +232,6 @@
               "If the mark has slipped, come back when the ink settles."
             ]
           },
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "type": "quest"
         }
       ],
@@ -266,7 +260,6 @@
               "There are marks I do not show until I trust the reading, and the reader."
             ]
           },
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
           "type": "quest"
         }
       ],

@@ -132,7 +132,7 @@ public final class VillagerQuestResources {
                 readObjectives(location, root),
                 readRules(location, root),
                 readTracker(root),
-                readTriggers(location, root),
+                readTriggers(location, root, id),
                 readRewards(root),
                 readDialogue(root),
                 DialogueEntryMetadata.read(location, "quest", "quest", root),
@@ -427,7 +427,10 @@ public final class VillagerQuestResources {
         return Map.copyOf(values);
     }
 
-    private static List<QuestDefinition.Trigger> readTriggers(ResourceLocation location, JsonObject root) {
+    private static List<QuestDefinition.Trigger> readTriggers(
+            ResourceLocation location,
+            JsonObject root,
+            ResourceLocation defaultQuestId) {
         JsonElement element = root.get("triggers");
         if (element == null || element.isJsonNull()) {
             return List.of();
@@ -440,14 +443,18 @@ public final class VillagerQuestResources {
         int index = 0;
         for (JsonElement child : element.getAsJsonArray()) {
             if (child.isJsonObject()) {
-                readTrigger(location, child.getAsJsonObject(), index).ifPresent(triggers::add);
+                readTrigger(location, child.getAsJsonObject(), index, defaultQuestId).ifPresent(triggers::add);
             }
             index++;
         }
         return List.copyOf(triggers);
     }
 
-    private static Optional<QuestDefinition.Trigger> readTrigger(ResourceLocation location, JsonObject trigger, int index) {
+    private static Optional<QuestDefinition.Trigger> readTrigger(
+            ResourceLocation location,
+            JsonObject trigger,
+            int index,
+            ResourceLocation defaultQuestId) {
         QuestDefinition.TriggerEvent event = QuestDefinition.TriggerEvent.bySerializedName(
                 DatapackJsonReader.readString(trigger, "event"));
         if (event == null) {
@@ -461,7 +468,8 @@ public final class VillagerQuestResources {
         List<VillagerActionDefinition> actions = VillagerActionDefinition.readListOrInline(
                 location,
                 "quest trigger \"" + id + "\"",
-                trigger);
+                trigger,
+                defaultQuestId);
         if (actions.isEmpty()) {
             return Optional.empty();
         }
@@ -473,7 +481,7 @@ public final class VillagerQuestResources {
         return Optional.of(new QuestDefinition.Trigger(
                 id,
                 event,
-                DialogueCondition.readList(location, "quest trigger \"" + id + "\"", trigger),
+                DialogueCondition.readList(location, "quest trigger \"" + id + "\"", trigger, defaultQuestId),
                 actions,
                 readDurationTicks(trigger, "cooldown", defaultTriggerCooldown(event)),
                 DatapackJsonReader.readDouble(trigger, "radius", 10.0D),
