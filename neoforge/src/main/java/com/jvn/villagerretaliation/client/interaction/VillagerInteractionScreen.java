@@ -11,7 +11,6 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
-import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
@@ -517,9 +516,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("clipboard.assign_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.ASSIGN));
         addOption("clipboard.show_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.SHOW));
         addOption("clipboard.remove_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.REMOVE));
-        if (clipboardHasSelection()) {
-            addOption("clipboard.clear_selection", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.CLEAR_SELECTION));
-        }
         addOption("root.goodbye", this::leaveConversation);
     }
 
@@ -1422,11 +1418,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private boolean canRequestVillagerInventory() {
         return this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
-    }
-
-    private boolean clipboardHasSelection() {
-        ItemStack stack = clipboardStack();
-        return !stack.isEmpty() && !HiredStorageClipboardItem.selectedContainers(stack).isEmpty();
     }
 
     private ItemStack clipboardStack() {
