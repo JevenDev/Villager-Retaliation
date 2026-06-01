@@ -61,7 +61,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Removed top-level dialogue metadata aliases from maintained beta.12 dialogue and dialogue-tree authoring.
 - No beta.12 runtime JSON fields, triggers, or placeholders are removed solely because of the folderized dialogue layout.
 - Edmundo came back
-- Removed Edmundo
+- Removed Edmundo (i think)
 
 ### Migration Notes For Pack Authors
 
