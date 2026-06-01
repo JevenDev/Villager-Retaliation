@@ -40,6 +40,7 @@ public final class VillagerInteractionScreenOpener {
                 mood,
                 dialogueContext.primaryMood(),
                 false,
+                false,
                 forceCameraTowardsVillager,
                 dialogueOptions
         );
@@ -63,8 +64,28 @@ public final class VillagerInteractionScreenOpener {
                 VillagerDialogueService.moodFor(context),
                 context.primaryMood(),
                 true,
+                false,
                 forceCameraTowardsVillager,
                 dialogueOptions
+        );
+        VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
+        PacketDistributor.sendToPlayer(player, payload);
+        VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
+    }
+
+    public static void openClipboard(ServerPlayer player, Villager villager, boolean forceCameraTowardsVillager) {
+        ServerLevel level = player.serverLevel();
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        OpenVillagerInteractionPayload payload = createPayload(
+                level,
+                player,
+                villager,
+                VillagerDialogueService.moodFor(context),
+                context.primaryMood(),
+                false,
+                true,
+                forceCameraTowardsVillager,
+                List.of()
         );
         VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
         PacketDistributor.sendToPlayer(player, payload);
@@ -78,6 +99,7 @@ public final class VillagerInteractionScreenOpener {
             DialogueDisposition mood,
             VillagerMood primaryMood,
             boolean forcedConversation,
+            boolean clipboardMenu,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions) {
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
@@ -98,6 +120,7 @@ public final class VillagerInteractionScreenOpener {
                 primaryMood,
                 VillagerRecruitmentService.isFollowing(villager, player),
                 forcedConversation,
+                clipboardMenu,
                 forceCameraTowardsVillager,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),

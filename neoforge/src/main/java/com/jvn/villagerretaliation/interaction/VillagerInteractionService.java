@@ -91,6 +91,13 @@ public final class VillagerInteractionService {
                 && shouldStayConversable(player, villager);
     }
 
+    public static boolean shouldHandleClipboardInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
+        return hand == InteractionHand.MAIN_HAND
+                && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && VillagerRetaliationItems.isClipboard(player.getItemInHand(hand))
+                && shouldStayConversable(player, villager);
+    }
+
     public static InteractionResult handleVillagerRightClick(Villager villager, ServerPlayer player) {
         if (villager.isSleeping()) {
             return handleSleepingVillagerInteraction(villager, player);
@@ -141,6 +148,26 @@ public final class VillagerInteractionService {
             return InteractionResult.FAIL;
         }
         openInteractionScreen(player, villager);
+        focusVillagerOnPlayer(villager, player);
+        return InteractionResult.SUCCESS;
+    }
+
+    public static InteractionResult handleClipboardVillagerRightClick(Villager villager, ServerPlayer player) {
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "interaction.refuse_despised");
+            return InteractionResult.FAIL;
+        }
+        if (VillagerRetaliationHandler.isHostileTowards(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "interaction.refuse_angry");
+            return InteractionResult.FAIL;
+        }
+        if (!VillagerConversationService.start(player, villager)) {
+            sendVillagerNotice(player, villager, "interaction.busy");
+            return InteractionResult.FAIL;
+        }
+        VillagerInteractionScreenOpener.openClipboard(player, villager, false);
         focusVillagerOnPlayer(villager, player);
         return InteractionResult.SUCCESS;
     }

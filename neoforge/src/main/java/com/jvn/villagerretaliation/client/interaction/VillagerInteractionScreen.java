@@ -98,6 +98,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private VillagerMood primaryMood;
     private boolean followingPlayer;
     private final boolean forcedDialogue;
+    private final boolean clipboardMenu;
     private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
@@ -146,6 +147,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             VillagerMood primaryMood,
             boolean followingPlayer,
             boolean forcedDialogue,
+            boolean clipboardMenu,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
@@ -165,6 +167,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.primaryMood = primaryMood == null ? VillagerMood.NEUTRAL : primaryMood;
         this.followingPlayer = followingPlayer;
         this.forcedDialogue = forcedDialogue;
+        this.clipboardMenu = clipboardMenu;
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
@@ -435,7 +438,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (this.page == DialoguePage.RECRUIT) {
             addRecruitOptions();
         } else if (this.page == DialoguePage.ROOT) {
-            if (this.forcedDialogue) {
+            if (this.clipboardMenu) {
+                addClipboardMenuOptions();
+            } else if (this.forcedDialogue) {
                 addDialogueOptions();
             } else {
                 addRootOptions();
@@ -474,7 +479,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addOption("root.inventory", this::requestInventory);
             }
             addOption("root.recruit", this::openRecruitPage);
-            addClipboardOptions();
             if (this.relationships.hasRelationships()) {
                 addOption("root.relationships", this::openRelationshipPage);
             }
@@ -509,16 +513,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
     }
 
-    private void addClipboardOptions() {
-        if (!holdingClipboard()) {
-            return;
-        }
+    private void addClipboardMenuOptions() {
         addOption("clipboard.assign_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.ASSIGN));
         addOption("clipboard.show_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.SHOW));
         addOption("clipboard.remove_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.REMOVE));
         if (clipboardHasSelection()) {
             addOption("clipboard.clear_selection", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.CLEAR_SELECTION));
         }
+        addOption("root.goodbye", this::leaveConversation);
     }
 
     private void addFamilyOptions() {
@@ -1420,10 +1422,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private boolean canRequestVillagerInventory() {
         return this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
-    }
-
-    private boolean holdingClipboard() {
-        return !clipboardStack().isEmpty();
     }
 
     private boolean clipboardHasSelection() {

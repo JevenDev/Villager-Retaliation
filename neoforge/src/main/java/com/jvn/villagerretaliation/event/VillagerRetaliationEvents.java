@@ -247,6 +247,14 @@ public final class VillagerRetaliationEvents {
         ItemStack interactionStack = player.getItemInHand(event.getHand());
 
         if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleClipboardInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleClipboardVillagerRightClick(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer
                 && VillagerRetaliationDebugItems.isDebugVillagerTool(interactionStack.getItem())) {
             InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());

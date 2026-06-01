@@ -97,6 +97,7 @@ public final class VillagerInteractionClientHandler {
                 payload.primaryMood(),
                 payload.followingPlayer(),
                 payload.forcedDialogue(),
+                payload.clipboardMenu(),
                 payload.forceCameraTowardsVillager(),
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
