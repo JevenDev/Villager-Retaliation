@@ -2,6 +2,9 @@
   "required": true,
   "package": "com.jvn.villagerretaliation.mixin",
   "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AbstractContainerMenuAccessor"
+  ],
   "client": [
     "client.ChatComponentMixin",
     "client.QuestItemEntityGlowMixin",

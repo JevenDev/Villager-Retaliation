@@ -279,6 +279,14 @@ public final class VillagerInteractionService {
         }
 
         focusVillagerOnPlayer(villager, player);
+        if (player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerInventoryMenu menu
+                && menu.villagerEntityId() == entityId) {
+            menu.switchViewMode(jobInventory
+                    ? com.jvn.villagerretaliation.inventory.VillagerInventoryMenu.ViewMode.JOB
+                    : com.jvn.villagerretaliation.inventory.VillagerInventoryMenu.ViewMode.PERSONAL);
+            menu.broadcastFullState();
+            return;
+        }
         if (jobInventory) {
             VillagerInventoryAccess.openJobInventory(player, villager);
         } else {

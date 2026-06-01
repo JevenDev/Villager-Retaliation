@@ -54,8 +54,15 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         Component tabLabel = Component.translatable(this.menu.isJobInventory()
                 ? "gui.villagerretaliation.inventory.personal_tab"
                 : "gui.villagerretaliation.inventory.job_tab");
-        addRenderableWidget(Button.builder(tabLabel, button -> PacketDistributor.sendToServer(
-                        new VillagerJobInventoryRequestPayload(this.menu.villagerEntityId(), !this.menu.isJobInventory())))
+        addRenderableWidget(Button.builder(tabLabel, button -> {
+                    VillagerInventoryMenu.ViewMode nextMode = this.menu.isJobInventory()
+                            ? VillagerInventoryMenu.ViewMode.PERSONAL
+                            : VillagerInventoryMenu.ViewMode.JOB;
+                    this.menu.switchViewMode(nextMode);
+                    refreshForModeSwitch();
+                    PacketDistributor.sendToServer(
+                            new VillagerJobInventoryRequestPayload(this.menu.villagerEntityId(), nextMode == VillagerInventoryMenu.ViewMode.JOB));
+                })
                 .bounds(this.leftPos + 116, this.topPos + 8, 52, 18)
                 .build());
     }
@@ -95,10 +102,11 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        Component label = Component.translatable(this.menu.isJobInventory()
-                ? "gui.villagerretaliation.inventory.job_inventory"
-                : "gui.villagerretaliation.inventory.personal_inventory");
-        graphics.drawString(this.font, label, 8, 8, 0x404040, false);
+    }
+
+    public void refreshForModeSwitch() {
+        clearWidgets();
+        init();
     }
 
     @Override
@@ -174,4 +182,5 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
             livingEntity.yHeadRot = previousHeadRot;
         }
     }
+
 }
