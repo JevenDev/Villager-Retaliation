@@ -295,6 +295,55 @@ Texture-only villager packs should generally work, but hostile/combat villagers 
 
 Resource packs can also override the combat villager model, opt into a custom non-combat model, and use EMF's normal entity model workflow when Entity Model Features is installed. Full texture paths and model notes are in the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki).
 
+![roadmap](https://cdn.modrinth.com/data/cached_images/04825ea0e2e5462ffa075e783ca38b0c63a36d34.png)
+
+## Roadmap
+
+Here is the current planned roadmap for Villager Retaliation. Version plans may shift slightly as features are developed and tested.
+
+### Beta 11 - Current Release [OUT NOW!]
+
+This is the currently released build on Modrinth and CurseForge.
+
+Beta 11 focuses on the current core Villager Retaliation experience, including villager combat behavior, reputation, dialogue, villager memory, datapack support, and the pack creator tools.
+
+### Beta 12 - Skills and Attributes Update
+
+This update will focus on making villagers feel more unique through individual skills, attributes, and stats.
+
+Planned focus:
+
+- Villager skills
+- Villager attributes
+- Profession-based strengths and weaknesses
+- Better stat visibility
+- More meaningful differences between villagers
+
+### Beta 13 - Hired Help Update
+
+This update will focus on expanding villager recruitment and making villagers more useful as companions, workers, and helpers.
+
+Planned focus:
+
+- Hiring villagers
+- Expanded follow behavior
+- Profession-based hired roles
+- Villagers helping with jobs and tasks
+- Better inventory, gear, and equipment support for recruited villagers
+
+### Beta 14 - Housing and Settlements Update
+
+This update will focus on giving villages more identity, structure, and long-term progression.
+
+Planned focus:
+
+- Villager housing
+- Village storage and ownership
+- Settlement memory
+- Village identity
+- Family trees and relationships
+- Stronger consequences for theft, deaths, and village events
+
 ## Version and Loaders
 
 - NeoForge 1.21.1 - active development
