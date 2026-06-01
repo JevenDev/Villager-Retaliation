@@ -15,7 +15,7 @@ public final class VillagerQuestKeyMappings {
     public static final KeyMapping TOGGLE_TRACKER = new KeyMapping(
             "key.villagerretaliation.toggle_quest_tracker",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_L,
+            GLFW.GLFW_KEY_K,
             "key.categories.villagerretaliation"
     );
 

@@ -246,7 +246,7 @@ Accepted quests sync to the client quest journal and tracker UI. The default key
 
 ```text
 J - Open Quest Journal
-L - Toggle Quest Tracker
+K - Toggle Quest Tracker
 ```
 
 The journal lists active quest state and detail text. The tracker uses the quest `tracker.title`, current tracker step, objective tracker text, and quest placeholders documented above. Active quest proof items can also receive quest-item highlighting in inventories, item tooltips, and dropped item labels when the server syncs them as quest-relevant items.

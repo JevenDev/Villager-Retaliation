@@ -7,23 +7,28 @@
           "functions": [
             {
               "count": {
-                "max": 48,
-                "min": 32,
+                "max": 80,
+                "min": 56,
                 "type": "minecraft:uniform"
               },
               "function": "minecraft:set_count"
             }
           ],
           "name": "minecraft:emerald",
-          "type": "minecraft:item",
-          "weight": 3
-        },
+          "type": "minecraft:item"
+        }
+      ],
+      "rolls": 1
+    },
+    {
+      "bonus_rolls": 0,
+      "entries": [
         {
           "functions": [
             {
               "count": {
-                "max": 8,
-                "min": 4,
+                "max": 14,
+                "min": 8,
                 "type": "minecraft:uniform"
               },
               "function": "minecraft:set_count"
@@ -37,14 +42,29 @@
           "functions": [
             {
               "count": {
-                "max": 36,
-                "min": 20,
+                "max": 60,
+                "min": 36,
                 "type": "minecraft:uniform"
               },
               "function": "minecraft:set_count"
             }
           ],
           "name": "minecraft:experience_bottle",
+          "type": "minecraft:item",
+          "weight": 2
+        },
+        {
+          "functions": [
+            {
+              "count": {
+                "max": 4,
+                "min": 2,
+                "type": "minecraft:uniform"
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "minecraft:shulker_shell",
           "type": "minecraft:item",
           "weight": 1
         }

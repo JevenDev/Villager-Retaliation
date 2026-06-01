@@ -1,15 +1,17 @@
-name: Deploy Datapack Builder
+name: Deploy Wiki Sites
 
 on:
   push:
     branches: ["1.21.1"]
     paths:
       - "tools/datapack-builder/**"
+      - "tools/player-wiki/**"
       - ".github/workflows/deploy-pages.yml"
   pull_request:
     branches: ["1.21.1"]
     paths:
       - "tools/datapack-builder/**"
+      - "tools/player-wiki/**"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
@@ -24,7 +26,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Validate static site
+    name: Validate static sites
     runs-on: ubuntu-latest
 
     steps:
@@ -34,11 +36,21 @@ jobs:
       - name: Check JavaScript syntax
         run: node --check tools/datapack-builder/app.js
 
-      - name: Verify Pages entry files
+      - name: Check player wiki JavaScript syntax
+        run: node --check tools/player-wiki/app.js
+
+      - name: Verify datapack builder entry files
         run: |
           test -f tools/datapack-builder/index.html
           test -f tools/datapack-builder/styles.css
           test -f tools/datapack-builder/app.js
+
+      - name: Verify player wiki entry files
+        run: |
+          test -f tools/player-wiki/index.html
+          test -f tools/player-wiki/styles.css
+          test -f tools/player-wiki/app.js
+          test -f tools/player-wiki/site-data.js
 
   deploy:
     name: Deploy to GitHub Pages
@@ -57,10 +69,18 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Build combined Pages artifact
+        run: |
+          rm -rf _site
+          mkdir -p _site/datapack-builder
+          cp -R tools/player-wiki/. _site/
+          cp -R tools/datapack-builder/. _site/datapack-builder/
+          touch _site/.nojekyll
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: tools/datapack-builder
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment

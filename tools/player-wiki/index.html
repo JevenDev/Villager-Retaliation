@@ -1,0 +1,63 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A player-facing Villager Retaliation wiki with quest walkthroughs, rewards, gifts, reputation, and feature guides.">
+    <title>Villager Retaliation Wiki</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css?v=48">
+  </head>
+  <body>
+    <div class="site-shell">
+      <aside class="sidebar" aria-label="Wiki navigation">
+        <a class="brand" href="#/home" aria-label="Villager Retaliation Wiki home">
+          <img src="./assets/villager_retaliation_logo.png" alt="Villager Retaliation logo">
+          <span>Villager Retaliation Wiki</span>
+        </a>
+
+        <label class="search-box" for="wiki-search">
+          <span class="search-box-label">Search Wiki</span>
+          <input id="wiki-search" type="search" autocomplete="off" spellcheck="false" placeholder="Search Wiki">
+          <span class="search-shortcut" aria-hidden="true">Alt Q</span>
+        </label>
+
+        <nav id="wiki-nav" class="nav-list"></nav>
+      </aside>
+
+      <main class="content-frame">
+        <header class="topbar">
+          <button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="wiki-nav">Menu</button>
+          <div id="page-crumb" class="page-crumb" aria-label="Current page"></div>
+          <div class="topbar-links">
+            <a href="./datapack-builder/index.html"><i data-lucide="hammer" aria-hidden="true"></i>Datapack Generator</a>
+            <a href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noreferrer"><i data-lucide="git-branch" aria-hidden="true"></i>GitHub</a>
+          </div>
+        </header>
+
+        <div class="document-layout">
+          <article id="wiki-content" class="wiki-content" tabindex="-1"></article>
+          <aside id="page-toc" class="toc" aria-label="On this page"></aside>
+        </div>
+      </main>
+    </div>
+
+    <div id="search-palette" class="search-palette" aria-hidden="true">
+      <section class="search-palette-window" role="dialog" aria-modal="true" aria-labelledby="search-palette-title">
+        <h2 id="search-palette-title">Search the wiki</h2>
+        <label class="palette-search-row" for="palette-search">
+          <span>Search</span>
+          <input id="palette-search" type="search" autocomplete="off" spellcheck="false" placeholder="Quests, advancements, rewards">
+          <kbd>Esc</kbd>
+        </label>
+        <div id="palette-results" class="palette-results" role="listbox" aria-label="Search results"></div>
+      </section>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="./site-data.js?v=48"></script>
+    <script src="./app.js?v=48"></script>
+  </body>
+</html>

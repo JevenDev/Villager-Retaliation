@@ -7,14 +7,34 @@
           "functions": [
             {
               "count": {
-                "max": 7,
-                "min": 4,
+                "max": 14,
+                "min": 9,
                 "type": "minecraft:uniform"
               },
               "function": "minecraft:set_count"
             }
           ],
           "name": "minecraft:emerald",
+          "type": "minecraft:item"
+        }
+      ],
+      "rolls": 1
+    },
+    {
+      "bonus_rolls": 0,
+      "entries": [
+        {
+          "functions": [
+            {
+              "count": {
+                "max": 24,
+                "min": 14,
+                "type": "minecraft:uniform"
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "minecraft:glowstone_dust",
           "type": "minecraft:item",
           "weight": 2
         },
@@ -22,14 +42,29 @@
           "functions": [
             {
               "count": {
-                "max": 12,
+                "max": 4,
+                "min": 2,
+                "type": "minecraft:uniform"
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "minecraft:iron_ingot",
+          "type": "minecraft:item",
+          "weight": 1
+        },
+        {
+          "functions": [
+            {
+              "count": {
+                "max": 10,
                 "min": 6,
                 "type": "minecraft:uniform"
               },
               "function": "minecraft:set_count"
             }
           ],
-          "name": "minecraft:glowstone_dust",
+          "name": "minecraft:experience_bottle",
           "type": "minecraft:item",
           "weight": 1
         }

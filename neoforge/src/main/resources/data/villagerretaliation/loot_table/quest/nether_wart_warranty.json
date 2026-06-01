@@ -7,14 +7,34 @@
           "functions": [
             {
               "count": {
-                "max": 22,
-                "min": 12,
+                "max": 34,
+                "min": 24,
                 "type": "minecraft:uniform"
               },
               "function": "minecraft:set_count"
             }
           ],
           "name": "minecraft:emerald",
+          "type": "minecraft:item"
+        }
+      ],
+      "rolls": 1
+    },
+    {
+      "bonus_rolls": 0,
+      "entries": [
+        {
+          "functions": [
+            {
+              "count": {
+                "max": 18,
+                "min": 10,
+                "type": "minecraft:uniform"
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "minecraft:blaze_powder",
           "type": "minecraft:item",
           "weight": 2
         },
@@ -22,14 +42,44 @@
           "functions": [
             {
               "count": {
-                "max": 6,
-                "min": 3,
+                "max": 18,
+                "min": 10,
                 "type": "minecraft:uniform"
               },
               "function": "minecraft:set_count"
             }
           ],
           "name": "minecraft:glistering_melon_slice",
+          "type": "minecraft:item",
+          "weight": 2
+        },
+        {
+          "functions": [
+            {
+              "count": {
+                "max": 20,
+                "min": 12,
+                "type": "minecraft:uniform"
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "minecraft:experience_bottle",
+          "type": "minecraft:item",
+          "weight": 1
+        },
+        {
+          "functions": [
+            {
+              "count": {
+                "max": 8,
+                "min": 4,
+                "type": "minecraft:uniform"
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "minecraft:magma_cream",
           "type": "minecraft:item",
           "weight": 1
         }

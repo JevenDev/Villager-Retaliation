@@ -88,7 +88,7 @@ Villagers can also share stories about discovered structures and biomes, give un
 
 Quest scenes can use authored dialogue trees for offers, reminders, turn-ins, abandonment, and event-driven follow-ups. The built-in Tales of a Lost Civilization quest sends players to an Ancient City, tracks proof items, highlights quest items, and can surface a middle-left quest tracker or quest journal entry.
 
-Default quest keybinds are `J` for the Quest Journal and `L` for the Quest Tracker.
+Default quest keybinds are `J` for the Quest Journal and `K` for the Quest Tracker.
 
 Villagers can confront players for opening, breaking, or stealing from watched containers, including generated village chests. Breaking generated containers unpacks and counts the dropped loot before applying reputation loss, so smashing fuller village stores is worse than cracking an empty box. Data packs can customize the event dialogue, target specific loot tables, require item payments, and show different responses based on the player's current reputation with the witnessing villager.
 
