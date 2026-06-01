@@ -84,7 +84,7 @@ public final class VillagerRetaliationConfigModel {
 
         public ReputationChangeDisplayMode reputationChangeDisplayMode = ReputationChangeDisplayMode.HUD;
 
-        public ReputationChangeNotificationStyle reputationChangeNotificationStyle = ReputationChangeNotificationStyle.DEFAULT;
+        public ReputationChangeNotificationStyle reputationChangeNotificationStyle = ReputationChangeNotificationStyle.EXPERIMENTAL;
 
         public ReputationChangeHudPosition reputationChangeHudPosition = ReputationChangeHudPosition.TOP_LEFT;
 

@@ -6,6 +6,7 @@ import com.jvn.toucanlib.client.ToucanScrollbars;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestUi;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay;
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,10 +72,12 @@ public final class VillagerQuestJournalScreen extends Screen {
         clampSelectedOption();
         updateVisualScrolls();
 
+        VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.screenLayerZ());
         renderExperimentalBackdrop(graphics, mouseX, mouseY);
         VillagerInteractionOptionList.render(this.optionListContext, graphics, mouseX, mouseY);
         renderSelectedUnderlineClipped(graphics, mouseX, mouseY);
         renderQuestDetails(graphics);
+        VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
     @Override

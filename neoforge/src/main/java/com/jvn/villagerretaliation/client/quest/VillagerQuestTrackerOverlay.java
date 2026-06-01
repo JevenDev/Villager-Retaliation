@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.quest;
 
 import com.jvn.villagerretaliation.client.interaction.VillagerQuestJournalScreen;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -80,7 +81,7 @@ public final class VillagerQuestTrackerOverlay {
     }
 
     public static void onRenderGuiLayer(RenderGuiLayerEvent.Post event) {
-        if (!VanillaGuiLayers.HOTBAR.equals(event.getName())
+        if (!VanillaGuiLayers.SAVING_INDICATOR.equals(event.getName())
                 || entries.isEmpty()
                 || (notificationAlpha <= 0.01F && trackerAlpha <= 0.01F)) {
             return;
@@ -96,6 +97,7 @@ public final class VillagerQuestTrackerOverlay {
         int screenWidth = minecraft.getWindow().getGuiScaledWidth();
         int screenHeight = minecraft.getWindow().getGuiScaledHeight();
 
+        VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.hudLayerZ());
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         Optional<QuestTrackerSyncPayload.Entry> trackedEntry = trackedEntry();
@@ -103,10 +105,12 @@ public final class VillagerQuestTrackerOverlay {
             renderNotification(graphics, font, trackedEntry.get(), screenWidth, screenHeight);
         }
         if (trackerAlpha <= 0.01F || minecraft.screen instanceof VillagerQuestJournalScreen) {
+            VillagerClientUiUtil.popGuiLayer(graphics);
             return;
         }
 
         renderTrackerLayer(graphics, font, screenWidth, screenHeight, trackerAlpha, false, age);
+        VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {

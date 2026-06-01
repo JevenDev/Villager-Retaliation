@@ -11,7 +11,32 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
 public final class VillagerClientUiUtil {
+    private static final float SCREEN_LAYER_Z = 320.0F;
+    private static final float HUD_LAYER_Z = 360.0F;
+    private static final float CHAT_LAYER_Z = 420.0F;
+
     private VillagerClientUiUtil() {
+    }
+
+    public static float screenLayerZ() {
+        return SCREEN_LAYER_Z;
+    }
+
+    public static float hudLayerZ() {
+        return HUD_LAYER_Z;
+    }
+
+    public static float chatLayerZ() {
+        return CHAT_LAYER_Z;
+    }
+
+    public static void pushGuiLayer(GuiGraphics graphics, float z) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, z);
+    }
+
+    public static void popGuiLayer(GuiGraphics graphics) {
+        graphics.pose().popPose();
     }
 
     public static int withAlphaFloor(int color, float alphaFactor) {

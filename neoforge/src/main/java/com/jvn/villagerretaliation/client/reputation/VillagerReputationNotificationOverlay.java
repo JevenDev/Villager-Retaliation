@@ -109,7 +109,7 @@ public final class VillagerReputationNotificationOverlay {
     }
 
     public static void onRenderGuiLayer(RenderGuiLayerEvent.Post event) {
-        if (!VanillaGuiLayers.HOTBAR.equals(event.getName())) {
+        if (!VanillaGuiLayers.SAVING_INDICATOR.equals(event.getName())) {
             return;
         }
 
@@ -127,6 +127,7 @@ public final class VillagerReputationNotificationOverlay {
         ReputationChangeHudPosition position = VillagerRetaliationConfig.REPUTATION_CHANGE_HUD_POSITION.get();
         ReputationChangeNotificationStyle style = VillagerRetaliationConfig.REPUTATION_CHANGE_NOTIFICATION_STYLE.get();
         int entryHeight = entryHeight(style, font);
+        VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.hudLayerZ());
         for (NotificationEntry entry : ACTIVE_ENTRIES) {
             float alpha = entry.alpha(partialTick);
             if (alpha <= 0.01F) {
@@ -151,6 +152,7 @@ public final class VillagerReputationNotificationOverlay {
             }
             index++;
         }
+        VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {

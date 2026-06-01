@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -30,10 +31,12 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
         this.interactionScreen.render(graphics, mouseX, mouseY, partialTick);
         VillagerInteractionScreen.ChatRenderLayout layout = this.interactionScreen.chatRenderLayout();
         graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
+        VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.chatLayerZ());
         graphics.pose().pushPose();
         graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
         super.render(graphics, layout.translatedMouseX(mouseX), layout.translatedMouseY(mouseY), partialTick);
         graphics.pose().popPose();
+        VillagerClientUiUtil.popGuiLayer(graphics);
         graphics.disableScissor();
     }
 

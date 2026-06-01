@@ -252,6 +252,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         updateOptionScroll();
         updateSkillScroll();
 
+        VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.screenLayerZ());
         VillagerInteractionExperimentalChrome.renderFocus(this.experimentalChromeContext, graphics, mouseX, mouseY);
         renderTopBackButton(graphics, mouseX, mouseY);
         if (this.page == DialoguePage.GIFT) {
@@ -274,6 +275,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         renderHint(graphics);
         VillagerInteractionExperimentalChrome.renderNameTooltip(this.experimentalChromeContext, graphics, mouseX, mouseY);
+        VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
     @Override
@@ -924,7 +926,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     void renderBackdropBehindChat(GuiGraphics graphics) {
         int veilTop = interactionVeilTop();
         if (experimentalSkillsBackdropVisible()) {
+            VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.hudLayerZ());
             renderExperimentalSkillsBackdrop(graphics);
+            VillagerClientUiUtil.popGuiLayer(graphics);
         }
         VillagerInteractionExperimentalChrome.renderBackdrop(graphics, this.width, this.height, veilTop, this.lastMouseX, this.lastMouseY);
     }
@@ -982,12 +986,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         Minecraft minecraft = Minecraft.getInstance();
         ChatRenderLayout layout = chatRenderLayout();
+        VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.chatLayerZ());
         graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
         graphics.pose().pushPose();
         graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
         VillagerChatEffectRenderer.render(graphics, minecraft);
         graphics.pose().popPose();
         graphics.disableScissor();
+        VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
     ChatRenderLayout chatRenderLayout() {

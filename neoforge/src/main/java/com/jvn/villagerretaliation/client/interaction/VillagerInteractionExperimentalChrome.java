@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.toucanlib.client.ToucanColors;
 import com.jvn.toucanlib.client.ToucanEasing;
 import com.jvn.toucanlib.client.ToucanGuiText;
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +86,7 @@ final class VillagerInteractionExperimentalChrome {
         float elapsedMillis = now - backdropAnimationStartMillis;
         float exitElapsedMillis = backdropExitStartMillis < 0L ? -1.0F : now - backdropExitStartMillis;
 
+        VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.hudLayerZ());
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -109,6 +111,7 @@ final class VillagerInteractionExperimentalChrome {
         }
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.disableBlend();
+        VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
     private static void renderExitSkillsPanel(
