@@ -218,15 +218,20 @@
       return `${professionSegments[0]}:${professionSegments.slice(1).join("/")}`;
     }
 
+    function contentNamespace(state) {
+      return namespaceify(state?.meta?.namespace, "my_pack");
+    }
+
     function dialoguePathInfo(path) {
-      const match = path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/);
+      const match = path.match(/^data\/([^/]+)\/dialogue\/([^/]+)\/(.+)\.json$/);
       if (!match) return null;
-      const relative = match[2];
+      const relative = match[3];
       const segments = relative.split("/");
       const kindIndex = dialogueKindIndex(segments);
       const kind = kindIndex >= 0 ? segments[kindIndex] : "";
       return {
-        locale: match[1],
+        namespace: match[1],
+        locale: match[2],
         relative,
         kind,
         folderName: kindIndex > 0 ? segments.slice(0, kindIndex).join("/") : "",
@@ -268,7 +273,7 @@
     }
 
     function dialogueBundlePath(state) {
-      return `data/villagerretaliation/dialogue/${state.meta.locale}/${state.dialogue.fileName}.json`;
+      return `data/${contentNamespace(state)}/dialogue/${state.meta.locale}/${state.dialogue.fileName}.json`;
     }
 
     function dialogueFolderName(state) {
@@ -287,11 +292,11 @@
       const stemSource = entry.request || entry.key || entry.id || kind;
       const stem = dialogueFileStem(stemSource, kind);
       const order = String(Math.max(0, index)).padStart(2, "0");
-      return `data/villagerretaliation/dialogue/${state.meta.locale}/${dialogueFolderName(state)}/${kind}/${order}_${stem}.json`;
+      return `data/${contentNamespace(state)}/dialogue/${state.meta.locale}/${dialogueFolderName(state)}/${kind}/${order}_${stem}.json`;
     }
 
     function forcedDialoguePath(state) {
-      return `data/villagerretaliation/forced_dialogue/${state.forcedDialogue.fileName}.json`;
+      return `data/${contentNamespace(state)}/forced_dialogue/${state.forcedDialogue.fileName}.json`;
     }
 
     function notificationsPath(state) {
@@ -439,7 +444,7 @@
     }
 
     function importedKnownKind(state, path) {
-      if (/^data\/villagerretaliation\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
+      if (/^data\/[^/]+\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
       if (/^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)) return "forced_dialogue";
       if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
       if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
@@ -463,7 +468,7 @@
       }
       const paths = Object.keys(files).map((path) => path.replace(/^\/+/, ""));
       const hasBeta12DialogueField = Object.entries(files).some(([path, value]) => (
-        /^data\/villagerretaliation\/dialogue\/.+\.json$/.test(path.replace(/^\/+/, ""))
+        /^data\/[^/]+\/dialogue\/.+\.json$/.test(path.replace(/^\/+/, ""))
         && typeof value === "string"
         && jsonContainsAnyKey(value, beta12DialogueKeys)
       ));
@@ -506,7 +511,7 @@
         return true;
       }
 
-      if (path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/)) {
+      if (path.match(/^data\/[^/]+\/dialogue\/([^/]+)\/(.+)\.json$/)) {
         const parsed = json();
         if (!parsed) return false;
         replaceDialogueFile(state, path, parsed);
@@ -592,6 +597,7 @@
 
     function replaceDialogueFile(state, path, json) {
       const info = dialoguePathInfo(path);
+      if (info.namespace) state.meta.namespace = namespaceify(info.namespace, state.meta.namespace || "my_pack");
       state.meta.locale = info.locale;
       state.dialogue.fileName = normalizeFileName(info.relative.split("/").pop(), state.dialogue.fileName);
       if (info.kind) {
@@ -627,6 +633,8 @@
 
     function replaceForcedDialogueFile(state, path, json) {
       const forcedDialogueMatch = path.match(/^data\/[^/]+\/forced_dialogue\/(.+)\.json$/);
+      const namespaceMatch = path.match(/^data\/([^/]+)\/forced_dialogue\/.+\.json$/);
+      if (namespaceMatch) state.meta.namespace = namespaceify(namespaceMatch[1], state.meta.namespace || "my_pack");
       state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
       state.forcedDialogue.entries = state.forcedDialogue.entries.filter((entry) => (entry.__sourcePath || forcedDialoguePath(state)) !== path);
       state.forcedDialogue.entries.push(...cleanArray(normalizeForcedDialogueEntries(json)).map((entry) => ({ ...entry, __sourcePath: path })));
@@ -666,6 +674,7 @@
 
       const dialogueInfo = dialoguePathInfo(path);
       if (dialogueInfo) {
+        if (dialogueInfo.namespace) state.meta.namespace = namespaceify(dialogueInfo.namespace, state.meta.namespace || "my_pack");
         state.meta.locale = dialogueInfo.locale;
         state.dialogue.fileName = normalizeFileName(dialogueInfo.relative.split("/").pop(), state.dialogue.fileName);
         if (dialogueInfo.kind) {
@@ -698,6 +707,8 @@
 
       const forcedDialogueMatch = path.match(/^data\/[^/]+\/forced_dialogue\/(.+)\.json$/);
       if (forcedDialogueMatch) {
+        const namespaceMatch = path.match(/^data\/([^/]+)\/forced_dialogue\/.+\.json$/);
+        if (namespaceMatch) state.meta.namespace = namespaceify(namespaceMatch[1], state.meta.namespace || "my_pack");
         state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
         mergeArray(state, "forcedDialogue", "entries", normalizeForcedDialogueEntries(json), path);
         return true;
@@ -1035,6 +1046,7 @@
       readPackVersion,
       packVersionAtLeast,
       supportsBeta12DialogueFields,
+      contentNamespace,
       makePackMeta,
       dialoguePathInfo,
       dialogueEntriesFromJson,

@@ -162,7 +162,7 @@ function testTypedFolderOutput(app) {
     weight: 4
   });
 
-  const path = "data/villagerretaliation/dialogue/en_us/my_pack/lines/00_question.json";
+  const path = "data/my_pack/dialogue/en_us/my_pack/lines/00_question.json";
   const line = jsonFile(app.generatedFiles(), path);
   for (const key of ["text_key", "conditions", "priority", "category", "topic", "tags", "questline", "quest", "stage"]) {
     assert(Object.hasOwn(line, key), `Generated typed line lost ${key}.`);
@@ -172,7 +172,7 @@ function testTypedFolderOutput(app) {
 }
 
 function testTypedImportAndProfessionDefaults(app) {
-  const path = "data/villagerretaliation/dialogue/en_us/professions/examplemod/alchemist/lines/reagents.json";
+  const path = "data/examplemod/dialogue/en_us/professions/examplemod/alchemist/lines/reagents.json";
   const input = {
     id: "alchemy.line",
     request: "question",
@@ -213,7 +213,7 @@ function testTypedImportAndProfessionDefaults(app) {
 }
 
 function testBundleImport(app) {
-  const path = "data/villagerretaliation/dialogue/en_us/global/messages/trade_refresh.json";
+  const path = "data/my_pack/dialogue/en_us/global/messages/trade_refresh.json";
   const bundle = { messages: [{ id: "msg.id", key: "msg.key", lines: ["one", "two"] }] };
   assert(app.ingestKnownJson(path, JSON.stringify(bundle)), "Bundle import returned false.");
   const message = app.state.dialogue.messages.find((entry) => entry.id === "msg.id");
@@ -223,7 +223,7 @@ function testBundleImport(app) {
 }
 
 function testTypedOptionWithoutType(app) {
-  const path = "data/villagerretaliation/dialogue/en_us/my_pack/options/00_question.json";
+  const path = "data/my_pack/dialogue/en_us/my_pack/options/00_question.json";
   const option = { id: "my_pack.ask_question", label: "Ask", request: "question" };
   assert(app.ingestKnownJson(path, JSON.stringify(option)), "Typed option import without type returned false.");
   const imported = app.state.dialogue.options.find((entry) => entry.id === "my_pack.ask_question");
@@ -290,8 +290,8 @@ function testAllSurfaceGeneration(app) {
 
   const files = app.generatedFiles();
   jsonFile(files, "pack.mcmeta");
-  jsonFile(files, "data/villagerretaliation/dialogue/en_us/my_pack/options/00_trade.json");
-  jsonFile(files, "data/villagerretaliation/forced_dialogue/my_pack_forced_dialogue.json");
+  jsonFile(files, "data/my_pack/dialogue/en_us/my_pack/options/00_trade.json");
+  jsonFile(files, "data/my_pack/forced_dialogue/my_pack_forced_dialogue.json");
   jsonFile(files, "data/villagerretaliation/notifications/en_us/my_pack_notifications.json");
   jsonFile(files, "data/villagerretaliation/gifts/my_pack_gifts.json");
   jsonFile(files, "data/villagerretaliation/pacification/my_pack_pacification.json");
@@ -304,7 +304,7 @@ function testAllSurfaceGeneration(app) {
 function testSurfaceImportsAndEdits(app) {
   app.state = app.createInitialState();
   const imports = [
-    ["data/villagerretaliation/forced_dialogue/theft.json", { entries: [{ trigger: "theft", line: "Stop." }] }],
+    ["data/examplepack/forced_dialogue/theft.json", { entries: [{ trigger: "theft", line: "Stop." }] }],
     ["data/villagerretaliation/notifications/en_us/events.json", { notifications: [{ trigger: "quest.expired", text: "Expired.", kind: "quest" }] }],
     ["data/villagerretaliation/gifts/custom.json", { preferences: [{ reaction: "liked", item: "minecraft:bread" }], rewards: [{ item: "minecraft:emerald" }] }],
     ["data/villagerretaliation/pacification/payments.json", { payments: [{ item: "minecraft:emerald", count: 4 }] }],
