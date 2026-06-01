@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import java.util.Optional;
@@ -24,9 +25,6 @@ public final class HiredVillagerContractService {
     private static final String STATUS_ENDED = "ended";
     private static final String STATUS_EXPIRED = "expired";
     private static final long DAY_TICKS = 24000L;
-    private static final int BASE_DAILY_COST = 4;
-    private static final int MIN_DAILY_COST = 2;
-    private static final int MAX_DAILY_COST = 32;
 
     private HiredVillagerContractService() {
     }
@@ -58,9 +56,16 @@ public final class HiredVillagerContractService {
 
     public static int getHireCost(ServerLevel level, Villager villager, ServerPlayer player, int days) {
         int skillScore = HiredVillagerRoles.bestRoleScore(level, villager);
-        int skillPremium = Math.max(0, (skillScore - 50) / 10);
+        int skillPremium = Math.max(0, (skillScore - 50) / 10)
+                * Math.max(0, VillagerRetaliationConfig.HIRED_CONTRACT_SKILL_PREMIUM_PER_TEN.get());
         int reputationModifier = reputationCostModifier(level, villager, player);
-        int dailyCost = Mth.clamp(BASE_DAILY_COST + skillPremium + reputationModifier, MIN_DAILY_COST, MAX_DAILY_COST);
+        int minDailyCost = Math.max(1, VillagerRetaliationConfig.HIRED_CONTRACT_MINIMUM_DAILY_COST.get());
+        int maxDailyCost = Math.max(minDailyCost, VillagerRetaliationConfig.HIRED_CONTRACT_MAXIMUM_DAILY_COST.get());
+        int dailyCost = Mth.clamp(
+                VillagerRetaliationConfig.HIRED_CONTRACT_BASE_DAILY_COST.get() + skillPremium + reputationModifier,
+                minDailyCost,
+                maxDailyCost
+        );
         return dailyCost * Math.max(1, days);
     }
 
@@ -101,8 +106,18 @@ public final class HiredVillagerContractService {
         return true;
     }
 
-    public static void endHireContract(Villager villager) {
-        contract(villager).ifPresent(tag -> tag.putString(STATUS_TAG, STATUS_ENDED));
+    public static int endHireContract(ServerLevel level, Villager villager, ServerPlayer player) {
+        expireHireContractIfNeeded(level, villager);
+        Optional<CompoundTag> activeContract = contract(villager)
+                .filter(HiredVillagerContractService::isActive)
+                .filter(tag -> tag.hasUUID(HIRER_TAG) && tag.getUUID(HIRER_TAG).equals(player.getUUID()));
+        if (activeContract.isEmpty()) {
+            return 0;
+        }
+        CompoundTag tag = activeContract.get();
+        int refund = earlyEndRefund(level, tag);
+        tag.putString(STATUS_TAG, STATUS_ENDED);
+        return refund;
     }
 
     public static void expireHireContractIfNeeded(ServerLevel level, Villager villager) {
@@ -139,6 +154,19 @@ public final class HiredVillagerContractService {
         return (int) Math.max(1L, (remainingTicks + DAY_TICKS - 1L) / DAY_TICKS);
     }
 
+    private static int earlyEndRefund(ServerLevel level, CompoundTag contract) {
+        long remainingTicks = Math.max(0L, contract.getLong(END_GAME_TIME_TAG) - level.getGameTime());
+        if (remainingTicks <= 0L) {
+            return 0;
+        }
+        int paid = Math.max(0, contract.getInt(EMERALDS_PAID_TAG));
+        int durationDays = Math.max(1, contract.getInt(DURATION_DAYS_TAG));
+        double averagePaidPerTick = paid / (durationDays * (double) DAY_TICKS);
+        double remainingPaidValue = averagePaidPerTick * remainingTicks;
+        int refundPercent = Mth.clamp(VillagerRetaliationConfig.HIRED_CONTRACT_EARLY_END_REFUND_PERCENT.get(), 0, 100);
+        return (int) Math.floor(remainingPaidValue * refundPercent / 100.0D);
+    }
+
     private static boolean isActive(CompoundTag tag) {
         return STATUS_ACTIVE.equals(tag.getString(STATUS_TAG));
     }
@@ -153,11 +181,15 @@ public final class HiredVillagerContractService {
     private static int reputationCostModifier(ServerLevel level, Villager villager, ServerPlayer player) {
         VillagerReputationLevel reputation = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
         return switch (reputation) {
-            case ROYALTY -> -2;
-            case REVERED -> -1;
-            case HOSTILE -> 4;
-            case DESPISED -> 8;
-            default -> 0;
+            case ROYALTY -> VillagerRetaliationConfig.HIRED_CONTRACT_ROYALTY_COST_MODIFIER.get();
+            case REVERED -> VillagerRetaliationConfig.HIRED_CONTRACT_REVERED_COST_MODIFIER.get();
+            case RESPECTED -> VillagerRetaliationConfig.HIRED_CONTRACT_RESPECTED_COST_MODIFIER.get();
+            case TRUSTED -> VillagerRetaliationConfig.HIRED_CONTRACT_TRUSTED_COST_MODIFIER.get();
+            case NEUTRAL -> VillagerRetaliationConfig.HIRED_CONTRACT_NEUTRAL_COST_MODIFIER.get();
+            case SUSPICIOUS -> VillagerRetaliationConfig.HIRED_CONTRACT_SUSPICIOUS_COST_MODIFIER.get();
+            case HOSTILE -> VillagerRetaliationConfig.HIRED_CONTRACT_HOSTILE_COST_MODIFIER.get();
+            case DESPISED -> VillagerRetaliationConfig.HIRED_CONTRACT_DESPISED_COST_MODIFIER.get();
+            case FEARED -> VillagerRetaliationConfig.HIRED_CONTRACT_FEARED_COST_MODIFIER.get();
         };
     }
 }

@@ -341,9 +341,15 @@ public final class VillagerInteractionService {
                     sendVillagerNotice(player, villager, "Only the hiring player can end this contract.");
                     return;
                 }
-                HiredVillagerContractService.endHireContract(villager);
+                int refund = HiredVillagerContractService.endHireContract(level, villager, player);
+                if (refund > 0) {
+                    giveEmeralds(player, refund);
+                }
                 VillagerRecruitmentService.sendFiredNotice(player, villager);
-                sendVillagerNotice(player, villager, "Contract ended.");
+                sendVillagerNotice(player, villager, refund > 0
+                        ? "Contract ended. Refunded " + refund + " emerald" + plural(refund) + "."
+                        : "Contract ended.");
+                VillagerInteractionScreenOpener.refreshNormal(player, villager);
             }
             default -> sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
         }
@@ -591,6 +597,18 @@ public final class VillagerInteractionService {
         remaining = removeEmeraldsFrom(player.getInventory().items, remaining);
         if (remaining > 0) {
             removeEmeraldsFrom(player.getInventory().offhand, remaining);
+        }
+    }
+
+    private static void giveEmeralds(ServerPlayer player, int count) {
+        int remaining = count;
+        while (remaining > 0) {
+            int chunk = Math.min(64, remaining);
+            ItemStack stack = new ItemStack(Items.EMERALD, chunk);
+            if (!player.getInventory().add(stack)) {
+                player.drop(stack, false);
+            }
+            remaining -= chunk;
         }
     }
 

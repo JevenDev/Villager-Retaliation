@@ -263,6 +263,48 @@ public final class VillagerRetaliationConfigModel {
 
         @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
         public double veryRareDropChance = 0.01;
+
+        @RangeConstraint(min = 1, max = 128)
+        public int hiredContractBaseDailyCost = 12;
+
+        @RangeConstraint(min = 1, max = 128)
+        public int hiredContractMinimumDailyCost = 4;
+
+        @RangeConstraint(min = 1, max = 512)
+        public int hiredContractMaximumDailyCost = 128;
+
+        @RangeConstraint(min = 0, max = 32)
+        public int hiredContractSkillPremiumPerTen = 2;
+
+        @RangeConstraint(min = -128, max = 128)
+        public int hiredContractRoyaltyCostModifier = -5;
+
+        @RangeConstraint(min = -128, max = 128)
+        public int hiredContractReveredCostModifier = -3;
+
+        @RangeConstraint(min = -128, max = 128)
+        public int hiredContractRespectedCostModifier = 0;
+
+        @RangeConstraint(min = -128, max = 128)
+        public int hiredContractTrustedCostModifier = 2;
+
+        @RangeConstraint(min = -128, max = 128)
+        public int hiredContractNeutralCostModifier = 4;
+
+        @RangeConstraint(min = -128, max = 128)
+        public int hiredContractSuspiciousCostModifier = 8;
+
+        @RangeConstraint(min = -128, max = 128)
+        public int hiredContractHostileCostModifier = 14;
+
+        @RangeConstraint(min = -128, max = 128)
+        public int hiredContractDespisedCostModifier = 24;
+
+        @RangeConstraint(min = -128, max = 128)
+        public int hiredContractFearedCostModifier = 32;
+
+        @RangeConstraint(min = 0, max = 100)
+        public int hiredContractEarlyEndRefundPercent = 50;
     }
 
     public static final class Retaliation {
