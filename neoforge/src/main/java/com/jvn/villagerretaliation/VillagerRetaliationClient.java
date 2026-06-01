@@ -1,11 +1,11 @@
 package com.jvn.villagerretaliation;
 
-import com.jvn.toucanlib.neoforge.config.ToucanConfigScreens;
+import io.wispforest.owo.config.ui.ConfigScreenProviders;
+import net.minecraft.client.gui.screens.Screen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -14,7 +14,7 @@ import net.neoforged.neoforge.common.NeoForge;
 @Mod(value = VillagerRetaliation.MOD_ID, dist = Dist.CLIENT)
 public final class VillagerRetaliationClient {
     public VillagerRetaliationClient(IEventBus modEventBus, ModContainer modContainer) {
-        ToucanConfigScreens.register(modContainer, (IConfigScreenFactory) ConfigurationScreen::new);
+        modContainer.registerExtensionPoint(IConfigScreenFactory.class, (IConfigScreenFactory) VillagerRetaliationClient::createConfigScreen);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerRenderers);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerLayerDefinitions);
         modEventBus.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings::register);
@@ -69,5 +69,13 @@ public final class VillagerRetaliationClient {
                 com.jvn.villagerretaliation.client.reputation.VillagerReputationTooltipComponent.class,
                 com.jvn.villagerretaliation.client.reputation.VillagerReputationClientTooltipComponent::new
         );
+    }
+
+    private static Screen createConfigScreen(ModContainer container, Screen parent) {
+        var provider = ConfigScreenProviders.get(VillagerRetaliation.MOD_ID);
+        if (provider == null) {
+            throw new IllegalStateException("Missing owo config screen provider for " + VillagerRetaliation.MOD_ID);
+        }
+        return provider.apply(parent);
     }
 }

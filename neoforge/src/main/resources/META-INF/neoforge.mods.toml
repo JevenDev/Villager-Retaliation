@@ -24,6 +24,8 @@ versionRange="[${neo_version},)"
 ordering="NONE"
 side="BOTH"
 
+${neoforge_owo_dependency}
+
 ${neoforge_toucanlib_dependency}
 
 [[dependencies."${mod_id}"]]

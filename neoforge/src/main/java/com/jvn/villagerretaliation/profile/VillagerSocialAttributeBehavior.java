@@ -4,7 +4,6 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.AbstractVillager;
-import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class VillagerSocialAttributeBehavior {
     public static final int BASELINE_VALUE = 50;
@@ -12,7 +11,7 @@ public final class VillagerSocialAttributeBehavior {
     private VillagerSocialAttributeBehavior() {
     }
 
-    public static boolean enabled(ModConfigSpec.BooleanValue featureToggle) {
+    public static boolean enabled(VillagerRetaliationConfig.ConfigValue<Boolean> featureToggle) {
         return VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_BEHAVIOR.get()
                 && (featureToggle == null || featureToggle.get());
     }
@@ -49,7 +48,7 @@ public final class VillagerSocialAttributeBehavior {
             AbstractVillager villager,
             VillagerSocialAttribute attribute,
             int maxAbsoluteOffset,
-            ModConfigSpec.BooleanValue featureToggle) {
+            VillagerRetaliationConfig.ConfigValue<Boolean> featureToggle) {
         if (!enabled(featureToggle) || maxAbsoluteOffset <= 0) {
             return 0;
         }
@@ -64,7 +63,7 @@ public final class VillagerSocialAttributeBehavior {
             AbstractVillager villager,
             VillagerSocialAttribute attribute,
             int maxBonus,
-            ModConfigSpec.BooleanValue featureToggle) {
+            VillagerRetaliationConfig.ConfigValue<Boolean> featureToggle) {
         return Math.max(0, scaledOffset(level, villager, attribute, maxBonus, featureToggle));
     }
 

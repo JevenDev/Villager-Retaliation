@@ -70,6 +70,9 @@ configurations {
 }
 
 dependencies {
+    implementation "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
+    annotationProcessor "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
+
     if (rootProject.enable_toucanlib.toBoolean()) {
         if (rootProject.useLocalToucanLib.toBoolean()) {
             implementation "com.jvn.toucanlib:toucanlib-neoforge-${rootProject.minecraft_version}:${rootProject.toucanlib_version}"
@@ -86,6 +89,7 @@ tasks.named('processResources', ProcessResources).configure {
             neo_version            : rootProject.neo_version,
             loader_version_range   : rootProject.loader_version_range,
             toucanlib_version      : rootProject.toucanlib_version,
+            owo_version            : rootProject.owo_version,
             mod_id                 : rootProject.mod_id,
             mod_name               : rootProject.mod_name,
             mod_license            : rootProject.mod_license,
@@ -103,6 +107,13 @@ ordering="AFTER"
 side="BOTH"
 """
                     : '',
+            neoforge_owo_dependency: """[[dependencies."${rootProject.mod_id}"]]
+modId="owo"
+type="required"
+versionRange="[${rootProject.owo_version},)"
+ordering="AFTER"
+side="BOTH"
+""",
     ]
     inputs.properties replaceProperties
 

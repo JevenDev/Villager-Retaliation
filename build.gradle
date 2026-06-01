@@ -24,6 +24,14 @@ allprojects {
             name = 'ParchmentMC'
             url = 'https://maven.parchmentmc.org/'
         }
+        maven {
+            name = 'Wisp Forest'
+            url = 'https://maven.wispforest.io/releases/'
+        }
+        maven {
+            name = 'Su5ed'
+            url = 'https://maven.su5ed.dev/releases'
+        }
         exclusiveContent {
             forRepository {
                 maven {

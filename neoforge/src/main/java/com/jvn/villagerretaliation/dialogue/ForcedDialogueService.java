@@ -181,7 +181,8 @@ public final class ForcedDialogueService {
                 player.getUUID(),
                 snapshot
         );
-        if (VillagerRetaliationConfig.CONTAINER_FORCED_DIALOGUE_TRIGGER.get() == ContainerForcedDialogueTrigger.OPENING) {
+        if (VillagerRetaliationConfig.ENABLE_CONTAINER_OPEN_REACTION.get()
+                && VillagerRetaliationConfig.CONTAINER_FORCED_DIALOGUE_TRIGGER.get() == ContainerForcedDialogueTrigger.OPENING) {
             triggerContainerOpened(level, player, snapshot);
             return;
         }
