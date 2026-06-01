@@ -316,6 +316,9 @@ public final class VillagerInteractionService {
         if (handleHireDurationRequest(player, level, villager, action)) {
             return;
         }
+        if (handleHireExtensionRequest(player, level, villager, action)) {
+            return;
+        }
         if (handleHiredRoleRequest(player, level, villager, action)) {
             return;
         }
@@ -405,6 +408,46 @@ public final class VillagerInteractionService {
         VillagerRecruitmentService.sendHiredNotice(player, villager);
         sendVillagerNotice(player, villager, "Hired for " + days + " day" + plural(days) + " as "
                 + HiredVillagerContractService.activeRole(level, villager).label() + ".");
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+        return true;
+    }
+
+    private static boolean handleHireExtensionRequest(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            VillagerRecruitRequestPayload.Action action) {
+        int days = switch (action) {
+            case EXTEND_ONE_DAY -> 1;
+            case EXTEND_THREE_DAYS -> 3;
+            case EXTEND_FIVE_DAYS -> 5;
+            case EXTEND_SEVEN_DAYS -> 7;
+            case EXTEND_FIFTEEN_DAYS -> 15;
+            case EXTEND_THIRTY_DAYS -> 30;
+            default -> 0;
+        };
+        if (days <= 0) {
+            return false;
+        }
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "Only the hiring player can extend this contract.");
+            return true;
+        }
+        int cost = HiredVillagerContractService.getHireCost(level, villager, player, days);
+        if (countEmeralds(player) < cost) {
+            sendVillagerNotice(player, villager, "A " + days + " day" + plural(days)
+                    + " extension costs " + cost + " emerald" + plural(cost) + ".");
+            return true;
+        }
+        removeEmeralds(player, cost);
+        if (!HiredVillagerContractService.extendHireContract(level, villager, player, days, cost)) {
+            sendVillagerNotice(player, villager, "This contract cannot be extended right now.");
+            return true;
+        }
+        sendVillagerNotice(player, villager, "Contract extended by " + days + " day" + plural(days)
+                + ". " + HiredVillagerContractService.getRemainingHireDays(level, villager) + " day"
+                + plural(HiredVillagerContractService.getRemainingHireDays(level, villager)) + " remaining.");
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
         return true;
     }
 

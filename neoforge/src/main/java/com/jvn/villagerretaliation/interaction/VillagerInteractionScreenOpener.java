@@ -92,6 +92,24 @@ public final class VillagerInteractionScreenOpener {
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
     }
 
+    public static void refreshNormal(ServerPlayer player, Villager villager) {
+        ServerLevel level = player.serverLevel();
+        DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, villager);
+        DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
+        List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
+        PacketDistributor.sendToPlayer(player, createPayload(
+                level,
+                player,
+                villager,
+                mood,
+                dialogueContext.primaryMood(),
+                false,
+                false,
+                false,
+                dialogueOptions
+        ));
+    }
+
     private static OpenVillagerInteractionPayload createPayload(
             ServerLevel level,
             ServerPlayer player,
@@ -106,6 +124,8 @@ public final class VillagerInteractionScreenOpener {
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
+        boolean hiredByPlayer = HiredVillagerContractService.isHiredBy(level, villager, player);
+        boolean hiredAnyPlayer = HiredVillagerContractService.isHired(level, villager);
         VillagerReputationNetworking.sendProfile(player, villager, profile);
         return new OpenVillagerInteractionPayload(
                 villager.getId(),
@@ -121,6 +141,9 @@ public final class VillagerInteractionScreenOpener {
                 VillagerRecruitmentService.isFollowing(villager, player),
                 forcedConversation,
                 clipboardMenu,
+                hiredByPlayer,
+                hiredAnyPlayer && !hiredByPlayer,
+                HiredVillagerContractService.getRemainingHireDays(level, villager),
                 forceCameraTowardsVillager,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),

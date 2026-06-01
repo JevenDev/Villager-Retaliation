@@ -36,6 +36,9 @@ public record OpenVillagerInteractionPayload(
         boolean followingPlayer,
         boolean forcedDialogue,
         boolean clipboardMenu,
+        boolean hiredByPlayer,
+        boolean hiredByOtherPlayer,
+        int hiredRemainingDays,
         boolean forceCameraTowardsVillager,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
@@ -61,6 +64,9 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.followingPlayer());
         buffer.writeBoolean(payload.forcedDialogue());
         buffer.writeBoolean(payload.clipboardMenu());
+        buffer.writeBoolean(payload.hiredByPlayer());
+        buffer.writeBoolean(payload.hiredByOtherPlayer());
+        buffer.writeVarInt(payload.hiredRemainingDays());
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
@@ -84,6 +90,9 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readVarInt(),
                 buffer.readBoolean(),
                 readDialogueOptions(buffer),
                 readStringList(buffer),

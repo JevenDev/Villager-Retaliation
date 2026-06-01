@@ -98,6 +98,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean followingPlayer;
     private final boolean forcedDialogue;
     private final boolean clipboardMenu;
+    private boolean hiredByPlayer;
+    private final boolean hiredByOtherPlayer;
+    private int hiredRemainingDays;
     private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
@@ -147,6 +150,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean followingPlayer,
             boolean forcedDialogue,
             boolean clipboardMenu,
+            boolean hiredByPlayer,
+            boolean hiredByOtherPlayer,
+            int hiredRemainingDays,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
@@ -167,6 +173,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.followingPlayer = followingPlayer;
         this.forcedDialogue = forcedDialogue;
         this.clipboardMenu = clipboardMenu;
+        this.hiredByPlayer = hiredByPlayer;
+        this.hiredByOtherPlayer = hiredByOtherPlayer;
+        this.hiredRemainingDays = Math.max(0, hiredRemainingDays);
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
@@ -436,6 +445,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addRelationshipOptions();
         } else if (this.page == DialoguePage.RECRUIT) {
             addRecruitOptions();
+        } else if (this.page == DialoguePage.CONTRACT) {
+            addContractOptions();
+        } else if (this.page == DialoguePage.CONTRACT_EXTENSION) {
+            addContractExtensionOptions();
         } else if (this.page == DialoguePage.ROOT) {
             if (this.clipboardMenu) {
                 addClipboardMenuOptions();
@@ -492,10 +505,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addRecruitOptions() {
-        addOption("recruit.contract", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
-        addOption("recruit.hire_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY));
-        addOption("recruit.hire_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_THREE_DAYS));
-        addOption("recruit.hire_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_SEVEN_DAYS));
+        if (this.hiredByPlayer) {
+            addOption("recruit.about_contract", this::openContractPage);
+        } else if (this.hiredByOtherPlayer) {
+            addOption("recruit.contract", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
+        } else {
+            addOption("recruit.hire_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY));
+            addOption("recruit.hire_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_THREE_DAYS));
+            addOption("recruit.hire_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_SEVEN_DAYS));
+        }
         addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
         addOption("recruit.show_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SHOW_STORAGE));
         addOption("recruit.remove_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_STORAGE));
@@ -510,6 +528,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.options.add(DialogueOption.enabled(
                 this.followingPlayer ? translate("recruit.stop_following") : translate("recruit.follow_me"),
                 () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
+    }
+
+    private void addContractOptions() {
+        addOption("recruit.contract_days_left", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
+        addOption("recruit.extend_contract", this::openContractExtensionPage);
+        addOption("recruit.nevermind", this::openRecruitPage);
+    }
+
+    private void addContractExtensionOptions() {
+        addOption("recruit.extend_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_ONE_DAY));
+        addOption("recruit.extend_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THREE_DAYS));
+        addOption("recruit.extend_five_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIVE_DAYS));
+        addOption("recruit.extend_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_SEVEN_DAYS));
+        addOption("recruit.extend_fifteen_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIFTEEN_DAYS));
+        addOption("recruit.extend_thirty_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THIRTY_DAYS));
+        addOption("recruit.nevermind", this::openContractPage);
     }
 
     private void addClipboardMenuOptions() {
@@ -652,6 +686,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.RECRUIT);
     }
 
+    private void openContractPage() {
+        openPage(DialoguePage.CONTRACT);
+    }
+
+    private void openContractExtensionPage() {
+        openPage(DialoguePage.CONTRACT_EXTENSION);
+    }
+
     private void openFamilyPage() {
         openPage(DialoguePage.FAMILY);
     }
@@ -719,6 +761,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void navigateBackPage() {
         if (this.page == DialoguePage.ANCESTRY || this.page == DialoguePage.DESCENDANTS) {
             openPage(DialoguePage.FAMILY);
+            return;
+        }
+        if (this.page == DialoguePage.CONTRACT_EXTENSION) {
+            openPage(DialoguePage.CONTRACT);
+            return;
+        }
+        if (this.page == DialoguePage.CONTRACT) {
+            openPage(DialoguePage.RECRUIT);
             return;
         }
         navigateToRootPage();
@@ -1820,7 +1870,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         ANCESTRY,
         DESCENDANTS,
         RELATIONSHIPS,
-        RECRUIT
+        RECRUIT,
+        CONTRACT,
+        CONTRACT_EXTENSION
     }
 
     private record DialogueOption(String label, Runnable action) {

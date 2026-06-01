@@ -83,6 +83,24 @@ public final class HiredVillagerContractService {
         villager.getPersistentData().put(CONTRACT_TAG, tag);
     }
 
+    public static boolean extendHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
+        expireHireContractIfNeeded(level, villager);
+        Optional<CompoundTag> contract = contract(villager)
+                .filter(HiredVillagerContractService::isActive)
+                .filter(tag -> tag.hasUUID(HIRER_TAG) && tag.getUUID(HIRER_TAG).equals(player.getUUID()));
+        if (contract.isEmpty()) {
+            return false;
+        }
+        int safeDays = Mth.clamp(days, 1, 30);
+        CompoundTag tag = contract.get();
+        long currentEnd = Math.max(level.getGameTime(), tag.getLong(END_GAME_TIME_TAG));
+        tag.putLong(END_GAME_TIME_TAG, currentEnd + safeDays * DAY_TICKS);
+        tag.putInt(DURATION_DAYS_TAG, tag.getInt(DURATION_DAYS_TAG) + safeDays);
+        tag.putInt(EMERALDS_PAID_TAG, tag.getInt(EMERALDS_PAID_TAG) + emeraldsPaid);
+        tag.putInt(DAILY_COST_TAG, Math.max(1, emeraldsPaid / safeDays));
+        return true;
+    }
+
     public static void endHireContract(Villager villager) {
         contract(villager).ifPresent(tag -> tag.putString(STATUS_TAG, STATUS_ENDED));
     }
