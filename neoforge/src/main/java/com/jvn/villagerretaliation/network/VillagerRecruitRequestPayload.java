@@ -24,7 +24,21 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
     }
 
     public enum Action {
-        HIRE,
+        HIRE_ONE_DAY,
+        HIRE_THREE_DAYS,
+        HIRE_SEVEN_DAYS,
+        VIEW_CONTRACT,
+        OPEN_JOB_INVENTORY,
+        SHOW_STORAGE,
+        REMOVE_STORAGE,
+        END_HIRE,
+        SET_ROLE_COMBAT,
+        SET_ROLE_MINING,
+        SET_ROLE_LOGGING,
+        SET_ROLE_FARMING,
+        SET_ROLE_BREWING,
+        SET_ROLE_NAVIGATION,
+        SET_ROLE_ANIMAL_HANDLING,
         FOLLOW
     }
 }

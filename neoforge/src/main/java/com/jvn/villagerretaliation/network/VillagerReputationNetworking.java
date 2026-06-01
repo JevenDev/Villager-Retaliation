@@ -98,6 +98,12 @@ public final class VillagerReputationNetworking {
                 "com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay",
                 "accept"
         );
+        network.safePlayToClientThreaded(
+                ClipboardAssignedStorageSyncPayload.TYPE,
+                ClipboardAssignedStorageSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
+                "accept"
+        );
         network.playToServer(
                 QuestTrackerRequestPayload.TYPE,
                 QuestTrackerRequestPayload.STREAM_CODEC,
@@ -189,6 +195,16 @@ public final class VillagerReputationNetworking {
                 VillagerRecruitRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
                         ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleRecruitRequest(
+                            player,
+                            payload.entityId(),
+                            payload.action()
+                    )))
+        );
+        network.playToServer(
+                ClipboardStorageActionPayload.TYPE,
+                ClipboardStorageActionPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleClipboardStorageAction(
                             player,
                             payload.entityId(),
                             payload.action()

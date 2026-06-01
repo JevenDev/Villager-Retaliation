@@ -486,8 +486,31 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private void setEquipment(EquipmentSlot slot, ItemStack stack) {
+        ItemStack previous = this.villager.getItemBySlot(slot);
+        if (isArmorEquipmentSlot(slot)
+                && !previous.isEmpty()
+                && !stack.isEmpty()
+                && !sameStack(previous, stack)
+                && !storeDisplacedArmor(previous)) {
+            return;
+        }
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, slot, stack);
         setChanged();
+    }
+
+    private boolean storeDisplacedArmor(ItemStack stack) {
+        ItemStack remainder = addItem(this.villager, stack.copy());
+        if (!remainder.isEmpty()) {
+            remainder = AssignedStorageService.depositStack(this.villager, remainder);
+        }
+        return remainder.isEmpty();
+    }
+
+    private static boolean isArmorEquipmentSlot(EquipmentSlot slot) {
+        return slot == EquipmentSlot.HEAD
+                || slot == EquipmentSlot.CHEST
+                || slot == EquipmentSlot.LEGS
+                || slot == EquipmentSlot.FEET;
     }
 
     private int vanillaInventorySlots() {

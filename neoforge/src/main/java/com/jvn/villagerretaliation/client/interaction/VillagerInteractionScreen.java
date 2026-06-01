@@ -11,6 +11,9 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
@@ -471,6 +474,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addOption("root.inventory", this::requestInventory);
             }
             addOption("root.recruit", this::openRecruitPage);
+            addClipboardOptions();
             if (this.relationships.hasRelationships()) {
                 addOption("root.relationships", this::openRelationshipPage);
             }
@@ -485,10 +489,36 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addRecruitOptions() {
-        addOption("recruit.hire", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE));
+        addOption("recruit.contract", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
+        addOption("recruit.hire_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY));
+        addOption("recruit.hire_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_THREE_DAYS));
+        addOption("recruit.hire_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_SEVEN_DAYS));
+        addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
+        addOption("recruit.show_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SHOW_STORAGE));
+        addOption("recruit.remove_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_STORAGE));
+        addOption("recruit.role_combat", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_COMBAT));
+        addOption("recruit.role_mining", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_MINING));
+        addOption("recruit.role_logging", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_LOGGING));
+        addOption("recruit.role_farming", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_FARMING));
+        addOption("recruit.role_brewing", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_BREWING));
+        addOption("recruit.role_navigation", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_NAVIGATION));
+        addOption("recruit.role_animal_handling", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_ANIMAL_HANDLING));
+        addOption("recruit.end_hire", () -> requestRecruit(VillagerRecruitRequestPayload.Action.END_HIRE));
         this.options.add(DialogueOption.enabled(
                 this.followingPlayer ? translate("recruit.stop_following") : translate("recruit.follow_me"),
                 () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
+    }
+
+    private void addClipboardOptions() {
+        if (!holdingClipboard()) {
+            return;
+        }
+        addOption("clipboard.assign_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.ASSIGN));
+        addOption("clipboard.show_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.SHOW));
+        addOption("clipboard.remove_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.REMOVE));
+        if (clipboardHasSelection()) {
+            addOption("clipboard.clear_selection", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.CLEAR_SELECTION));
+        }
     }
 
     private void addFamilyOptions() {
@@ -841,6 +871,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         sendToServer(new VillagerRecruitRequestPayload(this.villagerEntityId, action));
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
             this.followingPlayer = !this.followingPlayer;
+        }
+    }
+
+    private void requestClipboardStorage(ClipboardStorageActionPayload.Action action) {
+        sendToServer(new ClipboardStorageActionPayload(this.villagerEntityId, action));
+        if (action == ClipboardStorageActionPayload.Action.CLEAR_SELECTION) {
+            rebuildOptionsKeepingListPosition();
         }
     }
 
@@ -1383,6 +1420,28 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private boolean canRequestVillagerInventory() {
         return this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
+    }
+
+    private boolean holdingClipboard() {
+        return !clipboardStack().isEmpty();
+    }
+
+    private boolean clipboardHasSelection() {
+        ItemStack stack = clipboardStack();
+        return !stack.isEmpty() && !HiredStorageClipboardItem.selectedContainers(stack).isEmpty();
+    }
+
+    private ItemStack clipboardStack() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack mainHand = minecraft.player.getMainHandItem();
+        if (VillagerRetaliationItems.isClipboard(mainHand)) {
+            return mainHand;
+        }
+        ItemStack offhand = minecraft.player.getOffhandItem();
+        return VillagerRetaliationItems.isClipboard(offhand) ? offhand : ItemStack.EMPTY;
     }
 
     private void applyChatWidthOverride() {

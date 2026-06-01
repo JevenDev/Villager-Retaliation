@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
@@ -247,17 +248,6 @@ public final class VillagerRetaliationEvents {
 
         if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer
-                && VillagerRetaliationItems.isClipboard(interactionStack)) {
-            InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());
-            if (result.consumesAction()) {
-                event.setCanceled(true);
-                event.setCancellationResult(result);
-                return;
-            }
-        }
-
-        if (event.getTarget() instanceof Villager villager
-                && player instanceof ServerPlayer
                 && VillagerRetaliationDebugItems.isDebugVillagerTool(interactionStack.getItem())) {
             InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());
             if (result.consumesAction()) {
@@ -360,6 +350,20 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer
+                && event.getLevel() instanceof ServerLevel level
+                && VillagerRetaliationItems.isClipboard(event.getItemStack())) {
+            InteractionResult result = HiredStorageClipboardItem.selectContainer(
+                    level,
+                    serverPlayer,
+                    event.getItemStack(),
+                    event.getPos()
+            );
+            event.setCanceled(true);
+            event.setCancellationResult(result.consumesAction() ? result : InteractionResult.SUCCESS);
+            return;
+        }
+
         if (event.getEntity() instanceof ServerPlayer serverPlayer && event.getLevel() instanceof ServerLevel level) {
             InteractionResult sleepingResult = VillagerInteractionService.handleSleepingVillagerBedInteraction(
                     level,

@@ -43,7 +43,6 @@ public final class VillagerRecruitmentService {
     private static final String FOLLOW_MAX_DISTANCE_KEY = "VillagerRetaliationFollowMaxDistance";
     private static final String FOLLOW_USED_BOAT_KEY = "VillagerRetaliationFollowUsedBoat";
     private static final String FOLLOW_CROSSED_OCEAN_KEY = "VillagerRetaliationFollowCrossedOcean";
-    private static final String HIRED_PLAYER_KEY = "VillagerRetaliationHiredPlayer";
     private static final double FOLLOW_START_DISTANCE_SQR = 5.0D * 5.0D;
     private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double FOLLOW_SPEED = 0.62D;
@@ -91,7 +90,8 @@ public final class VillagerRecruitmentService {
     }
 
     public static boolean isHiredAnyPlayer(Villager villager) {
-        return villager.getPersistentData().hasUUID(HIRED_PLAYER_KEY);
+        return villager.level() instanceof ServerLevel level
+                && HiredVillagerContractService.isHired(level, villager);
     }
 
     public static boolean toggleFollow(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -170,8 +170,9 @@ public final class VillagerRecruitmentService {
         if (!sentNotice) {
             notifyRecentBetrayedFollowerDeath(level, villager, killer);
         }
-        if (villager.getPersistentData().hasUUID(HIRED_PLAYER_KEY)) {
-            ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(HIRED_PLAYER_KEY));
+        Optional<UUID> hiredPlayerId = HiredVillagerContractService.getHirer(level, villager);
+        if (hiredPlayerId.isPresent()) {
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(hiredPlayerId.get());
             if (player != null) {
                 VillagerNotifications.sendHud(
                         player,

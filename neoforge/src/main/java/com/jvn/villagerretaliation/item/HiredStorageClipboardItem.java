@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.item;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummary;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
+import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +33,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class HiredStorageClipboardItem extends Item {
     private static final String TAG = "VillagerRetaliationClipboard";
@@ -50,27 +53,7 @@ public final class HiredStorageClipboardItem extends Item {
         if (!(level instanceof ServerLevel serverLevel) || !(player instanceof ServerPlayer serverPlayer)) {
             return InteractionResult.SUCCESS;
         }
-        ItemStack stack = context.getItemInHand();
-        if (serverPlayer.isShiftKeyDown()) {
-            clearSelection(stack);
-            serverPlayer.displayClientMessage(Component.literal("Clipboard selection cleared."), true);
-            return InteractionResult.SUCCESS;
-        }
-        BlockEntity blockEntity = level.getBlockEntity(context.getClickedPos());
-        if (!(blockEntity instanceof net.minecraft.world.Container)) {
-            serverPlayer.displayClientMessage(Component.literal("Select a valid container."), true);
-            return InteractionResult.FAIL;
-        }
-
-        SelectionAddResult result = addSelection(stack, serverLevel.dimension(), context.getClickedPos());
-        Component message = switch (result) {
-            case ADDED -> Component.literal("Container selected.");
-            case DUPLICATE -> Component.literal("That container is already selected.");
-            case DIFFERENT_DIMENSION -> Component.literal("Clipboard selections must stay in one dimension.");
-            case FULL -> Component.literal("Clipboard selection is full.");
-        };
-        serverPlayer.displayClientMessage(message, true);
-        return InteractionResult.SUCCESS;
+        return selectContainer(serverLevel, serverPlayer, context.getItemInHand(), context.getClickedPos());
     }
 
     @Override
@@ -106,7 +89,9 @@ public final class HiredStorageClipboardItem extends Item {
                 int removed = AssignedStorageService.removeAssignedStorage(level, villager);
                 serverPlayer.displayClientMessage(Component.literal("Removed " + removed + " assigned container" + (removed == 1 ? "" : "s") + "."), true);
             } else {
-                int count = AssignedStorageService.assignedStorage(level, villager).size();
+                List<AssignedContainerRecord> assigned = AssignedStorageService.assignedStorage(level, villager);
+                sendAssignedStorageOutlines(serverPlayer, assigned);
+                int count = assigned.size();
                 serverPlayer.displayClientMessage(Component.literal("Assigned containers: " + count + "."), true);
             }
             return InteractionResult.SUCCESS;
@@ -147,6 +132,36 @@ public final class HiredStorageClipboardItem extends Item {
         return positions;
     }
 
+    public static InteractionResult selectContainer(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
+        if (player.isShiftKeyDown()) {
+            clearSelection(stack);
+            player.displayClientMessage(Component.literal("Clipboard selection cleared."), true);
+            return InteractionResult.SUCCESS;
+        }
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!(blockEntity instanceof net.minecraft.world.Container)) {
+            player.displayClientMessage(Component.literal("Select a valid container."), true);
+            return InteractionResult.FAIL;
+        }
+
+        SelectionAddResult result = addSelection(stack, level.dimension(), pos);
+        Component message = switch (result) {
+            case ADDED -> Component.literal("Container selected.");
+            case DUPLICATE -> Component.literal("That container is already selected.");
+            case DIFFERENT_DIMENSION -> Component.literal("Clipboard selections must stay in one dimension.");
+            case FULL -> Component.literal("Clipboard selection is full.");
+        };
+        player.displayClientMessage(message, true);
+        return InteractionResult.SUCCESS;
+    }
+
+    public static void sendAssignedStorageOutlines(ServerPlayer player, List<AssignedContainerRecord> records) {
+        List<ClipboardAssignedStorageSyncPayload.Entry> entries = records.stream()
+                .map(record -> new ClipboardAssignedStorageSyncPayload.Entry(record.dimension().location(), record.pos()))
+                .toList();
+        PacketDistributor.sendToPlayer(player, new ClipboardAssignedStorageSyncPayload(entries, 200));
+    }
+
     private static SelectionAddResult addSelection(ItemStack stack, ResourceKey<Level> dimension, BlockPos pos) {
         List<StoragePosition> selected = selectedContainers(stack);
         Optional<StoragePosition> first = selected.stream().findFirst();
@@ -166,7 +181,7 @@ public final class HiredStorageClipboardItem extends Item {
         return SelectionAddResult.ADDED;
     }
 
-    private static void clearSelection(ItemStack stack) {
+    public static void clearSelection(ItemStack stack) {
         CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         if (customData.isEmpty() || !customData.contains(TAG)) {
             return;

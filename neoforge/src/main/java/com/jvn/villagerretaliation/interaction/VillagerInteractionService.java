@@ -15,8 +15,15 @@ import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummary;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
@@ -270,16 +277,253 @@ public final class VillagerInteractionService {
         }
 
         focusVillagerOnPlayer(villager, player);
-        if (action == VillagerRecruitRequestPayload.Action.HIRE) {
-            sendVillagerNotice(player, villager, "interaction.hire_unavailable");
+        if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
+            boolean nowFollowing = VillagerRecruitmentService.toggleFollow(level, villager, player);
+            String responseText = message(createDialogueContext(level, player, villager), nowFollowing ? "interaction.follow_start" : "interaction.follow_stay");
+            sendVillagerNotice(player, villager, responseText);
+            PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
+            VillagerConversationService.endForPlayer(player, false);
             return;
         }
 
-        boolean nowFollowing = VillagerRecruitmentService.toggleFollow(level, villager, player);
-        String responseText = message(createDialogueContext(level, player, villager), nowFollowing ? "interaction.follow_start" : "interaction.follow_stay");
-        sendVillagerNotice(player, villager, responseText);
-        PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
-        VillagerConversationService.endForPlayer(player, false);
+        if (handleHireDurationRequest(player, level, villager, action)) {
+            return;
+        }
+        if (handleHiredRoleRequest(player, level, villager, action)) {
+            return;
+        }
+
+        switch (action) {
+            case VIEW_CONTRACT -> sendHiredContractNotice(player, level, villager);
+            case OPEN_JOB_INVENTORY -> {
+                if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "Only the hiring player can open hired job inventory.");
+                    return;
+                }
+                VillagerConversationService.endForPlayer(player, true);
+                VillagerInventoryAccess.openJobInventory(player, villager);
+            }
+            case SHOW_STORAGE -> showAssignedStorage(player, level, villager);
+            case REMOVE_STORAGE -> removeAssignedStorage(player, level, villager);
+            case END_HIRE -> {
+                if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "Only the hiring player can end this contract.");
+                    return;
+                }
+                HiredVillagerContractService.endHireContract(villager);
+                VillagerRecruitmentService.sendFiredNotice(player, villager);
+                sendVillagerNotice(player, villager, "Contract ended.");
+            }
+            default -> sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
+        }
+    }
+
+    public static void handleClipboardStorageAction(ServerPlayer player, int entityId, ClipboardStorageActionPayload.Action action) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        ItemStack clipboard = findClipboard(player);
+        if (clipboard.isEmpty()) {
+            sendVillagerNotice(player, villager, "Hold the clipboard to manage assigned storage.");
+            return;
+        }
+
+        focusVillagerOnPlayer(villager, player);
+        switch (action) {
+            case ASSIGN -> assignClipboardStorage(player, level, villager, clipboard);
+            case SHOW -> showAssignedStorage(player, level, villager);
+            case REMOVE -> removeAssignedStorage(player, level, villager);
+            case CLEAR_SELECTION -> {
+                HiredStorageClipboardItem.clearSelection(clipboard);
+                sendVillagerNotice(player, villager, "Clipboard selection cleared.");
+            }
+        }
+    }
+
+    private static boolean handleHireDurationRequest(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            VillagerRecruitRequestPayload.Action action) {
+        int days = switch (action) {
+            case HIRE_ONE_DAY -> 1;
+            case HIRE_THREE_DAYS -> 3;
+            case HIRE_SEVEN_DAYS -> 7;
+            default -> 0;
+        };
+        if (days <= 0) {
+            return false;
+        }
+        if (HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendHiredContractNotice(player, level, villager);
+            return true;
+        }
+        if (HiredVillagerContractService.isHired(level, villager)) {
+            sendVillagerNotice(player, villager, "I already have a contract.");
+            return true;
+        }
+
+        int cost = HiredVillagerContractService.getHireCost(level, villager, player, days);
+        if (countEmeralds(player) < cost) {
+            sendVillagerNotice(player, villager, "Hiring for " + days + " day" + plural(days) + " costs " + cost + " emerald" + plural(cost) + ".");
+            return true;
+        }
+        removeEmeralds(player, cost);
+        HiredVillagerContractService.startHireContract(level, villager, player, days, cost);
+        VillagerRecruitmentService.sendHiredNotice(player, villager);
+        sendVillagerNotice(player, villager, "Hired for " + days + " day" + plural(days) + " as "
+                + HiredVillagerContractService.activeRole(level, villager).label() + ".");
+        return true;
+    }
+
+    private static boolean handleHiredRoleRequest(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            VillagerRecruitRequestPayload.Action action) {
+        HiredVillagerRole role = switch (action) {
+            case SET_ROLE_COMBAT -> HiredVillagerRole.COMBAT;
+            case SET_ROLE_MINING -> HiredVillagerRole.MINING;
+            case SET_ROLE_LOGGING -> HiredVillagerRole.LOGGING;
+            case SET_ROLE_FARMING -> HiredVillagerRole.FARMING;
+            case SET_ROLE_BREWING -> HiredVillagerRole.BREWING;
+            case SET_ROLE_NAVIGATION -> HiredVillagerRole.NAVIGATION;
+            case SET_ROLE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
+            default -> null;
+        };
+        if (role == null) {
+            return false;
+        }
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "Hire me first, then choose my work.");
+            return true;
+        }
+        if (!HiredVillagerContractService.setActiveRole(level, villager, role)) {
+            sendVillagerNotice(player, villager, role.label() + " is not a good fit for my profession or skills.");
+            return true;
+        }
+        sendVillagerNotice(player, villager, "Assigned role: " + role.label() + ".");
+        return true;
+    }
+
+    private static void sendHiredContractNotice(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHired(level, villager)) {
+            int dailyCost = HiredVillagerContractService.getDailyCost(level, villager, player);
+            sendVillagerNotice(player, villager, "Available roles: " + HiredVillagerRoles.roleSummary(level, villager)
+                    + ". Daily cost: " + dailyCost + " emerald" + plural(dailyCost) + ".");
+            return;
+        }
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "I am already under contract.");
+            return;
+        }
+        int remainingDays = HiredVillagerContractService.getRemainingHireDays(level, villager);
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        sendVillagerNotice(player, villager, "Contract: " + remainingDays + " day" + plural(remainingDays)
+                + " remaining, role " + role.label() + ". Available roles: "
+                + HiredVillagerRoles.roleSummary(level, villager) + ".");
+    }
+
+    private static void assignClipboardStorage(ServerPlayer player, ServerLevel level, Villager villager, ItemStack clipboard) {
+        if (!canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "You need trust or an active hire contract to assign my storage.");
+            return;
+        }
+        List<StoragePosition> selected = HiredStorageClipboardItem.selectedContainers(clipboard);
+        if (selected.isEmpty()) {
+            sendVillagerNotice(player, villager, "Select storage with the clipboard first.");
+            return;
+        }
+        String purpose = HiredVillagerContractService.isHiredBy(level, villager, player)
+                ? HiredVillagerContractService.activeRole(level, villager).serializedName()
+                : "general";
+        AssignSummary summary = AssignedStorageService.assign(player, villager, selected, purpose);
+        if (summary.assigned() > 0) {
+            HiredStorageClipboardItem.clearSelection(clipboard);
+        }
+        sendVillagerNotice(player, villager, AssignedStorageService.assignmentSummary(summary).getString());
+    }
+
+    private static void showAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "You need trust or an active hire contract to inspect my storage.");
+            return;
+        }
+        List<AssignedContainerRecord> assigned = AssignedStorageService.assignedStorage(level, villager);
+        HiredStorageClipboardItem.sendAssignedStorageOutlines(player, assigned);
+        int count = assigned.size();
+        sendVillagerNotice(player, villager, "Assigned containers: " + count + ".");
+    }
+
+    private static void removeAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "You need trust or an active hire contract to remove my storage.");
+            return;
+        }
+        int removed = AssignedStorageService.removeAssignedStorage(level, villager);
+        sendVillagerNotice(player, villager, "Removed " + removed + " assigned container" + plural(removed) + ".");
+    }
+
+    private static boolean canManageAssignedStorage(ServerLevel level, Villager villager, ServerPlayer player) {
+        return HiredVillagerContractService.isHiredBy(level, villager, player)
+                || VillagerInventoryAccess.canAccess(level, villager, player);
+    }
+
+    private static ItemStack findClipboard(ServerPlayer player) {
+        ItemStack mainHand = player.getMainHandItem();
+        if (VillagerRetaliationItems.isClipboard(mainHand)) {
+            return mainHand;
+        }
+        ItemStack offhand = player.getOffhandItem();
+        return VillagerRetaliationItems.isClipboard(offhand) ? offhand : ItemStack.EMPTY;
+    }
+
+    private static int countEmeralds(ServerPlayer player) {
+        int count = 0;
+        for (ItemStack stack : player.getInventory().items) {
+            if (stack.is(Items.EMERALD)) {
+                count += stack.getCount();
+            }
+        }
+        for (ItemStack stack : player.getInventory().offhand) {
+            if (stack.is(Items.EMERALD)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static void removeEmeralds(ServerPlayer player, int count) {
+        int remaining = count;
+        remaining = removeEmeraldsFrom(player.getInventory().items, remaining);
+        if (remaining > 0) {
+            removeEmeraldsFrom(player.getInventory().offhand, remaining);
+        }
+    }
+
+    private static int removeEmeraldsFrom(List<ItemStack> stacks, int count) {
+        int remaining = count;
+        for (ItemStack stack : stacks) {
+            if (remaining <= 0) {
+                break;
+            }
+            if (!stack.is(Items.EMERALD)) {
+                continue;
+            }
+            int removed = Math.min(remaining, stack.getCount());
+            stack.shrink(removed);
+            remaining -= removed;
+        }
+        return remaining;
+    }
+
+    private static String plural(int count) {
+        return count == 1 ? "" : "s";
     }
 
     public static void handleReputationRequest(ServerPlayer player, int entityId) {
