@@ -1,19 +1,6 @@
-<div align="center">
+<div style="text-align:center"><h2><strong>Villagers remember, villagers fight back.</strong></h2></div>
 
-<h2><strong>Villagers remember, villagers fight back.</strong></h2>
-
-</div>
-
-<div align="center">
-
-<a href="https://modrinth.com/mod/Villager-Retaliation/settings/versions?l=neoforge"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/cozy/supported/neoforge_64h.png" alt="Available for NeoForge"></a>
-<a href="https://modrinth.com/mod/toucan"><img src="https://raw.githubusercontent.com/JevenDev/toucanLib/refs/heads/1.21.1/docs/badges/toucanlib_toucanlib_cozy_64h.png" alt="Requires toucanLib"></a>
-<br>
-<a href="https://modrinth.com/mod/Villager-Retaliation" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/modrinth_46h.png" alt="Available on Modrinth"></a>
-<a href="https://www.curseforge.com/minecraft/mc-mods/villager-retaliation" target="_blank" rel="nofollow"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/curseforge_46h.png" alt="Available on CurseForge"></a>
-<a href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/github_46h.png" alt="Available on GitHub"></a>
-
-</div>
+<div style="text-align:center"><a href="https://modrinth.com/mod/Villager-Retaliation/settings/versions?l=neoforge" rel="nofollow"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/cozy/supported/neoforge_64h.png" alt="Available for NeoForge"></a> <a href="https://modrinth.com/mod/toucan" rel="nofollow"><img src="https://raw.githubusercontent.com/JevenDev/toucanLib/refs/heads/1.21.1/docs/badges/toucanlib_toucanlib_cozy_64h.png" alt="Requires toucanLib"></a><br><a href="https://modrinth.com/mod/Villager-Retaliation" rel="nofollow"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/modrinth_46h.png" alt="Available on Modrinth"></a> <a href="https://www.curseforge.com/minecraft/mc-mods/villager-retaliation" rel="nofollow"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/curseforge_46h.png" alt="Available on CurseForge"></a> <a href="https://github.com/JevenDev/Villager-Retaliation" rel="nofollow"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/github_46h.png" alt="Available on GitHub"></a></div>
 
 ![villagers chasing a player](https://cdn.modrinth.com/data/cached_images/16269e99f4ef7ac15b6d24f3b523e5fa5778d5f5.png)
 
@@ -23,18 +10,18 @@ Villagers are still villagers: they trade, gossip, work, panic, and live ordinar
 
 Play kindly and a village can become warmer, more helpful, and more personal. Push people around, steal from village stores, or use "accidental" lava tricks, and the same village may remember that too.
 
-- Villagers can fight back when attacked
-- Nearby adult witnesses can rally after public crimes
-- Reputation is tracked per villager, per player
-- Trading, gifts, quests, village defense, and good history can build trust
-- Attacks, theft, watched-container damage, and village harm can damage trust
-- Hostile villagers can refuse trade, harass you, flee, or attack depending on settings and reputation
-- Dialogue reacts to reputation, profession, family, recent events, weather, gear, danger, and first meetings
-- Gifts can be loved, liked, ignored, disliked, or hated, with trusted villagers keeping favorites as keepsakes
-- Villagers can offer quests with tracker text, quest item highlighting, HUD notifications, and turn-in dialogue
-- Skilled villagers can unlock extra trade stock and high-reputation Special Orders
-- Some villagers can share stories, directions, relationships, and local memory
-- Babies stay defenseless, and nitwits still usually choose fear over heroics
+* Villagers can fight back when attacked
+* Nearby adult witnesses can rally after public crimes
+* Reputation is tracked per villager, per player
+* Trading, gifts, quests, village defense, and good history can build trust
+* Attacks, theft, watched-container damage, and village harm can damage trust
+* Hostile villagers can refuse trade, harass you, flee, or attack depending on settings and reputation
+* Dialogue reacts to reputation, profession, family, recent events, weather, gear, danger, and first meetings
+* Gifts can be loved, liked, ignored, disliked, or hated, with trusted villagers keeping favorites as keepsakes
+* Villagers can offer quests with tracker text, quest item highlighting, HUD notifications, and turn-in dialogue
+* Skilled villagers can unlock extra trade stock and high-reputation Special Orders
+* Some villagers can share stories, directions, relationships, and local memory
+* Babies stay defenseless, and nitwits still usually choose fear over heroics
 
 ![features](https://cdn.modrinth.com/data/cached_images/ec0e4dc78ec1a652eb11b233dd2926f7461fe770.png)
 
@@ -49,7 +36,7 @@ Every villager tracks their own opinion of every player. One farmer might trust 
 Default reputation tiers:
 
 | Tier | Default range |
-| --- | ---: |
+| --- | --- |
 | Royalty | 1000+ |
 | Revered | 400+ |
 | Respected | 250+ |
@@ -64,19 +51,19 @@ Higher trust can improve how villagers treat you, reduce anger, unlock warmer di
 
 Good ways to build trust:
 
-- Trade with villagers
-- Give liked or loved gifts
-- Defend villages from hostile mobs
-- Complete villager quests
-- Return from bad history by making peace
+* Trade with villagers
+* Give liked or loved gifts
+* Defend villages from hostile mobs
+* Complete villager quests
+* Return from bad history by making peace
 
 Fast ways to lose trust:
 
-- Hit or kill villagers
-- Harm an iron golem tied to a village
-- Break watched beds or village storage
-- Open, steal from, or smash generated village chests while watched
-- Use player-placed lava or fire to hurt villagers during the attribution window
+* Hit or kill villagers
+* Harm an iron golem tied to a village
+* Break watched beds or village storage
+* Open, steal from, or smash generated village chests while watched
+* Use player-placed lava or fire to hurt villagers during the attribution window
 
 ![villagers retaliating against a player that killed another villager](https://i.imgur.com/6c3vdac.gif)
 
@@ -109,8 +96,8 @@ Quest flow is meant to feel natural:
 
 Default quest keybinds:
 
-- `J` - Quest Journal
-- `K` - Quest Tracker
+* `J` - Quest Journal
+* `K` - Quest Tracker
 
 ### Gifts
 
@@ -161,12 +148,12 @@ The default attribution window is 2 real-time minutes. Natural lava, old hazards
 
 Villager Retaliation! adds configurable drops for villagers and wandering traders.
 
-- Villagers can drop emeralds and bread
-- Adult villagers can roll profession-themed loot
-- Combat weapons can drop at configurable rates
-- Equipped gear can be given through the villager inventory interaction
-- Baby villager loot is disabled by default
-- Wandering traders can drop emeralds, invisibility potions, and safe copies of current trade results
+* Villagers can drop emeralds and bread
+* Adult villagers can roll profession-themed loot
+* Combat weapons can drop at configurable rates
+* Equipped gear can be given through the villager inventory interaction
+* Baby villager loot is disabled by default
+* Wandering traders can drop emeralds, invisibility potions, and safe copies of current trade results
 
 Profession loot generally requires player kill credit by default, and profession-specific drops are backed by datapack loot-table rules.
 
@@ -174,10 +161,7 @@ Profession loot generally requires player kill credit by default, and profession
 
 The mod includes a full reputation advancement tab with milestones for trust, suspicion, pacification, village defense, watched crimes, story sharing, quests, and a few hidden bad decisions.
 
-<details>
-<summary><strong>All Advancements (Click to Expand)</strong></summary>
-
-<br>
+**All Advancements**
 
 | Advancement | Type | Criteria | Hidden |
 | --- | --- | --- | --- |
@@ -215,16 +199,14 @@ The mod includes a full reputation advancement tab with milestones for trust, su
 | Village Chronicler | Goal | Share 10 discovered stories with villagers. | No |
 | Legend Trader | Challenge | Share 25 discovered stories with villagers. | No |
 
-</details>
-
 ![keybinds](https://cdn.modrinth.com/data/cached_images/201d5ce49ba16974e3c3b0b562c392e03f38e35f.png)
 
 ## Configuration
 
 Main config file:
 
-- Singleplayer/client: `config/villagerretaliation-common.toml`
-- Dedicated server: `<server root>/config/villagerretaliation-common.toml`
+* Singleplayer/client: `config/villagerretaliation-common.toml`
+* Dedicated server: `<server root>/config/villagerretaliation-common.toml`
 
 Most major systems can be tuned or disabled, including retaliation, reputation, dialogue, gifts, notifications, social behavior, trade changes, profession combat, hostile mob targeting, loot, wandering trader behavior, and the optional debug overlay.
 
@@ -234,7 +216,7 @@ Operator commands are included for testing reputation, relationships, dialogue m
 
 Useful examples:
 
-```mcfunction
+```
 /villagerretaliation setNearbyReputation -150
 /villagerretaliation datapack diagnostics
 /villagerretaliation dialogue explain <villager> <request> [option_id]
@@ -244,7 +226,7 @@ Useful examples:
 
 Debug-only family testing items are also available through commands:
 
-```mcfunction
+```
 /give @s villagerretaliation:villager_breeding_stick
 /give @s villagerretaliation:villager_maturity_emerald
 ```
@@ -263,17 +245,17 @@ Resource packs can translate the interaction GUI and reputation UI, replace norm
 
 The browser-based [datapack generator](https://jevendev.github.io/Villager-Retaliation/datapack-builder/) can create, import, preview, validate, and export Villager Retaliation datapacks.
 
-For full pack-author documentation, examples, JSON references, and model notes, use the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki) rather than this Modrinth page.
+For full pack-author documentation, examples, JSON references, and model notes, use the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki) rather than this CurseForge page.
 
 ## Documentation
 
-- [Changelog](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/CHANGELOG.md)
-- [Player Wiki](https://jevendev.github.io/Villager-Retaliation/)
-- [Pack Wiki Home](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki)
-- [Datapack Generator](https://jevendev.github.io/Villager-Retaliation/datapack-builder/)
-- [Quest JSON](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Quests.md)
-- [Dialogue Trees](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Dialogue-Trees.md)
-- [Skill Trades](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Skill-Trades.md)
+* [Changelog](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/CHANGELOG.md)
+* [Player Wiki](https://jevendev.github.io/Villager-Retaliation/)
+* [Pack Wiki Home](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki)
+* [Datapack Generator](https://jevendev.github.io/Villager-Retaliation/datapack-builder/)
+* [Quest JSON](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Quests.md)
+* [Dialogue Trees](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Dialogue-Trees.md)
+* [Skill Trades](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Skill-Trades.md)
 
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 
@@ -281,13 +263,13 @@ For full pack-author documentation, examples, JSON references, and model notes, 
 
 Villager Retaliation! is designed to work with vanilla villager systems rather than replacing villager entities.
 
-- Built for NeoForge 1.21.1
-- Uses vanilla-style entity events and AI memory adjustments
-- Uses vanilla gossip integration where enabled
-- Uses NeoForge item tags for weapon detection where possible
-- Does not replace the villager entity type
+* Built for NeoForge 1.21.1
+* Uses vanilla-style entity events and AI memory adjustments
+* Uses vanilla gossip integration where enabled
+* Uses NeoForge item tags for weapon detection where possible
+* Does not replace the villager entity type
 
-Compatibility may vary with mods that heavily replace villager AI, trading, combat, or entity classes.
+Compatibility may vary with mods that heavily replace villager AI, trading, combat, rendering, or entity classes.
 
 ### Resource Pack Notes
 
@@ -297,17 +279,17 @@ Resource packs can also override the combat villager model, opt into a custom no
 
 ## Version and Loaders
 
-- NeoForge 1.21.1 - active development
-- Forge - not planned anytime soon, don't ask please :)
-- Fabric - possible future port, not anytime soon
-- Older Minecraft versions - not planned
-- Eventually, will skip straight to 26.1/whatever the newest standard will be for modding.
+* NeoForge 1.21.1 - active development
+* Forge - not planned anytime soon, don't ask please :)
+* Fabric - possible future port, not anytime soon
+* Older Minecraft versions - not planned
+* Eventually, will skip straight to 26.1/whatever the newest standard will be for modding.
 
 ![credits & license](https://cdn.modrinth.com/data/cached_images/5fd3ad80e342e6985dd6ebda1f7afd9c48749fce.png)
 
 ## Modpacks
 
-You may use this mod in modpacks, videos, servers, and other projects. A link back to the Modrinth page is appreciated.
+You may use this mod in modpacks, videos, servers, and other projects. A link back to the CurseForge or Modrinth page is appreciated.
 
 ## Credits
 
@@ -317,14 +299,12 @@ Created by me :D
 
 All Rights Reserved.
 
-Feel free to use this mod in modpacks, videos, etc. Just provide a link back to this page if possible :)
+Feel free to use this mod in modpacks, videos, servers, etc. Just provide a link back to this page if possible :)
+
+Feel free to create addons/texturepacks for this mod.
 
 Please don't port this mod without express permission from me.
 
 For any general queries/unlisted questions, DM me on Twitter (@prodbyjvn) / Discord (ijvn).
 
-<div align="center">
-
-  <p><strong><em>Warning: this mod ONLY exists on Modrinth & CurseForge as of May 2026. Any sites hosting this mod outside of Modrinth/CurseForge are not official releases.</em></strong></p>
-
-</div>
+<div><p><strong><em>Warning: this mod ONLY exists on Modrinth &amp; CurseForge as of May 2026. Any sites hosting this mod outside of Modrinth/CurseForge are not official releases.</em></strong></p></div>
