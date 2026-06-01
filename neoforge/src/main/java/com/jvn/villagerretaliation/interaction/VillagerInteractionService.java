@@ -325,6 +325,7 @@ public final class VillagerInteractionService {
 
         switch (action) {
             case VIEW_CONTRACT -> sendHiredContractNotice(player, level, villager);
+            case VIEW_ROLE -> sendHiredRoleNotice(player, level, villager);
             case OPEN_JOB_INVENTORY -> {
                 if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
                     sendVillagerNotice(player, villager, "Only the hiring player can open hired job inventory.");
@@ -479,6 +480,20 @@ public final class VillagerInteractionService {
         }
         sendVillagerNotice(player, villager, "Assigned role: " + role.label() + ".");
         return true;
+    }
+
+    private static void sendHiredRoleNotice(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHired(level, villager)) {
+            sendVillagerNotice(player, villager, "Hire me first, then choose my work.");
+            return;
+        }
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "Only the hiring player can manage my role.");
+            return;
+        }
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        sendVillagerNotice(player, villager, "Current role: " + role.label() + ". Available roles: "
+                + HiredVillagerRoles.roleSummary(level, villager) + ".");
     }
 
     private static void sendHiredContractNotice(ServerPlayer player, ServerLevel level, Villager villager) {

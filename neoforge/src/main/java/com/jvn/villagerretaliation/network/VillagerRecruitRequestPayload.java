@@ -38,6 +38,7 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
         SHOW_STORAGE,
         REMOVE_STORAGE,
         END_HIRE,
+        VIEW_ROLE,
         SET_ROLE_COMBAT,
         SET_ROLE_MINING,
         SET_ROLE_LOGGING,
