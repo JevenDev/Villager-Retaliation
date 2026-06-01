@@ -10,23 +10,34 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Added profile and skill debug commands under `/villagerretaliation profile ...` and `/villagerretaliation skill ...`.
 - Added temporary villager moods and Social Attribute dialogue filters for normal dialogue lines: `mood`, `moods`, `min_mood_intensity`, `requires_high_*`, and exact `min_*` / `max_*` score ranges.
 - Added data-driven quests with `quest_action` dialogue options, start/remind/turn-in/abandon actions, quest progress tracking, target/proof checks, rewards, notifications, active/expiration rules, and quest-triggered tracker or forced-dialogue actions.
+- Added built-in beta.12 quest content across Dangerous Commissions, Lost Civilization, Old Roads, Village Defense, and Village Supply questlines, with authored dialogue trees, quest-specific loot tables, offer gates, proof items, and balanced reputation/XP rewards.
+- Added quest item requirements and turn-in hand-ins, so quests can require extra delivered items in addition to target proof.
+- Added Quest Journal and Quest Tracker keybinds, smooth-scrolling quest UI, tracker HUD controls, quest debug tools, target dimensions, hint text, and shader outlines/highlights for quest items.
+- Added data-driven dialogue trees for branching villager scenes, including display metadata, narrative metadata, leave options, generic villager actions, shared quest actions, tracker flashes, and forced-dialogue handoffs.
 - Added individual trade-slot refresh requests for skill-generated villager trades. Random refreshes mature on the next Minecraft day and can open data-driven ready follow-up/interjection dialogue before the trade menu opens.
 - Added high-reputation Special Orders for directly requesting targetable skill-trade definitions, including wait times, cooldowns, extra costs, up to three active requests per villager/player, status dialogue, and ready-order fulfillment.
 - Added beta.12 dialogue authoring features: `conditions` blocks on normal dialogue lines and options, line `priority`, line `category`, and `text_key` message indirection.
 - Added path-aware folderized dialogue loading under `dialogue/<locale>/...`, including typed `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` folders, optional `type` in option files, profession defaults from paths, and namespaced custom profession paths.
 - Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` for in-game dialogue and datapack debugging.
 - Added beta.12 Datapack Generator support for the new target, folderized dialogue import/export, versioned wiki snapshots, and the downloadable dialogue folder template.
+- Added a player-facing static wiki under `tools/player-wiki` with generated quest walkthroughs, rewards, gifts, reputation, skill trades, watched-container guidance, advancements, search, and command/keybind references.
 - Added persistent per-villager/per-player last-seen memory with absence-aware opening dialogue placeholders: `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}`.
+- Added persisted village event and village encounter memories so dialogue can react to recent hostile events and prior village visits without rescanning every interaction.
 - Added recruitment left-behind follow-up dialogue and biome filters through `recruitment_memory_biome` / `recruitment_memory_biomes`.
+- Added data-driven watched-container resources and a generated-container allowlist for pack-controllable village chest confrontation behavior.
 
 ### Changed
 
 - Promoted the development version from `1.0.0-beta.11` to `1.0.0-beta.12`.
+- Switched the project to the NeoForge-only layout and moved the interaction UI stack onto ToucanLib-backed screens, scrolling, camera behavior, shader chrome, animated dialogue text, and profession-colored panels.
 - Built-in dialogue resources now use the beta.12 folderized layout under `dialogue/<locale>/global`, `groups`, and `professions/<profession>` instead of the previous large bundle-style authoring shape.
 - Built-in normal dialogue lines and family/relationship options now use `conditions` where practical while keeping the beta.11 helper fields as compatibility inputs.
 - Normal dialogue selection now applies explicit `priority` tiers before weighted random selection. Existing packs keep the default `priority: 0`.
 - The Datapack Generator version selector is now a target selector only. The beta.12 target no longer attempts beta.11-to-beta.12 conversion.
+- Quest provider ids can now inherit from quest/dialogue paths and metadata, reducing repeated ids in built-in quest and dialogue-tree resources.
+- Quest targets, hints, journal text, rewards, and built-in quest dialogue were expanded and rebalanced, including the `Ready the Larder` / `Shelter the Long Night` renames to `Bread Delivery` / `Village Lanterns`.
 - Regular completed trades now add `0.5` primary profession skill progress by default instead of `0.1`.
+- Bulk trade uses now count toward skill growth instead of only single-use trade updates.
 - Trade-refresh and Special Order messaging now runs through data-driven forced-dialogue/status branches with clearer blocker responses, order status choices, singular/plural placeholders, and shared active-request limits.
 - Trade-refresh replacement selection compares full result stacks instead of only item types, so variants such as different enchanted books can appear while exact duplicate refreshed trades are still avoided when possible.
 - Special Order selection now collapses duplicate result items by keeping the higher-count result and shows concise trade names with result counts when needed.
@@ -46,6 +57,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Deferred first-load social graph profile warmup across staggered villager ticks, reducing join-time TPS spikes when teleporting into villages that were first loaded after installing the mod.
 - Reduced repeated smith-villager repair path recalculations around damaged iron golems, especially when the golem is nearby but not immediately reachable.
 - Throttled natural-hostile targeting eligibility checks so stand-ground and nearby-weapon lookups no longer run every tick for every villager.
+- Throttled shared dialogue scans, story-discovery scans, and village-event check-ins with lazy memory/status caching so routine conversations no longer repeatedly rescan the same nearby world state.
 - Skipped passive combat cleanup work for villagers that have no active armorer, ranged, temporary-weapon, or borrowed-weapon state.
 - Reduced the default follower lost distance from 64 blocks to 32 blocks.
 - Reduced idle villager tick overhead by staggering persisted-anger restore probes, passive combat-survival checks, and no-op trade-pool checks.
