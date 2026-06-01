@@ -5,10 +5,13 @@ import com.jvn.villagerretaliation.inventory.VillagerConfiscatedStolenItemTracke
 import com.jvn.villagerretaliation.inventory.VillagerGiftReturnTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
+import com.jvn.villagerretaliation.inventory.ProtectedVillagerProperty;
+import com.jvn.villagerretaliation.network.VillagerJobInventoryRequestPayload;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.ChatFormatting;
@@ -18,6 +21,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -42,6 +46,18 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
 
     public static boolean isRenderingInventoryPreview(AbstractVillager villager) {
         return villager.getId() == renderingInventoryPreviewVillagerId;
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        Component tabLabel = Component.translatable(this.menu.isJobInventory()
+                ? "gui.villagerretaliation.inventory.personal_tab"
+                : "gui.villagerretaliation.inventory.job_tab");
+        addRenderableWidget(Button.builder(tabLabel, button -> PacketDistributor.sendToServer(
+                        new VillagerJobInventoryRequestPayload(this.menu.villagerEntityId(), !this.menu.isJobInventory())))
+                .bounds(this.leftPos + 116, this.topPos + 8, 52, 18)
+                .build());
     }
 
     @Override
@@ -79,6 +95,10 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        Component label = Component.translatable(this.menu.isJobInventory()
+                ? "gui.villagerretaliation.inventory.job_inventory"
+                : "gui.villagerretaliation.inventory.personal_inventory");
+        graphics.drawString(this.font, label, 8, 8, 0x404040, false);
     }
 
     @Override
@@ -94,6 +114,9 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
             if (VillagerConfiscatedStolenItemTracker.stolenItemBy(stack).isPresent()) {
                 tooltip.add(Component.translatable("villagerretaliation.tooltip.stolen_item").withStyle(ChatFormatting.RED));
             }
+            ProtectedVillagerProperty.read(stack)
+                    .map(property -> ProtectedVillagerProperty.tooltip(property).withStyle(ChatFormatting.GRAY))
+                    .ifPresent(tooltip::add);
         }
         return tooltip;
     }

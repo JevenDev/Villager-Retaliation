@@ -471,6 +471,7 @@ final class VillagerInventoryContainer implements Container {
             }
         }
         dropLegacyOverflowInventory(villager, event);
+        HiredJobInventory.dropAll(villager, event);
 
         clearFullInventory(villager);
         clearBorrowedCombatWeapon(villager);

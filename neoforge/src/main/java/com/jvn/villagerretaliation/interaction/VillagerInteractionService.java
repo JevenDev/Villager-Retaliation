@@ -232,6 +232,26 @@ public final class VillagerInteractionService {
         VillagerInventoryAccess.open(player, villager);
     }
 
+    public static void handleJobInventoryRequest(ServerPlayer player, int entityId, boolean jobInventory) {
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager) || !canUseInteractionSystem(player, villager)) {
+            sendNotice(player, entityId, "interaction.inventory_unavailable");
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        if (!VillagerInventoryAccess.canAccess(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
+            return;
+        }
+
+        focusVillagerOnPlayer(villager, player);
+        if (jobInventory) {
+            VillagerInventoryAccess.openJobInventory(player, villager);
+        } else {
+            VillagerInventoryAccess.open(player, villager);
+        }
+    }
+
     public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot) {
         VillagerGiftRequestHandler.handle(player, entityId, inventorySlot);
     }

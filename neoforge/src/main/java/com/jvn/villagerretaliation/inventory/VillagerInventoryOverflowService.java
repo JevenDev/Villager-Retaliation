@@ -65,7 +65,10 @@ final class VillagerInventoryOverflowService {
             return;
         }
 
-        List<ContainerCandidate> containers = nearbyGeneratedVillageContainers(level, villager.blockPosition());
+        boolean hasAssignedStorage = AssignedStorageService.hasAssignedStorage(level, villager);
+        List<ContainerCandidate> containers = hasAssignedStorage
+                ? AssignedStorageService.liveContainerCandidates(level, villager)
+                : nearbyGeneratedVillageContainers(level, villager.blockPosition());
         if (containers.isEmpty()) {
             return;
         }
@@ -114,7 +117,8 @@ final class VillagerInventoryOverflowService {
     private static boolean shouldKeepInInventory(ItemStack stack) {
         return VillagerGiftReturnTracker.giftedBy(stack).isPresent()
                 || VillagerTradePaymentTracker.tradedBy(stack).isPresent()
-                || VillagerConfiscatedStolenItemTracker.stolenItemBy(stack).isPresent();
+                || VillagerConfiscatedStolenItemTracker.stolenItemBy(stack).isPresent()
+                || ProtectedVillagerProperty.isProtected(stack);
     }
 
     private static List<ContainerCandidate> nearbyGeneratedVillageContainers(ServerLevel level, BlockPos center) {
@@ -161,7 +165,7 @@ final class VillagerInventoryOverflowService {
         return !customData.isEmpty() && customData.contains(OWNER_ITEM_TAG);
     }
 
-    private static ItemStack insertIntoContainers(
+    static ItemStack insertIntoContainers(
             List<ContainerCandidate> containers,
             ItemStack stack,
             List<ContainerCandidate> usedContainers) {
@@ -188,7 +192,7 @@ final class VillagerInventoryOverflowService {
         usedContainers.add(candidate);
     }
 
-    private static ItemStack insertIntoContainer(Container container, ItemStack stack) {
+    static ItemStack insertIntoContainer(Container container, ItemStack stack) {
         ItemStack remainder = stack.copy();
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
             if (remainder.isEmpty()) {
@@ -231,7 +235,7 @@ final class VillagerInventoryOverflowService {
         return remainder;
     }
 
-    private static void openUsedContainers(ServerLevel level, List<ContainerCandidate> usedContainers) {
+    static void openUsedContainers(ServerLevel level, List<ContainerCandidate> usedContainers) {
         for (ContainerCandidate candidate : usedContainers) {
             openContainerFeedback(level, candidate.pos());
         }
@@ -309,7 +313,7 @@ final class VillagerInventoryOverflowService {
         }
     }
 
-    private record ContainerCandidate(BlockPos pos, Container container) {
+    record ContainerCandidate(BlockPos pos, Container container) {
     }
 
     private record ContainerFeedbackKey(ResourceKey<Level> dimension, BlockPos pos) {

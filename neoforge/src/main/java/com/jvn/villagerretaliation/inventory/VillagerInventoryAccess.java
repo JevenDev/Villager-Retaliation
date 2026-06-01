@@ -23,13 +23,26 @@ public final class VillagerInventoryAccess {
     }
 
     public static void open(ServerPlayer player, Villager villager) {
+        open(player, villager, VillagerInventoryMenu.ViewMode.PERSONAL);
+    }
+
+    public static void openJobInventory(ServerPlayer player, Villager villager) {
+        open(player, villager, VillagerInventoryMenu.ViewMode.JOB);
+    }
+
+    private static void open(ServerPlayer player, Villager villager, VillagerInventoryMenu.ViewMode viewMode) {
         Component title = Component.translatable(
-                "container.villagerretaliation.villager_inventory",
+                viewMode == VillagerInventoryMenu.ViewMode.JOB
+                        ? "container.villagerretaliation.job_inventory"
+                        : "container.villagerretaliation.villager_inventory",
                 VillagerPresetNameRegistry.resolveDisplayName(villager)
         );
         player.openMenu(
-                new SimpleMenuProvider((containerId, inventory, owner) -> new VillagerInventoryMenu(containerId, inventory, villager), title),
-                buffer -> buffer.writeVarInt(villager.getId())
+                new SimpleMenuProvider((containerId, inventory, owner) -> new VillagerInventoryMenu(containerId, inventory, villager, viewMode), title),
+                buffer -> {
+                    buffer.writeVarInt(villager.getId());
+                    buffer.writeEnum(viewMode);
+                }
         );
     }
 

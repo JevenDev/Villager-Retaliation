@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
@@ -243,6 +244,17 @@ public final class VillagerRetaliationEvents {
         }
 
         ItemStack interactionStack = player.getItemInHand(event.getHand());
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer
+                && VillagerRetaliationItems.isClipboard(interactionStack)) {
+            InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());
+            if (result.consumesAction()) {
+                event.setCanceled(true);
+                event.setCancellationResult(result);
+                return;
+            }
+        }
 
         if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer

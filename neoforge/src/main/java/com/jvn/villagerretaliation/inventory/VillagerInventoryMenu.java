@@ -24,12 +24,8 @@ import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 
 public class VillagerInventoryMenu extends AbstractContainerMenu {
-    private static final int VILLAGER_SLOT_COUNT = VillagerInventoryContainer.SLOT_COUNT;
-    private static final int PLAYER_INVENTORY_START = VILLAGER_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_COUNT = 27;
-    private static final int PLAYER_HOTBAR_START = PLAYER_INVENTORY_START + PLAYER_INVENTORY_COUNT;
     private static final int PLAYER_HOTBAR_COUNT = 9;
-    private static final int PLAYER_SLOT_END = PLAYER_HOTBAR_START + PLAYER_HOTBAR_COUNT;
 
     private static final int ARMOR_X = 45;
     private static final int ARMOR_Y = 8;
@@ -46,6 +42,11 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private final Container villagerInventory;
     private final Villager villager;
     private final int villagerEntityId;
+    private final ViewMode viewMode;
+    private final int villagerSlotCount;
+    private final int playerInventoryStart;
+    private final int playerHotbarStart;
+    private final int playerSlotEnd;
     private final Player player;
     private final VillagerGiftReturnTracker.GiftSnapshot giftSnapshot;
     private final VillagerTradePaymentTracker.TradePaymentSnapshot tradePaymentSnapshot;
@@ -56,30 +57,56 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private boolean stolenItemReturnsProcessed;
 
     public VillagerInventoryMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
-        this(containerId, playerInventory, new SimpleContainer(VILLAGER_SLOT_COUNT), null, data == null ? -1 : data.readVarInt());
+        this(containerId, playerInventory, clientData(data));
     }
 
     public VillagerInventoryMenu(int containerId, Inventory playerInventory, Villager villager) {
-        this(containerId, playerInventory, new VillagerInventoryContainer(villager), villager, villager.getId());
+        this(containerId, playerInventory, villager, ViewMode.PERSONAL);
     }
 
-    private VillagerInventoryMenu(int containerId, Inventory playerInventory, Container villagerInventory, Villager villager, int villagerEntityId) {
+    public VillagerInventoryMenu(int containerId, Inventory playerInventory, Villager villager, ViewMode viewMode) {
+        this(
+                containerId,
+                playerInventory,
+                viewMode == ViewMode.JOB ? HiredJobInventory.getJobInventory(villager) : new VillagerInventoryContainer(villager),
+                villager,
+                villager.getId(),
+                viewMode
+        );
+    }
+
+    private VillagerInventoryMenu(int containerId, Inventory playerInventory, ClientMenuData data) {
+        this(containerId, playerInventory, new SimpleContainer(data.viewMode().slotCount()), null, data.entityId(), data.viewMode());
+    }
+
+    private VillagerInventoryMenu(
+            int containerId,
+            Inventory playerInventory,
+            Container villagerInventory,
+            Villager villager,
+            int villagerEntityId,
+            ViewMode viewMode) {
         super(VillagerRetaliationMenus.VILLAGER_INVENTORY.get(), containerId);
-        checkContainerSize(villagerInventory, VILLAGER_SLOT_COUNT);
+        this.viewMode = viewMode == null ? ViewMode.PERSONAL : viewMode;
+        this.villagerSlotCount = this.viewMode.slotCount();
+        this.playerInventoryStart = this.villagerSlotCount;
+        this.playerHotbarStart = this.playerInventoryStart + PLAYER_INVENTORY_COUNT;
+        this.playerSlotEnd = this.playerHotbarStart + PLAYER_HOTBAR_COUNT;
+        checkContainerSize(villagerInventory, this.villagerSlotCount);
         this.villagerInventory = villagerInventory;
         this.villager = villager;
         this.villagerEntityId = villagerEntityId;
         this.player = playerInventory.player;
-        this.giftSnapshot = villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
+        this.giftSnapshot = this.viewMode == ViewMode.PERSONAL && villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
                 ? VillagerGiftReturnTracker.capture(serverPlayer, villager)
                 : null;
-        this.tradePaymentSnapshot = villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
+        this.tradePaymentSnapshot = this.viewMode == ViewMode.PERSONAL && villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
                 ? VillagerTradePaymentTracker.capture(serverPlayer, villager)
                 : null;
-        this.stolenItemSnapshot = villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
+        this.stolenItemSnapshot = this.viewMode == ViewMode.PERSONAL && villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
                 ? VillagerConfiscatedStolenItemTracker.capture(serverPlayer, villager)
                 : null;
-        this.initialGearStackCount = villager == null ? 0 : gearStackCount(villagerInventory);
+        this.initialGearStackCount = villager == null || this.viewMode != ViewMode.PERSONAL ? 0 : gearStackCount(villagerInventory);
         villagerInventory.startOpen(playerInventory.player);
         addVillagerSlots();
         addPlayerSlots(playerInventory);
@@ -106,8 +133,11 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
         ItemStack sourceStack = sourceSlot.getItem();
         ItemStack originalStack = sourceStack.copy();
-        if (index < VILLAGER_SLOT_COUNT) {
-            if (!moveItemStackTo(sourceStack, PLAYER_INVENTORY_START, PLAYER_SLOT_END, true)) {
+        if (index < this.villagerSlotCount) {
+            if (isProtectedJobSlot(sourceSlot)) {
+                return ItemStack.EMPTY;
+            }
+            if (!moveItemStackTo(sourceStack, this.playerInventoryStart, this.playerSlotEnd, true)) {
                 return ItemStack.EMPTY;
             }
         } else if (!movePlayerStackToVillager(sourceStack)) {
@@ -143,12 +173,24 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         return this.villagerEntityId;
     }
 
+    public ViewMode viewMode() {
+        return this.viewMode;
+    }
+
     public boolean isVillagerSlot(Slot slot) {
         int menuSlot = this.slots.indexOf(slot);
-        return menuSlot >= 0 && menuSlot < VILLAGER_SLOT_COUNT;
+        return menuSlot >= 0 && menuSlot < this.villagerSlotCount;
+    }
+
+    public boolean isJobInventory() {
+        return this.viewMode == ViewMode.JOB;
     }
 
     private void addVillagerSlots() {
+        if (this.viewMode == ViewMode.JOB) {
+            addJobSlots();
+            return;
+        }
         for (int slot = 0; slot < VillagerInventoryContainer.ARMOR_SLOT_COUNT; slot++) {
             addSlot(new VillagerArmorSlot(
                     this.villagerInventory,
@@ -174,6 +216,20 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         addSlot(new Slot(this.villagerInventory, VillagerInventoryContainer.OFFHAND_SLOT, HELD_X, OFFHAND_Y));
     }
 
+    private void addJobSlots() {
+        for (int row = 0; row < 3; row++) {
+            for (int column = 0; column < 9; column++) {
+                int slot = row * 9 + column;
+                addSlot(new JobInventorySlot(
+                        this.villagerInventory,
+                        slot,
+                        VILLAGER_INVENTORY_X + column * SLOT_SIZE,
+                        44 + row * SLOT_SIZE
+                ));
+            }
+        }
+    }
+
     private void addPlayerSlots(Inventory playerInventory) {
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
@@ -193,6 +249,10 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     private boolean movePlayerStackToVillager(ItemStack stack) {
         EquipmentSlot equipmentSlot = equipmentSlotFor(stack);
+        if (this.viewMode == ViewMode.JOB) {
+            return moveItemStackTo(stack, 0, this.villagerSlotCount, false);
+        }
+
         if (equipmentSlot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
             int armorSlot = armorSlotFor(equipmentSlot);
             if (armorSlot >= 0 && !moveItemStackTo(stack, armorSlot, armorSlot + 1, false)) {
@@ -286,7 +346,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     private static int gearStackCount(Container container) {
         int count = 0;
-        for (int slot = 0; slot < VILLAGER_SLOT_COUNT; slot++) {
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
             ItemStack stack = container.getItem(slot);
             if (isGear(stack)) {
                 count += stack.getCount();
@@ -297,7 +357,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     private static String gearKind(Container container) {
         boolean hasArmor = false;
-        for (int slot = 0; slot < VILLAGER_SLOT_COUNT; slot++) {
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
             ItemStack stack = container.getItem(slot);
             if (VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)) {
                 return "weapon";
@@ -313,6 +373,19 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     private static boolean isArmor(ItemStack stack) {
         return Equipable.get(stack) != null;
+    }
+
+    private boolean isProtectedJobSlot(Slot slot) {
+        return this.viewMode == ViewMode.JOB && ProtectedVillagerProperty.isProtected(slot.getItem());
+    }
+
+    private static ClientMenuData clientData(RegistryFriendlyByteBuf data) {
+        if (data == null) {
+            return new ClientMenuData(-1, ViewMode.PERSONAL);
+        }
+        int entityId = data.readVarInt();
+        ViewMode viewMode = data.isReadable() ? data.readEnum(ViewMode.class) : ViewMode.PERSONAL;
+        return new ClientMenuData(entityId, viewMode);
     }
 
     private static int armorSlotFor(EquipmentSlot equipmentSlot) {
@@ -353,6 +426,35 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
             return Pair.of(InventoryMenu.BLOCK_ATLAS, emptyArmorSlotIcon(this.equipmentSlot));
         }
+    }
+
+    private static final class JobInventorySlot extends Slot {
+        private JobInventorySlot(Container container, int slot, int x, int y) {
+            super(container, slot, x, y);
+        }
+
+        @Override
+        public boolean mayPickup(Player player) {
+            return HiredJobInventory.canHirerRemoveFromJobInventory(getItem());
+        }
+    }
+
+    public enum ViewMode {
+        PERSONAL(VillagerInventoryContainer.SLOT_COUNT),
+        JOB(HiredJobInventory.SLOT_COUNT);
+
+        private final int slotCount;
+
+        ViewMode(int slotCount) {
+            this.slotCount = slotCount;
+        }
+
+        public int slotCount() {
+            return this.slotCount;
+        }
+    }
+
+    private record ClientMenuData(int entityId, ViewMode viewMode) {
     }
 
     private static ResourceLocation emptyArmorSlotIcon(EquipmentSlot equipmentSlot) {
