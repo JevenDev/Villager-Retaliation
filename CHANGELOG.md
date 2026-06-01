@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0-beta.12 - Unreleased
+## 1.0.0-beta.12 - 2026-06-01
 
 Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quests, skill-trade restocking, and datapack authoring cleanup. It is also a manual datapack-retargeting release: beta.11 packs should keep targeting the beta.11 wiki snapshot until they have been reviewed against the beta.12 pack surface.
 
@@ -10,7 +10,7 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Added profile and skill debug commands under `/villagerretaliation profile ...` and `/villagerretaliation skill ...`.
 - Added temporary villager moods and Social Attribute dialogue filters for normal dialogue lines: `mood`, `moods`, `min_mood_intensity`, `requires_high_*`, and exact `min_*` / `max_*` score ranges.
 - Added data-driven quests with `quest_action` dialogue options, start/remind/turn-in/abandon actions, quest progress tracking, target/proof checks, rewards, notifications, active/expiration rules, and quest-triggered tracker or forced-dialogue actions.
-- Added built-in beta.12 quest content across Dangerous Commissions, Lost Civilization, Old Roads, Village Defense, and Village Supply questlines, with authored dialogue trees, quest-specific loot tables, offer gates, proof items, and balanced reputation/XP rewards.
+- Added 21 built-in beta.12 quest content across Dangerous Commissions, Lost Civilization, Old Roads, Village Defense, and Village Supply questlines, with authored dialogue trees, quest-specific loot tables, offer gates, proof items, and balanced reputation/XP rewards.
 - Added quest item requirements and turn-in hand-ins, so quests can require extra delivered items in addition to target proof.
 - Added Quest Journal and Quest Tracker keybinds, smooth-scrolling quest UI, tracker HUD controls, quest debug tools, target dimensions, hint text, and shader outlines/highlights for quest items.
 - Added data-driven dialogue trees for branching villager scenes, including display metadata, narrative metadata, leave options, generic villager actions, shared quest actions, tracker flashes, and forced-dialogue handoffs.
@@ -25,35 +25,24 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 - Added persisted village event and village encounter memories so dialogue can react to recent hostile events and prior village visits without rescanning every interaction.
 - Added recruitment left-behind follow-up dialogue and biome filters through `recruitment_memory_biome` / `recruitment_memory_biomes`.
 - Added data-driven watched-container resources and a generated-container allowlist for pack-controllable village chest confrontation behavior.
+- Do not talk to Edmundo if you are named LoudLitten
 
 ### Changed
 
-- Promoted the development version from `1.0.0-beta.11` to `1.0.0-beta.12`.
 - Switched the project to the NeoForge-only layout and moved the interaction UI stack onto ToucanLib-backed screens, scrolling, camera behavior, shader chrome, animated dialogue text, and profession-colored panels.
 - Built-in dialogue resources now use the beta.12 folderized layout under `dialogue/<locale>/global`, `groups`, and `professions/<profession>` instead of the previous large bundle-style authoring shape.
 - Built-in normal dialogue lines and family/relationship options now use `conditions` where practical while keeping the beta.11 helper fields as compatibility inputs.
 - Normal dialogue selection now applies explicit `priority` tiers before weighted random selection. Existing packs keep the default `priority: 0`.
 - The Datapack Generator version selector is now a target selector only. The beta.12 target no longer attempts beta.11-to-beta.12 conversion.
-- Quest provider ids can now inherit from quest/dialogue paths and metadata, reducing repeated ids in built-in quest and dialogue-tree resources.
-- Quest targets, hints, journal text, rewards, and built-in quest dialogue were expanded and rebalanced, including the `Ready the Larder` / `Shelter the Long Night` renames to `Bread Delivery` / `Village Lanterns`.
-- Regular completed trades now add `0.5` primary profession skill progress by default instead of `0.1`.
-- Bulk trade uses now count toward skill growth instead of only single-use trade updates.
-- Trade-refresh and Special Order messaging now runs through data-driven forced-dialogue/status branches with clearer blocker responses, order status choices, singular/plural placeholders, and shared active-request limits.
-- Trade-refresh replacement selection compares full result stacks instead of only item types, so variants such as different enchanted books can appear while exact duplicate refreshed trades are still avoided when possible.
-- Special Order selection now collapses duplicate result items by keeping the higher-count result and shows concise trade names with result counts when needed.
-- Forced-dialogue sessions now preserve session-scoped placeholders and keep active sessions attached to the speaking villager while distance and availability rules still pass.
-- Ready trade-refresh and Special Order follow-ups now apply before the trade menu opens, and multiple nearby ready requests can resolve through one-at-a-time interjections.
 - First-conversation and first-village opening lines now respect persisted seen-memory after world leave/join cycles.
 - The default diamond-sword proximity forced-dialogue witness radius was reduced from 8 blocks to 4 blocks.
-- The built-in Lost Civilization quest now keeps `Abandon quest` inside the active quest conversation instead of exposing a separate top-level abandon option.
-- Quest JSON now uses the canonical beta.12 shape only: nested `display`, plural `offer.professions`, object-shaped `offer.skills`, explicit `objectives`, canonical rewards, and `repeatable` trigger behavior.
-- Dialogue tree display and story metadata now match quest formatting with nested `display` and `metadata` blocks.
 
 ### Fixed
 
 - Fixed Special Order active-request limits so the fourth request shows the limit dialogue immediately and the cap is hard-clamped to three.
 - Fixed multiple ready random refreshes so all accepted ready refreshes can fulfill in one pass instead of leaving completed requests behind.
 - Fixed vanilla villager trade-preview hand behavior causing nearby players holding trade costs to replace, duplicate, or drop held villager items.
+- Fixed inconsistent natural hostile detection paths between villagers and wandering traders by making both use the same shared hostile-mob classification rules.
 - Deferred first-load social graph profile warmup across staggered villager ticks, reducing join-time TPS spikes when teleporting into villages that were first loaded after installing the mod.
 - Reduced repeated smith-villager repair path recalculations around damaged iron golems, especially when the golem is nearby but not immediately reachable.
 - Throttled natural-hostile targeting eligibility checks so stand-ground and nearby-weapon lookups no longer run every tick for every villager.
@@ -64,11 +53,15 @@ Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quest
 
 ### Removed
 
+- Attempted to remove Edmundo
 - Removed the Datapack Generator's beta.11-to-beta.12 Convert workflow. Beta.12 is a manual retargeting boundary, not a marker-only migration.
 - Removed quest compatibility aliases and advancement-style `criteria` / `requirements` inference from the quest loader.
+- Removed Edmundo
 - Removed beta.11-only quest/action compatibility shapes from the beta.12 quest surface. The maintained action fields are `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker`; documented shorthand such as `xp`, `rep`, `notify`, and inline unique action fields still load where the shared action parser lists them.
 - Removed top-level dialogue metadata aliases from maintained beta.12 dialogue and dialogue-tree authoring.
 - No beta.12 runtime JSON fields, triggers, or placeholders are removed solely because of the folderized dialogue layout.
+- Edmundo came back
+- Removed Edmundo
 
 ### Migration Notes For Pack Authors
 

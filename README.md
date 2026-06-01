@@ -96,6 +96,19 @@ The interaction screen lets you talk, give gifts, check relationship context, re
 
 Villagers also remember when they last saw you. Return after enough in-game days and some opening lines can acknowledge the gap instead of treating every reload like a first meeting.
 
+<div align="center">
+  <img
+    src="https://i.imgur.com/2byLanp.jpeg"
+    alt="Skills screen"
+    width="49%"
+  />
+  <img
+    src="https://i.imgur.com/WE1tsrT.jpeg"
+    alt="Profile screen"
+    width="49%"
+  />
+</div>
+
 ### Quests
 
 Villagers can offer built-in quests through conversation. The player wiki currently covers 21 built-in quests across Dangerous Commissions, Lost Civilization, Old Roads, Village Defense, and Village Supply.

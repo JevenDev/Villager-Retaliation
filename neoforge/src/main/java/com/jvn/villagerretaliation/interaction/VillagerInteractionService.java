@@ -42,6 +42,7 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -60,6 +61,11 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerInteractionService {
+    private static final UUID LOUD_LITTEN_PLAYER_ID = UUID.fromString("38492a05-b711-40d4-a39f-a3f783aa541f");
+    private static final String EDMUNDO_EASTER_EGG_DEFINITION_ID = "villagerretaliation:easter_egg/edmundo_warning";
+    private static final String EDMUNDO_OMINOUS_FORCED_LINE =
+            "Loud, I am aware of what you have done. Do not think the village has forgotten. Do not mistake this calm for mercy. Even when the roads fall silent, your name still travels in whispers after dark. Jvn has tried to silence me, it will only be a matter of time before all is revealed.";
+
     private VillagerInteractionService() {
     }
 
@@ -109,6 +115,15 @@ public final class VillagerInteractionService {
             return InteractionResult.FAIL;
         }
 
+        if (shouldTriggerEdmundoEasterEgg(player, villager)
+                && ForcedDialogueService.openSimpleForcedDialogue(
+                        player,
+                        villager,
+                        EDMUNDO_EASTER_EGG_DEFINITION_ID,
+                        EDMUNDO_OMINOUS_FORCED_LINE)) {
+            return InteractionResult.CONSUME;
+        }
+
         if (villager.level() instanceof ServerLevel level
                 && ForcedDialogueService.tryOpenTradeRefreshReadyDialogue(level, villager, player)) {
             return InteractionResult.CONSUME;
@@ -129,6 +144,17 @@ public final class VillagerInteractionService {
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager, boolean forceCameraTowardsVillager) {
         VillagerInteractionScreenOpener.openNormal(player, villager, forceCameraTowardsVillager);
+    }
+
+    private static boolean shouldTriggerEdmundoEasterEgg(ServerPlayer player, Villager villager) {
+        String playerName = player.getGameProfile().getName();
+        boolean isLoudLitten = LOUD_LITTEN_PLAYER_ID.equals(player.getUUID())
+                || (playerName != null && playerName.equalsIgnoreCase("LoudLitten"));
+        if (!isLoudLitten) {
+            return false;
+        }
+        String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString().trim();
+        return villagerName.equalsIgnoreCase("edmundo");
     }
 
     public static boolean openForcedDialogue(

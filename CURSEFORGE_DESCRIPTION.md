@@ -2,6 +2,8 @@
 
 <div style="text-align:center"><a href="https://modrinth.com/mod/Villager-Retaliation/settings/versions?l=neoforge" rel="nofollow"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/cozy/supported/neoforge_64h.png" alt="Available for NeoForge"></a> <a href="https://modrinth.com/mod/toucan" rel="nofollow"><img src="https://raw.githubusercontent.com/JevenDev/toucanLib/refs/heads/1.21.1/docs/badges/toucanlib_toucanlib_cozy_64h.png" alt="Requires toucanLib"></a><br><a href="https://modrinth.com/mod/Villager-Retaliation" rel="nofollow"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/modrinth_46h.png" alt="Available on Modrinth"></a> <a href="https://www.curseforge.com/minecraft/mc-mods/villager-retaliation" rel="nofollow"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/curseforge_46h.png" alt="Available on CurseForge"></a> <a href="https://github.com/JevenDev/Villager-Retaliation" rel="nofollow"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/github_46h.png" alt="Available on GitHub"></a></div>
 
+<br>
+
 ![villagers chasing a player](https://cdn.modrinth.com/data/cached_images/16269e99f4ef7ac15b6d24f3b523e5fa5778d5f5.png)
 
 Villager Retaliation! is a Vanilla+ NeoForge mod that makes villages remember how you treat them.
@@ -82,6 +84,8 @@ Villagers can feel more like actual NPCs instead of silent trade menus.
 The interaction screen lets you talk, give gifts, check relationship context, recruit eligible villagers, and follow quest scenes. Dialogue can change based on reputation, profession, recent village events, family ties, gear, weather, time, danger, and whether this is your first meeting.
 
 Villagers also remember when they last saw you. Return after enough in-game days and some opening lines can acknowledge the gap instead of treating every reload like a first meeting.
+
+<div><img src="https://i.imgur.com/2byLanp.jpeg" alt="" width="49%"> <img src="https://i.imgur.com/WE1tsrT.jpeg" alt="" width="49%"></div>
 
 ### Quests
 

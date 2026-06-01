@@ -913,8 +913,8 @@ public final class VillagerRetaliationHandler {
         if (villager != null) {
             return VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, attacker);
         }
-        return attacker instanceof net.minecraft.world.entity.monster.Enemy
-                && !(attacker instanceof net.minecraft.world.entity.NeutralMob);
+        return !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker)
+                && VillagerRetaliationVillagerCombatUtil.isHostileMobType(attacker);
     }
 
     private static boolean shouldSuppressFleeingForRetaliation(Villager villager) {

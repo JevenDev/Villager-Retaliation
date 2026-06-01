@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialog
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueFollowUp;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueItemPayment;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueOption;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueOutput;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueOutputMode;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueStolenItemReturn;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueTrigger;
@@ -24,7 +25,9 @@ import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
 import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,6 +36,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -107,6 +111,24 @@ public final class ForcedDialogueService {
     private static final String RESTITUTION_REDUCED_PAY_SUCCESS_MESSAGE_KEY = "forced.restitution.reduced_pay.success";
     private static final String ROYALTY_AGGRO_BYPASS_MESSAGE_KEY = "retaliation.royalty_aggro_bypass";
     public static final String SPECIAL_ORDER_STATUS_ROOT_OPTION_ID = "trade_refresh.special_order.status";
+    private static final ForcedDialogueOutput SIMPLE_FORCED_OUTPUT =
+            new ForcedDialogueOutput(ForcedDialogueOutputMode.FORCED_DIALOGUE, 0.0D);
+    private static final ForcedDialogueOption SIMPLE_LEAVE_OPTION = new ForcedDialogueOption(
+            LEAVE_OPTION_ID,
+            "Leave",
+            List.of(),
+            0,
+            false,
+            0.0D,
+            true,
+            1000,
+            ForcedDialogueStolenItemReturn.empty(),
+            ForcedDialogueItemPayment.empty(),
+            VillagerReputationCondition.empty(),
+            SocialAttributeCondition.EMPTY,
+            List.of(),
+            ForcedDialogueFollowUp.empty());
+    private static final List<ForcedDialogueOption> SIMPLE_LEAVE_OPTIONS = List.of(SIMPLE_LEAVE_OPTION);
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
     private static final long TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS = 40L;
@@ -300,6 +322,76 @@ public final class ForcedDialogueService {
     public static boolean hasSession(ServerPlayer player, Villager villager) {
         ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
         return session != null && session.villagerId().equals(villager.getUUID());
+    }
+
+    public static boolean openSimpleForcedDialogue(ServerPlayer player, Villager villager, String definitionId, String line) {
+        if (line == null || line.isBlank()) {
+            return false;
+        }
+
+        ServerLevel level = player.serverLevel();
+        ForcedDialogueDefinition definition = new ForcedDialogueDefinition(
+                definitionId,
+                null,
+                ForcedDialogueTrigger.QUEST,
+                SIMPLE_FORCED_OUTPUT,
+                List.of(line),
+                true,
+                false,
+                true,
+                false,
+                0.0D,
+                1.0D,
+                0,
+                0,
+                0,
+                Integer.MAX_VALUE,
+                0,
+                Integer.MAX_VALUE,
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                VillagerEquipmentCondition.empty(),
+                VillagerPlayerItemCondition.empty(),
+                VillagerReputationCondition.empty(),
+                SIMPLE_LEAVE_OPTIONS,
+                SIMPLE_LEAVE_OPTION,
+                SIMPLE_LEAVE_OPTIONS);
+        ForcedDialogueContext context = new ForcedDialogueContext(
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                player.getName().getString(),
+                "",
+                "",
+                "",
+                "",
+                "",
+                0,
+                "",
+                "",
+                "",
+                "",
+                0,
+                0,
+                villager.blockPosition().getX(),
+                villager.blockPosition().getY(),
+                villager.blockPosition().getZ());
+        if (!VillagerInteractionService.openForcedDialogue(
+                player,
+                villager,
+                line,
+                forcedOptions(definition, level, villager, player),
+                true)) {
+            return false;
+        }
+        FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
+                villager.getUUID(),
+                definition,
+                context,
+                level.dimension(),
+                villager.blockPosition(),
+                List.of(),
+                level.getGameTime()));
+        return true;
     }
 
     public static boolean isStaleConversationEndRequest(ServerPlayer player, int entityId) {

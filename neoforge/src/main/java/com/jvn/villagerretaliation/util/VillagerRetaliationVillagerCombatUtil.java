@@ -10,6 +10,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -190,11 +191,18 @@ public final class VillagerRetaliationVillagerCombatUtil {
     public static boolean isNaturalHostileTarget(AbstractVillager villager, LivingEntity target) {
         return target != villager
                 && target.isAlive()
-                && target instanceof Enemy
-                && !(target instanceof NeutralMob)
                 && !(target instanceof Creeper)
                 && !(target instanceof Slime)
                 && !target.isAlliedTo(villager)
-                && !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target);
+                && !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target)
+                && isHostileMobType(target);
+    }
+
+    public static boolean isHostileMobType(LivingEntity target) {
+        if (target.getType().is(VillagerRetaliationTags.EntityTypes.IGNORED_NATURAL_HOSTILE_TARGETS)) {
+            return false;
+        }
+        return target.getType().is(VillagerRetaliationTags.EntityTypes.NATURAL_HOSTILE_TARGETS)
+                || target instanceof Enemy && target.getType().getCategory() == MobCategory.MONSTER;
     }
 }

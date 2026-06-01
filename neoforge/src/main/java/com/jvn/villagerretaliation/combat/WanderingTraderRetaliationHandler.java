@@ -346,8 +346,8 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     private static boolean isHostileMobAttacker(LivingEntity attacker) {
-        return attacker instanceof net.minecraft.world.entity.monster.Enemy
-                && !(attacker instanceof net.minecraft.world.entity.NeutralMob);
+        return !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker)
+                && VillagerRetaliationVillagerCombatUtil.isHostileMobType(attacker);
     }
 
     private static void clearAnger(WanderingTrader trader) {
