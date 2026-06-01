@@ -1,320 +1,116 @@
 # Pack Format Changes
 
-This page tracks JSON, tag, trigger, path, placeholder, and pack-behavior changes that matter to datapack and resource-pack authors.
+This page is the migration note for pack authors, not the player-facing changelog.
 
-This is a pack-format change log rather than a full release changelog. Player-facing features can stay in release notes; this page focuses on the pack author question: "What changed, what target should my pack use, and what do I need to review manually?"
+## Current Target
 
-## How To Read This Page
+The current repo wiki targets `1.0.0-beta.12`.
 
-Each version section uses the same categories so changes stay easy to scan:
+If you are still maintaining a beta.11 pack, keep using the beta.11 snapshot in `tools/datapack-builder/wiki/1.0.0-beta.11/` until you are ready to retarget manually.
 
-- **Added** - New fields, tags, triggers, paths, placeholders, files, or supported values.
-- **Modified** - Existing behavior that changed but still exists.
-- **Deprecated** - Still supported for now, but pack authors should move away from it.
-- **Removed** - No longer supported.
-- **Migration Notes** - Practical manual steps for updating existing packs when a version supports a clear path.
+## Beta.11 To Beta.12 Checklist
 
-Breaking changes should call out the old form, the new form, and whether the update has a supported migration path. Some releases, including beta.12, are intentionally treated as manual retargeting work instead of site-supported conversion.
+Beta.12 is not a marker-only update. Review these areas before changing pack target:
 
-## Current Pack Surface
+1. Dialogue layout: beta.12 strongly prefers folderized dialogue such as `options/`, `lines/`, `messages/`, `openings/`, `closings/`, and `pacify/`.
+2. Dialogue requests: options use `request`, and typed option files can omit `type` entirely.
+3. Complex logic: newer content should prefer `conditions` over older one-off helper fields.
+4. Dialogue filtering: beta.12 adds temporary mood filters, Social Attribute score filters, `priority`, `category`, and `text_key`.
+5. Quests: canonical quest JSON is the maintained shape. Old advancement-style quest shapes are not the beta.12 target.
+6. Skill trades: beta.12 adds trade refresh behavior, persistent trade pools, and targetable Special Orders.
+7. Builder workflow: there is no automatic beta.11 to beta.12 conversion pass.
 
-These pages describe the current supported format:
+## Most Important Authoring Differences
 
-- [JSON Reference](JSON-Reference.md)
-- [Dialogue JSON](Dialogue.md)
-- [Forced Dialogue JSON](Forced-Dialogue.md)
-- [Dialogue Requests](Dialogue-Requests.md)
-- [Event Tags](Event-Tags.md)
-- [Notifications JSON](Notifications.md)
-- [Notification Triggers](Notification-Triggers.md)
-- [Localization Guide](Localization.md)
-- [Gift JSON](Gifts.md)
-- [Pacification JSON](Pacification.md)
-- [Profession Loot JSON](Profession-Loot.md)
-- [Skill Trades](Skill-Trades.md)
-- [Story Discovery JSON](Story-Discovery.md)
-- [Resource Pack Models And Textures](Resource-Pack-Models.md)
+### 1. Dialogue Is Easier To Split
 
-## 1.0.0-beta.12 - Unreleased
+Old style:
 
-Beta.12 is a major pack authoring reset. It introduces persistent Social Attributes, temporary villager moods, richer dialogue conditions, and a folderized path-aware dialogue layout designed to replace thousand-line monolithic dialogue files. Beta.11 packs should continue to target the beta.11 wiki snapshot until a pack author manually reviews and retargets them for beta.12.
+```text
+data/my_pack/dialogue/en_us/global.json
+```
 
-The website and Datapack Generator do not provide beta.11 to beta.12 migration support. Do not treat beta.12 as a marker-only update.
+Preferred beta.12 style:
 
-### Added
+```text
+data/my_pack/dialogue/en_us/global/options/00_rumor.json
+data/my_pack/dialogue/en_us/global/lines/00_rumor.json
+data/my_pack/dialogue/en_us/global/messages/00_shared_text.json
+```
 
-- Added temporary villager mood values for dialogue line filtering: `neutral`, `content`, `grateful`, `afraid`, `angry`, `suspicious`, `grieving`, `protective`, `hopeful`, `stressed`, `proud`, and `lonely`.
-- Added dialogue line fields `mood`, `moods`, and `min_mood_intensity`.
-- Added Social Attribute dialogue line shorthands `requires_high_knowledge`, `requires_high_guts`, `requires_high_proficiency`, `requires_high_kindness`, and `requires_high_charm`. Each requires the matching profile score to be at least 60.
-- Added exact Social Attribute dialogue line ranges: `min_knowledge`, `max_knowledge`, `min_guts`, `max_guts`, `min_proficiency`, `max_proficiency`, `min_kindness`, `max_kindness`, `min_charm`, and `max_charm`.
-- Added resource-pack language keys for temporary mood labels under `villagerretaliation.mood.*`, Profile page attribute labels/descriptions under `villagerretaliation.profile.attribute.*`, profile ranks under `villagerretaliation.profile.rank.*`, and Profile UI rows/tooltips under `villagerretaliation.gui.profile.*`.
-- Added villager trade refresh support for skill-generated trades. Refresh requests are stored per villager and per offer slot, mature on the next Minecraft day, and replace the selected slot with an eligible skill-trade offer when ready.
-- Added persistent per-villager, per-profession skill-trade pools. Villagers remember known skill-trade definition ids for professions they have actually held and reuse that memory when reacquiring the same profession.
-- Added Respected Special Orders: high-reputation players can choose targetable skill-trade definitions for longer, cooldown-gated restock requests, up to three active requests per villager/player.
-- Added an `Ask about orders` dialogue branch for active Special Orders, with a data-driven root dialogue option, dynamic per-order status options, and eight stock-time response variations.
-- Added recruitment-memory biome line filters `recruitment_memory_biome` and `recruitment_memory_biomes` for recruitment follow-up dialogue.
-- Added `conditions` support to dialogue options, so option visibility can use the same compound condition blocks as normal dialogue lines.
-- Added normal dialogue line `priority` and `category` fields. Higher `priority` lines win before weighted random selection; `category` is an author/debug label shown by dialogue explain.
-- Added normal dialogue line `text_key` so a rule entry can resolve its text from keyed `messages` instead of embedding localized text directly.
-- Added optional skill-trade `request` metadata: `targetable`, `display_priority`, `min_reputation`, `wait_days`, `cooldown_days`, and `extra_cost`.
-- Added the forced-dialogue trigger value `trade_refresh` for data-driven trade-refresh option templates.
-- Added built-in forced-dialogue entries `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, `trade_refresh.special_order_confirm_options`, and `trade_refresh.special_order_status_options`.
-- Added dialogue message keys `trade_refresh.ready`, `trade_refresh.accept`, `trade_refresh.already_pending`, `trade_refresh.not_ready`, `trade_refresh.unavailable`, `trade_refresh.revered_prompt`, and `trade_refresh.special_order_*` for trade-refresh and Special Order opening/follow-up lines, including ready restock prompts, queue responses, active-request cap responses, and order-status responses.
-- Added shared forced-dialogue interjection message keys `trade_refresh.ready_interjection`, `trade_refresh.ready_theft_interjection`, `container_theft.backup_interjection`, and `container_opened.backup_interjection`, including `.second` / `.third` variants and interjection-order placeholders for multi-villager forced-dialogue chains.
-- Added a `1.0.0-beta.12` target to the Datapack Generator and built-in website wiki. The beta.11 snapshot remains separate.
-- Added persisted per-villager last-seen memory and built-in absence-aware opening message key `opening.return_after_absence` with placeholders `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}`.
-- Added path-aware dialogue files. Files under typed folders named `options`, `lines`, `messages`, `openings`, `closings`, or `pacify` can now be authored as one focused JSON entry instead of a top-level array bundle.
-- Added optional `type` for dialogue options. New files under an `options` folder can omit `type: "dialogue_option"`; if `type` is present, it must still be `dialogue_option`.
-- Added profession defaults from folder paths such as `dialogue/<locale>/professions/farmer/lines/...json` and namespaced custom profession paths such as `professions/examplemod/alchemist/lines/...json`.
-- Added a downloadable beta.12 dialogue folder template at `example-packs/dialogue-folder-template/`, and added it to the Datapack Generator `Preset` picker alongside the editable starter pack.
+### 2. `conditions` Are The Long-Term Shape
 
-### Modified
-
-- The Datapack Generator now exposes beta.12 mood and Social Attribute line filters only when the selected VR version is `1.0.0-beta.12`.
-- The Datapack Generator can now author, import, preserve, preview, and export typed beta.12 dialogue files such as `options/00_greeting.json` and `lines/00_greeting.json`. New beta.12 dialogue entries default to typed folders unless the `Single bundle file` layout is selected.
-- The Datapack Generator now infers namespaced custom profession defaults from typed profession paths such as `professions/examplemod/alchemist/lines/...json`, matching the runtime path behavior.
-- The Datapack Generator's version selector is now a target selector only. It restores the saved target from `pack.mcmeta`, but it does not convert beta.11 packs to beta.12.
-- Documentation now distinguishes dialogue `dispositions` from beta.12 temporary `mood` / `moods` filters.
-- Documentation now separates canonical field names from compatibility aliases, including `trigger`, `player_items`, `give_items`, `requires_villager_*`, `requires_witness_*`, and `world_text_kind`.
-- Normal dialogue line selection now has an explicit priority tier before weighted random selection. Existing packs keep the default `priority: 0`.
-- Forced-dialogue option ids should remain unique among simultaneously visible options, but reputation-filtered variants can reuse an id when their filters are mutually exclusive. The built-in trade-refresh option templates use this to provide tier-specific responses for the same visible button.
-- Skill-trade replacement selection now avoids giving a refresh result item that already exists in the villager's current offer list.
-- Built-in villager skill-trade entries are Special Order targetable by default. Wandering trader skill-trade entries are not targetable.
-- Ready trade-refresh follow-ups can now open a forced-dialogue session tied to the speaking villager, and conversation validation allows that forced session target while forced-session rules still pass.
-- `first_conversation_only` opening behavior now respects persisted seen-memory, so first-time intros do not replay for villagers that already remember the player after leave/join.
-- `first_village_interaction_only` opening behavior now also respects persisted seen-memory from any villager in the same resolved village, so "new here" openings do not replay for returning players after leave/join.
-- Forced-dialogue option and leave responses now keep session-scoped replacements when a forced session advances, so interjection and ready-trade placeholders stay available to follow-up responses.
-- Built-in dialogue resources are now split into folderized topic files under `dialogue/<locale>/global`, `groups`, and `professions/<profession>`, with profession files further separated into `lines`, `messages`, `openings`, `closings`, `pacify`, `share_stories`, and baby-specific story folders. Profession story biome dialogue and recruitment-left-behind biome follow-ups are grouped by biome type, such as cold, hot/dry, ocean/river, Nether, and End files.
-
-### Planned Beta.13 Deprecations
-
-- The flat normal dialogue line memory/family/relationship helper fields still load in beta.12 as compatibility inputs, but are planned for beta.13 deprecation in favor of `conditions`. The beta.12 folderized dialogue rewrite does not remove these fields; it makes `conditions` the maintained authoring shape. Affected line fields: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
-- The flat dialogue option family and relationship helper fields still load in beta.12 as compatibility inputs, but are planned for beta.13 deprecation in favor of `conditions`: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, and `requires_known_widowed_partner`.
-
-### Removed
-
-- Removed the Datapack Generator's beta.11 to beta.12 Convert workflow. The site no longer offers automated pack-version migration for this boundary.
-- Removed quest JSON compatibility aliases and advancement-style `criteria` / `requirements` inference. Beta.12 quest files use `display`, plural `offer.professions`, object-shaped `offer.skills`, explicit `objectives`, canonical reward keys, and `repeatable` trigger behavior.
-- Removed beta.11-only quest/action compatibility shapes from the beta.12 quest surface. The maintained action fields are `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker`; documented shorthand such as `xp`, `rep`, `notify`, and inline unique action fields still load where the shared action parser lists them.
-- Removed top-level dialogue metadata aliases from the maintained beta.12 authoring shape. Dialogue and dialogue tree metadata now lives under a nested `metadata` object with `topic`, `tags`, `questline`, `quest`, `stage`, and `notes`.
-- No beta.12 runtime JSON fields, triggers, or placeholders are removed solely because of the folderized dialogue layout.
-
-### Migration Notes
-
-- Treat beta.12 as a manual retargeting release. Keep existing beta.11 datapacks on `1.0.0-beta.11` until you have reviewed their dialogue, forced-dialogue, notification, and skill-trade assumptions against the beta.12 wiki.
-- Do not migrate a beta.11 pack by only changing `villagerretaliation.pack_version` to `1.0.0-beta.12`. That marker selects the editor/runtime target; it does not reorganize dialogue, audit ids, update deprecated helper fields, or validate new beta.12 behavior.
-- New beta.12 dialogue packs should prefer folderized files under `data/villagerretaliation/dialogue/<locale>/global`, `groups`, or `professions/<profession>`, with typed folders such as `options`, `lines`, `messages`, `openings`, `closings`, and `pacify`.
-- Treat `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` as reserved section folder names anywhere below `dialogue/<locale>/`. Use names like `topics`, `groups`, `share_stories`, or `profession_notes` for normal organizational folders.
-- Split large beta.11 dialogue files by ownership and purpose. For example, move farmer replies to `professions/farmer/lines/...json`, shared smithing replies to `groups/smiths/lines/...json`, keyed trade refresh text to `global/messages/...json`, and menu options to `global/options/...json`.
-- Use single-entry files under typed folders when one file represents one option, line group, message, opening, closing, or pacify entry. Keep bundle files only when several entries are easier to review together.
-- Check every intentional override. Minecraft still overrides by exact resource path before Villager Retaliation merges entries, so copying an old built-in monolith path can replace more beta.12 content than intended.
-- If you choose beta.12 in the builder, the pack is now your beta.12 source of truth. The website will not provide a beta.11 rollback or forward migration report.
-- Packs that customize skill trades can make better refresh results available by adding eligible higher-rank entries. A villager cannot refresh into a result item they already offer.
-- Packs that customize skill trades can add `request.targetable: true` to make an entry directly requestable as a Special Order. The queued request stores the trade definition id, so cost, result, enchantment, skill gates, level gates, and config flags remain tied to the original entry.
-- Packs that customize trade-refresh dialogue should override the `trade_refresh.*` dialogue message keys for opening lines and follow-ups, including `trade_refresh.ready_interjection` and `trade_refresh.ready_theft_interjection` for shared ready-request interruptions, and the `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, and `trade_refresh.special_order_confirm_options` forced-dialogue entries for button responses.
-- Keep using `dispositions` for reputation-derived tone filters. Use `mood` / `moods` only for temporary event-driven emotional state.
-- Use `priority` when one matched line should reliably win over another. Use `weight` to tune random odds inside the same priority tier.
-- Use `text_key` for new locale-heavy packs when translators should override message text without copying the full line filters.
-- Migrate flat normal dialogue line helper fields to `conditions` before beta.13 if you want to avoid the beta.13 deprecation path.
-- Prefer `conditions` for new dialogue option family and relationship checks. The flat option helper fields are still accepted for compatibility in beta.12, but are planned for beta.13 deprecation.
-- Prefer canonical field names from [JSON Reference](JSON-Reference.md). Aliases remain compatibility inputs, not the recommended names for new examples.
-- Retarget quest packs by converting old `criteria` / `requirements` blocks into `target` plus explicit `objectives`, replacing singular `profession` with `professions`, moving rewards to `loot_table` / `memory_event`, and using `repeatable: false` instead of `once`.
-- Retarget quest and dialogue-tree actions by using canonical fields: `type`, `quest`, `action`, `amount`, `memory_event`, `loot_table`, `notification`, `text`, `forced_dialogue`, and `flash_tracker`.
-- Retarget dialogue tree story metadata by moving top-level `topic`, `tags`, `questline`, `quest`, `stage`, and `notes` into `metadata`.
-- Use `requires_high_*` when a simple score of 60+ is enough. Use `min_*` and `max_*` score ranges when a line needs exact attribute bands.
-- Packs that customize opening greetings can override `opening.return_after_absence` to control how villagers mention long gaps between visits.
-- Prefer the folderized dialogue layout for new packs: put single-purpose files under typed folders, and use bundle files only when several related entries are easier to maintain together.
-- Existing top-level dialogue bundle files with `options`, `lines`, `messages`, `openings`, `closings`, or `pacify` arrays still load, but the built-in pack no longer uses giant `global.json` or all-in-one profession files as the primary authoring shape.
-
-## 1.0.0-beta.11 - 2026-05-26
-
-Pack-facing beta.11 changes focus on making data-driven behavior easier to extend without full-file copies.
-
-### Added
-
-- Added [Forced Dialogue JSON](Forced-Dialogue.md) under `data/villagerretaliation/forced_dialogue/` for event-driven locked dialogue moments.
-- Added built-in `container_theft` forced dialogue trigger for witnessed chest, barrel, and shulker theft.
-- Added built-in `container_opened` forced dialogue trigger for configs that confront players when they open watched containers.
-- Added forced-dialogue `output` objects with `mode` and optional `radius`, so the event trigger says what happened and the output says how the line is delivered.
-- Added chat output for normal forced-dialogue triggers such as `container_theft`, `container_opened`, `container_broken`, and `retaliation_started` by setting `output.mode` to `chat`.
-- Added non-player target support for `retaliation_started` chat output. When the retaliation target is not a player, the line is broadcast to nearby players instead of opening a player-facing conversation.
-- Added notification trigger `combat.flee_started` for villagers that keep fleeing a hostile instead of standing ground.
-- Added `lines` array support to normal dialogue entries, keyed dialogue messages, conversation openings, conversation closings, pacify lines, and notifications. These entries can still use `text` for a single line.
-- Added forced dialogue entry `chance` so event callouts can be occasional instead of firing every time.
-- Added forced dialogue witness equipment filters `requires_witness_unarmed` / `witness_unarmed` and `requires_witness_armed` / `witness_armed`.
-- Added villager equipment filters `requires_villager_unarmed` / `villager_unarmed` and `requires_villager_armed` / `villager_armed` anywhere a pack rule is evaluated against a villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules.
-- Added forced dialogue entry fields: `trigger`, `event`, `output`, `line`, `lines`, `priority`, `chance`, `witness_radius`, `witness_profession`, `witness_professions`, `requires_witness_unarmed`, `requires_witness_armed`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `force_camera_towards_villager`, `reputation`, `loot_table`, `loot_tables`, `options`, `leave_option`, and `leave_options`.
-- Added forced dialogue option fields: `id`, `label`, `response`, `reputation`, `aggro`, `aggro_chance`, `end_conversation`, `order`, and `take_items`.
-- Added shared reputation condition fields `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation` to dialogue options, dialogue lines, and forced dialogue options.
-- Added normal dialogue option `give_items` hand-ins, with `take_items` and `payment` aliases, so selecting a talk option can remove configured item(s) from the player and store, discard, or drop them.
-- Added normal dialogue hand-in placeholders `{given_count}`, `{given_item}`, `{given_item_id}`, `{given_stack}`, `{given_items}`, `{payment_item}`, `{payment_item_id}`, and `{payment_stack}`.
-- Added forced dialogue `take_items` support for removing a total `count` of matching item ids or tags from the player's inventory, with separate failure response, reputation, end-conversation, and aggro behavior.
-- Added `take_items.destination`, `take_items.overflow_destination`, and `take_items.require_space` so removed items can be discarded, stored in the witnessing villager's inventory, returned to the source container, or dropped at the villager/container.
-- Added forced dialogue `take_stolen_items` / `return_stolen_items` support for removing the specific stacks stolen during `container_theft` and moving them into the villager inventory, source container, or another item destination.
-- Added forced dialogue placeholders: `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{item_id}`, `{item_count}`, `{item_stack}`, `{items}`, `{loot_table}`, `{payment_count}`, `{payment_items}`, `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_items}`, `{x}`, `{y}`, and `{z}`.
-- Added `player_container_theft` village memory tag, `requires_container_theft_to_self`, `requires_container_theft_from_other`, and theft-memory placeholders `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
-- Added `baby_villager_attacked` village memory tag for player attacks against baby villagers.
-- Added forced dialogue editing, import, preview, validation, starter data, and export support to the [Datapack Generator](Datapack-Generator.md), including line variations, witness professions, custom leave options, `take_items`, `take_stolen_items`, item destinations, and reputation-gated option validation.
-- Added `dialogue_option` as the required `options[].type` value and moved the dialogue request into `options[].request` and `lines[].request`.
-- Added a VR version selector to the Datapack Generator. Exported beta.11+ packs write `villagerretaliation.pack_version` in `pack.mcmeta`, and import uses it to restore the matching generator target.
-- Added reload warnings for common dialogue, forced-dialogue, and notification authoring mistakes: content in the wrong system folder, unsupported fields, wrong trigger families, inert player item slot filters, and unknown profession ids.
-- Added more built-in dialogue lines for reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
-- Added built-in profession-group dialogue files for shared multi-profession reactions, while single-profession dialogue lives in the matching `professions/<profession>.json` files.
-- Added built-in `retaliation_started` chat-output combat barks for player targets, raiders, undead, monsters, generic retaliation targets, and unarmed villagers.
-- Added built-in baby-only alert text for baby villagers being hit and for baby villagers witnessing a villager death.
-- Added loot-table-specific built-in forced dialogue scenes for vanilla village profession chests, with profession-specific robbery responses and lower-priority village/general fallbacks.
-- Added documentation for resource-pack language keys used by the interaction GUI, generated family and relationship rows, reputation overlays, villager chat labels, gender labels, mood labels, and fallback profession labels.
-- Added [Localization Guide](Localization.md) to explain how datapack locale folders and resource-pack language files work together.
-- Added namespaced custom profession support for dialogue defaults, dialogue filters, notification filters, gift filters, pacification filters, gift-knowledge keys, and profession display fallbacks.
-- Added [Profession Loot JSON](Profession-Loot.md) rule files under `data/villagerretaliation/profession_loot/`.
-- Added loot-table-backed profession drops through `loot_table` references. Loot tables can live in any namespace.
-- Added top-level `replace` support for dialogue and notification files.
-- Added `id`, `remove`, and top-level `replace` support for gift preferences and gift rewards.
-- Added additive villager name files under `data/villagerretaliation/villager_names/`, plus top-level `replace` support.
-
-### Modified
-
-- The interaction screen now has a locked forced-dialogue mode for event moments. In this mode, normal root actions such as Talk, Trade, Gift, Inventory, Recruit, Family, and Relationships are hidden until the event option resolves.
-- The built-in container forced-dialogue config now defaults to opening generated containers, and the default forced-dialogue pack targets vanilla village chest loot tables for village chest confrontations.
-- The built-in village chest forced-dialogue options now vary by reputation: high-reputation players can receive warnings, mid-reputation players can offer normal payment, and low-reputation players can face higher payment costs or harsher outcomes.
-- Built-in dialogue tone now emphasizes the mod's memory and consequence loop: villagers react to personal reputation, remember harm, gossip about theft, and treat defense as meaningful without instantly erasing past behavior.
-- Built-in dialogue data and wiki examples now use `question` for general Talk menu conversation, with event chat separated into forced-dialogue `output.mode`.
-- Built-in dialogue output entries now use `lines` arrays with at least three variants where possible, so default conversations repeat less often.
-- Profession-filtered keyed messages, openings, and closings now default to adult-only unless `show_for_babies: true` is supplied, so job-site and profession flavor does not appear on baby villagers by accident.
-- Baby villagers can now participate in witnessed-death flee alerts when `retaliation.babyVillagersFleeWitnessedDeaths` is enabled. The built-in data keeps adult and baby alert wording separate with age filters.
-- Hitting a baby villager now records both `player_attacked_villager` and `baby_villager_attacked`, and built-in immediate alert/chat wording uses child-specific lines.
-- Villager profession and gender labels used by the interaction GUI are now documented as localization-friendly client values instead of server-supplied English display strings.
-- Villager dialogue speaker labels are now documented as client-localized GUI text instead of datapack text.
-- Built-in profession loot is now declared through datapack rule files and Minecraft loot tables instead of hardcoded Java pools.
-- Gift files can replace or remove individual rules by stable `id`; same-id later entries replace earlier rules.
-- Villager name files are additive by default instead of requiring packs to copy `preset_names.json` just to append names.
-- The Datapack Generator now imports known Villager Retaliation roots using the same strict folder rules as the game. Files under `dialogue/<locale>/`, `notifications/<locale>/`, and `forced_dialogue/` are imported as that system only.
-- Datapack Generator zip and folder imports now normalize backslash paths and read zip central-directory entries by directory size for more reliable imports across zip tools and folder pickers.
-
-### Deprecated
-
-- Full-file gift and name overrides still work, but individual ids and additive files are preferred for small changes.
-
-### Removed
-
-- Removed `small_talk` as a distinct dialogue request. Use `question` for general player-selected conversation.
-- Removed request values from dialogue `type` fields. Dialogue options must use `type: "dialogue_option"` plus `request`, and dialogue lines must use `request`.
-- Removed `_chat` forced-dialogue triggers. Use the normal event trigger with `output.mode: "chat"`.
-
-### Migration Notes
-
-- Datapacks that already translate dialogue and notifications should keep using `data/villagerretaliation/dialogue/<locale>/` and `data/villagerretaliation/notifications/<locale>/`.
-- Packs that want to translate interaction buttons, generated relationship/family labels, reputation labels, or profession display names should add a resource pack with `assets/villagerretaliation/lang/<locale>.json`.
-- Pack authors can organize single-profession dialogue under `dialogue/<locale>/professions/<profession>.json` or subfolders. Shared multi-profession dialogue can live in any normal dialogue file, such as a `groups/` folder, as long as the entries keep their `professions` filters.
-- Existing unnamespaced vanilla profession filters continue to work. New custom-profession filters should use full ids such as `examplemod:alchemist`.
-- Packs that copied `gifts/default.json` only to remove or change one rule can now add a smaller file with matching `id` or `"remove": true`.
-- Packs that copied `villager_names/preset_names.json` only to add names can now add a separate file under `villager_names/`.
-- Packs that want to change profession drops should add or remove `profession_loot` rules and point them at normal Minecraft loot tables.
-- Packs that want to change the built-in theft confrontation can add an entry under `forced_dialogue/`, or intentionally override `data/villagerretaliation/forced_dialogue/default.json`.
-- Packs that mixed `notifications` or forced-dialogue `entries` into dialogue files should split those sections into `data/villagerretaliation/notifications/<locale>/...json` or `data/villagerretaliation/forced_dialogue/...json`.
-- Forced-dialogue theft confrontations should use `trigger: "container_theft"`. Notification-style trigger names such as `alert.player_container_theft` are not forced-dialogue triggers.
-- Slot-only player item filters should add an actual selector, such as `player_items`, `player_item_tag`, durability bounds, or enchantment filters.
-- Packs that use dialogue option `type` for a request must move that value to `request` and set `type` to `dialogue_option`.
-- Packs that use dialogue line `type` for a request must rename it to `request`.
-- Packs that use `small_talk` must migrate those entries to `question`.
-- Packs that only want an event line in villager chat should keep the normal trigger, such as `container_theft` or `retaliation_started`, and set `output.mode` to `chat`. Add `output.radius` to control the broadcast range.
-- Packs with several identical dialogue, message, opening, closing, pacify, or notification entries can collapse them into one entry with `lines`. To preserve the old overall selection odds, set the new entry's `weight` to the sum of the old entry weights.
-- Packs that intentionally want profession-filtered openings or keyed messages for baby villagers should now set `show_for_babies: true` explicitly.
-
-## 2026-05 Documentation Baseline
-
-This is the first wiki baseline for pack-format tracking. It reflects the current source and built-in data as of May 2026.
-
-### Added
-
-- Added dedicated reference pages for every current dialogue request, event tag, and built-in notification `trigger`.
-- Added expanded examples for current `event_tags` and `player_event_tags` values.
-- Added documentation for current family and relationship dialogue filters:
-  - `requires_known_family`
-  - `requires_known_parent`
-  - `requires_known_sibling`
-  - `requires_known_spouse`
-  - `requires_known_child`
-  - `requires_known_grandparent`
-  - `requires_known_grandchild`
-  - `requires_known_descendant`
-  - `requires_known_aunt_uncle`
-  - `requires_known_cousin`
-  - `requires_known_niece_nephew`
-  - `requires_known_extended_family`
-  - `requires_known_deceased_family`
-  - `requires_known_relationship`
-  - `requires_known_current_relationship`
-  - `requires_known_past_relationship`
-  - `requires_known_crush`
-  - `requires_known_dating_partner`
-  - `requires_known_fiance`
-  - `requires_known_romantic_spouse`
-  - `requires_known_separated_partner`
-  - `requires_known_widowed_partner`
-- Added documentation for family and relationship placeholders used by matching dialogue lines.
-- Added documentation for `player_item_tags` as an accepted player item filter alias.
-
-### Modified
-
-- Event-tag examples now use `Expanded:` instead of `Complex:` so deeper examples read as implementation detail, not difficulty.
-- Pack authors now have per-value reference catalogs instead of long example lists on the main system pages.
-
-### Deprecated
-
-- No pack-facing fields, tags, triggers, or paths are marked deprecated in this baseline.
-- Legacy pacification placeholders `{emerald_cost}` and `{emeralds}` are still supported aliases, but new packs should prefer `{payment_cost}`, `{payment_item}`, and `{payment_items}`.
-
-### Removed
-
-- Nothing recorded in this baseline.
-
-### Migration Notes
-
-- Existing packs do not need changes for this documentation baseline.
-- If a pack uses pacification text, prefer the newer payment placeholder names so the same text works cleanly with non-emerald payment items.
-- If a pack uses event tags, check [Event Tags](Event-Tags.md) for which accepted tags are currently emitted by built-in handlers. `golem_created` and `nearby_hostile_mob` are accepted by the parser but are not currently written by built-in event code.
-
-## Entry Template
-
-Use this structure for future version sections.
-
-````markdown
-## Version X.Y.Z - YYYY-MM-DD
-
-Short summary of pack-facing changes in this release.
-
-### Added
-
-- New field/tag/trigger/path: `example`.
-
-### Modified
-
-- Changed `old_behavior` so it now does `new_behavior`.
-
-### Deprecated
-
-- Deprecated `old_field`. Use `new_field` instead.
-
-### Removed
-
-- Removed `removed_field`.
-
-### Migration Notes
-
-- Replace:
+Instead of stacking many special-purpose booleans, move new work toward:
 
 ```json
 {
-  "old_field": "value"
+  "id": "my_pack.line.family_storm",
+  "request": "question",
+  "conditions": [
+    { "type": "family", "relation": "child" },
+    { "type": "weather", "state": "thunder" }
+  ],
+  "text": "Storm nights are worse when you have children to worry about."
 }
 ```
 
-with:
+### 3. Quests Now Expect Explicit Structure
+
+Preferred beta.12 quest shape:
 
 ```json
 {
-  "new_field": "value"
+  "id": "my_pack:bread_delivery",
+  "display": {
+    "title": "Bread Delivery",
+    "description": "Bring 16 bread to the village stores."
+  },
+  "offer": {
+    "professions": ["minecraft:farmer"]
+  },
+  "objectives": [
+    {
+      "id": "bring_bread",
+      "type": "item_check",
+      "item": "minecraft:bread",
+      "count": 16
+    }
+  ]
 }
 ```
-````
+
+### 4. Skill Trades Can Power Special Orders
+
+Entries can now expose direct requests:
+
+```json
+"request": {
+  "targetable": true,
+  "display_priority": 20,
+  "min_reputation": "respected",
+  "wait_days": 2,
+  "cooldown_days": 3
+}
+```
+
+## Safe Migration Plan
+
+1. Leave the pack on beta.11 while you review it.
+2. Move dialogue into folderized beta.12 paths if the current files are large.
+3. Convert any old quest data to canonical quest files plus dialogue trees.
+4. Replace older helper-heavy logic with `conditions` where practical.
+5. Test each system separately.
+6. Only then change the pack target to beta.12.
+
+## What Did Not Change
+
+These habits are still correct:
+
+- Use stable `id` values.
+- Use exact path overrides only when you really want to replace built-in content.
+- Keep notifications, dialogue, and forced dialogue in their own loaders.
+- Use a resource pack for GUI text and models.
+
+## When In Doubt
+
+Use the beta.12 example pack and builder template as the source of truth for new content. They are easier to trust than trying to "incrementally guess" a beta.11 file into the new surface.

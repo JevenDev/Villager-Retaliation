@@ -1,89 +1,48 @@
-# Localization Guide
+# Localization
 
-Villager Retaliation has two localization layers:
+Villager Retaliation uses two different localization layers.
 
-- **Datapack text** for dialogue, forced dialogue, notifications, ambient world text, and villager name pools.
-- **Resource-pack language keys** for client UI labels, generated GUI rows, reputation overlays, and Minecraft entity names.
+## 1. Datapack Locale Files
 
-Use both layers when translating the whole experience. A datapack can translate villager speech and notification text, but it cannot translate the interaction-screen buttons by itself. A resource pack can translate the GUI, but it cannot replace datapack dialogue pools by itself.
-
-## Datapack Locale Files
-
-Dialogue and notifications are locale-aware datapack systems. The mod loads `en_us` first, then overlays the player's normalized client locale when the server knows it.
+Use datapack locale folders for authored speech and notification text:
 
 ```text
-data/villagerretaliation/dialogue/en_us/my_pack/lines/weather.json
-data/villagerretaliation/dialogue/fr_fr/my_pack/lines/weather.json
+data/my_pack/dialogue/en_us/global/messages/00_weather.json
+data/my_pack/dialogue/fr_fr/global/messages/00_weather.json
 data/villagerretaliation/notifications/en_us/my_pack_notifications.json
 data/villagerretaliation/notifications/fr_fr/my_pack_notifications.json
 ```
 
-Use the same folder shape and the same `id` in the fallback entry and the translated entry. The translated entry replaces the fallback only for players using that locale. In beta.12, folderized dialogue makes this easier to review because translators can work on focused files such as `global/messages/trade_refresh.json`, `professions/farmer/lines/greetings.json`, or `professions/farmer/share_stories/02_share_stories__biomes_cold.json` instead of one giant dialogue bundle.
-
-Typed dialogue folders such as `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` can contain single-entry files. Translators usually only need to mirror files that contain visible text; rule-heavy files can stay in `en_us` if their text is pulled from keyed `messages`.
+Example translated message:
 
 ```json
 {
-  "id": "my_pack.follow_start",
-  "key": "interaction.follow_start",
-  "text": "All right. I will follow you."
+  "id": "my_pack.message.weather",
+  "key": "my_pack.message.weather",
+  "text": "Rain keeps the fields honest."
 }
 ```
 
 ```json
 {
-  "id": "my_pack.follow_start",
-  "key": "interaction.follow_start",
-  "text": "D'accord. Je vais te suivre."
+  "id": "my_pack.message.weather",
+  "key": "my_pack.message.weather",
+  "text": "La pluie garde les champs honnetes."
 }
 ```
 
-Players using `fr_fr` see the French line. Players using any other language keep the `en_us` fallback.
+Use the same `id` so the locale-specific entry replaces the fallback.
 
-For lines with complex filters, keep the filters in a `lines` file and point the spoken text at a keyed message:
+## 2. Resource-Pack Language Files
 
-```json
-{
-  "id": "my_pack.weather_rain_farmer",
-  "request": "question",
-  "option": "my_pack.ask_weather",
-  "weather": "rain",
-  "text_key": "my_pack.weather.rain.farmer"
-}
-```
-
-Then translate only the message entry in each locale:
-
-```json
-{
-  "id": "my_pack.weather_rain_farmer_text",
-  "key": "my_pack.weather.rain.farmer",
-  "lines": [
-    "Good for wheat, bad for boots.",
-    "Rain keeps the fields honest."
-  ]
-}
-```
-
-Forced dialogue files under `data/villagerretaliation/forced_dialogue/` are datapack text too, but they are not locale-folder based. Put forced-dialogue wording directly in the forced-dialogue entry that should be active for that pack.
-
-## Resource-Pack Language Files
-
-Client UI text lives in normal Minecraft language files:
+Use a resource pack for GUI and generated labels:
 
 ```text
 assets/villagerretaliation/lang/en_us.json
 assets/villagerretaliation/lang/fr_fr.json
 ```
 
-Use a resource pack to translate these strings:
-
-- Interaction-screen title, buttons, Esc hints, gift tooltip labels, and info rows.
-- Generated family labels such as father, cousin, spouse, grandparent, and descendant rows.
-- Generated relationship labels, relationship stages, and alive/deceased status text.
-- Reputation overlay labels and reputation tier names.
-- Profile page labels, Social Attribute names/descriptions, rank labels, and mood labels.
-- Villager chat tag text and speaker formatting.
+This is where buttons, profile labels, relationship rows, reputation text, mood names, and profession labels belong.
 
 Example:
 
@@ -91,60 +50,35 @@ Example:
 {
   "villagerretaliation.gui.root.talk": "Parler",
   "villagerretaliation.gui.root.trade": "Commercer",
-  "villagerretaliation.gui.info.gender": "Genre : %s",
-  "villagerretaliation.gui.relationships.active_format": "%s : %s (%s) - affection %s, compatibilite %s",
   "villagerretaliation.reputation.value_format": "Reputation : %s"
 }
 ```
 
-Keep `%s` placeholders in the translated string. You can reorder them if the target language needs a different sentence structure.
+## When To Use `text_key`
 
-## Format Keys
-
-Some resource-pack language keys are format strings. Keep the same number of `%s` placeholders unless the key notes otherwise. Minecraft uses the values passed by the mod at runtime, so removing a required placeholder can hide information, and adding extra placeholders can display incorrectly.
-
-| Key | Arguments |
-| --- | --- |
-| `container.villagerretaliation.villager_inventory` | villager name |
-| `villagerretaliation.reputation.value_format` | reputation value |
-| `villagerretaliation.reputation.tier_value_format` | reputation tier, reputation value |
-| `villagerretaliation.reputation.debug.value_and_level` | reputation value, reputation tier |
-| `villagerretaliation.reputation.debug.health` | current health, max health |
-| `villagerretaliation.reputation.debug.armor` | armor value |
-| `villagerretaliation.gui.info.gender` | localized gender |
-| `villagerretaliation.gui.info.mood` | localized mood |
-| `villagerretaliation.gui.info.reputation` | reputation value |
-| `villagerretaliation.gui.speaker.profession` | localized profession |
-| `villagerretaliation.gui.speaker.named` | localized profession, villager name |
-| `villagerretaliation.gui.chat.speaker_prefix` | speaker label |
-| `villagerretaliation.gui.family.tree_count` | known family count |
-| `villagerretaliation.gui.family.row` | relationship label, member name |
-| `villagerretaliation.gui.family.member.deceased_format` | member name, deceased status |
-| `villagerretaliation.gui.family.great_prefix` | existing ancestor or descendant label |
-| `villagerretaliation.gui.relationships.count` | known relationship count |
-| `villagerretaliation.gui.relationships.active_format` | stage, partner name, status, affection, compatibility |
-| `villagerretaliation.gui.relationships.past_format` | stage, partner name, status |
-| `villagerretaliation.gui.relationships.past_format_reason` | stage, partner name, status, end reason |
-| `villagerretaliation.gui.profile.attribute_row` | localized attribute name, localized rank |
-| `villagerretaliation.gui.profile.tooltip.level` | localized rank |
-| `villagerretaliation.gui.profile.tooltip.score` | score out of 100 |
-
-Configuration screen keys such as `villagerretaliation.configuration.title` and `villagerretaliation.configuration.section.villagerretaliation.common.toml` also use `%s` for the mod or section name.
-
-## Profession Names
-
-The interaction GUI resolves villager profession names through language keys instead of server-side English strings.
-
-Vanilla professions use Minecraft's own keys:
+If several filtered dialogue rules should share one translated line, keep the logic in `lines` and the wording in `messages`:
 
 ```json
 {
-  "entity.minecraft.villager.farmer": "Farmer",
-  "entity.minecraft.villager.librarian": "Librarian"
+  "id": "my_pack.line.weather_rain",
+  "request": "question",
+  "text_key": "my_pack.message.weather"
 }
 ```
 
-Custom professions use the same pattern with the namespace included:
+That lets translators touch one keyed message instead of copying every filter block.
+
+## Profession Names
+
+Vanilla professions use Minecraft's own language keys:
+
+```json
+{
+  "entity.minecraft.villager.farmer": "Farmer"
+}
+```
+
+Custom professions follow the same pattern with namespace and dotted path:
 
 ```json
 {
@@ -152,87 +86,7 @@ Custom professions use the same pattern with the namespace included:
 }
 ```
 
-If a custom profession id uses folders in its path, write those path separators as dots in the language key. For example, `my_mod:jobs/crystal_smith` becomes `entity.minecraft.villager.my_mod.jobs.crystal_smith`.
+## Rule Of Thumb
 
-Villager Retaliation also provides fallback profession labels:
-
-```json
-{
-  "villagerretaliation.gui.profession.child": "Child",
-  "villagerretaliation.gui.profession.unemployed": "Unemployed"
-}
-```
-
-## Gender, Mood, Profile, Family, And Relationships
-
-Villager gender, dialogue disposition labels, and beta.12 temporary mood labels are client-localized:
-
-```json
-{
-  "villagerretaliation.gui.gender.male": "Male",
-  "villagerretaliation.gui.gender.female": "Female",
-  "villagerretaliation.gui.gender.unknown": "Unknown",
-  "villagerretaliation.gui.mood.friendly": "Friendly",
-  "villagerretaliation.gui.mood.hostile": "Hostile",
-  "villagerretaliation.mood.grateful": "Grateful",
-  "villagerretaliation.gui.mood.grateful": "Grateful"
-}
-```
-
-Beta.12 Social Attributes and Profile page labels use these resource-pack keys:
-
-```json
-{
-  "villagerretaliation.profile.attribute.knowledge": "Knowledge",
-  "villagerretaliation.profile.attribute.knowledge.description": "Understanding, memory, and social awareness.",
-  "villagerretaliation.profile.attribute.guts": "Guts",
-  "villagerretaliation.profile.attribute.proficiency": "Proficiency",
-  "villagerretaliation.profile.attribute.kindness": "Kindness",
-  "villagerretaliation.profile.attribute.charm": "Charm",
-  "villagerretaliation.profile.rank.strong": "Strong",
-  "villagerretaliation.gui.root.profile": "Profile",
-  "villagerretaliation.gui.profile.loading": "Loading profile...",
-  "villagerretaliation.gui.profile.attribute_row": "%s: %s",
-  "villagerretaliation.gui.profile.tooltip.score": "Score: %s/100"
-}
-```
-
-Family and relationship rows are assembled from smaller translated parts. This makes generated rows localizable without datapacks having to hardcode every possible family tree.
-
-```json
-{
-  "villagerretaliation.gui.family.row": "%s: %s",
-  "villagerretaliation.gui.family.father": "Father",
-  "villagerretaliation.gui.family.great_prefix": "Great-%s",
-  "villagerretaliation.gui.family.member.deceased_format": "%s (%s)",
-  "villagerretaliation.gui.relationships.status.deceased": "deceased",
-  "villagerretaliation.gui.relationship.stage.married": "Married",
-  "villagerretaliation.gui.relationships.active_format": "%s: %s (%s) - affection %s, compatibility %s"
-}
-```
-
-If a language cannot build ancestor words with a simple prefix such as `Great-%s`, translate `villagerretaliation.gui.family.great_prefix` as the best readable fallback and keep an eye on future releases. This key is intentionally isolated so the format can be improved later without changing datapack text.
-
-## What Not To Translate In Datapacks
-
-Do not translate these in dialogue or notification JSON:
-
-- Interaction buttons such as Talk, Trade, Gift, Recruit, and Goodbye.
-- GUI labels such as Gender, Mood, Reputation, Family Tree, and Relationships.
-- Profile labels, Social Attribute names/descriptions, rank labels, and temporary mood names.
-- Generated family relationship labels.
-- Reputation overlay labels.
-- Vanilla or custom profession display names.
-
-Put those in `assets/villagerretaliation/lang/<locale>.json` or, for vanilla profession names, rely on Minecraft's existing language files.
-
-## Pack Developer Checklist
-
-- Put fallback text in `en_us`.
-- Mirror the `en_us` folder path in each translated locale when replacing dialogue or notification entries.
-- Give every translated dialogue and notification entry a stable `id`.
-- Use the same `id` in translated locale files to replace only that entry.
-- Prefer `text_key` plus keyed `messages` when translators should change wording without copying rule filters.
-- Keep placeholders such as `{villager}`, `{item}`, and `%s` intact.
-- Test once with `en_us` and once with the target language selected in the client.
-- Ship a resource pack alongside your datapack if you translate the interaction GUI or reputation UI.
+- Dialogue, notifications, and authored lines: datapack locale folders
+- UI labels, profile text, family rows, profession names: resource-pack language files

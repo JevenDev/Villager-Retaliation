@@ -1,433 +1,78 @@
 # Example Packs
 
-These examples are intentionally small. Use them as starter files, then add filters and entries as needed.
-
-## Downloadable Templates
-
-The repo includes a folderized beta.12 starter at:
+The repo already includes a full starter datapack you can copy from:
 
 ```text
 example-packs/dialogue-folder-template/
 ```
 
-It contains one focused file per dialogue request under `data/villagerretaliation/dialogue/en_us/example_template/options/` and `lines/`. Each request has one custom option and one matching response with `text: "example"`, plus starter files for messages, openings, closings, pacify lines, profession folders, groups, share-story folders, forced dialogue, notifications, gifts, pacification, names, profession loot, story structures, and story biomes.
+This is the best source of real, current beta.12 examples.
 
-On the Datapack Generator site, the `Preset` button opens a template picker. Choose `Starter Pack` for a small editable beta.12 example, or `Dialogue Folder Template` for the full folder layout, then click `Export` to download it as a datapack zip.
+## What Is In The Template
 
-## Minimal Datapack Layout
+| Area | Example path |
+| --- | --- |
+| Dialogue option | `example-packs/dialogue-folder-template/data/villagerretaliation/dialogue/en_us/example_template/options/00_greeting.json` |
+| Dialogue line | `example-packs/dialogue-folder-template/data/villagerretaliation/dialogue/en_us/example_template/lines/00_greeting.json` |
+| Keyed message | `example-packs/dialogue-folder-template/data/villagerretaliation/dialogue/en_us/example_template/messages/00_example.json` |
+| Forced dialogue | `example-packs/dialogue-folder-template/data/villagerretaliation/forced_dialogue/example_template/00_container_theft.json` |
+| Notification | `example-packs/dialogue-folder-template/data/villagerretaliation/notifications/en_us/example_template/00_ambient.json` |
+| Gifts | `example-packs/dialogue-folder-template/data/villagerretaliation/gifts/example_template/00_gifts.json` |
+| Pacification | `example-packs/dialogue-folder-template/data/villagerretaliation/pacification/example_template/00_payments.json` |
+| Profession loot | `example-packs/dialogue-folder-template/data/villagerretaliation/profession_loot/example_template/00_loot.json` |
+| Villager names | `example-packs/dialogue-folder-template/data/villagerretaliation/villager_names/example_template_names.json` |
+
+## Smallest Copyable Pack
+
+If you want the lightest possible starting point, copy only:
 
 ```text
-VillagerRetaliationExample/
-  pack.mcmeta
-  data/
-    villagerretaliation/
-      dialogue/
-        en_us/
-          examplepack_dialogue.json
-      forced_dialogue/
-        examplepack_events.json
-      notifications/
-        en_us/
-          examplepack_notifications.json
-      gifts/
-        example_gifts.json
-      profession_loot/
-        example_loot.json
-    examplepack/
-      loot_table/
-        villager/profession/alchemist/common.json
-      story_structures/
-        haunted_places.json
-      story_biomes/
-        crystal_biomes.json
+pack.mcmeta
+data/
+  my_pack/
+    dialogue/en_us/my_pack/options/00_rumor.json
+    dialogue/en_us/my_pack/lines/00_rumor.json
 ```
 
-`pack.mcmeta`:
+Example option:
+
+```json
+{
+  "id": "my_pack.option.ask_rumor",
+  "label": "Ask For A Rumor",
+  "request": "story"
+}
+```
+
+Example line:
+
+```json
+{
+  "id": "my_pack.line.rumor",
+  "request": "story",
+  "option": "my_pack.option.ask_rumor",
+  "text": "Roads carry stories faster than traders do."
+}
+```
+
+## When To Copy The Full Template
+
+Copy the whole `dialogue-folder-template` when you want:
+
+- one file per dialogue request
+- a translator-friendly folder layout
+- examples for beta.12 conditions and filters
+- a reference pack that covers almost every authoring surface
+
+## Minimal `pack.mcmeta`
 
 ```json
 {
   "pack": {
     "pack_format": 34,
-    "description": "Villager Retaliation example datapack"
+    "description": "Villager Retaliation example pack"
   }
 }
 ```
 
-## Dialogue Example
-
-```text
-data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
-```
-
-```json
-{
-  "options": [
-    {
-      "id": "examplepack.ask_local_rumors",
-      "label": "Ask Local Rumors",
-      "type": "dialogue_option",
-      "request": "story",
-      "order": 30,
-      "show_for_babies": false
-    }
-  ],
-  "lines": [
-    {
-      "id": "examplepack.rumor.generic",
-      "option": "examplepack.ask_local_rumors",
-      "request": "story",
-      "text": "Roads keep secrets. Villages keep better ones.",
-      "weight": 10
-    },
-    {
-      "id": "examplepack.low_rep_question",
-      "request": "question",
-      "reputation_levels": [
-        "hostile",
-        "despised",
-        "feared"
-      ],
-      "text": "You will find fewer open doors here than you remember.",
-      "weight": 20
-    },
-    {
-      "id": "examplepack.share_story.haunted_keep",
-      "request": "share_story",
-      "option": "adult_share_story",
-      "story_structure": "examplemod:haunted_keep",
-      "text": "{target_article}. If you found it, walk home before dark.",
-      "weight": 30
-    }
-  ],
-  "messages": [
-    {
-      "id": "examplepack.sleep.broken_bed",
-      "key": "sleep.broken_bed",
-      "text": "That bed had a name in this house.",
-      "weight": 15
-    },
-    {
-      "id": "examplepack.gift.librarian.rare_book",
-      "key": "examplepack.gift.librarian.rare_book",
-      "text": "{gift_item}? This belongs near a reading lamp, not forgotten in a chest."
-    }
-  ]
-}
-```
-
-## Event Tag Dialogue Example
-
-Use event tags when a line should only appear after a recent village memory. The full tag list and per-tag dropdown examples are in [Event Tags](Event-Tags.md).
-
-```json
-{
-  "lines": [
-    {
-      "id": "examplepack.raid.aftermath",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid"
-      ],
-      "text": "The banners are gone, but the village still hears them.",
-      "weight": 20
-    },
-    {
-      "id": "examplepack.raid.thanked_player",
-      "request": "village_defense_report",
-      "player_event_tags": [
-        "player_defended_raid"
-      ],
-      "requires_unreported_village_defense": true,
-      "text": "You stood with us when it mattered.",
-      "weight": 30
-    }
-  ]
-}
-```
-
-## Forced Dialogue Example
-
-```text
-data/villagerretaliation/forced_dialogue/examplepack_events.json
-```
-
-```json
-{
-  "entries": [
-    {
-      "id": "examplepack.strict_theft_warning",
-      "trigger": "container_theft",
-      "witness_radius": 10,
-      "requires_line_of_sight": true,
-      "initiate_dialogue": true,
-      "reputation": -6,
-      "line": "Hands off that {container}. I saw what you took.",
-      "options": [
-        {
-          "id": "return_and_apologize",
-          "label": "Apologize",
-          "response": "Then prove it next time before the village has to ask.",
-          "reputation": 2,
-          "aggro": false,
-          "order": 0
-        },
-        {
-          "id": "trusted_warning",
-          "label": "Accept warning",
-          "response": "You have helped us before, so I will treat this as a mistake. Close it.",
-          "reputation_levels": [
-            "trusted",
-            "respected",
-            "revered",
-            "royalty"
-          ],
-          "reputation": 1,
-          "order": 1
-        },
-        {
-          "id": "offer_payment",
-          "label": "Offer payment",
-          "response": "Payment does not make it yours, but it can make things right.",
-          "reputation_levels": [
-            "neutral",
-            "suspicious"
-          ],
-          "take_items": {
-            "items": [
-              "minecraft:emerald"
-            ],
-            "count": 8,
-            "destination": "villager_inventory",
-            "overflow_destination": "drop_at_villager",
-            "failure_response": "Do not offer emeralds you do not have.",
-            "failure_reputation": -2,
-            "failure_end_conversation": false
-          },
-          "reputation": 2,
-          "order": 2
-        },
-        {
-          "id": "talk_back",
-          "label": "Talk back",
-          "response": "Wrong answer.",
-          "reputation_levels": [
-            "hostile",
-            "despised",
-            "feared"
-          ],
-          "reputation": -6,
-          "aggro": true,
-          "order": 3
-        }
-      ]
-    }
-  ]
-}
-```
-
-## Notifications Example
-
-```text
-data/villagerretaliation/notifications/en_us/examplepack_notifications.json
-```
-
-```json
-{
-  "notifications": [
-    {
-      "id": "examplepack.ambient.trusted_farmer",
-      "trigger": "ambient.murmur",
-      "text": "Good harvest follows good neighbors",
-      "world_text_kind": "murmur",
-      "professions": [
-        "farmer"
-      ],
-      "reputation_levels": [
-        "trusted",
-        "respected",
-        "revered",
-        "royalty"
-      ],
-      "color": "#DCEBA6",
-      "weight": 20
-    },
-    {
-      "id": "examplepack.trade.refused.hostile",
-      "trigger": "trade.refused",
-      "text": "Not today",
-      "world_text_kind": "negative",
-      "reputation_levels": [
-        "hostile",
-        "despised",
-        "feared"
-      ],
-      "color": "red"
-    },
-    {
-      "id": "examplepack.combat.player_killed",
-      "trigger": "combat.player_killed",
-      "text": "{player} should have listened",
-      "world_text_kind": "alert",
-      "reputation_levels": [
-        "hostile",
-        "despised",
-        "feared"
-      ],
-      "color": "#FFD166",
-      "weight": 20
-    }
-  ]
-}
-```
-
-## Gifts Example
-
-```text
-data/villagerretaliation/gifts/example_gifts.json
-```
-
-```json
-{
-  "preferences": [
-    {
-      "professions": [
-        "librarian"
-      ],
-      "reaction": "loved",
-      "items": [
-        "minecraft:enchanted_book",
-        "minecraft:name_tag"
-      ],
-      "response_key": "examplepack.gift.librarian.rare_book",
-      "priority": 20
-    },
-    {
-      "reaction": "disliked",
-      "items": [
-        "minecraft:cobweb"
-      ],
-      "reputation_per_item": -1
-    }
-  ],
-  "rewards": [
-    {
-      "professions": [
-        "librarian"
-      ],
-      "reputation_levels": [
-        "revered",
-        "royalty"
-      ],
-      "item": "minecraft:book",
-      "min_count": 2,
-      "max_count": 5,
-      "weight": 10
-    }
-  ]
-}
-```
-
-## Profession Loot Example
-
-```text
-data/villagerretaliation/profession_loot/example_loot.json
-```
-
-```json
-{
-  "tables": [
-    {
-      "id": "examplepack.alchemist.common",
-      "professions": [
-        "examplemod:alchemist"
-      ],
-      "loot_table": "examplepack:villager/profession/alchemist/common",
-      "chance": "always"
-    }
-  ]
-}
-```
-
-```text
-data/examplepack/loot_table/villager/profession/alchemist/common.json
-```
-
-```json
-{
-  "type": "minecraft:entity",
-  "pools": [
-    {
-      "rolls": 1,
-      "bonus_rolls": 0,
-      "entries": [
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:amethyst_shard",
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": {
-                "type": "minecraft:uniform",
-                "min": 1,
-                "max": 3
-              }
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
-
-## Story Structure Example
-
-```text
-data/examplepack/story_structures/haunted_places.json
-```
-
-```json
-{
-  "radius": 128,
-  "entries": [
-    {
-      "structure": "examplemod:haunted_keep",
-      "name": "Haunted Keep"
-    }
-  ]
-}
-```
-
-## Story Biome Example
-
-```text
-data/examplepack/story_biomes/crystal_biomes.json
-```
-
-```json
-{
-  "entries": [
-    {
-      "biome": "examplemod:crystal_marsh",
-      "name": "Crystal Marsh"
-    }
-  ]
-}
-```
-
-## Minimal Resource Pack Layout
-
-```text
-VillagerRetaliationResourceExample/
-  pack.mcmeta
-  assets/
-    minecraft/
-      textures/entity/villager/villager.png
-      textures/entity/wandering_trader.png
-    villagerretaliation/
-      textures/entity/villager/villager.png
-      textures/entity/wandering_trader/wandering_trader.png
-      models/entity/villager/combat_villager.json
-```
-
-Use the built-in `combat_villager.json` as the safest starting point, then change part dimensions or decorative children gradually.
+Add your own `villagerretaliation.pack_version` marker only if your workflow already expects it. The builder will add it automatically on export for supported versions.

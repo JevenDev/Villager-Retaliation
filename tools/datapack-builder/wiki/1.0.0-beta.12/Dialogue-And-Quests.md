@@ -1,131 +1,93 @@
 # Dialogue And Quests
 
-Dialogue and quests use a module-first authoring convention. A module is one quest or story beat whose files share the same relative path across the quest, dialogue-tree, ambient-dialogue, and forced-dialogue roots.
+The cleanest beta.12 quest authoring style is module-based. One quest or story beat gets a matching set of files that share the same relative path.
 
-## Recommended Layout
-
-Use this layout for new quest content:
+## Recommended Module Layout
 
 ```text
 data/<namespace>/quests/<questline>/<quest>.json
 data/<namespace>/dialogue_trees/<locale>/quests/<questline>/<quest>.json
-data/<namespace>/dialogue/<locale>/quests/<questline>/<quest>.json
+data/<namespace>/dialogue/<locale>/quests/<questline>/<quest>/...
 data/<namespace>/forced_dialogue/quests/<questline>/<quest>.json
 ```
 
-Only create the files the module actually needs. A simple quest with one branching scene usually needs the quest file and the dialogue tree. Add ambient dialogue only when the quest contributes reusable talk-menu options, keyed messages, openings, closings, or request lines. Add forced dialogue only when a quest trigger, theft event, retaliation event, or trade-refresh flow needs a locked scene.
+Only create the files the module actually needs.
 
-## What The Path Does
-
-Quest files still use normal quest JSON. If `id` is omitted, the quest id falls back to the file path under `quests/`.
-
-Dialogue tree files under `dialogue_trees/<locale>/quests/` are treated as quest-scoped trees. If the tree has no `id`, the loader drops the leading `quests/` path segment so this tree:
+## Example Module
 
 ```text
-data/example/dialogue_trees/en_us/quests/lost_civilization/tales.json
+data/my_pack/quests/old_roads/road_ledger.json
+data/my_pack/dialogue_trees/en_us/quests/old_roads/road_ledger.json
+data/my_pack/dialogue/en_us/quests/old_roads/road_ledger/messages/00_shared.json
+data/my_pack/forced_dialogue/quests/old_roads/road_ledger.json
 ```
 
-falls back to:
+## What Each File Does
 
-```text
-example:lost_civilization/tales
-```
+| File | Job |
+| --- | --- |
+| Quest JSON | Rules, objectives, rewards, tracker text, triggers |
+| Dialogue tree | The branching offer/reminder/turn-in scene |
+| Normal dialogue | Reusable extra talk, keyed messages, or follow-up flavor |
+| Forced dialogue | Locked quest scenes triggered by events or quest actions |
 
-When a quest-scoped tree has an explicit `id`, that id is also the default quest id for local quest conditions and quest actions. This means local branches can write:
+## Example Ownership Split
 
-```json
-{ "type": "quest", "state": "available" }
-```
-
-and:
-
-```json
-{ "action": "start" }
-```
-
-instead of repeating the same `quest` field in every condition and action.
-
-Quest files also supply their own id as the default quest id inside objectives, active rules, expiration rules, and triggers.
-
-## What Not To Duplicate
-
-Do not repeat quest offer gates in the dialogue tree. `type: "quest", state: "available"` already checks the quest offer rules, including profession, villager level, skill requirements, repeat limits, cooldowns, and completion limits.
-
-For example, prefer:
+Use the quest file for quest state:
 
 ```json
 {
-  "id": "offer",
-  "label": "Lost Civilization",
-  "conditions": [
-    { "type": "quest", "state": "available" }
-  ],
-  "show_for_babies": false,
-  "start": "offer"
+  "id": "my_pack:road_ledger",
+  "questline": "old_roads"
 }
 ```
 
-over repeating the same `offer.professions`, `offer.min_villager_level`, and `offer.skills` gates in both quest JSON and dialogue tree JSON.
-
-## Links And Metadata
-
-`links` and root `metadata` are optional authoring aids. They are useful for documentation, validation, and tools, but they are not required runtime wiring.
-
-Runtime behavior comes from:
-
-- quest definitions under `quests/`
-- dialogue tree entries with quest conditions
-- dialogue tree node or response actions
-- quest trigger actions
-- forced-dialogue entries referenced by actions
-
-Use `links` when you want a quest file to document the dialogue surfaces it owns. Omit it when the mirrored module path is clearer.
-
-## Module Dialogue Files
-
-Ambient dialogue loading is recursive, so a module can keep small local pools beside the quest:
-
-```text
-data/example/dialogue/en_us/quests/lost_civilization/tales.json
-```
-
-That file can bundle sections when they are easier to maintain together:
+Use the dialogue tree for the player-facing scene:
 
 ```json
 {
-  "options": [
+  "entries": [
     {
-      "id": "lost_civilization.ask_ruins",
-      "label": "Ask about the old city",
-      "request": "story"
-    }
-  ],
-  "lines": [
-    {
-      "id": "lost_civilization.ruins_hint",
-      "option": "lost_civilization.ask_ruins",
-      "request": "story",
-      "text": "There are maps that remember roads no one walks anymore."
+      "id": "offer",
+      "label": "Road Ledger",
+      "conditions": [
+        { "type": "quest", "state": "available" }
+      ],
+      "start": "offer"
     }
   ]
 }
 ```
 
-Split a module into typed folders when it grows:
+Use normal dialogue only when the quest also adds reusable talk outside the tree:
 
-```text
-data/example/dialogue/en_us/quests/lost_civilization/tales/options/00_options.json
-data/example/dialogue/en_us/quests/lost_civilization/tales/lines/00_lines.json
+```json
+{
+  "id": "my_pack.message.road_ledger_hint",
+  "key": "my_pack.message.road_ledger_hint",
+  "text": "Paper survives rain worse than stone does."
+}
 ```
 
-## Migration Notes
+## Good Rule
 
-The old separate folders still load. Existing packs do not need to move immediately.
+Do not repeat quest offer requirements in three places.
 
-For new content, use mirrored module paths and omit repeated local quest ids. For old content, migrate one module at a time:
+If the quest file already says the quest is only for farmers, let the dialogue tree use:
 
-1. Move the quest under `quests/<questline>/`.
-2. Move its tree under `dialogue_trees/<locale>/quests/<questline>/`.
-3. Move any quest-triggered forced scenes under `forced_dialogue/quests/<questline>/`.
-4. Remove duplicate quest conditions, duplicate quest action ids, and optional `links` that only restate the path.
-5. Run `node tools/validate-dialogue-data.mjs`.
+```json
+{ "type": "quest", "state": "available" }
+```
+
+instead of duplicating the profession gate again in the tree.
+
+## When To Add Forced Dialogue
+
+Add forced dialogue only when the quest needs:
+
+- a locked event scene
+- an interruption during progress
+- a trigger-based confrontation
+- authored quest chatter outside the Talk menu
+
+If the entire interaction can happen through one tree, keep it in the tree.
