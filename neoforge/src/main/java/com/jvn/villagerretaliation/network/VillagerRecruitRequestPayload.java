@@ -26,7 +26,10 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
     public enum Action {
         HIRE_ONE_DAY,
         HIRE_THREE_DAYS,
+        HIRE_FIVE_DAYS,
         HIRE_SEVEN_DAYS,
+        HIRE_FIFTEEN_DAYS,
+        HIRE_THIRTY_DAYS,
         EXTEND_ONE_DAY,
         EXTEND_THREE_DAYS,
         EXTEND_FIVE_DAYS,

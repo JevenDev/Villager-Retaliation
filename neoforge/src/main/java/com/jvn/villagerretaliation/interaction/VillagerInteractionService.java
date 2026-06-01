@@ -384,7 +384,10 @@ public final class VillagerInteractionService {
         int days = switch (action) {
             case HIRE_ONE_DAY -> 1;
             case HIRE_THREE_DAYS -> 3;
+            case HIRE_FIVE_DAYS -> 5;
             case HIRE_SEVEN_DAYS -> 7;
+            case HIRE_FIFTEEN_DAYS -> 15;
+            case HIRE_THIRTY_DAYS -> 30;
             default -> 0;
         };
         if (days <= 0) {
