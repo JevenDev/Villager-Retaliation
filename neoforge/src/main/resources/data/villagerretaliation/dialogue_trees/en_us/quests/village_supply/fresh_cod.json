@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "Fresh Cod quest offer, reminder, and turn-in scene.",
+    "title": "Fresh Cod"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "Fresh Cod",
+      "order": -13,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About Fresh Cod",
+      "order": -13,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About Fresh Cod",
+      "order": -13,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:fresh_cod",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. Supper forgives delay better than empty plates."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Put Fresh Cod aside for now?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will clear the cod note. Come back if the pot still needs fish."
+            ],
+            "abandoned_cooldown": [
+              "I will pause the cod request for now. Let the kitchen decide its next supper."
+            ],
+            "abandoned_forever": [
+              "Then the cod request is closed for good."
+            ],
+            "unavailable": [
+              "There is no fish order here to put away."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the cod fresh until you are ready."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "Fresh Cod is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "Fresh Cod is complete. The village can use this, and you have earned the reward."
+            ],
+            "inactive": [
+              "The kitchen is not taking cod right now."
+            ],
+            "missing_objectives": [
+              "Fresh Cod is still short. The tracker has the exact count."
+            ],
+            "missing_proof": [
+              "Fresh Cod still needs the cod in your pack before I can close it."
+            ],
+            "missing_target": [
+              "Fresh Cod is not at the right count yet; bring the rest before turning it in."
+            ],
+            "unavailable": [
+              "This cod request is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Then supper remains mostly optimism."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "The pot is ready and the fish are not.",
+        "I dislike that order of events."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I can bring cod",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The supper fish request is quiet for now."
+            ],
+            "reminder": [
+              "Fresh Cod: I still need the cod. Bring the full count back to me."
+            ],
+            "unavailable": [
+              "That fresh cod request is not yours right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "The supper fish is already settled."
+            ],
+            "locate_failed": [
+              "Fresh Cod cannot be posted from here right now."
+            ],
+            "started": [
+              "Fresh Cod is yours now. Bring the cod back when the count is ready."
+            ],
+            "unavailable": [
+              "The kitchen is not asking you for cod right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "If you have the cod, we can settle Fresh Cod."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Keep the cod fresh; supper is less forgiving than paperwork."
+      ]
+    }
+  }
+}

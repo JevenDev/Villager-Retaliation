@@ -1,13 +1,13 @@
 {
   "dialogue": {
     "already_completed": [
-      "Ready the Larder is already settled."
+      "Bread Delivery is already settled."
     ],
     "inactive": [
-      "The conditions for this quest are not right at the moment."
+      "The larder request is not open right now."
     ],
     "locate_failed": [
-      "I cannot post that request right now."
+      "The stores are not ready for another bread request yet."
     ],
     "missing_proof": [
       "Bring the bread before we close this."
@@ -25,14 +25,14 @@
       "Good. A full shelf makes brave talk sound less hollow. Take this with my thanks."
     ],
     "unavailable": [
-      "This request is closed for now."
+      "The bread shelves are closed to new help for now."
     ]
   },
   "display": {
     "description": "Bring bread so the village can stretch its stores through a hard night.",
-    "title": "Ready the Larder"
+    "title": "Bread Delivery"
   },
-  "id": "villagerretaliation:ready_the_larder",
+  "id": "villagerretaliation:bread_delivery",
   "objectives": [
     {
       "count": 16,
@@ -62,7 +62,7 @@
   "rewards": {
     "experience": 60,
     "gossip_reputation": 2,
-    "loot_table": "villagerretaliation:quest/ready_the_larder",
+    "loot_table": "villagerretaliation:quest/bread_delivery",
     "memory_event": "player_completed_quest",
     "reputation": 5
   },
@@ -78,7 +78,7 @@
   },
   "tracker": {
     "metadata": {
-      "source": "Larder Supplies"
+      "source": "Bread Delivery"
     },
     "steps": {
       "proof": {
@@ -92,6 +92,6 @@
         "text": "Return to the quest giver with the bread."
       }
     },
-    "title": "Ready the Larder"
+    "title": "Bread Delivery"
   }
 }

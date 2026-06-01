@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "Wool Blankets quest offer, reminder, and turn-in scene.",
+    "title": "Wool Blankets"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "Wool Blankets",
+      "order": -14,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About Wool Blankets",
+      "order": -14,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About Wool Blankets",
+      "order": -14,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:wool_blankets",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. Clean blankets do more work than they get credit for."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Put Wool Blankets aside for now?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will set the blanket request aside. Return if the beds still run cold."
+            ],
+            "abandoned_cooldown": [
+              "I will pause the wool request for now. Let the sickroom count its stores again."
+            ],
+            "abandoned_forever": [
+              "Then the wool blanket request is closed for good."
+            ],
+            "unavailable": [
+              "There is no blanket request here for me to close."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the wool clean until you are ready."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "Wool Blankets is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "Wool Blankets is complete. The village can use this, and you have earned the reward."
+            ],
+            "inactive": [
+              "The sickroom is not accepting wool right now."
+            ],
+            "missing_objectives": [
+              "Wool Blankets is still short. The tracker has the exact count."
+            ],
+            "missing_proof": [
+              "Wool Blankets still needs the white wool in your pack before I can close it."
+            ],
+            "missing_target": [
+              "Wool Blankets is not at the right count yet; bring the rest before turning it in."
+            ],
+            "unavailable": [
+              "This blanket request is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Then I will keep pretending one blanket can be in two beds."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "We are short on clean bedding.",
+        "No one recovers faster because the blanket is thin."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I can bring wool",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The sickbed wool count is quiet for the moment."
+            ],
+            "reminder": [
+              "Wool Blankets: I still need the white wool. Bring the full count back to me."
+            ],
+            "unavailable": [
+              "That wool blanket request is not in your hands right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "The wool blankets are already settled."
+            ],
+            "locate_failed": [
+              "Wool Blankets cannot be posted from here right now."
+            ],
+            "started": [
+              "Wool Blankets is yours now. Bring the white wool back when the count is ready."
+            ],
+            "unavailable": [
+              "The sickroom is not asking you for wool right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "If you have the white wool, we can settle Wool Blankets."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Keep the wool clean until the beds can be made."
+      ]
+    }
+  }
+}

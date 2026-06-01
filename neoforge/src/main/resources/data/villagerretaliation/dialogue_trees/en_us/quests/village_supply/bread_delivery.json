@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "Bread Delivery quest offer, reminder, and turn-in scene.",
+    "title": "Bread Delivery"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "Bread Delivery",
+      "order": -19,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About Bread Delivery",
+      "order": -19,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About Bread Delivery",
+      "order": -19,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:bread_delivery",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. Keep the loaves in mind; empty shelves get loud by evening."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Put Bread Delivery aside for now?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will clear the bread tally. Come back if the village still needs stocking."
+            ],
+            "abandoned_cooldown": [
+              "I will set the bread count aside for now. Give the stores a little time before asking again."
+            ],
+            "abandoned_forever": [
+              "Then the bread request is closed for good."
+            ],
+            "unavailable": [
+              "There is no bread tally here for me to close."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the bread close until you are ready."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "Bread Delivery is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "Bread Delivery is complete. The village can use this, and you have earned the reward."
+            ],
+            "inactive": [
+              "The larder is not taking bread right now."
+            ],
+            "missing_objectives": [
+              "Bread Delivery is still short. The tracker has the exact count."
+            ],
+            "missing_proof": [
+              "Bread Delivery still needs the bread in your pack before I can close it."
+            ],
+            "missing_target": [
+              "Bread Delivery is not at the right count yet; bring the rest before turning it in."
+            ],
+            "unavailable": [
+              "This bread delivery is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Then I will keep counting crumbs and pretending it is planning."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "The bins are low. Nothing dramatic, which is usually when it becomes dramatic.",
+        "A few good loaves would quiet half the village by sunset."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I can help stock the larder",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The larder request has gone quiet for now."
+            ],
+            "reminder": [
+              "Bread Delivery: I still need the bread. Bring the full count back to me."
+            ],
+            "unavailable": [
+              "That bread delivery is not in your hands right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "The bread shelves are already settled."
+            ],
+            "locate_failed": [
+              "Bread Delivery cannot be posted from here right now."
+            ],
+            "started": [
+              "Bread Delivery is yours now. Bring the bread back when the count is ready."
+            ],
+            "unavailable": [
+              "The larder is not asking you for bread right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "If that pack smells like fresh bread, you may have saved me an argument."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Count the loaves once more, then we can close Bread Delivery properly."
+      ]
+    }
+  }
+}

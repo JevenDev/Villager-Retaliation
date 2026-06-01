@@ -1,13 +1,13 @@
 {
   "dialogue": {
     "already_completed": [
-      "Lanterns for the Long Night is already settled."
+      "Village Lanterns is already settled."
     ],
     "inactive": [
-      "The conditions for this quest are not right at the moment."
+      "The watch is not posting a lantern request right now."
     ],
     "locate_failed": [
-      "I cannot post that request right now."
+      "The watch cannot place another lantern request from here."
     ],
     "missing_proof": [
       "Bring the lanterns before we close this."
@@ -30,9 +30,9 @@
   },
   "display": {
     "description": "Bring lanterns before the watch loses the edges of the village to darkness.",
-    "title": "Lanterns for the Long Night"
+    "title": "Village Lanterns"
   },
-  "id": "villagerretaliation:lanterns_for_the_long_night",
+  "id": "villagerretaliation:village_lanterns",
   "objectives": [
     {
       "count": 6,
@@ -63,7 +63,7 @@
   "rewards": {
     "experience": 100,
     "gossip_reputation": 3,
-    "loot_table": "villagerretaliation:quest/lanterns_for_the_long_night",
+    "loot_table": "villagerretaliation:quest/village_lanterns",
     "memory_event": "player_completed_quest",
     "reputation": 8
   },
@@ -86,7 +86,7 @@
   },
   "tracker": {
     "metadata": {
-      "source": "Long Night Lanterns"
+      "source": "Village Lanterns"
     },
     "steps": {
       "proof": {
@@ -100,6 +100,6 @@
         "text": "Return to the quest giver with the lanterns."
       }
     },
-    "title": "Lanterns for the Long Night"
+    "title": "Village Lanterns"
   }
 }

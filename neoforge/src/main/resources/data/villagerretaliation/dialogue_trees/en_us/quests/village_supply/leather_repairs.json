@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "Leather Repairs quest offer, reminder, and turn-in scene.",
+    "title": "Leather Repairs"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "Leather Repairs",
+      "order": -11,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About Leather Repairs",
+      "order": -11,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About Leather Repairs",
+      "order": -11,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:leather_repairs",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. A torn strap can wait, but it will complain."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Put Leather Repairs aside for now?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will set the leather repairs aside. Return if the straps keep failing."
+            ],
+            "abandoned_cooldown": [
+              "I will pause the leather request for now. Let the repair pile get sorted again."
+            ],
+            "abandoned_forever": [
+              "Then the leather repair request is closed for good."
+            ],
+            "unavailable": [
+              "There is no leather repair note here to close."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the leather ready until you are sure."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "Leather Repairs is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "Leather Repairs is complete. The village can use this, and you have earned the reward."
+            ],
+            "inactive": [
+              "The repair pile is not accepting leather right now."
+            ],
+            "missing_objectives": [
+              "Leather Repairs is still short. The tracker has the exact count."
+            ],
+            "missing_proof": [
+              "Leather Repairs still needs the leather in your pack before I can close it."
+            ],
+            "missing_target": [
+              "Leather Repairs is not at the right count yet; bring the rest before turning it in."
+            ],
+            "unavailable": [
+              "This leather repair is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Then the repair pile continues judging me."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "The repair pile is mostly broken straps.",
+        "That is better than broken backs, but only if we fix it."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I can bring leather",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The strap repair list is quiet for the moment."
+            ],
+            "reminder": [
+              "Leather Repairs: I still need the leather. Bring the full count back to me."
+            ],
+            "unavailable": [
+              "That leather repair request is not yours right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "The leather repairs are already settled."
+            ],
+            "locate_failed": [
+              "Leather Repairs cannot be posted from here right now."
+            ],
+            "started": [
+              "Leather Repairs is yours now. Bring the leather back when the count is ready."
+            ],
+            "unavailable": [
+              "The repair bench is not asking you for leather right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "If you have the leather, we can settle Leather Repairs."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Keep the leather bundled until the straps can be cut."
+      ]
+    }
+  }
+}

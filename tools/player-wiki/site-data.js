@@ -1202,9 +1202,1057 @@ window.VR_WIKI_DATA = {
       }
     },
     {
-      "id": "villagerretaliation:lanterns_for_the_long_night",
-      "slug": "lanterns_for_the_long_night",
-      "title": "Lanterns for the Long Night",
+      "id": "villagerretaliation:watch_arrows",
+      "slug": "watch_arrows",
+      "title": "Watch Arrows",
+      "description": "Bring arrows so the village watch can answer trouble before it reaches the doors.",
+      "questline": "village_defense",
+      "questlineLabel": "Village Defense",
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Fletcher"
+        ],
+        "skills": [
+          {
+            "skill": "Archery",
+            "min": 10,
+            "max": null
+          },
+          {
+            "skill": "Guarding",
+            "min": 6,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "16 Arrow"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 16 arrows for the village watch.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the arrow.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 90,
+        "reputation": 7,
+        "gossipReputation": 4,
+        "lootTable": "villagerretaliation:quest/watch_arrows",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "8-14",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Flint",
+            "count": "4-8",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Feather",
+            "count": "4-8",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "4-7",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "2 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The watch quiver is too light.",
+          "A warning bell is useful, but arrows make trouble reconsider."
+        ],
+        "accept": "I can bring arrows",
+        "decline": "Another time",
+        "started": [
+          "Watch Arrows is yours now. Bring the arrows back when the count is ready."
+        ],
+        "reminder": [
+          "Watch Arrows: I still need the arrows. Bring the full count back to me."
+        ],
+        "completed": [
+          "Watch Arrows is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Watch Arrows is not at the right count yet; bring the rest before turning it in.",
+          "Watch Arrows still needs the arrows in your pack before I can close it.",
+          "Watch Arrows is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:berry_picking",
+      "slug": "berry_picking",
+      "title": "Berry Picking",
+      "description": "Bring sweet berries for quick meals and traveling pouches.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Farmer",
+          "Butcher"
+        ],
+        "skills": [
+          {
+            "skill": "Gathering",
+            "min": 6,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "16 Sweet Berries"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Gather 16 sweet berries for village stores.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the sweet berries.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 50,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/berry_picking",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Cookie",
+            "count": "4-8",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Honey Bottle",
+            "count": "1-2",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The small baskets empty first.",
+          "A few sweet berries would make the next ration day feel less like punishment."
+        ],
+        "accept": "I can fill the berry baskets",
+        "decline": "Another time",
+        "started": [
+          "Berry Picking is yours now. Bring the sweet berries back when the count is ready."
+        ],
+        "reminder": [
+          "Berry Picking: I still need the sweet berries. Bring the full count back to me."
+        ],
+        "completed": [
+          "Berry Picking is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Berry Picking is not at the right count yet; bring the rest before turning it in.",
+          "Berry Picking still needs the sweet berries in your pack before I can close it.",
+          "Berry Picking is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:bread_delivery",
+      "slug": "bread_delivery",
+      "title": "Bread Delivery",
+      "description": "Bring bread so the village can stretch its stores through a hard night.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Farmer"
+        ],
+        "skills": [
+          {
+            "skill": "Farming",
+            "min": 8,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "16 Bread"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 16 bread back to the quest giver.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the bread.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 60,
+        "reputation": 5,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/bread_delivery",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "6-10",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "4-8",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Golden Carrot",
+            "count": "3-6",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Hay Block",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are not consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The bins are low. Nothing dramatic, which is usually when it becomes dramatic.",
+          "A few good loaves would quiet half the village by sunset."
+        ],
+        "accept": "I can help stock the larder",
+        "decline": "Another time",
+        "started": [
+          "Bread Delivery is yours now. Bring the bread back when the count is ready."
+        ],
+        "reminder": [
+          "Bread Delivery: I still need the bread. Bring the full count back to me."
+        ],
+        "completed": [
+          "Bread Delivery is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Bread Delivery is not at the right count yet; bring the rest before turning it in.",
+          "Bread Delivery still needs the bread in your pack before I can close it.",
+          "Bread Delivery is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:clay_repairs",
+      "slug": "clay_repairs",
+      "title": "Clay Repairs",
+      "description": "Bring clay for small repairs around wells, ovens, and cracked walls.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Mason"
+        ],
+        "skills": [
+          {
+            "skill": "Masonry",
+            "min": 8,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "16 Clay Ball"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 16 clay balls for village repairs.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the clay ball.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 65,
+        "reputation": 5,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/clay_repairs",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "6-10",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Brick",
+            "count": "8-16",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Stone Bricks",
+            "count": "8-12",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "3-5",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "Small cracks have started introducing themselves.",
+          "I would rather meet them with clay than with a collapsed oven."
+        ],
+        "accept": "I can bring clay",
+        "decline": "Another time",
+        "started": [
+          "Clay Repairs is yours now. Bring the clay back when the count is ready."
+        ],
+        "reminder": [
+          "Clay Repairs: I still need the clay. Bring the full count back to me."
+        ],
+        "completed": [
+          "Clay Repairs is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Clay Repairs is not at the right count yet; bring the rest before turning it in.",
+          "Clay Repairs still needs the clay in your pack before I can close it.",
+          "Clay Repairs is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:fresh_cod",
+      "slug": "fresh_cod",
+      "title": "Fresh Cod",
+      "description": "Bring cod for a simple village supper.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Fisherman",
+          "Butcher"
+        ],
+        "skills": [
+          {
+            "skill": "Fishing",
+            "min": 6,
+            "max": null
+          },
+          {
+            "skill": "Cooking",
+            "min": 4,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "10 Cod"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 10 cod for supper.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the cod.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 55,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/fresh_cod",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "5-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Bread",
+            "count": "3-6",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Kelp",
+            "count": "8-16",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The pot is ready and the fish are not.",
+          "I dislike that order of events."
+        ],
+        "accept": "I can bring cod",
+        "decline": "Another time",
+        "started": [
+          "Fresh Cod is yours now. Bring the cod back when the count is ready."
+        ],
+        "reminder": [
+          "Fresh Cod: I still need the cod. Bring the full count back to me."
+        ],
+        "completed": [
+          "Fresh Cod is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Fresh Cod is not at the right count yet; bring the rest before turning it in.",
+          "Fresh Cod still needs the cod in your pack before I can close it.",
+          "Fresh Cod is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:ink_supply",
+      "slug": "ink_supply",
+      "title": "Ink Supply",
+      "description": "Bring ink so ledgers, maps, and warning notices remain legible.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Librarian",
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Scholarship",
+            "min": 12,
+            "max": null
+          },
+          {
+            "skill": "Cartography",
+            "min": 8,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "6 Ink Sac"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 6 ink sacs for the ledger.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the ink sac.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 95,
+        "reputation": 7,
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/ink_supply",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "9-14",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Paper",
+            "count": "6-12",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Glow Ink Sac",
+            "count": "1-2",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "4-7",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "2 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The ledger ink is getting thin.",
+          "I dislike guessing whether a line says paid, owed, or run."
+        ],
+        "accept": "I can bring ink",
+        "decline": "Another time",
+        "started": [
+          "Ink Supply is yours now. Bring the ink sacs back when the count is ready."
+        ],
+        "reminder": [
+          "Ink Supply: I still need the ink sacs. Bring the full count back to me."
+        ],
+        "completed": [
+          "Ink Supply is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Ink Supply is not at the right count yet; bring the rest before turning it in.",
+          "Ink Supply still needs the ink sacs in your pack before I can close it.",
+          "Ink Supply is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:kiln_fuel",
+      "slug": "kiln_fuel",
+      "title": "Kiln Fuel",
+      "description": "Bring coal to keep the kiln and forge work moving.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Mason",
+          "Armorer",
+          "Toolsmith",
+          "Weaponsmith"
+        ],
+        "skills": [
+          {
+            "skill": "Mining",
+            "min": 10,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "12 Coal"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 12 coal for the kiln and forge fires.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the coal.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 85,
+        "reputation": 7,
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/kiln_fuel",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "8-13",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Iron Nugget",
+            "count": "8-16",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Copper Ingot",
+            "count": "3-6",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "4-7",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "2 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The firebox is down to crumbs.",
+          "A cold kiln is just an expensive room with opinions."
+        ],
+        "accept": "I can bring coal",
+        "decline": "Another time",
+        "started": [
+          "Kiln Fuel is yours now. Bring the coal back when the count is ready."
+        ],
+        "reminder": [
+          "Kiln Fuel: I still need the coal. Bring the full count back to me."
+        ],
+        "completed": [
+          "Kiln Fuel is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Kiln Fuel is not at the right count yet; bring the rest before turning it in.",
+          "Kiln Fuel still needs the coal in your pack before I can close it.",
+          "Kiln Fuel is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:leather_repairs",
+      "slug": "leather_repairs",
+      "title": "Leather Repairs",
+      "description": "Bring leather for tool loops, armor straps, and pack repairs.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Leatherworker",
+          "Armorer"
+        ],
+        "skills": [
+          {
+            "skill": "Leatherworking",
+            "min": 10,
+            "max": null
+          },
+          {
+            "skill": "Crafting",
+            "min": 6,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "8 Leather"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 8 leather for repair straps.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the leather.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 80,
+        "reputation": 6,
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/leather_repairs",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "7-12",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Rabbit Hide",
+            "count": "2-5",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "String",
+            "count": "6-12",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "4-6",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "2 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The repair pile is mostly broken straps.",
+          "That is better than broken backs, but only if we fix it."
+        ],
+        "accept": "I can bring leather",
+        "decline": "Another time",
+        "started": [
+          "Leather Repairs is yours now. Bring the leather back when the count is ready."
+        ],
+        "reminder": [
+          "Leather Repairs: I still need the leather. Bring the full count back to me."
+        ],
+        "completed": [
+          "Leather Repairs is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Leather Repairs is not at the right count yet; bring the rest before turning it in.",
+          "Leather Repairs still needs the leather in your pack before I can close it.",
+          "Leather Repairs is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:map_paper",
+      "slug": "map_paper",
+      "title": "Map Paper",
+      "description": "Bring paper so village records, maps, and warnings can stay current.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Librarian",
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Scholarship",
+            "min": 6,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "24 Paper"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 24 paper for village notes and maps.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the paper.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 55,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/map_paper",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "5-9",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Book",
+            "count": "1-2",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Map",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "3-5",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "We are writing warnings on the backs of old lists.",
+          "That works until someone mistakes a raid note for a turnip count."
+        ],
+        "accept": "I can bring paper",
+        "decline": "Another time",
+        "started": [
+          "Map Paper is yours now. Bring the paper back when the count is ready."
+        ],
+        "reminder": [
+          "Map Paper: I still need the paper. Bring the full count back to me."
+        ],
+        "completed": [
+          "Map Paper is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Map Paper is not at the right count yet; bring the rest before turning it in.",
+          "Map Paper still needs the paper in your pack before I can close it.",
+          "Map Paper is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:seed_stockpile",
+      "slug": "seed_stockpile",
+      "title": "Seed Stockpile",
+      "description": "Bring seed grain so the village can replant without touching winter stores.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Farmer"
+        ],
+        "skills": [
+          {
+            "skill": "Farming",
+            "min": 5,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "32 Wheat Seeds"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 32 wheat seeds for the reserve.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the wheat seeds.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 45,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/seed_stockpile",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "4-7",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Bone Meal",
+            "count": "8-16",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Wheat",
+            "count": "6-12",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The seed bin is lower than I like.",
+          "If we borrow from the eating grain, spring will arrive with an argument already waiting."
+        ],
+        "accept": "I can bring seed grain",
+        "decline": "Another time",
+        "started": [
+          "Seed Stockpile is yours now. Bring the wheat seeds back when the count is ready."
+        ],
+        "reminder": [
+          "Seed Stockpile: I still need the wheat seeds. Bring the full count back to me."
+        ],
+        "completed": [
+          "Seed Stockpile is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Seed Stockpile is not at the right count yet; bring the rest before turning it in.",
+          "Seed Stockpile still needs the wheat seeds in your pack before I can close it.",
+          "Seed Stockpile is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:village_lanterns",
+      "slug": "village_lanterns",
+      "title": "Village Lanterns",
       "description": "Bring lanterns before the watch loses the edges of the village to darkness.",
       "questline": "village_supply",
       "questlineLabel": "Village Supply",
@@ -1246,7 +2294,7 @@ window.VR_WIKI_DATA = {
         "experience": 100,
         "reputation": 8,
         "gossipReputation": 3,
-        "lootTable": "villagerretaliation:quest/lanterns_for_the_long_night",
+        "lootTable": "villagerretaliation:quest/village_lanterns",
         "loot": [
           {
             "item": "Emerald",
@@ -1290,57 +2338,63 @@ window.VR_WIKI_DATA = {
         "accept": "I will bring lanterns",
         "decline": "Another time",
         "started": [
-          "Bring 6 lanterns soon; this request matters less after a couple of days."
+          "Village Lanterns is yours now. Bring the lanterns back when the count is ready."
         ],
         "reminder": [
-          "Six lanterns, and sooner is better. Darkness will not wait."
+          "Village Lanterns: I still need the lanterns. Bring the full count back to me."
         ],
         "completed": [
-          "That will hold the corners of the village a little brighter. Good work."
+          "Village Lanterns is complete. The village can use this, and you have earned the reward."
         ],
         "missing": [
-          "We still need all 6 lanterns for the watch.",
-          "Bring the lanterns before we close this.",
-          "I need 6 lanterns, not promises shaped like lanterns."
+          "Village Lanterns is not at the right count yet; bring the rest before turning it in.",
+          "Village Lanterns still needs the lanterns in your pack before I can close it.",
+          "Village Lanterns is still short. The tracker has the exact count."
         ]
       }
     },
     {
-      "id": "villagerretaliation:ready_the_larder",
-      "slug": "ready_the_larder",
-      "title": "Ready the Larder",
-      "description": "Bring bread so the village can stretch its stores through a hard night.",
+      "id": "villagerretaliation:wool_blankets",
+      "slug": "wool_blankets",
+      "title": "Wool Blankets",
+      "description": "Bring wool for clean bedding and warm wraps.",
       "questline": "village_supply",
       "questlineLabel": "Village Supply",
       "requirements": {
         "minLevel": "Novice",
         "professions": [
-          "Farmer"
+          "Shepherd",
+          "Cleric"
         ],
         "skills": [
           {
-            "skill": "Farming",
-            "min": 8,
+            "skill": "Animal Handling",
+            "min": 6,
+            "max": null
+          },
+          {
+            "skill": "Medicine",
+            "min": 4,
             "max": null
           }
         ]
       },
       "target": null,
       "objectives": [
-        "16 Bread"
+        "12 White Wool"
       ],
       "steps": [
         {
           "id": "proof",
           "label": "Proof",
-          "text": "Bring 16 bread back to the quest giver.",
+          "text": "Bring 12 white wool for sickbeds.",
           "progress": 0.7,
           "hint": ""
         },
         {
           "id": "return",
           "label": "Return",
-          "text": "Return to the quest giver with the bread.",
+          "text": "Return to the quest giver with the white wool.",
           "progress": 1,
           "hint": ""
         }
@@ -1348,30 +2402,30 @@ window.VR_WIKI_DATA = {
       "rewards": {
         "experience": 60,
         "reputation": 5,
-        "gossipReputation": 2,
-        "lootTable": "villagerretaliation:quest/ready_the_larder",
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/wool_blankets",
         "loot": [
           {
             "item": "Emerald",
-            "count": "6-10",
+            "count": "5-9",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "String",
+            "count": "6-12",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Honey Bottle",
+            "count": "1-2",
             "weight": 1,
             "note": ""
           },
           {
             "item": "Experience Bottle",
-            "count": "4-8",
-            "weight": 2,
-            "note": ""
-          },
-          {
-            "item": "Golden Carrot",
-            "count": "3-6",
-            "weight": 2,
-            "note": ""
-          },
-          {
-            "item": "Hay Block",
-            "count": "2-4",
+            "count": "3-5",
             "weight": 1,
             "note": ""
           }
@@ -1381,29 +2435,29 @@ window.VR_WIKI_DATA = {
         "Repeatable",
         "Can be completed with another valid villager",
         "Locked to the quest giver",
-        "Turn-in items are not consumed on completion",
+        "Turn-in items are consumed on completion",
         "1 day completion cooldown"
       ],
       "dialogue": {
         "offer": [
-          "The bins are low. Nothing dramatic, which is usually when it becomes dramatic.",
-          "A few good loaves would quiet half the village by sunset."
+          "We are short on clean bedding.",
+          "No one recovers faster because the blanket is thin."
         ],
-        "accept": "I can help stock the larder",
+        "accept": "I can bring wool",
         "decline": "Another time",
         "started": [
-          "Bring me 16 bread. Simple work, but it keeps people steady."
+          "Wool Blankets is yours now. Bring the white wool back when the count is ready."
         ],
         "reminder": [
-          "Sixteen bread, if you can spare it. No heroics today, just weight on the shelf."
+          "Wool Blankets: I still need the white wool. Bring the full count back to me."
         ],
         "completed": [
-          "Good. A full shelf makes brave talk sound less hollow. Take this with my thanks."
+          "Wool Blankets is complete. The village can use this, and you have earned the reward."
         ],
         "missing": [
-          "We still need all 16 bread for the stores.",
-          "Bring the bread before we close this.",
-          "I still count fewer than 16 bread. Close, maybe, but hungry math is strict."
+          "Wool Blankets is not at the right count yet; bring the rest before turning it in.",
+          "Wool Blankets still needs the white wool in your pack before I can close it.",
+          "Wool Blankets is still short. The tracker has the exact count."
         ]
       }
     }
@@ -4732,11 +5786,11 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 25876,
+    "dialogueLinesEstimate": 25966,
     "dialogueLineBreakdown": {
       "dialogue": 25550,
       "forcedDialogue": 220,
-      "dialogueTrees": 106
+      "dialogueTrees": 196
     }
   }
 };

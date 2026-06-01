@@ -1,7 +1,7 @@
 {
   "display": {
-    "description": "Lanterns for the Long Night quest offer, reminder, and turn-in scene.",
-    "title": "Lanterns for the Long Night"
+    "description": "Ink Supply quest offer, reminder, and turn-in scene.",
+    "title": "Ink Supply"
   },
   "entries": [
     {
@@ -12,8 +12,8 @@
         }
       ],
       "id": "offer",
-      "label": "Long Night Lanterns",
-      "order": -18,
+      "label": "Ink Supply",
+      "order": -9,
       "request": "question",
       "show_for_babies": false,
       "start": "offer"
@@ -26,8 +26,8 @@
         }
       ],
       "id": "reminder",
-      "label": "About Lanterns for the Long Night",
-      "order": -18,
+      "label": "About Ink Supply",
+      "order": -9,
       "request": "question",
       "show_for_babies": false,
       "start": "active_menu"
@@ -40,24 +40,24 @@
         }
       ],
       "id": "turn_in",
-      "label": "About Lanterns for the Long Night",
-      "order": -18,
+      "label": "About Ink Supply",
+      "order": -9,
       "request": "question",
       "show_for_babies": false,
       "start": "turn_in"
     }
   ],
-  "id": "villagerretaliation:lanterns_for_the_long_night",
+  "id": "villagerretaliation:ink_supply",
   "nodes": {
     "abandon_cancel": {
       "end": true,
       "lines": [
-        "Good. Some work only looks lighter after you pick it back up."
+        "Good. Faded records can wait, but only briefly."
       ]
     },
     "abandon_confirm": {
       "lines": [
-        "Are you sure you want me to put this quest aside?"
+        "Put Ink Supply aside for now?"
       ],
       "responses": [
         {
@@ -78,16 +78,16 @@
           "action": "abandon",
           "lines": {
             "abandoned": [
-              "Then I will set this aside. Come back if the work still matters."
+              "I will set the ink request aside. Return if the ledger starts fading again."
             ],
             "abandoned_cooldown": [
-              "Then I will set this aside for a while. Let the trail cool before asking again."
+              "I will pause the ink request for now. Let the desk sort its records first."
             ],
             "abandoned_forever": [
-              "Then this matter is closed. I will not reopen it."
+              "Then the ink supply request is closed for good."
             ],
             "unavailable": [
-              "There is no active trail here for me to fold away."
+              "There is no ink note here to put away."
             ]
           },
           "type": "quest"
@@ -98,12 +98,12 @@
     "active_cancel": {
       "end": true,
       "lines": [
-        "Then keep the work close until you are ready."
+        "Then keep the ink sealed until you are ready."
       ]
     },
     "active_menu": {
       "lines": [
-        "Lanterns for the Long Night is still open. I can repeat the details, or close my notes if you are done."
+        "Ink Supply is still open. I can repeat the details, or close my notes if you are done."
       ],
       "responses": [
         {
@@ -132,22 +132,22 @@
           "action": "turn_in",
           "lines": {
             "completed": [
-              "That will hold the corners of the village a little brighter. Good work."
+              "Ink Supply is complete. The village can use this, and you have earned the reward."
             ],
             "inactive": [
-              "The conditions for this quest are not right at the moment."
+              "The ledger desk is not accepting ink right now."
             ],
             "missing_objectives": [
-              "I need 6 lanterns, not promises shaped like lanterns."
+              "Ink Supply is still short. The tracker has the exact count."
             ],
             "missing_proof": [
-              "Bring the lanterns before we close this."
+              "Ink Supply still needs the ink sacs in your pack before I can close it."
             ],
             "missing_target": [
-              "We still need all 6 lanterns for the watch."
+              "Ink Supply is not at the right count yet; bring the rest before turning it in."
             ],
             "unavailable": [
-              "This quest is not ready to close yet."
+              "This ink supply request is not ready to close yet."
             ]
           },
           "type": "quest"
@@ -158,18 +158,18 @@
     "decline": {
       "end": true,
       "lines": [
-        "Then we keep the old ones burning and hope they do not blink first."
+        "Then the ledger remains a work of interpretive art."
       ]
     },
     "offer": {
       "lines": [
-        "The watch posts need light, not speeches. Six lanterns would do more than ten warnings.",
-        "Night has been leaning too close to the doors. We need more lanterns before habit becomes fear."
+        "The ledger ink is getting thin.",
+        "I dislike guessing whether a line says paid, owed, or run."
       ],
       "responses": [
         {
           "id": "accept",
-          "label": "I will bring lanterns",
+          "label": "I can bring ink",
           "next": "start_quest"
         },
         {
@@ -185,13 +185,13 @@
           "action": "remind",
           "lines": {
             "inactive": [
-              "The conditions for this quest are not right at the moment."
+              "The ledger ink count is quiet for the moment."
             ],
             "reminder": [
-              "Six lanterns, and sooner is better. Darkness will not wait."
+              "Ink Supply: I still need the ink sacs. Bring the full count back to me."
             ],
             "unavailable": [
-              "That quest is not in your hands right now."
+              "That ink supply request is not yours right now."
             ]
           },
           "type": "quest"
@@ -205,16 +205,16 @@
           "action": "start",
           "lines": {
             "already_completed": [
-              "Lanterns for the Long Night is already settled."
+              "The ink supply is already settled."
             ],
             "locate_failed": [
-              "I cannot post that request right now."
+              "Ink Supply cannot be posted from here right now."
             ],
             "started": [
-              "Bring 6 lanterns soon; this request matters less after a couple of days."
+              "Ink Supply is yours now. Bring the ink sacs back when the count is ready."
             ],
             "unavailable": [
-              "The watch is not ready to post that request right now."
+              "The ledger desk is not asking you for ink right now."
             ]
           },
           "type": "quest"
@@ -224,7 +224,7 @@
     },
     "turn_in": {
       "lines": [
-        "Tell me those are lanterns and not another clever excuse."
+        "If you have the ink sac, we can settle Ink Supply."
       ],
       "responses": [
         {
@@ -250,7 +250,7 @@
     "turn_in_wait": {
       "end": true,
       "lines": [
-        "Then hold onto it until you are ready to settle the matter."
+        "Keep the ink sealed until the ledger desk can take it."
       ]
     }
   }

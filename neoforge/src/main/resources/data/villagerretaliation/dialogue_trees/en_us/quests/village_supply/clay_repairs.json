@@ -1,7 +1,7 @@
 {
   "display": {
-    "description": "Ready the Larder quest offer, reminder, and turn-in scene.",
-    "title": "Ready the Larder"
+    "description": "Clay Repairs quest offer, reminder, and turn-in scene.",
+    "title": "Clay Repairs"
   },
   "entries": [
     {
@@ -12,8 +12,8 @@
         }
       ],
       "id": "offer",
-      "label": "Larder Supplies",
-      "order": -19,
+      "label": "Clay Repairs",
+      "order": -15,
       "request": "question",
       "show_for_babies": false,
       "start": "offer"
@@ -26,8 +26,8 @@
         }
       ],
       "id": "reminder",
-      "label": "About Ready the Larder",
-      "order": -19,
+      "label": "About Clay Repairs",
+      "order": -15,
       "request": "question",
       "show_for_babies": false,
       "start": "active_menu"
@@ -40,24 +40,24 @@
         }
       ],
       "id": "turn_in",
-      "label": "About Ready the Larder",
-      "order": -19,
+      "label": "About Clay Repairs",
+      "order": -15,
       "request": "question",
       "show_for_babies": false,
       "start": "turn_in"
     }
   ],
-  "id": "villagerretaliation:ready_the_larder",
+  "id": "villagerretaliation:clay_repairs",
   "nodes": {
     "abandon_cancel": {
       "end": true,
       "lines": [
-        "Good. Some work only looks lighter after you pick it back up."
+        "Good. Small cracks are easier to face before they grow teeth."
       ]
     },
     "abandon_confirm": {
       "lines": [
-        "Are you sure you want me to put this quest aside?"
+        "Put Clay Repairs aside for now?"
       ],
       "responses": [
         {
@@ -78,16 +78,16 @@
           "action": "abandon",
           "lines": {
             "abandoned": [
-              "Then I will set this aside. Come back if the work still matters."
+              "I will set the clay work aside. Come back if the cracks keep spreading."
             ],
             "abandoned_cooldown": [
-              "Then I will set this aside for a while. Let the trail cool before asking again."
+              "I will pause the clay repair note for now. Give the mason time to reset the list."
             ],
             "abandoned_forever": [
-              "Then this matter is closed. I will not reopen it."
+              "Then the clay repair request is closed for good."
             ],
             "unavailable": [
-              "There is no active trail here for me to fold away."
+              "There is no clay repair note here to put away."
             ]
           },
           "type": "quest"
@@ -98,12 +98,12 @@
     "active_cancel": {
       "end": true,
       "lines": [
-        "Then keep the work close until you are ready."
+        "Then keep the clay damp until you are ready."
       ]
     },
     "active_menu": {
       "lines": [
-        "Ready the Larder is still open. I can repeat the details, or close my notes if you are done."
+        "Clay Repairs is still open. I can repeat the details, or close my notes if you are done."
       ],
       "responses": [
         {
@@ -132,22 +132,22 @@
           "action": "turn_in",
           "lines": {
             "completed": [
-              "Good. A full shelf makes brave talk sound less hollow. Take this with my thanks."
+              "Clay Repairs is complete. The village can use this, and you have earned the reward."
             ],
             "inactive": [
-              "The conditions for this quest are not right at the moment."
+              "The repair bench is not accepting clay right now."
             ],
             "missing_objectives": [
-              "I still count fewer than 16 bread. Close, maybe, but hungry math is strict."
+              "Clay Repairs is still short. The tracker has the exact count."
             ],
             "missing_proof": [
-              "Bring the bread before we close this."
+              "Clay Repairs still needs the clay in your pack before I can close it."
             ],
             "missing_target": [
-              "We still need all 16 bread for the stores."
+              "Clay Repairs is not at the right count yet; bring the rest before turning it in."
             ],
             "unavailable": [
-              "This quest is not ready to close yet."
+              "This clay repair is not ready to close yet."
             ]
           },
           "type": "quest"
@@ -158,18 +158,18 @@
     "decline": {
       "end": true,
       "lines": [
-        "Then I will keep counting crumbs and pretending it is planning."
+        "Then I will continue glaring at the cracks. It helps less than clay."
       ]
     },
     "offer": {
       "lines": [
-        "The bins are low. Nothing dramatic, which is usually when it becomes dramatic.",
-        "A few good loaves would quiet half the village by sunset."
+        "Small cracks have started introducing themselves.",
+        "I would rather meet them with clay than with a collapsed oven."
       ],
       "responses": [
         {
           "id": "accept",
-          "label": "I can help stock the larder",
+          "label": "I can bring clay",
           "next": "start_quest"
         },
         {
@@ -185,13 +185,13 @@
           "action": "remind",
           "lines": {
             "inactive": [
-              "The conditions for this quest are not right at the moment."
+              "The clay repair list is quiet for the moment."
             ],
             "reminder": [
-              "Sixteen bread, if you can spare it. No heroics today, just weight on the shelf."
+              "Clay Repairs: I still need the clay. Bring the full count back to me."
             ],
             "unavailable": [
-              "That quest is not in your hands right now."
+              "That clay repair request is not yours right now."
             ]
           },
           "type": "quest"
@@ -205,16 +205,16 @@
           "action": "start",
           "lines": {
             "already_completed": [
-              "Ready the Larder is already settled."
+              "The clay repairs are already settled."
             ],
             "locate_failed": [
-              "I cannot post that request right now."
+              "Clay Repairs cannot be posted from here right now."
             ],
             "started": [
-              "Bring me 16 bread. Simple work, but it keeps people steady."
+              "Clay Repairs is yours now. Bring the clay back when the count is ready."
             ],
             "unavailable": [
-              "This request is closed for now."
+              "The mason has no clay work for you right now."
             ]
           },
           "type": "quest"
@@ -224,7 +224,7 @@
     },
     "turn_in": {
       "lines": [
-        "If that pack smells like fresh bread, you may have saved me an argument."
+        "If you have the clay ball, we can settle Clay Repairs."
       ],
       "responses": [
         {
@@ -250,7 +250,7 @@
     "turn_in_wait": {
       "end": true,
       "lines": [
-        "Then hold onto it until you are ready to settle the matter."
+        "Keep the clay workable until the repair bench is ready."
       ]
     }
   }

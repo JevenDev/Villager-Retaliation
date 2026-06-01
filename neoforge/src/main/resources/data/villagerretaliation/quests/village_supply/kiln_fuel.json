@@ -1,0 +1,100 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Kiln Fuel is already settled."
+    ],
+    "inactive": [
+      "The kiln is not taking fuel right now."
+    ],
+    "locate_failed": [
+      "The firebox list is not ready for another coal request."
+    ],
+    "missing_proof": [
+      "Bring the coal before I stoke the firebox."
+    ],
+    "missing_target": [
+      "The firebox still needs 12 coal."
+    ],
+    "reminder": [
+      "Twelve coal for the firebox. The work stops quickly when the heat does."
+    ],
+    "start": [
+      "Bring 12 coal. The kiln is hungry, and hungry kilns become cold workshops."
+    ],
+    "turn_in": [
+      "Good fuel. We can make useful things instead of excuses."
+    ],
+    "unavailable": [
+      "The kiln fuel request is closed for now."
+    ]
+  },
+  "display": {
+    "description": "Bring coal to keep the kiln and forge work moving.",
+    "title": "Kiln Fuel"
+  },
+  "id": "villagerretaliation:kiln_fuel",
+  "objectives": [
+    {
+      "count": 12,
+      "id": "bring_coal",
+      "item": "minecraft:coal",
+      "tracker": {
+        "complete_text": "The coal is stacked by the firebox.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 12 coal for the kiln and forge fires."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "apprentice",
+    "professions": [
+      "minecraft:mason",
+      "minecraft:armorer",
+      "minecraft:toolsmith",
+      "minecraft:weaponsmith"
+    ],
+    "skills": {
+      "mining": {
+        "min": 10
+      }
+    }
+  },
+  "questline": "village_supply",
+  "rewards": {
+    "experience": 85,
+    "gossip_reputation": 3,
+    "loot_table": "villagerretaliation:quest/kiln_fuel",
+    "memory_event": "player_completed_quest",
+    "reputation": 7
+  },
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 2,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Kiln Fuel"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 12 coal for the kiln and forge fires."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the coal."
+      }
+    },
+    "title": "Kiln Fuel"
+  }
+}

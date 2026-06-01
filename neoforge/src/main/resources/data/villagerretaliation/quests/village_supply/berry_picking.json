@@ -1,0 +1,98 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Berry Picking is already settled."
+    ],
+    "inactive": [
+      "The berry baskets are not being counted right now."
+    ],
+    "locate_failed": [
+      "No one has set out the berry baskets yet."
+    ],
+    "missing_proof": [
+      "Bring the sweet berries before I call the baskets full."
+    ],
+    "missing_target": [
+      "The baskets still need 16 sweet berries."
+    ],
+    "reminder": [
+      "Sixteen sweet berries for the stores. Mind the thorns; they are very committed."
+    ],
+    "start": [
+      "Bring 16 sweet berries. Easy to bruise, easier to miss when they are gone."
+    ],
+    "turn_in": [
+      "Fresh enough. The children will call it dessert, and I will let them."
+    ],
+    "unavailable": [
+      "The berry request is closed for now."
+    ]
+  },
+  "display": {
+    "description": "Bring sweet berries for quick meals and traveling pouches.",
+    "title": "Berry Picking"
+  },
+  "id": "villagerretaliation:berry_picking",
+  "objectives": [
+    {
+      "count": 16,
+      "id": "bring_berries",
+      "item": "minecraft:sweet_berries",
+      "tracker": {
+        "complete_text": "The berry baskets are full.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Gather 16 sweet berries for village stores."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:farmer",
+      "minecraft:butcher"
+    ],
+    "skills": {
+      "gathering": {
+        "min": 6
+      }
+    }
+  },
+  "questline": "village_supply",
+  "rewards": {
+    "experience": 50,
+    "gossip_reputation": 2,
+    "loot_table": "villagerretaliation:quest/berry_picking",
+    "memory_event": "player_completed_quest",
+    "reputation": 4
+  },
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Berry Picking"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Gather 16 sweet berries for village stores."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the sweet berries."
+      }
+    },
+    "title": "Berry Picking"
+  }
+}

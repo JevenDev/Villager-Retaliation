@@ -1,0 +1,97 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Clay Repairs is already settled."
+    ],
+    "inactive": [
+      "The repair bench is not taking clay right now."
+    ],
+    "locate_failed": [
+      "No repair list is ready for a clay request yet."
+    ],
+    "missing_proof": [
+      "Bring the clay before I mix the patchwork."
+    ],
+    "missing_target": [
+      "The repair bench still needs 16 clay balls."
+    ],
+    "reminder": [
+      "Sixteen clay balls. Damp is fine; mud with ambition is still useful."
+    ],
+    "start": [
+      "Bring 16 clay balls. I can patch three problems before they become one expensive one."
+    ],
+    "turn_in": [
+      "That will patch the little cracks before they learn confidence."
+    ],
+    "unavailable": [
+      "The clay repair request is closed for now."
+    ]
+  },
+  "display": {
+    "description": "Bring clay for small repairs around wells, ovens, and cracked walls.",
+    "title": "Clay Repairs"
+  },
+  "id": "villagerretaliation:clay_repairs",
+  "objectives": [
+    {
+      "count": 16,
+      "id": "bring_clay",
+      "item": "minecraft:clay_ball",
+      "tracker": {
+        "complete_text": "The clay is ready for patching.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 16 clay balls for village repairs."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:mason"
+    ],
+    "skills": {
+      "masonry": {
+        "min": 8
+      }
+    }
+  },
+  "questline": "village_supply",
+  "rewards": {
+    "experience": 65,
+    "gossip_reputation": 2,
+    "loot_table": "villagerretaliation:quest/clay_repairs",
+    "memory_event": "player_completed_quest",
+    "reputation": 5
+  },
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Clay Repairs"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 16 clay balls for village repairs."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the clay ball."
+      }
+    },
+    "title": "Clay Repairs"
+  }
+}

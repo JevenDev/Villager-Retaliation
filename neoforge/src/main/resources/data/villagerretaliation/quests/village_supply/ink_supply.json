@@ -1,0 +1,101 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Ink Supply is already settled."
+    ],
+    "inactive": [
+      "The ledger desk is not taking ink right now."
+    ],
+    "locate_failed": [
+      "No ledger note is ready for an ink request yet."
+    ],
+    "missing_proof": [
+      "Bring the ink sacs before I refill the desk."
+    ],
+    "missing_target": [
+      "The ledger still needs 6 ink sacs."
+    ],
+    "reminder": [
+      "Six ink sacs for the ledger. The village prefers its debts and warnings visible."
+    ],
+    "start": [
+      "Bring 6 ink sacs. A ledger written in faded gray is just a future argument."
+    ],
+    "turn_in": [
+      "Dark ink. Excellent. Now our mistakes can be preserved properly."
+    ],
+    "unavailable": [
+      "The ink request is closed for now."
+    ]
+  },
+  "display": {
+    "description": "Bring ink so ledgers, maps, and warning notices remain legible.",
+    "title": "Ink Supply"
+  },
+  "id": "villagerretaliation:ink_supply",
+  "objectives": [
+    {
+      "count": 6,
+      "id": "bring_ink",
+      "item": "minecraft:ink_sac",
+      "tracker": {
+        "complete_text": "The ink is ready for the desk.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 6 ink sacs for the ledger."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "apprentice",
+    "professions": [
+      "minecraft:librarian",
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "scholarship": {
+        "min": 12
+      },
+      "cartography": {
+        "min": 8
+      }
+    }
+  },
+  "questline": "village_supply",
+  "rewards": {
+    "experience": 95,
+    "gossip_reputation": 3,
+    "loot_table": "villagerretaliation:quest/ink_supply",
+    "memory_event": "player_completed_quest",
+    "reputation": 7
+  },
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 2,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Ink Supply"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 6 ink sacs for the ledger."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the ink sac."
+      }
+    },
+    "title": "Ink Supply"
+  }
+}

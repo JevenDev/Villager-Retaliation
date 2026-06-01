@@ -361,6 +361,12 @@ code {
   color: #ffffff;
 }
 
+.topbar-link-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--line);
+}
+
 .page-crumb {
   min-width: 0;
   display: flex;
@@ -1754,7 +1760,9 @@ blockquote p {
     font-size: 15.5px;
   }
 
-  .topbar-links a:nth-child(2) {
+  .topbar-links a:nth-of-type(2),
+  .topbar-links .topbar-link-divider,
+  .topbar-links a:nth-of-type(4) {
     display: none;
   }
 
