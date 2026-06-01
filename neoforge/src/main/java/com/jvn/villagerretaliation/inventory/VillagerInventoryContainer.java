@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -487,27 +488,108 @@ final class VillagerInventoryContainer implements Container {
 
     private void setEquipment(EquipmentSlot slot, ItemStack stack) {
         ItemStack previous = this.villager.getItemBySlot(slot);
-        if (isArmorEquipmentSlot(slot)
-                && !previous.isEmpty()
-                && !stack.isEmpty()
-                && !sameStack(previous, stack)
-                && !storeDisplacedArmor(previous)) {
+        if (shouldStoreDisplacedEquipment(slot, previous, stack)
+                && !storeDisplacedEquipment(previous)) {
             return;
         }
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, slot, stack);
         setChanged();
     }
 
-    private boolean storeDisplacedArmor(ItemStack stack) {
-        ItemStack remainder = addItem(this.villager, stack.copy());
+    private boolean shouldStoreDisplacedEquipment(EquipmentSlot slot, ItemStack previous, ItemStack stack) {
+        return isPersonalEquipmentSlot(slot)
+                && !previous.isEmpty()
+                && !stack.isEmpty()
+                && !sameStack(previous, stack)
+                && (slot != EquipmentSlot.MAINHAND || canAccessMainHand(this.villager));
+    }
+
+    private boolean storeDisplacedEquipment(ItemStack stack) {
+        ItemStack remainder = stack.copy();
+        NonNullList<ItemStack> updatedInventory = copyInventory(this.inventory);
+        mergeIntoExistingStacks(updatedInventory, remainder);
+        fillEmptySlots(updatedInventory, remainder);
         if (!remainder.isEmpty()) {
+            if (!canAssignedStorageAccept(remainder)) {
+                return false;
+            }
             remainder = AssignedStorageService.depositStack(this.villager, remainder);
+        }
+        if (remainder.isEmpty()) {
+            for (int slot = 0; slot < this.inventory.size(); slot++) {
+                this.inventory.set(slot, updatedInventory.get(slot));
+            }
         }
         return remainder.isEmpty();
     }
 
-    private static boolean isArmorEquipmentSlot(EquipmentSlot slot) {
-        return slot == EquipmentSlot.HEAD
+    private boolean canAssignedStorageAccept(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return true;
+        }
+        if (!(this.villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+
+        ItemStack remainder = stack.copy();
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate
+                : AssignedStorageService.liveContainerCandidates(level, this.villager)) {
+            remainder = simulateInsertIntoContainer(candidate.container(), remainder);
+            if (remainder.isEmpty()) {
+                return true;
+            }
+        }
+        return remainder.isEmpty();
+    }
+
+    private static ItemStack simulateInsertIntoContainer(Container container, ItemStack stack) {
+        ItemStack remainder = stack.copy();
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            if (remainder.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+
+            ItemStack existing = container.getItem(slot);
+            if (existing.isEmpty()
+                    || !ItemStack.isSameItemSameComponents(existing, remainder)
+                    || !container.canPlaceItem(slot, remainder)) {
+                continue;
+            }
+
+            int maxStackSize = Math.min(existing.getMaxStackSize(), container.getMaxStackSize());
+            int moveCount = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
+            if (moveCount > 0) {
+                remainder.shrink(moveCount);
+            }
+        }
+
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            if (remainder.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+            if (!container.getItem(slot).isEmpty() || !container.canPlaceItem(slot, remainder)) {
+                continue;
+            }
+
+            int moveCount = Math.min(remainder.getCount(),
+                    Math.min(remainder.getMaxStackSize(), container.getMaxStackSize()));
+            remainder.shrink(moveCount);
+        }
+        return remainder;
+    }
+
+    private static NonNullList<ItemStack> copyInventory(NonNullList<ItemStack> inventory) {
+        NonNullList<ItemStack> copy = NonNullList.withSize(inventory.size(), ItemStack.EMPTY);
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            copy.set(slot, inventory.get(slot).copy());
+        }
+        return copy;
+    }
+
+    private static boolean isPersonalEquipmentSlot(EquipmentSlot slot) {
+        return slot == EquipmentSlot.MAINHAND
+                || slot == EquipmentSlot.OFFHAND
+                || slot == EquipmentSlot.HEAD
                 || slot == EquipmentSlot.CHEST
                 || slot == EquipmentSlot.LEGS
                 || slot == EquipmentSlot.FEET;
