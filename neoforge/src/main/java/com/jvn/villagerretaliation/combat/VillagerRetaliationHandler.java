@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.Ang
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
@@ -345,6 +346,7 @@ public final class VillagerRetaliationHandler {
         }
         ServerLevel serverLevel = (ServerLevel) villager.level();
 
+        HiredJobInventory.migrateEquipmentSlotsIfNeeded(villager);
         ensureArmorerSpawnShieldRoll(villager);
         if (!VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
                 && VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {

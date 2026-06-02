@@ -35,8 +35,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private static final int OFFHAND_Y = 62;
     private static final int VILLAGER_INVENTORY_X = 8;
     private static final int VILLAGER_INVENTORY_Y = 84;
-    private static final int JOB_MAINHAND_SLOT = VillagerInventoryContainer.ARMOR_SLOT_COUNT;
-    private static final int JOB_OFFHAND_SLOT = JOB_MAINHAND_SLOT + 1;
+    private static final int JOB_MAINHAND_SLOT = HiredJobInventory.MAINHAND_SLOT;
+    private static final int JOB_OFFHAND_SLOT = HiredJobInventory.OFFHAND_SLOT;
     private static final int JOB_EQUIPMENT_SLOT_COUNT = JOB_OFFHAND_SLOT + 1;
     private static final int PLAYER_INVENTORY_X = 8;
     private static final int PLAYER_INVENTORY_Y = 156;
