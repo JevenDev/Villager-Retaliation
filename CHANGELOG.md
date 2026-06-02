@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.0-beta.12-hotfix.1 - 2026-06-02
+
+Beta.12-hotfix.1 is a focused stability follow-up for beta.12. It fixes duplicate skill-trade registration and makes the villager interaction UI behave consistently across UI scale and text-scale settings.
+
+### Changed
+
+- Made villager skill-trade registration idempotent so repeated registration passes no longer append duplicate offers to villager or wandering trader trade pools.
+- Reworked interaction-screen layout math to be scale-aware across profile, skills, gift, navigation, option-list, and quest-journal UI surfaces.
+- Tooltip rendering now uses bounded, scale-aware positioning so item and component tooltips stay readable and remain on-screen at larger UI scales.
+
+### Fixed
+
+- Fixed UI scale rendering issues for gui scale 1, 2, 4, and auto.
+- Fixed Mac user UI rendering (i think lol).
+- Fixed duplicate villager and wandering-trader skill trades caused by repeated trade registration against mutable or previously registered trade collections.
+- Fixed gift-page hit detection, hover states, and button placement drifting out of sync when UI scale or text scale changed.
+- Fixed profile-page and option-list hover/click regions using unscaled screen coordinates, which could cause incorrect selection and tooltip behavior at non-default scales.
+- Fixed interaction-screen tooltips rendering off-screen or at inconsistent positions when the UI was transformed or scaled.
+
 ## 1.0.0-beta.12 - 2026-06-01
 
 Beta.12 is a major beta.11 follow-up focused on villager profiles, skills, quests, skill-trade restocking, and datapack authoring cleanup. It is also a manual datapack-retargeting release: beta.11 packs should keep targeting the beta.11 wiki snapshot until they have been reviewed against the beta.12 pack surface.
