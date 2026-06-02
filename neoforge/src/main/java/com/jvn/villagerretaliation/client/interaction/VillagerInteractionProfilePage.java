@@ -24,44 +24,69 @@ final class VillagerInteractionProfilePage {
         Optional<VillagerProfileClientCache.DisplayEntry> entry = context.profileEntry();
         if (entry.isEmpty()) {
             context.requestProfileRefresh();
-            graphics.drawString(context.font(), context.translate("profile.loading"), left, top + 32, context.infoSecondaryColor(), false);
+            VillagerInteractionUiUtil.drawScaledString(
+                    graphics,
+                    context.font(),
+                    context.translate("profile.loading"),
+                    left,
+                    top + context.profileChartLoadingYOffset(),
+                    context.infoSecondaryColor(),
+                    context.profileChartTextScale());
             return;
         }
 
         VillagerProfileClientCache.DisplayEntry profile = entry.get();
+        float scale = context.profileChartTextScale();
         int chartRadius = resolvedChartRadius(context);
         int centerX = left + context.optionWidth() / 2 - context.profileChartCenterXOffset();
         int centerY = resolvedCenterY(context, chartRadius, top);
-        VillagerSocialAttribute hoveredAttribute = profileChartPointAt(context, profile, centerX, centerY, chartRadius, mouseX, mouseY);
-        renderProfileChart(context, graphics, profile, centerX, centerY, chartRadius, hoveredAttribute);
+        ProfileTransform transform = new ProfileTransform(centerX, centerY, scale);
+        double localMouseX = transform.localX(mouseX);
+        double localMouseY = transform.localY(mouseY);
+        int localMouseXi = Mth.floor(localMouseX);
+        int localMouseYi = Mth.floor(localMouseY);
+        int localChartRadius = resolvedLocalChartRadius(context, scale);
+        VillagerSocialAttribute hoveredAttribute = profileChartPointAt(
+                profile,
+                localChartRadius,
+                localHitRadius(context, scale),
+                localMouseXi,
+                localMouseYi);
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(transform.centerX(), transform.centerY(), 0.0F);
+        graphics.pose().scale(transform.scale(), transform.scale(), 1.0F);
+        renderProfileChart(context, graphics, profile, localChartRadius, scale, hoveredAttribute);
         if (hoveredAttribute != null) {
-            renderProfileAttributeTooltip(context, graphics, profile, hoveredAttribute, mouseX, mouseY);
+            renderProfileAttributeTooltip(context, graphics, profile, hoveredAttribute, localMouseXi, localMouseYi, transform.scale(), transform.centerX(), transform.centerY());
         }
+        graphics.pose().popPose();
     }
 
     private static void renderProfileChart(
             Context context,
             GuiGraphics graphics,
             VillagerProfileClientCache.DisplayEntry profile,
-            int centerX,
-            int centerY,
             int chartRadius,
+            float scale,
             VillagerSocialAttribute hoveredAttribute) {
         Font font = context.font();
         VillagerSocialAttribute[] attributes = VillagerSocialAttribute.values();
         ProfilePoint[] outer = new ProfilePoint[attributes.length];
         ProfilePoint[] values = new ProfilePoint[attributes.length];
+        int labelXOffset = localUnit(context.profileChartLabelXOffset(), scale);
+        int labelYOffset = localUnit(context.profileChartLabelYOffset(), scale);
 
         for (int index = 0; index < attributes.length; index++) {
             double angle = profileAttributeAngle(index, attributes.length);
-            outer[index] = profilePoint(centerX, centerY, angle, chartRadius);
+            outer[index] = profilePoint(0, 0, angle, chartRadius);
             int valueRadius = Math.round(chartRadius * profile.value(attributes[index]) / 100.0F);
-            values[index] = profilePoint(centerX, centerY, angle, valueRadius);
-            drawPixelLine(graphics, centerX, centerY, outer[index].x(), outer[index].y(), context.profileChartAxisColor());
+            values[index] = profilePoint(0, 0, angle, valueRadius);
+            drawPixelLine(graphics, 0, 0, outer[index].x(), outer[index].y(), context.profileChartAxisColor());
 
             String label = context.localizedAttribute(attributes[index]);
-            int labelX = profilePoint(centerX, centerY, angle, chartRadius + context.profileChartLabelXOffset()).x() - font.width(label) / 2;
-            int labelY = profilePoint(centerX, centerY, angle, chartRadius + context.profileChartLabelYOffset()).y() - font.lineHeight / 2;
+            int labelX = profilePoint(0, 0, angle, chartRadius + labelXOffset).x() - font.width(label) / 2;
+            int labelY = profilePoint(0, 0, angle, chartRadius + labelYOffset).y() - font.lineHeight / 2;
             graphics.drawString(font, label, labelX, labelY, context.infoSecondaryColor(), false);
         }
 
@@ -70,7 +95,9 @@ final class VillagerInteractionProfilePage {
             drawPixelLine(graphics, outer[index].x(), outer[index].y(), outer[next].x(), outer[next].y(), context.profileChartOutlineColor());
             drawPixelLine(graphics, values[index].x(), values[index].y(), values[next].x(), values[next].y(), context.profileChartValueColor());
             boolean hovered = attributes[index] == hoveredAttribute;
-            int pointRadius = hovered ? context.profileChartPointHoverRadius() : context.profileChartPointRadius();
+            int pointRadius = hovered
+                    ? localUnit(context.profileChartPointHoverRadius(), scale)
+                    : localUnit(context.profileChartPointRadius(), scale);
             int pointColor = hovered ? context.profileChartPointHoverColor() : context.profileChartPointColor();
             graphics.fill(
                     values[index].x() - pointRadius,
@@ -83,20 +110,18 @@ final class VillagerInteractionProfilePage {
     }
 
     private static VillagerSocialAttribute profileChartPointAt(
-            Context context,
             VillagerProfileClientCache.DisplayEntry profile,
-            int centerX,
-            int centerY,
             int chartRadius,
+            int hitRadius,
             int mouseX,
             int mouseY) {
         VillagerSocialAttribute[] attributes = VillagerSocialAttribute.values();
         VillagerSocialAttribute closestAttribute = null;
-        int closestDistance = context.profileChartPointHitRadius() * context.profileChartPointHitRadius() + 1;
+        int closestDistance = hitRadius * hitRadius + 1;
         for (int index = 0; index < attributes.length; index++) {
             double angle = profileAttributeAngle(index, attributes.length);
             int valueRadius = Math.round(chartRadius * profile.value(attributes[index]) / 100.0F);
-            ProfilePoint point = profilePoint(centerX, centerY, angle, valueRadius);
+            ProfilePoint point = profilePoint(0, 0, angle, valueRadius);
             int dx = mouseX - point.x();
             int dy = mouseY - point.y();
             int distance = dx * dx + dy * dy;
@@ -112,9 +137,22 @@ final class VillagerInteractionProfilePage {
         return Math.max(4, context.profileChartRadius());
     }
 
+    private static int resolvedLocalChartRadius(Context context, float scale) {
+        return Math.max(4, localUnit(context.profileChartRadius(), scale));
+    }
+
+    private static int localHitRadius(Context context, float scale) {
+        return Math.max(2, localUnit(context.profileChartPointHitRadius(), scale));
+    }
+
+    private static int localUnit(int scaledValue, float scale) {
+        return Math.max(1, Math.round(scaledValue / Math.max(scale, 0.001F)));
+    }
+
     private static int resolvedCenterY(Context context, int chartRadius, int topLimit) {
         int preferredCenterY = topLimit + chartRadius + context.profileChartCenterYOffset();
-        int labelPadding = context.profileChartLabelYOffset() + context.font().lineHeight / 2;
+        int labelPadding = context.profileChartLabelYOffset()
+                + Math.round(context.font().lineHeight * context.profileChartTextScale() * 0.5F);
         int minCenterY = topLimit + chartRadius + labelPadding;
         int maxCenterY = context.profileChartBottomLimit() - chartRadius - labelPadding;
         if (maxCenterY < minCenterY) {
@@ -129,7 +167,10 @@ final class VillagerInteractionProfilePage {
             VillagerProfileClientCache.DisplayEntry profile,
             VillagerSocialAttribute attribute,
             int mouseX,
-            int mouseY) {
+            int mouseY,
+            float scale,
+            int originX,
+            int originY) {
         VillagerSocialAttributeRank rank = profile.rank(attribute);
         List<Component> tooltip = new ArrayList<>();
         tooltip.add(Component.literal(context.localizedAttribute(attribute)).withStyle(ChatFormatting.WHITE));
@@ -137,7 +178,7 @@ final class VillagerInteractionProfilePage {
         tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.value(attribute)).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.empty());
         tooltip.add(Component.literal(context.localizedAttributeDescription(attribute)).withStyle(ChatFormatting.GRAY));
-        graphics.renderComponentTooltip(context.font(), tooltip, mouseX, mouseY);
+        VillagerInteractionUiUtil.renderBoundedComponentTooltipInCurrentPose(graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
     }
 
     private static double profileAttributeAngle(int index, int attributeCount) {
@@ -197,9 +238,13 @@ final class VillagerInteractionProfilePage {
 
         int profileChartLabelYOffset();
 
+        int profileChartLoadingYOffset();
+
         int profileChartTopLimit();
 
         int profileChartBottomLimit();
+
+        float profileChartTextScale();
 
         int profileChartAxisColor();
 
@@ -231,5 +276,15 @@ final class VillagerInteractionProfilePage {
     }
 
     private record ProfilePoint(int x, int y) {
+    }
+
+    private record ProfileTransform(int centerX, int centerY, float scale) {
+        double localX(double screenX) {
+            return (screenX - this.centerX) / Math.max(this.scale, 0.001F);
+        }
+
+        double localY(double screenY) {
+            return (screenY - this.centerY) / Math.max(this.scale, 0.001F);
+        }
     }
 }

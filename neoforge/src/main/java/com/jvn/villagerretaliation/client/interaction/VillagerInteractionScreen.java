@@ -754,8 +754,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             float delay = 120.0F + index * 28.0F;
             int textY = Mth.floor(y + optionTextYOffset());
             if (selected) {
+                int selectorX = textLeft - experimentalUnit(17);
+                int selectorY = Math.round(y + VillagerInteractionOptionList.optionHeight(this.optionListContext, index) * 0.5F
+                        - this.font.lineHeight * scale * 0.5F) + 3;
                 textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                        ">", textLeft - optionTextInset() - 7, textY, 0xFFFFFFFF, scale, delay, 0.0F, this.height - textY + 72.0F, false));
+                        ">", selectorX, selectorY, 0xFFFFFFFF, scale, delay, 0.0F, this.height - selectorY + 72.0F, false));
             }
             List<String> labelLines = VillagerInteractionOptionList.wrappedOptionLabelLines(this.optionListContext, this.options.get(index).label(), scale);
             for (int lineIndex = 0; lineIndex < labelLines.size(); lineIndex++) {
@@ -783,8 +786,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int height = Math.round(this.font.lineHeight * scale);
         textElements.add(new VillagerInteractionExperimentalChrome.ExitFadeTextElement(
                 hintText,
-                this.width - width - 8,
-                this.height - height - 5,
+                this.width - width - experimentalUnit(8),
+                this.height - height - experimentalUnit(5),
                 0x66FFFFFF,
                 scale));
         return textElements;
@@ -911,7 +914,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 mouseY,
                 partialTick,
                 optionsLeft(),
-                conversationInfoTop()
+                optionWidth(),
+                this.width,
+                this.height,
+                topBackButtonBounds().bottom()
         );
     }
 
@@ -1147,7 +1153,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean tryClickGiftPage(double mouseX, double mouseY) {
-        return VillagerInteractionGiftPage.tryClick(this.giftPageContext, mouseX, mouseY, optionsLeft(), conversationInfoTop());
+        return VillagerInteractionGiftPage.tryClick(
+                this.giftPageContext,
+                mouseX,
+                mouseY,
+                optionsLeft(),
+                optionWidth(),
+                this.width,
+                this.height,
+                topBackButtonBounds().bottom());
     }
 
     private int firstGiftableInventorySlot() {
@@ -1163,27 +1177,29 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int giftInventoryLeft() {
-        return VillagerInteractionGiftPage.giftInventoryLeft(optionsLeft());
+        return VillagerInteractionGiftPage.giftInventoryLeft(optionsLeft(), optionWidth(), this.width);
     }
 
     private int giftInventoryTop() {
-        return VillagerInteractionGiftPage.giftInventoryTop(conversationInfoTop());
+        return VillagerInteractionGiftPage.giftInventoryTop(topBackButtonBounds().bottom(), this.height);
     }
 
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
-        int left = optionsLeft() - 18;
-        int right = optionsLeft() + optionWidth() + 4;
+        int left = optionsLeft() - experimentalUnit(18);
+        int right = optionsLeft() + optionWidth() + experimentalUnit(4);
         int top = optionsTop();
         int bottom = top + optionViewportHeight();
-        return mouseX >= left && mouseX <= right && mouseY >= top - 4 && mouseY <= bottom + 4;
+        int verticalPadding = experimentalUnit(4);
+        return mouseX >= left && mouseX <= right && mouseY >= top - verticalPadding && mouseY <= bottom + verticalPadding;
     }
 
     private boolean isPointInsideSkillsInfoScrollArea(double mouseX, double mouseY) {
-        int left = optionsLeft() - 18;
-        int right = optionsLeft() + optionWidth() + 4;
+        int left = optionsLeft() - experimentalUnit(18);
+        int right = optionsLeft() + optionWidth() + experimentalUnit(4);
         int top = skillInfoViewportTop();
         int bottom = skillInfoViewportBottom();
-        return mouseX >= left && mouseX <= right && mouseY >= top - 4 && mouseY <= bottom + 4;
+        int verticalPadding = experimentalUnit(4);
+        return mouseX >= left && mouseX <= right && mouseY >= top - verticalPadding && mouseY <= bottom + verticalPadding;
     }
 
     private static boolean isLeftMouseButton(int button) {
@@ -1204,7 +1220,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         TopBackButtonBounds bounds = topBackButtonBounds();
-        return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, bounds.left(), bounds.top() - 2, bounds.right(), bounds.bottom() + 2);
+        int verticalPadding = experimentalUnitAtLeast(2, 1);
+        return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, bounds.left(), bounds.top() - verticalPadding, bounds.right(), bounds.bottom() + verticalPadding);
     }
 
     private TopBackButtonBounds topBackButtonBounds() {
@@ -1928,6 +1945,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public int experimentalUnit(int value) {
+            return VillagerInteractionScreen.this.experimentalUnit(value);
+        }
+
+        @Override
+        public int experimentalUnitAtLeast(int value, int minimum) {
+            return VillagerInteractionScreen.this.experimentalUnitAtLeast(value, minimum);
+        }
+
+        @Override
         public int optionsScrollbarLeft() {
             return VillagerInteractionScreen.this.optionsScrollbarLeft();
         }
@@ -2041,7 +2068,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.page == DialoguePage.SKILLS) {
                 return VillagerInteractionScreen.this.scrollbarRight();
             }
-            return VillagerInteractionScreen.this.width - 8;
+            return VillagerInteractionScreen.this.width - VillagerInteractionScreen.this.experimentalUnit(8);
         }
 
         @Override
@@ -2147,8 +2174,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public int profileChartLoadingYOffset() {
+            return VillagerInteractionScreen.this.experimentalUnit(32);
+        }
+
+        @Override
         public int profileChartTopLimit() {
-            return VillagerInteractionScreen.this.conversationInfoTop() + VillagerInteractionScreen.this.experimentalUnit(2);
+            return VillagerInteractionScreen.this.topBackButtonBounds().bottom() + VillagerInteractionScreen.this.experimentalUnit(7);
         }
 
         @Override
@@ -2159,6 +2191,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     + VillagerInteractionScreen.this.rootOptionViewportHeight()
                     - VillagerInteractionScreen.this.experimentalUnit(4);
             return Math.min(screenBottomLimit, viewportBottomLimit);
+        }
+
+        @Override
+        public float profileChartTextScale() {
+            return VillagerInteractionScreen.this.experimentalScaleFactor();
         }
 
         @Override
@@ -2255,7 +2292,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int skillInfoScissorRight() {
-            return VillagerInteractionScreen.this.optionsScrollbarLeft() - 4;
+            return VillagerInteractionScreen.this.optionsScrollbarLeft() - VillagerInteractionScreen.this.experimentalUnit(4);
         }
 
         @Override
