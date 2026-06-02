@@ -21,7 +21,6 @@ public final class HiredJobInventory implements Container {
     public static final int OFFHAND_SLOT = 5;
     private static final int ARMOR_SLOT_COUNT = 4;
     private static final String TAG = "VillagerRetaliationJobInventory";
-    private static final String EQUIPMENT_SLOTS_MIGRATED_TAG = "VillagerRetaliationJobEquipmentSlotsMigrated";
     private static final String SLOT_TYPES_TAG = "SlotTypes";
     private static final String SLOT_TAG = "Slot";
     private static final String TYPE_TAG = "Type";
@@ -52,12 +51,12 @@ public final class HiredJobInventory implements Container {
         return new HiredJobInventory(villager);
     }
 
-    public static void migrateEquipmentSlotsIfNeeded(Villager villager) {
-        if (villager.getPersistentData().getBoolean(EQUIPMENT_SLOTS_MIGRATED_TAG)) {
-            return;
-        }
-        new HiredJobInventory(villager);
-        villager.getPersistentData().putBoolean(EQUIPMENT_SLOTS_MIGRATED_TAG, true);
+    public static void maintainEquipmentSlots(Villager villager) {
+        new HiredJobInventory(villager).maintainEquipmentAuthority();
+    }
+
+    public static boolean hasJobEquipmentForSlot(Villager villager, EquipmentSlot equipmentSlot) {
+        return !new HiredJobInventory(villager).jobEquipmentItem(equipmentSlot).isEmpty();
     }
 
     public static boolean isProtectedVillagerProperty(ItemStack stack) {
@@ -100,10 +99,6 @@ public final class HiredJobInventory implements Container {
 
     @Override
     public ItemStack getItem(int slot) {
-        EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
-        if (equipmentSlot != null) {
-            return this.villager.getItemBySlot(equipmentSlot);
-        }
         return isValidSlot(slot) ? this.items.get(slot) : ItemStack.EMPTY;
     }
 
@@ -112,17 +107,17 @@ public final class HiredJobInventory implements Container {
         if (!isValidSlot(slot) || amount <= 0) {
             return ItemStack.EMPTY;
         }
-        EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
-        if (equipmentSlot != null) {
-            return removeEquipmentItem(equipmentSlot, amount);
-        }
-
         ItemStack stack = this.items.get(slot);
         if (stack.isEmpty() || !canHirerRemoveFromJobInventory(stack)) {
             return ItemStack.EMPTY;
         }
+        ItemStack previousStack = stack.copy();
         ItemStack removed = ContainerHelper.removeItem(this.items, slot, amount);
         if (!removed.isEmpty()) {
+            EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
+            if (equipmentSlot != null) {
+                updateLiveEquipmentAfterJobSlotChange(equipmentSlot, previousStack);
+            }
             setChanged();
         }
         return removed;
@@ -133,21 +128,18 @@ public final class HiredJobInventory implements Container {
         if (!isValidSlot(slot)) {
             return ItemStack.EMPTY;
         }
-        EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
-        if (equipmentSlot != null) {
-            ItemStack stack = this.villager.getItemBySlot(equipmentSlot);
-            if (!canHirerRemoveFromJobInventory(stack)) {
-                return ItemStack.EMPTY;
-            }
-            VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, ItemStack.EMPTY);
-            return stack.copy();
-        }
-
         ItemStack stack = this.items.get(slot);
         if (!canHirerRemoveFromJobInventory(stack)) {
             return ItemStack.EMPTY;
         }
-        return ContainerHelper.takeItem(this.items, slot);
+        ItemStack previousStack = stack.copy();
+        ItemStack removed = ContainerHelper.takeItem(this.items, slot);
+        EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
+        if (equipmentSlot != null && !removed.isEmpty()) {
+            updateLiveEquipmentAfterJobSlotChange(equipmentSlot, previousStack);
+            setChanged();
+        }
+        return removed;
     }
 
     @Override
@@ -157,7 +149,7 @@ public final class HiredJobInventory implements Container {
         }
         EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
         if (equipmentSlot != null) {
-            setEquipmentItem(equipmentSlot, stack);
+            setEquipmentItem(slot, equipmentSlot, stack);
             return;
         }
 
@@ -188,7 +180,7 @@ public final class HiredJobInventory implements Container {
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
             if (equipmentSlot != null) {
-                VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, ItemStack.EMPTY);
+                clearLiveEquipmentIfOwnedByJob(equipmentSlot, this.items.get(slot));
             }
             this.items.set(slot, ItemStack.EMPTY);
             this.slotTypes[slot] = defaultType(slot);
@@ -282,7 +274,7 @@ public final class HiredJobInventory implements Container {
                 this.slotTypes[slot] = HiredJobInventorySlotType.PROTECTED_PROPERTY;
             }
         }
-        migrateStoredEquipmentSlots();
+        reconcileStoredEquipmentWithLiveItems();
     }
 
     private void save() {
@@ -305,7 +297,7 @@ public final class HiredJobInventory implements Container {
         this.villager.getPersistentData().put(TAG, tag);
     }
 
-    private void migrateStoredEquipmentSlots() {
+    private void reconcileStoredEquipmentWithLiveItems() {
         boolean changed = false;
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
@@ -317,40 +309,98 @@ public final class HiredJobInventory implements Container {
             if (storedStack.isEmpty()) {
                 continue;
             }
-            setEquipmentItem(equipmentSlot, storedStack);
-            this.items.set(slot, ItemStack.EMPTY);
-            this.slotTypes[slot] = defaultType(slot);
-            changed = true;
+            ItemStack liveStack = this.villager.getItemBySlot(equipmentSlot);
+            if (!liveStack.isEmpty() && ItemStack.isSameItem(liveStack, storedStack) && !sameStack(liveStack, storedStack)) {
+                this.items.set(slot, liveStack.copy());
+                changed = true;
+            }
         }
         if (changed) {
             save();
         }
     }
 
-    private ItemStack removeEquipmentItem(EquipmentSlot equipmentSlot, int amount) {
+    private void setEquipmentItem(int slot, EquipmentSlot equipmentSlot, ItemStack stack) {
+        ItemStack previousJobStack = this.items.get(slot).copy();
         ItemStack current = this.villager.getItemBySlot(equipmentSlot);
-        if (current.isEmpty() || !canHirerRemoveFromJobInventory(current)) {
-            return ItemStack.EMPTY;
+        if (stack.isEmpty()) {
+            this.items.set(slot, ItemStack.EMPTY);
+            if (this.slotTypes[slot] == HiredJobInventorySlotType.PROTECTED_PROPERTY) {
+                this.slotTypes[slot] = defaultType(slot);
+            }
+            clearLiveEquipmentIfOwnedByJob(equipmentSlot, previousJobStack);
+            setChanged();
+            return;
         }
-
-        ItemStack remaining = current.copy();
-        ItemStack removed;
-        if (amount >= remaining.getCount()) {
-            removed = remaining.copy();
-            remaining = ItemStack.EMPTY;
-        } else {
-            removed = remaining.split(amount);
-        }
-        VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, remaining);
-        return removed;
-    }
-
-    private void setEquipmentItem(EquipmentSlot equipmentSlot, ItemStack stack) {
-        ItemStack current = this.villager.getItemBySlot(equipmentSlot);
-        if (!current.isEmpty() && !stack.isEmpty() && !sameStack(current, stack)) {
+        if (!current.isEmpty()
+                && !sameStack(current, stack)
+                && !isCurrentJobEquipment(current, previousJobStack)) {
             storeDisplacedEquipment(current);
         }
+        this.items.set(slot, stack);
+        if (!stack.isEmpty() && ProtectedVillagerProperty.isProtected(stack)) {
+            this.slotTypes[slot] = HiredJobInventorySlotType.PROTECTED_PROPERTY;
+        } else if (this.slotTypes[slot] == HiredJobInventorySlotType.PROTECTED_PROPERTY) {
+            this.slotTypes[slot] = defaultType(slot);
+        }
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, stack);
+        setChanged();
+    }
+
+    private void updateLiveEquipmentAfterJobSlotChange(EquipmentSlot equipmentSlot, ItemStack previousJobStack) {
+        ItemStack remainingJobStack = jobEquipmentItem(equipmentSlot);
+        if (!remainingJobStack.isEmpty()) {
+            VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, remainingJobStack);
+            return;
+        }
+        clearLiveEquipmentIfOwnedByJob(equipmentSlot, previousJobStack);
+    }
+
+    private void clearLiveEquipmentIfOwnedByJob(EquipmentSlot equipmentSlot, ItemStack previousJobStack) {
+        ItemStack current = this.villager.getItemBySlot(equipmentSlot);
+        if (current.isEmpty() || isCurrentJobEquipment(current, previousJobStack)) {
+            VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, ItemStack.EMPTY);
+        }
+    }
+
+    private boolean maintainEquipmentAuthority() {
+        boolean changed = false;
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
+            if (equipmentSlot == null) {
+                continue;
+            }
+
+            ItemStack jobStack = this.items.get(slot);
+            if (jobStack.isEmpty()) {
+                continue;
+            }
+
+            ItemStack current = this.villager.getItemBySlot(equipmentSlot);
+            if (current.isEmpty()) {
+                VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, jobStack);
+                continue;
+            }
+            if (ItemStack.isSameItem(current, jobStack)) {
+                if (!sameStack(current, jobStack)) {
+                    this.items.set(slot, current.copy());
+                    changed = true;
+                }
+                continue;
+            }
+
+            storeDisplacedEquipment(current);
+            VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, jobStack);
+        }
+        if (changed) {
+            save();
+        }
+        return changed;
+    }
+
+    private ItemStack jobEquipmentItem(EquipmentSlot equipmentSlot) {
+        int slot = jobSlotForEquipmentSlot(equipmentSlot);
+        return slot >= 0 ? this.items.get(slot) : ItemStack.EMPTY;
     }
 
     private void storeDisplacedEquipment(ItemStack stack) {
@@ -380,6 +430,21 @@ public final class HiredJobInventory implements Container {
         return null;
     }
 
+    private static int jobSlotForEquipmentSlot(EquipmentSlot equipmentSlot) {
+        for (int slot = 0; slot < ARMOR_SLOTS.length; slot++) {
+            if (ARMOR_SLOTS[slot] == equipmentSlot) {
+                return slot;
+            }
+        }
+        if (equipmentSlot == EquipmentSlot.MAINHAND) {
+            return MAINHAND_SLOT;
+        }
+        if (equipmentSlot == EquipmentSlot.OFFHAND) {
+            return OFFHAND_SLOT;
+        }
+        return -1;
+    }
+
     private static HiredJobInventorySlotType defaultType(int slot) {
         if (slot < 9) {
             return HiredJobInventorySlotType.GEAR;
@@ -392,6 +457,10 @@ public final class HiredJobInventory implements Container {
 
     private static boolean sameStack(ItemStack first, ItemStack second) {
         return first.getCount() == second.getCount() && ItemStack.isSameItemSameComponents(first, second);
+    }
+
+    private static boolean isCurrentJobEquipment(ItemStack current, ItemStack jobStack) {
+        return !jobStack.isEmpty() && ItemStack.isSameItem(current, jobStack);
     }
 
     public record OutputStack(int slot, ItemStack stack) {

@@ -73,12 +73,21 @@ final class VillagerInventoryContainer implements Container {
     @Override
     public ItemStack getItem(int slot) {
         if (isArmorSlot(slot)) {
+            if (jobEquipmentControls(ARMOR_SLOTS[slot])) {
+                return ItemStack.EMPTY;
+            }
             return this.villager.getItemBySlot(ARMOR_SLOTS[slot]);
         }
         if (slot == HELD_SLOT) {
+            if (jobEquipmentControls(EquipmentSlot.MAINHAND)) {
+                return ItemStack.EMPTY;
+            }
             return canAccessMainHand(this.villager) ? this.villager.getMainHandItem() : ItemStack.EMPTY;
         }
         if (slot == OFFHAND_SLOT) {
+            if (jobEquipmentControls(EquipmentSlot.OFFHAND)) {
+                return ItemStack.EMPTY;
+            }
             return this.villager.getOffhandItem();
         }
         int inventorySlot = slot - ARMOR_SLOT_COUNT;
@@ -123,10 +132,16 @@ final class VillagerInventoryContainer implements Container {
     @Override
     public void setItem(int slot, ItemStack stack) {
         if (isArmorSlot(slot)) {
+            if (jobEquipmentControls(ARMOR_SLOTS[slot])) {
+                return;
+            }
             setEquipment(ARMOR_SLOTS[slot], stack);
             return;
         }
         if (slot == HELD_SLOT) {
+            if (jobEquipmentControls(EquipmentSlot.MAINHAND)) {
+                return;
+            }
             if (stack.isEmpty() && !canAccessMainHand(this.villager)) {
                 return;
             }
@@ -134,6 +149,9 @@ final class VillagerInventoryContainer implements Container {
             return;
         }
         if (slot == OFFHAND_SLOT) {
+            if (jobEquipmentControls(EquipmentSlot.OFFHAND)) {
+                return;
+            }
             setEquipment(EquipmentSlot.OFFHAND, stack);
             return;
         }
@@ -484,6 +502,10 @@ final class VillagerInventoryContainer implements Container {
 
     private void setInventoryItem(int inventorySlot, ItemStack stack) {
         this.inventory.set(inventorySlot, stack);
+    }
+
+    private boolean jobEquipmentControls(EquipmentSlot slot) {
+        return HiredJobInventory.hasJobEquipmentForSlot(this.villager, slot);
     }
 
     private void setEquipment(EquipmentSlot slot, ItemStack stack) {
@@ -843,6 +865,11 @@ final class VillagerInventoryContainer implements Container {
     private static void dropEquipmentSlot(Villager villager, LivingDropsEvent event, EquipmentSlot slot) {
         ItemStack stack = villager.getItemBySlot(slot);
         if (stack.isEmpty()) {
+            return;
+        }
+        if (HiredJobInventory.hasJobEquipmentForSlot(villager, slot)) {
+            removeOneMatchingDrop(event, stack);
+            VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
             return;
         }
         if (slot == EquipmentSlot.MAINHAND && !canAccessMainHand(villager)) {

@@ -346,7 +346,7 @@ public final class VillagerRetaliationHandler {
         }
         ServerLevel serverLevel = (ServerLevel) villager.level();
 
-        HiredJobInventory.migrateEquipmentSlotsIfNeeded(villager);
+        HiredJobInventory.maintainEquipmentSlots(villager);
         ensureArmorerSpawnShieldRoll(villager);
         if (!VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
                 && VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {

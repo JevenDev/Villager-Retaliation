@@ -217,6 +217,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                     slot,
                     ARMOR_X,
                     ARMOR_Y + slot * SLOT_SIZE,
+                    this.villager,
                     VillagerInventoryContainer.armorEquipmentSlot(slot)
             ));
         }
@@ -237,14 +238,18 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                 VillagerInventoryContainer.HELD_SLOT,
                 HELD_X,
                 HELD_Y,
-                EMPTY_SLOT_SWORD_ICON
+                EMPTY_SLOT_SWORD_ICON,
+                this.villager,
+                EquipmentSlot.MAINHAND
         ));
         addSlot(new VillagerHandSlot(
                 this.villagerInventory,
                 VillagerInventoryContainer.OFFHAND_SLOT,
                 HELD_X,
                 OFFHAND_Y,
-                InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD
+                InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD,
+                this.villager,
+                EquipmentSlot.OFFHAND
         ));
     }
 
@@ -452,16 +457,19 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     }
 
     private static final class VillagerArmorSlot extends Slot {
+        private final Villager villager;
         private final EquipmentSlot equipmentSlot;
 
-        private VillagerArmorSlot(Container container, int slot, int x, int y, EquipmentSlot equipmentSlot) {
+        private VillagerArmorSlot(Container container, int slot, int x, int y, Villager villager, EquipmentSlot equipmentSlot) {
             super(container, slot, x, y);
+            this.villager = villager;
             this.equipmentSlot = equipmentSlot;
         }
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return equipmentSlotFor(stack) == this.equipmentSlot;
+            return !HiredJobInventory.hasJobEquipmentForSlot(this.villager, this.equipmentSlot)
+                    && equipmentSlotFor(stack) == this.equipmentSlot;
         }
 
         @Override
@@ -505,10 +513,27 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     private static final class VillagerHandSlot extends Slot {
         private final ResourceLocation icon;
+        private final Villager villager;
+        private final EquipmentSlot equipmentSlot;
 
-        private VillagerHandSlot(Container container, int slot, int x, int y, ResourceLocation icon) {
+        private VillagerHandSlot(
+                Container container,
+                int slot,
+                int x,
+                int y,
+                ResourceLocation icon,
+                Villager villager,
+                EquipmentSlot equipmentSlot
+        ) {
             super(container, slot, x, y);
             this.icon = icon;
+            this.villager = villager;
+            this.equipmentSlot = equipmentSlot;
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return !HiredJobInventory.hasJobEquipmentForSlot(this.villager, this.equipmentSlot);
         }
 
         @Override
