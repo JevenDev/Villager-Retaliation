@@ -904,35 +904,11 @@ public final class VillagerQuestService {
                 }
             }
         }
-        changed |= ensureStructureObjectiveTarget(level, player, definition, progress);
+        /*
+         * Do not locate generated structures from player tick. Vanilla nearest/generated-structure
+         * searches can synchronously enter worldgen/StructureCheck while players are exploring.
+         */
         return changed;
-    }
-
-    private static boolean ensureStructureObjectiveTarget(
-            ServerLevel level,
-            ServerPlayer player,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
-        if (definition.target().hasStructureTarget() && !progress.visitedTarget()) {
-            return false;
-        }
-        if (!progress.targetObjectiveId().isBlank() && progress.targetPos() != null) {
-            return false;
-        }
-        Optional<QuestDefinition.Objective> next = definition.objectives().stream()
-                .filter(objective -> objective.type() == QuestDefinition.ObjectiveType.STRUCTURE_VISIT)
-                .filter(objective -> !progress.objectiveComplete(objective.id()))
-                .findFirst();
-        if (next.isEmpty()) {
-            return false;
-        }
-        VillagerQuestTargets.LocatedTarget target =
-                VillagerQuestTargets.locateTarget(level, player.blockPosition(), next.get()).orElse(null);
-        if (target == null) {
-            return false;
-        }
-        progress.setTarget(progress.startedVillagerId(), target.dimension(), target.pos(), target.objectiveId());
-        return true;
     }
 
     private static boolean requiredObjectivesComplete(
