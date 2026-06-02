@@ -47,7 +47,7 @@ final class VillagerInteractionNavigationChrome {
                 font,
                 hintText,
                 context.hintRight() - width,
-                context.screenHeight() - height - 5,
+                context.screenHeight() - height - Math.round(5.0F * scale),
                 withAlpha(0x66FFFFFF, alpha),
                 scale);
     }

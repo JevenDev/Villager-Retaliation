@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.village.VillageMembership;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,12 +12,13 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 public final class VillagerInteractionTracker {
     private static final int VILLAGE_ENCOUNTER_REGION_SIZE = 64;
@@ -259,15 +261,40 @@ public final class VillagerInteractionTracker {
         return reports;
     }
 
+    public static Optional<StructureVisit> currentStructureVisit(
+            ServerLevel level,
+            ServerPlayer player,
+            Collection<ResourceLocation> structureIds) {
+        if (structureIds == null || structureIds.isEmpty()) {
+            return Optional.empty();
+        }
+        BlockPos playerPos = player.blockPosition();
+        for (ResourceLocation structureId : structureIds) {
+            Optional<StructureVisit> visit = detectedStructureAt(level, playerPos, structureId);
+            if (visit.isPresent()) {
+                return visit;
+            }
+        }
+        return Optional.empty();
+    }
+
     private static boolean isPlayerInsideStructure(ServerLevel level, BlockPos playerPos, ResourceLocation structureId) {
+        return detectedStructureAt(level, playerPos, structureId).isPresent();
+    }
+
+    private static Optional<StructureVisit> detectedStructureAt(ServerLevel level, BlockPos playerPos, ResourceLocation structureId) {
         ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, structureId);
         return level.registryAccess()
                 .registryOrThrow(Registries.STRUCTURE)
                 .getHolder(structureKey)
-                .map(holder -> level.structureManager()
-                        .getStructureWithPieceAt(playerPos, HolderSet.direct(holder))
-                        .isValid())
-                .orElse(false);
+                .flatMap(holder -> {
+                    StructureStart start = level.structureManager()
+                            .getStructureWithPieceAt(playerPos, HolderSet.direct(holder));
+                    if (!start.isValid()) {
+                        return Optional.empty();
+                    }
+                    return Optional.of(new StructureVisit(structureId, start.getBoundingBox().getCenter()));
+                });
     }
 
     public static Optional<StoryHintReport> unreportedStoryHintDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -629,6 +656,9 @@ public final class VillagerInteractionTracker {
             List<CartographerMapReport> cartographerMapReports,
             List<StoryHintReport> storyHintReports
     ) {
+    }
+
+    public record StructureVisit(ResourceLocation structureId, BlockPos targetPos) {
     }
 
     public record InteractionState(

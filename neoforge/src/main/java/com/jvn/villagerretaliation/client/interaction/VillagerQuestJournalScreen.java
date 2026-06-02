@@ -1004,6 +1004,16 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
 
         @Override
+        public int experimentalUnit(int value) {
+            return VillagerQuestJournalScreen.this.experimentalUnit(value);
+        }
+
+        @Override
+        public int experimentalUnitAtLeast(int value, int minimum) {
+            return VillagerQuestJournalScreen.this.experimentalUnitAtLeast(value, minimum);
+        }
+
+        @Override
         public int optionsScrollbarLeft() {
             return VillagerQuestJournalScreen.this.optionsScrollbarLeft();
         }

@@ -8,6 +8,7 @@ import net.minecraft.util.Mth;
 final class VillagerInteractionOptionList {
     private static final float EXPERIMENTAL_OPTION_BASE_SCALE = 1.48F;
     private static final int WRAPPED_OPTION_MAX_LINES = 2;
+    private static final int SELECTOR_LABEL_GAP = 17;
 
     private VillagerInteractionOptionList() {
     }
@@ -18,8 +19,9 @@ final class VillagerInteractionOptionList {
         int viewportHeight = context.optionViewportHeight();
         int viewportBottom = top + viewportHeight;
         int hovered = optionAt(context, mouseX, mouseY);
+        int scissorInset = context.experimentalUnit(4);
 
-        graphics.enableScissor(Math.max(0, left - context.optionWidth()), top, context.optionsScrollbarLeft() - 4, viewportBottom);
+        graphics.enableScissor(Math.max(0, left - context.optionWidth()), top, context.optionsScrollbarLeft() - scissorInset, viewportBottom);
         for (int index = 0; index < context.optionCount(); index++) {
             int rowHeight = optionHeight(context, index);
             float y = top + optionOffset(context, index) - context.optionScroll();
@@ -36,15 +38,17 @@ final class VillagerInteractionOptionList {
         int left = context.optionsLeft();
         int top = context.optionsTop();
         int bottom = top + context.optionViewportHeight();
-        if (mouseX < left - 18 || mouseX > left + context.optionWidth()) {
+        int horizontalPadding = context.experimentalUnit(18);
+        int verticalPadding = context.experimentalUnitAtLeast(2, 1);
+        if (mouseX < left - horizontalPadding || mouseX > left + context.optionWidth()) {
             return -1;
         }
-        if (mouseY < top - 2 || mouseY > bottom + 2) {
+        if (mouseY < top - verticalPadding || mouseY > bottom + verticalPadding) {
             return -1;
         }
         for (int index = 0; index < context.optionCount(); index++) {
             float y = top + optionOffset(context, index) - context.optionScroll();
-            if (mouseY >= y - 2.0F && mouseY <= y + optionHeight(context, index) + 2.0F) {
+            if (mouseY >= y - verticalPadding && mouseY <= y + optionHeight(context, index) + verticalPadding) {
                 return index;
             }
         }
@@ -105,13 +109,14 @@ final class VillagerInteractionOptionList {
     ) {
         boolean selected = index == context.selectedOption();
         boolean isHovered = hovered == index;
+        boolean showSelector = index == selectorOption(context, hovered);
         float hoverMix = isHovered ? context.hoverIntensity(mouseX, mouseY, left, y) : 0.0F;
         float textScale = context.experimentalTextScale();
         float scale = (EXPERIMENTAL_OPTION_BASE_SCALE
                 + (selected ? context.optionSelectedScale() : 0.0F)
                 + hoverMix * context.optionHoverScale()) * textScale;
-        float cursorShiftX = isHovered ? context.hoverShift(mouseX, left, context.optionWidth(), 3.2F * textScale) * hoverMix : 0.0F;
-        float cursorShiftY = isHovered ? context.hoverShift(mouseY, y, rowHeight, 1.6F * textScale) * hoverMix : 0.0F;
+        float cursorShiftX = isHovered ? context.hoverShift(mouseX, left, context.optionWidth(), context.experimentalUnit(3)) * hoverMix : 0.0F;
+        float cursorShiftY = isHovered ? context.hoverShift(mouseY, y, rowHeight, context.experimentalUnit(2)) * hoverMix : 0.0F;
         float edgeAlpha = context.edgeFadeAlpha(y, viewportTop, viewportBottom);
         int textColor = optionTextColor(selected, isHovered);
         float textFadeInAlpha = VillagerInteractionExperimentalChrome.textFadeInAlpha();
@@ -123,11 +128,15 @@ final class VillagerInteractionOptionList {
         renderExperimentalOptionBackground(context, graphics, isHovered, left, y, rowHeight, textAlpha);
         graphics.pose().pushPose();
         applyExperimentalOptionTransform(context, graphics, left, y, scale, cursorShiftX, cursorShiftY);
-        if (selected) {
-            graphics.drawString(context.font(), ">", left - 7, selectorY(context, y, rowHeight), VillagerInteractionUiUtil.withAlpha(0xFFFFFFFF, textAlpha), false);
-        }
         renderWrappedLabel(context, graphics, context.optionLabel(index), left, y, rowHeight, scale, textColor, textFadeInAlpha, viewportTop, viewportBottom, false);
+        if (showSelector) {
+            renderSelector(context, graphics, left, y, rowHeight, scale, cursorShiftX, cursorShiftY, textAlpha, isHovered);
+        }
         graphics.pose().popPose();
+    }
+
+    private static int selectorOption(Context context, int hovered) {
+        return hovered >= 0 ? hovered : context.selectedOption();
     }
 
     private static void applyExperimentalOptionTransform(Context context, GuiGraphics graphics, int left, float top, float scale, float shiftX, float shiftY) {
@@ -142,8 +151,25 @@ final class VillagerInteractionOptionList {
         return rowHeight * (5.0F / 18.0F);
     }
 
-    private static int selectorY(Context context, float optionTop, int rowHeight) {
-        return Mth.floor(optionTop + rowHeight * 0.5F - context.font().lineHeight * 0.5F);
+    private static void renderSelector(
+            Context context,
+            GuiGraphics graphics,
+            int left,
+            float top,
+            int rowHeight,
+            float scale,
+            float shiftX,
+            float shiftY,
+            float alpha,
+            boolean hovered) {
+        int textLeft = left + context.optionTextInset();
+        float pivotX = textLeft;
+        float pivotY = top + optionTextYOffset(context.optionHeight());
+        float desiredScreenX = textLeft + shiftX - context.experimentalUnit(SELECTOR_LABEL_GAP);
+        float desiredScreenY = top + rowHeight * 0.5F + shiftY - context.font().lineHeight * scale * 0.5F + 3.0F + (hovered ? 1.0F : 0.0F);
+        int localX = Mth.floor(pivotX + (desiredScreenX - pivotX - shiftX) / Math.max(scale, 0.001F));
+        int localY = Mth.floor(pivotY + (desiredScreenY - pivotY - shiftY) / Math.max(scale, 0.001F));
+        graphics.drawString(context.font(), ">", localX, localY, VillagerInteractionUiUtil.withAlpha(0xFFFFFFFF, alpha), false);
     }
 
     private static void renderWrappedLabel(
@@ -191,9 +217,9 @@ final class VillagerInteractionOptionList {
             return;
         }
 
-        int bgLeft = left - 12;
+        int bgLeft = left - context.experimentalUnit(12);
         int bgTop = Mth.floor(top + 1.0F);
-        int bgRight = Math.min(context.optionsScrollbarLeft() - 8, left + context.optionWidth() - 8);
+        int bgRight = Math.min(context.optionsScrollbarLeft() - context.experimentalUnit(8), left + context.optionWidth() - context.experimentalUnit(8));
         int bgBottom = bgTop + rowHeight - 1;
         if (bgRight > bgLeft) {
             graphics.fill(bgLeft, bgTop, bgRight, bgBottom, VillagerInteractionUiUtil.withAlpha(0xFF000000, edgeAlpha * 0.16F));
@@ -281,6 +307,10 @@ final class VillagerInteractionOptionList {
         float optionSelectedScale();
 
         float experimentalTextScale();
+
+        int experimentalUnit(int value);
+
+        int experimentalUnitAtLeast(int value, int minimum);
 
         int optionsScrollbarLeft();
 

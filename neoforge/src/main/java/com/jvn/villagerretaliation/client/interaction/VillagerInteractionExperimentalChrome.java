@@ -201,7 +201,7 @@ final class VillagerInteractionExperimentalChrome {
         tooltip.add(Component.literal(context.villagerName()).withStyle(ChatFormatting.WHITE));
         tooltip.add(Component.literal(context.moodText()).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(context.genderText()).withStyle(ChatFormatting.GRAY));
-        graphics.renderComponentTooltip(context.font(), tooltip, mouseX, mouseY);
+        VillagerInteractionUiUtil.renderScaledComponentTooltip(graphics, context.font(), tooltip, mouseX, mouseY, context.experimentalTextScale());
     }
 
     static void renderWalletTooltip(Context context, GuiGraphics graphics, int mouseX, int mouseY) {

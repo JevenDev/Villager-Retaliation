@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.trade;
 
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -27,13 +28,25 @@ public final class VillagerSkillTradeEvents {
     }
 
     public static void onWandererTrades(WandererTradesEvent event) {
-        event.getGenericTrades().add(new WanderingTraderSkillTradeListing(SkillTradePool.WANDERING_TRADER_GENERIC));
-        event.getRareTrades().add(new WanderingTraderSkillTradeListing(SkillTradePool.WANDERING_TRADER_RARE));
+        addIfAbsent(event.getGenericTrades(), new WanderingTraderSkillTradeListing(SkillTradePool.WANDERING_TRADER_GENERIC));
+        addIfAbsent(event.getRareTrades(), new WanderingTraderSkillTradeListing(SkillTradePool.WANDERING_TRADER_RARE));
     }
 
     private static void add(Int2ObjectMap<List<VillagerTrades.ItemListing>> trades, int level, VillagerTrades.ItemListing listing) {
-        List<VillagerTrades.ItemListing> listings = trades.get(level);
-        if (listings != null) {
+        List<VillagerTrades.ItemListing> mutable = new ArrayList<>();
+        List<VillagerTrades.ItemListing> existing = trades.get(level);
+        if (existing != null) {
+            if (existing.contains(listing)) {
+                return;
+            }
+            mutable.addAll(existing);
+        }
+        mutable.add(listing);
+        trades.put(level, mutable);
+    }
+
+    private static void addIfAbsent(List<VillagerTrades.ItemListing> listings, VillagerTrades.ItemListing listing) {
+        if (!listings.contains(listing)) {
             listings.add(listing);
         }
     }

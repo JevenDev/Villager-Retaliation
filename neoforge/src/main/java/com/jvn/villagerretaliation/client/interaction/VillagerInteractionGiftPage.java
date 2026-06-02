@@ -11,6 +11,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
+import org.lwjgl.glfw.GLFW;
 
 final class VillagerInteractionGiftPage {
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
@@ -29,6 +30,7 @@ final class VillagerInteractionGiftPage {
     private static final int GIFT_INFO_ICON_SIZE = 16;
     private static final int GIFT_INFO_ICON_GAP = 5;
     private static final int INVENTORY_LEFT_OFFSET = 10;
+    private static final int INVENTORY_BACK_BUTTON_GAP = 5;
 
     private VillagerInteractionGiftPage() {
     }
@@ -40,32 +42,64 @@ final class VillagerInteractionGiftPage {
             int mouseY,
             float partialTick,
             int optionsLeft,
-            int conversationInfoTop) {
-        int left = giftInventoryLeft(optionsLeft);
-        int top = giftInventoryTop(conversationInfoTop);
-        int hoveredSlot = giftSlotAt(mouseX, mouseY, left, top);
+            int optionWidth,
+            int screenWidth,
+            int screenHeight,
+            int backButtonBottom) {
+        GiftTransform transform = giftTransform(optionsLeft, optionWidth, screenWidth, screenHeight, backButtonBottom);
+        double localMouseX = transform.localX(mouseX);
+        double localMouseY = transform.localY(mouseY);
+        int localMouseXi = Mth.floor(localMouseX);
+        int localMouseYi = Mth.floor(localMouseY);
+        int hoveredSlot = giftSlotAt(localMouseX, localMouseY, 0, 0);
 
-        renderGiftSlots(context, graphics, left, top, hoveredSlot);
-        renderGiftInfoIcon(graphics, left, top);
-        renderGiftButton(context, graphics, mouseX, mouseY, partialTick, left, top);
+        graphics.pose().pushPose();
+        graphics.pose().translate(transform.left(), transform.top(), 0.0F);
+        graphics.pose().scale(transform.scale(), transform.scale(), 1.0F);
+
+        renderGiftSlots(context, graphics, 0, 0, hoveredSlot);
+        renderGiftInfoIcon(graphics, 0, 0);
+        renderGiftButton(context, graphics, localMouseXi, localMouseYi, partialTick, 0, 0);
 
         ItemStack hoveredStack = context.stackForInventorySlot(hoveredSlot);
-        if (isPointInsideGiftInfoIcon(mouseX, mouseY, left, top)) {
-            renderGiftKnowledgeTooltip(context, graphics, mouseX, mouseY);
+        if (isPointInsideGiftInfoIcon(localMouseX, localMouseY, 0, 0)) {
+            renderGiftKnowledgeTooltip(context, graphics, localMouseXi, localMouseYi, transform.scale(), transform.left(), transform.top());
         } else if (!hoveredStack.isEmpty()) {
-            graphics.renderTooltip(context.font(), hoveredStack, mouseX, mouseY);
+            VillagerInteractionUiUtil.renderBoundedItemTooltipInCurrentPose(
+                    graphics,
+                    context.font(),
+                    hoveredStack,
+                    localMouseXi,
+                    localMouseYi,
+                    transform.scale(),
+                    transform.left(),
+                    transform.top());
         }
+
+        graphics.pose().popPose();
     }
 
-    static boolean tryClick(Context context, double mouseX, double mouseY, int optionsLeft, int conversationInfoTop) {
-        int left = giftInventoryLeft(optionsLeft);
-        int top = giftInventoryTop(conversationInfoTop);
-        int clickedSlot = giftSlotAt(mouseX, mouseY, left, top);
+    static boolean tryClick(
+            Context context,
+            double mouseX,
+            double mouseY,
+            int optionsLeft,
+            int optionWidth,
+            int screenWidth,
+            int screenHeight,
+            int backButtonBottom) {
+        GiftTransform transform = giftTransform(optionsLeft, optionWidth, screenWidth, screenHeight, backButtonBottom);
+        double localMouseX = transform.localX(mouseX);
+        double localMouseY = transform.localY(mouseY);
+        int clickedSlot = giftSlotAt(localMouseX, localMouseY, 0, 0);
         if (clickedSlot >= 0) {
             ItemStack stack = context.stackForInventorySlot(clickedSlot);
             if (!stack.isEmpty()) {
                 context.setSelectedInventorySlot(clickedSlot);
             }
+            return true;
+        }
+        if (tryClickGiftButton(context, localMouseX, localMouseY)) {
             return true;
         }
         return false;
@@ -80,12 +114,31 @@ final class VillagerInteractionGiftPage {
         return -1;
     }
 
-    static int giftInventoryTop(int conversationInfoTop) {
-        return conversationInfoTop;
+    static int giftInventoryLeft(int optionsLeft, int optionWidth, int screenWidth) {
+        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
+        int scaledInventoryWidth = Math.round(INVENTORY_TEXTURE_WIDTH * scale);
+        int preferredLeft = optionsLeft + optionWidth - scaledInventoryWidth;
+        int edgeMargin = VillagerInteractionExperimentalLayout.unitAtLeast(8, 4);
+        int maxLeft = Math.max(edgeMargin, screenWidth - scaledInventoryWidth - edgeMargin);
+        return Mth.clamp(preferredLeft, edgeMargin, maxLeft);
     }
 
-    static int giftInventoryLeft(int optionsLeft) {
-        return optionsLeft + INVENTORY_LEFT_OFFSET;
+    static int giftInventoryTop(int backButtonBottom, int screenHeight) {
+        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
+        int edgeMargin = VillagerInteractionExperimentalLayout.unitAtLeast(8, 4);
+        int scaledInventoryHeight = Math.round(INVENTORY_TEXTURE_HEIGHT * scale);
+        int scaledButtonClearance = Math.round((INVENTORY_BUTTON_HEIGHT + INVENTORY_BUTTON_GAP) * scale);
+        int preferredTop = backButtonBottom + VillagerInteractionExperimentalLayout.unit(INVENTORY_BACK_BUTTON_GAP);
+        int minTop = edgeMargin + scaledButtonClearance;
+        int maxTop = Math.max(minTop, screenHeight - scaledInventoryHeight - edgeMargin);
+        return Mth.clamp(preferredTop, minTop, maxTop);
+    }
+
+    private static GiftTransform giftTransform(int optionsLeft, int optionWidth, int screenWidth, int screenHeight, int backButtonBottom) {
+        return new GiftTransform(
+                giftInventoryLeft(optionsLeft, optionWidth, screenWidth),
+                giftInventoryTop(backButtonBottom, screenHeight),
+                VillagerInteractionExperimentalLayout.scaleFactor());
     }
 
     private static void renderGiftSlots(Context context, GuiGraphics graphics, int left, int top, int hoveredSlot) {
@@ -147,14 +200,35 @@ final class VillagerInteractionGiftPage {
             return;
         }
 
+        updateGiftButton(context, left, top);
+        giftButton.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private static boolean tryClickGiftButton(Context context, double mouseX, double mouseY) {
+        Button giftButton = context.giftButton();
+        if (giftButton == null) {
+            return false;
+        }
+
+        updateGiftButton(context, 0, 0);
+        return giftButton.mouseClicked(mouseX, mouseY, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+    }
+
+    private static void updateGiftButton(Context context, int left, int top) {
+        Button giftButton = context.giftButton();
+        if (giftButton == null) {
+            return;
+        }
+
         GiftButtonBounds bounds = giftButtonBounds(left, top);
         int selectedSlot = context.selectedInventorySlot();
         boolean enabled = selectedSlot >= 0 && !context.stackForInventorySlot(selectedSlot).isEmpty();
         giftButton.setPosition(bounds.left(), bounds.top());
+        giftButton.setWidth(bounds.width());
+        giftButton.setHeight(bounds.height());
         giftButton.setMessage(Component.translatable(giftButtonKey(context.stackForInventorySlot(selectedSlot))));
         giftButton.active = enabled;
         giftButton.visible = true;
-        giftButton.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private static String giftButtonKey(ItemStack selectedStack) {
@@ -176,7 +250,14 @@ final class VillagerInteractionGiftPage {
         );
     }
 
-    private static void renderGiftKnowledgeTooltip(Context context, GuiGraphics graphics, int mouseX, int mouseY) {
+    private static void renderGiftKnowledgeTooltip(
+            Context context,
+            GuiGraphics graphics,
+            int mouseX,
+            int mouseY,
+            float scale,
+            int originX,
+            int originY) {
         List<Component> tooltip = new ArrayList<>();
         tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.known_gifts").withStyle(ChatFormatting.AQUA));
         tooltip.add(Component.literal(context.professionName()).withStyle(ChatFormatting.AQUA));
@@ -187,7 +268,7 @@ final class VillagerInteractionGiftPage {
             addGiftTooltipSection(tooltip, "gift.likes", context.knownLikedGiftNames(), ChatFormatting.GREEN);
             addGiftTooltipSection(tooltip, "gift.dislikes", context.knownDislikedGiftNames(), ChatFormatting.RED);
         }
-        graphics.renderComponentTooltip(context.font(), tooltip, mouseX, mouseY);
+        VillagerInteractionUiUtil.renderBoundedComponentTooltipInCurrentPose(graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
     }
 
     private static void addGiftTooltipSection(List<Component> tooltip, String labelKey, List<String> giftNames, ChatFormatting color) {
@@ -265,7 +346,24 @@ final class VillagerInteractionGiftPage {
         List<String> knownDislikedGiftNames();
     }
 
+    private record GiftTransform(int left, int top, float scale) {
+        double localX(double screenX) {
+            return (screenX - this.left) / Math.max(this.scale, 0.001F);
+        }
+
+        double localY(double screenY) {
+            return (screenY - this.top) / Math.max(this.scale, 0.001F);
+        }
+    }
+
     private record GiftButtonBounds(int left, int top, int right, int bottom) {
+        int width() {
+            return this.right - this.left;
+        }
+
+        int height() {
+            return this.bottom - this.top;
+        }
     }
 
     private record GiftInfoIconBounds(int left, int top, int right, int bottom) {

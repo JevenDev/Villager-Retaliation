@@ -31,29 +31,35 @@ final class VillagerInteractionExperimentalLayout {
 
     static int optionsLeft(int screenWidth, int optionWidth) {
         int preferredLeft = Mth.floor(screenWidth * OPTIONS_LEFT_RATIO);
-        int maxLeft = Math.max(MIN_SCREEN_MARGIN, screenWidth - optionWidth - unit(SCREEN_EDGE_MARGIN));
-        return Mth.clamp(preferredLeft, MIN_SCREEN_MARGIN, maxLeft);
+        int minLeft = unit(MIN_SCREEN_MARGIN);
+        int maxLeft = Math.max(minLeft, screenWidth - optionWidth - unit(SCREEN_EDGE_MARGIN));
+        return Mth.clamp(preferredLeft, minLeft, maxLeft);
     }
 
     static int optionsTop(int screenHeight, int viewportHeight) {
         int top = Mth.floor(screenHeight * OPTIONS_TOP_RATIO);
-        return Mth.clamp(top, 24, Math.max(24, screenHeight - viewportHeight - 18));
+        int minTop = unit(24);
+        int bottomMargin = unit(18);
+        return Mth.clamp(top, minTop, Math.max(minTop, screenHeight - viewportHeight - bottomMargin));
     }
 
     static int pageLeft(int screenWidth, int optionWidth) {
         int preferredLeft = Mth.floor(screenWidth * PAGE_LEFT_RATIO);
-        int maxLeft = Math.max(MIN_SCREEN_MARGIN, screenWidth - optionWidth - unit(PAGE_RIGHT_MARGIN));
-        return Mth.clamp(preferredLeft, MIN_SCREEN_MARGIN, maxLeft);
+        int minLeft = unit(MIN_SCREEN_MARGIN);
+        int maxLeft = Math.max(minLeft, screenWidth - optionWidth - unit(PAGE_RIGHT_MARGIN));
+        return Mth.clamp(preferredLeft, minLeft, maxLeft);
     }
 
     static int infoRight(int screenWidth, int optionsLeft) {
         int preferredRight = Mth.floor(screenWidth * INFO_RIGHT_RATIO);
-        int maxRight = Math.max(MIN_SCREEN_MARGIN, optionsLeft - INFO_TO_OPTIONS_GAP);
-        return Mth.clamp(preferredRight, MIN_SCREEN_MARGIN, maxRight);
+        int minRight = unit(MIN_SCREEN_MARGIN);
+        int maxRight = Math.max(minRight, optionsLeft - unit(INFO_TO_OPTIONS_GAP));
+        return Mth.clamp(preferredRight, minRight, maxRight);
     }
 
     static int scrollbarLeft(int screenWidth, int optionsLeft, int optionWidth, int scrollbarOffset, int scrollbarWidth) {
-        int maxLeft = Math.max(MIN_SCREEN_MARGIN, screenWidth - scrollbarWidth - unit(SCREEN_EDGE_MARGIN));
+        int minLeftMargin = unit(MIN_SCREEN_MARGIN);
+        int maxLeft = Math.max(minLeftMargin, screenWidth - scrollbarWidth - unit(SCREEN_EDGE_MARGIN));
         int minLeft = Math.min(maxLeft, optionsLeft + optionWidth + scrollbarOffset);
         int preferredLeft = screenWidth - unit(SCROLLBAR_RIGHT_MARGIN);
         return Mth.clamp(preferredLeft, minLeft, maxLeft);
