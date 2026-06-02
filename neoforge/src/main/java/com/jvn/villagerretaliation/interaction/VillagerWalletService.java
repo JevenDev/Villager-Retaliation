@@ -21,12 +21,15 @@ public final class VillagerWalletService {
     private static final String CURRENT_EMERALDS_TAG = "CurrentEmeralds";
     private static final String MAX_EMERALDS_TAG = "MaxEmeralds";
     private static final String LIFETIME_EARNED_TAG = "LifetimeEarned";
+    private static final String LIFETIME_NATURAL_EARNED_TAG = "LifetimeNaturalEarned";
     private static final String LIFETIME_SPENT_TAG = "LifetimeSpent";
     private static final String LIFETIME_DEPOSITED_TAG = "LifetimeDeposited";
     private static final String LAST_INCOME_DAY_TAG = "LastIncomeDay";
     private static final String LAST_DEPOSIT_DAY_TAG = "LastDepositDay";
     private static final long DAY_TICKS = 24000L;
     private static final int WALLET_TICK_INTERVAL = 200;
+    private static final int MIN_VENDOR_CAPACITY = 400;
+    private static final int ESTABLISHED_VENDOR_CAPACITY = 1000;
     private static final int MAX_SAFE_EMERALDS = 1_000_000_000;
 
     private VillagerWalletService() {
@@ -66,6 +69,7 @@ public final class VillagerWalletService {
         wallet.putInt(CURRENT_EMERALDS_TAG, starting);
         wallet.putInt(MAX_EMERALDS_TAG, max);
         wallet.putInt(LIFETIME_EARNED_TAG, starting);
+        wallet.putInt(LIFETIME_NATURAL_EARNED_TAG, 0);
         wallet.putInt(LIFETIME_SPENT_TAG, 0);
         wallet.putInt(LIFETIME_DEPOSITED_TAG, 0);
         wallet.putLong(LAST_INCOME_DAY_TAG, currentDay(villager));
@@ -164,10 +168,10 @@ public final class VillagerWalletService {
 
         int current = safeInt(wallet, CURRENT_EMERALDS_TAG);
         int max = safeInt(wallet, MAX_EMERALDS_TAG);
-        if (current < max) {
-            int income = Math.min(dailyIncome(villager), max - current);
+        if (current <= max) {
+            int income = dailyIncome(villager);
             if (income > 0) {
-                addEmeralds(villager, income, WalletSource.DAILY_WORK);
+                addNaturalEmeralds(villager, income);
             }
         }
 
@@ -282,8 +286,9 @@ public final class VillagerWalletService {
 
     private static void sanitize(CompoundTag wallet) {
         wallet.putInt(CURRENT_EMERALDS_TAG, safeInt(wallet, CURRENT_EMERALDS_TAG));
-        wallet.putInt(MAX_EMERALDS_TAG, Math.max(1, safeInt(wallet, MAX_EMERALDS_TAG)));
+        wallet.putInt(MAX_EMERALDS_TAG, Math.max(MIN_VENDOR_CAPACITY, safeInt(wallet, MAX_EMERALDS_TAG)));
         wallet.putInt(LIFETIME_EARNED_TAG, safeInt(wallet, LIFETIME_EARNED_TAG));
+        wallet.putInt(LIFETIME_NATURAL_EARNED_TAG, safeInt(wallet, LIFETIME_NATURAL_EARNED_TAG));
         wallet.putInt(LIFETIME_SPENT_TAG, safeInt(wallet, LIFETIME_SPENT_TAG));
         wallet.putInt(LIFETIME_DEPOSITED_TAG, safeInt(wallet, LIFETIME_DEPOSITED_TAG));
     }
@@ -293,7 +298,28 @@ public final class VillagerWalletService {
         int skillBonus = skillBonus(villager);
         int professionBonus = professionBonus(professionKey(villager));
         int baseline = range.min() + (range.max() - range.min()) * Math.max(1, villager.getVillagerData().getLevel()) / 5;
-        return Mth.clamp(baseline + skillBonus + professionBonus, 1, MAX_SAFE_EMERALDS);
+        int baseCap = Mth.clamp(baseline + skillBonus + professionBonus, MIN_VENDOR_CAPACITY, ESTABLISHED_VENDOR_CAPACITY);
+        int naturalGrowth = safeInt(walletTag(villager), LIFETIME_NATURAL_EARNED_TAG);
+        return Mth.clamp(baseCap + naturalGrowth, MIN_VENDOR_CAPACITY, MAX_SAFE_EMERALDS);
+    }
+
+    private static int addNaturalEmeralds(Villager villager, int amount) {
+        if (amount <= 0) {
+            return 0;
+        }
+        initializeWalletIfNeeded(villager);
+        CompoundTag wallet = walletTag(villager);
+        wallet.putInt(LIFETIME_NATURAL_EARNED_TAG, addClamped(safeInt(wallet, LIFETIME_NATURAL_EARNED_TAG), amount));
+        setMaxEmeraldsFromProfessionAndSkills(villager);
+        int max = safeInt(wallet, MAX_EMERALDS_TAG);
+        int current = safeInt(wallet, CURRENT_EMERALDS_TAG);
+        int accepted = Math.min(amount, Math.max(0, max - current));
+        if (accepted <= 0) {
+            return 0;
+        }
+        wallet.putInt(CURRENT_EMERALDS_TAG, current + accepted);
+        wallet.putInt(LIFETIME_EARNED_TAG, addClamped(safeInt(wallet, LIFETIME_EARNED_TAG), accepted));
+        return accepted;
     }
 
     private static int startingEmeralds(Villager villager) {
@@ -350,26 +376,26 @@ public final class VillagerWalletService {
     private static WealthRange baseRange(Villager villager) {
         String professionKey = professionKey(villager);
         if ("nitwit".equals(professionKey)) {
-            return new WealthRange(4, 12);
+            return new WealthRange(400, 500);
         }
         if ("none".equals(professionKey)) {
-            return new WealthRange(8, 20);
+            return new WealthRange(400, 575);
         }
         return switch (Math.max(1, villager.getVillagerData().getLevel())) {
-            case 1 -> new WealthRange(20, 40);
-            case 2 -> new WealthRange(35, 60);
-            case 3 -> new WealthRange(50, 90);
-            case 4 -> new WealthRange(75, 130);
-            default -> new WealthRange(100, 180);
+            case 1 -> new WealthRange(600, 725);
+            case 2 -> new WealthRange(700, 825);
+            case 3 -> new WealthRange(800, 925);
+            case 4 -> new WealthRange(900, ESTABLISHED_VENDOR_CAPACITY);
+            default -> new WealthRange(ESTABLISHED_VENDOR_CAPACITY, ESTABLISHED_VENDOR_CAPACITY);
         };
     }
 
     private static int professionBonus(String professionKey) {
         return switch (professionKey) {
-            case "armorer", "weaponsmith", "toolsmith" -> 20;
-            case "cleric", "librarian", "cartographer" -> 12;
-            case "farmer", "fisherman", "shepherd", "butcher" -> 6;
-            case "mason", "fletcher", "leatherworker" -> 4;
+            case "armorer", "weaponsmith", "toolsmith" -> 120;
+            case "cleric", "librarian", "cartographer" -> 80;
+            case "farmer", "fisherman", "shepherd", "butcher" -> 50;
+            case "mason", "fletcher", "leatherworker" -> 40;
             default -> 0;
         };
     }
