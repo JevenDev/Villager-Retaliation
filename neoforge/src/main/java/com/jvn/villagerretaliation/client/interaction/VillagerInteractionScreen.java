@@ -72,6 +72,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INFO_LABEL_COLOR = 0x96E8E4DA;
     private static final int INFO_VALUE_COLOR = 0xFFF8F6EF;
     private static final int INFO_SECONDARY_COLOR = 0xB8D5D0C6;
+    private static final int WALLET_COLOR = 0xFFB6FF4A;
     private static final int GIFT_BUTTON_WIDTH = 64;
     private static final int GIFT_BUTTON_HEIGHT = 18;
     private static final int PROFILE_CHART_RADIUS = 36;
@@ -301,6 +302,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         renderHint(graphics);
         VillagerInteractionExperimentalChrome.renderNameTooltip(this.experimentalChromeContext, graphics, mouseX, mouseY);
+        VillagerInteractionExperimentalChrome.renderWalletTooltip(this.experimentalChromeContext, graphics, mouseX, mouseY);
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
@@ -1525,6 +1527,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return translate("info.wallet", this.walletEmeralds, this.maxWalletEmeralds);
     }
 
+    private String walletTooltipTitle() {
+        return translate("info.wallet.tooltip.title");
+    }
+
+    private String walletTooltipBody() {
+        return translate("info.wallet.tooltip.body");
+    }
+
     private int reputationColor() {
         Integer color = VillagerReputationIconSet.colorFor(this.reputationLevel).getColor();
         return color == null ? INFO_LABEL_COLOR : 0xFF000000 | color;
@@ -2167,6 +2177,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public String walletTooltipTitle() {
+            return VillagerInteractionScreen.this.walletTooltipTitle();
+        }
+
+        @Override
+        public String walletTooltipBody() {
+            return VillagerInteractionScreen.this.walletTooltipBody();
+        }
+
+        @Override
         public int moodColor() {
             return VillagerInteractionScreen.moodColor(VillagerInteractionScreen.this.primaryMood);
         }
@@ -2174,6 +2194,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public int reputationColor() {
             return VillagerInteractionScreen.this.reputationColor();
+        }
+
+        @Override
+        public int walletColor() {
+            return WALLET_COLOR;
         }
 
         @Override

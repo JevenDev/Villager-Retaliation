@@ -187,7 +187,7 @@ final class VillagerInteractionExperimentalChrome {
                 context.walletText(),
                 right,
                 walletY,
-                context.infoSecondaryColor(),
+                context.walletColor(),
                 detailScale,
                 textFadeInAlpha());
     }
@@ -204,6 +204,17 @@ final class VillagerInteractionExperimentalChrome {
         graphics.renderComponentTooltip(context.font(), tooltip, mouseX, mouseY);
     }
 
+    static void renderWalletTooltip(Context context, GuiGraphics graphics, int mouseX, int mouseY) {
+        if (!isPointInsideWallet(context, mouseX, mouseY)) {
+            return;
+        }
+
+        List<Component> tooltip = new ArrayList<>();
+        tooltip.add(Component.literal(context.walletTooltipTitle()).withStyle(ChatFormatting.GREEN));
+        tooltip.add(Component.literal(context.walletTooltipBody()).withStyle(ChatFormatting.GRAY));
+        graphics.renderComponentTooltip(context.font(), tooltip, mouseX, mouseY);
+    }
+
     private static boolean isPointInsideName(Context context, double mouseX, double mouseY) {
         Font font = context.font();
         float nameScale = NAME_TEXT_SCALE * context.experimentalTextScale();
@@ -211,7 +222,8 @@ final class VillagerInteractionExperimentalChrome {
         int lineGap = context.experimentalUnit(NAME_LINE_GAP);
         int nameWidth = Math.round(font.width(context.villagerName()) * nameScale);
         int nameLeft = context.infoRight() - nameWidth;
-        int reputationY = context.infoBottom() - Math.round(font.lineHeight * detailScale);
+        int walletY = context.infoBottom() - Math.round(font.lineHeight * detailScale);
+        int reputationY = walletY - lineGap - Math.round(font.lineHeight * detailScale);
         int professionY = reputationY - lineGap - Math.round(font.lineHeight * detailScale);
         int nameTop = professionY - lineGap - Math.round(font.lineHeight * nameScale);
         int nameHeight = Math.round(font.lineHeight * nameScale);
@@ -219,6 +231,19 @@ final class VillagerInteractionExperimentalChrome {
                 && mouseX <= nameLeft + nameWidth + 4
                 && mouseY >= nameTop - 3
                 && mouseY <= nameTop + nameHeight + 3;
+    }
+
+    private static boolean isPointInsideWallet(Context context, double mouseX, double mouseY) {
+        Font font = context.font();
+        float detailScale = NAME_DETAIL_TEXT_SCALE * context.experimentalTextScale();
+        int walletWidth = Math.round(font.width(context.walletText()) * detailScale);
+        int walletLeft = context.infoRight() - walletWidth;
+        int walletTop = context.infoBottom() - Math.round(font.lineHeight * detailScale);
+        int walletHeight = Math.round(font.lineHeight * detailScale);
+        return mouseX >= walletLeft - 4
+                && mouseX <= walletLeft + walletWidth + 4
+                && mouseY >= walletTop - 3
+                && mouseY <= walletTop + walletHeight + 3;
     }
 
     private static void drawAnimatedRightAlignedScaled(
@@ -385,9 +410,15 @@ final class VillagerInteractionExperimentalChrome {
 
         String walletText();
 
+        String walletTooltipTitle();
+
+        String walletTooltipBody();
+
         int moodColor();
 
         int reputationColor();
+
+        int walletColor();
 
         int infoSecondaryColor();
 
