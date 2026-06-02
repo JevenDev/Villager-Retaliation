@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.skill.VillagerSkillGrowthService;
 import com.jvn.villagerretaliation.skill.VillagerTradeLevelingService;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
+import com.jvn.villagerretaliation.trade.VillagerTradeWalletService;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -206,6 +207,10 @@ public final class VillagerReputationEvents {
                 if (event.getEntity() instanceof ServerPlayer serverPlayer) {
                     storeTradePayments(level, villageResident, serverPlayer, event.getMerchantOffer());
                 }
+                VillagerTradeWalletService.onTradeCompleted(level, villageResident, event.getMerchantOffer());
+                if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+                    VillagerTradeWalletService.syncOffers(serverPlayer, villageResident);
+                }
                 VillagerTradeLevelingService.onTradeCompleted(level, villageResident, event.getMerchantOffer());
             }
             VillagerAmbientIndicatorService.onTradeCompleted(level, villager, event.getEntity());
@@ -246,8 +251,14 @@ public final class VillagerReputationEvents {
         AABB area = player.getBoundingBox().inflate(8.0D);
         for (AbstractVillager villager : level.getEntitiesOfClass(AbstractVillager.class, area)) {
             if (villager.getTradingPlayer() == player) {
+                if (villager instanceof Villager villageResident) {
+                    VillagerTradeWalletService.refreshWalletStock(level, villageResident);
+                }
                 VillagerTradeUseTracker.snapshotOffers(villager);
                 VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+                if (villager instanceof Villager villageResident && player instanceof ServerPlayer serverPlayer) {
+                    VillagerTradeWalletService.syncOffers(serverPlayer, villageResident);
+                }
                 VillagerReputationManager.syncToTrackingPlayer(level, villager, player.getUUID());
                 return;
             }

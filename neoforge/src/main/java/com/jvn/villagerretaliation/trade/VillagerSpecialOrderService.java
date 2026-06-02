@@ -257,6 +257,7 @@ public final class VillagerSpecialOrderService {
                 continue;
             }
 
+            VillagerTradeWalletService.restoreWalletStock(villager, offerIndex);
             offers.set(offerIndex, replacement);
             if (player != null
                     && order.hasUUID(PLAYER_KEY)

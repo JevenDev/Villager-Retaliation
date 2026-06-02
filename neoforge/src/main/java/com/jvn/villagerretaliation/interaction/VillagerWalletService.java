@@ -435,6 +435,8 @@ public final class VillagerWalletService {
         STARTING_FUNDS,
         DAILY_WORK,
         HIRE_PAYMENT,
+        TRADE_PAYMENT,
+        TRADE_PAYOUT,
         TASK_REWARD,
         DEPOSIT_ADJUSTMENT,
         DEBUG
