@@ -149,6 +149,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_REPUTATION_TRADE_PRICING = bind("reputation.enableReputationTradePricing", Boolean.class);
     public static final ConfigValue<Double> REPUTATION_TRADE_PRICE_SCALE = bind("reputation.reputationTradePriceScale", Double.class);
     public static final ConfigValue<Boolean> ENABLE_SKILL_TRADE_OVERHAUL = bind("trade.enableSkillTradeOverhaul", Boolean.class);
+    public static final ConfigValue<Boolean> DISABLE_VILLAGER_WALLET_LIMIT = bind("trade.disableVillagerWalletLimit", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_SPECIAL_ORDERS = bind("trade.enableSpecialOrders", Boolean.class);
     public static final ConfigValue<VillagerReputationLevel> SPECIAL_ORDER_MIN_REPUTATION = bind("trade.specialOrderMinReputation", VillagerReputationLevel.class);
     public static final ConfigValue<Integer> SPECIAL_ORDER_WAIT_DAYS = bind("trade.specialOrderWaitDays", Integer.class);

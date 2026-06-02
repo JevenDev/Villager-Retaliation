@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.ProtectedVillagerProperty;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -112,11 +113,14 @@ public final class VillagerWalletService {
     }
 
     public static boolean canSpendEmeralds(Villager villager, int amount) {
-        return amount <= 0 || getCurrentEmeralds(villager) >= amount;
+        return amount <= 0 || hasUnlimitedCurrency() || getCurrentEmeralds(villager) >= amount;
     }
 
     public static boolean spendEmeralds(Villager villager, int amount, WalletSource source) {
         if (amount <= 0) {
+            return true;
+        }
+        if (hasUnlimitedCurrency()) {
             return true;
         }
         initializeWalletIfNeeded(villager);
@@ -182,6 +186,9 @@ public final class VillagerWalletService {
     }
 
     public static int getDepositAmount(Villager villager) {
+        if (hasUnlimitedCurrency()) {
+            return 0;
+        }
         WalletSnapshot wallet = getWallet(villager);
         return Math.max(0, wallet.currentEmeralds() - wallet.maxEmeralds());
     }
@@ -251,15 +258,25 @@ public final class VillagerWalletService {
     }
 
     public static int getVendorCurrencyAvailable(Villager villager) {
+        if (hasUnlimitedCurrency()) {
+            return MAX_SAFE_EMERALDS;
+        }
         return getCurrentEmeralds(villager);
     }
 
     public static int getVendorCurrencyCap(Villager villager) {
+        if (hasUnlimitedCurrency()) {
+            return MAX_SAFE_EMERALDS;
+        }
         return getMaxEmeralds(villager);
     }
 
     public static void replenishVendorCurrencyIfNeeded(Villager villager) {
         tickWallet(villager);
+    }
+
+    public static boolean hasUnlimitedCurrency() {
+        return VillagerRetaliationConfig.DISABLE_VILLAGER_WALLET_LIMIT.get();
     }
 
     public static WealthTier getWealthTier(Villager villager) {

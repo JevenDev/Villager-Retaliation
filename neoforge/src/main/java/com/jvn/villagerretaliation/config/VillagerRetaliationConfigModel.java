@@ -429,6 +429,8 @@ public final class VillagerRetaliationConfigModel {
     public static final class Trade {
         public boolean enableSkillTradeOverhaul = true;
 
+        public boolean disableVillagerWalletLimit = false;
+
         public boolean enableSpecialOrders = true;
 
         public VillagerReputationLevel specialOrderMinReputation = VillagerReputationLevel.RESPECTED;

@@ -27,6 +27,10 @@ public final class VillagerTradeWalletService {
         }
         VillagerWalletService.initializeWalletIfNeeded(villager);
         MerchantOffers offers = villager.getOffers();
+        if (VillagerWalletService.hasUnlimitedCurrency()) {
+            restoreAllWalletStock(villager, offers);
+            return;
+        }
         for (int index = 0; index < offers.size(); index++) {
             MerchantOffer offer = offers.get(index);
             int payout = emeraldCount(offer.getResult());
@@ -80,6 +84,12 @@ public final class VillagerTradeWalletService {
             return;
         }
         restoreWalletStock(villager, villager.getOffers().get(index), index);
+    }
+
+    private static void restoreAllWalletStock(Villager villager, MerchantOffers offers) {
+        for (int index = 0; index < offers.size(); index++) {
+            restoreWalletStock(villager, offers.get(index), index);
+        }
     }
 
     private static void markWalletOutOfStock(Villager villager, MerchantOffer offer, int index) {
