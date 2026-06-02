@@ -20,7 +20,8 @@ public final class HiredVillagerRoles {
             HiredVillagerRole.FARMING, List.of(VillagerSkill.FARMING),
             HiredVillagerRole.BREWING, List.of(VillagerSkill.MEDICINE),
             HiredVillagerRole.NAVIGATION, List.of(VillagerSkill.CARTOGRAPHY, VillagerSkill.SURVIVAL),
-            HiredVillagerRole.ANIMAL_HANDLING, List.of(VillagerSkill.ANIMAL_HANDLING)
+            HiredVillagerRole.ANIMAL_HANDLING, List.of(VillagerSkill.ANIMAL_HANDLING),
+            HiredVillagerRole.NITWIT, List.of(VillagerSkill.SURVIVAL, VillagerSkill.GATHERING, VillagerSkill.DIPLOMACY)
     );
 
     private HiredVillagerRoles() {
@@ -77,6 +78,7 @@ public final class HiredVillagerRoles {
 
     private static EnumSet<HiredVillagerRole> preferredRoles(Villager villager) {
         return switch (VillagerProfessionSkills.professionKey(villager)) {
+            case "nitwit" -> EnumSet.of(HiredVillagerRole.NITWIT);
             case "armorer", "weaponsmith" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.MINING);
             case "toolsmith", "mason" -> EnumSet.of(HiredVillagerRole.MINING, HiredVillagerRole.LOGGING);
             case "farmer" -> EnumSet.of(HiredVillagerRole.FARMING, HiredVillagerRole.ANIMAL_HANDLING);

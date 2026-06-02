@@ -305,6 +305,62 @@ public final class VillagerRetaliationConfigModel {
 
         @RangeConstraint(min = 0, max = 100)
         public int hiredContractEarlyEndRefundPercent = 50;
+
+        @RangeConstraint(min = 10, max = 200)
+        public int hiredWorkTickInterval = 40;
+
+        @RangeConstraint(min = 4, max = 64)
+        public int hiredWorkDefaultRadius = 16;
+
+        @RangeConstraint(min = 4, max = 128)
+        public int hiredWorkMaxRadius = 32;
+
+        public boolean hiredWorkFoodEnabled = true;
+
+        @RangeConstraint(min = 0, max = 64)
+        public int hiredWorkBaseFoodPerDay = 2;
+
+        @RangeConstraint(min = 0, max = 100)
+        public int hiredWorkNoFoodMoodIntensity = 36;
+
+        @RangeConstraint(min = -1000, max = 0)
+        public int hiredWorkNoFoodReputationPenalty = -2;
+
+        @RangeConstraint(min = 0, max = 30)
+        public int hiredWorkMaxStarvationPenaltyDays = 5;
+
+        @RangeConstraint(min = 1, max = 300)
+        public int hiredWorkBaseEfficiencyPercent = 100;
+
+        @RangeConstraint(min = 1, max = 300)
+        public int hiredWorkMinimumEfficiencyPercent = 25;
+
+        @RangeConstraint(min = 1, max = 300)
+        public int hiredWorkMaximumEfficiencyPercent = 175;
+
+        @RangeConstraint(min = 0, max = 16)
+        public int hiredWorkFoodCostCombat = 2;
+
+        @RangeConstraint(min = 0, max = 16)
+        public int hiredWorkFoodCostMining = 3;
+
+        @RangeConstraint(min = 0, max = 16)
+        public int hiredWorkFoodCostLogging = 3;
+
+        @RangeConstraint(min = 0, max = 16)
+        public int hiredWorkFoodCostFarming = 2;
+
+        @RangeConstraint(min = 0, max = 16)
+        public int hiredWorkFoodCostBrewing = 1;
+
+        @RangeConstraint(min = 0, max = 16)
+        public int hiredWorkFoodCostNavigation = 2;
+
+        @RangeConstraint(min = 0, max = 16)
+        public int hiredWorkFoodCostAnimalHandling = 2;
+
+        @RangeConstraint(min = 0, max = 16)
+        public int hiredWorkFoodCostNitwit = 1;
     }
 
     public static final class Retaliation {

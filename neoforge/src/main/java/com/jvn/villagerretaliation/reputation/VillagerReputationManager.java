@@ -94,6 +94,10 @@ public final class VillagerReputationManager {
         addReputation(level, villager, player.getUUID(), amount, ReputationEventType.TRADE, villager.blockPosition());
     }
 
+    public static void addHiredWorkReputation(ServerLevel level, AbstractVillager villager, UUID playerId, int amount) {
+        addReputation(level, villager, playerId, amount, ReputationEventType.DIALOGUE, villager.blockPosition());
+    }
+
     public static int getReputation(ServerLevel level, AbstractVillager villager, UUID playerId) {
         VillagerReputationSavedData.ReputationEntry entry = VillagerReputationSavedData.get(level).get(villager.getUUID(), playerId);
         return entry == null ? 0 : entry.reputation();

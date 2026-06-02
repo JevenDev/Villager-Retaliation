@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.Assignment
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -85,6 +86,36 @@ public final class AssignedStorageService {
         ItemStack remainder = VillagerInventoryOverflowService.insertIntoContainers(containers, stack, usedContainers);
         VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
         return remainder;
+    }
+
+    public static int consumeItems(Villager villager, Predicate<ItemStack> predicate, int count) {
+        if (count <= 0 || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
+        int remaining = count;
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+            Container container = candidate.container();
+            boolean used = false;
+            for (int slot = 0; slot < container.getContainerSize() && remaining > 0; slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.isEmpty() || !predicate.test(stack)) {
+                    continue;
+                }
+                int removed = Math.min(remaining, stack.getCount());
+                container.removeItem(slot, removed);
+                remaining -= removed;
+                used = true;
+            }
+            if (used) {
+                usedContainers.add(candidate);
+            }
+            if (remaining <= 0) {
+                break;
+            }
+        }
+        VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
+        return count - remaining;
     }
 
     static List<VillagerInventoryOverflowService.ContainerCandidate> liveContainerCandidates(ServerLevel level, Villager villager) {

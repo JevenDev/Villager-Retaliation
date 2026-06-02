@@ -469,6 +469,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addRoleOptions();
         } else if (this.page == DialoguePage.ROLE_CHANGE) {
             addRoleChangeOptions();
+        } else if (this.page == DialoguePage.WORK) {
+            addWorkOptions();
         } else if (this.page == DialoguePage.ROOT) {
             if (this.clipboardMenu) {
                 addClipboardMenuOptions();
@@ -510,7 +512,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (canRequestVillagerInventory()) {
                 addOption("root.inventory", this::requestInventory);
             }
-            addOption("root.recruit", this::openRecruitPage);
+            this.options.add(DialogueOption.enabled(translate(this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "root.recruit"), this::openRecruitPage));
             if (this.relationships.hasRelationships()) {
                 addOption("root.relationships", this::openRelationshipPage);
             }
@@ -538,6 +540,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.remove_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_STORAGE));
         if (this.hiredByPlayer) {
             addOption("recruit.about_role", this::openRolePage);
+            addOption("recruit.work", this::openWorkPage);
         }
         addOption("recruit.end_hire", () -> requestRecruit(VillagerRecruitRequestPayload.Action.END_HIRE));
         this.options.add(DialogueOption.enabled(
@@ -585,7 +588,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.role_brewing", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_BREWING));
         addOption("recruit.role_navigation", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_NAVIGATION));
         addOption("recruit.role_animal_handling", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_ANIMAL_HANDLING));
+        addOption("recruit.role_nitwit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_NITWIT));
         addOption("recruit.nevermind", this::openRolePage);
+    }
+
+    private void addWorkOptions() {
+        addOption("recruit.work_status", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_WORK_STATUS));
+        addOption("recruit.work_toggle", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED));
+        addOption("recruit.work_radius_up", () -> requestRecruit(VillagerRecruitRequestPayload.Action.INCREASE_WORK_RADIUS));
+        addOption("recruit.work_radius_down", () -> requestRecruit(VillagerRecruitRequestPayload.Action.DECREASE_WORK_RADIUS));
+        addOption("recruit.work_assigned_supplies", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES));
+        addOption("recruit.work_auto_deposit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS));
+        addOption("recruit.work_config_logging", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_LOGGING));
+        addOption("recruit.work_config_farming", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING));
+        addOption("recruit.work_config_brewing", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_BREWING));
+        addOption("recruit.work_config_navigation", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_NAVIGATION));
+        addOption("recruit.work_config_animal_handling", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_ANIMAL_HANDLING));
+        addOption("recruit.work_config_nitwit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT));
+        addOption("recruit.nevermind", this::openRecruitPage);
     }
 
     private void addClipboardMenuOptions() {
@@ -748,6 +768,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.ROLE_CHANGE);
     }
 
+    private void openWorkPage() {
+        openPage(DialoguePage.WORK);
+    }
+
     private void openFamilyPage() {
         openPage(DialoguePage.FAMILY);
     }
@@ -834,6 +858,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         if (this.page == DialoguePage.ROLE) {
+            openPage(DialoguePage.RECRUIT);
+            return;
+        }
+        if (this.page == DialoguePage.WORK) {
             openPage(DialoguePage.RECRUIT);
             return;
         }
@@ -1954,7 +1982,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         CONTRACT,
         CONTRACT_EXTENSION,
         ROLE,
-        ROLE_CHANGE
+        ROLE_CHANGE,
+        WORK
     }
 
     private record DialogueOption(String label, Runnable action) {

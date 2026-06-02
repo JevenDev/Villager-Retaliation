@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.inventory;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -198,6 +200,137 @@ public final class HiredJobInventory implements Container {
 
     public boolean isOutputSlot(int slot) {
         return slotType(slot) == HiredJobInventorySlotType.OUTPUT;
+    }
+
+    public boolean isSupplySlot(int slot) {
+        return slotType(slot) == HiredJobInventorySlotType.SUPPLY;
+    }
+
+    public List<Integer> supplySlots() {
+        List<Integer> slots = new ArrayList<>();
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (isSupplySlot(slot)) {
+                slots.add(slot);
+            }
+        }
+        return slots;
+    }
+
+    public List<Integer> outputSlots() {
+        List<Integer> slots = new ArrayList<>();
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (isOutputSlot(slot)) {
+                slots.add(slot);
+            }
+        }
+        return slots;
+    }
+
+    public ItemStack findSupply(Predicate<ItemStack> predicate) {
+        for (int slot : supplySlots()) {
+            ItemStack stack = this.items.get(slot);
+            if (!stack.isEmpty() && predicate.test(stack)) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    public ItemStack findTool(Predicate<ItemStack> predicate) {
+        ItemStack mainhand = getItem(MAINHAND_SLOT);
+        if (!mainhand.isEmpty() && predicate.test(mainhand)) {
+            return mainhand;
+        }
+        return findSupply(predicate);
+    }
+
+    public ItemStack equipBestTool(Predicate<ItemStack> predicate, ToDoubleFunction<ItemStack> scorer) {
+        int bestSlot = -1;
+        double bestScore = Double.NEGATIVE_INFINITY;
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (slot != MAINHAND_SLOT && !isSupplySlot(slot)) {
+                continue;
+            }
+            ItemStack stack = this.items.get(slot);
+            if (stack.isEmpty() || !predicate.test(stack)) {
+                continue;
+            }
+            double score = scorer.applyAsDouble(stack);
+            if (score > bestScore) {
+                bestScore = score;
+                bestSlot = slot;
+            }
+        }
+        if (bestSlot < 0) {
+            return ItemStack.EMPTY;
+        }
+        if (bestSlot == MAINHAND_SLOT) {
+            return this.items.get(MAINHAND_SLOT);
+        }
+        ItemStack selected = this.items.get(bestSlot);
+        ItemStack previousMainhand = this.items.get(MAINHAND_SLOT);
+        this.items.set(MAINHAND_SLOT, selected);
+        this.items.set(bestSlot, previousMainhand);
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, EquipmentSlot.MAINHAND, selected);
+        setChanged();
+        return selected;
+    }
+
+    public int consumeSupply(Predicate<ItemStack> predicate, int count) {
+        int remaining = Math.max(0, count);
+        if (remaining <= 0) {
+            return 0;
+        }
+        int consumed = 0;
+        for (int slot : supplySlots()) {
+            ItemStack stack = this.items.get(slot);
+            if (stack.isEmpty() || !predicate.test(stack)) {
+                continue;
+            }
+            int removed = Math.min(remaining, stack.getCount());
+            stack.shrink(removed);
+            if (stack.isEmpty()) {
+                this.items.set(slot, ItemStack.EMPTY);
+            }
+            remaining -= removed;
+            consumed += removed;
+            if (remaining <= 0) {
+                setChanged();
+                return consumed;
+            }
+        }
+        if (consumed > 0) {
+            setChanged();
+        }
+        return consumed;
+    }
+
+    public ItemStack insertOutput(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack remainder = stack.copy();
+        for (int slot : outputSlots()) {
+            ItemStack current = this.items.get(slot);
+            if (current.isEmpty()) {
+                int moved = Math.min(remainder.getCount(), remainder.getMaxStackSize());
+                this.items.set(slot, remainder.copyWithCount(moved));
+                remainder.shrink(moved);
+            } else if (ItemStack.isSameItemSameComponents(current, remainder)
+                    && current.getCount() < current.getMaxStackSize()) {
+                int moved = Math.min(remainder.getCount(), current.getMaxStackSize() - current.getCount());
+                current.grow(moved);
+                remainder.shrink(moved);
+            }
+            if (remainder.isEmpty()) {
+                setChanged();
+                return ItemStack.EMPTY;
+            }
+        }
+        if (remainder.getCount() != stack.getCount()) {
+            setChanged();
+        }
+        return remainder;
     }
 
     public boolean hasOutputSpace() {

@@ -330,6 +330,9 @@ public final class VillagerInteractionService {
         if (handleHiredRoleRequest(player, level, villager, action)) {
             return;
         }
+        if (handleHiredWorkRequest(player, level, villager, action)) {
+            return;
+        }
 
         switch (action) {
             case VIEW_CONTRACT -> sendHiredContractNotice(player, level, villager);
@@ -487,6 +490,7 @@ public final class VillagerInteractionService {
             case SET_ROLE_BREWING -> HiredVillagerRole.BREWING;
             case SET_ROLE_NAVIGATION -> HiredVillagerRole.NAVIGATION;
             case SET_ROLE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
+            case SET_ROLE_NITWIT -> HiredVillagerRole.NITWIT;
             default -> null;
         };
         if (role == null) {
@@ -501,6 +505,46 @@ public final class VillagerInteractionService {
             return true;
         }
         sendVillagerNotice(player, villager, "Assigned role: " + role.label() + ".");
+        return true;
+    }
+
+    private static boolean handleHiredWorkRequest(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            VillagerRecruitRequestPayload.Action action) {
+        HiredVillagerRole configureRole = switch (action) {
+            case CONFIGURE_LOGGING -> HiredVillagerRole.LOGGING;
+            case CONFIGURE_FARMING -> HiredVillagerRole.FARMING;
+            case CONFIGURE_BREWING -> HiredVillagerRole.BREWING;
+            case CONFIGURE_NAVIGATION -> HiredVillagerRole.NAVIGATION;
+            case CONFIGURE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
+            case CONFIGURE_NITWIT -> HiredVillagerRole.NITWIT;
+            default -> null;
+        };
+        boolean workAction = configureRole != null
+                || action == VillagerRecruitRequestPayload.Action.VIEW_WORK_STATUS
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED
+                || action == VillagerRecruitRequestPayload.Action.INCREASE_WORK_RADIUS
+                || action == VillagerRecruitRequestPayload.Action.DECREASE_WORK_RADIUS
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS;
+        if (!workAction) {
+            return false;
+        }
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            sendVillagerNotice(player, villager, "Only the hiring player can manage hired work.");
+            return true;
+        }
+        switch (action) {
+            case VIEW_WORK_STATUS -> HiredVillagerWorkService.sendStatus(player, level, villager);
+            case TOGGLE_WORK_ENABLED -> HiredVillagerWorkService.toggleEnabled(player, level, villager);
+            case INCREASE_WORK_RADIUS -> HiredVillagerWorkService.changeRadius(player, level, villager, 4);
+            case DECREASE_WORK_RADIUS -> HiredVillagerWorkService.changeRadius(player, level, villager, -4);
+            case TOGGLE_USE_ASSIGNED_SUPPLIES -> HiredVillagerWorkService.toggleAssignedSupplies(player, level, villager);
+            case TOGGLE_AUTO_DEPOSIT_OUTPUTS -> HiredVillagerWorkService.toggleAutoDeposit(player, level, villager);
+            default -> HiredVillagerWorkService.configureRole(player, level, villager, configureRole);
+        }
         return true;
     }
 

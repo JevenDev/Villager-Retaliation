@@ -50,6 +50,19 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
         SET_ROLE_BREWING,
         SET_ROLE_NAVIGATION,
         SET_ROLE_ANIMAL_HANDLING,
+        SET_ROLE_NITWIT,
+        VIEW_WORK_STATUS,
+        TOGGLE_WORK_ENABLED,
+        INCREASE_WORK_RADIUS,
+        DECREASE_WORK_RADIUS,
+        TOGGLE_USE_ASSIGNED_SUPPLIES,
+        TOGGLE_AUTO_DEPOSIT_OUTPUTS,
+        CONFIGURE_LOGGING,
+        CONFIGURE_FARMING,
+        CONFIGURE_BREWING,
+        CONFIGURE_NAVIGATION,
+        CONFIGURE_ANIMAL_HANDLING,
+        CONFIGURE_NITWIT,
         FOLLOW
     }
 }

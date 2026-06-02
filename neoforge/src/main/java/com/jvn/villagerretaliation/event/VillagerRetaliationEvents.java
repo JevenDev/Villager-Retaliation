@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
+import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
@@ -97,6 +98,7 @@ public final class VillagerRetaliationEvents {
         VillagerReputationManager.clearSyncState();
         VillagerCombatSurvivalService.clearRuntimeState();
         VillagerRecruitmentService.clearRuntimeState();
+        HiredVillagerWorkService.clearRuntimeState();
         VillagerTradeMemory.clearRuntimeState();
         VillagerSocialGraphService.clearRuntimeState();
     }
@@ -200,6 +202,7 @@ public final class VillagerRetaliationEvents {
         if (entity instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
             VillagerRecruitmentService.onVillagerTickPost(villager);
+            HiredVillagerWorkService.onVillagerTickPost(villager);
             rememberWeatherEventNearVillager(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerTradeMemory.ensureProfessionPoolIfNeeded(level, villager);

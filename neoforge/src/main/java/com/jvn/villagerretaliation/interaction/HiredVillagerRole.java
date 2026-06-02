@@ -9,7 +9,8 @@ public enum HiredVillagerRole {
     FARMING("farming"),
     BREWING("brewing"),
     NAVIGATION("navigation"),
-    ANIMAL_HANDLING("animal_handling");
+    ANIMAL_HANDLING("animal_handling"),
+    NITWIT("nitwit");
 
     private final String serializedName;
 
