@@ -39,6 +39,7 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
         VIEW_CONTRACT,
         OPEN_JOB_INVENTORY,
         SHOW_STORAGE,
+        DEPOSIT_EARNINGS,
         REMOVE_STORAGE,
         END_HIRE,
         VIEW_ROLE,

@@ -149,7 +149,8 @@ final class VillagerInteractionExperimentalChrome {
         float nameScale = NAME_TEXT_SCALE * context.experimentalTextScale();
         float detailScale = NAME_DETAIL_TEXT_SCALE * context.experimentalTextScale();
         int lineGap = context.experimentalUnit(NAME_LINE_GAP);
-        int reputationY = context.infoBottom() - Math.round(font.lineHeight * detailScale);
+        int walletY = context.infoBottom() - Math.round(font.lineHeight * detailScale);
+        int reputationY = walletY - lineGap - Math.round(font.lineHeight * detailScale);
         int professionY = reputationY - lineGap - Math.round(font.lineHeight * detailScale);
         int nameY = professionY - lineGap - Math.round(font.lineHeight * nameScale);
 
@@ -178,6 +179,15 @@ final class VillagerInteractionExperimentalChrome {
                 right,
                 reputationY,
                 context.reputationColor(),
+                detailScale,
+                textFadeInAlpha());
+        drawAnimatedRightAlignedScaled(
+                graphics,
+                font,
+                context.walletText(),
+                right,
+                walletY,
+                context.infoSecondaryColor(),
                 detailScale,
                 textFadeInAlpha());
     }
@@ -372,6 +382,8 @@ final class VillagerInteractionExperimentalChrome {
         String moodText();
 
         String reputationText();
+
+        String walletText();
 
         int moodColor();
 

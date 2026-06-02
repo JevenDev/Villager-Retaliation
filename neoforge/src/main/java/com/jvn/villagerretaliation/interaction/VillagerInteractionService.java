@@ -343,6 +343,7 @@ public final class VillagerInteractionService {
                 VillagerInventoryAccess.openJobInventory(player, villager);
             }
             case SHOW_STORAGE -> showAssignedStorage(player, level, villager);
+            case DEPOSIT_EARNINGS -> depositEarnings(player, level, villager);
             case REMOVE_STORAGE -> removeAssignedStorage(player, level, villager);
             case END_HIRE -> {
                 if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
@@ -423,8 +424,10 @@ public final class VillagerInteractionService {
         }
         removeEmeralds(player, cost);
         HiredVillagerContractService.startHireContract(level, villager, player, days, cost);
+        VillagerWalletService.addEmeralds(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         VillagerRecruitmentService.sendHiredNotice(player, villager);
-        sendVillagerNotice(player, villager, "Hired for " + days + " day" + plural(days) + " as "
+        sendVillagerNotice(player, villager, "Hired for " + days + " day" + plural(days) + " for "
+                + cost + " emerald" + plural(cost) + " as "
                 + HiredVillagerContractService.activeRole(level, villager).label() + ".");
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
         return true;
@@ -457,13 +460,15 @@ public final class VillagerInteractionService {
                     + " extension costs " + cost + " emerald" + plural(cost) + ".");
             return true;
         }
-        removeEmeralds(player, cost);
         if (!HiredVillagerContractService.extendHireContract(level, villager, player, days, cost)) {
             sendVillagerNotice(player, villager, "This contract cannot be extended right now.");
             return true;
         }
+        removeEmeralds(player, cost);
+        VillagerWalletService.addEmeralds(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         sendVillagerNotice(player, villager, "Contract extended by " + days + " day" + plural(days)
-                + ". " + HiredVillagerContractService.getRemainingHireDays(level, villager) + " day"
+                + " for " + cost + " emerald" + plural(cost) + ". "
+                + HiredVillagerContractService.getRemainingHireDays(level, villager) + " day"
                 + plural(HiredVillagerContractService.getRemainingHireDays(level, villager)) + " remaining.");
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
         return true;
@@ -560,6 +565,34 @@ public final class VillagerInteractionService {
         HiredStorageClipboardItem.sendAssignedStorageOutlines(player, assigned);
         int count = assigned.size();
         sendVillagerNotice(player, villager, "Assigned containers: " + count + ".");
+    }
+
+    private static void depositEarnings(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "You need trust or an active hire contract to manage my earnings.");
+            return;
+        }
+        int excess = VillagerWalletService.getDepositAmount(villager);
+        if (excess <= 0) {
+            sendVillagerNotice(player, villager, "No excess earnings to deposit.");
+            return;
+        }
+        VillagerWalletService.DepositResult result = VillagerWalletService.tryDepositExcessEmeralds(villager);
+        if (result.storageUnavailable()) {
+            sendVillagerNotice(player, villager, "Assigned storage is unavailable.");
+        } else if (!result.assignedStorageAvailable()) {
+            sendVillagerNotice(player, villager, "No assigned storage. I kept the emeralds in my wallet.");
+        } else if (result.deposited() <= 0) {
+            sendVillagerNotice(player, villager, "Assigned storage is full. I kept the emeralds in my wallet.");
+        } else if (result.remaining() > 0) {
+            sendVillagerNotice(player, villager, "Deposited " + result.deposited() + " emerald"
+                    + plural(result.deposited()) + ". Storage is full, so I kept "
+                    + result.remaining() + " in my wallet.");
+        } else {
+            sendVillagerNotice(player, villager, "Deposited " + result.deposited() + " emerald"
+                    + plural(result.deposited()) + " into assigned storage.");
+        }
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
     }
 
     private static void removeAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {

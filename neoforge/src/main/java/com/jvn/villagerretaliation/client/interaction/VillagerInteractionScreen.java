@@ -101,6 +101,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean hiredByPlayer;
     private final boolean hiredByOtherPlayer;
     private int hiredRemainingDays;
+    private final int walletEmeralds;
+    private final int maxWalletEmeralds;
+    private final int lifetimeWalletEarned;
+    private final int lifetimeWalletDeposited;
     private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
@@ -153,6 +157,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean hiredByPlayer,
             boolean hiredByOtherPlayer,
             int hiredRemainingDays,
+            int walletEmeralds,
+            int maxWalletEmeralds,
+            int lifetimeWalletEarned,
+            int lifetimeWalletDeposited,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
@@ -176,6 +184,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.hiredByPlayer = hiredByPlayer;
         this.hiredByOtherPlayer = hiredByOtherPlayer;
         this.hiredRemainingDays = Math.max(0, hiredRemainingDays);
+        this.walletEmeralds = Math.max(0, walletEmeralds);
+        this.maxWalletEmeralds = Math.max(0, maxWalletEmeralds);
+        this.lifetimeWalletEarned = Math.max(0, lifetimeWalletEarned);
+        this.lifetimeWalletDeposited = Math.max(0, lifetimeWalletDeposited);
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
@@ -520,6 +532,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
         addOption("recruit.show_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SHOW_STORAGE));
+        addOption("recruit.deposit_earnings", () -> requestRecruit(VillagerRecruitRequestPayload.Action.DEPOSIT_EARNINGS));
         addOption("recruit.remove_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_STORAGE));
         if (this.hiredByPlayer) {
             addOption("recruit.about_role", this::openRolePage);
@@ -1483,7 +1496,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int nameWidth = Math.round(this.font.width(this.villagerName) * EXPERIMENTAL_INFO_NAME_SCALE * scale);
         int professionWidth = Math.round(this.font.width(this.professionName) * EXPERIMENTAL_INFO_DETAIL_SCALE * scale);
         int reputationWidth = Math.round(this.font.width(reputationText()) * EXPERIMENTAL_INFO_DETAIL_SCALE * scale);
-        int infoWidth = Math.max(nameWidth, Math.max(professionWidth, reputationWidth));
+        int walletWidth = Math.round(this.font.width(walletText()) * EXPERIMENTAL_INFO_DETAIL_SCALE * scale);
+        int infoWidth = Math.max(nameWidth, Math.max(Math.max(professionWidth, reputationWidth), walletWidth));
         return experimentalInfoRight() - infoWidth;
     }
 
@@ -1505,6 +1519,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private String reputationText() {
         return translate("info.reputation", this.reputation);
+    }
+
+    private String walletText() {
+        return translate("info.wallet", this.walletEmeralds, this.maxWalletEmeralds);
     }
 
     private int reputationColor() {
@@ -2141,6 +2159,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public String reputationText() {
             return VillagerInteractionScreen.this.reputationText();
+        }
+
+        @Override
+        public String walletText() {
+            return VillagerInteractionScreen.this.walletText();
         }
 
         @Override
