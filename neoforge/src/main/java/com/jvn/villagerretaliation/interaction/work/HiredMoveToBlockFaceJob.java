@@ -1,0 +1,190 @@
+package com.jvn.villagerretaliation.interaction.work;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+
+final class HiredMoveToBlockFaceJob extends HiredPathJob {
+    static final double MAX_REACH = 3.0D;
+    static final double MAX_REACH_SQR = MAX_REACH * MAX_REACH;
+    private static final int APPROACH_SEARCH_RADIUS = 3;
+    private static final int MAX_APPROACHES_TO_PATHFIND = 24;
+    private static final double FACE_INSET = 0.01D;
+    private final Iterable<BlockPos> candidatePositions;
+
+    HiredMoveToBlockFaceJob(ServerLevel level, Villager villager, Iterable<BlockPos> candidatePositions, int maxCandidates) {
+        super(level, villager, maxCandidates);
+        this.candidatePositions = candidatePositions;
+    }
+
+    @Override
+    protected void collectCandidates(CandidateSink sink) {
+        for (BlockPos candidate : this.candidatePositions) {
+            if (!HiredPathMemory.isAvoided(this.level, this.villager, candidate)) {
+                sink.add(candidate);
+            }
+        }
+    }
+
+    @Override
+    protected HiredPathResult evaluate(BlockPos target) {
+        HiredPathTarget current = targetFromCurrentPosition(target);
+        if (current != null) {
+            return new HiredPathResult(current, null, true);
+        }
+
+        List<ApproachCandidate> approaches = new ArrayList<>();
+        for (BlockPos rawCandidate : BlockPos.betweenClosed(
+                target.offset(-APPROACH_SEARCH_RADIUS, -2, -APPROACH_SEARCH_RADIUS),
+                target.offset(APPROACH_SEARCH_RADIUS, 2, APPROACH_SEARCH_RADIUS))) {
+            BlockPos approach = rawCandidate.immutable();
+            if (!isValidApproachPosition(this.level, approach)) {
+                continue;
+            }
+            Vec3 eye = new Vec3(
+                    approach.getX() + 0.5D,
+                    approach.getY() + this.villager.getEyeHeight(),
+                    approach.getZ() + 0.5D);
+            Vec3 hit = visibleHitPosition(this.level, this.villager, eye, target);
+            if (hit == null
+                    || eye.distanceToSqr(hit) > MAX_REACH_SQR
+                    || approach.getCenter().distanceToSqr(hit) > MAX_REACH_SQR) {
+                continue;
+            }
+            approaches.add(new ApproachCandidate(approach, hit, approachScore(approach, hit, target)));
+        }
+        approaches.sort(Comparator.comparingDouble(ApproachCandidate::score));
+
+        int evaluated = 0;
+        for (ApproachCandidate approach : approaches) {
+            if (evaluated >= MAX_APPROACHES_TO_PATHFIND) {
+                break;
+            }
+            evaluated++;
+            Path path = this.villager.getNavigation().createPath(approach.pos(), 0);
+            if (path != null && path.canReach()) {
+                return new HiredPathResult(new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()), path, true);
+            }
+        }
+        return HiredPathResult.blocked();
+    }
+
+    private HiredPathTarget targetFromCurrentPosition(BlockPos target) {
+        Vec3 hit = visibleHitPosition(this.level, this.villager, this.villager.getEyePosition(), target);
+        if (hit == null) {
+            return null;
+        }
+        HiredPathTarget pathTarget = new HiredPathTarget(target.immutable(), this.villager.blockPosition().immutable(), hit);
+        return canReachFromCurrentPosition(this.level, this.villager, pathTarget) ? pathTarget : null;
+    }
+
+    private double approachScore(BlockPos approach, Vec3 hitPos, BlockPos target) {
+        double distance = this.villager.distanceToSqr(approach.getCenter());
+        int vertical = Math.abs(approach.getY() - this.villager.blockPosition().getY());
+        double reachSlack = hitPos.distanceToSqr(approach.getCenter());
+        double targetVertical = Math.abs(target.getY() - approach.getY());
+        return distance
+                + vertical * vertical * 3.0D
+                + targetVertical * 2.0D
+                + reachSlack * 0.25D
+                + terrainCost(this.level, approach)
+                + HiredPathMemory.recentCost(this.villager, target);
+    }
+
+    static boolean canReachFromCurrentPosition(ServerLevel level, Villager villager, HiredPathTarget target) {
+        return isCloseEnough(villager, target)
+                && hasLineOfSightToBlock(level, villager, villager.getEyePosition(), target.blockPos(), target.hitPos());
+    }
+
+    static boolean isCloseEnough(Villager villager, HiredPathTarget target) {
+        return villager.getEyePosition().distanceToSqr(target.hitPos()) <= MAX_REACH_SQR
+                && villager.position().distanceToSqr(target.hitPos()) <= MAX_REACH_SQR;
+    }
+
+    static Vec3 visibleHitPosition(ServerLevel level, Villager villager, Vec3 start, BlockPos target) {
+        Vec3 bestHit = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (Direction direction : Direction.values()) {
+            BlockPos neighbor = target.relative(direction);
+            BlockState neighborState = level.getBlockState(neighbor);
+            if (!neighborState.isAir() && !neighborState.liquid()) {
+                continue;
+            }
+            Vec3 hit = faceHitPosition(target, direction);
+            if (!hasLineOfSightToBlock(level, villager, start, target, hit)) {
+                continue;
+            }
+            double distance = start.distanceToSqr(hit);
+            if (distance < bestDistance) {
+                bestHit = hit;
+                bestDistance = distance;
+            }
+        }
+        return bestHit;
+    }
+
+    static boolean hasLineOfSightToBlock(ServerLevel level, Villager villager, Vec3 start, BlockPos target, Vec3 hitPos) {
+        BlockHitResult hit = level.clip(new ClipContext(
+                start,
+                hitPos,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                villager));
+        return hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(target);
+    }
+
+    static boolean isValidApproachPosition(ServerLevel level, BlockPos pos) {
+        BlockState feet = level.getBlockState(pos);
+        BlockState head = level.getBlockState(pos.above());
+        BlockState floor = level.getBlockState(pos.below());
+        return (feet.isAir() || feet.liquid())
+                && (head.isAir() || head.liquid())
+                && floor.isSolid();
+    }
+
+    static double terrainCost(ServerLevel level, BlockPos pos) {
+        double cost = 0.0D;
+        cost += blockRiskCost(level.getBlockState(pos)) * 3.0D;
+        cost += blockRiskCost(level.getBlockState(pos.above())) * 2.0D;
+        cost += blockRiskCost(level.getBlockState(pos.below()));
+        return cost;
+    }
+
+    private static double blockRiskCost(BlockState state) {
+        if (state.isAir()) {
+            return 0.0D;
+        }
+        double cost = state.liquid() ? 24.0D : 0.0D;
+        String path = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
+        if (path.contains("fire")
+                || path.contains("lava")
+                || path.contains("magma")
+                || path.contains("cactus")
+                || path.contains("sweet_berry_bush")
+                || path.contains("powder_snow")) {
+            cost += 120.0D;
+        }
+        return cost;
+    }
+
+    private static Vec3 faceHitPosition(BlockPos target, Direction direction) {
+        return new Vec3(
+                target.getX() + 0.5D + direction.getStepX() * (0.5D - FACE_INSET),
+                target.getY() + 0.5D + direction.getStepY() * (0.5D - FACE_INSET),
+                target.getZ() + 0.5D + direction.getStepZ() * (0.5D - FACE_INSET));
+    }
+
+    private record ApproachCandidate(BlockPos pos, Vec3 hitPos, double score) {
+    }
+}
