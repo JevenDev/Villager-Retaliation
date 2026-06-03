@@ -13,6 +13,10 @@ public interface HiredRoleWorker {
     default void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
     }
 
+    default void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+        context.setProgressTicks(0);
+    }
+
     default String status(ServerLevel level, Villager villager, HiredWorkContext context) {
         return context.status();
     }

@@ -30,6 +30,8 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     private static final String ACTIVE_HIT_X_TAG = "ActiveWorkHitX";
     private static final String ACTIVE_HIT_Y_TAG = "ActiveWorkHitY";
     private static final String ACTIVE_HIT_Z_TAG = "ActiveWorkHitZ";
+    private static final String WORKER_TASK_STATE_TAG = "WorkerTaskState";
+    private static final String WORKER_TASK_TARGET_POS_TAG = "WorkerTaskTargetPos";
     private static final long LOOK_TARGET_MEMORY_TICKS = 24L;
     private static final int MAX_TARGETS_TO_PATHFIND = 64;
     private static final int STORAGE_APPROACH_SEARCH_RADIUS = 4;
@@ -64,6 +66,12 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     protected boolean storeDrops(ServerLevel level, HiredWorkContext context, Villager villager, BlockPos pos, ItemStack tool) {
         HiredPathTarget target = bestWorkTarget(level, villager, context, pos);
         return target != null && storeDrops(level, context, villager, target, tool);
+    }
+
+    @Override
+    public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+        clearActiveBreakingTarget(level, context, villager);
+        setTaskState(context, WorkerTaskState.AWAITING_INSTRUCTION);
     }
 
     protected boolean storeDrops(ServerLevel level, HiredWorkContext context, Villager villager, HiredPathTarget target, ItemStack tool) {
@@ -186,6 +194,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             context.state().remove(ACTIVE_HIT_Z_TAG);
         }
         HiredPathMemory.clearNavigationProgress(villager);
+        context.state().remove(WORKER_TASK_TARGET_POS_TAG);
         context.setProgressTicks(0);
     }
 
@@ -259,6 +268,24 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
 
     protected void expireWorkPathMemory(ServerLevel level) {
         HiredPathMemory.expire(level);
+    }
+
+    protected void setTaskState(HiredWorkContext context, WorkerTaskState state) {
+        context.state().putString(WORKER_TASK_STATE_TAG, state.id);
+        if (state != WorkerTaskState.MOVING_TO_TARGET
+                && state != WorkerTaskState.VALIDATING_TARGET
+                && state != WorkerTaskState.WORKING
+                && state != WorkerTaskState.COLLECTING_OUTPUT
+                && state != WorkerTaskState.FINDING_CONTINUATION_TARGET) {
+            context.state().remove(WORKER_TASK_TARGET_POS_TAG);
+        }
+    }
+
+    protected void setTaskState(HiredWorkContext context, WorkerTaskState state, BlockPos target) {
+        setTaskState(context, state);
+        if (target != null) {
+            context.state().putLong(WORKER_TASK_TARGET_POS_TAG, target.asLong());
+        }
     }
 
     protected boolean moveToTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredPathTarget target, double speed) {
@@ -518,6 +545,27 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         DEPOSITED,
         MOVING,
         UNAVAILABLE
+    }
+
+    protected enum WorkerTaskState {
+        IDLE("idle"),
+        SELECTING_TARGET("selecting_target"),
+        MOVING_TO_TARGET("moving_to_target"),
+        VALIDATING_TARGET("validating_target"),
+        WORKING("working"),
+        COLLECTING_OUTPUT("collecting_output"),
+        FINDING_CONTINUATION_TARGET("finding_continuation_target"),
+        DEPOSITING_ITEMS("depositing_items"),
+        FAILED_COOLDOWN("failed_cooldown"),
+        AWAITING_INSTRUCTION("awaiting_instruction"),
+        BLOCKED_OUTPUT_FULL("blocked_output_full"),
+        BLOCKED_MISSING_TOOL("blocked_missing_tool");
+
+        private final String id;
+
+        WorkerTaskState(String id) {
+            this.id = id;
+        }
     }
 
     private enum StorageMoveResult {

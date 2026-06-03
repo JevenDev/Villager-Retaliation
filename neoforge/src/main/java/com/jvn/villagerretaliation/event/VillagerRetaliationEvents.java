@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.work.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -168,6 +169,11 @@ public final class VillagerRetaliationEvents {
             VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
             VillagerQuestService.onVillagerDeath(villager);
             if (villager.level() instanceof ServerLevel level) {
+                HiredVillagerWorkService.stopWork(
+                        level,
+                        villager,
+                        HiredVillagerContractService.activeRole(level, villager),
+                        "Work stopped. Villager died.");
                 AssignedStorageService.removeAssignedStorage(level, villager);
             }
         }

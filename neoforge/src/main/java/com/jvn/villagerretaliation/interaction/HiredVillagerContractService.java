@@ -116,6 +116,8 @@ public final class HiredVillagerContractService {
             return 0;
         }
         CompoundTag tag = activeContract.get();
+        HiredVillagerRole role = roleFromContract(level, villager, tag);
+        HiredVillagerWorkService.stopWork(level, villager, role, "Work stopped. Contract ended.");
         int refund = earlyEndRefund(level, tag);
         tag.putString(STATUS_TAG, STATUS_ENDED);
         AssignedStorageService.removeAssignedStorage(level, villager);
@@ -127,6 +129,8 @@ public final class HiredVillagerContractService {
                 .filter(HiredVillagerContractService::isActive)
                 .filter(tag -> level.getGameTime() >= tag.getLong(END_GAME_TIME_TAG))
                 .ifPresent(tag -> {
+                    HiredVillagerRole role = roleFromContract(level, villager, tag);
+                    HiredVillagerWorkService.stopWork(level, villager, role, "Work stopped. Contract expired.");
                     tag.putString(STATUS_TAG, STATUS_EXPIRED);
                     AssignedStorageService.removeAssignedStorage(level, villager);
                 });
@@ -150,8 +154,18 @@ public final class HiredVillagerContractService {
         if (contract.isEmpty()) {
             return false;
         }
-        contract.get().putString(ROLE_TAG, role.serializedName());
+        CompoundTag tag = contract.get();
+        HiredVillagerRole currentRole = roleFromContract(level, villager, tag);
+        if (currentRole != role) {
+            HiredVillagerWorkService.stopWork(level, villager, currentRole, "Work stopped. Role changed.");
+        }
+        tag.putString(ROLE_TAG, role.serializedName());
         return true;
+    }
+
+    private static HiredVillagerRole roleFromContract(ServerLevel level, Villager villager, CompoundTag tag) {
+        HiredVillagerRole role = HiredVillagerRole.bySerializedName(tag.getString(ROLE_TAG));
+        return role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
     }
 
     private static int remainingDays(ServerLevel level, CompoundTag contract) {

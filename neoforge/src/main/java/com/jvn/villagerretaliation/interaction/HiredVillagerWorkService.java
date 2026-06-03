@@ -157,6 +157,50 @@ public final class HiredVillagerWorkService {
                         + (status.isBlank() ? "No task yet." : status));
     }
 
+    public static void resetForNewContract(ServerLevel level, Villager villager) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        state.putBoolean("Enabled", true);
+        state.remove("NextWorkGameTime");
+        state.remove("ProgressTicks");
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        int radius = Mth.clamp(
+                VillagerRetaliationConfig.HIRED_WORK_DEFAULT_RADIUS.get(),
+                MIN_WORK_RADIUS,
+                maxWorkRadius(level, villager, role));
+        state.putInt("Radius", radius);
+        BlockPos center = villager.blockPosition();
+        setWorkAreaBounds(state, defaultMin(center, radius), defaultMax(center, radius));
+        stopWork(level, villager, role, "Waiting for work assignment.");
+    }
+
+    public static void stopWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
+        HiredRoleWorker worker = WORKERS.get(safeRole);
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        int maxRadius = maxWorkRadius(level, villager, safeRole);
+        WorkArea area = workAreaWithinMax(state, villager, maxRadius);
+        HiredWorkContext context = new HiredWorkContext(
+                inventory,
+                state,
+                area.center(),
+                area.min(),
+                area.max(),
+                area.radius(),
+                efficiencyPercent(level, villager, safeRole, state, inventory),
+                state.getBoolean("AutoDepositOutputs"),
+                state.getBoolean("UseAssignedStorageForSupplies"));
+        if (worker != null) {
+            worker.stop(level, villager, context);
+        } else {
+            context.setProgressTicks(0);
+        }
+        state.remove("NextWorkGameTime");
+        setStatus(state, status);
+    }
+
     public static void toggleEnabled(ServerPlayer player, ServerLevel level, Villager villager) {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
@@ -302,6 +346,9 @@ public final class HiredVillagerWorkService {
         }
         if (!state.contains("Status", Tag.TAG_STRING)) {
             state.putString("Status", "Waiting for work tick.");
+        }
+        if (!state.contains("WorkerTaskState", Tag.TAG_STRING)) {
+            state.putString("WorkerTaskState", "idle");
         }
         if (!state.contains(WORK_CENTER_POS_TAG, Tag.TAG_LONG)) {
             state.putLong(WORK_CENTER_POS_TAG, villager.blockPosition().asLong());
