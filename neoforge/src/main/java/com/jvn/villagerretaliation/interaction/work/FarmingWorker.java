@@ -1,8 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,6 +12,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class FarmingWorker extends AbstractBlockWorker {
     private static final String NEXT_CROP_SCAN_GAME_TIME_TAG = "NextFarmingCropScanGameTime";
+    private static final String CROP_SCAN_CURSOR_TAG = "FarmingCropScanCursor";
+    private static final int MAX_CROP_SCAN_POSITIONS_PER_WORK_TICK = 1536;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
 
     @Override
@@ -29,6 +29,10 @@ public final class FarmingWorker extends AbstractBlockWorker {
         HiredPathTarget target = findMatureCrop(level, villager, context);
         if (target == null) {
             clearActiveBreakingTarget(level, context, villager);
+            if (isCropScanInProgress(context)) {
+                setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
+                return WorkResult.progressed("Scanning assigned area for mature crops.");
+            }
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
@@ -105,29 +109,40 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 && context.isInsideWorkArea(active.blockPos())
                 && context.isLoaded(level, active.blockPos())
                 && isMatureCrop(level, active.blockPos())) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "active_crop_target");
             return active;
         }
         if (level.getGameTime() < context.state().getLong(NEXT_CROP_SCAN_GAME_TIME_TAG)) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "crop_scan_cooldown");
             return null;
         }
 
-        List<BlockPos> candidates = new ArrayList<>();
-        for (BlockPos rawPos : context.workAreaPositions()) {
-            BlockPos pos = rawPos.immutable();
-            if (context.isInsideWorkArea(pos)
-                    && context.isLoaded(level, pos)
-                    && isMatureCrop(level, pos)
-                    && !isTemporarilyAvoidedTarget(level, villager, pos)) {
-                candidates.add(pos);
-            }
-        }
-        HiredPathTarget target = chooseReachableTarget(level, villager, context, candidates);
+        HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
+                context,
+                CROP_SCAN_CURSOR_TAG,
+                MAX_CROP_SCAN_POSITIONS_PER_WORK_TICK,
+                pos -> context.isInsideWorkArea(pos)
+                        && context.isLoaded(level, pos)
+                        && isMatureCrop(level, pos)
+                        && !isTemporarilyAvoidedTarget(level, villager, pos));
+        HiredPathTarget target = chooseReachableTarget(level, villager, context, scan.candidates());
         if (target == null) {
-            context.state().putLong(NEXT_CROP_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
+            if (scan.completedFullPass()) {
+                context.state().putLong(NEXT_CROP_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
+                HiredWorkerBrain.setLastTargetScanResult(context, "crop_scan_full_no_reachable_targets");
+            } else {
+                HiredWorkerBrain.setLastTargetScanResult(context, "crop_scan_partial_" + scan.visitedPositions());
+            }
         } else {
+            HiredWorkAreaScan.clearCursor(context, CROP_SCAN_CURSOR_TAG);
             context.state().remove(NEXT_CROP_SCAN_GAME_TIME_TAG);
+            HiredWorkerBrain.setLastTargetScanResult(context, "crop_target_found");
         }
         return target;
+    }
+
+    private static boolean isCropScanInProgress(HiredWorkContext context) {
+        return HiredWorkAreaScan.isInProgress(context, CROP_SCAN_CURSOR_TAG);
     }
 
     private static boolean isMatureCrop(ServerLevel level, BlockPos pos) {

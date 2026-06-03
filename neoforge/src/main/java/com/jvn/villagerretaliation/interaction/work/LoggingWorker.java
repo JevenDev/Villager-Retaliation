@@ -24,10 +24,12 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 public final class LoggingWorker extends AbstractBlockWorker {
     private static final String NEXT_TREE_SCAN_GAME_TIME_TAG = "NextLoggingTreeScanGameTime";
+    private static final String TREE_SCAN_CURSOR_TAG = "LoggingTreeScanCursor";
     private static final int MAX_TREE_LOGS_PER_HARVEST = 96;
     private static final int MAX_TREE_HORIZONTAL_DISTANCE = 8;
     private static final int MAX_TREE_VERTICAL_DISTANCE = 24;
     private static final int MIN_NATURAL_LEAVES = 4;
+    private static final int MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK = 512;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
 
     @Override
@@ -43,6 +45,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
         HiredPathTarget target = findTreeLog(level, villager, context);
         if (target == null) {
             clearActiveBreakingTarget(level, context, villager);
+            if (isTreeScanInProgress(context)) {
+                setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
+                return WorkResult.progressed("Scanning assigned area for safe tree logs.");
+            }
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
@@ -132,27 +138,40 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 && context.isLoaded(level, active.blockPos())
                 && !isTemporarilyAvoidedTarget(level, villager, active.blockPos())
                 && isTreeLog(level, active.blockPos(), filter)) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "active_tree_target");
             return active;
         }
         if (level.getGameTime() < context.state().getLong(NEXT_TREE_SCAN_GAME_TIME_TAG)) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "tree_scan_cooldown");
             return null;
         }
 
-        List<BlockPos> candidates = new ArrayList<>();
-        for (BlockPos rawPos : context.workAreaPositions()) {
-            BlockPos pos = rawPos.immutable();
-            if (!context.isInsideWorkArea(pos) || !context.isLoaded(level, pos) || !isTreeLog(level, pos, filter)) {
-                continue;
-            }
-            candidates.add(pos);
-        }
-        HiredPathTarget target = chooseReachableTarget(level, villager, context, candidates);
+        HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
+                context,
+                TREE_SCAN_CURSOR_TAG,
+                MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK,
+                pos -> context.isInsideWorkArea(pos)
+                        && context.isLoaded(level, pos)
+                        && !isTemporarilyAvoidedTarget(level, villager, pos)
+                        && isTreeLog(level, pos, filter));
+        HiredPathTarget target = chooseReachableTarget(level, villager, context, scan.candidates());
         if (target == null) {
-            context.state().putLong(NEXT_TREE_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
+            if (scan.completedFullPass()) {
+                context.state().putLong(NEXT_TREE_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
+                HiredWorkerBrain.setLastTargetScanResult(context, "tree_scan_full_no_reachable_targets");
+            } else {
+                HiredWorkerBrain.setLastTargetScanResult(context, "tree_scan_partial_" + scan.visitedPositions());
+            }
         } else {
+            HiredWorkAreaScan.clearCursor(context, TREE_SCAN_CURSOR_TAG);
             context.state().remove(NEXT_TREE_SCAN_GAME_TIME_TAG);
+            HiredWorkerBrain.setLastTargetScanResult(context, "tree_target_found");
         }
         return target;
+    }
+
+    private static boolean isTreeScanInProgress(HiredWorkContext context) {
+        return HiredWorkAreaScan.isInProgress(context, TREE_SCAN_CURSOR_TAG);
     }
 
     private static boolean matchesFilter(BlockState state, String filter) {
