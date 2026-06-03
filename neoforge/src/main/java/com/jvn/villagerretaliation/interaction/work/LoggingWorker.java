@@ -54,6 +54,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("No safe tree logs found in radius. Walking to assigned storage.");
             }
+            if (roamInsideWorkArea(level, villager, context, 0.4D)) {
+                return WorkResult.progressed("No safe tree logs found. Roaming the assigned area.");
+            }
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             return WorkResult.idle("No safe tree logs found in radius.");
         }

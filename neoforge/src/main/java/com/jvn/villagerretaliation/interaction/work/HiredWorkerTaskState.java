@@ -11,6 +11,7 @@ public enum HiredWorkerTaskState {
     COLLECTING_OUTPUT("collecting_output"),
     FINDING_CHAIN_TARGET("finding_chain_target"),
     MOVING_TO_STORAGE("moving_to_storage"),
+    RETURNING_TO_WORK_AREA("returning_to_work_area"),
     DEPOSITING("depositing"),
     PAUSED_FULL_INVENTORY("paused_full_inventory"),
     PAUSED_NO_STORAGE("paused_no_storage"),
@@ -42,7 +43,7 @@ public enum HiredWorkerTaskState {
 
     public boolean keepsBlockTarget() {
         return switch (this) {
-            case MOVING_TO_TARGET, VALIDATING_TARGET, WORKING, COLLECTING_OUTPUT, FINDING_CHAIN_TARGET, FAILED_COOLDOWN -> true;
+            case MOVING_TO_TARGET, VALIDATING_TARGET, WORKING, COLLECTING_OUTPUT, FINDING_CHAIN_TARGET, RETURNING_TO_WORK_AREA, FAILED_COOLDOWN -> true;
             default -> false;
         };
     }

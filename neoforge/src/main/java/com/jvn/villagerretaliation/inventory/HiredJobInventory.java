@@ -431,6 +431,30 @@ public final class HiredJobInventory implements Container {
         return changed;
     }
 
+    public boolean depositOutputToAssignedStorageAt(BlockPos storagePos) {
+        if (storagePos == null || this.collectOutputItems().isEmpty()) {
+            return false;
+        }
+        boolean changed = false;
+        for (OutputStack output : collectOutputItems()) {
+            ItemStack remainder = AssignedStorageService.depositStackAtAssignedStorage(this.villager, storagePos, output.stack());
+            int moved = output.stack().getCount() - remainder.getCount();
+            if (moved <= 0) {
+                continue;
+            }
+            ItemStack current = this.items.get(output.slot());
+            current.shrink(moved);
+            if (current.isEmpty()) {
+                this.items.set(output.slot(), ItemStack.EMPTY);
+            }
+            changed = true;
+        }
+        if (changed) {
+            setChanged();
+        }
+        return changed;
+    }
+
     private ItemStack simulateOutputInsert(NonNullList<ItemStack> simulated, ItemStack stack) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;

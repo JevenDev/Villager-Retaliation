@@ -14,11 +14,17 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 public final class AssignedStorageService {
     private static final double STORAGE_INTERACTION_REACH_SQR = 25.0D;
+    private static final double OUTPUT_DEPOSIT_REACH_BLOCKS = 2.0D;
+    private static final double OUTPUT_DEPOSIT_REACH_SQR = OUTPUT_DEPOSIT_REACH_BLOCKS * OUTPUT_DEPOSIT_REACH_BLOCKS;
 
     private AssignedStorageService() {
     }
@@ -113,6 +119,25 @@ public final class AssignedStorageService {
         return remainder;
     }
 
+    public static ItemStack depositStackAtAssignedStorage(Villager villager, BlockPos storagePos, ItemStack stack) {
+        if (storagePos == null || stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
+            return stack;
+        }
+        if (!isInOutputDepositRange(villager, storagePos)) {
+            return stack;
+        }
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+            if (!candidate.pos().equals(storagePos)) {
+                continue;
+            }
+            List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
+            ItemStack remainder = VillagerInventoryOverflowService.insertIntoContainers(List.of(candidate), stack, usedContainers);
+            VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
+            return remainder;
+        }
+        return stack;
+    }
+
     public static boolean canInteractWithAssignedStorage(Villager villager) {
         return canInteractWithAssignedStorage(villager, ignored -> true);
     }
@@ -122,6 +147,21 @@ public final class AssignedStorageService {
             return false;
         }
         return !nearbyLiveContainerCandidates(level, villager, positionFilter == null ? ignored -> true : positionFilter).isEmpty();
+    }
+
+    public static boolean canInteractWithAssignedStorage(Villager villager, BlockPos storagePos) {
+        if (storagePos == null || !(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        if (!isInOutputDepositRange(villager, storagePos)) {
+            return false;
+        }
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+            if (candidate.pos().equals(storagePos)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static BlockPos nearestAssignedStoragePos(ServerLevel level, Villager villager) {
@@ -143,6 +183,25 @@ public final class AssignedStorageService {
     public static boolean isInInteractionRange(Villager villager, BlockPos pos) {
         return villager.getEyePosition().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR
                 && villager.position().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR;
+    }
+
+    public static boolean isInOutputDepositRange(Villager villager, BlockPos pos) {
+        if (villager.blockPosition().distSqr(pos) > OUTPUT_DEPOSIT_REACH_SQR) {
+            return false;
+        }
+        return hasLineOfSightToStorage(villager, pos);
+    }
+
+    private static boolean hasLineOfSightToStorage(Villager villager, BlockPos pos) {
+        Vec3 start = villager.getEyePosition();
+        Vec3 end = Vec3.atCenterOf(pos);
+        BlockHitResult hit = villager.level().clip(new ClipContext(
+                start,
+                end,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                villager));
+        return hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(pos);
     }
 
     public static int consumeItems(Villager villager, Predicate<ItemStack> predicate, int count) {

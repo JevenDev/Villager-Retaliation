@@ -49,6 +49,9 @@ public final class MiningWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("No exposed ores in the current pocket. Walking to assigned storage.");
             }
+            if (roamInsideWorkArea(level, villager, context, 0.4D)) {
+                return WorkResult.progressed("No exposed ores nearby. Roaming the assigned area.");
+            }
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             ensureNoTargetScanCooldown(level, context);
             return WorkResult.idle(depositResult == DepositResult.DEPOSITED
@@ -161,6 +164,9 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (depositResult == DepositResult.MOVING) {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             return WorkResult.progressed("Mined block and collected output. Walking to assigned storage.");
+        }
+        if (roamInsideWorkArea(level, villager, context, 0.4D)) {
+            return WorkResult.progressed("Mined block and collected output. Roaming the assigned area.");
         }
         setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
         ensureNoTargetScanCooldown(level, context);

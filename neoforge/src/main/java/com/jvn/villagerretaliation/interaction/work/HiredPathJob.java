@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 
 abstract class HiredPathJob {
+    private static final int MAX_REACHABLE_RESULTS_TO_COMPARE = 4;
     protected final ServerLevel level;
     protected final Villager villager;
     private final int maxCandidates;
@@ -25,6 +26,8 @@ abstract class HiredPathJob {
         candidates.sort(Comparator.comparingDouble(this::candidateScore));
 
         int evaluated = 0;
+        int reachableResults = 0;
+        HiredPathResult bestResult = null;
         for (BlockPos candidate : candidates) {
             if (evaluated >= this.maxCandidates) {
                 break;
@@ -32,10 +35,16 @@ abstract class HiredPathJob {
             evaluated++;
             HiredPathResult result = evaluate(candidate);
             if (result.reachesDestination()) {
-                return result;
+                if (bestResult == null || result.score() < bestResult.score()) {
+                    bestResult = result;
+                }
+                reachableResults++;
+                if (reachableResults >= MAX_REACHABLE_RESULTS_TO_COMPARE) {
+                    break;
+                }
             }
         }
-        return HiredPathResult.blocked();
+        return bestResult != null ? bestResult : HiredPathResult.blocked();
     }
 
     private List<BlockPos> uniqueCandidates() {

@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -42,6 +43,7 @@ import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.level.pathfinder.Path;
 
 public final class HiredVillagerWorkService {
     private static final String TAG = "VillagerRetaliationHiredWork";
@@ -125,6 +127,9 @@ public final class HiredVillagerWorkService {
                 state.getBoolean("UseAssignedStorageForSupplies"));
 
         suppressProfessionJobSiteBehavior(level, villager, context);
+        if (returnVillagerToWorkArea(level, villager, context, state)) {
+            return;
+        }
         worker.maintain(level, villager, context);
 
         int interval = Math.max(10, VillagerRetaliationConfig.HIRED_WORK_TICK_INTERVAL.get());
@@ -164,6 +169,81 @@ public final class HiredVillagerWorkService {
             brain.setDefaultActivity(Activity.IDLE);
             brain.setActiveActivityIfPossible(Activity.IDLE);
         }
+    }
+
+    private static boolean returnVillagerToWorkArea(ServerLevel level, Villager villager, HiredWorkContext context, CompoundTag state) {
+        if (context.isInsideWorkArea(villager.blockPosition())) {
+            return false;
+        }
+
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (!villager.getNavigation().isDone() && navigationTarget != null && context.isInsideWorkArea(navigationTarget)) {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, navigationTarget);
+            setStatus(state, "Outside assigned area. Returning to work area.");
+            return true;
+        }
+
+        BlockPos returnTarget = findWorkAreaReturnTarget(level, villager, context);
+        if (returnTarget == null) {
+            villager.getNavigation().stop();
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            setStatus(state, "Outside assigned area, but no reachable path back was found yet.");
+            return true;
+        }
+
+        Path path = villager.getNavigation().createPath(returnTarget, 0);
+        if (path == null || !path.canReach()) {
+            villager.getNavigation().stop();
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            setStatus(state, "Outside assigned area, but pathfinding back failed.");
+            return true;
+        }
+
+        if (villager.getNavigation().moveTo(path, 1.0D)) {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnTarget);
+            setStatus(state, "Outside assigned area. Returning to work area.");
+        } else {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            setStatus(state, "Outside assigned area, but movement back could not start.");
+        }
+        return true;
+    }
+
+    private static BlockPos findWorkAreaReturnTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
+        BlockPos clamped = new BlockPos(
+                Mth.clamp(villager.blockPosition().getX(), context.workMin().getX(), context.workMax().getX()),
+                Mth.clamp(villager.blockPosition().getY(), context.workMin().getY(), context.workMax().getY()),
+                Mth.clamp(villager.blockPosition().getZ(), context.workMin().getZ(), context.workMax().getZ()));
+
+        List<BlockPos> candidates = new ArrayList<>();
+        candidates.add(clamped);
+        candidates.add(context.workCenter());
+        for (BlockPos raw : BlockPos.betweenClosed(
+                clamped.offset(-3, -2, -3),
+                clamped.offset(3, 2, 3))) {
+            BlockPos candidate = raw.immutable();
+            if (context.isInsideWorkArea(candidate)) {
+                candidates.add(candidate);
+            }
+        }
+
+        candidates.sort(Comparator.comparingDouble(pos -> returnTargetScore(villager, context, pos)));
+        for (BlockPos candidate : candidates) {
+            if (!context.isLoaded(level, candidate)) {
+                continue;
+            }
+            Path path = villager.getNavigation().createPath(candidate, 0);
+            if (path != null && path.canReach()) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private static double returnTargetScore(Villager villager, HiredWorkContext context, BlockPos pos) {
+        double villagerDistance = villager.distanceToSqr(pos.getCenter());
+        double centerDistance = pos.distSqr(context.workCenter());
+        return villagerDistance + centerDistance * 0.25D;
     }
 
     public static void clearRuntimeState() {

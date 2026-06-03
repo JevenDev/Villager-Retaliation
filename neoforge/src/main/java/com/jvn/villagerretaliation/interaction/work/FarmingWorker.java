@@ -38,6 +38,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("No mature crops found in radius. Walking to assigned storage.");
             }
+            if (roamInsideWorkArea(level, villager, context, 0.35D)) {
+                return WorkResult.progressed("No mature crops found. Roaming the assigned area.");
+            }
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             return WorkResult.idle("No mature crops found in radius.");
         }

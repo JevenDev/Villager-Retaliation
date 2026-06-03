@@ -69,6 +69,12 @@ public record HiredWorkContext(
         return this.autoDepositOutputs && this.inventory.depositOutputToNearbyAssignedStorage(this::isInsideWorkArea);
     }
 
+    public boolean depositOutputsAtStorage(Villager villager, BlockPos storagePos) {
+        return this.autoDepositOutputs
+                && this.isInsideWorkArea(storagePos)
+                && this.inventory.depositOutputToAssignedStorageAt(storagePos);
+    }
+
     public boolean hasOutputToDeposit() {
         return this.inventory.hasOutputItems();
     }
@@ -77,6 +83,13 @@ public record HiredWorkContext(
         return this.autoDepositOutputs
                 && this.inventory.hasOutputItems()
                 && AssignedStorageService.canInteractWithAssignedStorage(villager, this::isInsideWorkArea);
+    }
+
+    public boolean canDepositOutputsAtStorageNow(Villager villager, BlockPos storagePos) {
+        return this.autoDepositOutputs
+                && this.inventory.hasOutputItems()
+                && this.isInsideWorkArea(storagePos)
+                && AssignedStorageService.canInteractWithAssignedStorage(villager, storagePos);
     }
 
     public BlockPos nearestDepositStorage(ServerLevel level, Villager villager) {

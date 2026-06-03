@@ -19,8 +19,11 @@ import net.minecraft.world.phys.Vec3;
 final class HiredMoveToBlockFaceJob extends HiredPathJob {
     static final double MAX_REACH = 3.0D;
     static final double MAX_REACH_SQR = MAX_REACH * MAX_REACH;
-    private static final int APPROACH_SEARCH_RADIUS = 3;
-    private static final int MAX_APPROACHES_TO_PATHFIND = 24;
+    private static final double BODY_REACH_BUFFER = 0.75D;
+    private static final double BODY_REACH_SQR = (MAX_REACH + BODY_REACH_BUFFER) * (MAX_REACH + BODY_REACH_BUFFER);
+    private static final int FACE_APPROACH_RADIUS = 1;
+    private static final int MAX_APPROACHES_TO_PATHFIND = 32;
+    private static final int MAX_REACHABLE_APPROACHES_TO_COMPARE = 5;
     private static final double FACE_INSET = 0.01D;
     private final Iterable<BlockPos> candidatePositions;
     private final Predicate<BlockPos> approachFilter;
@@ -57,32 +60,44 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
         }
         HiredPathTarget current = targetFromCurrentPosition(target);
         if (current != null) {
-            return new HiredPathResult(current, null, true);
+            return new HiredPathResult(current, null, true, 0.0D);
         }
 
         List<ApproachCandidate> approaches = new ArrayList<>();
-        for (BlockPos rawCandidate : BlockPos.betweenClosed(
-                target.offset(-APPROACH_SEARCH_RADIUS, -2, -APPROACH_SEARCH_RADIUS),
-                target.offset(APPROACH_SEARCH_RADIUS, 2, APPROACH_SEARCH_RADIUS))) {
-            BlockPos approach = rawCandidate.immutable();
-            if (!this.approachFilter.test(approach) || !isValidApproachPosition(this.level, approach)) {
+        for (Direction direction : Direction.values()) {
+            BlockPos exposedNeighbor = target.relative(direction);
+            if (!isLoaded(this.level, exposedNeighbor)) {
                 continue;
             }
-            Vec3 eye = new Vec3(
-                    approach.getX() + 0.5D,
-                    approach.getY() + this.villager.getEyeHeight(),
-                    approach.getZ() + 0.5D);
-            Vec3 hit = visibleHitPosition(this.level, this.villager, eye, target);
-            if (hit == null
-                    || eye.distanceToSqr(hit) > MAX_REACH_SQR
-                    || approach.getCenter().distanceToSqr(hit) > MAX_REACH_SQR) {
+            BlockState exposedState = this.level.getBlockState(exposedNeighbor);
+            if (!exposedState.isAir() && !exposedState.liquid()) {
                 continue;
             }
-            approaches.add(new ApproachCandidate(approach, hit, approachScore(approach, hit, target)));
+            Vec3 hit = faceHitPosition(target, direction);
+            for (BlockPos rawCandidate : BlockPos.betweenClosed(
+                    exposedNeighbor.offset(-FACE_APPROACH_RADIUS, -1, -FACE_APPROACH_RADIUS),
+                    exposedNeighbor.offset(FACE_APPROACH_RADIUS, 1, FACE_APPROACH_RADIUS))) {
+                BlockPos approach = rawCandidate.immutable();
+                if (!this.approachFilter.test(approach) || !isValidApproachPosition(this.level, approach)) {
+                    continue;
+                }
+                Vec3 eye = new Vec3(
+                        approach.getX() + 0.5D,
+                        approach.getY() + this.villager.getEyeHeight(),
+                        approach.getZ() + 0.5D);
+                if (!hasLineOfSightToBlock(this.level, this.villager, eye, target, hit)
+                        || eye.distanceToSqr(hit) > MAX_REACH_SQR
+                        || approach.getCenter().distanceToSqr(hit) > BODY_REACH_SQR) {
+                    continue;
+                }
+                approaches.add(new ApproachCandidate(approach, hit, approachScore(approach, hit, target)));
+            }
         }
         approaches.sort(Comparator.comparingDouble(ApproachCandidate::score));
 
         int evaluated = 0;
+        int reachableApproaches = 0;
+        HiredPathResult bestResult = null;
         for (ApproachCandidate approach : approaches) {
             if (evaluated >= MAX_APPROACHES_TO_PATHFIND) {
                 break;
@@ -90,10 +105,22 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
             evaluated++;
             Path path = this.villager.getNavigation().createPath(approach.pos(), 0);
             if (path != null && path.canReach() && pathStaysInsideFilter(path, this.approachFilter)) {
-                return new HiredPathResult(new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()), path, true);
+                double score = approach.score() + path.getNodeCount() * 1.5D;
+                HiredPathResult result = new HiredPathResult(
+                        new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()),
+                        path,
+                        true,
+                        score);
+                if (bestResult == null || result.score() < bestResult.score()) {
+                    bestResult = result;
+                }
+                reachableApproaches++;
+                if (reachableApproaches >= MAX_REACHABLE_APPROACHES_TO_COMPARE) {
+                    break;
+                }
             }
         }
-        return HiredPathResult.blocked();
+        return bestResult != null ? bestResult : HiredPathResult.blocked();
     }
 
     private HiredPathTarget targetFromCurrentPosition(BlockPos target) {
@@ -123,6 +150,11 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     static boolean canReachFromCurrentPosition(ServerLevel level, Villager villager, HiredPathTarget target) {
+        Vec3 currentHit = visibleHitPosition(level, villager, villager.getEyePosition(), target.blockPos());
+        if (currentHit != null) {
+            return villager.getEyePosition().distanceToSqr(currentHit) <= MAX_REACH_SQR
+                    && villager.position().distanceToSqr(currentHit) <= BODY_REACH_SQR;
+        }
         return isLoaded(level, target.blockPos())
                 && isLoaded(level, target.approachPos())
                 && isCloseEnough(villager, target)
@@ -131,7 +163,7 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
 
     static boolean isCloseEnough(Villager villager, HiredPathTarget target) {
         return villager.getEyePosition().distanceToSqr(target.hitPos()) <= MAX_REACH_SQR
-                && villager.position().distanceToSqr(target.hitPos()) <= MAX_REACH_SQR;
+                && villager.position().distanceToSqr(target.hitPos()) <= BODY_REACH_SQR;
     }
 
     static boolean pathStaysInsideFilter(Path path, Predicate<BlockPos> positionFilter) {
