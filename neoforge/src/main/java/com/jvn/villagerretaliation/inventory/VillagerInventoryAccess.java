@@ -22,15 +22,24 @@ public final class VillagerInventoryAccess {
                 >= VillagerReputationLevel.REVERED.trustRank();
     }
 
-    public static void open(ServerPlayer player, Villager villager) {
-        open(player, villager, VillagerInventoryMenu.ViewMode.PERSONAL);
+    public static boolean open(ServerPlayer player, Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level) || !canAccess(level, villager, player)) {
+            return false;
+        }
+        open(player, villager, VillagerInventoryMenu.ViewMode.PERSONAL, true);
+        return true;
     }
 
     public static void openJobInventory(ServerPlayer player, Villager villager) {
-        open(player, villager, VillagerInventoryMenu.ViewMode.JOB);
+        boolean personalInventoryAccess = villager.level() instanceof ServerLevel level && canAccess(level, villager, player);
+        open(player, villager, VillagerInventoryMenu.ViewMode.JOB, personalInventoryAccess);
     }
 
-    private static void open(ServerPlayer player, Villager villager, VillagerInventoryMenu.ViewMode viewMode) {
+    private static void open(
+            ServerPlayer player,
+            Villager villager,
+            VillagerInventoryMenu.ViewMode viewMode,
+            boolean personalInventoryAccess) {
         Component title = Component.translatable(
                 viewMode == VillagerInventoryMenu.ViewMode.JOB
                         ? "container.villagerretaliation.job_inventory"
@@ -38,10 +47,18 @@ public final class VillagerInventoryAccess {
                 VillagerPresetNameRegistry.resolveDisplayName(villager)
         );
         player.openMenu(
-                new SimpleMenuProvider((containerId, inventory, owner) -> new VillagerInventoryMenu(containerId, inventory, villager, viewMode), title),
+                new SimpleMenuProvider(
+                        (containerId, inventory, owner) -> new VillagerInventoryMenu(
+                                containerId,
+                                inventory,
+                                villager,
+                                viewMode,
+                                personalInventoryAccess),
+                        title),
                 buffer -> {
                     buffer.writeVarInt(villager.getId());
                     buffer.writeEnum(viewMode);
+                    buffer.writeBoolean(personalInventoryAccess);
                 }
         );
     }

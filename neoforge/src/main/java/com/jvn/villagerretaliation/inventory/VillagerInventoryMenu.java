@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -54,6 +55,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private int playerSlotEnd;
     private final Player player;
     private final Inventory playerInventory;
+    private final boolean personalInventoryAccess;
     private VillagerGiftReturnTracker.GiftSnapshot giftSnapshot;
     private VillagerTradePaymentTracker.TradePaymentSnapshot tradePaymentSnapshot;
     private VillagerConfiscatedStolenItemTracker.StolenItemSnapshot stolenItemSnapshot;
@@ -72,18 +74,35 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     }
 
     public VillagerInventoryMenu(int containerId, Inventory playerInventory, Villager villager, ViewMode viewMode) {
+        this(containerId, playerInventory, villager, viewMode, personalInventoryAccess(playerInventory, villager));
+    }
+
+    public VillagerInventoryMenu(
+            int containerId,
+            Inventory playerInventory,
+            Villager villager,
+            ViewMode viewMode,
+            boolean personalInventoryAccess) {
         this(
                 containerId,
                 playerInventory,
-                viewMode == ViewMode.JOB ? HiredJobInventory.getJobInventory(villager) : new VillagerInventoryContainer(villager),
+                createVillagerInventory(villager, allowedViewMode(viewMode, personalInventoryAccess)),
                 villager,
                 villager.getId(),
-                viewMode
+                allowedViewMode(viewMode, personalInventoryAccess),
+                personalInventoryAccess
         );
     }
 
     private VillagerInventoryMenu(int containerId, Inventory playerInventory, ClientMenuData data) {
-        this(containerId, playerInventory, new SimpleContainer(data.viewMode().slotCount()), null, data.entityId(), data.viewMode());
+        this(
+                containerId,
+                playerInventory,
+                new SimpleContainer(data.viewMode().slotCount()),
+                null,
+                data.entityId(),
+                data.viewMode(),
+                data.personalInventoryAccess());
     }
 
     private VillagerInventoryMenu(
@@ -92,7 +111,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             Container villagerInventory,
             Villager villager,
             int villagerEntityId,
-            ViewMode viewMode) {
+            ViewMode viewMode,
+            boolean personalInventoryAccess) {
         super(VillagerRetaliationMenus.VILLAGER_INVENTORY.get(), containerId);
         this.viewMode = viewMode == null ? ViewMode.PERSONAL : viewMode;
         this.villagerSlotCount = this.viewMode.slotCount();
@@ -105,6 +125,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         this.villagerEntityId = villagerEntityId;
         this.player = playerInventory.player;
         this.playerInventory = playerInventory;
+        this.personalInventoryAccess = personalInventoryAccess;
         villagerInventory.startOpen(playerInventory.player);
         initializePersonalTrackingState();
         addVillagerSlots();
@@ -113,7 +134,10 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return this.villager == null || canStillUse(player) && this.villagerInventory.stillValid(player);
+        return this.villager == null
+                || canStillUse(player)
+                && this.villagerInventory.stillValid(player)
+                && (this.viewMode != ViewMode.PERSONAL || hasPersonalInventoryAccess(player));
     }
 
     @Override
@@ -185,8 +209,15 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         return this.viewMode == ViewMode.JOB;
     }
 
+    public boolean canSwitchToPersonalInventory() {
+        return this.personalInventoryAccess;
+    }
+
     public void switchViewMode(ViewMode viewMode) {
         if (viewMode == null || this.viewMode == viewMode) {
+            return;
+        }
+        if (viewMode == ViewMode.PERSONAL && !this.personalInventoryAccess) {
             return;
         }
         this.villagerInventory.stopOpen(this.playerInventory.player);
@@ -316,6 +347,13 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         return player.distanceToSqr(this.villager) <= maxDistance * maxDistance;
     }
 
+    private boolean hasPersonalInventoryAccess(Player player) {
+        return this.personalInventoryAccess
+                && player instanceof ServerPlayer serverPlayer
+                && this.villager.level() instanceof ServerLevel level
+                && VillagerInventoryAccess.canAccess(level, this.villager, serverPlayer);
+    }
+
     private void holdVillager() {
         if (this.villager == null || this.player == null || !canStillUse(this.player)) {
             return;
@@ -415,11 +453,30 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     private static ClientMenuData clientData(RegistryFriendlyByteBuf data) {
         if (data == null) {
-            return new ClientMenuData(-1, ViewMode.PERSONAL);
+            return new ClientMenuData(-1, ViewMode.PERSONAL, true);
         }
         int entityId = data.readVarInt();
         ViewMode viewMode = data.isReadable() ? data.readEnum(ViewMode.class) : ViewMode.PERSONAL;
-        return new ClientMenuData(entityId, viewMode);
+        boolean personalInventoryAccess = viewMode == ViewMode.PERSONAL;
+        if (data.isReadable()) {
+            personalInventoryAccess = data.readBoolean();
+        }
+        viewMode = allowedViewMode(viewMode, personalInventoryAccess);
+        return new ClientMenuData(entityId, viewMode, personalInventoryAccess);
+    }
+
+    private static boolean personalInventoryAccess(Inventory playerInventory, Villager villager) {
+        return !(playerInventory.player instanceof ServerPlayer serverPlayer)
+                || villager.level() instanceof ServerLevel level && VillagerInventoryAccess.canAccess(level, villager, serverPlayer);
+    }
+
+    private static Container createVillagerInventory(Villager villager, ViewMode viewMode) {
+        return viewMode == ViewMode.JOB ? HiredJobInventory.getJobInventory(villager) : new VillagerInventoryContainer(villager);
+    }
+
+    private static ViewMode allowedViewMode(ViewMode viewMode, boolean personalInventoryAccess) {
+        ViewMode safeViewMode = viewMode == null ? ViewMode.PERSONAL : viewMode;
+        return safeViewMode == ViewMode.PERSONAL && !personalInventoryAccess ? ViewMode.JOB : safeViewMode;
     }
 
     private static int armorSlotFor(EquipmentSlot equipmentSlot) {
@@ -557,7 +614,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         }
     }
 
-    private record ClientMenuData(int entityId, ViewMode viewMode) {
+    private record ClientMenuData(int entityId, ViewMode viewMode, boolean personalInventoryAccess) {
     }
 
     private static ResourceLocation emptyArmorSlotIcon(EquipmentSlot equipmentSlot) {

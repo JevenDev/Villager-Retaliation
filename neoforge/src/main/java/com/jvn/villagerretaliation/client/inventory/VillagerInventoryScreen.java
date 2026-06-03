@@ -54,17 +54,25 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         Component tabLabel = Component.translatable(this.menu.isJobInventory()
                 ? "gui.villagerretaliation.inventory.personal_tab"
                 : "gui.villagerretaliation.inventory.job_tab");
-        addRenderableWidget(Button.builder(tabLabel, button -> {
+        Button tabButton = Button.builder(tabLabel, button -> {
                     VillagerInventoryMenu.ViewMode nextMode = this.menu.isJobInventory()
                             ? VillagerInventoryMenu.ViewMode.PERSONAL
                             : VillagerInventoryMenu.ViewMode.JOB;
+                    if (nextMode == VillagerInventoryMenu.ViewMode.PERSONAL
+                            && !this.menu.canSwitchToPersonalInventory()) {
+                        return;
+                    }
                     this.menu.switchViewMode(nextMode);
                     refreshForModeSwitch();
                     PacketDistributor.sendToServer(
                             new VillagerJobInventoryRequestPayload(this.menu.villagerEntityId(), nextMode == VillagerInventoryMenu.ViewMode.JOB));
                 })
                 .bounds(this.leftPos + 116, this.topPos + 8, 52, 18)
-                .build());
+                .build();
+        if (this.menu.isJobInventory() && !this.menu.canSwitchToPersonalInventory()) {
+            tabButton.active = false;
+        }
+        addRenderableWidget(tabButton);
     }
 
     @Override

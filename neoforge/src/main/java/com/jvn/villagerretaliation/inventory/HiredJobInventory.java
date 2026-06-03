@@ -542,7 +542,6 @@ public final class HiredJobInventory implements Container {
             return;
         }
         if (!current.isEmpty()
-                && !sameStack(current, stack)
                 && !isCurrentJobEquipment(current, previousJobStack)) {
             storeDisplacedEquipment(current);
         }
