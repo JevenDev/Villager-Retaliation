@@ -51,7 +51,7 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
 
     @Override
     protected HiredPathResult evaluate(BlockPos target) {
-        if (!isLoaded(this.level, target)) {
+        if (!this.approachFilter.test(target) || !isLoaded(this.level, target)) {
             return HiredPathResult.blocked();
         }
         HiredPathTarget current = targetFromCurrentPosition(target);
@@ -88,7 +88,7 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
             }
             evaluated++;
             Path path = this.villager.getNavigation().createPath(approach.pos(), 0);
-            if (path != null && path.canReach()) {
+            if (path != null && path.canReach() && pathStaysInsideFilter(path, this.approachFilter)) {
                 return new HiredPathResult(new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()), path, true);
             }
         }
@@ -131,6 +131,19 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     static boolean isCloseEnough(Villager villager, HiredPathTarget target) {
         return villager.getEyePosition().distanceToSqr(target.hitPos()) <= MAX_REACH_SQR
                 && villager.position().distanceToSqr(target.hitPos()) <= MAX_REACH_SQR;
+    }
+
+    static boolean pathStaysInsideFilter(Path path, Predicate<BlockPos> positionFilter) {
+        if (path == null) {
+            return false;
+        }
+        Predicate<BlockPos> filter = positionFilter == null ? ignored -> true : positionFilter;
+        for (int i = 0; i < path.getNodeCount(); i++) {
+            if (!filter.test(path.getNode(i).asBlockPos())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     static Vec3 visibleHitPosition(ServerLevel level, Villager villager, Vec3 start, BlockPos target) {

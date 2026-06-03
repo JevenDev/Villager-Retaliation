@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -30,7 +31,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
@@ -111,6 +115,7 @@ public final class HiredVillagerWorkService {
                 state.getBoolean("AutoDepositOutputs"),
                 state.getBoolean("UseAssignedStorageForSupplies"));
 
+        suppressProfessionJobSiteBehavior(level, villager, context);
         worker.maintain(level, villager, context);
 
         int interval = Math.max(10, VillagerRetaliationConfig.HIRED_WORK_TICK_INTERVAL.get());
@@ -130,6 +135,25 @@ public final class HiredVillagerWorkService {
         if (result.completed()) {
             state.putLong("NextWorkGameTime", level.getGameTime() + nextTaskCooldownTicks(efficiency));
             maybeNotify(level, villager, hirer, state, result.status(), 20L * 30L);
+        }
+    }
+
+    private static void suppressProfessionJobSiteBehavior(ServerLevel level, Villager villager, HiredWorkContext context) {
+        Brain<Villager> brain = villager.getBrain();
+        BlockPos jobSite = brain.getMemory(MemoryModuleType.JOB_SITE)
+                .filter(pos -> pos.dimension().equals(level.dimension()))
+                .map(GlobalPos::pos)
+                .orElse(null);
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (navigationTarget != null
+                && (!context.isInsideWorkArea(navigationTarget) || navigationTarget.equals(jobSite))) {
+            villager.getNavigation().stop();
+        }
+        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+        brain.eraseMemory(MemoryModuleType.PATH);
+        if (brain.isActive(Activity.WORK)) {
+            brain.setDefaultActivity(Activity.IDLE);
+            brain.setActiveActivityIfPossible(Activity.IDLE);
         }
     }
 

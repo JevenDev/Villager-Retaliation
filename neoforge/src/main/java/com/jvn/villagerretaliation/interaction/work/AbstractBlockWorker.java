@@ -13,7 +13,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -53,7 +52,9 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             holdMiningPosition(villager, target);
             return;
         }
-        keepWalkTarget(villager, target.approachPos(), 0.55D, 1);
+        if (!ensureNavigationRemainsInsideWorkArea(context, villager)) {
+            return;
+        }
         faceBlock(villager, target);
     }
 
@@ -299,7 +300,9 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             holdMiningPosition(villager, target);
             return true;
         }
-        keepWalkTarget(villager, target.approachPos(), speed, 1);
+        if (!ensureNavigationRemainsInsideWorkArea(context, villager)) {
+            return false;
+        }
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         if (!villager.getNavigation().isDone() && target.approachPos().equals(navigationTarget)) {
             if (HiredPathMemory.isNavigationBlocked(level, villager, target.approachPos(), villager.distanceToSqr(target.approachPos().getCenter()))) {
@@ -310,7 +313,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             return true;
         }
         Path path = villager.getNavigation().createPath(target.approachPos(), 0);
-        if (path != null && path.canReach()) {
+        if (path != null && path.canReach() && pathStaysInsideWorkArea(path, context)) {
             boolean moved = villager.getNavigation().moveTo(path, speed);
             if (moved) {
                 HiredPathMemory.rememberNavigationProgress(level, villager, target.approachPos(), villager.distanceToSqr(target.approachPos().getCenter()));
@@ -330,6 +333,10 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             double speed) {
         if (!context.autoDepositOutputs() || !context.hasOutputToDeposit()) {
             return DepositResult.NOT_NEEDED;
+        }
+        if (!context.isInsideWorkArea(villager.blockPosition())) {
+            stopWorkNavigation(villager);
+            return DepositResult.UNAVAILABLE;
         }
         if (context.depositOutputs(villager)) {
             return DepositResult.DEPOSITED;
@@ -374,12 +381,12 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         if (!context.isLoaded(level, storage)) {
             return StorageMoveResult.FAILED;
         }
+        if (!ensureNavigationRemainsInsideWorkArea(context, villager)) {
+            return StorageMoveResult.FAILED;
+        }
         faceBlock(villager, Vec3.atCenterOf(storage));
         if (context.canDepositOutputsNow(villager)) {
-            if (!villager.getNavigation().isDone()) {
-                villager.getNavigation().stop();
-            }
-            HiredPathMemory.clearNavigationProgress(villager);
+            stopWorkNavigation(villager);
             return StorageMoveResult.ARRIVED;
         }
 
@@ -389,7 +396,6 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             return StorageMoveResult.FAILED;
         }
 
-        keepWalkTarget(villager, approach, speed, 1);
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         double distanceSqr = villager.distanceToSqr(approach.getCenter());
         if (!villager.getNavigation().isDone() && approach.equals(navigationTarget)) {
@@ -402,7 +408,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         }
 
         Path path = villager.getNavigation().createPath(approach, 0);
-        if (path != null && path.canReach()) {
+        if (path != null && path.canReach() && pathStaysInsideWorkArea(path, context)) {
             boolean moved = villager.getNavigation().moveTo(path, speed);
             if (moved) {
                 HiredPathMemory.rememberNavigationProgress(level, villager, approach, distanceSqr);
@@ -417,6 +423,9 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
 
     private BlockPos bestStorageApproach(ServerLevel level, HiredWorkContext context, Villager villager, BlockPos storage) {
         if (!context.isLoaded(level, storage)) {
+            return null;
+        }
+        if (!context.isInsideWorkArea(villager.blockPosition())) {
             return null;
         }
         if (AssignedStorageService.isInInteractionRange(villager, storage) && context.isInsideWorkArea(villager.blockPosition())) {
@@ -439,7 +448,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         candidates.sort(Comparator.comparingDouble(StorageApproach::score));
         for (StorageApproach candidate : candidates) {
             Path path = villager.getNavigation().createPath(candidate.pos(), 0);
-            if (path != null && path.canReach()) {
+            if (path != null && path.canReach() && pathStaysInsideWorkArea(path, context)) {
                 return candidate.pos();
             }
         }
@@ -461,21 +470,35 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     }
 
     protected void holdMiningPosition(Villager villager, HiredPathTarget target) {
+        stopWorkNavigation(villager);
+        faceBlock(villager, target);
+        villager.setDeltaMovement(villager.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));
+    }
+
+    private boolean ensureNavigationRemainsInsideWorkArea(HiredWorkContext context, Villager villager) {
+        if (!context.isInsideWorkArea(villager.blockPosition())) {
+            stopWorkNavigation(villager);
+            return false;
+        }
+        Path path = villager.getNavigation().getPath();
+        if (path != null && !pathStaysInsideWorkArea(path, context)) {
+            stopWorkNavigation(villager);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean pathStaysInsideWorkArea(Path path, HiredWorkContext context) {
+        return HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea);
+    }
+
+    private void stopWorkNavigation(Villager villager) {
         if (!villager.getNavigation().isDone()) {
             villager.getNavigation().stop();
         }
         HiredPathMemory.clearNavigationProgress(villager);
         villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         villager.getBrain().eraseMemory(MemoryModuleType.PATH);
-        faceBlock(villager, target);
-        villager.setDeltaMovement(villager.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));
-    }
-
-    private void keepWalkTarget(Villager villager, BlockPos pos, double speed, int closeEnoughDistance) {
-        villager.getBrain().setMemoryWithExpiry(
-                MemoryModuleType.WALK_TARGET,
-                new WalkTarget(new BlockPosTracker(pos), (float) speed, closeEnoughDistance),
-                30L);
     }
 
     protected boolean canMineFromCurrentPosition(ServerLevel level, Villager villager, HiredPathTarget target) {
