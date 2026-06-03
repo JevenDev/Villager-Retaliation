@@ -10,6 +10,9 @@ public interface HiredRoleWorker {
 
     WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context);
 
+    default void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
+    }
+
     default String status(ServerLevel level, Villager villager, HiredWorkContext context) {
         return context.status();
     }

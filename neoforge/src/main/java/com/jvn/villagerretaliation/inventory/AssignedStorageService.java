@@ -18,6 +18,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public final class AssignedStorageService {
+    private static final double STORAGE_INTERACTION_REACH_SQR = 25.0D;
+
     private AssignedStorageService() {
     }
 
@@ -70,8 +72,12 @@ public final class AssignedStorageService {
         return AssignedStorageSavedData.get(level).removeAssignedTo(villager.getUUID());
     }
 
+    public static boolean removeAssignedContainer(ServerLevel level, BlockPos pos) {
+        return AssignedStorageSavedData.get(level).removeAssignedAt(level.dimension(), pos);
+    }
+
     public static boolean isValidContainer(ServerLevel level, BlockPos pos) {
-        return level.getBlockEntity(pos) instanceof Container;
+        return level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof Container;
     }
 
     public static ItemStack depositStack(Villager villager, ItemStack stack) {
@@ -88,13 +94,72 @@ public final class AssignedStorageService {
         return remainder;
     }
 
+    public static ItemStack depositStackNearVillager(Villager villager, ItemStack stack) {
+        return depositStackNearVillager(villager, stack, ignored -> true);
+    }
+
+    public static ItemStack depositStackNearVillager(Villager villager, ItemStack stack, Predicate<BlockPos> positionFilter) {
+        if (stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
+            return stack;
+        }
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        List<VillagerInventoryOverflowService.ContainerCandidate> containers = nearbyLiveContainerCandidates(level, villager, safeFilter);
+        if (containers.isEmpty()) {
+            return stack;
+        }
+        List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
+        ItemStack remainder = VillagerInventoryOverflowService.insertIntoContainers(containers, stack, usedContainers);
+        VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
+        return remainder;
+    }
+
+    public static boolean canInteractWithAssignedStorage(Villager villager) {
+        return canInteractWithAssignedStorage(villager, ignored -> true);
+    }
+
+    public static boolean canInteractWithAssignedStorage(Villager villager, Predicate<BlockPos> positionFilter) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        return !nearbyLiveContainerCandidates(level, villager, positionFilter == null ? ignored -> true : positionFilter).isEmpty();
+    }
+
+    public static BlockPos nearestAssignedStoragePos(ServerLevel level, Villager villager) {
+        return nearestAssignedStoragePos(level, villager, ignored -> true);
+    }
+
+    public static BlockPos nearestAssignedStoragePos(ServerLevel level, Villager villager, Predicate<BlockPos> positionFilter) {
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        BlockPos villagerPos = villager.blockPosition();
+        return liveContainerCandidates(level, villager).stream()
+                .filter(candidate -> safeFilter.test(candidate.pos()))
+                .min((first, second) -> Double.compare(
+                        first.pos().distSqr(villagerPos),
+                        second.pos().distSqr(villagerPos)))
+                .map(candidate -> candidate.pos().immutable())
+                .orElse(null);
+    }
+
+    public static boolean isInInteractionRange(Villager villager, BlockPos pos) {
+        return villager.getEyePosition().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR
+                && villager.position().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR;
+    }
+
     public static int consumeItems(Villager villager, Predicate<ItemStack> predicate, int count) {
+        return consumeItems(villager, predicate, count, ignored -> true);
+    }
+
+    public static int consumeItems(Villager villager, Predicate<ItemStack> predicate, int count, Predicate<BlockPos> positionFilter) {
         if (count <= 0 || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int remaining = count;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+            if (!safeFilter.test(candidate.pos())) {
+                continue;
+            }
             Container container = candidate.container();
             boolean used = false;
             for (int slot = 0; slot < container.getContainerSize() && remaining > 0; slot++) {
@@ -131,6 +196,10 @@ public final class AssignedStorageService {
                 data.updateValidation(record, "wrong_dimension");
                 continue;
             }
+            if (!level.hasChunkAt(record.pos())) {
+                data.updateValidation(record, "unloaded");
+                continue;
+            }
             BlockEntity blockEntity = level.getBlockEntity(record.pos());
             if (!(blockEntity instanceof Container container)) {
                 data.updateValidation(record, "missing_container");
@@ -138,6 +207,26 @@ public final class AssignedStorageService {
             }
             data.updateValidation(record, "valid");
             containers.add(new VillagerInventoryOverflowService.ContainerCandidate(record.pos().immutable(), container));
+        }
+        return containers;
+    }
+
+    private static List<VillagerInventoryOverflowService.ContainerCandidate> nearbyLiveContainerCandidates(
+            ServerLevel level,
+            Villager villager) {
+        return nearbyLiveContainerCandidates(level, villager, ignored -> true);
+    }
+
+    private static List<VillagerInventoryOverflowService.ContainerCandidate> nearbyLiveContainerCandidates(
+            ServerLevel level,
+            Villager villager,
+            Predicate<BlockPos> positionFilter) {
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        List<VillagerInventoryOverflowService.ContainerCandidate> containers = new ArrayList<>();
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+            if (safeFilter.test(candidate.pos()) && isInInteractionRange(villager, candidate.pos())) {
+                containers.add(candidate);
+            }
         }
         return containers;
     }

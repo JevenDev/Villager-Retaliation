@@ -1,26 +1,60 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import net.minecraft.core.Holder;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
 abstract class AbstractBlockWorker implements HiredRoleWorker {
+    private static final String ACTIVE_BLOCK_POS_TAG = "ActiveWorkBlockPos";
+    private static final String ACTIVE_APPROACH_POS_TAG = "ActiveWorkApproachPos";
+    private static final String ACTIVE_HIT_X_TAG = "ActiveWorkHitX";
+    private static final String ACTIVE_HIT_Y_TAG = "ActiveWorkHitY";
+    private static final String ACTIVE_HIT_Z_TAG = "ActiveWorkHitZ";
+    private static final long LOOK_TARGET_MEMORY_TICKS = 24L;
+    private static final int MAX_TARGETS_TO_PATHFIND = 64;
+    private static final int STORAGE_APPROACH_SEARCH_RADIUS = 4;
+
+    static void clearSharedRuntimeState() {
+        HiredPathMemory.clear();
+    }
+
+    @Override
+    public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (context.progressTicks() <= 0) {
+            return;
+        }
+        HiredPathTarget target = activeWorkTarget(level, context, villager);
+        if (target == null || !context.isLoaded(level, target.blockPos()) || level.getBlockState(target.blockPos()).isAir()) {
+            return;
+        }
+        if (canWorkFromCurrentPosition(level, villager, context, target)) {
+            holdMiningPosition(villager, target);
+            return;
+        }
+        keepWalkTarget(villager, target.approachPos(), 0.55D, 1);
+        faceBlock(villager, target);
+    }
+
     protected static Iterable<BlockPos> positionsNear(BlockPos center, int radius) {
         return BlockPos.betweenClosed(
                 center.offset(-radius, -Math.min(radius, 8), -radius),
@@ -28,29 +62,69 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     }
 
     protected boolean storeDrops(ServerLevel level, HiredWorkContext context, Villager villager, BlockPos pos, ItemStack tool) {
-        WorkTarget target = new WorkTarget(pos, bestApproachPos(level, villager, pos), true);
-        if (target.approachPos() == null || !canMineFromCurrentPosition(level, villager, target)) {
+        HiredPathTarget target = bestWorkTarget(level, villager, context, pos);
+        return target != null && storeDrops(level, context, villager, target, tool);
+    }
+
+    protected boolean storeDrops(ServerLevel level, HiredWorkContext context, Villager villager, HiredPathTarget target, ItemStack tool) {
+        if (!context.isInsideWorkArea(target.blockPos())
+                || !context.isInsideWorkArea(target.approachPos())
+                || !context.isLoaded(level, target.blockPos())
+                || !context.isLoaded(level, target.approachPos())
+                || !canWorkFromCurrentPosition(level, villager, context, target)) {
             return false;
         }
-        BlockState state = level.getBlockState(pos);
-        List<ItemStack> drops = Block.getDrops(state, level, pos, level.getBlockEntity(pos), villager, tool);
+        BlockState state = level.getBlockState(target.blockPos());
+        List<ItemStack> drops = Block.getDrops(state, level, target.blockPos(), level.getBlockEntity(target.blockPos()), villager, tool);
+        if (!context.canStoreOutputs(drops)) {
+            context.depositOutputs(villager);
+        }
+        if (!context.canStoreOutputs(drops)) {
+            return false;
+        }
         for (ItemStack drop : drops) {
             if (!context.storeOutputAfterDepositIfFull(villager, drop).isEmpty()) {
                 return false;
             }
         }
-        faceBlock(villager, pos);
-        villager.swing(InteractionHand.MAIN_HAND, true);
-        EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, Vec3.atCenterOf(pos), state, ignored -> {
+        faceBlock(villager, target);
+        swingWorkTool(villager);
+        EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, target.hitPos(), state, ignored -> {
         });
-        level.destroyBlock(pos, false, villager);
-        level.destroyBlockProgress(villager.getId(), pos, -1);
+        level.destroyBlock(target.blockPos(), false, villager);
+        level.destroyBlockProgress(villager.getId(), target.blockPos(), -1);
         damageTool(context, villager, tool);
+        HiredPathMemory.rememberRecent(level, target.blockPos());
         return true;
     }
 
     protected void faceBlock(Villager villager, BlockPos pos) {
-        villager.getLookControl().setLookAt(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 30.0F, 30.0F);
+        faceBlock(villager, Vec3.atCenterOf(pos));
+    }
+
+    protected void faceBlock(Villager villager, HiredPathTarget target) {
+        villager.getBrain().setMemoryWithExpiry(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target.blockPos()), LOOK_TARGET_MEMORY_TICKS);
+        faceBlock(villager, target.hitPos());
+    }
+
+    protected void faceBlock(Villager villager, Vec3 target) {
+        villager.getLookControl().setLookAt(target.x, target.y, target.z, 90.0F, 90.0F);
+        double dx = target.x - villager.getX();
+        double dy = target.y - villager.getEyeY();
+        double dz = target.z - villager.getZ();
+        double horizontal = Math.sqrt(dx * dx + dz * dz);
+        float yaw = (float) (Mth.atan2(dz, dx) * 180.0D / Math.PI) - 90.0F;
+        float pitch = (float) -(Mth.atan2(dy, horizontal) * 180.0D / Math.PI);
+        villager.setYRot(yaw);
+        villager.setXRot(Mth.clamp(pitch, -60.0F, 60.0F));
+        villager.yBodyRot = yaw;
+        villager.yHeadRot = yaw;
+    }
+
+    protected void swingWorkTool(Villager villager) {
+        if (!villager.swinging) {
+            villager.swing(InteractionHand.MAIN_HAND, true);
+        }
     }
 
     protected int breakProgressGoal(ServerLevel level, BlockPos pos, ItemStack tool) {
@@ -80,82 +154,305 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         }
     }
 
-    protected WorkTarget chooseReachableTarget(ServerLevel level, Villager villager, Iterable<BlockPos> targets) {
-        WorkTarget best = null;
-        double bestScore = Double.MAX_VALUE;
-        for (BlockPos target : targets) {
-            BlockPos approach = bestApproachPos(level, villager, target);
-            if (approach == null) {
-                continue;
-            }
-            double distance = villager.distanceToSqr(approach.getCenter());
-            Path path = villager.getNavigation().createPath(approach, 0);
-            boolean reachable = path != null && path.canReach();
-            if (!reachable && distance > 9.0D) {
-                continue;
-            }
-            double score = distance + (reachable ? 0.0D : 256.0D);
-            if (score < bestScore) {
-                best = new WorkTarget(target.immutable(), approach.immutable(), reachable);
-                bestScore = score;
-            }
+    protected void prepareBreakingTarget(ServerLevel level, HiredWorkContext context, Villager villager, BlockPos pos) {
+        long packedPos = pos.asLong();
+        if (context.state().contains(ACTIVE_BLOCK_POS_TAG) && context.state().getLong(ACTIVE_BLOCK_POS_TAG) != packedPos) {
+            clearBreakProgress(level, villager, BlockPos.of(context.state().getLong(ACTIVE_BLOCK_POS_TAG)));
+            context.setProgressTicks(0);
         }
-        return best;
+        context.state().putLong(ACTIVE_BLOCK_POS_TAG, packedPos);
     }
 
-    protected boolean moveToTarget(Villager villager, WorkTarget target, double speed) {
-        faceBlock(villager, target.blockPos());
-        if (canMineFromCurrentPosition((ServerLevel) villager.level(), villager, target)) {
-            holdMiningPosition(villager, target);
-            return true;
-        }
-        if (isCloseEnough(villager, target)) {
+    protected void prepareBreakingTarget(ServerLevel level, HiredWorkContext context, Villager villager, HiredPathTarget target) {
+        prepareBreakingTarget(level, context, villager, target.blockPos());
+        context.state().putLong(ACTIVE_APPROACH_POS_TAG, target.approachPos().asLong());
+        context.state().putDouble(ACTIVE_HIT_X_TAG, target.hitPos().x);
+        context.state().putDouble(ACTIVE_HIT_Y_TAG, target.hitPos().y);
+        context.state().putDouble(ACTIVE_HIT_Z_TAG, target.hitPos().z);
+    }
+
+    protected void clearActiveBreakingTarget(ServerLevel level, HiredWorkContext context, Villager villager) {
+        if (context.state().contains(ACTIVE_BLOCK_POS_TAG)) {
+            clearBreakProgress(level, villager, BlockPos.of(context.state().getLong(ACTIVE_BLOCK_POS_TAG)));
             if (!villager.getNavigation().isDone()) {
                 villager.getNavigation().stop();
             }
+            villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+            villager.getBrain().eraseMemory(MemoryModuleType.PATH);
+            context.state().remove(ACTIVE_BLOCK_POS_TAG);
+            context.state().remove(ACTIVE_APPROACH_POS_TAG);
+            context.state().remove(ACTIVE_HIT_X_TAG);
+            context.state().remove(ACTIVE_HIT_Y_TAG);
+            context.state().remove(ACTIVE_HIT_Z_TAG);
+        }
+        HiredPathMemory.clearNavigationProgress(villager);
+        context.setProgressTicks(0);
+    }
+
+    protected HiredPathTarget activeWorkTarget(ServerLevel level, HiredWorkContext context, Villager villager) {
+        HiredPathTarget target = storedWorkTarget(context.state());
+        if (target == null || HiredPathMemory.isAvoided(level, villager, target.blockPos())) {
+            return null;
+        }
+        if (!context.isInsideWorkArea(target.blockPos()) || !context.isInsideWorkArea(target.approachPos())) {
+            return null;
+        }
+        if (!context.isLoaded(level, target.blockPos()) || !context.isLoaded(level, target.approachPos())) {
+            return null;
+        }
+        if (canMineFromCurrentPosition(level, villager, target)) {
+            return target;
+        }
+        if (!HiredMoveToBlockFaceJob.isValidApproachPosition(level, target.approachPos())) {
+            return null;
+        }
+        Vec3 approachEye = new Vec3(
+                target.approachPos().getX() + 0.5D,
+                target.approachPos().getY() + villager.getEyeHeight(),
+                target.approachPos().getZ() + 0.5D);
+        if (!HiredMoveToBlockFaceJob.hasLineOfSightToBlock(level, villager, approachEye, target.blockPos(), target.hitPos())) {
+            return null;
+        }
+        return target;
+    }
+
+    protected boolean canWorkFromCurrentPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredPathTarget target) {
+        return context.isInsideWorkArea(villager.blockPosition())
+                && context.isInsideWorkArea(target.blockPos())
+                && context.isLoaded(level, target.blockPos())
+                && context.isLoaded(level, target.approachPos())
+                && canMineFromCurrentPosition(level, villager, target);
+    }
+
+    protected HiredPathTarget chooseReachableTarget(ServerLevel level, Villager villager, Iterable<BlockPos> targets) {
+        return new HiredMoveToBlockFaceJob(level, villager, targets, MAX_TARGETS_TO_PATHFIND).search().target();
+    }
+
+    protected HiredPathTarget chooseReachableTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Iterable<BlockPos> targets) {
+        return new HiredMoveToBlockFaceJob(
+                level,
+                villager,
+                targets,
+                MAX_TARGETS_TO_PATHFIND,
+                context::isInsideWorkArea).search().target();
+    }
+
+    protected boolean recordWorkPathFailure(ServerLevel level, Villager villager, BlockPos pos) {
+        return HiredPathMemory.recordFailure(level, villager, pos);
+    }
+
+    protected void clearWorkPathFailure(Villager villager, BlockPos pos) {
+        HiredPathMemory.clearFailure(villager, pos);
+    }
+
+    protected boolean isTemporarilyAvoidedTarget(ServerLevel level, Villager villager, BlockPos pos) {
+        return HiredPathMemory.isAvoided(level, villager, pos);
+    }
+
+    protected void expireWorkPathMemory(ServerLevel level) {
+        HiredPathMemory.expire(level);
+    }
+
+    protected boolean moveToTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredPathTarget target, double speed) {
+        faceBlock(villager, target);
+        if (!context.isInsideWorkArea(target.approachPos())
+                || !context.isLoaded(level, target.blockPos())
+                || !context.isLoaded(level, target.approachPos())) {
             return false;
         }
-        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
-        if (path != null) {
-            return villager.getNavigation().moveTo(path, speed);
+        if (canWorkFromCurrentPosition(level, villager, context, target)) {
+            holdMiningPosition(villager, target);
+            return true;
         }
-        return villager.getNavigation().moveTo(
-                target.approachPos().getX() + 0.5D,
-                target.approachPos().getY(),
-                target.approachPos().getZ() + 0.5D,
-                speed);
+        keepWalkTarget(villager, target.approachPos(), speed, 1);
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (!villager.getNavigation().isDone() && target.approachPos().equals(navigationTarget)) {
+            if (HiredPathMemory.isNavigationBlocked(level, villager, target.approachPos(), villager.distanceToSqr(target.approachPos().getCenter()))) {
+                villager.getNavigation().stop();
+                HiredPathMemory.clearNavigationProgress(villager);
+                return false;
+            }
+            return true;
+        }
+        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        if (path != null && path.canReach()) {
+            boolean moved = villager.getNavigation().moveTo(path, speed);
+            if (moved) {
+                HiredPathMemory.rememberNavigationProgress(level, villager, target.approachPos(), villager.distanceToSqr(target.approachPos().getCenter()));
+            } else {
+                HiredPathMemory.clearNavigationProgress(villager);
+            }
+            return moved;
+        }
+        HiredPathMemory.clearNavigationProgress(villager);
+        return false;
     }
 
-    protected boolean isCloseEnough(Villager villager, WorkTarget target) {
-        return villager.distanceToSqr(target.approachPos().getCenter()) <= 4.5D;
+    protected DepositResult depositOutputsOrMoveToStorage(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            double speed) {
+        if (!context.autoDepositOutputs() || !context.hasOutputToDeposit()) {
+            return DepositResult.NOT_NEEDED;
+        }
+        if (context.depositOutputs(villager)) {
+            return DepositResult.DEPOSITED;
+        }
+        BlockPos storage = context.nearestDepositStorage(level, villager);
+        if (storage == null) {
+            return DepositResult.UNAVAILABLE;
+        }
+        if (!context.isInsideWorkArea(storage)) {
+            return DepositResult.UNAVAILABLE;
+        }
+        if (!context.isLoaded(level, storage)) {
+            return DepositResult.UNAVAILABLE;
+        }
+        StorageMoveResult moveResult = moveToStorageTarget(level, context, villager, storage, speed);
+        if (moveResult == StorageMoveResult.MOVING) {
+            return DepositResult.MOVING;
+        }
+        if (moveResult == StorageMoveResult.FAILED) {
+            return DepositResult.UNAVAILABLE;
+        }
+        return context.depositOutputs(villager) ? DepositResult.DEPOSITED : DepositResult.UNAVAILABLE;
     }
 
-    protected void holdMiningPosition(Villager villager, WorkTarget target) {
+    protected DepositResult depositOutputsForFullInventory(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            double speed) {
+        if (!context.canDepositOutputsNow(villager)) {
+            clearActiveBreakingTarget(level, context, villager);
+        }
+        return depositOutputsOrMoveToStorage(level, context, villager, speed);
+    }
+
+    private StorageMoveResult moveToStorageTarget(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            BlockPos storage,
+            double speed) {
+        if (!context.isLoaded(level, storage)) {
+            return StorageMoveResult.FAILED;
+        }
+        faceBlock(villager, Vec3.atCenterOf(storage));
+        if (context.canDepositOutputsNow(villager)) {
+            if (!villager.getNavigation().isDone()) {
+                villager.getNavigation().stop();
+            }
+            HiredPathMemory.clearNavigationProgress(villager);
+            return StorageMoveResult.ARRIVED;
+        }
+
+        BlockPos approach = bestStorageApproach(level, context, villager, storage);
+        if (approach == null) {
+            HiredPathMemory.clearNavigationProgress(villager);
+            return StorageMoveResult.FAILED;
+        }
+
+        keepWalkTarget(villager, approach, speed, 1);
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        double distanceSqr = villager.distanceToSqr(approach.getCenter());
+        if (!villager.getNavigation().isDone() && approach.equals(navigationTarget)) {
+            if (HiredPathMemory.isNavigationBlocked(level, villager, approach, distanceSqr)) {
+                villager.getNavigation().stop();
+                HiredPathMemory.clearNavigationProgress(villager);
+                return StorageMoveResult.FAILED;
+            }
+            return StorageMoveResult.MOVING;
+        }
+
+        Path path = villager.getNavigation().createPath(approach, 0);
+        if (path != null && path.canReach()) {
+            boolean moved = villager.getNavigation().moveTo(path, speed);
+            if (moved) {
+                HiredPathMemory.rememberNavigationProgress(level, villager, approach, distanceSqr);
+            } else {
+                HiredPathMemory.clearNavigationProgress(villager);
+            }
+            return moved ? StorageMoveResult.MOVING : StorageMoveResult.FAILED;
+        }
+        HiredPathMemory.clearNavigationProgress(villager);
+        return StorageMoveResult.FAILED;
+    }
+
+    private BlockPos bestStorageApproach(ServerLevel level, HiredWorkContext context, Villager villager, BlockPos storage) {
+        if (!context.isLoaded(level, storage)) {
+            return null;
+        }
+        if (AssignedStorageService.isInInteractionRange(villager, storage) && context.isInsideWorkArea(villager.blockPosition())) {
+            return villager.blockPosition().immutable();
+        }
+
+        List<StorageApproach> candidates = new ArrayList<>();
+        for (BlockPos rawCandidate : BlockPos.betweenClosed(
+                storage.offset(-STORAGE_APPROACH_SEARCH_RADIUS, -2, -STORAGE_APPROACH_SEARCH_RADIUS),
+                storage.offset(STORAGE_APPROACH_SEARCH_RADIUS, 2, STORAGE_APPROACH_SEARCH_RADIUS))) {
+            BlockPos candidate = rawCandidate.immutable();
+            if (!context.isLoaded(level, candidate)
+                    || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)
+                    || !context.isInsideWorkArea(candidate)
+                    || candidate.getCenter().distanceToSqr(storage.getCenter()) > 25.0D) {
+                continue;
+            }
+            candidates.add(new StorageApproach(candidate, storageApproachScore(level, villager, candidate, storage)));
+        }
+        candidates.sort(Comparator.comparingDouble(StorageApproach::score));
+        for (StorageApproach candidate : candidates) {
+            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            if (path != null && path.canReach()) {
+                return candidate.pos();
+            }
+        }
+        return null;
+    }
+
+    private double storageApproachScore(ServerLevel level, Villager villager, BlockPos approach, BlockPos storage) {
+        double distance = villager.distanceToSqr(approach.getCenter());
+        int vertical = Math.abs(approach.getY() - villager.blockPosition().getY());
+        double reachSlack = approach.getCenter().distanceToSqr(storage.getCenter());
+        return distance
+                + vertical * vertical * 3.0D
+                + reachSlack * 0.25D
+                + HiredMoveToBlockFaceJob.terrainCost(level, approach);
+    }
+
+    protected boolean isCloseEnough(Villager villager, HiredPathTarget target) {
+        return HiredMoveToBlockFaceJob.isCloseEnough(villager, target);
+    }
+
+    protected void holdMiningPosition(Villager villager, HiredPathTarget target) {
         if (!villager.getNavigation().isDone()) {
             villager.getNavigation().stop();
         }
-        villager.getLookControl().setLookAt(
-                target.blockPos().getX() + 0.5D,
-                target.blockPos().getY() + 0.5D,
-                target.blockPos().getZ() + 0.5D,
-                30.0F,
-                30.0F);
+        HiredPathMemory.clearNavigationProgress(villager);
+        villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+        villager.getBrain().eraseMemory(MemoryModuleType.PATH);
+        faceBlock(villager, target);
         villager.setDeltaMovement(villager.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));
     }
 
-    protected boolean canMineFromCurrentPosition(ServerLevel level, Villager villager, WorkTarget target) {
-        if (!isCloseEnough(villager, target) || !isExposedFromApproach(level, target)) {
-            return false;
-        }
-        Vec3 start = villager.getEyePosition();
-        Vec3 end = Vec3.atCenterOf(target.blockPos());
-        BlockHitResult hit = level.clip(new ClipContext(
-                start,
-                end,
-                ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.NONE,
-                villager));
-        return hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(target.blockPos());
+    private void keepWalkTarget(Villager villager, BlockPos pos, double speed, int closeEnoughDistance) {
+        villager.getBrain().setMemoryWithExpiry(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(pos), (float) speed, closeEnoughDistance),
+                30L);
+    }
+
+    protected boolean canMineFromCurrentPosition(ServerLevel level, Villager villager, HiredPathTarget target) {
+        return HiredMoveToBlockFaceJob.canReachFromCurrentPosition(level, villager, target);
     }
 
     protected void damageTool(HiredWorkContext context, Villager villager, ItemStack tool) {
@@ -180,35 +477,55 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         return level;
     }
 
-    private BlockPos bestApproachPos(ServerLevel level, Villager villager, BlockPos target) {
-        BlockPos best = null;
-        double bestDistance = Double.MAX_VALUE;
-        for (Direction direction : Direction.values()) {
-            BlockPos candidate = target.relative(direction);
-            if (!level.getBlockState(candidate).isAir() && !level.getBlockState(candidate).liquid()) {
-                continue;
-            }
-            BlockPos standingPos = candidate.getY() < target.getY() ? candidate : candidate.below();
-            if (!level.getBlockState(standingPos).isSolid()) {
-                continue;
-            }
-            double distance = villager.distanceToSqr(candidate.getCenter());
-            if (distance < bestDistance) {
-                best = candidate;
-                bestDistance = distance;
-            }
+    protected HiredPathTarget storedWorkTarget(CompoundTag state) {
+        if (!state.contains(ACTIVE_BLOCK_POS_TAG)
+                || !state.contains(ACTIVE_APPROACH_POS_TAG)
+                || !state.contains(ACTIVE_HIT_X_TAG)
+                || !state.contains(ACTIVE_HIT_Y_TAG)
+                || !state.contains(ACTIVE_HIT_Z_TAG)) {
+            return null;
         }
-        return best;
+        BlockPos blockPos = BlockPos.of(state.getLong(ACTIVE_BLOCK_POS_TAG));
+        BlockPos approachPos = BlockPos.of(state.getLong(ACTIVE_APPROACH_POS_TAG));
+        Vec3 hitPos = new Vec3(
+                state.getDouble(ACTIVE_HIT_X_TAG),
+                state.getDouble(ACTIVE_HIT_Y_TAG),
+                state.getDouble(ACTIVE_HIT_Z_TAG));
+        return new HiredPathTarget(blockPos, approachPos, hitPos);
     }
 
-    private boolean isExposedFromApproach(ServerLevel level, WorkTarget target) {
-        if (!target.approachPos().closerToCenterThan(target.blockPos().getCenter(), 1.75D)) {
-            return false;
-        }
-        BlockState approachState = level.getBlockState(target.approachPos());
-        return approachState.isAir() || approachState.liquid();
+    protected HiredPathTarget bestWorkTarget(ServerLevel level, Villager villager, BlockPos target) {
+        return chooseReachableTarget(level, villager, List.of(target));
     }
 
-    protected record WorkTarget(BlockPos blockPos, BlockPos approachPos, boolean reachable) {
+    protected HiredPathTarget bestWorkTarget(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos target) {
+        if (!context.isInsideWorkArea(target)) {
+            return null;
+        }
+        return chooseReachableTarget(level, villager, context, List.of(target));
+    }
+
+    private boolean isInsideWorkArea(HiredWorkContext context, BlockPos pos) {
+        return context.isInsideWorkArea(pos);
+    }
+
+    protected boolean hasLineOfSightToBlock(ServerLevel level, Villager villager, Vec3 start, BlockPos target, Vec3 hitPos) {
+        return HiredMoveToBlockFaceJob.hasLineOfSightToBlock(level, villager, start, target, hitPos);
+    }
+
+    protected enum DepositResult {
+        NOT_NEEDED,
+        DEPOSITED,
+        MOVING,
+        UNAVAILABLE
+    }
+
+    private enum StorageMoveResult {
+        ARRIVED,
+        MOVING,
+        FAILED
+    }
+
+    private record StorageApproach(BlockPos pos, double score) {
     }
 }

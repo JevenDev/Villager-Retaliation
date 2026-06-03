@@ -49,11 +49,7 @@ public final class VillagerPoseAnimator {
             return;
         }
 
-        if (isAttackingWithMainHand(villager)) {
-            AnimationUtils.swingWeaponDown(rightArm, leftArm, villager, attackTime, ageInTicks);
-        } else {
-            AnimationUtils.swingWeaponDown(leftArm, rightArm, villager, attackTime, ageInTicks);
-        }
+        applyPlayerLikeSwing(villager, rightArm, leftArm, attackTime);
     }
 
     public static void applyBowPose(
@@ -185,5 +181,34 @@ public final class VillagerPoseAnimator {
         punchArm.xRot -= punch * 1.2F + punchRecovery * 0.4F;
         supportArm.yRot = yawDirection * 0.2F;
         supportArm.xRot *= 0.5F;
+    }
+
+    private static void applyPlayerLikeSwing(AbstractVillager villager, ModelPart rightArm, ModelPart leftArm, float attackProgress) {
+        ModelPart swingArm = isAttackingWithMainHand(villager)
+                ? (villager.getMainArm() == HumanoidArm.RIGHT ? rightArm : leftArm)
+                : (villager.getMainArm() == HumanoidArm.RIGHT ? leftArm : rightArm);
+        ModelPart supportArm = swingArm == rightArm ? leftArm : rightArm;
+        float direction = swingArm == rightArm ? 1.0F : -1.0F;
+
+        float tailFade = 1.0F - smoothStep(0.72F, 1.0F, attackProgress);
+        float bodySwing = Mth.sin(Mth.sqrt(attackProgress) * ((float) Math.PI * 2.0F)) * 0.2F * direction * tailFade;
+        float eased = 1.0F - attackProgress;
+        eased *= eased;
+        eased *= eased;
+        eased = 1.0F - eased;
+        float forwardSwing = Mth.sin(eased * (float) Math.PI) * tailFade;
+        float recovery = Mth.sin(attackProgress * (float) Math.PI) * -(swingArm.xRot - 0.7F) * 0.55F * tailFade;
+
+        swingArm.yRot += bodySwing * 2.0F + direction * (0.08F - forwardSwing * 0.25F);
+        swingArm.xRot -= forwardSwing * 1.2F + recovery;
+        swingArm.zRot += Mth.sin(attackProgress * (float) Math.PI) * -0.4F * direction;
+
+        supportArm.yRot -= bodySwing * 0.5F;
+        supportArm.xRot *= 0.65F;
+    }
+
+    private static float smoothStep(float edge0, float edge1, float value) {
+        float t = Mth.clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+        return t * t * (3.0F - 2.0F * t);
     }
 }

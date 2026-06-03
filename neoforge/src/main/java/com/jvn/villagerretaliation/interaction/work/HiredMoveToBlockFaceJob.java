@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -22,10 +23,21 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     private static final int MAX_APPROACHES_TO_PATHFIND = 24;
     private static final double FACE_INSET = 0.01D;
     private final Iterable<BlockPos> candidatePositions;
+    private final Predicate<BlockPos> approachFilter;
 
     HiredMoveToBlockFaceJob(ServerLevel level, Villager villager, Iterable<BlockPos> candidatePositions, int maxCandidates) {
+        this(level, villager, candidatePositions, maxCandidates, ignored -> true);
+    }
+
+    HiredMoveToBlockFaceJob(
+            ServerLevel level,
+            Villager villager,
+            Iterable<BlockPos> candidatePositions,
+            int maxCandidates,
+            Predicate<BlockPos> approachFilter) {
         super(level, villager, maxCandidates);
         this.candidatePositions = candidatePositions;
+        this.approachFilter = approachFilter == null ? ignored -> true : approachFilter;
     }
 
     @Override
@@ -39,6 +51,9 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
 
     @Override
     protected HiredPathResult evaluate(BlockPos target) {
+        if (!isLoaded(this.level, target)) {
+            return HiredPathResult.blocked();
+        }
         HiredPathTarget current = targetFromCurrentPosition(target);
         if (current != null) {
             return new HiredPathResult(current, null, true);
@@ -49,7 +64,7 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 target.offset(-APPROACH_SEARCH_RADIUS, -2, -APPROACH_SEARCH_RADIUS),
                 target.offset(APPROACH_SEARCH_RADIUS, 2, APPROACH_SEARCH_RADIUS))) {
             BlockPos approach = rawCandidate.immutable();
-            if (!isValidApproachPosition(this.level, approach)) {
+            if (!this.approachFilter.test(approach) || !isValidApproachPosition(this.level, approach)) {
                 continue;
             }
             Vec3 eye = new Vec3(
@@ -81,11 +96,15 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     private HiredPathTarget targetFromCurrentPosition(BlockPos target) {
+        BlockPos currentPos = this.villager.blockPosition().immutable();
+        if (!isLoaded(this.level, target) || !this.approachFilter.test(currentPos)) {
+            return null;
+        }
         Vec3 hit = visibleHitPosition(this.level, this.villager, this.villager.getEyePosition(), target);
         if (hit == null) {
             return null;
         }
-        HiredPathTarget pathTarget = new HiredPathTarget(target.immutable(), this.villager.blockPosition().immutable(), hit);
+        HiredPathTarget pathTarget = new HiredPathTarget(target.immutable(), currentPos, hit);
         return canReachFromCurrentPosition(this.level, this.villager, pathTarget) ? pathTarget : null;
     }
 
@@ -103,7 +122,9 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     static boolean canReachFromCurrentPosition(ServerLevel level, Villager villager, HiredPathTarget target) {
-        return isCloseEnough(villager, target)
+        return isLoaded(level, target.blockPos())
+                && isLoaded(level, target.approachPos())
+                && isCloseEnough(villager, target)
                 && hasLineOfSightToBlock(level, villager, villager.getEyePosition(), target.blockPos(), target.hitPos());
     }
 
@@ -113,10 +134,16 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     static Vec3 visibleHitPosition(ServerLevel level, Villager villager, Vec3 start, BlockPos target) {
+        if (!isLoaded(level, target)) {
+            return null;
+        }
         Vec3 bestHit = null;
         double bestDistance = Double.MAX_VALUE;
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = target.relative(direction);
+            if (!isLoaded(level, neighbor)) {
+                continue;
+            }
             BlockState neighborState = level.getBlockState(neighbor);
             if (!neighborState.isAir() && !neighborState.liquid()) {
                 continue;
@@ -135,6 +162,9 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     static boolean hasLineOfSightToBlock(ServerLevel level, Villager villager, Vec3 start, BlockPos target, Vec3 hitPos) {
+        if (!isLoaded(level, target)) {
+            return false;
+        }
         BlockHitResult hit = level.clip(new ClipContext(
                 start,
                 hitPos,
@@ -145,6 +175,9 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     static boolean isValidApproachPosition(ServerLevel level, BlockPos pos) {
+        if (!isLoaded(level, pos) || !isLoaded(level, pos.above()) || !isLoaded(level, pos.below())) {
+            return false;
+        }
         BlockState feet = level.getBlockState(pos);
         BlockState head = level.getBlockState(pos.above());
         BlockState floor = level.getBlockState(pos.below());
@@ -154,6 +187,9 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     static double terrainCost(ServerLevel level, BlockPos pos) {
+        if (!isLoaded(level, pos) || !isLoaded(level, pos.above()) || !isLoaded(level, pos.below())) {
+            return 256.0D;
+        }
         double cost = 0.0D;
         cost += blockRiskCost(level.getBlockState(pos)) * 3.0D;
         cost += blockRiskCost(level.getBlockState(pos.above())) * 2.0D;
@@ -183,6 +219,10 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 target.getX() + 0.5D + direction.getStepX() * (0.5D - FACE_INSET),
                 target.getY() + 0.5D + direction.getStepY() * (0.5D - FACE_INSET),
                 target.getZ() + 0.5D + direction.getStepZ() * (0.5D - FACE_INSET));
+    }
+
+    private static boolean isLoaded(ServerLevel level, BlockPos pos) {
+        return level.hasChunkAt(pos);
     }
 
     private record ApproachCandidate(BlockPos pos, Vec3 hitPos, double score) {

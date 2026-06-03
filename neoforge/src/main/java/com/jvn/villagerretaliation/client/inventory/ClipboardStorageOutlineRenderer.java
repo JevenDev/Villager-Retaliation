@@ -2,8 +2,11 @@ package com.jvn.villagerretaliation.client.inventory;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem.ClipboardMode;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
+import com.jvn.villagerretaliation.network.ClipboardWorkAreaEntry;
+import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
@@ -26,8 +29,11 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 public final class ClipboardStorageOutlineRenderer {
     private static final int SELECTED_COLOR = 0xFF3FA7FF;
     private static final int ASSIGNED_COLOR = 0xFFFFD54A;
+    private static final int WORK_AREA_COLOR = 0xFF65D889;
     private static final List<StoragePosition> ASSIGNED_POSITIONS = new ArrayList<>();
+    private static final List<WorkAreaPosition> WORK_AREAS = new ArrayList<>();
     private static long assignedVisibleUntilGameTime;
+    private static long workAreasVisibleUntilGameTime;
 
     private ClipboardStorageOutlineRenderer() {
     }
@@ -50,6 +56,25 @@ public final class ClipboardStorageOutlineRenderer {
         });
     }
 
+    public static void accept(ClipboardWorkAreaSyncPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.execute(() -> {
+            WORK_AREAS.clear();
+            if (minecraft.level == null) {
+                workAreasVisibleUntilGameTime = 0L;
+                return;
+            }
+            for (ClipboardWorkAreaEntry entry : payload.entries()) {
+                WORK_AREAS.add(new WorkAreaPosition(
+                        ResourceKey.create(Registries.DIMENSION, entry.dimension()),
+                        entry.min(),
+                        entry.max()
+                ));
+            }
+            workAreasVisibleUntilGameTime = minecraft.level.getGameTime() + payload.ticks();
+        });
+    }
+
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             return;
@@ -61,12 +86,24 @@ public final class ClipboardStorageOutlineRenderer {
         }
 
         ItemStack clipboard = clipboardStack(minecraft);
-        List<StoragePosition> selected = HiredStorageClipboardItem.selectedContainers(clipboard);
-        renderPositions(event, selected, SELECTED_COLOR);
-        if (minecraft.level.getGameTime() <= assignedVisibleUntilGameTime) {
-            renderPositions(event, ASSIGNED_POSITIONS, ASSIGNED_COLOR);
-        } else {
-            ASSIGNED_POSITIONS.clear();
+        ClipboardMode mode = HiredStorageClipboardItem.mode(clipboard);
+        if (mode == ClipboardMode.ASSIGN_STORAGE) {
+            List<StoragePosition> selected = HiredStorageClipboardItem.selectedContainers(clipboard);
+            renderPositions(event, selected, SELECTED_COLOR);
+            if (minecraft.level.getGameTime() <= assignedVisibleUntilGameTime) {
+                renderPositions(event, ASSIGNED_POSITIONS, ASSIGNED_COLOR);
+            } else {
+                ASSIGNED_POSITIONS.clear();
+            }
+            return;
+        }
+
+        if (mode == ClipboardMode.WORK_AREA || mode == ClipboardMode.SET_WORK_AREA) {
+            if (minecraft.level.getGameTime() <= workAreasVisibleUntilGameTime) {
+                renderWorkAreas(event, WORK_AREAS, WORK_AREA_COLOR);
+            } else {
+                WORK_AREAS.clear();
+            }
         }
     }
 
@@ -98,6 +135,46 @@ public final class ClipboardStorageOutlineRenderer {
         bufferSource.endBatch(RenderType.lines());
     }
 
+    private static void renderWorkAreas(RenderLevelStageEvent event, List<WorkAreaPosition> areas, int color) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || areas.isEmpty()) {
+            return;
+        }
+
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+        poseStack.pushPose();
+        poseStack.translate(-camera.x, -camera.y, -camera.z);
+        MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.lines());
+        float red = ((color >> 16) & 0xFF) / 255.0F;
+        float green = ((color >> 8) & 0xFF) / 255.0F;
+        float blue = (color & 0xFF) / 255.0F;
+        float alpha = ((color >> 24) & 0xFF) / 255.0F;
+        ResourceKey<Level> currentDimension = minecraft.level.dimension();
+        for (WorkAreaPosition area : areas) {
+            if (!area.dimension().equals(currentDimension) || !minecraft.level.hasChunkAt(area.min()) || !minecraft.level.hasChunkAt(area.max())) {
+                continue;
+            }
+            LevelRenderer.renderLineBox(poseStack, consumer, workAreaBox(area), red, green, blue, alpha);
+        }
+        poseStack.popPose();
+        bufferSource.endBatch(RenderType.lines());
+    }
+
+    private static AABB workAreaBox(WorkAreaPosition area) {
+        BlockPos min = area.min();
+        BlockPos max = area.max();
+        return new AABB(
+                min.getX(),
+                min.getY(),
+                min.getZ(),
+                max.getX() + 1.0D,
+                max.getY() + 1.0D,
+                max.getZ() + 1.0D
+        ).inflate(0.003D);
+    }
+
     private static AABB outlineBox(Level level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         if (!state.isAir()) {
@@ -117,5 +194,8 @@ public final class ClipboardStorageOutlineRenderer {
     private static ItemStack clipboardStack(Minecraft minecraft) {
         ItemStack mainHand = minecraft.player.getMainHandItem();
         return VillagerRetaliationItems.isClipboard(mainHand) ? mainHand : minecraft.player.getOffhandItem();
+    }
+
+    private record WorkAreaPosition(ResourceKey<Level> dimension, BlockPos min, BlockPos max) {
     }
 }

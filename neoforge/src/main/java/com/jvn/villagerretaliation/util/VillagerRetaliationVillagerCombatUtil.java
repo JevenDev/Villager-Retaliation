@@ -163,17 +163,18 @@ public final class VillagerRetaliationVillagerCombatUtil {
 
     public static void updateSwingAnimation(AbstractVillager villager) {
         int swingDuration = Math.max(1, villager.getCurrentSwingDuration());
+        villager.oAttackAnim = villager.attackAnim;
         if (villager.swinging) {
             villager.swingTime++;
             if (villager.swingTime >= swingDuration) {
-                villager.swingTime = 0;
+                villager.swingTime = swingDuration;
                 villager.swinging = false;
             }
         } else {
             villager.swingTime = 0;
         }
 
-        villager.attackAnim = (float) villager.swingTime / (float) swingDuration;
+        villager.attackAnim = villager.swinging ? (float) villager.swingTime / (float) swingDuration : 0.0F;
     }
 
     public static <T> Optional<T> getMemoryIfRegistered(AbstractVillager villager, MemoryModuleType<T> memoryType) {

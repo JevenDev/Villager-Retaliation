@@ -2,13 +2,19 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import java.util.List;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 
 public record HiredWorkContext(
         HiredJobInventory inventory,
         CompoundTag state,
+        BlockPos workCenter,
+        BlockPos workMin,
+        BlockPos workMax,
         int radius,
         int efficiency,
         boolean autoDepositOutputs,
@@ -25,12 +31,59 @@ public record HiredWorkContext(
         this.state.putInt("ProgressTicks", Math.max(0, ticks));
     }
 
+    public int verticalRadius() {
+        return Math.max(1, Math.max(
+                Math.abs(this.workCenter.getY() - this.workMin.getY()),
+                Math.abs(this.workMax.getY() - this.workCenter.getY())));
+    }
+
+    public int horizontalSearchRadius() {
+        return Math.max(1, Math.max(
+                Math.max(Math.abs(this.workCenter.getX() - this.workMin.getX()), Math.abs(this.workMax.getX() - this.workCenter.getX())),
+                Math.max(Math.abs(this.workCenter.getZ() - this.workMin.getZ()), Math.abs(this.workMax.getZ() - this.workCenter.getZ()))));
+    }
+
+    public Iterable<BlockPos> workAreaPositions() {
+        return BlockPos.betweenClosed(this.workMin, this.workMax);
+    }
+
+    public boolean isLoaded(ServerLevel level, BlockPos pos) {
+        return level.hasChunkAt(pos);
+    }
+
+    public boolean isInsideWorkArea(BlockPos pos) {
+        return pos.getX() >= this.workMin.getX()
+                && pos.getX() <= this.workMax.getX()
+                && pos.getY() >= this.workMin.getY()
+                && pos.getY() <= this.workMax.getY()
+                && pos.getZ() >= this.workMin.getZ()
+                && pos.getZ() <= this.workMax.getZ();
+    }
+
     public ItemStack storeOutput(Villager villager, ItemStack stack) {
         return this.inventory.insertOutput(stack);
     }
 
     public boolean depositOutputs(Villager villager) {
-        return this.autoDepositOutputs && this.inventory.depositOutputToAssignedStorage();
+        return this.autoDepositOutputs && this.inventory.depositOutputToNearbyAssignedStorage(this::isInsideWorkArea);
+    }
+
+    public boolean hasOutputToDeposit() {
+        return this.inventory.hasOutputItems();
+    }
+
+    public boolean canDepositOutputsNow(Villager villager) {
+        return this.autoDepositOutputs
+                && this.inventory.hasOutputItems()
+                && AssignedStorageService.canInteractWithAssignedStorage(villager, this::isInsideWorkArea);
+    }
+
+    public BlockPos nearestDepositStorage(ServerLevel level, Villager villager) {
+        return AssignedStorageService.nearestAssignedStoragePos(level, villager, this::isInsideWorkArea);
+    }
+
+    public boolean canStoreOutputs(List<ItemStack> stacks) {
+        return this.inventory.canStoreOutputs(stacks);
     }
 
     public ItemStack storeOutputAfterDepositIfFull(Villager villager, ItemStack stack) {

@@ -124,6 +124,22 @@ public final class AssignedStorageSavedData extends SavedData {
         return records.size();
     }
 
+    public boolean removeAssignedAt(ResourceKey<Level> dimension, BlockPos pos) {
+        AssignedContainerRecord removed = this.byContainer.remove(new ContainerKey(dimension, pos.immutable()));
+        if (removed == null) {
+            return false;
+        }
+        List<AssignedContainerRecord> records = this.byVillager.get(removed.villagerId());
+        if (records != null) {
+            records.removeIf(candidate -> candidate.dimension().equals(removed.dimension()) && candidate.pos().equals(removed.pos()));
+            if (records.isEmpty()) {
+                this.byVillager.remove(removed.villagerId());
+            }
+        }
+        setDirty();
+        return true;
+    }
+
     public void updateValidation(AssignedContainerRecord record, String validationStatus) {
         AssignedContainerRecord updated = new AssignedContainerRecord(
                 record.dimension(),

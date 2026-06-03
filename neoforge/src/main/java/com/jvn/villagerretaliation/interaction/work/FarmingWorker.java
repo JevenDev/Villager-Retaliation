@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -11,6 +13,9 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class FarmingWorker extends AbstractBlockWorker {
+    private static final String NEXT_CROP_SCAN_GAME_TIME_TAG = "NextFarmingCropScanGameTime";
+    private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
+
     @Override
     public HiredVillagerRole role() {
         return HiredVillagerRole.FARMING;
@@ -18,42 +23,104 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
-        BlockPos target = findMatureCrop(level, villager.blockPosition(), context.radius());
+        expireWorkPathMemory(level);
+
+        HiredPathTarget target = findMatureCrop(level, villager, context);
         if (target == null) {
-            context.setProgressTicks(0);
+            clearActiveBreakingTarget(level, context, villager);
+            DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
+            if (depositResult == DepositResult.MOVING) {
+                return WorkResult.progressed("No mature crops found in radius. Walking to assigned storage.");
+            }
             return WorkResult.idle("No mature crops found in radius.");
         }
+
+        BlockState targetState = level.getBlockState(target.blockPos());
+        if (!(targetState.getBlock() instanceof CropBlock crop) || !crop.isMaxAge(targetState)) {
+            clearActiveBreakingTarget(level, context, villager);
+            return WorkResult.idle("Crop target changed.");
+        }
+
+        prepareBreakingTarget(level, context, villager, target);
+        if (!canWorkFromCurrentPosition(level, villager, context, target)) {
+            context.setProgressTicks(0);
+            if (!moveToTarget(level, villager, context, target, 0.45D)) {
+                if (recordWorkPathFailure(level, villager, target.blockPos())) {
+                    clearActiveBreakingTarget(level, context, villager);
+                    return WorkResult.idle("Crop blocked. Looking for another reachable harvest.");
+                }
+                return WorkResult.progressed("Crop blocked. Repositioning for a reachable harvest.");
+            }
+            return WorkResult.progressed("Moving to mature crop.");
+        }
+        clearWorkPathFailure(villager, target.blockPos());
+        holdMiningPosition(villager, target);
 
         int needed = Math.max(1, 5 - Math.max(0, context.efficiency() - 75) / 30);
         int progress = context.progressTicks() + 1;
         if (progress < needed) {
             context.setProgressTicks(progress);
-            villager.getNavigation().moveTo(target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D, 0.45D);
+            swingWorkTool(villager);
+            showBreakProgress(level, villager, target.blockPos(), progress, needed);
             return WorkResult.progressed("Harvesting crop: " + progress + "/" + needed + ".");
         }
 
         context.setProgressTicks(0);
-        BlockState state = level.getBlockState(target);
-        if (!(state.getBlock() instanceof CropBlock crop)) {
-            return WorkResult.idle("Crop target changed.");
-        }
         ItemStack tool = context.inventory().findTool(stack -> true);
         if (!storeDrops(level, context, villager, target, tool)) {
+            DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
+            if (depositResult == DepositResult.DEPOSITED && storeDrops(level, context, villager, target, tool)) {
+                replant(level, target.blockPos(), crop, context);
+                clearActiveBreakingTarget(level, context, villager);
+                return WorkResult.completed("Harvested mature crop.");
+            }
+            if (depositResult == DepositResult.MOVING) {
+                return WorkResult.progressed("Output full. Walking to assigned storage before harvesting more.");
+            }
             return WorkResult.idle("Paused: output storage is full.");
         }
-        replant(level, target, crop, context);
+        replant(level, target.blockPos(), crop, context);
+        clearActiveBreakingTarget(level, context, villager);
         return WorkResult.completed("Harvested mature crop.");
     }
 
-    private static BlockPos findMatureCrop(ServerLevel level, BlockPos center, int radius) {
-        for (BlockPos rawPos : positionsNear(center, radius)) {
+    private HiredPathTarget findMatureCrop(ServerLevel level, Villager villager, HiredWorkContext context) {
+        HiredPathTarget active = activeWorkTarget(level, context, villager);
+        if (active != null
+                && context.isInsideWorkArea(active.blockPos())
+                && context.isLoaded(level, active.blockPos())
+                && isMatureCrop(level, active.blockPos())) {
+            return active;
+        }
+        if (level.getGameTime() < context.state().getLong(NEXT_CROP_SCAN_GAME_TIME_TAG)) {
+            return null;
+        }
+
+        List<BlockPos> candidates = new ArrayList<>();
+        for (BlockPos rawPos : context.workAreaPositions()) {
             BlockPos pos = rawPos.immutable();
-            BlockState state = level.getBlockState(pos);
-            if (state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state)) {
-                return pos;
+            if (context.isInsideWorkArea(pos)
+                    && context.isLoaded(level, pos)
+                    && isMatureCrop(level, pos)
+                    && !isTemporarilyAvoidedTarget(level, villager, pos)) {
+                candidates.add(pos);
             }
         }
-        return null;
+        HiredPathTarget target = chooseReachableTarget(level, villager, context, candidates);
+        if (target == null) {
+            context.state().putLong(NEXT_CROP_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
+        } else {
+            context.state().remove(NEXT_CROP_SCAN_GAME_TIME_TAG);
+        }
+        return target;
+    }
+
+    private static boolean isMatureCrop(ServerLevel level, BlockPos pos) {
+        if (!level.hasChunkAt(pos)) {
+            return false;
+        }
+        BlockState state = level.getBlockState(pos);
+        return state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state);
     }
 
     private static void replant(ServerLevel level, BlockPos pos, CropBlock crop, HiredWorkContext context) {

@@ -309,10 +309,10 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 10, max = 200)
         public int hiredWorkTickInterval = 40;
 
-        @RangeConstraint(min = 4, max = 64)
+        @RangeConstraint(min = 4, max = 32)
         public int hiredWorkDefaultRadius = 16;
 
-        @RangeConstraint(min = 4, max = 128)
+        @RangeConstraint(min = 4, max = 32)
         public int hiredWorkMaxRadius = 32;
 
         public boolean hiredWorkFoodEnabled = true;

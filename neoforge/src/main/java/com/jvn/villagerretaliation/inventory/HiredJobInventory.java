@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -342,6 +343,21 @@ public final class HiredJobInventory implements Container {
         return false;
     }
 
+    public boolean canStoreOutputs(List<ItemStack> stacks) {
+        NonNullList<ItemStack> simulated = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (isOutputSlot(slot)) {
+                simulated.set(slot, this.items.get(slot).copy());
+            }
+        }
+        for (ItemStack stack : stacks) {
+            if (!simulateOutputInsert(simulated, stack.copy()).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public List<OutputStack> collectOutputItems() {
         List<OutputStack> output = new ArrayList<>();
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
@@ -356,6 +372,10 @@ public final class HiredJobInventory implements Container {
             output.add(new OutputStack(slot, stack.copy()));
         }
         return output;
+    }
+
+    public boolean hasOutputItems() {
+        return !collectOutputItems().isEmpty();
     }
 
     public boolean depositOutputToAssignedStorage() {
@@ -380,6 +400,62 @@ public final class HiredJobInventory implements Container {
             setChanged();
         }
         return changed;
+    }
+
+    public boolean depositOutputToNearbyAssignedStorage() {
+        return depositOutputToNearbyAssignedStorage(ignored -> true);
+    }
+
+    public boolean depositOutputToNearbyAssignedStorage(Predicate<BlockPos> positionFilter) {
+        if (this.collectOutputItems().isEmpty()) {
+            return false;
+        }
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        boolean changed = false;
+        for (OutputStack output : collectOutputItems()) {
+            ItemStack remainder = AssignedStorageService.depositStackNearVillager(this.villager, output.stack(), safeFilter);
+            int moved = output.stack().getCount() - remainder.getCount();
+            if (moved <= 0) {
+                continue;
+            }
+            ItemStack current = this.items.get(output.slot());
+            current.shrink(moved);
+            if (current.isEmpty()) {
+                this.items.set(output.slot(), ItemStack.EMPTY);
+            }
+            changed = true;
+        }
+        if (changed) {
+            setChanged();
+        }
+        return changed;
+    }
+
+    private ItemStack simulateOutputInsert(NonNullList<ItemStack> simulated, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack remainder = stack.copy();
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (!isOutputSlot(slot)) {
+                continue;
+            }
+            ItemStack current = simulated.get(slot);
+            if (current.isEmpty()) {
+                int moved = Math.min(remainder.getCount(), remainder.getMaxStackSize());
+                simulated.set(slot, remainder.copyWithCount(moved));
+                remainder.shrink(moved);
+            } else if (ItemStack.isSameItemSameComponents(current, remainder)
+                    && current.getCount() < current.getMaxStackSize()) {
+                int moved = Math.min(remainder.getCount(), current.getMaxStackSize() - current.getCount());
+                current.grow(moved);
+                remainder.shrink(moved);
+            }
+            if (remainder.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+        }
+        return remainder;
     }
 
     private void load() {

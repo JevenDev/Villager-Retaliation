@@ -15,9 +15,11 @@ import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.interaction.work.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -99,6 +101,7 @@ public final class VillagerRetaliationEvents {
         VillagerCombatSurvivalService.clearRuntimeState();
         VillagerRecruitmentService.clearRuntimeState();
         HiredVillagerWorkService.clearRuntimeState();
+        HiredOreBlockTracker.clearRuntimeState();
         VillagerTradeMemory.clearRuntimeState();
         VillagerSocialGraphService.clearRuntimeState();
     }
@@ -164,6 +167,9 @@ public final class VillagerRetaliationEvents {
             VillagerCombatSurvivalService.onVillagerDeath(villager);
             VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
             VillagerQuestService.onVillagerDeath(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                AssignedStorageService.removeAssignedStorage(level, villager);
+            }
         }
         VillagerRetaliationHandler.onLivingDeath(event);
         WanderingTraderRetaliationHandler.onLivingDeath(event);
@@ -250,6 +256,18 @@ public final class VillagerRetaliationEvents {
         }
 
         ItemStack interactionStack = player.getItemInHand(event.getHand());
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer
+                && VillagerRetaliationItems.isClipboard(interactionStack)
+                && HiredStorageClipboardItem.mode(interactionStack) != HiredStorageClipboardItem.ClipboardMode.ASSIGN_STORAGE) {
+            InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());
+            if (result.consumesAction()) {
+                event.setCanceled(true);
+                event.setCancellationResult(result);
+                return;
+            }
+        }
 
         if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer serverPlayer
@@ -366,7 +384,7 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof ServerPlayer serverPlayer
                 && event.getLevel() instanceof ServerLevel level
                 && VillagerRetaliationItems.isClipboard(event.getItemStack())) {
-            InteractionResult result = HiredStorageClipboardItem.selectContainer(
+            InteractionResult result = HiredStorageClipboardItem.handleRightClickBlock(
                     level,
                     serverPlayer,
                     event.getItemStack(),
@@ -401,11 +419,30 @@ public final class VillagerRetaliationEvents {
         );
     }
 
+    public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer
+                && event.getLevel() instanceof ServerLevel level
+                && VillagerRetaliationItems.isClipboard(event.getItemStack())) {
+            InteractionResult result = HiredStorageClipboardItem.handleLeftClickBlock(
+                    level,
+                    serverPlayer,
+                    event.getItemStack(),
+                    event.getPos()
+            );
+            if (result.consumesAction()) {
+                event.setCanceled(true);
+            }
+        }
+    }
+
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         if (event.getPlayer() instanceof ServerPlayer serverPlayer
                 && event.getLevel() instanceof ServerLevel level
                 && event.getState().is(BlockTags.BEDS)) {
             VillagerInteractionService.handleSleepingVillagerBedBroken(level, serverPlayer, event.getPos());
+        }
+        if (!event.isCanceled() && event.getLevel() instanceof ServerLevel level) {
+            AssignedStorageService.removeAssignedContainer(level, event.getPos());
         }
         ForcedDialogueService.onContainerBreak(event);
     }

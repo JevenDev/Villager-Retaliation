@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.interaction.work.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
@@ -61,7 +62,11 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onEntityInteract)
                 .listener(VillagerRetaliationEvents::onEntityInteractSpecific)
                 .listener(VillagerRetaliationEvents::onRightClickBlock)
+                .listener(VillagerRetaliationEvents::onLeftClickBlock)
                 .listener(VillagerRetaliationEvents::onBlockBreak)
+                .listener(HiredOreBlockTracker::onBlockPlace)
+                .listener(HiredOreBlockTracker::onFluidPlaceBlock)
+                .listener(HiredOreBlockTracker::onChunkUnload)
                 .listener(VillagerReputationEvents::onTradeWithVillager)
                 .listener(ForcedDialogueService::onContainerOpen)
                 .listener(VillagerReputationEvents::onContainerOpen)

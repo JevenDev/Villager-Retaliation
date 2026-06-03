@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import java.util.Optional;
@@ -117,6 +118,7 @@ public final class HiredVillagerContractService {
         CompoundTag tag = activeContract.get();
         int refund = earlyEndRefund(level, tag);
         tag.putString(STATUS_TAG, STATUS_ENDED);
+        AssignedStorageService.removeAssignedStorage(level, villager);
         return refund;
     }
 
@@ -124,7 +126,10 @@ public final class HiredVillagerContractService {
         contract(villager)
                 .filter(HiredVillagerContractService::isActive)
                 .filter(tag -> level.getGameTime() >= tag.getLong(END_GAME_TIME_TAG))
-                .ifPresent(tag -> tag.putString(STATUS_TAG, STATUS_EXPIRED));
+                .ifPresent(tag -> {
+                    tag.putString(STATUS_TAG, STATUS_EXPIRED);
+                    AssignedStorageService.removeAssignedStorage(level, villager);
+                });
     }
 
     public static HiredVillagerRole activeRole(ServerLevel level, Villager villager) {

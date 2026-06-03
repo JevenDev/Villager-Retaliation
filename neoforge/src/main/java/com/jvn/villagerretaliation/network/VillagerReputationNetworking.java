@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "16";
+    private static final String PROTOCOL_VERSION = "17";
 
     private VillagerReputationNetworking() {
     }
@@ -101,6 +101,12 @@ public final class VillagerReputationNetworking {
         network.safePlayToClientThreaded(
                 ClipboardAssignedStorageSyncPayload.TYPE,
                 ClipboardAssignedStorageSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                ClipboardWorkAreaSyncPayload.TYPE,
+                ClipboardWorkAreaSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
                 "accept"
         );
@@ -208,6 +214,15 @@ public final class VillagerReputationNetworking {
                             player,
                             payload.entityId(),
                             payload.action()
+                    )))
+        );
+        network.playToServer(
+                ClipboardModeChangePayload.TYPE,
+                ClipboardModeChangePayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> com.jvn.villagerretaliation.item.HiredStorageClipboardItem.changeHeldClipboardMode(
+                            player,
+                            payload.delta()
                     )))
         );
         network.playToServer(

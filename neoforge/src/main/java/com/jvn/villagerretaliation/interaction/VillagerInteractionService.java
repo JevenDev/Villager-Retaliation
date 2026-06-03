@@ -427,6 +427,7 @@ public final class VillagerInteractionService {
         }
         removeEmeralds(player, cost);
         HiredVillagerContractService.startHireContract(level, villager, player, days, cost);
+        HiredVillagerWorkService.initializeWorkArea(level, villager);
         VillagerWalletService.addEmeralds(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         VillagerRecruitmentService.sendHiredNotice(player, villager);
         sendVillagerNotice(player, villager, "Hired for " + days + " day" + plural(days) + " for "
