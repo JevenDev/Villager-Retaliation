@@ -73,7 +73,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             setMiningState(context, MiningState.PATH_TO_TARGET);
             setTaskState(context, WorkerTaskState.MOVING_TO_TARGET, target.blockPos());
             boolean closeEnough = isWithinMiningDistance(villager, target.blockPos());
-            boolean hasLineOfSight = hasLineOfSightToTargetCenter(level, villager, target.blockPos());
+            boolean hasLineOfSight = hasLineOfSightToTarget(level, villager, target);
             if (!moveToTarget(level, villager, context, target, 0.55D)) {
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
                     clearActiveBreakingTarget(level, context, villager);
@@ -318,7 +318,7 @@ public final class MiningWorker extends AbstractBlockWorker {
     private boolean canStartMining(ServerLevel level, Villager villager, HiredWorkContext context, HiredPathTarget target) {
         return canWorkFromCurrentPosition(level, villager, context, target)
                 && isWithinMiningDistance(villager, target.blockPos())
-                && hasLineOfSightToTargetCenter(level, villager, target.blockPos())
+                && hasLineOfSightToTarget(level, villager, target)
                 && canMineFromCurrentPosition(level, villager, target);
     }
 
@@ -326,8 +326,8 @@ public final class MiningWorker extends AbstractBlockWorker {
         return villager.position().distanceToSqr(Vec3.atCenterOf(pos)) <= 9.0D;
     }
 
-    private boolean hasLineOfSightToTargetCenter(ServerLevel level, Villager villager, BlockPos target) {
-        return hasLineOfSightToBlock(level, villager, villager.getEyePosition(), target, Vec3.atCenterOf(target));
+    private boolean hasLineOfSightToTarget(ServerLevel level, Villager villager, HiredPathTarget target) {
+        return hasLineOfSightToBlock(level, villager, villager.getEyePosition(), target.blockPos(), target.hitPos());
     }
 
     private int adjustedBreakProgressGoal(ServerLevel level, BlockPos pos, ItemStack tool, int efficiency) {

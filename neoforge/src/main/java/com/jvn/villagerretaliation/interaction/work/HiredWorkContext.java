@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -92,5 +93,14 @@ public record HiredWorkContext(
             remainder = this.inventory.insertOutput(remainder);
         }
         return remainder;
+    }
+
+    public int consumeSupply(Villager villager, Predicate<ItemStack> predicate, int count) {
+        int consumed = this.inventory.consumeSupply(predicate, count);
+        int remaining = Math.max(0, count - consumed);
+        if (remaining > 0 && this.useAssignedStorageForSupplies) {
+            consumed += AssignedStorageService.consumeItems(villager, predicate, remaining, this::isInsideWorkArea);
+        }
+        return consumed;
     }
 }

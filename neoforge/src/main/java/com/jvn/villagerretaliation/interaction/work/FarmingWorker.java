@@ -78,7 +78,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (!storeDrops(level, context, villager, target, tool)) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
             if (depositResult == DepositResult.DEPOSITED && storeDrops(level, context, villager, target, tool)) {
-                replant(level, target.blockPos(), crop, context);
+                replant(level, villager, target.blockPos(), crop, context);
                 clearActiveBreakingTarget(level, context, villager);
                 return WorkResult.completed("Harvested mature crop.");
             }
@@ -89,7 +89,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             setTaskState(context, WorkerTaskState.BLOCKED_OUTPUT_FULL);
             return WorkResult.idle("Paused: output storage is full.");
         }
-        replant(level, target.blockPos(), crop, context);
+        replant(level, villager, target.blockPos(), crop, context);
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, WorkerTaskState.IDLE);
         return WorkResult.completed("Harvested mature crop.");
@@ -134,12 +134,15 @@ public final class FarmingWorker extends AbstractBlockWorker {
         return state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state);
     }
 
-    private static void replant(ServerLevel level, BlockPos pos, CropBlock crop, HiredWorkContext context) {
+    private static void replant(ServerLevel level, Villager villager, BlockPos pos, CropBlock crop, HiredWorkContext context) {
+        if (!"harvest_replant".equals(context.state().getString("CropMode"))) {
+            return;
+        }
         ItemStack seed = seedForCrop(crop);
         if (seed.isEmpty()) {
             return;
         }
-        int consumed = context.inventory().consumeSupply(stack -> stack.is(seed.getItem()), 1);
+        int consumed = context.consumeSupply(villager, stack -> stack.is(seed.getItem()), 1);
         if (consumed > 0) {
             level.setBlock(pos, crop.defaultBlockState(), 3);
         }
