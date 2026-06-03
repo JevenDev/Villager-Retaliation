@@ -39,16 +39,16 @@ public final class LoggingWorker extends AbstractBlockWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         expireWorkPathMemory(level);
 
-        setTaskState(context, WorkerTaskState.SELECTING_TARGET);
+        setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
         HiredPathTarget target = findTreeLog(level, villager, context);
         if (target == null) {
             clearActiveBreakingTarget(level, context, villager);
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
             if (depositResult == DepositResult.MOVING) {
-                setTaskState(context, WorkerTaskState.DEPOSITING_ITEMS);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("No safe tree logs found in radius. Walking to assigned storage.");
             }
-            setTaskState(context, WorkerTaskState.AWAITING_INSTRUCTION);
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             return WorkResult.idle("No safe tree logs found in radius.");
         }
 
@@ -58,18 +58,20 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 stack -> effectiveDestroySpeed(stack, targetState));
         if (axe.isEmpty()) {
             clearActiveBreakingTarget(level, context, villager);
-            setTaskState(context, WorkerTaskState.BLOCKED_MISSING_TOOL);
+            HiredWorkerBrain.setFailure(context, "missing_axe", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
             return WorkResult.idle("Paused: logging needs an axe in job gear or supplies.");
         }
 
         prepareBreakingTarget(level, context, villager, target);
         if (!canWorkFromCurrentPosition(level, villager, context, target)) {
             context.setProgressTicks(0);
-            setTaskState(context, WorkerTaskState.MOVING_TO_TARGET, target.blockPos());
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target.blockPos());
             if (!moveToTarget(level, villager, context, target, 0.55D)) {
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
                     clearActiveBreakingTarget(level, context, villager);
-                    setTaskState(context, WorkerTaskState.FAILED_COOLDOWN, target.blockPos());
+                    HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 20L * 30L);
+                    setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
                     return WorkResult.idle("Tree log blocked. Looking for another reachable trunk.");
                 }
                 return WorkResult.progressed("Tree log blocked. Repositioning for a reachable trunk face.");
@@ -78,7 +80,8 @@ public final class LoggingWorker extends AbstractBlockWorker {
         }
         clearWorkPathFailure(villager, target.blockPos());
         holdMiningPosition(villager, target);
-        setTaskState(context, WorkerTaskState.WORKING, target.blockPos());
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.WORKING, target.blockPos());
 
         int needed = breakProgressGoal(level, target.blockPos(), axe);
         int progress = context.progressTicks() + 1;
@@ -90,7 +93,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         }
 
         context.setProgressTicks(0);
-        setTaskState(context, WorkerTaskState.COLLECTING_OUTPUT, target.blockPos());
+        setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, target.blockPos());
         TreeHarvestResult harvestResult = harvestTree(level, context, villager, target, axe);
         if (harvestResult == TreeHarvestResult.OUTPUT_FULL) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.55D);
@@ -102,20 +105,22 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 }
             }
             if (depositResult == DepositResult.MOVING) {
-                setTaskState(context, WorkerTaskState.DEPOSITING_ITEMS);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("Output full. Walking to assigned storage before logging more.");
             }
             clearActiveBreakingTarget(level, context, villager);
-            setTaskState(context, WorkerTaskState.BLOCKED_OUTPUT_FULL);
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
             return WorkResult.idle("Paused: output storage is full.");
         }
         if (harvestResult == TreeHarvestResult.TARGET_CHANGED) {
             clearActiveBreakingTarget(level, context, villager);
-            setTaskState(context, WorkerTaskState.FAILED_COOLDOWN);
+            HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN);
             return WorkResult.idle("Tree target changed.");
         }
         clearActiveBreakingTarget(level, context, villager);
-        setTaskState(context, WorkerTaskState.IDLE);
+        setTaskState(context, HiredWorkerTaskState.IDLE);
         return WorkResult.completed("Cut " + harvestResult.logsCut() + " tree logs.");
     }
 

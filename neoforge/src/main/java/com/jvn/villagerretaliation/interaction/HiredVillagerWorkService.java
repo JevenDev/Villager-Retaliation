@@ -6,6 +6,8 @@ import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.work.FarmingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.LoggingWorker;
 import com.jvn.villagerretaliation.interaction.work.MiningWorker;
 import com.jvn.villagerretaliation.interaction.work.NitwitWorker;
@@ -17,7 +19,9 @@ import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -79,7 +83,10 @@ public final class HiredVillagerWorkService {
 
         UUID hirerId = HiredVillagerContractService.getHirer(level, villager).orElse(null);
         if (hirerId == null || !(level.getServer().getPlayerList().getPlayer(hirerId) instanceof ServerPlayer hirer)) {
-            setStatus(state(villager), "Waiting for hirer to be online.");
+            CompoundTag waitingState = state(villager);
+            initializeDefaults(waitingState, villager);
+            HiredWorkerBrain.setState(waitingState, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            setStatus(waitingState, "Waiting for hirer to be online.");
             return;
         }
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, hirer)) {
@@ -91,10 +98,12 @@ public final class HiredVillagerWorkService {
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         HiredRoleWorker worker = WORKERS.get(role);
         if (worker == null) {
+            HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setStatus(state, "Paused: no worker exists for " + role.label() + ".");
             return;
         }
         if (!state.getBoolean("Enabled")) {
+            HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setStatus(state, "Paused by hirer.");
             return;
         }
@@ -166,6 +175,7 @@ public final class HiredVillagerWorkService {
         initializeDefaults(state, villager);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         String status = state.getString("Status");
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
         int efficiency = efficiencyPercent(level, villager, role, state, HiredJobInventory.getJobInventory(villager));
         int maxRadius = maxWorkRadius(level, villager, role);
         WorkArea area = workAreaWithinMax(state, villager, maxRadius);
@@ -177,8 +187,50 @@ public final class HiredVillagerWorkService {
                         + ", supplies " + (state.getBoolean("UseAssignedStorageForSupplies") ? "job+assigned" : "job")
                         + ", auto-deposit " + (state.getBoolean("AutoDepositOutputs") ? "on" : "off")
                         + ", starvation days " + state.getInt("StarvationDays")
-                        + ", efficiency " + efficiency + "%. "
+                        + ", efficiency " + efficiency + "%"
+                        + ", task " + snapshot.taskState().label()
+                        + ", target " + HiredWorkerBrain.formatPos(snapshot.targetPos())
+                        + ". "
                         + (status.isBlank() ? "No task yet." : status));
+    }
+
+    public static List<String> debugLines(ServerLevel level, Villager villager) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        int efficiency = efficiencyPercent(level, villager, role, state, inventory);
+        int maxRadius = maxWorkRadius(level, villager, role);
+        WorkArea area = workAreaWithinMax(state, villager, maxRadius);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        int outputStacks = inventory.collectOutputItems().size();
+        int outputItems = inventory.collectOutputItems().stream().mapToInt(output -> output.stack().getCount()).sum();
+        boolean hasAssignedStorage = AssignedStorageService.hasAssignedStorage(level, villager);
+        boolean canDepositNow = AssignedStorageService.canInteractWithAssignedStorage(villager, pos -> isInsideWorkArea(area, pos));
+
+        List<String> lines = new ArrayList<>();
+        lines.add("Hired worker debug: role=" + role.serializedName()
+                + ", hired=" + HiredVillagerContractService.isHired(level, villager)
+                + ", enabled=" + state.getBoolean("Enabled")
+                + ", efficiency=" + efficiency + "%");
+        lines.add("State: task=" + snapshot.taskState().id()
+                + ", progress=" + snapshot.progressTicks()
+                + ", target=" + HiredWorkerBrain.formatPos(snapshot.targetPos())
+                + ", storageTarget=" + HiredWorkerBrain.formatPos(snapshot.storageTargetPos()));
+        lines.add("Failure: reason=" + valueOrNone(snapshot.failureReason())
+                + ", retryCooldown=" + snapshot.retryCooldownTicks()
+                + ", lastScan=" + valueOrNone(snapshot.lastTargetScanResult()));
+        lines.add("Work area: " + areaDescription(area)
+                + ", radius=" + area.radius()
+                + ", verticalRadius=" + area.verticalRadius()
+                + ", maxRadius=" + maxRadius);
+        lines.add("Inventory/storage: outputStacks=" + outputStacks
+                + ", outputItems=" + outputItems
+                + ", autoDeposit=" + state.getBoolean("AutoDepositOutputs")
+                + ", assignedStorage=" + hasAssignedStorage
+                + ", canDepositNow=" + canDepositNow);
+        lines.add("Status: " + valueOrNone(snapshot.status()));
+        return lines;
     }
 
     public static void resetForNewContract(ServerLevel level, Villager villager) {
@@ -371,9 +423,7 @@ public final class HiredVillagerWorkService {
         if (!state.contains("Status", Tag.TAG_STRING)) {
             state.putString("Status", "Waiting for work tick.");
         }
-        if (!state.contains("WorkerTaskState", Tag.TAG_STRING)) {
-            state.putString("WorkerTaskState", "idle");
-        }
+        HiredWorkerBrain.initialize(state);
         if (!state.contains(WORK_CENTER_POS_TAG, Tag.TAG_LONG)) {
             state.putLong(WORK_CENTER_POS_TAG, villager.blockPosition().asLong());
         }
@@ -510,6 +560,10 @@ public final class HiredVillagerWorkService {
 
     private static void setStatus(CompoundTag state, String status) {
         state.putString("Status", status == null ? "" : status);
+    }
+
+    private static String valueOrNone(String value) {
+        return value == null || value.isBlank() ? "none" : value;
     }
 
     private static void handleDailyFood(

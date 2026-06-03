@@ -37,7 +37,7 @@ public final class MiningWorker extends AbstractBlockWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         expireWorkPathMemory(level);
 
-        setTaskState(context, WorkerTaskState.SELECTING_TARGET);
+        setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
         HiredPathTarget target = resolveTarget(level, villager, context);
         if (target == null) {
             clearActiveBreakingTarget(level, context, villager);
@@ -46,10 +46,10 @@ public final class MiningWorker extends AbstractBlockWorker {
                     ? MiningState.DEPOSIT_OUTPUT
                     : MiningState.WAITING_NO_TARGETS);
             if (depositResult == DepositResult.MOVING) {
-                setTaskState(context, WorkerTaskState.DEPOSITING_ITEMS);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("No exposed ores in the current pocket. Walking to assigned storage.");
             }
-            setTaskState(context, WorkerTaskState.AWAITING_INSTRUCTION);
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             ensureNoTargetScanCooldown(level, context);
             return WorkResult.idle(depositResult == DepositResult.DEPOSITED
                     ? "Depositing mined output. No exposed ore nearby."
@@ -63,7 +63,8 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (pickaxe.isEmpty()) {
             clearActiveBreakingTarget(level, context, villager);
             setMiningState(context, MiningState.BLOCKED_MISSING_TOOL);
-            setTaskState(context, WorkerTaskState.BLOCKED_MISSING_TOOL);
+            HiredWorkerBrain.setFailure(context, "missing_pickaxe", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
             return WorkResult.idle("Paused: mining needs a pickaxe that can harvest the target ore.");
         }
 
@@ -71,13 +72,14 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (!canStartMining(level, villager, context, target)) {
             context.setProgressTicks(0);
             setMiningState(context, MiningState.PATH_TO_TARGET);
-            setTaskState(context, WorkerTaskState.MOVING_TO_TARGET, target.blockPos());
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target.blockPos());
             boolean closeEnough = isWithinMiningDistance(villager, target.blockPos());
             boolean hasLineOfSight = hasLineOfSightToTarget(level, villager, target);
             if (!moveToTarget(level, villager, context, target, 0.55D)) {
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
                     clearActiveBreakingTarget(level, context, villager);
-                    setTaskState(context, WorkerTaskState.FAILED_COOLDOWN, target.blockPos());
+                    HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 20L * 30L);
+                    setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
                     return WorkResult.idle("Mining target blocked. Looking for another exposed ore.");
                 }
                 return WorkResult.progressed("Mining target blocked. Repositioning for a reachable ore face.");
@@ -90,7 +92,8 @@ public final class MiningWorker extends AbstractBlockWorker {
         clearWorkPathFailure(villager, target.blockPos());
         holdMiningPosition(villager, target);
         setMiningState(context, MiningState.MINE_TARGET);
-        setTaskState(context, WorkerTaskState.WORKING, target.blockPos());
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.WORKING, target.blockPos());
 
         int needed = adjustedBreakProgressGoal(level, target.blockPos(), pickaxe, context.efficiency());
         int progress = context.progressTicks() + 1;
@@ -108,26 +111,28 @@ public final class MiningWorker extends AbstractBlockWorker {
                 level.getBlockEntity(target.blockPos()),
                 villager,
                 pickaxe);
-        setTaskState(context, WorkerTaskState.COLLECTING_OUTPUT, target.blockPos());
+        setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, target.blockPos());
         if (!context.canStoreOutputs(drops)) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.55D);
             if (depositResult == DepositResult.MOVING) {
                 setMiningState(context, MiningState.DEPOSIT_OUTPUT);
-                setTaskState(context, WorkerTaskState.DEPOSITING_ITEMS);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("Output full. Walking to assigned storage before mining more.");
             }
         }
         if (!context.canStoreOutputs(drops)) {
             context.setProgressTicks(0);
             setMiningState(context, MiningState.BLOCKED_OUTPUT_FULL);
-            setTaskState(context, WorkerTaskState.BLOCKED_OUTPUT_FULL);
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
             return WorkResult.idle("Paused: mining output is full.");
         }
 
         context.setProgressTicks(0);
         if (!storeDrops(level, context, villager, target, pickaxe)) {
             setMiningState(context, MiningState.BLOCKED_OUTPUT_FULL);
-            setTaskState(context, WorkerTaskState.BLOCKED_OUTPUT_FULL);
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
             return WorkResult.idle("Paused: mining output is full.");
         }
         HiredOreBlockTracker.onBlockBroken(level, target.blockPos());
@@ -135,7 +140,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         rememberLastMined(context, target.blockPos());
         rememberMiningAnchor(level, context, target.blockPos());
         clearActiveBreakingTarget(level, context, villager);
-        setTaskState(context, WorkerTaskState.FINDING_CONTINUATION_TARGET, target.blockPos());
+        setTaskState(context, HiredWorkerTaskState.FINDING_CHAIN_TARGET, target.blockPos());
         HiredPathTarget nextTarget = findAdjacentMineable(level, villager, context, target.blockPos());
         if (nextTarget == null) {
             nextTarget = findMineableInCurrentPocket(level, villager, context);
@@ -144,7 +149,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             rememberMiningAnchor(level, context, nextTarget.blockPos());
             prepareBreakingTarget(level, context, villager, nextTarget);
             setMiningState(context, MiningState.PATH_TO_TARGET);
-            setTaskState(context, WorkerTaskState.MOVING_TO_TARGET, nextTarget.blockPos());
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, nextTarget.blockPos());
             return WorkResult.progressed("Mined block and collected output. Continuing to the next exposed ore.");
         }
 
@@ -154,10 +159,10 @@ public final class MiningWorker extends AbstractBlockWorker {
                 ? MiningState.DEPOSIT_OUTPUT
                 : MiningState.WAITING_NO_TARGETS);
         if (depositResult == DepositResult.MOVING) {
-            setTaskState(context, WorkerTaskState.DEPOSITING_ITEMS);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             return WorkResult.progressed("Mined block and collected output. Walking to assigned storage.");
         }
-        setTaskState(context, WorkerTaskState.AWAITING_INSTRUCTION);
+        setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
         ensureNoTargetScanCooldown(level, context);
         return WorkResult.progressed(depositResult == DepositResult.DEPOSITED
                 ? "Mined block, collected output, and deposited mined output."

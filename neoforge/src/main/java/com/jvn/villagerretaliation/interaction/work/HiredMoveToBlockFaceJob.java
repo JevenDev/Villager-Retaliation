@@ -43,7 +43,8 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
     @Override
     protected void collectCandidates(CandidateSink sink) {
         for (BlockPos candidate : this.candidatePositions) {
-            if (!HiredPathMemory.isAvoided(this.level, this.villager, candidate)) {
+            if (!HiredPathMemory.isAvoided(this.level, this.villager, candidate)
+                    && !HiredPathMemory.isReservedByOther(this.level, this.villager, candidate)) {
                 sink.add(candidate);
             }
         }

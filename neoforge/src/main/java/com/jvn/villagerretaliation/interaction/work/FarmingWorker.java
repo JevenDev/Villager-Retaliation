@@ -25,34 +25,36 @@ public final class FarmingWorker extends AbstractBlockWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         expireWorkPathMemory(level);
 
-        setTaskState(context, WorkerTaskState.SELECTING_TARGET);
+        setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
         HiredPathTarget target = findMatureCrop(level, villager, context);
         if (target == null) {
             clearActiveBreakingTarget(level, context, villager);
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
             if (depositResult == DepositResult.MOVING) {
-                setTaskState(context, WorkerTaskState.DEPOSITING_ITEMS);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("No mature crops found in radius. Walking to assigned storage.");
             }
-            setTaskState(context, WorkerTaskState.AWAITING_INSTRUCTION);
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             return WorkResult.idle("No mature crops found in radius.");
         }
 
         BlockState targetState = level.getBlockState(target.blockPos());
         if (!(targetState.getBlock() instanceof CropBlock crop) || !crop.isMaxAge(targetState)) {
             clearActiveBreakingTarget(level, context, villager);
-            setTaskState(context, WorkerTaskState.FAILED_COOLDOWN, target.blockPos());
+            HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
             return WorkResult.idle("Crop target changed.");
         }
 
         prepareBreakingTarget(level, context, villager, target);
         if (!canWorkFromCurrentPosition(level, villager, context, target)) {
             context.setProgressTicks(0);
-            setTaskState(context, WorkerTaskState.MOVING_TO_TARGET, target.blockPos());
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target.blockPos());
             if (!moveToTarget(level, villager, context, target, 0.45D)) {
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
                     clearActiveBreakingTarget(level, context, villager);
-                    setTaskState(context, WorkerTaskState.FAILED_COOLDOWN, target.blockPos());
+                    HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 20L * 30L);
+                    setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
                     return WorkResult.idle("Crop blocked. Looking for another reachable harvest.");
                 }
                 return WorkResult.progressed("Crop blocked. Repositioning for a reachable harvest.");
@@ -61,7 +63,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
         clearWorkPathFailure(villager, target.blockPos());
         holdMiningPosition(villager, target);
-        setTaskState(context, WorkerTaskState.WORKING, target.blockPos());
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.WORKING, target.blockPos());
 
         int needed = Math.max(1, 5 - Math.max(0, context.efficiency() - 75) / 30);
         int progress = context.progressTicks() + 1;
@@ -73,7 +76,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         context.setProgressTicks(0);
-        setTaskState(context, WorkerTaskState.COLLECTING_OUTPUT, target.blockPos());
+        setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, target.blockPos());
         ItemStack tool = context.inventory().findTool(stack -> true);
         if (!storeDrops(level, context, villager, target, tool)) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
@@ -83,15 +86,16 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 return WorkResult.completed("Harvested mature crop.");
             }
             if (depositResult == DepositResult.MOVING) {
-                setTaskState(context, WorkerTaskState.DEPOSITING_ITEMS);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("Output full. Walking to assigned storage before harvesting more.");
             }
-            setTaskState(context, WorkerTaskState.BLOCKED_OUTPUT_FULL);
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
             return WorkResult.idle("Paused: output storage is full.");
         }
         replant(level, villager, target.blockPos(), crop, context);
         clearActiveBreakingTarget(level, context, villager);
-        setTaskState(context, WorkerTaskState.IDLE);
+        setTaskState(context, HiredWorkerTaskState.IDLE);
         return WorkResult.completed("Harvested mature crop.");
     }
 

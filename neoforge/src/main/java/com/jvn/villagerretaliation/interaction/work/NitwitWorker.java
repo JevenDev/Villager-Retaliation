@@ -22,10 +22,14 @@ public final class NitwitWorker implements HiredRoleWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         long lastNotice = context.state().getLong("NitwitNoticeTick");
         if (level.getGameTime() - lastNotice < 20L * 60L) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "nitwit_cooldown");
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.IDLE);
             return WorkResult.idle("Nitwit is wandering productively-adjacent.");
         }
         context.state().putLong("NitwitNoticeTick", level.getGameTime());
         String line = LINES[Math.floorMod((int) (level.getGameTime() / 1200L + villager.getId()), LINES.length)];
+        HiredWorkerBrain.setLastTargetScanResult(context, "nitwit_report_ready");
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING);
         return WorkResult.completed(line);
     }
 }

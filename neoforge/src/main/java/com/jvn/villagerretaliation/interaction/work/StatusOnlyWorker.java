@@ -22,6 +22,8 @@ public final class StatusOnlyWorker implements HiredRoleWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         context.setProgressTicks(0);
+        HiredWorkerBrain.setLastTargetScanResult(context, "status_only");
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
         return WorkResult.idle(this.status);
     }
 }

@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
@@ -93,6 +94,7 @@ public final class VillagerRetaliationCommands {
                         .then(literal("datapack")
                                 .then(literal("diagnostics")
                                         .executes(VillagerRetaliationCommands::showDatapackDiagnostics)))
+                        .then(hiredDebugCommands())
                         .then(questDebugCommands())
                         .then(literal("profile")
                                 .then(literal("get")
@@ -204,6 +206,26 @@ public final class VillagerRetaliationCommands {
                                                                 context,
                                                                 DoubleArgumentType.getDouble(context, "radius"),
                                                                 true)))))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> hiredDebugCommands() {
+        return literal("hired")
+                .then(literal("debug")
+                        .then(targetArgument()
+                                .executes(VillagerRetaliationCommands::debugHiredWork)));
+    }
+
+    private static int debugHiredWork(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager target = profileTarget(context);
+        if (!(target instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) {
+            source.sendFailure(Component.literal("Target must be a villager."));
+            return 0;
+        }
+
+        List<String> lines = HiredVillagerWorkService.debugLines(level, villager);
+        lines.forEach(line -> source.sendSuccess(() -> Component.literal(line), false));
+        return lines.size();
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, String> questIdArgument() {
