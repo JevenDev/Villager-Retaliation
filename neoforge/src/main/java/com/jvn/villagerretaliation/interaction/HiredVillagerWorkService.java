@@ -3,7 +3,6 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
-import com.jvn.villagerretaliation.interaction.work.HiredRoleWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
@@ -72,62 +71,43 @@ public final class HiredVillagerWorkService {
             return;
         }
 
-        CompoundTag state = state(villager);
-        initializeDefaults(state, villager);
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        HiredRoleWorker worker = HiredRoleWorkerRegistry.get(role);
-        if (worker == null) {
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        if (session.worker() == null) {
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
-            HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            setStatus(state, "Paused: no worker exists for " + role.label() + ".");
+            HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            setStatus(session.state(), "Paused: no worker exists for " + session.role().label() + ".");
             return;
         }
-        if (!state.getBoolean("Enabled")) {
+        if (!session.state().getBoolean("Enabled")) {
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
-            HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            setStatus(state, "Paused by hirer.");
+            HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            setStatus(session.state(), "Paused by hirer.");
             return;
         }
 
-        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
-        int maxRadius = maxWorkRadius(level, villager, role);
-        WorkArea area = workAreaWithinMax(state, villager, maxRadius);
-        int radius = area.radius();
-        int efficiency = efficiencyPercent(level, villager, role, state, inventory);
-        HiredWorkContext context = new HiredWorkContext(
-                inventory,
-                state,
-                area.center(),
-                area.min(),
-                area.max(),
-                radius,
-                efficiency,
-                state.getBoolean("AutoDepositOutputs"),
-                state.getBoolean("UseAssignedStorageForSupplies"));
-
-        HiredVillagerFocusService.suppressNonWorkAi(level, villager, context);
-        if (returnVillagerToWorkArea(level, villager, context, state)) {
+        HiredVillagerFocusService.suppressNonWorkAi(level, villager, session.context());
+        if (returnVillagerToWorkArea(level, villager, session.context(), session.state())) {
             return;
         }
-        worker.maintain(level, villager, context);
+        session.worker().maintain(level, villager, session.context());
 
         int interval = Math.max(10, VillagerRetaliationConfig.HIRED_WORK_TICK_INTERVAL.get());
         if (Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), interval) != 0L) {
             return;
         }
 
-        long nextWorkGameTime = state.getLong("NextWorkGameTime");
+        long nextWorkGameTime = session.state().getLong("NextWorkGameTime");
         if (nextWorkGameTime > level.getGameTime()) {
-            setStatus(state, "Preparing for next task. Cooldown: " + (nextWorkGameTime - level.getGameTime()) + " ticks.");
+            setStatus(session.state(), "Preparing for next task. Cooldown: " + (nextWorkGameTime - level.getGameTime()) + " ticks.");
             return;
         }
 
-        handleDailyFood(level, villager, hirer, role, worker, state, inventory, area);
-        WorkResult result = worker.tick(level, villager, hirer, context);
-        setStatus(state, result.status() + " Efficiency: " + efficiency + "%.");
+        handleDailyFood(level, villager, hirer, session);
+        WorkResult result = session.worker().tick(level, villager, hirer, session.context());
+        setStatus(session.state(), result.status() + " Efficiency: " + session.efficiency() + "%.");
         if (result.completed()) {
-            state.putLong("NextWorkGameTime", level.getGameTime() + nextTaskCooldownTicks(efficiency));
-            maybeNotify(level, villager, hirer, state, result.status(), 20L * 30L);
+            session.state().putLong("NextWorkGameTime", level.getGameTime() + nextTaskCooldownTicks(session.efficiency()));
+            maybeNotify(level, villager, hirer, session.state(), result.status(), 20L * 30L);
         }
     }
 
@@ -222,23 +202,18 @@ public final class HiredVillagerWorkService {
     }
 
     public static void sendStatus(ServerPlayer player, ServerLevel level, Villager villager) {
-        CompoundTag state = state(villager);
-        initializeDefaults(state, villager);
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        String status = state.getString("Status");
-        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
-        int efficiency = efficiencyPercent(level, villager, role, state, HiredJobInventory.getJobInventory(villager));
-        int maxRadius = maxWorkRadius(level, villager, role);
-        WorkArea area = workAreaWithinMax(state, villager, maxRadius);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        String status = session.state().getString("Status");
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
         VillagerInteractionService.sendVillagerNotice(player, villager,
-                "Work: " + (state.getBoolean("Enabled") ? "running" : "paused")
-                        + ", role " + role.label()
-                        + ", area " + areaDescription(area)
-                        + ", max radius " + maxRadius
-                        + ", supplies " + (state.getBoolean("UseAssignedStorageForSupplies") ? "job+assigned" : "job")
-                        + ", auto-deposit " + (state.getBoolean("AutoDepositOutputs") ? "on" : "off")
-                        + ", starvation days " + state.getInt("StarvationDays")
-                        + ", efficiency " + efficiency + "%"
+                "Work: " + (session.state().getBoolean("Enabled") ? "running" : "paused")
+                        + ", role " + session.role().label()
+                        + ", area " + areaDescription(session.area())
+                        + ", max radius " + session.maxRadius()
+                        + ", supplies " + (session.state().getBoolean("UseAssignedStorageForSupplies") ? "job+assigned" : "job")
+                        + ", auto-deposit " + (session.state().getBoolean("AutoDepositOutputs") ? "on" : "off")
+                        + ", starvation days " + session.state().getInt("StarvationDays")
+                        + ", efficiency " + session.efficiency() + "%"
                         + ", task " + snapshot.taskState().label()
                         + ", target " + HiredWorkerBrain.formatPos(snapshot.targetPos())
                         + ". "
@@ -246,51 +221,35 @@ public final class HiredVillagerWorkService {
     }
 
     public static List<String> debugLines(ServerLevel level, Villager villager) {
-        CompoundTag state = state(villager);
-        initializeDefaults(state, villager);
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
-        int efficiency = efficiencyPercent(level, villager, role, state, inventory);
-        int maxRadius = maxWorkRadius(level, villager, role);
-        WorkArea area = workAreaWithinMax(state, villager, maxRadius);
-        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
-        int outputStacks = inventory.collectOutputItems().size();
-        int outputItems = inventory.collectOutputItems().stream().mapToInt(output -> output.stack().getCount()).sum();
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
+        int outputStacks = session.inventory().collectOutputItems().size();
+        int outputItems = session.inventory().collectOutputItems().stream().mapToInt(output -> output.stack().getCount()).sum();
         boolean hasAssignedStorage = AssignedStorageService.hasAssignedStorage(level, villager);
-        boolean canDepositNow = AssignedStorageService.canInteractWithAssignedStorage(villager, pos -> isInsideWorkArea(area, pos));
+        boolean canDepositNow = AssignedStorageService.canInteractWithAssignedStorage(villager, pos -> isInsideWorkArea(session.area(), pos));
 
         List<String> lines = new ArrayList<>();
-        lines.add("Hired worker debug: role=" + role.serializedName()
+        lines.add("Hired worker debug: role=" + session.role().serializedName()
                 + ", hired=" + HiredVillagerContractService.isHired(level, villager)
-                + ", enabled=" + state.getBoolean("Enabled")
-                + ", efficiency=" + efficiency + "%");
+                + ", enabled=" + session.state().getBoolean("Enabled")
+                + ", efficiency=" + session.efficiency() + "%");
         lines.add("State: task=" + snapshot.taskState().id()
                 + ", progress=" + snapshot.progressTicks()
                 + ", target=" + HiredWorkerBrain.formatPos(snapshot.targetPos())
                 + ", storageTarget=" + HiredWorkerBrain.formatPos(snapshot.storageTargetPos()));
-        HiredWorkContext debugContext = new HiredWorkContext(
-                inventory,
-                state,
-                area.center(),
-                area.min(),
-                area.max(),
-                area.radius(),
-                efficiency,
-                state.getBoolean("AutoDepositOutputs"),
-                state.getBoolean("UseAssignedStorageForSupplies"));
-        lines.add("Plan: objective=" + HiredWorkPlan.objectiveType(debugContext)
-                + ", anchor=" + HiredWorkerBrain.formatPos(HiredWorkPlan.objectiveAnchor(debugContext))
-                + ", queuedTargets=" + HiredWorkPlan.size(debugContext));
+        lines.add("Plan: objective=" + HiredWorkPlan.objectiveType(session.context())
+                + ", anchor=" + HiredWorkerBrain.formatPos(HiredWorkPlan.objectiveAnchor(session.context()))
+                + ", queuedTargets=" + HiredWorkPlan.size(session.context()));
         lines.add("Failure: reason=" + valueOrNone(snapshot.failureReason())
                 + ", retryCooldown=" + snapshot.retryCooldownTicks()
                 + ", lastScan=" + valueOrNone(snapshot.lastTargetScanResult()));
-        lines.add("Work area: " + areaDescription(area)
-                + ", radius=" + area.radius()
-                + ", verticalRadius=" + area.verticalRadius()
-                + ", maxRadius=" + maxRadius);
+        lines.add("Work area: " + areaDescription(session.area())
+                + ", radius=" + session.area().radius()
+                + ", verticalRadius=" + session.area().verticalRadius()
+                + ", maxRadius=" + session.maxRadius());
         lines.add("Inventory/storage: outputStacks=" + outputStacks
                 + ", outputItems=" + outputItems
-                + ", autoDeposit=" + state.getBoolean("AutoDepositOutputs")
+                + ", autoDeposit=" + session.state().getBoolean("AutoDepositOutputs")
                 + ", assignedStorage=" + hasAssignedStorage
                 + ", canDepositNow=" + canDepositNow);
         lines.add("Status: " + valueOrNone(snapshot.status()));
@@ -315,30 +274,14 @@ public final class HiredVillagerWorkService {
     }
 
     public static void stopWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
-        CompoundTag state = state(villager);
-        initializeDefaults(state, villager);
-        HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
-        HiredRoleWorker worker = HiredRoleWorkerRegistry.get(safeRole);
-        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
-        int maxRadius = maxWorkRadius(level, villager, safeRole);
-        WorkArea area = workAreaWithinMax(state, villager, maxRadius);
-        HiredWorkContext context = new HiredWorkContext(
-                inventory,
-                state,
-                area.center(),
-                area.min(),
-                area.max(),
-                area.radius(),
-                efficiencyPercent(level, villager, safeRole, state, inventory),
-                state.getBoolean("AutoDepositOutputs"),
-                state.getBoolean("UseAssignedStorageForSupplies"));
-        if (worker != null) {
-            worker.stop(level, villager, context);
+        HiredWorkSession session = HiredWorkSession.create(level, villager, role);
+        if (session.worker() != null) {
+            session.worker().stop(level, villager, session.context());
         } else {
-            context.setProgressTicks(0);
+            session.context().setProgressTicks(0);
         }
-        state.remove("NextWorkGameTime");
-        setStatus(state, status);
+        session.state().remove("NextWorkGameTime");
+        setStatus(session.state(), status);
     }
 
     public static void toggleEnabled(ServerPlayer player, ServerLevel level, Villager villager) {
@@ -513,7 +456,7 @@ public final class HiredVillagerWorkService {
         return new WorkArea(center, min, max, radius, verticalRadius);
     }
 
-    private static WorkArea workAreaWithinMax(CompoundTag state, Villager villager, int maxRadius) {
+    static WorkArea workAreaWithinMax(CompoundTag state, Villager villager, int maxRadius) {
         int safeMaxRadius = Math.max(MIN_WORK_RADIUS, maxRadius);
         WorkArea area = workArea(state, villager);
         BlockPos center = area.center();
@@ -531,7 +474,7 @@ public final class HiredVillagerWorkService {
         return area;
     }
 
-    private static int maxWorkRadius(ServerLevel level, Villager villager, HiredVillagerRole role) {
+    static int maxWorkRadius(ServerLevel level, Villager villager, HiredVillagerRole role) {
         int base = baseWorkRadiusCap();
         int max = Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_MAX_RADIUS.get(), base, MAX_SKILLED_WORK_RADIUS);
         int score = Mth.clamp(HiredVillagerRoles.roleScore(level, villager, role), 0, 100);
@@ -630,22 +573,23 @@ public final class HiredVillagerWorkService {
             ServerLevel level,
             Villager villager,
             ServerPlayer hirer,
-            HiredVillagerRole role,
-            HiredRoleWorker worker,
-            CompoundTag state,
-            HiredJobInventory inventory,
-            WorkArea area) {
+            HiredWorkSession session) {
         long day = level.getDayTime() / DAY_TICKS;
         if (!VillagerRetaliationConfig.HIRED_WORK_FOOD_ENABLED.get()
-                || !worker.requiresFood()
-                || state.getLong("LastFoodCheckDay") == day) {
+                || !session.worker().requiresFood()
+                || session.state().getLong("LastFoodCheckDay") == day) {
             return;
         }
-        state.putLong("LastFoodCheckDay", day);
-        int needed = Math.max(0, roleFoodCost(role));
-        if (needed <= 0 || consumeFood(villager, inventory, needed, state.getBoolean("UseAssignedStorageForSupplies"), area) >= needed) {
-            int starvationDays = Math.max(0, state.getInt("StarvationDays") - 1);
-            state.putInt("StarvationDays", starvationDays);
+        session.state().putLong("LastFoodCheckDay", day);
+        int needed = Math.max(0, roleFoodCost(session.role()));
+        if (needed <= 0 || consumeFood(
+                villager,
+                session.inventory(),
+                needed,
+                session.state().getBoolean("UseAssignedStorageForSupplies"),
+                session.area()) >= needed) {
+            int starvationDays = Math.max(0, session.state().getInt("StarvationDays") - 1);
+            session.state().putInt("StarvationDays", starvationDays);
             if (starvationDays == 0) {
                 VillagerMoodService.setMood(level, villager, VillagerMood.CONTENT, 14, "hired_work_fed", hirer.getUUID(), hirer.getUUID(), VillagerMoodService.SHORT_DECAY_TICKS);
             }
@@ -653,8 +597,8 @@ public final class HiredVillagerWorkService {
         }
 
         int maxDays = Math.max(0, VillagerRetaliationConfig.HIRED_WORK_MAX_STARVATION_PENALTY_DAYS.get());
-        int starvationDays = Mth.clamp(state.getInt("StarvationDays") + 1, 0, maxDays);
-        state.putInt("StarvationDays", starvationDays);
+        int starvationDays = Mth.clamp(session.state().getInt("StarvationDays") + 1, 0, maxDays);
+        session.state().putInt("StarvationDays", starvationDays);
         VillagerMood mood = starvationDays >= Math.max(2, maxDays / 2) ? VillagerMood.ANGRY : VillagerMood.STRESSED;
         VillagerMoodService.setMood(
                 level,
@@ -670,7 +614,7 @@ public final class HiredVillagerWorkService {
                 villager,
                 hirer.getUUID(),
                 VillagerRetaliationConfig.HIRED_WORK_NO_FOOD_REPUTATION_PENALTY.get());
-        maybeNotify(level, villager, hirer, state, "No food for hired work. Mood and reputation suffered.", DAY_TICKS);
+        maybeNotify(level, villager, hirer, session.state(), "No food for hired work. Mood and reputation suffered.", DAY_TICKS);
     }
 
     private static int consumeFood(
@@ -728,7 +672,7 @@ public final class HiredVillagerWorkService {
         return Math.max(0, Math.max(base, roleCost));
     }
 
-    private static int efficiencyPercent(ServerLevel level, Villager villager, HiredVillagerRole role, CompoundTag state, HiredJobInventory inventory) {
+    static int efficiencyPercent(ServerLevel level, Villager villager, HiredVillagerRole role, CompoundTag state, HiredJobInventory inventory) {
         int min = Math.max(1, VillagerRetaliationConfig.HIRED_WORK_MINIMUM_EFFICIENCY_PERCENT.get());
         int max = Math.max(min, VillagerRetaliationConfig.HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT.get());
         int efficiency = VillagerRetaliationConfig.HIRED_WORK_BASE_EFFICIENCY_PERCENT.get();
