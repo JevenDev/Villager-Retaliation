@@ -510,6 +510,9 @@ public final class VillagerRetaliationEvents {
             VillagerTradeUseTracker.forget(villager);
         }
         if (event.getEntity() instanceof Villager villager) {
+            if (villager.level() instanceof ServerLevel level) {
+                HiredVillagerWorkService.onVillagerLeaveLevel(level, villager);
+            }
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
             VillagerRetaliationVillagerBrainUtil.clearRuntimeState(villager);
             VillagerTaskNavigationUtil.clearRuntimeState(villager);

@@ -201,6 +201,15 @@ public final class HiredVillagerWorkService {
         HiredRoleWorkerRegistry.clearRuntimeState();
     }
 
+    public static void onVillagerLeaveLevel(ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHired(level, villager)) {
+            return;
+        }
+
+        VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+        HiredRoleWorkerRegistry.clearRuntimeState(villager);
+    }
+
     public static void sendStatus(ServerPlayer player, ServerLevel level, Villager villager) {
         HiredWorkSession session = HiredWorkSession.active(level, villager);
         String status = session.state().getString("Status");

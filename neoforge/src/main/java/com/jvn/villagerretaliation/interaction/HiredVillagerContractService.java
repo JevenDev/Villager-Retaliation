@@ -87,6 +87,7 @@ public final class HiredVillagerContractService {
         tag.putString(ROLE_TAG, HiredVillagerRoles.defaultRole(level, villager).serializedName());
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
+        villager.setPersistenceRequired();
     }
 
     public static boolean extendHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
@@ -104,6 +105,7 @@ public final class HiredVillagerContractService {
         tag.putInt(DURATION_DAYS_TAG, tag.getInt(DURATION_DAYS_TAG) + safeDays);
         tag.putInt(EMERALDS_PAID_TAG, tag.getInt(EMERALDS_PAID_TAG) + emeraldsPaid);
         tag.putInt(DAILY_COST_TAG, Math.max(1, emeraldsPaid / safeDays));
+        villager.setPersistenceRequired();
         return true;
     }
 

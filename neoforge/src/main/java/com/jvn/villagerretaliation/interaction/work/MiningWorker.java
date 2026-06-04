@@ -79,7 +79,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             context.setProgressTicks(0);
             setMiningState(context, MiningState.PATH_TO_TARGET);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target.blockPos());
-            boolean closeEnough = isWithinMiningDistance(villager, target.blockPos());
+            boolean closeEnough = isCloseEnough(villager, target);
             boolean hasLineOfSight = hasLineOfSightToTarget(level, villager, target);
             if (!moveToTarget(level, villager, context, target, 0.55D)) {
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
@@ -470,13 +470,8 @@ public final class MiningWorker extends AbstractBlockWorker {
 
     private boolean canStartMining(ServerLevel level, Villager villager, HiredWorkContext context, HiredPathTarget target) {
         return canWorkFromCurrentPosition(level, villager, context, target)
-                && isWithinMiningDistance(villager, target.blockPos())
                 && hasLineOfSightToTarget(level, villager, target)
                 && canMineFromCurrentPosition(level, villager, target);
-    }
-
-    private static boolean isWithinMiningDistance(Villager villager, BlockPos pos) {
-        return villager.position().distanceToSqr(Vec3.atCenterOf(pos)) <= 9.0D;
     }
 
     private boolean hasLineOfSightToTarget(ServerLevel level, Villager villager, HiredPathTarget target) {

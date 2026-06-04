@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.EnumMap;
 import java.util.Map;
+import net.minecraft.world.entity.npc.Villager;
 
 public final class HiredRoleWorkerRegistry {
     private static final Map<HiredVillagerRole, HiredRoleWorker> WORKERS = new EnumMap<>(HiredVillagerRole.class);
@@ -27,6 +28,11 @@ public final class HiredRoleWorkerRegistry {
 
     public static void clearRuntimeState() {
         MiningWorker.clearRuntimeState();
+    }
+
+    public static void clearRuntimeState(Villager villager) {
+        HiredPathMemory.releaseAll(villager);
+        HiredPathMemory.clearNavigationProgress(villager);
     }
 
     private static void register(HiredRoleWorker worker) {
