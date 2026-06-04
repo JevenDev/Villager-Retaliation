@@ -348,6 +348,9 @@ public final class VillagerInteractionService {
             case SHOW_STORAGE -> showAssignedStorage(player, level, villager);
             case DEPOSIT_EARNINGS -> depositEarnings(player, level, villager);
             case REMOVE_STORAGE -> removeAssignedStorage(player, level, villager);
+            case SHOW_PAYMENT_STORAGE -> showAssignedPaymentStorage(player, level, villager);
+            case REMOVE_PAYMENT_STORAGE -> removeAssignedPaymentStorage(player, level, villager);
+            case TOGGLE_AUTO_PAYMENT -> toggleAutoPayment(player, level, villager);
             case END_HIRE -> {
                 if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
                     sendVillagerNotice(player, villager, "Only the hiring player can end this contract.");
@@ -612,6 +615,18 @@ public final class VillagerInteractionService {
         sendVillagerNotice(player, villager, "Assigned containers: " + count + ".");
     }
 
+    private static void showAssignedPaymentStorage(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "Hire me first, then assign recurring payment storage.");
+            return;
+        }
+        List<AssignedContainerRecord> assigned = AssignedStorageService.assignedPaymentStorage(level, villager);
+        HiredStorageClipboardItem.sendAssignedStorageOutlines(player, assigned);
+        int count = assigned.size();
+        sendVillagerNotice(player, villager, "Payment containers: " + count
+                + ". Auto-payment is " + (HiredVillagerContractService.isAutoPaymentEnabled(level, villager) ? "on" : "off") + ".");
+    }
+
     private static void depositEarnings(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!canManageAssignedStorage(level, villager, player)) {
             sendVillagerNotice(player, villager, "You need trust or an active hire contract to manage my earnings.");
@@ -647,6 +662,31 @@ public final class VillagerInteractionService {
         }
         int removed = AssignedStorageService.removeAssignedStorage(level, villager);
         sendVillagerNotice(player, villager, "Removed " + removed + " assigned container" + plural(removed) + ".");
+    }
+
+    private static void removeAssignedPaymentStorage(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "Only the hiring player can remove payment storage.");
+            return;
+        }
+        int removed = AssignedStorageService.removeAssignedPaymentStorage(level, villager);
+        if (removed > 0) {
+            HiredVillagerContractService.setAutoPaymentEnabled(villager, false);
+        }
+        sendVillagerNotice(player, villager, "Removed " + removed + " payment container" + plural(removed) + ".");
+    }
+
+    private static void toggleAutoPayment(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "Hire me first, then set up recurring payment.");
+            return;
+        }
+        if (!AssignedStorageService.hasAssignedPaymentStorage(level, villager)) {
+            sendVillagerNotice(player, villager, "Assign a payment container first with the clipboard's recurring payment mode.");
+            return;
+        }
+        boolean enabled = HiredVillagerContractService.toggleAutoPayment(level, villager);
+        sendVillagerNotice(player, villager, "Recurring payment " + (enabled ? "enabled" : "disabled") + ".");
     }
 
     private static boolean canManageAssignedStorage(ServerLevel level, Villager villager, ServerPlayer player) {

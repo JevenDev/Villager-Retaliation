@@ -26,7 +26,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
         buffer.writeVarInt(snapshot.idleCount());
         buffer.writeVarInt(snapshot.warningCount());
         buffer.writeVarInt(snapshot.assignedStorageCount());
-        buffer.writeVarInt(snapshot.emeraldBalance());
+        buffer.writeVarInt(snapshot.paymentContainerCount());
         buffer.writeVarInt(snapshot.dailyWages());
         writeJobs(buffer, snapshot.jobs());
         writeWorkers(buffer, snapshot.workers());

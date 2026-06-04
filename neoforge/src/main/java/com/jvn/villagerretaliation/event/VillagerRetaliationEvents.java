@@ -183,7 +183,7 @@ public final class VillagerRetaliationEvents {
                         villager,
                         HiredVillagerContractService.activeRole(level, villager),
                         "Work stopped. Villager died.");
-                AssignedStorageService.removeAssignedStorage(level, villager);
+                AssignedStorageService.removeAllAssignedStorage(level, villager);
             }
         }
         VillagerRetaliationHandler.onLivingDeath(event);
@@ -223,6 +223,7 @@ public final class VillagerRetaliationEvents {
         }
         if (entity instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
+            HiredVillagerContractService.onVillagerTickPost(villager);
             VillagerRecruitmentService.onVillagerTickPost(villager);
             HiredVillagerWorkService.onVillagerTickPost(villager);
             if (villager.level() instanceof ServerLevel level) {

@@ -24,6 +24,7 @@ public record ClipboardAssignedStorageSyncPayload(List<Entry> entries, int ticks
         for (Entry entry : payload.entries()) {
             buffer.writeResourceLocation(entry.dimension());
             buffer.writeBlockPos(entry.pos());
+            buffer.writeBoolean(entry.payment());
         }
         buffer.writeVarInt(payload.ticks());
     }
@@ -32,7 +33,7 @@ public record ClipboardAssignedStorageSyncPayload(List<Entry> entries, int ticks
         int size = Math.min(MAX_ENTRIES, buffer.readVarInt());
         List<Entry> entries = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
-            entries.add(new Entry(buffer.readResourceLocation(), buffer.readBlockPos()));
+            entries.add(new Entry(buffer.readResourceLocation(), buffer.readBlockPos(), buffer.readBoolean()));
         }
         return new ClipboardAssignedStorageSyncPayload(entries, buffer.readVarInt());
     }
@@ -42,6 +43,6 @@ public record ClipboardAssignedStorageSyncPayload(List<Entry> entries, int ticks
         return TYPE;
     }
 
-    public record Entry(ResourceLocation dimension, BlockPos pos) {
+    public record Entry(ResourceLocation dimension, BlockPos pos, boolean payment) {
     }
 }

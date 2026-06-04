@@ -1,10 +1,13 @@
 package com.jvn.villagerretaliation;
 
 import com.jvn.villagerretaliation.command.VillagerRetaliationCommands;
+import com.jvn.villagerretaliation.block.VillagerRetaliationBlockEntityTypes;
+import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
+import com.jvn.villagerretaliation.item.VillagerRetaliationCreativeTabs;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.interaction.work.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -30,8 +33,11 @@ public class VillagerRetaliation {
 
     public VillagerRetaliation(IEventBus modEventBus, ModContainer modContainer) {
         VillagerRetaliationConfig.init();
+        VillagerRetaliationBlocks.register(modEventBus);
+        VillagerRetaliationBlockEntityTypes.register(modEventBus);
         VillagerRetaliationMenus.register(modEventBus);
         VillagerRetaliationItems.register(modEventBus);
+        VillagerRetaliationCreativeTabs.register(modEventBus);
         VillagerRetaliationDebugItems.register(modEventBus);
         ToucanEventBuses.on(modEventBus)
                 .listener(VillagerRetaliationEvents::onEntityAttributeModification)

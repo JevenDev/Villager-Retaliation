@@ -10,7 +10,7 @@ public record ClipboardWorkforceSnapshot(
         int idleCount,
         int warningCount,
         int assignedStorageCount,
-        int emeraldBalance,
+        int paymentContainerCount,
         int dailyWages,
         List<JobSummary> jobs,
         List<WorkerRow> workers,

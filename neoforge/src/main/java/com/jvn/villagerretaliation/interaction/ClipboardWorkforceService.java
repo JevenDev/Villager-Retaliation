@@ -38,7 +38,7 @@ public final class ClipboardWorkforceService {
         int working = 0;
         int idle = 0;
         int assignedStorage = 0;
-        int emeraldBalance = 0;
+        int paymentContainers = 0;
         int dailyWages = 0;
 
         for (ServerLevel level : player.server.getAllLevels()) {
@@ -54,6 +54,7 @@ public final class ClipboardWorkforceService {
                 HiredVillagerRole role = session.role();
                 HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
                 int storageCount = AssignedStorageService.assignedStorage(level, villager).size();
+                int paymentStorageCount = AssignedStorageService.assignedPaymentStorage(level, villager).size();
                 boolean storageAssigned = storageCount > 0;
                 boolean inventoryFull = brain.taskState() == HiredWorkerTaskState.PAUSED_FULL_INVENTORY
                         || !session.inventory().hasOutputSpace();
@@ -61,13 +62,12 @@ public final class ClipboardWorkforceService {
                 boolean noTargets = isNoTargetState(brain);
                 boolean tooFar = !session.context().isInsideWorkArea(villager.blockPosition());
                 int dailyWage = HiredVillagerContractService.getContractDailyCost(level, villager, player);
-                int walletEmeralds = VillagerWalletService.getCurrentEmeralds(villager);
-                boolean unpaid = dailyWage > 0 && walletEmeralds < dailyWage;
+                boolean unpaid = false;
                 WorkerStatus status = status(role, brain.taskState(), inventoryFull, noStorage, noTargets, unpaid, tooFar);
 
                 jobCounts.merge(role, 1, Integer::sum);
                 assignedStorage += storageCount;
-                emeraldBalance += walletEmeralds;
+                paymentContainers += paymentStorageCount;
                 dailyWages += dailyWage;
                 if (isWorking(brain.taskState(), session.state().getBoolean("Enabled"))) {
                     working++;
@@ -76,7 +76,6 @@ public final class ClipboardWorkforceService {
                 }
                 addWarning(warningCounts, WarningType.NO_STORAGE, role, noStorage);
                 addWarning(warningCounts, WarningType.INVENTORY_FULL, role, inventoryFull);
-                addWarning(warningCounts, WarningType.UNPAID, role, unpaid);
                 addWarning(warningCounts, WarningType.NO_TARGETS, role, noTargets);
                 addWarning(warningCounts, WarningType.TOO_FAR, role, tooFar);
                 workers.add(new WorkerRow(
@@ -112,7 +111,7 @@ public final class ClipboardWorkforceService {
                 idle,
                 warnings.stream().mapToInt(WarningSummary::count).sum(),
                 assignedStorage,
-                emeraldBalance,
+                paymentContainers,
                 dailyWages,
                 jobs,
                 workers,

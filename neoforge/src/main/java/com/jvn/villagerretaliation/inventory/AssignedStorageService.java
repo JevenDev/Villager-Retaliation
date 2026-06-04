@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.block.PaymentBoxBlockEntity;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignmentResult;
 import java.util.ArrayList;
@@ -22,6 +23,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class AssignedStorageService {
+    public static final String GENERAL_PURPOSE = "general";
+    public static final String PAYMENT_PURPOSE = "payment";
     private static final double STORAGE_INTERACTION_REACH_SQR = 25.0D;
     private static final double OUTPUT_DEPOSIT_REACH_BLOCKS = 2.0D;
     private static final double OUTPUT_DEPOSIT_REACH_SQR = OUTPUT_DEPOSIT_REACH_BLOCKS * OUTPUT_DEPOSIT_REACH_BLOCKS;
@@ -30,10 +33,24 @@ public final class AssignedStorageService {
     }
 
     public static boolean hasAssignedStorage(ServerLevel level, Villager villager) {
-        return !AssignedStorageSavedData.get(level).assignedTo(villager.getUUID()).isEmpty();
+        return !assignedStorage(level, villager).isEmpty();
+    }
+
+    public static boolean hasAssignedPaymentStorage(ServerLevel level, Villager villager) {
+        return !assignedPaymentStorage(level, villager).isEmpty();
     }
 
     public static List<AssignedContainerRecord> assignedStorage(ServerLevel level, Villager villager) {
+        return AssignedStorageSavedData.get(level).assignedTo(villager.getUUID()).stream()
+                .filter(record -> !PAYMENT_PURPOSE.equals(normalizePurpose(record.purpose())))
+                .toList();
+    }
+
+    public static List<AssignedContainerRecord> assignedPaymentStorage(ServerLevel level, Villager villager) {
+        return AssignedStorageSavedData.get(level).assignedTo(villager.getUUID(), PAYMENT_PURPOSE);
+    }
+
+    public static List<AssignedContainerRecord> allAssignedStorage(ServerLevel level, Villager villager) {
         return AssignedStorageSavedData.get(level).assignedTo(villager.getUUID());
     }
 
@@ -49,10 +66,11 @@ public final class AssignedStorageService {
         int assigned = 0;
         int alreadyAssigned = 0;
         int invalid = 0;
-        int priorityBase = data.assignedTo(villager.getUUID()).size();
+        String normalizedPurpose = normalizePurpose(purpose);
+        int priorityBase = data.assignedTo(villager.getUUID(), normalizedPurpose).size();
         for (StoragePosition position : positions) {
             ServerLevel targetLevel = player.server.getLevel(position.dimension());
-            if (targetLevel == null || !isValidContainer(targetLevel, position.pos())) {
+            if (targetLevel == null || !isValidContainerForPurpose(targetLevel, position.pos(), normalizedPurpose)) {
                 invalid++;
                 continue;
             }
@@ -61,7 +79,7 @@ public final class AssignedStorageService {
                     position.pos().immutable(),
                     villager.getUUID(),
                     player.getUUID(),
-                    purpose == null || purpose.isBlank() ? "general" : purpose,
+                    normalizedPurpose,
                     priorityBase + assigned,
                     "valid"
             ));
@@ -75,7 +93,21 @@ public final class AssignedStorageService {
     }
 
     public static int removeAssignedStorage(ServerLevel level, Villager villager) {
+        int removed = 0;
+        for (AssignedContainerRecord record : assignedStorage(level, villager)) {
+            if (AssignedStorageSavedData.get(level).removeAssignedAt(record.dimension(), record.pos())) {
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    public static int removeAllAssignedStorage(ServerLevel level, Villager villager) {
         return AssignedStorageSavedData.get(level).removeAssignedTo(villager.getUUID());
+    }
+
+    public static int removeAssignedPaymentStorage(ServerLevel level, Villager villager) {
+        return AssignedStorageSavedData.get(level).removeAssignedTo(villager.getUUID(), PAYMENT_PURPOSE);
     }
 
     public static boolean removeAssignedContainer(ServerLevel level, BlockPos pos) {
@@ -84,6 +116,18 @@ public final class AssignedStorageService {
 
     public static boolean isValidContainer(ServerLevel level, BlockPos pos) {
         return level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof Container;
+    }
+
+    public static boolean isValidContainerForPurpose(ServerLevel level, BlockPos pos, String purpose) {
+        if (!level.hasChunkAt(pos)) {
+            return false;
+        }
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!(blockEntity instanceof Container)) {
+            return false;
+        }
+        boolean paymentBox = blockEntity instanceof PaymentBoxBlockEntity;
+        return PAYMENT_PURPOSE.equals(normalizePurpose(purpose)) ? paymentBox : !paymentBox;
     }
 
     public static ItemStack depositStack(Villager villager, ItemStack stack) {
@@ -242,10 +286,71 @@ public final class AssignedStorageService {
         return count - remaining;
     }
 
+    public static int consumePaymentItems(Villager villager, Predicate<ItemStack> predicate, int count) {
+        if (count <= 0 || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
+        int remaining = count;
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
+            Container container = candidate.container();
+            boolean used = false;
+            for (int slot = 0; slot < container.getContainerSize() && remaining > 0; slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.isEmpty() || !predicate.test(stack)) {
+                    continue;
+                }
+                int removed = Math.min(remaining, stack.getCount());
+                container.removeItem(slot, removed);
+                remaining -= removed;
+                used = true;
+            }
+            if (used) {
+                usedContainers.add(candidate);
+            }
+            if (remaining <= 0) {
+                break;
+            }
+        }
+        VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
+        return count - remaining;
+    }
+
+    public static int countPaymentItems(Villager villager, Predicate<ItemStack> predicate) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        int count = 0;
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
+            Container container = candidate.container();
+            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (!stack.isEmpty() && predicate.test(stack)) {
+                    count += stack.getCount();
+                }
+            }
+        }
+        return count;
+    }
+
     static List<VillagerInventoryOverflowService.ContainerCandidate> liveContainerCandidates(ServerLevel level, Villager villager) {
+        return liveContainerCandidates(level, villager, record -> !PAYMENT_PURPOSE.equals(normalizePurpose(record.purpose())));
+    }
+
+    private static List<VillagerInventoryOverflowService.ContainerCandidate> livePaymentContainerCandidates(ServerLevel level, Villager villager) {
+        return liveContainerCandidates(level, villager, record -> PAYMENT_PURPOSE.equals(normalizePurpose(record.purpose())));
+    }
+
+    private static List<VillagerInventoryOverflowService.ContainerCandidate> liveContainerCandidates(
+            ServerLevel level,
+            Villager villager,
+            Predicate<AssignedContainerRecord> recordFilter) {
         AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
         List<VillagerInventoryOverflowService.ContainerCandidate> containers = new ArrayList<>();
         for (AssignedContainerRecord record : data.assignedTo(villager.getUUID())) {
+            if (recordFilter != null && !recordFilter.test(record)) {
+                continue;
+            }
             ServerLevel targetLevel = level.getServer().getLevel(record.dimension());
             if (targetLevel == null) {
                 data.updateValidation(record, "missing_dimension");
@@ -262,6 +367,10 @@ public final class AssignedStorageService {
             BlockEntity blockEntity = level.getBlockEntity(record.pos());
             if (!(blockEntity instanceof Container container)) {
                 data.updateValidation(record, "missing_container");
+                continue;
+            }
+            if (!isValidContainerForPurpose(level, record.pos(), record.purpose())) {
+                data.updateValidation(record, "wrong_purpose");
                 continue;
             }
             data.updateValidation(record, "valid");
@@ -301,6 +410,10 @@ public final class AssignedStorageService {
             return Component.literal("No valid selected containers were found.");
         }
         return Component.literal("No storage was assigned.");
+    }
+
+    private static String normalizePurpose(String purpose) {
+        return purpose == null || purpose.isBlank() ? GENERAL_PURPOSE : purpose;
     }
 
     public record StoragePosition(ResourceKey<Level> dimension, BlockPos pos) {

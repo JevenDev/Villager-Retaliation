@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.Items;
 
 public final class HiredVillagerContractService {
     private static final String CONTRACT_TAG = "VillagerRetaliationHireContract";
@@ -20,12 +21,15 @@ public final class HiredVillagerContractService {
     private static final String DURATION_DAYS_TAG = "DurationDays";
     private static final String DAILY_COST_TAG = "DailyCost";
     private static final String EMERALDS_PAID_TAG = "EmeraldsPaid";
+    private static final String AUTO_PAYMENT_TAG = "AutoPayment";
+    private static final String LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG = "LastAutoPaymentAttemptGameTime";
     private static final String ROLE_TAG = "Role";
     private static final String STATUS_TAG = "Status";
     private static final String STATUS_ACTIVE = "active";
     private static final String STATUS_ENDED = "ended";
     private static final String STATUS_EXPIRED = "expired";
     private static final long DAY_TICKS = 24000L;
+    private static final long AUTO_PAYMENT_RETRY_TICKS = 1200L;
 
     private HiredVillagerContractService() {
     }
@@ -37,6 +41,13 @@ public final class HiredVillagerContractService {
 
     public static boolean isHiredBy(ServerLevel level, Villager villager, ServerPlayer player) {
         return getHirer(level, villager).filter(player.getUUID()::equals).isPresent();
+    }
+
+    public static void onVillagerTickPost(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level) || villager.isBaby() || !villager.isAlive()) {
+            return;
+        }
+        maybeAutoRenew(level, villager);
     }
 
     public static Optional<UUID> getHirer(ServerLevel level, Villager villager) {
@@ -83,6 +94,36 @@ public final class HiredVillagerContractService {
                 .orElseGet(() -> getDailyCost(level, villager, player));
     }
 
+    public static boolean isAutoPaymentEnabled(ServerLevel level, Villager villager) {
+        expireHireContractIfNeeded(level, villager);
+        return contract(villager)
+                .filter(HiredVillagerContractService::isActive)
+                .map(tag -> tag.getBoolean(AUTO_PAYMENT_TAG))
+                .orElse(false);
+    }
+
+    public static boolean toggleAutoPayment(ServerLevel level, Villager villager) {
+        expireHireContractIfNeeded(level, villager);
+        Optional<CompoundTag> activeContract = contract(villager).filter(HiredVillagerContractService::isActive);
+        if (activeContract.isEmpty()) {
+            return false;
+        }
+        CompoundTag tag = activeContract.get();
+        boolean enabled = !tag.getBoolean(AUTO_PAYMENT_TAG);
+        tag.putBoolean(AUTO_PAYMENT_TAG, enabled);
+        villager.setPersistenceRequired();
+        return enabled;
+    }
+
+    public static void setAutoPaymentEnabled(Villager villager, boolean enabled) {
+        contract(villager)
+                .filter(HiredVillagerContractService::isActive)
+                .ifPresent(tag -> {
+                    tag.putBoolean(AUTO_PAYMENT_TAG, enabled);
+                    villager.setPersistenceRequired();
+                });
+    }
+
     public static void startHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
         int safeDays = Mth.clamp(days, 1, 30);
         long startGameTime = level.getGameTime();
@@ -93,6 +134,7 @@ public final class HiredVillagerContractService {
         tag.putInt(DURATION_DAYS_TAG, safeDays);
         tag.putInt(DAILY_COST_TAG, Math.max(1, emeraldsPaid / safeDays));
         tag.putInt(EMERALDS_PAID_TAG, emeraldsPaid);
+        tag.putBoolean(AUTO_PAYMENT_TAG, false);
         tag.putString(ROLE_TAG, HiredVillagerRoles.defaultRole(level, villager).serializedName());
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
@@ -131,7 +173,7 @@ public final class HiredVillagerContractService {
         HiredVillagerWorkService.stopWork(level, villager, role, "Work stopped. Contract ended.");
         int refund = earlyEndRefund(level, tag);
         tag.putString(STATUS_TAG, STATUS_ENDED);
-        AssignedStorageService.removeAssignedStorage(level, villager);
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
         return refund;
     }
 
@@ -143,7 +185,7 @@ public final class HiredVillagerContractService {
                     HiredVillagerRole role = roleFromContract(level, villager, tag);
                     HiredVillagerWorkService.stopWork(level, villager, role, "Work stopped. Contract expired.");
                     tag.putString(STATUS_TAG, STATUS_EXPIRED);
-                    AssignedStorageService.removeAssignedStorage(level, villager);
+                    AssignedStorageService.removeAllAssignedStorage(level, villager);
                 });
     }
 
@@ -182,6 +224,47 @@ public final class HiredVillagerContractService {
     private static int remainingDays(ServerLevel level, CompoundTag contract) {
         long remainingTicks = Math.max(0L, contract.getLong(END_GAME_TIME_TAG) - level.getGameTime());
         return (int) Math.max(1L, (remainingTicks + DAY_TICKS - 1L) / DAY_TICKS);
+    }
+
+    private static void maybeAutoRenew(ServerLevel level, Villager villager) {
+        Optional<CompoundTag> activeContract = contract(villager).filter(HiredVillagerContractService::isActive);
+        if (activeContract.isEmpty()) {
+            return;
+        }
+        CompoundTag tag = activeContract.get();
+        if (!tag.getBoolean(AUTO_PAYMENT_TAG)) {
+            return;
+        }
+        long gameTime = level.getGameTime();
+        long remainingTicks = tag.getLong(END_GAME_TIME_TAG) - gameTime;
+        if (remainingTicks <= 0L || remainingTicks > DAY_TICKS) {
+            return;
+        }
+        if (gameTime < tag.getLong(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG) + AUTO_PAYMENT_RETRY_TICKS) {
+            return;
+        }
+        tag.putLong(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG, gameTime);
+
+        int dailyCost = Math.max(1, tag.getInt(DAILY_COST_TAG));
+        if (AssignedStorageService.countPaymentItems(villager, stack -> stack.is(Items.EMERALD)) < dailyCost) {
+            return;
+        }
+        int consumed = AssignedStorageService.consumePaymentItems(villager, stack -> stack.is(Items.EMERALD), dailyCost);
+        if (consumed < dailyCost) {
+            return;
+        }
+        extendActiveContract(level, tag, 1, dailyCost);
+        VillagerWalletService.addEmeralds(villager, dailyCost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        villager.setPersistenceRequired();
+    }
+
+    private static void extendActiveContract(ServerLevel level, CompoundTag tag, int days, int emeraldsPaid) {
+        int safeDays = Mth.clamp(days, 1, 30);
+        long currentEnd = Math.max(level.getGameTime(), tag.getLong(END_GAME_TIME_TAG));
+        tag.putLong(END_GAME_TIME_TAG, currentEnd + safeDays * DAY_TICKS);
+        tag.putInt(DURATION_DAYS_TAG, tag.getInt(DURATION_DAYS_TAG) + safeDays);
+        tag.putInt(EMERALDS_PAID_TAG, tag.getInt(EMERALDS_PAID_TAG) + emeraldsPaid);
+        tag.putInt(DAILY_COST_TAG, Math.max(1, emeraldsPaid / safeDays));
     }
 
     private static int earlyEndRefund(ServerLevel level, CompoundTag contract) {

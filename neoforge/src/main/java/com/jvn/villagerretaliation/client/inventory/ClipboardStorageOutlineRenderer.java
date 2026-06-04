@@ -29,8 +29,9 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 public final class ClipboardStorageOutlineRenderer {
     private static final int SELECTED_COLOR = 0xFF3FA7FF;
     private static final int ASSIGNED_COLOR = 0xFFFFD54A;
+    private static final int PAYMENT_COLOR = 0xFF46E06E;
     private static final int WORK_AREA_COLOR = 0xFF65D889;
-    private static final List<StoragePosition> ASSIGNED_POSITIONS = new ArrayList<>();
+    private static final List<OutlinedStoragePosition> ASSIGNED_POSITIONS = new ArrayList<>();
     private static final List<WorkAreaPosition> WORK_AREAS = new ArrayList<>();
     private static long assignedVisibleUntilGameTime;
     private static long workAreasVisibleUntilGameTime;
@@ -47,9 +48,10 @@ public final class ClipboardStorageOutlineRenderer {
                 return;
             }
             for (ClipboardAssignedStorageSyncPayload.Entry entry : payload.entries()) {
-                ASSIGNED_POSITIONS.add(new StoragePosition(
+                ASSIGNED_POSITIONS.add(new OutlinedStoragePosition(
                         ResourceKey.create(Registries.DIMENSION, entry.dimension()),
-                        entry.pos()
+                        entry.pos(),
+                        entry.payment()
                 ));
             }
             assignedVisibleUntilGameTime = minecraft.level.getGameTime() + payload.ticks();
@@ -87,11 +89,11 @@ public final class ClipboardStorageOutlineRenderer {
 
         ItemStack clipboard = clipboardStack(minecraft);
         ClipboardMode mode = HiredStorageClipboardItem.mode(clipboard);
-        if (mode == ClipboardMode.ASSIGN_STORAGE) {
+        if (mode == ClipboardMode.ASSIGN_STORAGE || mode == ClipboardMode.ASSIGN_PAYMENT) {
             List<StoragePosition> selected = HiredStorageClipboardItem.selectedContainers(clipboard);
-            renderPositions(event, selected, SELECTED_COLOR);
+            renderPositions(event, selected, mode == ClipboardMode.ASSIGN_PAYMENT ? PAYMENT_COLOR : SELECTED_COLOR);
             if (minecraft.level.getGameTime() <= assignedVisibleUntilGameTime) {
-                renderPositions(event, ASSIGNED_POSITIONS, ASSIGNED_COLOR);
+                renderAssignedPositions(event, ASSIGNED_POSITIONS);
             } else {
                 ASSIGNED_POSITIONS.clear();
             }
@@ -105,6 +107,21 @@ public final class ClipboardStorageOutlineRenderer {
                 WORK_AREAS.clear();
             }
         }
+    }
+
+    private static void renderAssignedPositions(RenderLevelStageEvent event, List<OutlinedStoragePosition> positions) {
+        List<StoragePosition> normal = new ArrayList<>();
+        List<StoragePosition> payment = new ArrayList<>();
+        for (OutlinedStoragePosition position : positions) {
+            StoragePosition storagePosition = new StoragePosition(position.dimension(), position.pos());
+            if (position.payment()) {
+                payment.add(storagePosition);
+            } else {
+                normal.add(storagePosition);
+            }
+        }
+        renderPositions(event, normal, ASSIGNED_COLOR);
+        renderPositions(event, payment, PAYMENT_COLOR);
     }
 
     private static void renderPositions(RenderLevelStageEvent event, List<StoragePosition> positions, int color) {
@@ -197,5 +214,8 @@ public final class ClipboardStorageOutlineRenderer {
     }
 
     private record WorkAreaPosition(ResourceKey<Level> dimension, BlockPos min, BlockPos max) {
+    }
+
+    private record OutlinedStoragePosition(ResourceKey<Level> dimension, BlockPos pos, boolean payment) {
     }
 }

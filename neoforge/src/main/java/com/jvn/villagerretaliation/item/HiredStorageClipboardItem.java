@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedCo
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummary;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
@@ -103,9 +104,34 @@ public final class HiredStorageClipboardItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
+        if (clipboardMode == ClipboardMode.ASSIGN_PAYMENT) {
+            List<StoragePosition> selected = selectedContainers(stack);
+            if (!selected.isEmpty()) {
+                if (!HiredVillagerContractService.isHiredBy(level, villager, serverPlayer)) {
+                    serverPlayer.displayClientMessage(Component.literal("Hire this villager before assigning payment storage."), true);
+                    return InteractionResult.SUCCESS;
+                }
+                AssignSummary summary = AssignedStorageService.assign(serverPlayer, villager, selected, AssignedStorageService.PAYMENT_PURPOSE);
+                if (summary.assigned() > 0) {
+                    clearSelection(stack);
+                    HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
+                }
+                serverPlayer.displayClientMessage(AssignedStorageService.assignmentSummary(summary), true);
+                return InteractionResult.SUCCESS;
+            }
+            List<AssignedContainerRecord> assigned = AssignedStorageService.assignedPaymentStorage(level, villager);
+            if (!assigned.isEmpty()) {
+                sendAssignedStorageOutlines(serverPlayer, assigned);
+                serverPlayer.displayClientMessage(Component.literal("Payment containers: " + assigned.size() + "."), true);
+                return InteractionResult.SUCCESS;
+            }
+            serverPlayer.displayClientMessage(Component.literal("Select a payment container, then use the clipboard on a hired villager."), true);
+            return InteractionResult.SUCCESS;
+        }
+
         List<StoragePosition> selected = selectedContainers(stack);
         if (!selected.isEmpty()) {
-            AssignSummary summary = AssignedStorageService.assign(serverPlayer, villager, selected, "general");
+            AssignSummary summary = AssignedStorageService.assign(serverPlayer, villager, selected, AssignedStorageService.GENERAL_PURPOSE);
             if (summary.assigned() > 0) {
                 clearSelection(stack);
             }
@@ -233,10 +259,22 @@ public final class HiredStorageClipboardItem extends Item {
             player.displayClientMessage(Component.literal("Select a valid container."), true);
             return InteractionResult.FAIL;
         }
+        ClipboardMode clipboardMode = mode(stack);
+        if (!AssignedStorageService.isValidContainerForPurpose(
+                level,
+                pos,
+                clipboardMode == ClipboardMode.ASSIGN_PAYMENT
+                        ? AssignedStorageService.PAYMENT_PURPOSE
+                        : AssignedStorageService.GENERAL_PURPOSE)) {
+            player.displayClientMessage(Component.literal(clipboardMode == ClipboardMode.ASSIGN_PAYMENT
+                    ? "Select a payment box."
+                    : "Payment boxes can only be assigned in payment mode."), true);
+            return InteractionResult.FAIL;
+        }
 
         SelectionAddResult result = addSelection(stack, level.dimension(), pos);
         Component message = switch (result) {
-            case ADDED -> Component.literal("Container selected.");
+            case ADDED -> Component.literal(clipboardMode == ClipboardMode.ASSIGN_PAYMENT ? "Payment box selected." : "Container selected.");
             case DUPLICATE -> Component.literal("That container is already selected.");
             case DIFFERENT_DIMENSION -> Component.literal("Clipboard selections must stay in one dimension.");
             case FULL -> Component.literal("Clipboard selection is full.");
@@ -247,7 +285,7 @@ public final class HiredStorageClipboardItem extends Item {
 
     public static InteractionResult handleRightClickBlock(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
         return switch (mode(stack)) {
-            case ASSIGN_STORAGE -> selectContainer(level, player, stack, pos);
+            case ASSIGN_STORAGE, ASSIGN_PAYMENT -> selectContainer(level, player, stack, pos);
             case WORK_AREA -> {
                 player.displayClientMessage(Component.literal("View work area mode: use the clipboard on a hired villager."), true);
                 yield InteractionResult.SUCCESS;
@@ -304,7 +342,10 @@ public final class HiredStorageClipboardItem extends Item {
 
     public static void sendAssignedStorageOutlines(ServerPlayer player, List<AssignedContainerRecord> records) {
         List<ClipboardAssignedStorageSyncPayload.Entry> entries = records.stream()
-                .map(record -> new ClipboardAssignedStorageSyncPayload.Entry(record.dimension().location(), record.pos()))
+                .map(record -> new ClipboardAssignedStorageSyncPayload.Entry(
+                        record.dimension().location(),
+                        record.pos(),
+                        AssignedStorageService.PAYMENT_PURPOSE.equals(record.purpose())))
                 .toList();
         PacketDistributor.sendToPlayer(player, new ClipboardAssignedStorageSyncPayload(entries, 200));
     }
@@ -463,6 +504,7 @@ public final class HiredStorageClipboardItem extends Item {
 
     public enum ClipboardMode {
         ASSIGN_STORAGE("assign_storage", "Assign inventories"),
+        ASSIGN_PAYMENT("assign_payment", "Assign payment"),
         WORK_AREA("work_area", "View work area"),
         SET_WORK_AREA("set_work_area", "Set work area");
 

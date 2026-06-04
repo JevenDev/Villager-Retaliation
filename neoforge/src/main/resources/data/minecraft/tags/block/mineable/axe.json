@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "villagerretaliation:oak_payment_box",
+    "villagerretaliation:spruce_payment_box",
+    "villagerretaliation:birch_payment_box",
+    "villagerretaliation:jungle_payment_box",
+    "villagerretaliation:acacia_payment_box",
+    "villagerretaliation:dark_oak_payment_box",
+    "villagerretaliation:mangrove_payment_box",
+    "villagerretaliation:cherry_payment_box",
+    "villagerretaliation:bamboo_payment_box",
+    "villagerretaliation:crimson_payment_box",
+    "villagerretaliation:warped_payment_box"
+  ]
+}

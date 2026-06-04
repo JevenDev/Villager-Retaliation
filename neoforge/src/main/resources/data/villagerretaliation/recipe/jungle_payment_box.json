@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PPP",
+    "PEP",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "minecraft:jungle_planks"
+    },
+    "E": {
+      "item": "minecraft:emerald"
+    }
+  },
+  "result": {
+    "id": "villagerretaliation:jungle_payment_box",
+    "count": 1
+  }
+}

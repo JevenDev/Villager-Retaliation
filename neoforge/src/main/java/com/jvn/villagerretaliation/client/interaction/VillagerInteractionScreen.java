@@ -539,6 +539,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.deposit_earnings", () -> requestRecruit(VillagerRecruitRequestPayload.Action.DEPOSIT_EARNINGS));
         addOption("recruit.remove_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_STORAGE));
         if (this.hiredByPlayer) {
+            addOption("recruit.auto_payment", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_PAYMENT));
+            addOption("recruit.show_payment_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SHOW_PAYMENT_STORAGE));
+            addOption("recruit.remove_payment_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_PAYMENT_STORAGE));
             addOption("recruit.about_role", this::openRolePage);
             addOption("recruit.work", this::openWorkPage);
         }

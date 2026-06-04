@@ -97,6 +97,13 @@ public final class AssignedStorageSavedData extends SavedData {
                 .toList();
     }
 
+    public List<AssignedContainerRecord> assignedTo(UUID villagerId, String purpose) {
+        String normalizedPurpose = normalizePurpose(purpose);
+        return assignedTo(villagerId).stream()
+                .filter(record -> normalizePurpose(record.purpose()).equals(normalizedPurpose))
+                .toList();
+    }
+
     public Optional<AssignedContainerRecord> assignedAt(ResourceKey<Level> dimension, BlockPos pos) {
         return Optional.ofNullable(this.byContainer.get(new ContainerKey(dimension, pos.immutable())));
     }
@@ -118,6 +125,27 @@ public final class AssignedStorageSavedData extends SavedData {
             this.byContainer.remove(new ContainerKey(record.dimension(), record.pos()));
         }
         this.byVillager.remove(villagerId);
+        if (!records.isEmpty()) {
+            setDirty();
+        }
+        return records.size();
+    }
+
+    public int removeAssignedTo(UUID villagerId, String purpose) {
+        String normalizedPurpose = normalizePurpose(purpose);
+        List<AssignedContainerRecord> records = new ArrayList<>(this.byVillager.getOrDefault(villagerId, List.of()).stream()
+                .filter(record -> normalizePurpose(record.purpose()).equals(normalizedPurpose))
+                .toList());
+        for (AssignedContainerRecord record : records) {
+            this.byContainer.remove(new ContainerKey(record.dimension(), record.pos()));
+        }
+        List<AssignedContainerRecord> remaining = this.byVillager.get(villagerId);
+        if (remaining != null) {
+            remaining.removeIf(record -> normalizePurpose(record.purpose()).equals(normalizedPurpose));
+            if (remaining.isEmpty()) {
+                this.byVillager.remove(villagerId);
+            }
+        }
         if (!records.isEmpty()) {
             setDirty();
         }
@@ -169,6 +197,10 @@ public final class AssignedStorageSavedData extends SavedData {
         List<AssignedContainerRecord> records = this.byVillager.computeIfAbsent(record.villagerId(), ignored -> new ArrayList<>());
         records.removeIf(candidate -> candidate.dimension().equals(record.dimension()) && candidate.pos().equals(record.pos()));
         records.add(record);
+    }
+
+    private static String normalizePurpose(String purpose) {
+        return purpose == null || purpose.isBlank() ? "general" : purpose;
     }
 
     public enum AssignmentResult {

@@ -21,15 +21,15 @@ import org.lwjgl.glfw.GLFW;
 public final class ClipboardWorkforceScreen extends Screen {
     private static final int TEXTURE_WIDTH = 145;
     private static final int TEXTURE_HEIGHT = 194;
-    private static final int CONTENT_LEFT = 19;
-    private static final int CONTENT_RIGHT = 127;
+    private static final int CONTENT_LEFT = 15;
+    private static final int CONTENT_RIGHT = 131;
     private static final int CONTENT_TOP = 43;
     private static final int CONTENT_BOTTOM = 181;
     private static final int TITLE_Y = 34;
     private static final int PAGE_BUTTON_WIDTH = 23;
     private static final int PAGE_BUTTON_HEIGHT = 13;
-    private static final int PAGE_BUTTON_LEFT = CONTENT_RIGHT - PAGE_BUTTON_WIDTH;
-    private static final int PAGE_BUTTON_TOP = CONTENT_BOTTOM - PAGE_BUTTON_HEIGHT;
+    private static final int PAGE_BUTTON_LEFT = CONTENT_RIGHT - PAGE_BUTTON_WIDTH + 1;
+    private static final int PAGE_BUTTON_TOP = CONTENT_BOTTOM - PAGE_BUTTON_HEIGHT + 4;
     private static final int FIRST_OVERVIEW_PAGE_LAST_ROLE = HiredVillagerRole.NAVIGATION.ordinal();
     private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
     private static final ResourceLocation PAGE_FORWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");
@@ -40,8 +40,15 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int WARNING = 0xFF9A3B24;
     private static final int HOVER_FILL = 0x30A66A34;
     private static final int SELECTED_FILL = 0x3DA65C2B;
-    private static final int ROW_HEIGHT = 13;
+    private static final int ROW_HEIGHT = 11;
     private static final int ROW_OPTION_HEIGHT = 12;
+    private static final int WORKER_ROW_HEIGHT = 56;
+    private static final int WRAPPED_LINE_STEP = 9;
+    private static final int HEADER_DIVIDER_Y = 10;
+    private static final int HEADER_ROW_START_OFFSET = 14;
+    private static final int WARNING_ARROW_GAP = 10;
+    private static final int JOB_PAGE_ROW_START_OFFSET = 15;
+    private static final int WORKER_ROW_BOTTOM_INSET = 7;
 
     private final ClipboardWorkforceSnapshot snapshot;
     private final List<RowAction> rowActions = new ArrayList<>();
@@ -210,7 +217,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         this.rowActions.add(new RowAction(RowKind.WARNINGS, null, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10));
         y += 14;
         drawSmallHeader(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.jobs"), y);
-        y += 12;
+        y += HEADER_ROW_START_OFFSET;
         int rowIndex = 0;
         for (OverviewRow row : overviewRows()) {
             boolean selected = this.showOverviewSelection && this.selectedOverviewRow == rowIndex;
@@ -232,12 +239,12 @@ public final class ClipboardWorkforceScreen extends Screen {
         }
         int maxScroll = Math.max(0, workers.size() - visibleWorkerRows());
         this.workerScroll = Mth.clamp(this.workerScroll, 0, maxScroll);
-        int y = CONTENT_TOP + 12;
+        int y = CONTENT_TOP + JOB_PAGE_ROW_START_OFFSET;
         int end = Math.min(workers.size(), this.workerScroll + visibleWorkerRows());
         for (int index = this.workerScroll; index < end; index++) {
             WorkerRow worker = workers.get(index);
             renderWorkerRow(graphics, mouseX, mouseY, worker, y);
-            y += 35;
+            y += WORKER_ROW_HEIGHT;
         }
         if (maxScroll > 0) {
             drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.page_count", this.workerScroll + 1, maxScroll + 1), CONTENT_BOTTOM - 4, MUTED);
@@ -258,17 +265,20 @@ public final class ClipboardWorkforceScreen extends Screen {
         int end = Math.min(this.snapshot.warnings().size(), this.workerScroll + visibleWarningRows());
         for (int index = this.workerScroll; index < end; index++) {
             WarningSummary warning = this.snapshot.warnings().get(index);
-            if (y > CONTENT_BOTTOM - 10) {
+            Component text = warningText(warning);
+            int rowHeight = warningRowHeight(text);
+            int rowBottom = y + rowHeight - 2;
+            if (rowBottom > CONTENT_BOTTOM) {
                 return;
             }
-            boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 9);
+            boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom);
             if (hovered) {
-                graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 9, HOVER_FILL);
+                graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom, HOVER_FILL);
             }
-            drawLine(graphics, warningText(warning), CONTENT_LEFT, y, WARNING);
+            drawWrappedLines(graphics, text, CONTENT_LEFT, y, warningTextRight(), WARNING);
             drawRight(graphics, Component.literal(">"), CONTENT_RIGHT, y, WARNING);
-            this.rowActions.add(new RowAction(RowKind.JOB, warning.role(), CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 9));
-            y += ROW_HEIGHT;
+            this.rowActions.add(new RowAction(RowKind.JOB, warning.role(), CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom));
+            y += rowHeight;
         }
         if (maxScroll > 0) {
             drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.page_count", this.workerScroll + 1, maxScroll + 1), CONTENT_BOTTOM - 4, MUTED);
@@ -276,25 +286,28 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private void renderWorkerRow(GuiGraphics graphics, double mouseX, double mouseY, WorkerRow worker, int y) {
-        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 31);
+        int rowBottom = y + WORKER_ROW_HEIGHT - WORKER_ROW_BOTTOM_INSET;
+        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom);
         if (hovered) {
-            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 31, HOVER_FILL);
+            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom, HOVER_FILL);
         }
         drawLine(graphics, Component.literal(worker.displayName()), CONTENT_LEFT, y, CONTENT_RIGHT - 10, TEXT);
         if (hasWarning(worker)) {
             drawLine(graphics, Component.literal("!"), CONTENT_RIGHT - 6, y, WARNING);
         }
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_status", statusName(worker.status())), CONTENT_LEFT, y + 10, mutedForWarning(worker));
+        int lineY = y + 10;
+        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_status", statusName(worker.status())), CONTENT_LEFT, lineY, mutedForWarning(worker));
+        lineY += 10;
         Component target = worker.target().isBlank()
                 ? Component.translatable("villagerretaliation.gui.clipboard_workforce.not_assigned")
                 : Component.literal(worker.target());
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_target", target), CONTENT_LEFT, y + 19, MUTED);
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_storage",
+        lineY = drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_target", target), CONTENT_LEFT, lineY, MUTED);
+        drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_storage",
                 worker.storageAssigned()
                         ? Component.translatable("villagerretaliation.gui.clipboard_workforce.assigned")
                         : Component.translatable("villagerretaliation.gui.clipboard_workforce.missing"),
                 worker.workRadius(),
-                worker.dailyWage()), CONTENT_LEFT, y + 28, worker.noStorage() ? WARNING : MUTED);
+                worker.dailyWage()), CONTENT_LEFT, lineY + 1, worker.noStorage() ? WARNING : MUTED);
     }
 
     private void renderStoragePage(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -310,12 +323,10 @@ public final class ClipboardWorkforceScreen extends Screen {
     private void renderPaymentPage(GuiGraphics graphics, double mouseX, double mouseY) {
         renderBackRow(graphics, mouseX, mouseY);
         drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.payment"), TITLE_Y, TEXT);
-        int unpaid = (int) this.snapshot.workers().stream().filter(WorkerRow::unpaid).count();
         int y = CONTENT_TOP + 18;
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.emerald_balance", this.snapshot.emeraldBalance()), CONTENT_LEFT, y, TEXT);
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.daily_wages", this.snapshot.dailyWages()), CONTENT_LEFT, y + 14, TEXT);
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.unpaid_workers", unpaid), CONTENT_LEFT, y + 28, warningColor(unpaid));
-        drawWrapped(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.payment_placeholder"), y + 48);
+        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.daily_wages", this.snapshot.dailyWages()), CONTENT_LEFT, y, TEXT);
+        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.payment_containers", this.snapshot.paymentContainerCount()), CONTENT_LEFT, y + 14, TEXT);
+        drawWrapped(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.payment_placeholder"), y + 36);
     }
 
     private int drawNavigationRow(
@@ -330,13 +341,14 @@ public final class ClipboardWorkforceScreen extends Screen {
             HiredVillagerRole role,
             boolean muted) {
         boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 1, CONTENT_RIGHT + 1, y + ROW_OPTION_HEIGHT - 1);
+        int rowBottom = y + ROW_OPTION_HEIGHT - 3;
         if (selected || hovered) {
-            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + ROW_OPTION_HEIGHT - 1, selected ? SELECTED_FILL : HOVER_FILL);
+            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom, selected ? SELECTED_FILL : HOVER_FILL);
         }
         drawLine(graphics, Component.literal(selected ? ">" : ""), CONTENT_LEFT - 8, y, TEXT);
         drawRight(graphics, Component.literal(value), CONTENT_RIGHT, y, muted ? MUTED : TEXT);
         drawLine(graphics, label, CONTENT_LEFT, y, CONTENT_RIGHT - this.font.width(value) - 8, muted ? MUTED : TEXT);
-        this.rowActions.add(new RowAction(kind, role, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + ROW_OPTION_HEIGHT - 1));
+        this.rowActions.add(new RowAction(kind, role, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom));
         return y + ROW_HEIGHT;
     }
 
@@ -375,18 +387,34 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private void drawSmallHeader(GuiGraphics graphics, Component text, int y) {
         drawLine(graphics, text, CONTENT_LEFT, y, MUTED);
-        graphics.fill(CONTENT_LEFT, y + 8, CONTENT_RIGHT, y + 9, 0x5A7A442F);
+        graphics.fill(CONTENT_LEFT, y + HEADER_DIVIDER_Y, CONTENT_RIGHT, y + HEADER_DIVIDER_Y + 1, 0x5A7A442F);
     }
 
     private void drawWrapped(GuiGraphics graphics, Component text, int y) {
         int lineY = y;
         for (net.minecraft.util.FormattedCharSequence line : this.font.split(text, CONTENT_RIGHT - CONTENT_LEFT)) {
             graphics.drawString(this.font, line, CONTENT_LEFT, lineY, MUTED, false);
-            lineY += 10;
+            lineY += WRAPPED_LINE_STEP;
             if (lineY > CONTENT_BOTTOM - 8) {
                 return;
             }
         }
+    }
+
+    private int drawWrappedLines(GuiGraphics graphics, Component text, int x, int y, int color) {
+        return drawWrappedLines(graphics, text, x, y, CONTENT_RIGHT, color);
+    }
+
+    private int drawWrappedLines(GuiGraphics graphics, Component text, int x, int y, int right, int color) {
+        int lineY = y;
+        for (net.minecraft.util.FormattedCharSequence line : this.font.split(text, right - x)) {
+            graphics.drawString(this.font, line, x, lineY, color, false);
+            lineY += WRAPPED_LINE_STEP;
+            if (lineY > CONTENT_BOTTOM - 0) {
+                break;
+            }
+        }
+        return lineY;
     }
 
     private void drawLine(GuiGraphics graphics, Component text, int x, int y, int color) {
@@ -420,7 +448,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private int visibleWorkerRows() {
-        return Math.max(1, (CONTENT_BOTTOM - (CONTENT_TOP + 12)) / 35);
+        return Math.max(1, (CONTENT_BOTTOM - (CONTENT_TOP + 12)) / WORKER_ROW_HEIGHT);
     }
 
     private int visibleWarningRows() {
@@ -513,7 +541,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                     RowKind.PAYMENT,
                     null,
                     Component.translatable("villagerretaliation.gui.clipboard_workforce.payment"),
-                    Integer.toString(this.snapshot.emeraldBalance()),
+                    Integer.toString(this.snapshot.paymentContainerCount()),
                     false));
         }
         return rows;
@@ -542,6 +570,16 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private boolean hasWarning(WorkerRow worker) {
         return worker.inventoryFull() || worker.unpaid() || worker.noStorage() || worker.noTargets() || worker.tooFar();
+    }
+
+    private int warningTextRight() {
+        return CONTENT_RIGHT - WARNING_ARROW_GAP;
+    }
+
+    private int warningRowHeight(Component text) {
+        int width = warningTextRight() - CONTENT_LEFT;
+        int lines = Math.max(1, this.font.split(text, width).size());
+        return Math.max(ROW_HEIGHT, lines * WRAPPED_LINE_STEP + 1);
     }
 
     private String fit(String text, int width) {
