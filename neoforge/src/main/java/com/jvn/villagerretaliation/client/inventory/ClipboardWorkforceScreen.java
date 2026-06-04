@@ -48,6 +48,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private Page page = Page.OVERVIEW;
     private HiredVillagerRole selectedRole = HiredVillagerRole.MINING;
     private int selectedOverviewRow;
+    private boolean showOverviewSelection;
     private int overviewPage;
     private int workerScroll;
 
@@ -112,20 +113,24 @@ public final class ClipboardWorkforceScreen extends Screen {
                 }
                 case JOB -> {
                     playPageSound();
+                    this.showOverviewSelection = false;
                     openJob(row.role());
                 }
                 case WARNINGS -> {
                     playPageSound();
+                    this.showOverviewSelection = false;
                     this.page = Page.WARNINGS;
                     this.workerScroll = 0;
                 }
                 case STORAGE -> {
                     playPageSound();
+                    this.showOverviewSelection = false;
                     this.page = Page.STORAGE;
                     this.workerScroll = 0;
                 }
                 case PAYMENT -> {
                     playPageSound();
+                    this.showOverviewSelection = false;
                     this.page = Page.PAYMENT;
                     this.workerScroll = 0;
                 }
@@ -208,7 +213,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         y += 12;
         int rowIndex = 0;
         for (OverviewRow row : overviewRows()) {
-            boolean selected = this.selectedOverviewRow == rowIndex;
+            boolean selected = this.showOverviewSelection && this.selectedOverviewRow == rowIndex;
             y = drawNavigationRow(graphics, mouseX, mouseY, y, selected, row.label(), row.value(), row.kind(), row.role(), row.muted());
             rowIndex++;
         }
@@ -425,6 +430,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private void openOverview() {
         this.page = Page.OVERVIEW;
         this.workerScroll = 0;
+        this.showOverviewSelection = false;
     }
 
     private void openJob(HiredVillagerRole role) {
@@ -434,6 +440,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         this.selectedRole = role;
         this.page = Page.JOB;
         this.workerScroll = 0;
+        this.showOverviewSelection = false;
     }
 
     private void moveOverviewSelection(int direction) {
@@ -442,6 +449,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         }
         int rowCount = overviewRows().size();
         this.selectedOverviewRow = Mth.clamp(this.selectedOverviewRow + direction, 0, Math.max(0, rowCount - 1));
+        this.showOverviewSelection = true;
     }
 
     private void activateOverviewSelection() {
@@ -452,7 +460,12 @@ public final class ClipboardWorkforceScreen extends Screen {
         if (this.selectedOverviewRow < 0 || this.selectedOverviewRow >= rows.size()) {
             return;
         }
+        if (!this.showOverviewSelection) {
+            this.showOverviewSelection = true;
+            return;
+        }
         OverviewRow row = rows.get(this.selectedOverviewRow);
+        this.showOverviewSelection = false;
         switch (row.kind()) {
             case JOB -> openJob(row.role());
             case WARNINGS -> this.page = Page.WARNINGS;
@@ -466,6 +479,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private void turnOverviewPage() {
         this.overviewPage = this.overviewPage == 0 ? 1 : 0;
         this.selectedOverviewRow = 0;
+        this.showOverviewSelection = false;
     }
 
     private List<OverviewRow> overviewRows() {
