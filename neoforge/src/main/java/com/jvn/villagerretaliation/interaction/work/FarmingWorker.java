@@ -1,6 +1,10 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,6 +19,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
     private static final String CROP_SCAN_CURSOR_TAG = "FarmingCropScanCursor";
     private static final int MAX_CROP_SCAN_POSITIONS_PER_WORK_TICK = 1536;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
+    private static final int MAX_PLANNED_CROP_TARGETS = 24;
 
     @Override
     public HiredVillagerRole role() {
@@ -47,6 +52,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
         BlockState targetState = level.getBlockState(target.blockPos());
         if (!(targetState.getBlock() instanceof CropBlock crop) || !crop.isMaxAge(targetState)) {
+            HiredWorkPlan.removeTarget(context, target.blockPos());
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
@@ -101,6 +107,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return WorkResult.idle("Paused: output storage is full.");
         }
         replant(level, villager, target.blockPos(), crop, context);
+        HiredWorkPlan.removeTarget(context, target.blockPos());
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
         return WorkResult.completed("Harvested mature crop.");
@@ -115,6 +122,19 @@ public final class FarmingWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setLastTargetScanResult(context, "active_crop_target");
             return active;
         }
+        HiredPathTarget planned = plannedTarget(
+                level,
+                villager,
+                context,
+                pos -> context.isInsideWorkArea(pos)
+                        && context.isLoaded(level, pos)
+                        && isMatureCrop(level, pos)
+                        && !isTemporarilyAvoidedTarget(level, villager, pos),
+                MAX_PLANNED_CROP_TARGETS);
+        if (planned != null) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "planned_crop_target");
+            return planned;
+        }
         if (level.getGameTime() < context.state().getLong(NEXT_CROP_SCAN_GAME_TIME_TAG)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "crop_scan_cooldown");
             return null;
@@ -128,7 +148,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
                         && context.isLoaded(level, pos)
                         && isMatureCrop(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos));
-        HiredPathTarget target = chooseReachableTarget(level, villager, context, scan.candidates());
+        HiredPathTarget target = rebuildCropObjective(level, villager, context, scan.candidates());
         if (target == null) {
             if (scan.completedFullPass()) {
                 context.state().putLong(NEXT_CROP_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
@@ -154,6 +174,129 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
         BlockState state = level.getBlockState(pos);
         return state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state);
+    }
+
+    private HiredPathTarget rebuildCropObjective(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            List<BlockPos> candidates) {
+        List<BlockPos> row = bestCropRow(level, villager, candidates);
+        if (row.size() >= 2) {
+            HiredWorkPlan.replaceWithObjective(context, "row", row.getFirst(), row, MAX_PLANNED_CROP_TARGETS);
+            HiredPathTarget target = plannedTarget(
+                    level,
+                    villager,
+                    context,
+                    pos -> context.isInsideWorkArea(pos)
+                            && context.isLoaded(level, pos)
+                            && isMatureCrop(level, pos)
+                            && !isTemporarilyAvoidedTarget(level, villager, pos),
+                    MAX_PLANNED_CROP_TARGETS);
+            if (target != null) {
+                return target;
+            }
+        }
+
+        List<BlockPos> ordered = HiredWorkPlan.routeOrder(villager.blockPosition(), candidates, MAX_PLANNED_CROP_TARGETS);
+        HiredWorkPlan.replaceWithObjective(
+                context,
+                ordered.size() >= 2 ? "patch" : "single_crop",
+                ordered.isEmpty() ? null : ordered.getFirst(),
+                ordered,
+                MAX_PLANNED_CROP_TARGETS);
+        return plannedTarget(
+                level,
+                villager,
+                context,
+                pos -> context.isInsideWorkArea(pos)
+                        && context.isLoaded(level, pos)
+                        && isMatureCrop(level, pos)
+                        && !isTemporarilyAvoidedTarget(level, villager, pos),
+                MAX_PLANNED_CROP_TARGETS);
+    }
+
+    private static List<BlockPos> bestCropRow(ServerLevel level, Villager villager, List<BlockPos> candidates) {
+        Set<Long> candidateSet = new HashSet<>();
+        for (BlockPos candidate : candidates) {
+            candidateSet.add(candidate.asLong());
+        }
+
+        List<BlockPos> best = List.of();
+        double bestScore = Double.NEGATIVE_INFINITY;
+        for (BlockPos seed : candidates) {
+            BlockState seedState = level.getBlockState(seed);
+            if (!(seedState.getBlock() instanceof CropBlock crop) || !crop.isMaxAge(seedState)) {
+                continue;
+            }
+            List<BlockPos> alongX = contiguousCropLine(level, seed, candidateSet, true);
+            List<BlockPos> alongZ = contiguousCropLine(level, seed, candidateSet, false);
+            List<BlockPos> row = alongX.size() >= alongZ.size() ? alongX : alongZ;
+            double score = row.size() * 1000.0D - villager.distanceToSqr(seed.getCenter());
+            if (row.size() >= 2 && score > bestScore) {
+                best = row;
+                bestScore = score;
+            }
+        }
+        return best;
+    }
+
+    private static List<BlockPos> contiguousCropLine(
+            ServerLevel level,
+            BlockPos seed,
+            Set<Long> candidateSet,
+            boolean alongX) {
+        BlockState seedState = level.getBlockState(seed);
+        if (!(seedState.getBlock() instanceof CropBlock seedCrop)) {
+            return List.of();
+        }
+
+        int fixedY = seed.getY();
+        int fixedAxis = alongX ? seed.getZ() : seed.getX();
+        List<BlockPos> negatives = new ArrayList<>();
+        List<BlockPos> positives = new ArrayList<>();
+
+        for (int step = 1; step <= MAX_PLANNED_CROP_TARGETS; step++) {
+            BlockPos candidate = alongX
+                    ? seed.offset(-step, 0, 0)
+                    : seed.offset(0, 0, -step);
+            if (!candidateSet.contains(candidate.asLong()) || !matchesCrop(level, candidate, seedCrop, fixedY, fixedAxis, alongX)) {
+                break;
+            }
+            negatives.addFirst(candidate.immutable());
+        }
+        for (int step = 1; step <= MAX_PLANNED_CROP_TARGETS; step++) {
+            BlockPos candidate = alongX
+                    ? seed.offset(step, 0, 0)
+                    : seed.offset(0, 0, step);
+            if (!candidateSet.contains(candidate.asLong()) || !matchesCrop(level, candidate, seedCrop, fixedY, fixedAxis, alongX)) {
+                break;
+            }
+            positives.add(candidate.immutable());
+        }
+
+        List<BlockPos> row = new ArrayList<>(negatives.size() + positives.size() + 1);
+        row.addAll(negatives);
+        row.add(seed.immutable());
+        row.addAll(positives);
+        return row;
+    }
+
+    private static boolean matchesCrop(
+            ServerLevel level,
+            BlockPos candidate,
+            CropBlock seedCrop,
+            int fixedY,
+            int fixedAxis,
+            boolean alongX) {
+        if (candidate.getY() != fixedY) {
+            return false;
+        }
+        if (alongX ? candidate.getZ() != fixedAxis : candidate.getX() != fixedAxis) {
+            return false;
+        }
+        BlockState state = level.getBlockState(candidate);
+        return state.getBlock() == seedCrop && seedCrop.isMaxAge(state);
     }
 
     private static void replant(ServerLevel level, Villager villager, BlockPos pos, CropBlock crop, HiredWorkContext context) {

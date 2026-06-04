@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -23,6 +24,7 @@ public final class MiningWorker extends AbstractBlockWorker {
     private static final int MINING_POCKET_RADIUS = 6;
     private static final long MINING_ANCHOR_TICKS = 20L * 90L;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
+    private static final int MAX_PLANNED_MINING_TARGETS = 20;
 
     @Override
     public HiredVillagerRole role() {
@@ -64,6 +66,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 stack -> stack.is(ItemTags.PICKAXES) && stack.isCorrectToolForDrops(targetState),
                 stack -> effectiveDestroySpeed(stack, targetState));
         if (pickaxe.isEmpty()) {
+            HiredWorkPlan.clear(context);
             clearActiveBreakingTarget(level, context, villager);
             setMiningState(context, MiningState.BLOCKED_MISSING_TOOL);
             HiredWorkerBrain.setFailure(context, "missing_pickaxe", 0L);
@@ -139,6 +142,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             return WorkResult.idle("Paused: mining output is full.");
         }
         HiredOreBlockTracker.onBlockBroken(level, target.blockPos());
+        HiredWorkPlan.removeTarget(context, target.blockPos());
 
         rememberLastMined(context, target.blockPos());
         rememberMiningAnchor(level, context, target.blockPos());
@@ -150,6 +154,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
         if (nextTarget != null) {
             rememberMiningAnchor(level, context, nextTarget.blockPos());
+            HiredWorkPlan.prioritize(context, nextTarget.blockPos(), MAX_PLANNED_MINING_TARGETS);
             prepareBreakingTarget(level, context, villager, nextTarget);
             setMiningState(context, MiningState.PATH_TO_TARGET);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, nextTarget.blockPos());
@@ -184,6 +189,18 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
         if (storedWorkTarget(context.state()) != null) {
             clearActiveBreakingTarget(level, context, villager);
+        }
+
+        HiredPathTarget planned = plannedTarget(
+                level,
+                villager,
+                context,
+                pos -> isValidMiningTarget(level, villager, context, pos, miningAnchor(level, context)),
+                MAX_PLANNED_MINING_TARGETS);
+        if (planned != null) {
+            rememberMiningAnchor(level, context, planned.blockPos());
+            setMiningState(context, MiningState.FIND_TARGET);
+            return planned;
         }
 
         BlockPos lastMined = lastMinedBlock(context);
@@ -253,7 +270,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 candidates.add(pos);
             }
         }
-        return chooseReachableTarget(level, villager, context, candidates);
+        return rebuildVeinObjective(level, villager, context, candidates, anchor);
     }
 
     private HiredPathTarget findRecentlyExposedMineableInRadius(
@@ -271,7 +288,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 candidates.add(pos);
             }
         }
-        return chooseReachableTarget(level, villager, context, candidates);
+        return rebuildVeinObjective(level, villager, context, candidates, center);
     }
 
     private HiredPathTarget findNearestMineableInRadius(
@@ -293,13 +310,105 @@ public final class MiningWorker extends AbstractBlockWorker {
                 candidates.add(pos);
             }
         }
-        HiredPathTarget target = chooseReachableTarget(level, villager, context, candidates);
+        HiredPathTarget target = rebuildVeinObjective(level, villager, context, candidates, center);
         if (target == null) {
             context.state().putLong(NEXT_FULL_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
         } else {
             context.state().remove(NEXT_FULL_SCAN_GAME_TIME_TAG);
         }
         return target;
+    }
+
+    private HiredPathTarget rebuildVeinObjective(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            List<BlockPos> candidates,
+            BlockPos origin) {
+        List<BlockPos> vein = bestVeinPlan(level, origin == null ? villager.blockPosition() : origin, candidates);
+        if (!vein.isEmpty()) {
+            HiredWorkPlan.replaceWithObjective(
+                    context,
+                    vein.size() > 1 ? "vein" : "ore",
+                    vein.getFirst(),
+                    vein,
+                    MAX_PLANNED_MINING_TARGETS);
+            HiredPathTarget target = plannedTarget(
+                    level,
+                    villager,
+                    context,
+                    pos -> isValidMiningTarget(level, villager, context, pos, miningAnchor(level, context)),
+                    MAX_PLANNED_MINING_TARGETS);
+            if (target != null) {
+                return target;
+            }
+        }
+
+        List<BlockPos> ordered = HiredWorkPlan.routeOrder(
+                origin == null ? villager.blockPosition() : origin,
+                candidates,
+                MAX_PLANNED_MINING_TARGETS);
+        HiredWorkPlan.replaceWithObjective(
+                context,
+                ordered.size() > 1 ? "ore_route" : "single_ore",
+                ordered.isEmpty() ? null : ordered.getFirst(),
+                ordered,
+                MAX_PLANNED_MINING_TARGETS);
+        return plannedTarget(
+                level,
+                villager,
+                context,
+                pos -> isValidMiningTarget(level, villager, context, pos, miningAnchor(level, context)),
+                MAX_PLANNED_MINING_TARGETS);
+    }
+
+    private static List<BlockPos> bestVeinPlan(ServerLevel level, BlockPos origin, List<BlockPos> candidates) {
+        Set<Long> remaining = new java.util.LinkedHashSet<>();
+        for (BlockPos candidate : candidates) {
+            remaining.add(candidate.asLong());
+        }
+
+        List<BlockPos> bestVein = List.of();
+        double bestScore = Double.NEGATIVE_INFINITY;
+        while (!remaining.isEmpty()) {
+            BlockPos seed = BlockPos.of(remaining.iterator().next());
+            BlockState seedState = level.getBlockState(seed);
+            List<BlockPos> vein = new ArrayList<>();
+            java.util.ArrayDeque<BlockPos> queue = new java.util.ArrayDeque<>();
+            queue.add(seed);
+            remaining.remove(seed.asLong());
+
+            while (!queue.isEmpty() && vein.size() < MAX_PLANNED_MINING_TARGETS) {
+                BlockPos current = queue.removeFirst();
+                vein.add(current);
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dy = -1; dy <= 1; dy++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            if (dx == 0 && dy == 0 && dz == 0) {
+                                continue;
+                            }
+                            BlockPos next = current.offset(dx, dy, dz).immutable();
+                            if (!remaining.contains(next.asLong())) {
+                                continue;
+                            }
+                            if (level.getBlockState(next).getBlock() != seedState.getBlock()) {
+                                continue;
+                            }
+                            remaining.remove(next.asLong());
+                            queue.addLast(next);
+                        }
+                    }
+                }
+            }
+
+            List<BlockPos> ordered = HiredWorkPlan.routeOrder(origin, vein, MAX_PLANNED_MINING_TARGETS);
+            double score = ordered.size() * 1000.0D - origin.distSqr(seed);
+            if (!ordered.isEmpty() && score > bestScore) {
+                bestVein = ordered;
+                bestScore = score;
+            }
+        }
+        return bestVein;
     }
 
     private boolean isValidMiningTarget(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos pos) {

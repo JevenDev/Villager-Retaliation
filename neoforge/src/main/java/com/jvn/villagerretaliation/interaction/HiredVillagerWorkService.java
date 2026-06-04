@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.work.FarmingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.LoggingWorker;
@@ -333,6 +334,19 @@ public final class HiredVillagerWorkService {
                 + ", progress=" + snapshot.progressTicks()
                 + ", target=" + HiredWorkerBrain.formatPos(snapshot.targetPos())
                 + ", storageTarget=" + HiredWorkerBrain.formatPos(snapshot.storageTargetPos()));
+        HiredWorkContext debugContext = new HiredWorkContext(
+                inventory,
+                state,
+                area.center(),
+                area.min(),
+                area.max(),
+                area.radius(),
+                efficiency,
+                state.getBoolean("AutoDepositOutputs"),
+                state.getBoolean("UseAssignedStorageForSupplies"));
+        lines.add("Plan: objective=" + HiredWorkPlan.objectiveType(debugContext)
+                + ", anchor=" + HiredWorkerBrain.formatPos(HiredWorkPlan.objectiveAnchor(debugContext))
+                + ", queuedTargets=" + HiredWorkPlan.size(debugContext));
         lines.add("Failure: reason=" + valueOrNone(snapshot.failureReason())
                 + ", retryCooldown=" + snapshot.retryCooldownTicks()
                 + ", lastScan=" + valueOrNone(snapshot.lastTargetScanResult()));

@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
@@ -70,6 +71,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
 
     @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+        HiredWorkPlan.clear(context);
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
     }
@@ -253,6 +255,40 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
                 targets,
                 MAX_TARGETS_TO_PATHFIND,
                 context::isInsideWorkArea).search().target();
+    }
+
+    protected HiredPathTarget plannedTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Predicate<BlockPos> validator,
+            int maxPlanTargets) {
+        Predicate<BlockPos> safeValidator = validator == null ? ignored -> true : validator;
+        HiredWorkPlan.retainMatching(context, safeValidator, maxPlanTargets);
+        for (BlockPos planned : HiredWorkPlan.targets(context)) {
+            HiredPathTarget target = bestWorkTarget(level, villager, context, planned);
+            if (target != null && safeValidator.test(target.blockPos())) {
+                return target;
+            }
+        }
+        HiredWorkPlan.clear(context);
+        return null;
+    }
+
+    protected HiredPathTarget rebuildPlannedTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Iterable<BlockPos> candidates,
+            Predicate<BlockPos> validator,
+            BlockPos planOrigin,
+            int maxPlanTargets) {
+        List<BlockPos> ordered = HiredWorkPlan.routeOrder(
+                planOrigin == null ? villager.blockPosition() : planOrigin,
+                candidates,
+                maxPlanTargets);
+        HiredWorkPlan.replace(context, ordered, maxPlanTargets);
+        return plannedTarget(level, villager, context, validator, maxPlanTargets);
     }
 
     protected boolean recordWorkPathFailure(ServerLevel level, Villager villager, BlockPos pos) {

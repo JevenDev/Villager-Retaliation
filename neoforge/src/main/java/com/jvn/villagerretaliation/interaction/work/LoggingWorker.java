@@ -32,6 +32,8 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final int MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK = 512;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
     private static final int MAX_TREE_PROGRESS_TICKS = 180;
+    private static final int MAX_PLANNED_TREE_TARGETS = 12;
+    private static final int GROVE_LINK_RADIUS = 6;
 
     @Override
     public HiredVillagerRole role() {
@@ -110,6 +112,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             if (depositResult == DepositResult.DEPOSITED) {
                 harvestResult = harvestTree(level, context, villager, target, axe);
                 if (harvestResult.completed()) {
+                    HiredWorkPlan.removeTarget(context, target.blockPos());
                     clearActiveBreakingTarget(level, context, villager);
                     return WorkResult.completed("Cut " + harvestResult.logsCut() + " tree logs.");
                 }
@@ -124,11 +127,13 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return WorkResult.idle("Paused: output storage is full.");
         }
         if (harvestResult == TreeHarvestResult.TARGET_CHANGED) {
+            HiredWorkPlan.removeTarget(context, target.blockPos());
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN);
             return WorkResult.idle("Tree target changed.");
         }
+        HiredWorkPlan.removeTarget(context, target.blockPos());
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
         return WorkResult.completed("Cut " + harvestResult.logsCut() + " tree logs.");
@@ -145,6 +150,19 @@ public final class LoggingWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setLastTargetScanResult(context, "active_tree_target");
             return active;
         }
+        HiredPathTarget planned = plannedTarget(
+                level,
+                villager,
+                context,
+                pos -> context.isInsideWorkArea(pos)
+                        && context.isLoaded(level, pos)
+                        && !isTemporarilyAvoidedTarget(level, villager, pos)
+                        && isTreeLog(level, pos, filter),
+                MAX_PLANNED_TREE_TARGETS);
+        if (planned != null) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "planned_tree_target");
+            return planned;
+        }
         if (level.getGameTime() < context.state().getLong(NEXT_TREE_SCAN_GAME_TIME_TAG)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "tree_scan_cooldown");
             return null;
@@ -158,7 +176,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                         && context.isLoaded(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos)
                         && isTreeLog(level, pos, filter));
-        HiredPathTarget target = chooseReachableTarget(level, villager, context, scan.candidates());
+        HiredPathTarget target = rebuildTreeObjective(level, villager, context, scan.candidates(), filter);
         if (target == null) {
             if (scan.completedFullPass()) {
                 context.state().putLong(NEXT_TREE_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
@@ -193,6 +211,110 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return isMatchingLog(state, filter)
                 && hasNearbyNaturalLeaves(level, pos)
                 && isLikelyNaturalTree(level, pos, filter);
+    }
+
+    private HiredPathTarget rebuildTreeObjective(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            List<BlockPos> candidates,
+            String filter) {
+        List<BlockPos> grove = bestGrovePlan(level, villager, candidates, filter);
+        if (!grove.isEmpty()) {
+            HiredWorkPlan.replaceWithObjective(
+                    context,
+                    grove.size() > 1 ? "grove" : "tree",
+                    grove.getFirst(),
+                    grove,
+                    MAX_PLANNED_TREE_TARGETS);
+            HiredPathTarget target = plannedTarget(
+                    level,
+                    villager,
+                    context,
+                    pos -> context.isInsideWorkArea(pos)
+                            && context.isLoaded(level, pos)
+                            && !isTemporarilyAvoidedTarget(level, villager, pos)
+                            && isTreeLog(level, pos, filter),
+                    MAX_PLANNED_TREE_TARGETS);
+            if (target != null) {
+                return target;
+            }
+        }
+
+        List<BlockPos> ordered = HiredWorkPlan.routeOrder(villager.blockPosition(), candidates, MAX_PLANNED_TREE_TARGETS);
+        HiredWorkPlan.replaceWithObjective(
+                context,
+                ordered.size() > 1 ? "tree_route" : "single_tree",
+                ordered.isEmpty() ? null : ordered.getFirst(),
+                ordered,
+                MAX_PLANNED_TREE_TARGETS);
+        return plannedTarget(
+                level,
+                villager,
+                context,
+                pos -> context.isInsideWorkArea(pos)
+                        && context.isLoaded(level, pos)
+                        && !isTemporarilyAvoidedTarget(level, villager, pos)
+                        && isTreeLog(level, pos, filter),
+                MAX_PLANNED_TREE_TARGETS);
+    }
+
+    private static List<BlockPos> bestGrovePlan(
+            ServerLevel level,
+            Villager villager,
+            List<BlockPos> candidates,
+            String filter) {
+        List<BlockPos> roots = distinctTreeRoots(level, candidates, filter);
+        if (roots.isEmpty()) {
+            return List.of();
+        }
+
+        List<BlockPos> bestCluster = List.of();
+        double bestScore = Double.NEGATIVE_INFINITY;
+        int linkRadiusSqr = GROVE_LINK_RADIUS * GROVE_LINK_RADIUS;
+        for (BlockPos root : roots) {
+            List<BlockPos> cluster = new ArrayList<>();
+            for (BlockPos other : roots) {
+                if (root.distSqr(other) <= linkRadiusSqr) {
+                    cluster.add(other);
+                }
+            }
+            List<BlockPos> ordered = HiredWorkPlan.routeOrder(root, cluster, MAX_PLANNED_TREE_TARGETS);
+            double score = ordered.size() * 1000.0D - villager.distanceToSqr(root.getCenter());
+            if (!ordered.isEmpty() && score > bestScore) {
+                bestCluster = ordered;
+                bestScore = score;
+            }
+        }
+        return bestCluster;
+    }
+
+    private static List<BlockPos> distinctTreeRoots(ServerLevel level, List<BlockPos> candidates, String filter) {
+        Set<Long> seenRoots = new HashSet<>();
+        List<BlockPos> roots = new ArrayList<>();
+        for (BlockPos candidate : candidates) {
+            List<BlockPos> logs = connectedTreeLogs(level, candidate, filter);
+            if (logs.isEmpty()) {
+                continue;
+            }
+            BlockPos root = treeRoot(logs);
+            if (root != null && seenRoots.add(root.asLong())) {
+                roots.add(root.immutable());
+            }
+        }
+        return roots;
+    }
+
+    private static BlockPos treeRoot(List<BlockPos> logs) {
+        BlockPos root = null;
+        for (BlockPos log : logs) {
+            if (root == null
+                    || log.getY() < root.getY()
+                    || (log.getY() == root.getY() && log.asLong() < root.asLong())) {
+                root = log;
+            }
+        }
+        return root;
     }
 
     private TreeHarvestResult harvestTree(
