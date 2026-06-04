@@ -3,16 +3,18 @@ package com.jvn.villagerretaliation.client.inventory;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WarningSummary;
-import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WarningType;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerRow;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
@@ -31,8 +33,6 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int FIRST_OVERVIEW_PAGE_LAST_ROLE = HiredVillagerRole.NAVIGATION.ordinal();
     private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
     private static final ResourceLocation PAGE_FORWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");
-    private static final ResourceLocation PAGE_BACKWARD = ResourceLocation.withDefaultNamespace("widget/page_backward");
-    private static final ResourceLocation PAGE_BACKWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_backward_highlighted");
     private static final int TEXT = 0xFF4B2B1D;
     private static final int MUTED = 0xFF8B6247;
     private static final int WARNING = 0xFF9A3B24;
@@ -79,6 +79,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         switch (this.page) {
             case OVERVIEW -> renderOverview(graphics, panelMouseX, panelMouseY);
             case JOB -> renderJobPage(graphics, panelMouseX, panelMouseY);
+            case WARNINGS -> renderWarningsPage(graphics, panelMouseX, panelMouseY);
             case STORAGE -> renderStoragePage(graphics, panelMouseX, panelMouseY);
             case PAYMENT -> renderPaymentPage(graphics, panelMouseX, panelMouseY);
         }
@@ -98,14 +99,30 @@ public final class ClipboardWorkforceScreen extends Screen {
                 continue;
             }
             switch (row.kind()) {
-                case BACK -> openOverview();
-                case PAGE_TURN -> turnOverviewPage();
-                case JOB -> openJob(row.role());
+                case BACK -> {
+                    playPageSound();
+                    openOverview();
+                }
+                case PAGE_TURN -> {
+                    playPageSound();
+                    turnOverviewPage();
+                }
+                case JOB -> {
+                    playPageSound();
+                    openJob(row.role());
+                }
+                case WARNINGS -> {
+                    playPageSound();
+                    this.page = Page.WARNINGS;
+                    this.workerScroll = 0;
+                }
                 case STORAGE -> {
+                    playPageSound();
                     this.page = Page.STORAGE;
                     this.workerScroll = 0;
                 }
                 case PAYMENT -> {
+                    playPageSound();
                     this.page = Page.PAYMENT;
                     this.workerScroll = 0;
                 }
@@ -117,6 +134,11 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (this.page == Page.WARNINGS) {
+            int maxScroll = Math.max(0, this.snapshot.warnings().size() - visibleWarningRows());
+            this.workerScroll = Mth.clamp(this.workerScroll - (int) Math.signum(scrollY), 0, maxScroll);
+            return maxScroll > 0;
+        }
         if (this.page != Page.JOB) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
@@ -149,6 +171,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                 yield true;
             }
             case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> {
+                playPageSound();
                 activateOverviewSelection();
                 yield true;
             }
@@ -172,7 +195,11 @@ public final class ClipboardWorkforceScreen extends Screen {
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.working", this.snapshot.workingCount()),
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.idle", this.snapshot.idleCount()));
         y += 12;
+        if (contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10)) {
+            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10, HOVER_FILL);
+        }
         drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.warnings", this.snapshot.warningCount()), CONTENT_LEFT, y, warningColor(this.snapshot.warningCount()));
+        this.rowActions.add(new RowAction(RowKind.WARNINGS, null, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10));
         y += 14;
         drawSmallHeader(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.jobs"), y);
         y += 10;
@@ -182,32 +209,7 @@ public final class ClipboardWorkforceScreen extends Screen {
             y = drawNavigationRow(graphics, mouseX, mouseY, y, selected, row.label(), row.value(), row.kind(), row.role(), row.muted());
             rowIndex++;
         }
-        y += 2;
-        renderWarnings(graphics, mouseX, mouseY, y);
         renderOverviewPageButton(graphics, mouseX, mouseY);
-    }
-
-    private void renderWarnings(GuiGraphics graphics, double mouseX, double mouseY, int startY) {
-        if (this.snapshot.warnings().isEmpty() || startY > CONTENT_BOTTOM - 10) {
-            return;
-        }
-        drawSmallHeader(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.warning_header"), startY);
-        int y = startY + 10;
-        int shown = Math.min(3, this.snapshot.warnings().size());
-        for (int index = 0; index < shown && y <= CONTENT_BOTTOM - 9; index++) {
-            WarningSummary warning = this.snapshot.warnings().get(index);
-            boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT, y - 1, CONTENT_RIGHT, y + 9);
-            if (hovered) {
-                graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 9, HOVER_FILL);
-            }
-            drawLine(graphics, warningText(warning), CONTENT_LEFT, y, WARNING);
-            this.rowActions.add(new RowAction(RowKind.JOB, warning.role(), CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 9));
-            y += 10;
-        }
-        int more = this.snapshot.warnings().size() - shown;
-        if (more > 0 && y <= CONTENT_BOTTOM - 9) {
-            drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.more_warnings", more), CONTENT_LEFT, y, MUTED);
-        }
     }
 
     private void renderJobPage(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -228,6 +230,37 @@ public final class ClipboardWorkforceScreen extends Screen {
             WorkerRow worker = workers.get(index);
             renderWorkerRow(graphics, mouseX, mouseY, worker, y);
             y += 35;
+        }
+        if (maxScroll > 0) {
+            drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.page_count", this.workerScroll + 1, maxScroll + 1), CONTENT_BOTTOM - 4, MUTED);
+        }
+    }
+
+    private void renderWarningsPage(GuiGraphics graphics, double mouseX, double mouseY) {
+        renderBackRow(graphics, mouseX, mouseY);
+        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.warning_header"), TITLE_Y, TEXT);
+        if (this.snapshot.warnings().isEmpty()) {
+            drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.no_warnings"), CONTENT_LEFT, CONTENT_TOP + 22, MUTED);
+            return;
+        }
+
+        int maxScroll = Math.max(0, this.snapshot.warnings().size() - visibleWarningRows());
+        this.workerScroll = Mth.clamp(this.workerScroll, 0, maxScroll);
+        int y = CONTENT_TOP + 16;
+        int end = Math.min(this.snapshot.warnings().size(), this.workerScroll + visibleWarningRows());
+        for (int index = this.workerScroll; index < end; index++) {
+            WarningSummary warning = this.snapshot.warnings().get(index);
+            if (y > CONTENT_BOTTOM - 10) {
+                return;
+            }
+            boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 9);
+            if (hovered) {
+                graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 9, HOVER_FILL);
+            }
+            drawLine(graphics, warningText(warning), CONTENT_LEFT, y, WARNING);
+            drawRight(graphics, Component.literal(">"), CONTENT_RIGHT, y, WARNING);
+            this.rowActions.add(new RowAction(RowKind.JOB, warning.role(), CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 9));
+            y += ROW_HEIGHT;
         }
         if (maxScroll > 0) {
             drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.page_count", this.workerScroll + 1, maxScroll + 1), CONTENT_BOTTOM - 4, MUTED);
@@ -310,10 +343,16 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private void renderOverviewPageButton(GuiGraphics graphics, double mouseX, double mouseY) {
         boolean hovered = contains(mouseX, mouseY, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_LEFT + PAGE_BUTTON_WIDTH, PAGE_BUTTON_TOP + PAGE_BUTTON_HEIGHT);
-        ResourceLocation sprite = this.overviewPage == 0
-                ? hovered ? PAGE_FORWARD_HIGHLIGHTED : PAGE_FORWARD
-                : hovered ? PAGE_BACKWARD_HIGHLIGHTED : PAGE_BACKWARD;
-        graphics.blitSprite(sprite, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
+        ResourceLocation sprite = hovered ? PAGE_FORWARD_HIGHLIGHTED : PAGE_FORWARD;
+        if (this.overviewPage == 0) {
+            graphics.blitSprite(sprite, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
+        } else {
+            graphics.pose().pushPose();
+            graphics.pose().translate(PAGE_BUTTON_LEFT + PAGE_BUTTON_WIDTH, PAGE_BUTTON_TOP, 0.0F);
+            graphics.pose().scale(-1.0F, 1.0F, 1.0F);
+            graphics.blitSprite(sprite, 0, 0, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
+            graphics.pose().popPose();
+        }
         this.rowActions.add(new RowAction(
                 RowKind.PAGE_TURN,
                 null,
@@ -367,6 +406,10 @@ public final class ClipboardWorkforceScreen extends Screen {
         return Math.max(1, (CONTENT_BOTTOM - (CONTENT_TOP + 12)) / 35);
     }
 
+    private int visibleWarningRows() {
+        return Math.max(1, (CONTENT_BOTTOM - (CONTENT_TOP + 16)) / ROW_HEIGHT);
+    }
+
     private void openOverview() {
         this.page = Page.OVERVIEW;
         this.workerScroll = 0;
@@ -400,6 +443,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         OverviewRow row = rows.get(this.selectedOverviewRow);
         switch (row.kind()) {
             case JOB -> openJob(row.role());
+            case WARNINGS -> this.page = Page.WARNINGS;
             case STORAGE -> this.page = Page.STORAGE;
             case PAYMENT -> this.page = Page.PAYMENT;
             default -> {
@@ -427,6 +471,12 @@ public final class ClipboardWorkforceScreen extends Screen {
                     job.count() == 0));
         }
         if (this.overviewPage == 1) {
+            rows.add(new OverviewRow(
+                    RowKind.WARNINGS,
+                    null,
+                    Component.translatable("villagerretaliation.gui.clipboard_workforce.warning_header"),
+                    Integer.toString(this.snapshot.warningCount()),
+                    this.snapshot.warningCount() == 0));
             rows.add(new OverviewRow(
                     RowKind.STORAGE,
                     null,
@@ -475,6 +525,10 @@ public final class ClipboardWorkforceScreen extends Screen {
         return this.font.plainSubstrByWidth(text, Math.max(0, width - this.font.width("..."))) + "...";
     }
 
+    private void playPageSound() {
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F, 0.65F));
+    }
+
     private boolean contains(double x, double y, int left, int top, int right, int bottom) {
         return x >= left && x <= right && y >= top && y <= bottom;
     }
@@ -496,6 +550,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private enum Page {
         OVERVIEW,
         JOB,
+        WARNINGS,
         STORAGE,
         PAYMENT
     }
@@ -504,6 +559,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         BACK,
         PAGE_TURN,
         JOB,
+        WARNINGS,
         STORAGE,
         PAYMENT
     }

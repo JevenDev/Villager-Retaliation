@@ -505,6 +505,7 @@
   "villagerretaliation.gui.clipboard_workforce.storage": "Storage",
   "villagerretaliation.gui.clipboard_workforce.payment": "Payment",
   "villagerretaliation.gui.clipboard_workforce.warning_header": "Warnings",
+  "villagerretaliation.gui.clipboard_workforce.no_warnings": "No warnings.",
   "villagerretaliation.gui.clipboard_workforce.more_warnings": "+%s more",
   "villagerretaliation.gui.clipboard_workforce.no_workers": "No workers assigned.",
   "villagerretaliation.gui.clipboard_workforce.controls_coming": "Detailed controls coming soon.",
