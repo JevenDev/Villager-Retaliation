@@ -21,8 +21,8 @@ import org.lwjgl.glfw.GLFW;
 public final class ClipboardWorkforceScreen extends Screen {
     private static final int TEXTURE_WIDTH = 145;
     private static final int TEXTURE_HEIGHT = 194;
-    private static final int CONTENT_LEFT = 18;
-    private static final int CONTENT_RIGHT = 121;
+    private static final int CONTENT_LEFT = 19;
+    private static final int CONTENT_RIGHT = 127;
     private static final int CONTENT_TOP = 43;
     private static final int CONTENT_BOTTOM = 181;
     private static final int TITLE_Y = 34;
@@ -33,12 +33,14 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int FIRST_OVERVIEW_PAGE_LAST_ROLE = HiredVillagerRole.NAVIGATION.ordinal();
     private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
     private static final ResourceLocation PAGE_FORWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");
+    private static final ResourceLocation PAGE_BACKWARD = ResourceLocation.withDefaultNamespace("widget/page_backward");
+    private static final ResourceLocation PAGE_BACKWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_backward_highlighted");
     private static final int TEXT = 0xFF4B2B1D;
     private static final int MUTED = 0xFF8B6247;
     private static final int WARNING = 0xFF9A3B24;
     private static final int HOVER_FILL = 0x30A66A34;
     private static final int SELECTED_FILL = 0x3DA65C2B;
-    private static final int ROW_HEIGHT = 12;
+    private static final int ROW_HEIGHT = 13;
 
     private final ClipboardWorkforceSnapshot snapshot;
     private final List<RowAction> rowActions = new ArrayList<>();
@@ -202,7 +204,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         this.rowActions.add(new RowAction(RowKind.WARNINGS, null, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10));
         y += 14;
         drawSmallHeader(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.jobs"), y);
-        y += 10;
+        y += 12;
         int rowIndex = 0;
         for (OverviewRow row : overviewRows()) {
             boolean selected = this.selectedOverviewRow == rowIndex;
@@ -345,16 +347,10 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private void renderOverviewPageButton(GuiGraphics graphics, double mouseX, double mouseY) {
         boolean hovered = contains(mouseX, mouseY, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_LEFT + PAGE_BUTTON_WIDTH, PAGE_BUTTON_TOP + PAGE_BUTTON_HEIGHT);
-        ResourceLocation sprite = hovered ? PAGE_FORWARD_HIGHLIGHTED : PAGE_FORWARD;
-        if (this.overviewPage == 0) {
-            graphics.blitSprite(sprite, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
-        } else {
-            graphics.pose().pushPose();
-            graphics.pose().translate(PAGE_BUTTON_LEFT + PAGE_BUTTON_WIDTH, PAGE_BUTTON_TOP, 0.0F);
-            graphics.pose().scale(-1.0F, 1.0F, 1.0F);
-            graphics.blitSprite(sprite, 0, 0, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
-            graphics.pose().popPose();
-        }
+        ResourceLocation sprite = this.overviewPage == 0
+                ? (hovered ? PAGE_FORWARD_HIGHLIGHTED : PAGE_FORWARD)
+                : (hovered ? PAGE_BACKWARD_HIGHLIGHTED : PAGE_BACKWARD);
+        graphics.blitSprite(sprite, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
         this.rowActions.add(new RowAction(
                 RowKind.PAGE_TURN,
                 null,
