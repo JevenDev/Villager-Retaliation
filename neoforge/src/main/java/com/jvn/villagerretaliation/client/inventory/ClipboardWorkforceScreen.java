@@ -41,6 +41,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int HOVER_FILL = 0x30A66A34;
     private static final int SELECTED_FILL = 0x3DA65C2B;
     private static final int ROW_HEIGHT = 13;
+    private static final int ROW_OPTION_HEIGHT = 12;
 
     private final ClipboardWorkforceSnapshot snapshot;
     private final List<RowAction> rowActions = new ArrayList<>();
@@ -221,7 +222,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         if (workers.isEmpty()) {
             int y = CONTENT_TOP + 22;
             drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.no_workers"), CONTENT_LEFT, y, MUTED);
-            drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.controls_coming"), CONTENT_LEFT, y + 12, MUTED);
+            drawWrapped(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.controls_coming"), y + 12);
             return;
         }
         int maxScroll = Math.max(0, workers.size() - visibleWorkerRows());
@@ -323,26 +324,27 @@ public final class ClipboardWorkforceScreen extends Screen {
             RowKind kind,
             HiredVillagerRole role,
             boolean muted) {
-        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 1, CONTENT_RIGHT + 1, y + ROW_HEIGHT - 1);
+        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 1, CONTENT_RIGHT + 1, y + ROW_OPTION_HEIGHT - 1);
         if (selected || hovered) {
-            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + ROW_HEIGHT - 1, selected ? SELECTED_FILL : HOVER_FILL);
+            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + ROW_OPTION_HEIGHT - 1, selected ? SELECTED_FILL : HOVER_FILL);
         }
         drawLine(graphics, Component.literal(selected ? ">" : ""), CONTENT_LEFT - 8, y, TEXT);
         drawRight(graphics, Component.literal(value), CONTENT_RIGHT, y, muted ? MUTED : TEXT);
         drawLine(graphics, label, CONTENT_LEFT, y, CONTENT_RIGHT - this.font.width(value) - 8, muted ? MUTED : TEXT);
-        this.rowActions.add(new RowAction(kind, role, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + ROW_HEIGHT - 1));
+        this.rowActions.add(new RowAction(kind, role, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + ROW_OPTION_HEIGHT - 1));
         return y + ROW_HEIGHT;
     }
 
     private void renderBackRow(GuiGraphics graphics, double mouseX, double mouseY) {
         Component back = Component.translatable("villagerretaliation.gui.clipboard_workforce.back");
+        int y = CONTENT_TOP + 2;
         int right = CONTENT_LEFT + Math.min(46, this.font.width(back) + 4);
-        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, CONTENT_TOP - 2, right, CONTENT_TOP + 9);
+        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, right, y + 9);
         if (hovered) {
-            graphics.fill(CONTENT_LEFT - 2, CONTENT_TOP - 2, right, CONTENT_TOP + 9, HOVER_FILL);
+            graphics.fill(CONTENT_LEFT - 2, y - 2, right, y + 9, HOVER_FILL);
         }
-        drawLine(graphics, back, CONTENT_LEFT, CONTENT_TOP, TEXT);
-        this.rowActions.add(new RowAction(RowKind.BACK, null, CONTENT_LEFT - 2, CONTENT_TOP - 2, right, CONTENT_TOP + 9));
+        drawLine(graphics, back, CONTENT_LEFT, y, TEXT);
+        this.rowActions.add(new RowAction(RowKind.BACK, null, CONTENT_LEFT - 2, y - 2, right, y + 9));
     }
 
     private void renderOverviewPageButton(GuiGraphics graphics, double mouseX, double mouseY) {
