@@ -12,6 +12,7 @@ import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
@@ -20,8 +21,18 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int TEXTURE_HEIGHT = 194;
     private static final int CONTENT_LEFT = 13;
     private static final int CONTENT_RIGHT = 133;
-    private static final int CONTENT_TOP = 38;
+    private static final int CONTENT_TOP = 42;
     private static final int CONTENT_BOTTOM = 181;
+    private static final int TITLE_Y = 34;
+    private static final int PAGE_BUTTON_WIDTH = 23;
+    private static final int PAGE_BUTTON_HEIGHT = 13;
+    private static final int PAGE_BUTTON_LEFT = CONTENT_RIGHT - PAGE_BUTTON_WIDTH;
+    private static final int PAGE_BUTTON_TOP = CONTENT_BOTTOM - PAGE_BUTTON_HEIGHT;
+    private static final int FIRST_OVERVIEW_PAGE_LAST_ROLE = HiredVillagerRole.NAVIGATION.ordinal();
+    private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
+    private static final ResourceLocation PAGE_FORWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");
+    private static final ResourceLocation PAGE_BACKWARD = ResourceLocation.withDefaultNamespace("widget/page_backward");
+    private static final ResourceLocation PAGE_BACKWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_backward_highlighted");
     private static final int TEXT = 0xFF4B2B1D;
     private static final int MUTED = 0xFF8B6247;
     private static final int WARNING = 0xFF9A3B24;
@@ -34,6 +45,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private Page page = Page.OVERVIEW;
     private HiredVillagerRole selectedRole = HiredVillagerRole.MINING;
     private int selectedOverviewRow;
+    private int overviewPage;
     private int workerScroll;
 
     public ClipboardWorkforceScreen(ClipboardWorkforceSnapshot snapshot) {
@@ -87,6 +99,7 @@ public final class ClipboardWorkforceScreen extends Screen {
             }
             switch (row.kind()) {
                 case BACK -> openOverview();
+                case PAGE_TURN -> turnOverviewPage();
                 case JOB -> openJob(row.role());
                 case STORAGE -> {
                     this.page = Page.STORAGE;
@@ -149,7 +162,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private void renderOverview(GuiGraphics graphics, double mouseX, double mouseY) {
-        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.title"), 30, TEXT);
+        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.title"), TITLE_Y, TEXT);
         int y = CONTENT_TOP + 2;
         drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.hired",
                 this.snapshot.totalHired(),
@@ -164,19 +177,14 @@ public final class ClipboardWorkforceScreen extends Screen {
         drawSmallHeader(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.jobs"), y);
         y += 10;
         int rowIndex = 0;
-        for (ClipboardWorkforceSnapshot.JobSummary job : this.snapshot.jobs()) {
+        for (OverviewRow row : overviewRows()) {
             boolean selected = this.selectedOverviewRow == rowIndex;
-            y = drawNavigationRow(graphics, mouseX, mouseY, y, selected, roleName(job.role()), Integer.toString(job.count()), RowKind.JOB, job.role(), job.count() == 0);
+            y = drawNavigationRow(graphics, mouseX, mouseY, y, selected, row.label(), row.value(), row.kind(), row.role(), row.muted());
             rowIndex++;
         }
         y += 2;
-        y = drawNavigationRow(graphics, mouseX, mouseY, y, this.selectedOverviewRow == rowIndex,
-                Component.translatable("villagerretaliation.gui.clipboard_workforce.storage"), Integer.toString(this.snapshot.assignedStorageCount()), RowKind.STORAGE, null, false);
-        rowIndex++;
-        y = drawNavigationRow(graphics, mouseX, mouseY, y, this.selectedOverviewRow == rowIndex,
-                Component.translatable("villagerretaliation.gui.clipboard_workforce.payment"), Integer.toString(this.snapshot.emeraldBalance()), RowKind.PAYMENT, null, false);
-        y += 2;
         renderWarnings(graphics, mouseX, mouseY, y);
+        renderOverviewPageButton(graphics, mouseX, mouseY);
     }
 
     private void renderWarnings(GuiGraphics graphics, double mouseX, double mouseY, int startY) {
@@ -204,7 +212,7 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private void renderJobPage(GuiGraphics graphics, double mouseX, double mouseY) {
         renderBackRow(graphics, mouseX, mouseY);
-        drawCentered(graphics, roleName(this.selectedRole), 30, TEXT);
+        drawCentered(graphics, roleName(this.selectedRole), TITLE_Y, TEXT);
         List<WorkerRow> workers = workersForSelectedRole();
         if (workers.isEmpty()) {
             int y = CONTENT_TOP + 22;
@@ -250,7 +258,7 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private void renderStoragePage(GuiGraphics graphics, double mouseX, double mouseY) {
         renderBackRow(graphics, mouseX, mouseY);
-        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.storage"), 30, TEXT);
+        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.storage"), TITLE_Y, TEXT);
         int missing = (int) this.snapshot.workers().stream().filter(WorkerRow::noStorage).count();
         int y = CONTENT_TOP + 18;
         drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.assigned_containers", this.snapshot.assignedStorageCount()), CONTENT_LEFT, y, TEXT);
@@ -260,7 +268,7 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private void renderPaymentPage(GuiGraphics graphics, double mouseX, double mouseY) {
         renderBackRow(graphics, mouseX, mouseY);
-        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.payment"), 30, TEXT);
+        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.payment"), TITLE_Y, TEXT);
         int unpaid = (int) this.snapshot.workers().stream().filter(WorkerRow::unpaid).count();
         int y = CONTENT_TOP + 18;
         drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.emerald_balance", this.snapshot.emeraldBalance()), CONTENT_LEFT, y, TEXT);
@@ -298,6 +306,21 @@ public final class ClipboardWorkforceScreen extends Screen {
         }
         drawLine(graphics, Component.translatable("villagerretaliation.gui.back"), CONTENT_LEFT, CONTENT_TOP, TEXT);
         this.rowActions.add(new RowAction(RowKind.BACK, null, CONTENT_LEFT - 2, CONTENT_TOP - 2, CONTENT_LEFT + 42, CONTENT_TOP + 9));
+    }
+
+    private void renderOverviewPageButton(GuiGraphics graphics, double mouseX, double mouseY) {
+        boolean hovered = contains(mouseX, mouseY, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_LEFT + PAGE_BUTTON_WIDTH, PAGE_BUTTON_TOP + PAGE_BUTTON_HEIGHT);
+        ResourceLocation sprite = this.overviewPage == 0
+                ? hovered ? PAGE_FORWARD_HIGHLIGHTED : PAGE_FORWARD
+                : hovered ? PAGE_BACKWARD_HIGHLIGHTED : PAGE_BACKWARD;
+        graphics.blitSprite(sprite, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
+        this.rowActions.add(new RowAction(
+                RowKind.PAGE_TURN,
+                null,
+                PAGE_BUTTON_LEFT,
+                PAGE_BUTTON_TOP,
+                PAGE_BUTTON_LEFT + PAGE_BUTTON_WIDTH,
+                PAGE_BUTTON_TOP + PAGE_BUTTON_HEIGHT));
     }
 
     private void drawMetricPair(GuiGraphics graphics, int y, Component left, Component right) {
@@ -362,7 +385,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         if (this.page != Page.OVERVIEW) {
             return;
         }
-        int rowCount = this.snapshot.jobs().size() + 2;
+        int rowCount = overviewRows().size();
         this.selectedOverviewRow = Mth.clamp(this.selectedOverviewRow + direction, 0, Math.max(0, rowCount - 1));
     }
 
@@ -370,13 +393,54 @@ public final class ClipboardWorkforceScreen extends Screen {
         if (this.page != Page.OVERVIEW) {
             return;
         }
-        if (this.selectedOverviewRow < this.snapshot.jobs().size()) {
-            openJob(this.snapshot.jobs().get(this.selectedOverviewRow).role());
-        } else if (this.selectedOverviewRow == this.snapshot.jobs().size()) {
-            this.page = Page.STORAGE;
-        } else {
-            this.page = Page.PAYMENT;
+        List<OverviewRow> rows = overviewRows();
+        if (this.selectedOverviewRow < 0 || this.selectedOverviewRow >= rows.size()) {
+            return;
         }
+        OverviewRow row = rows.get(this.selectedOverviewRow);
+        switch (row.kind()) {
+            case JOB -> openJob(row.role());
+            case STORAGE -> this.page = Page.STORAGE;
+            case PAYMENT -> this.page = Page.PAYMENT;
+            default -> {
+            }
+        }
+    }
+
+    private void turnOverviewPage() {
+        this.overviewPage = this.overviewPage == 0 ? 1 : 0;
+        this.selectedOverviewRow = 0;
+    }
+
+    private List<OverviewRow> overviewRows() {
+        List<OverviewRow> rows = new ArrayList<>();
+        for (ClipboardWorkforceSnapshot.JobSummary job : this.snapshot.jobs()) {
+            boolean firstPageRole = job.role().ordinal() <= FIRST_OVERVIEW_PAGE_LAST_ROLE;
+            if ((this.overviewPage == 0) != firstPageRole) {
+                continue;
+            }
+            rows.add(new OverviewRow(
+                    RowKind.JOB,
+                    job.role(),
+                    roleName(job.role()),
+                    Integer.toString(job.count()),
+                    job.count() == 0));
+        }
+        if (this.overviewPage == 1) {
+            rows.add(new OverviewRow(
+                    RowKind.STORAGE,
+                    null,
+                    Component.translatable("villagerretaliation.gui.clipboard_workforce.storage"),
+                    Integer.toString(this.snapshot.assignedStorageCount()),
+                    false));
+            rows.add(new OverviewRow(
+                    RowKind.PAYMENT,
+                    null,
+                    Component.translatable("villagerretaliation.gui.clipboard_workforce.payment"),
+                    Integer.toString(this.snapshot.emeraldBalance()),
+                    false));
+        }
+        return rows;
     }
 
     private Component roleName(HiredVillagerRole role) {
@@ -438,9 +502,13 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private enum RowKind {
         BACK,
+        PAGE_TURN,
         JOB,
         STORAGE,
         PAYMENT
+    }
+
+    private record OverviewRow(RowKind kind, HiredVillagerRole role, Component label, String value, boolean muted) {
     }
 
     private record RowAction(RowKind kind, HiredVillagerRole role, int left, int top, int right, int bottom) {
