@@ -31,6 +31,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final int MIN_NATURAL_LEAVES = 4;
     private static final int MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK = 512;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
+    private static final int MAX_TREE_PROGRESS_TICKS = 180;
 
     @Override
     public HiredVillagerRole role() {
@@ -92,7 +93,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.WORKING, target.blockPos());
 
-        int needed = breakProgressGoal(level, target.blockPos(), axe);
+        int needed = adjustedTreeHarvestProgressGoal(level, context, target.blockPos(), axe);
         int progress = context.progressTicks() + 1;
         if (progress < needed) {
             context.setProgressTicks(progress);
@@ -257,11 +258,33 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return cut <= 0 ? TreeHarvestResult.TARGET_CHANGED : TreeHarvestResult.completed(cut);
     }
 
-    private static List<BlockPos> connectedTreeLogs(ServerLevel level, BlockPos origin, String filter) {
-        if (!isLikelyNaturalTree(level, origin, filter)) {
-            return List.of();
+    private int adjustedTreeHarvestProgressGoal(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos origin,
+            ItemStack axe) {
+        String filter = context.state().getString("LoggingFilter");
+        List<BlockPos> logs = connectedTreeLogs(level, origin, filter);
+        int total = 0;
+        for (BlockPos log : logs) {
+            if (!context.isInsideWorkArea(log) || !context.isLoaded(level, log)) {
+                continue;
+            }
+            BlockState state = level.getBlockState(log);
+            if (isMatchingLog(state, filter)) {
+                total += breakProgressGoal(level, log, axe);
+            }
         }
-        return connectedLogs(level, origin, filter);
+        if (total <= 0) {
+            total = breakProgressGoal(level, origin, axe);
+        }
+        float multiplier = 100.0F / Math.max(25.0F, context.efficiency());
+        return Math.clamp(Math.round(total * multiplier), 1, MAX_TREE_PROGRESS_TICKS);
+    }
+
+    private static List<BlockPos> connectedTreeLogs(ServerLevel level, BlockPos origin, String filter) {
+        List<BlockPos> logs = connectedLogs(level, origin, filter);
+        return isLikelyNaturalTree(level, logs) ? logs : List.of();
     }
 
     private static List<BlockPos> connectedLogs(ServerLevel level, BlockPos origin, String filter) {
@@ -306,7 +329,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private static boolean isLikelyNaturalTree(ServerLevel level, BlockPos origin, String filter) {
-        List<BlockPos> logs = connectedLogs(level, origin, filter);
+        return isLikelyNaturalTree(level, connectedLogs(level, origin, filter));
+    }
+
+    private static boolean isLikelyNaturalTree(ServerLevel level, List<BlockPos> logs) {
         return !logs.isEmpty()
                 && hasRootedLog(level, logs)
                 && naturalLeavesNearLogs(level, logs) >= MIN_NATURAL_LEAVES;

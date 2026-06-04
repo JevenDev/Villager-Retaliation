@@ -21,6 +21,7 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 
 public final class HiredOreBlockTracker {
     private static final Map<ServerLevel, OreIndex> INDEXES = new HashMap<>();
+    private static final long RECENT_EXPOSURE_TICKS = 20L * 30L;
 
     private HiredOreBlockTracker() {
     }
@@ -43,8 +44,16 @@ public final class HiredOreBlockTracker {
         updatePlacedBlock(event.getLevel(), event.getPos(), event.getNewState());
     }
 
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (!event.isCanceled() && event.getLevel() instanceof ServerLevel level) {
+            index(level).rememberPotentialExposureAround(level, event.getPos());
+        }
+    }
+
     public static void onBlockBroken(ServerLevel level, BlockPos pos) {
-        index(level).remove(pos);
+        OreIndex index = index(level);
+        index.remove(pos);
+        index.rememberPotentialExposureAround(level, pos);
     }
 
     public static List<BlockPos> nearbyOreBlocks(ServerLevel level, BlockPos center, int radius) {
@@ -55,6 +64,10 @@ public final class HiredOreBlockTracker {
 
     public static List<BlockPos> nearbyOreBlocks(ServerLevel level, BlockPos center, int radius, int verticalRadius) {
         return index(level).nearbyOreBlocks(level, center, Math.max(1, radius), Math.max(1, verticalRadius));
+    }
+
+    public static List<BlockPos> recentlyExposedOreBlocks(ServerLevel level, BlockPos center, int radius, int verticalRadius) {
+        return index(level).recentlyExposedOreBlocks(level, center, Math.max(1, radius), Math.max(1, verticalRadius));
     }
 
     static boolean isTrackedOre(BlockState state) {
@@ -85,6 +98,7 @@ public final class HiredOreBlockTracker {
     private static final class OreIndex {
         private final Map<Long, Set<Long>> oreBlocksByChunk = new HashMap<>();
         private final Set<Long> fullyIndexedChunks = new HashSet<>();
+        private final Map<Long, Long> recentlyExposedOreBlocks = new HashMap<>();
 
         void indexChunk(ServerLevel level, LevelChunk chunk) {
             Set<Long> oreBlocks = new HashSet<>();
@@ -110,6 +124,7 @@ public final class HiredOreBlockTracker {
         void forgetChunk(long chunkKey) {
             this.oreBlocksByChunk.remove(chunkKey);
             this.fullyIndexedChunks.remove(chunkKey);
+            this.recentlyExposedOreBlocks.keySet().removeIf(packedPos -> ChunkPos.asLong(BlockPos.of(packedPos)) == chunkKey);
         }
 
         void add(BlockPos pos) {
@@ -121,9 +136,22 @@ public final class HiredOreBlockTracker {
         void remove(BlockPos pos) {
             Set<Long> oreBlocks = this.oreBlocksByChunk.get(ChunkPos.asLong(pos));
             if (oreBlocks == null) {
+                this.recentlyExposedOreBlocks.remove(pos.asLong());
                 return;
             }
             oreBlocks.remove(pos.asLong());
+            this.recentlyExposedOreBlocks.remove(pos.asLong());
+        }
+
+        void rememberPotentialExposureAround(ServerLevel level, BlockPos origin) {
+            long expiresGameTime = level.getGameTime() + RECENT_EXPOSURE_TICKS;
+            for (net.minecraft.core.Direction direction : net.minecraft.core.Direction.values()) {
+                BlockPos candidate = origin.relative(direction).immutable();
+                if (level.hasChunkAt(candidate) && isTrackedOre(level.getBlockState(candidate))) {
+                    add(candidate);
+                    this.recentlyExposedOreBlocks.put(candidate.asLong(), expiresGameTime);
+                }
+            }
         }
 
         List<BlockPos> nearbyOreBlocks(ServerLevel level, BlockPos center, int radius, int verticalRadius) {
@@ -153,6 +181,28 @@ public final class HiredOreBlockTracker {
                             matches.add(pos);
                         }
                     }
+                }
+            }
+
+            matches.sort(Comparator.comparingDouble(pos -> center.distSqr(pos)));
+            return matches;
+        }
+
+        List<BlockPos> recentlyExposedOreBlocks(ServerLevel level, BlockPos center, int radius, int verticalRadius) {
+            long now = level.getGameTime();
+            int minY = Math.max(level.getMinBuildHeight(), center.getY() - verticalRadius);
+            int maxY = Math.min(level.getMaxBuildHeight() - 1, center.getY() + verticalRadius);
+            int radiusSqr = radius * radius;
+            List<BlockPos> matches = new ArrayList<>();
+
+            this.recentlyExposedOreBlocks.entrySet().removeIf(entry ->
+                    entry.getValue() <= now || isStale(level, BlockPos.of(entry.getKey())));
+            for (long packedPos : this.recentlyExposedOreBlocks.keySet()) {
+                BlockPos pos = BlockPos.of(packedPos);
+                if (pos.getY() >= minY
+                        && pos.getY() <= maxY
+                        && center.distSqr(pos) <= radiusSqr) {
+                    matches.add(pos);
                 }
             }
 

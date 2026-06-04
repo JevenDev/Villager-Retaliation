@@ -47,6 +47,7 @@ import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -96,6 +97,7 @@ public final class VillagerRetaliationEvents {
     public static void onServerStopping(ServerStoppingEvent event) {
         VillagerDataWarmup.clearCaches();
         VillagerRetaliationVillagerBrainUtil.clearRuntimeState();
+        VillagerTaskNavigationUtil.clearRuntimeState();
         VillagerRetaliationVillagerRules.clearCachedChecks();
         VillagerGossipHooks.clear();
         VillagerReputationManager.clearSyncState();
@@ -215,6 +217,9 @@ public final class VillagerRetaliationEvents {
             VillagerConversationService.tickVillager(villager);
             VillagerRecruitmentService.onVillagerTickPost(villager);
             HiredVillagerWorkService.onVillagerTickPost(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                VillagerTaskNavigationUtil.tickPathDoors(level, villager);
+            }
             rememberWeatherEventNearVillager(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerTradeMemory.ensureProfessionPoolIfNeeded(level, villager);
@@ -448,6 +453,7 @@ public final class VillagerRetaliationEvents {
             VillagerInteractionService.handleSleepingVillagerBedBroken(level, serverPlayer, event.getPos());
         }
         if (!event.isCanceled() && event.getLevel() instanceof ServerLevel level) {
+            HiredOreBlockTracker.onBlockBreak(event);
             AssignedStorageService.removeAssignedContainer(level, event.getPos());
         }
         ForcedDialogueService.onContainerBreak(event);
@@ -504,6 +510,7 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof Villager villager) {
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
             VillagerRetaliationVillagerBrainUtil.clearRuntimeState(villager);
+            VillagerTaskNavigationUtil.clearRuntimeState(villager);
             VillagerRetaliationVillagerRules.clearCachedChecks(villager);
             VillagerTradeMemory.clearRuntimeState(villager);
         }

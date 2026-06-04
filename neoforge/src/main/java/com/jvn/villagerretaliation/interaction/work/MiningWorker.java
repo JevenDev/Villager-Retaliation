@@ -204,6 +204,14 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
         clearMiningAnchor(context);
 
+        HiredPathTarget recentlyExposedTarget = findRecentlyExposedMineableInRadius(level, villager, context);
+        if (recentlyExposedTarget != null) {
+            rememberMiningAnchor(level, context, recentlyExposedTarget.blockPos());
+            context.state().remove(NEXT_FULL_SCAN_GAME_TIME_TAG);
+            setMiningState(context, MiningState.FIND_TARGET);
+            return recentlyExposedTarget;
+        }
+
         if (level.getGameTime() < context.state().getLong(NEXT_FULL_SCAN_GAME_TIME_TAG)) {
             return null;
         }
@@ -218,10 +226,17 @@ public final class MiningWorker extends AbstractBlockWorker {
     private HiredPathTarget findAdjacentMineable(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos origin) {
         List<BlockPos> candidates = new ArrayList<>();
         BlockPos anchor = miningAnchor(level, context);
-        for (Direction direction : Direction.values()) {
-            BlockPos pos = origin.relative(direction).immutable();
-            if (isValidMiningTarget(level, villager, context, pos, anchor)) {
-                candidates.add(pos);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dy == 0 && dz == 0) {
+                        continue;
+                    }
+                    BlockPos pos = origin.offset(dx, dy, dz).immutable();
+                    if (isValidMiningTarget(level, villager, context, pos, anchor)) {
+                        candidates.add(pos);
+                    }
+                }
             }
         }
         return chooseReachableTarget(level, villager, context, candidates);
@@ -235,6 +250,24 @@ public final class MiningWorker extends AbstractBlockWorker {
         List<BlockPos> candidates = new ArrayList<>();
         for (BlockPos pos : HiredOreBlockTracker.nearbyOreBlocks(level, anchor, pocketRadius(context), context.verticalRadius())) {
             if (isValidMiningTarget(level, villager, context, pos, anchor)) {
+                candidates.add(pos);
+            }
+        }
+        return chooseReachableTarget(level, villager, context, candidates);
+    }
+
+    private HiredPathTarget findRecentlyExposedMineableInRadius(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        List<BlockPos> candidates = new ArrayList<>();
+        BlockPos center = context.workCenter();
+        for (BlockPos pos : HiredOreBlockTracker.recentlyExposedOreBlocks(
+                level,
+                center,
+                context.horizontalSearchRadius(),
+                context.verticalRadius())) {
+            if (isValidMiningTarget(level, villager, context, pos, null)) {
                 candidates.add(pos);
             }
         }

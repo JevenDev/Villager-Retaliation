@@ -19,6 +19,7 @@ import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -50,10 +51,15 @@ public final class HiredVillagerWorkService {
     private static final String WORK_CENTER_POS_TAG = "WorkCenterPos";
     private static final String WORK_MIN_POS_TAG = "WorkMinPos";
     private static final String WORK_MAX_POS_TAG = "WorkMaxPos";
+    private static final String NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG = "NextProfessionSuppressionGameTime";
+    private static final String NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG = "NextWorkAreaReturnPathGameTime";
     private static final long DAY_TICKS = 24000L;
     private static final int MIN_WORK_RADIUS = 4;
     private static final int SKILL_RADIUS_BASELINE = 50;
     private static final int MAX_SKILLED_WORK_RADIUS = 32;
+    private static final int PROFESSION_SUPPRESSION_INTERVAL_TICKS = 20;
+    private static final int WORK_AREA_RETURN_PATH_RETRY_TICKS = 20;
+    private static final int MAX_RETURN_TARGETS_TO_PATHFIND = 32;
     private static final Map<HiredVillagerRole, HiredRoleWorker> WORKERS = new EnumMap<>(HiredVillagerRole.class);
 
     static {
@@ -87,6 +93,7 @@ public final class HiredVillagerWorkService {
         if (hirerId == null || !(level.getServer().getPlayerList().getPlayer(hirerId) instanceof ServerPlayer hirer)) {
             CompoundTag waitingState = state(villager);
             initializeDefaults(waitingState, villager);
+            VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(waitingState, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setStatus(waitingState, "Waiting for hirer to be online.");
             return;
@@ -100,11 +107,13 @@ public final class HiredVillagerWorkService {
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         HiredRoleWorker worker = WORKERS.get(role);
         if (worker == null) {
+            VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setStatus(state, "Paused: no worker exists for " + role.label() + ".");
             return;
         }
         if (!state.getBoolean("Enabled")) {
+            VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setStatus(state, "Paused by hirer.");
             return;
@@ -159,12 +168,28 @@ public final class HiredVillagerWorkService {
                 .map(GlobalPos::pos)
                 .orElse(null);
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
-        if (navigationTarget != null
-                && (!context.isInsideWorkArea(navigationTarget) || navigationTarget.equals(jobSite))) {
+        boolean stopNavigation = navigationTarget != null
+                && (!context.isInsideWorkArea(navigationTarget) || navigationTarget.equals(jobSite));
+        if (stopNavigation) {
             villager.getNavigation().stop();
         }
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
+
+        long gameTime = level.getGameTime();
+        if (!stopNavigation
+                && !brain.isActive(Activity.WORK)
+                && gameTime < context.state().getLong(NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG)) {
+            return;
+        }
+        context.state().putLong(
+                NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG,
+                gameTime + PROFESSION_SUPPRESSION_INTERVAL_TICKS);
+
+        if (brain.getMemory(MemoryModuleType.WALK_TARGET).isPresent()) {
+            brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+        }
+        if (brain.getMemory(MemoryModuleType.PATH).isPresent()) {
+            brain.eraseMemory(MemoryModuleType.PATH);
+        }
         if (brain.isActive(Activity.WORK)) {
             brain.setDefaultActivity(Activity.IDLE);
             brain.setActiveActivityIfPossible(Activity.IDLE);
@@ -173,6 +198,7 @@ public final class HiredVillagerWorkService {
 
     private static boolean returnVillagerToWorkArea(ServerLevel level, Villager villager, HiredWorkContext context, CompoundTag state) {
         if (context.isInsideWorkArea(villager.blockPosition())) {
+            state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
             return false;
         }
 
@@ -183,33 +209,35 @@ public final class HiredVillagerWorkService {
             return true;
         }
 
-        BlockPos returnTarget = findWorkAreaReturnTarget(level, villager, context);
-        if (returnTarget == null) {
+        long gameTime = level.getGameTime();
+        if (gameTime < state.getLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG)) {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, null);
+            setStatus(state, "Outside assigned area. Waiting before retrying path back.");
+            return true;
+        }
+
+        ReturnPath returnPath = findWorkAreaReturnPath(level, villager, context);
+        if (returnPath == null) {
             villager.getNavigation().stop();
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
             setStatus(state, "Outside assigned area, but no reachable path back was found yet.");
             return true;
         }
 
-        Path path = villager.getNavigation().createPath(returnTarget, 0);
-        if (path == null || !path.canReach()) {
-            villager.getNavigation().stop();
-            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            setStatus(state, "Outside assigned area, but pathfinding back failed.");
-            return true;
-        }
-
-        if (villager.getNavigation().moveTo(path, 1.0D)) {
-            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnTarget);
+        if (villager.getNavigation().moveTo(returnPath.path(), 1.0D)) {
+            state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnPath.target());
             setStatus(state, "Outside assigned area. Returning to work area.");
         } else {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
             setStatus(state, "Outside assigned area, but movement back could not start.");
         }
         return true;
     }
 
-    private static BlockPos findWorkAreaReturnTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
+    private static ReturnPath findWorkAreaReturnPath(ServerLevel level, Villager villager, HiredWorkContext context) {
         BlockPos clamped = new BlockPos(
                 Mth.clamp(villager.blockPosition().getX(), context.workMin().getX(), context.workMax().getX()),
                 Mth.clamp(villager.blockPosition().getY(), context.workMin().getY(), context.workMax().getY()),
@@ -228,13 +256,18 @@ public final class HiredVillagerWorkService {
         }
 
         candidates.sort(Comparator.comparingDouble(pos -> returnTargetScore(villager, context, pos)));
+        int evaluated = 0;
         for (BlockPos candidate : candidates) {
+            if (evaluated >= MAX_RETURN_TARGETS_TO_PATHFIND) {
+                break;
+            }
             if (!context.isLoaded(level, candidate)) {
                 continue;
             }
+            evaluated++;
             Path path = villager.getNavigation().createPath(candidate, 0);
             if (path != null && path.canReach()) {
-                return candidate;
+                return new ReturnPath(candidate, path);
             }
         }
         return null;
@@ -244,6 +277,9 @@ public final class HiredVillagerWorkService {
         double villagerDistance = villager.distanceToSqr(pos.getCenter());
         double centerDistance = pos.distSqr(context.workCenter());
         return villagerDistance + centerDistance * 0.25D;
+    }
+
+    private record ReturnPath(BlockPos target, Path path) {
     }
 
     public static void clearRuntimeState() {

@@ -23,6 +23,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -263,7 +264,7 @@ public final class VillagerRecruitmentService {
         Entity followTarget = player.getVehicle() == null ? player : player.getVehicle();
         double distanceSqr = villager.distanceToSqr(player);
         if (distanceSqr > FOLLOW_START_DISTANCE_SQR) {
-            moveTowardFollowTarget(villager, followTarget, FOLLOW_SPEED);
+            moveTowardFollowTarget(villager, followTarget, adaptiveFollowSpeed(distanceSqr));
         } else if (distanceSqr < FOLLOW_STOP_DISTANCE_SQR) {
             stopFollowNavigation(villager);
         }
@@ -449,6 +450,13 @@ public final class VillagerRecruitmentService {
                 failedPathFindingPenalty
         ));
         return moved;
+    }
+
+    private static double adaptiveFollowSpeed(double distanceSqr) {
+        double distance = Math.sqrt(Math.max(0.0D, distanceSqr));
+        double distancePastComfort = Math.max(0.0D, distance - Math.sqrt(FOLLOW_STOP_DISTANCE_SQR));
+        double multiplier = Mth.clamp(distancePastComfort * 0.12D, 0.85D, 1.45D);
+        return FOLLOW_SPEED * multiplier;
     }
 
     private static void stopFollowNavigation(Villager villager) {
