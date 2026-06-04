@@ -19,17 +19,28 @@ import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 public final class ClipboardWorkforceScreen extends Screen {
-    private static final int TEXTURE_WIDTH = 145;
-    private static final int TEXTURE_HEIGHT = 194;
-    private static final int CONTENT_LEFT = 15;
-    private static final int CONTENT_RIGHT = 131;
-    private static final int CONTENT_TOP = 43;
-    private static final int CONTENT_BOTTOM = 181;
-    private static final int TITLE_Y = 34;
+    private static final int TEXTURE_WIDTH = 180;
+    private static final int TEXTURE_HEIGHT = 198;
+    private static final int TAB_WIDTH = 27;
+    private static final int TAB_HEIGHT = 24;
+    private static final int TAB_RIGHT = 33;
+    private static final int TAB_LEFT = TAB_RIGHT - TAB_WIDTH;
+    private static final int TAB_HOVER_OFFSET = 8;
+    private static final int TAB_HOVER_LEFT = 3;
+    private static final int TAB_HOVER_RIGHT = 23;
+    private static final int TAB_HOVER_HEIGHT = 25;
+    private static final int TAB_1_TOP = 52;
+    private static final int TAB_2_TOP = 76;
+    private static final int TAB_3_TOP = 104;
+    private static final int CONTENT_LEFT = 30;
+    private static final int CONTENT_RIGHT = 149;
+    private static final int CONTENT_TOP = 54;
+    private static final int CONTENT_BOTTOM = 184;
+    private static final int TITLE_Y = 44;
     private static final int PAGE_BUTTON_WIDTH = 23;
     private static final int PAGE_BUTTON_HEIGHT = 13;
     private static final int PAGE_BUTTON_LEFT = CONTENT_RIGHT - PAGE_BUTTON_WIDTH + 1;
-    private static final int PAGE_BUTTON_TOP = CONTENT_BOTTOM - PAGE_BUTTON_HEIGHT + 4;
+    private static final int PAGE_BUTTON_TOP = CONTENT_BOTTOM - PAGE_BUTTON_HEIGHT;
     private static final int FIRST_OVERVIEW_PAGE_LAST_ROLE = HiredVillagerRole.NAVIGATION.ordinal();
     private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
     private static final ResourceLocation PAGE_FORWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");
@@ -77,16 +88,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         graphics.pose().pushPose();
         graphics.pose().translate(left, top, 0.0F);
         graphics.pose().scale(scale, scale, 1.0F);
-        graphics.blit(
-                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TEXTURE,
-                0,
-                0,
-                0.0F,
-                0.0F,
-                TEXTURE_WIDTH,
-                TEXTURE_HEIGHT,
-                TEXTURE_WIDTH,
-                TEXTURE_HEIGHT);
+        renderClipboard(graphics, panelMouseX, panelMouseY);
         switch (this.page) {
             case OVERVIEW -> renderOverview(graphics, panelMouseX, panelMouseY);
             case JOB -> renderJobPage(graphics, panelMouseX, panelMouseY);
@@ -95,6 +97,50 @@ public final class ClipboardWorkforceScreen extends Screen {
             case PAYMENT -> renderPaymentPage(graphics, panelMouseX, panelMouseY);
         }
         graphics.pose().popPose();
+    }
+
+    private static void renderClipboard(GuiGraphics graphics, double mouseX, double mouseY) {
+        graphics.blit(
+                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_BASE_TEXTURE,
+                0,
+                0,
+                0.0F,
+                0.0F,
+                TEXTURE_WIDTH,
+                TEXTURE_HEIGHT,
+                TEXTURE_WIDTH,
+                TEXTURE_HEIGHT);
+        renderClipboardTab(graphics, mouseX, mouseY, VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_1_TEXTURE, TAB_1_TOP);
+        renderClipboardTab(graphics, mouseX, mouseY, VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_2_TEXTURE, TAB_2_TOP);
+        renderClipboardTab(graphics, mouseX, mouseY, VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_3_TEXTURE, TAB_3_TOP);
+        graphics.blit(
+                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_PAPER_TEXTURE,
+                0,
+                0,
+                0.0F,
+                0.0F,
+                TEXTURE_WIDTH,
+                TEXTURE_HEIGHT,
+                TEXTURE_WIDTH,
+                TEXTURE_HEIGHT);
+    }
+
+    private static void renderClipboardTab(GuiGraphics graphics, double mouseX, double mouseY, ResourceLocation texture, int top) {
+        int left = isClipboardTabHovered(mouseX, mouseY, top) ? TAB_LEFT - TAB_HOVER_OFFSET : TAB_LEFT;
+        graphics.blit(
+                texture,
+                left,
+                top,
+                0.0F,
+                0.0F,
+                TAB_WIDTH,
+                TAB_HEIGHT,
+                TAB_WIDTH,
+                TAB_HEIGHT);
+    }
+
+    private static boolean isClipboardTabHovered(double mouseX, double mouseY, int top) {
+        return mouseX >= TAB_HOVER_LEFT && mouseX <= TAB_HOVER_RIGHT && mouseY >= top && mouseY <= top + TAB_HOVER_HEIGHT;
     }
 
     @Override

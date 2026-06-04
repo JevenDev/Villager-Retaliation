@@ -522,7 +522,7 @@
   "villagerretaliation.gui.clipboard_workforce.assigned": "Assigned",
   "villagerretaliation.gui.clipboard_workforce.missing": "Missing",
   "villagerretaliation.gui.clipboard_workforce.assigned_containers": "Assigned Containers: %s",
-  "villagerretaliation.gui.clipboard_workforce.missing_storage_workers": "Workers Missing Storage: %s",
+  "villagerretaliation.gui.clipboard_workforce.missing_storage_workers": "Missing Storage: %s",
   "villagerretaliation.gui.clipboard_workforce.storage_placeholder": "Container management will be added in a later clipboard page.",
   "villagerretaliation.gui.clipboard_workforce.emerald_balance": "Emerald Balance: %s",
   "villagerretaliation.gui.clipboard_workforce.daily_wages": "Daily Wages: %s",
