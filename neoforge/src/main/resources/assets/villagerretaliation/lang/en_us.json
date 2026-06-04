@@ -650,7 +650,7 @@
   "text.config.villagerretaliation.option.general.collapseReputationChangeNotifications": "Collapse Reputation Change Notifications",
   "text.config.villagerretaliation.option.general.collapseReputationChangeNotifications.tooltip": "Combines same-type villager reputation tier notifications into one counted line.",
   "text.config.villagerretaliation.option.general.showVillagerNameTags": "Show Villager Name Tags",
-  "text.config.villagerretaliation.option.general.showVillagerNameTags.tooltip": "Renders generated villager names above their heads.",
+  "text.config.villagerretaliation.option.general.showVillagerNameTags.tooltip": "Server-controlled toggle for rendering generated villager names above their heads.",
   "text.config.villagerretaliation.option.general.villagerReputationHoverTooltipRequiresEmerald": "Villager Reputation Hover Tooltip Requires Emerald",
   "text.config.villagerretaliation.option.general.villagerReputationHoverTooltipRequiresEmerald.tooltip": "Requires the player to hold an emerald before the villager reputation hover tooltip appears.",
   "text.config.villagerretaliation.option.general.enableVillagerDeathMessages": "Enable Villager Death Messages",

@@ -95,6 +95,12 @@ public final class VillagerRetaliationEvents {
         VillagerDataWarmup.warm(event.getServer());
     }
 
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            VillagerReputationNetworking.sendServerConfig(player);
+        }
+    }
+
     public static void onServerStopping(ServerStoppingEvent event) {
         VillagerDataWarmup.clearCaches();
         VillagerRetaliationVillagerBrainUtil.clearRuntimeState();

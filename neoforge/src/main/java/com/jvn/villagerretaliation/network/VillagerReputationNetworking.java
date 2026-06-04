@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
@@ -13,13 +14,19 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "17";
+    private static final String PROTOCOL_VERSION = "18";
 
     private VillagerReputationNetworking() {
     }
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         ToucanNetwork network = ToucanNetwork.create(VillagerRetaliation.MOD_ID, PROTOCOL_VERSION, event);
+        network.safePlayToClientThreaded(
+                ServerConfigSyncPayload.TYPE,
+                ServerConfigSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient",
+                "accept"
+        );
         network.safePlayToClientThreaded(
                 VillagerReputationSyncPayload.TYPE,
                 VillagerReputationSyncPayload.STREAM_CODEC,
@@ -242,6 +249,12 @@ public final class VillagerReputationNetworking {
                 villager.getUUID(),
                 reputation,
                 VillagerReputationLevel.fromReputation(reputation)
+        ));
+    }
+
+    public static void sendServerConfig(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, new ServerConfigSyncPayload(
+                VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get()
         ));
     }
 

@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.villager;
 
-import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
@@ -15,7 +15,7 @@ public final class VillagerNameTagOverlay {
     }
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
-        if (!VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get()
+        if (!VillagerRetaliationServerConfigClient.showVillagerNameTags()
                 || !(event.getEntity() instanceof AbstractVillager villager)
                 || villager.hasCustomName()) {
             return;
@@ -41,5 +41,6 @@ public final class VillagerNameTagOverlay {
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         VillagerNameClientCache.clear();
+        VillagerRetaliationServerConfigClient.reset();
     }
 }

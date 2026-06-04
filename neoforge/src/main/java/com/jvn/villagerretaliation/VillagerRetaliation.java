@@ -52,6 +52,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onLivingDrops)
                 .listener(VillagerRetaliationEvents::onEntityTickPre)
                 .listener(VillagerRetaliationEvents::onEntityTickPost)
+                .listener(VillagerRetaliationEvents::onPlayerLoggedIn)
                 .listener(VillagerReputationEvents::onServerTickPost)
                 .listener(VillagerSocialGraphService::onBabyEntitySpawn)
                 .listener(VillagerSocialGraphService::onLivingConversionPost)
