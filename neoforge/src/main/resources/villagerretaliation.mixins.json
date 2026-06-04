@@ -8,6 +8,7 @@
   ],
   "client": [
     "client.ChatComponentMixin",
+    "client.MerchantScreenMixin",
     "client.QuestItemEntityGlowMixin",
     "client.QuestItemEntityOutlineColorMixin",
     "client.QuestItemHeldGlowMixin"

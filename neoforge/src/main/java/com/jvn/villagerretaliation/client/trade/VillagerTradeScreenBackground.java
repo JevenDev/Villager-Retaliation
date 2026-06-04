@@ -1,8 +1,8 @@
 package com.jvn.villagerretaliation.client.trade;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
-import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 
 public final class VillagerTradeScreenBackground {
     private static final int VANILLA_WIDTH = 276;
@@ -15,12 +15,8 @@ public final class VillagerTradeScreenBackground {
     private VillagerTradeScreenBackground() {
     }
 
-    public static void onBackgroundRender(ContainerScreenEvent.Render.Background event) {
-        if (!(event.getContainerScreen() instanceof MerchantScreen screen)) {
-            return;
-        }
-
-        event.getGuiGraphics().blit(
+    public static void render(GuiGraphics graphics, MerchantScreen screen) {
+        graphics.blit(
                 VillagerRetaliationClientAssets.VILLAGER_TRADE_EXTENDED_TEXTURE,
                 screen.getGuiLeft() - EXTENDED_LEFT_WIDTH,
                 screen.getGuiTop(),
