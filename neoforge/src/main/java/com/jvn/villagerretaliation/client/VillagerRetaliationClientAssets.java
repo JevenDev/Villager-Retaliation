@@ -24,6 +24,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/info_icon");
     public static final ResourceLocation VILLAGER_INVENTORY_TEXTURE =
             texture("gui/villager_interaction_screen/villager_inventory");
+    public static final ResourceLocation CLIPBOARD_WORKFORCE_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard");
     public static final ResourceLocation TRADE_REROLL_BUTTON_TEXTURE =
             texture("gui/trade/reroll_button");
     public static final ResourceLocation TRADE_REROLL_BUTTON_HIGHLIGHTED_TEXTURE =

@@ -74,6 +74,15 @@ public final class HiredVillagerContractService {
         return getHireCost(level, villager, player, 1);
     }
 
+    public static int getContractDailyCost(ServerLevel level, Villager villager, ServerPlayer player) {
+        expireHireContractIfNeeded(level, villager);
+        return contract(villager)
+                .filter(HiredVillagerContractService::isActive)
+                .map(tag -> Math.max(0, tag.getInt(DAILY_COST_TAG)))
+                .filter(cost -> cost > 0)
+                .orElseGet(() -> getDailyCost(level, villager, player));
+    }
+
     public static void startHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
         int safeDays = Mth.clamp(days, 1, 30);
         long startGameTime = level.getGameTime();

@@ -117,6 +117,12 @@ public final class VillagerReputationNetworking {
                 "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
                 "accept"
         );
+        network.safePlayToClientThreaded(
+                ClipboardWorkforceSyncPayload.TYPE,
+                ClipboardWorkforceSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.inventory.ClipboardWorkforceClient",
+                "accept"
+        );
         network.playToServer(
                 QuestTrackerRequestPayload.TYPE,
                 QuestTrackerRequestPayload.STREAM_CODEC,

@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummary;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
+import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
@@ -66,9 +67,16 @@ public final class HiredStorageClipboardItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
+        if (level.isClientSide) {
+            return InteractionResultHolder.success(stack);
+        }
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer && player.isShiftKeyDown()) {
             clearSelection(stack);
             serverPlayer.displayClientMessage(Component.literal("Clipboard selection cleared."), true);
+            return InteractionResultHolder.success(stack);
+        }
+        if (player instanceof ServerPlayer serverPlayer) {
+            ClipboardWorkforceService.openClipboard(serverPlayer);
             return InteractionResultHolder.success(stack);
         }
         return InteractionResultHolder.pass(stack);

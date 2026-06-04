@@ -1,0 +1,75 @@
+package com.jvn.villagerretaliation.interaction;
+
+import java.util.List;
+import java.util.UUID;
+
+public record ClipboardWorkforceSnapshot(
+        int totalHired,
+        int maxHired,
+        int workingCount,
+        int idleCount,
+        int warningCount,
+        int assignedStorageCount,
+        int emeraldBalance,
+        int dailyWages,
+        List<JobSummary> jobs,
+        List<WorkerRow> workers,
+        List<WarningSummary> warnings) {
+    public ClipboardWorkforceSnapshot {
+        jobs = List.copyOf(jobs);
+        workers = List.copyOf(workers);
+        warnings = List.copyOf(warnings);
+    }
+
+    public static ClipboardWorkforceSnapshot empty() {
+        return new ClipboardWorkforceSnapshot(0, -1, 0, 0, 0, 0, 0, 0, List.of(), List.of(), List.of());
+    }
+
+    public record JobSummary(HiredVillagerRole role, int count) {
+    }
+
+    public record WorkerRow(
+            UUID villagerId,
+            String displayName,
+            HiredVillagerRole role,
+            WorkerStatus status,
+            String target,
+            boolean storageAssigned,
+            int storageCount,
+            int workRadius,
+            int dailyWage,
+            boolean inventoryFull,
+            boolean unpaid,
+            boolean noStorage,
+            boolean noTargets,
+            boolean tooFar) {
+    }
+
+    public record WarningSummary(WarningType type, HiredVillagerRole role, int count) {
+    }
+
+    public enum WorkerStatus {
+        WORKING,
+        PATHING,
+        MINING,
+        LOGGING,
+        FARMING,
+        BREWING,
+        DEPOSITING,
+        WAITING,
+        NO_TARGETS,
+        NO_STORAGE,
+        INVENTORY_FULL,
+        UNPAID,
+        TOO_FAR,
+        UNKNOWN
+    }
+
+    public enum WarningType {
+        NO_STORAGE,
+        INVENTORY_FULL,
+        UNPAID,
+        NO_TARGETS,
+        TOO_FAR
+    }
+}
