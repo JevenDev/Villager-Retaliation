@@ -64,6 +64,10 @@ public final class VillagerRetaliationClient {
                 com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.VILLAGER_INVENTORY.get(),
                 com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen::new
         );
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.PAYMENT_BOX.get(),
+                com.jvn.villagerretaliation.client.inventory.PaymentBoxScreen::new
+        );
     }
 
     private static void registerTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {

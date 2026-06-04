@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.block.PaymentBoxMenu;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
@@ -14,6 +15,8 @@ public final class VillagerRetaliationMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<VillagerInventoryMenu>> VILLAGER_INVENTORY =
             MENUS.register("villager_inventory", () -> IMenuTypeExtension.create(VillagerInventoryMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<PaymentBoxMenu>> PAYMENT_BOX =
+            MENUS.register("payment_box", () -> IMenuTypeExtension.create(PaymentBoxMenu::new));
 
     private VillagerRetaliationMenus() {
     }
