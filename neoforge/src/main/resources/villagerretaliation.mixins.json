@@ -3,7 +3,8 @@
   "package": "com.jvn.villagerretaliation.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "AbstractContainerMenuAccessor"
+    "AbstractContainerMenuAccessor",
+    "VillagerBrainTickMixin"
   ],
   "client": [
     "client.ChatComponentMixin",

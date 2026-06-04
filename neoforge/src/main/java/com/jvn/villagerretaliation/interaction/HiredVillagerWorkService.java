@@ -3,16 +3,12 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
-import com.jvn.villagerretaliation.interaction.work.FarmingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorker;
+import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
-import com.jvn.villagerretaliation.interaction.work.LoggingWorker;
-import com.jvn.villagerretaliation.interaction.work.MiningWorker;
-import com.jvn.villagerretaliation.interaction.work.NitwitWorker;
-import com.jvn.villagerretaliation.interaction.work.StatusOnlyWorker;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
@@ -23,13 +19,10 @@ import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -38,10 +31,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.Brain;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
@@ -52,41 +42,20 @@ public final class HiredVillagerWorkService {
     private static final String WORK_CENTER_POS_TAG = "WorkCenterPos";
     private static final String WORK_MIN_POS_TAG = "WorkMinPos";
     private static final String WORK_MAX_POS_TAG = "WorkMaxPos";
-    private static final String NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG = "NextProfessionSuppressionGameTime";
     private static final String NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG = "NextWorkAreaReturnPathGameTime";
     private static final long DAY_TICKS = 24000L;
     private static final int MIN_WORK_RADIUS = 4;
     private static final int SKILL_RADIUS_BASELINE = 50;
     private static final int MAX_SKILLED_WORK_RADIUS = 32;
-    private static final int PROFESSION_SUPPRESSION_INTERVAL_TICKS = 20;
     private static final int WORK_AREA_RETURN_PATH_RETRY_TICKS = 20;
     private static final int MAX_RETURN_TARGETS_TO_PATHFIND = 32;
-    private static final Map<HiredVillagerRole, HiredRoleWorker> WORKERS = new EnumMap<>(HiredVillagerRole.class);
-
-    static {
-        register(new LoggingWorker());
-        register(new MiningWorker());
-        register(new FarmingWorker());
-        register(new NitwitWorker());
-        register(new StatusOnlyWorker(HiredVillagerRole.BREWING, "Brewing automation is waiting for a configured brewing stand and supplies."));
-        register(new StatusOnlyWorker(HiredVillagerRole.NAVIGATION, "Navigation work is ready for target discovery configuration."));
-        register(new StatusOnlyWorker(HiredVillagerRole.ANIMAL_HANDLING, "Animal handling is waiting for lure supplies and a safe pen."));
-        register(new StatusOnlyWorker(HiredVillagerRole.COMBAT, "Guard duty active. Combat is handled by existing retaliation systems."));
-    }
 
     private HiredVillagerWorkService() {
     }
 
     public static void onVillagerTickPost(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level)
-                || villager.isBaby()
-                || !villager.isAlive()
-                || villager.isSleeping()
-                || villager.isTrading()
-                || VillagerConversationService.isConversing(villager)
-                || villager.getTarget() != null
-                || villager.getLastHurtByMob() != null
-                || !HiredVillagerContractService.isHired(level, villager)) {
+                || HiredVillagerFocusService.shouldSkipHiredFocus(level, villager)) {
             return;
         }
 
@@ -106,7 +75,7 @@ public final class HiredVillagerWorkService {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        HiredRoleWorker worker = WORKERS.get(role);
+        HiredRoleWorker worker = HiredRoleWorkerRegistry.get(role);
         if (worker == null) {
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
@@ -136,7 +105,7 @@ public final class HiredVillagerWorkService {
                 state.getBoolean("AutoDepositOutputs"),
                 state.getBoolean("UseAssignedStorageForSupplies"));
 
-        suppressProfessionJobSiteBehavior(level, villager, context);
+        HiredVillagerFocusService.suppressNonWorkAi(level, villager, context);
         if (returnVillagerToWorkArea(level, villager, context, state)) {
             return;
         }
@@ -159,41 +128,6 @@ public final class HiredVillagerWorkService {
         if (result.completed()) {
             state.putLong("NextWorkGameTime", level.getGameTime() + nextTaskCooldownTicks(efficiency));
             maybeNotify(level, villager, hirer, state, result.status(), 20L * 30L);
-        }
-    }
-
-    private static void suppressProfessionJobSiteBehavior(ServerLevel level, Villager villager, HiredWorkContext context) {
-        Brain<Villager> brain = villager.getBrain();
-        BlockPos jobSite = brain.getMemory(MemoryModuleType.JOB_SITE)
-                .filter(pos -> pos.dimension().equals(level.dimension()))
-                .map(GlobalPos::pos)
-                .orElse(null);
-        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
-        boolean stopNavigation = navigationTarget != null
-                && (!context.isInsideWorkArea(navigationTarget) || navigationTarget.equals(jobSite));
-        if (stopNavigation) {
-            villager.getNavigation().stop();
-        }
-
-        long gameTime = level.getGameTime();
-        if (!stopNavigation
-                && !brain.isActive(Activity.WORK)
-                && gameTime < context.state().getLong(NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG)) {
-            return;
-        }
-        context.state().putLong(
-                NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG,
-                gameTime + PROFESSION_SUPPRESSION_INTERVAL_TICKS);
-
-        if (brain.getMemory(MemoryModuleType.WALK_TARGET).isPresent()) {
-            brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        }
-        if (brain.getMemory(MemoryModuleType.PATH).isPresent()) {
-            brain.eraseMemory(MemoryModuleType.PATH);
-        }
-        if (brain.isActive(Activity.WORK)) {
-            brain.setDefaultActivity(Activity.IDLE);
-            brain.setActiveActivityIfPossible(Activity.IDLE);
         }
     }
 
@@ -284,7 +218,7 @@ public final class HiredVillagerWorkService {
     }
 
     public static void clearRuntimeState() {
-        MiningWorker.clearRuntimeState();
+        HiredRoleWorkerRegistry.clearRuntimeState();
     }
 
     public static void sendStatus(ServerPlayer player, ServerLevel level, Villager villager) {
@@ -384,7 +318,7 @@ public final class HiredVillagerWorkService {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
         HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
-        HiredRoleWorker worker = WORKERS.get(safeRole);
+        HiredRoleWorker worker = HiredRoleWorkerRegistry.get(safeRole);
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         int maxRadius = maxWorkRadius(level, villager, safeRole);
         WorkArea area = workAreaWithinMax(state, villager, maxRadius);
@@ -513,11 +447,7 @@ public final class HiredVillagerWorkService {
         return true;
     }
 
-    private static void register(HiredRoleWorker worker) {
-        WORKERS.put(worker.role(), worker);
-    }
-
-    private static CompoundTag state(Villager villager) {
+    static CompoundTag state(Villager villager) {
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(TAG, Tag.TAG_COMPOUND)) {
             persistentData.put(TAG, new CompoundTag());
@@ -525,7 +455,7 @@ public final class HiredVillagerWorkService {
         return persistentData.getCompound(TAG);
     }
 
-    private static void initializeDefaults(CompoundTag state, Villager villager) {
+    static void initializeDefaults(CompoundTag state, Villager villager) {
         if (!state.contains("Enabled", Tag.TAG_BYTE)) {
             state.putBoolean("Enabled", true);
         }
