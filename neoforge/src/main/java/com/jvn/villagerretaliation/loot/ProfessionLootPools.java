@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.loot;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.toucanlib.util.ToucanItemStacks;
 import com.jvn.toucanlib.util.ToucanRandom;
 import java.util.ArrayList;
@@ -220,16 +221,20 @@ public final class ProfessionLootPools {
         List<ItemStack> drops = rollCommon(random, 2, 4,
                 stack(Items.BREAD, 1, 3), stack(Items.STICK, 1, 4), stack(Items.POISONOUS_POTATO, 1, 1),
                 stack(randomFlower(random), 1, 1), stack(Items.DIRT, 1, 1));
-        addRare(random, drops, new ItemStack(Items.EMERALD, ToucanRandom.betweenInclusive(random, 1, 2)));
+        addRare(random, drops, currencyStack(villager, random, 1, 2));
         return drops;
     }
 
     private static List<ItemStack> unemployed(Villager villager, RandomSource random) {
         List<ItemStack> drops = rollCommon(random, 2, 3,
                 stack(Items.BREAD, 1, 3), stack(Items.STICK, 1, 3), stack(Items.WHEAT_SEEDS, 1, 2));
-        addRare(random, drops, new ItemStack(Items.EMERALD, ToucanRandom.betweenInclusive(random, 1, 2)));
+        addRare(random, drops, currencyStack(villager, random, 1, 2));
         addRare(random, drops, new ItemStack(Items.APPLE));
         return drops;
+    }
+
+    private static ItemStack currencyStack(Villager villager, RandomSource random, int min, int max) {
+        return VillagerCurrencyResources.createStack(villager.level().getServer(), ToucanRandom.betweenInclusive(random, min, max));
     }
 
     private static List<ItemStack> rollCommon(RandomSource random, int minRolls, int maxRolls, Entry... entries) {

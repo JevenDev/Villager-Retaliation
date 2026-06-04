@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.trade;
 
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -9,7 +10,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 
@@ -33,12 +33,12 @@ public final class VillagerTradeWalletService {
         }
         for (int index = 0; index < offers.size(); index++) {
             MerchantOffer offer = offers.get(index);
-            int payout = emeraldCount(offer.getResult());
+            int payout = currencyCount(level, offer.getResult());
             if (payout <= 0) {
                 restoreWalletStock(villager, offer, index);
                 continue;
             }
-            if (VillagerWalletService.canSpendEmeralds(villager, payout)) {
+            if (VillagerWalletService.canSpendCurrency(villager, payout)) {
                 restoreWalletStock(villager, offer, index);
             } else {
                 markWalletOutOfStock(villager, offer, index);
@@ -67,14 +67,14 @@ public final class VillagerTradeWalletService {
         }
         restoreWalletStock(villager, offer, indexOf(villager.getOffers(), offer));
 
-        int paidToVillager = emeraldCount(offer.getCostA()) + emeraldCount(offer.getCostB());
+        int paidToVillager = currencyCount(level, offer.getCostA()) + currencyCount(level, offer.getCostB());
         if (paidToVillager > 0) {
-            VillagerWalletService.addEmeralds(villager, paidToVillager, VillagerWalletService.WalletSource.TRADE_PAYMENT);
+            VillagerWalletService.addCurrency(villager, paidToVillager, VillagerWalletService.WalletSource.TRADE_PAYMENT);
         }
 
-        int paidByVillager = emeraldCount(offer.getResult());
+        int paidByVillager = currencyCount(level, offer.getResult());
         if (paidByVillager > 0) {
-            VillagerWalletService.spendEmeralds(villager, paidByVillager, VillagerWalletService.WalletSource.TRADE_PAYOUT);
+            VillagerWalletService.spendCurrency(villager, paidByVillager, VillagerWalletService.WalletSource.TRADE_PAYOUT);
         }
         refreshWalletStock(level, villager);
     }
@@ -114,8 +114,8 @@ public final class VillagerTradeWalletService {
         }
     }
 
-    private static int emeraldCount(ItemStack stack) {
-        return !stack.isEmpty() && stack.is(Items.EMERALD) ? stack.getCount() : 0;
+    private static int currencyCount(ServerLevel level, ItemStack stack) {
+        return VillagerCurrencyResources.isCurrency(level.getServer(), stack) ? stack.getCount() : 0;
     }
 
     private static int indexOf(MerchantOffers offers, MerchantOffer target) {

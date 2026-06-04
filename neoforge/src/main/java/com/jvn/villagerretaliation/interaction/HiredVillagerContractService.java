@@ -11,7 +11,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.item.Items;
 
 public final class HiredVillagerContractService {
     private static final String CONTRACT_TAG = "VillagerRetaliationHireContract";
@@ -246,15 +245,15 @@ public final class HiredVillagerContractService {
         tag.putLong(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG, gameTime);
 
         int dailyCost = Math.max(1, tag.getInt(DAILY_COST_TAG));
-        if (AssignedStorageService.countPaymentItems(villager, stack -> stack.is(Items.EMERALD)) < dailyCost) {
+        if (AssignedStorageService.countPaymentItems(villager, stack -> VillagerCurrencyResources.isCurrency(level.getServer(), stack)) < dailyCost) {
             return;
         }
-        int consumed = AssignedStorageService.consumePaymentItems(villager, stack -> stack.is(Items.EMERALD), dailyCost);
+        int consumed = AssignedStorageService.consumePaymentItems(villager, stack -> VillagerCurrencyResources.isCurrency(level.getServer(), stack), dailyCost);
         if (consumed < dailyCost) {
             return;
         }
         extendActiveContract(level, tag, 1, dailyCost);
-        VillagerWalletService.addEmeralds(villager, dailyCost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        VillagerWalletService.addCurrency(villager, dailyCost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         villager.setPersistenceRequired();
     }
 

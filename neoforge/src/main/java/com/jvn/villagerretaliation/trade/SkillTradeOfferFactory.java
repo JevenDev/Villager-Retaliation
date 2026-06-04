@@ -261,7 +261,7 @@ public final class SkillTradeOfferFactory {
             }
 
             int baseCostCount = definition.cost().countForSkill(context.skillValue(), definition.minRank().minInclusive());
-            int costCount = SkillTradeQualityScaler.emeraldCost(context, definition.cost().item(), baseCostCount);
+            int costCount = SkillTradeQualityScaler.currencyCost(level.getServer(), context, definition.cost().item(), baseCostCount);
             int baseMaxUses = definition.maxUses().valueForSkill(context.skillValue(), definition.minRank().minInclusive());
             int maxUses = SkillTradeQualityScaler.maxUses(context, baseMaxUses);
             int xp = SkillTradeQualityScaler.xp(context, definition.xp());

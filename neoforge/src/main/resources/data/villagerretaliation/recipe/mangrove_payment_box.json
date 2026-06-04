@@ -10,7 +10,7 @@
       "item": "minecraft:mangrove_planks"
     },
     "E": {
-      "item": "minecraft:emerald"
+      "tag": "villagerretaliation:currency"
     }
   },
   "result": {

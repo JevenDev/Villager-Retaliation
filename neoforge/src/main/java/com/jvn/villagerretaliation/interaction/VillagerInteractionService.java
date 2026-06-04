@@ -358,11 +358,11 @@ public final class VillagerInteractionService {
                 }
                 int refund = HiredVillagerContractService.endHireContract(level, villager, player);
                 if (refund > 0) {
-                    giveEmeralds(player, refund);
+                    giveCurrency(player, refund);
                 }
                 VillagerRecruitmentService.sendFiredNotice(player, villager);
                 sendVillagerNotice(player, villager, refund > 0
-                        ? "Contract ended. Refunded " + refund + " emerald" + plural(refund) + "."
+                        ? "Contract ended. Refunded " + formatCurrency(level, refund) + "."
                         : "Contract ended.");
                 VillagerInteractionScreenOpener.refreshNormal(player, villager);
             }
@@ -424,17 +424,17 @@ public final class VillagerInteractionService {
         }
 
         int cost = HiredVillagerContractService.getHireCost(level, villager, player, days);
-        if (countEmeralds(player) < cost) {
-            sendVillagerNotice(player, villager, "Hiring for " + days + " day" + plural(days) + " costs " + cost + " emerald" + plural(cost) + ".");
+        if (countCurrency(player) < cost) {
+            sendVillagerNotice(player, villager, "Hiring for " + days + " day" + plural(days) + " costs " + formatCurrency(level, cost) + ".");
             return true;
         }
-        removeEmeralds(player, cost);
+        removeCurrency(player, cost);
         HiredVillagerContractService.startHireContract(level, villager, player, days, cost);
         HiredVillagerWorkService.resetForNewContract(level, villager);
-        VillagerWalletService.addEmeralds(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         VillagerRecruitmentService.sendHiredNotice(player, villager);
         sendVillagerNotice(player, villager, "Hired for " + days + " day" + plural(days) + " for "
-                + cost + " emerald" + plural(cost) + " as "
+                + formatCurrency(level, cost) + " as "
                 + HiredVillagerContractService.activeRole(level, villager).label() + ".");
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
         return true;
@@ -462,19 +462,19 @@ public final class VillagerInteractionService {
             return true;
         }
         int cost = HiredVillagerContractService.getHireCost(level, villager, player, days);
-        if (countEmeralds(player) < cost) {
+        if (countCurrency(player) < cost) {
             sendVillagerNotice(player, villager, "A " + days + " day" + plural(days)
-                    + " extension costs " + cost + " emerald" + plural(cost) + ".");
+                    + " extension costs " + formatCurrency(level, cost) + ".");
             return true;
         }
         if (!HiredVillagerContractService.extendHireContract(level, villager, player, days, cost)) {
             sendVillagerNotice(player, villager, "This contract cannot be extended right now.");
             return true;
         }
-        removeEmeralds(player, cost);
-        VillagerWalletService.addEmeralds(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        removeCurrency(player, cost);
+        VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         sendVillagerNotice(player, villager, "Contract extended by " + days + " day" + plural(days)
-                + " for " + cost + " emerald" + plural(cost) + ". "
+                + " for " + formatCurrency(level, cost) + ". "
                 + HiredVillagerContractService.getRemainingHireDays(level, villager) + " day"
                 + plural(HiredVillagerContractService.getRemainingHireDays(level, villager)) + " remaining.");
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
@@ -570,7 +570,7 @@ public final class VillagerInteractionService {
         if (!HiredVillagerContractService.isHired(level, villager)) {
             int dailyCost = HiredVillagerContractService.getDailyCost(level, villager, player);
             sendVillagerNotice(player, villager, "Available roles: " + HiredVillagerRoles.roleSummary(level, villager)
-                    + ". Daily cost: " + dailyCost + " emerald" + plural(dailyCost) + ".");
+                    + ". Daily cost: " + formatCurrency(level, dailyCost) + ".");
             return;
         }
         if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
@@ -637,20 +637,20 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "No excess earnings to deposit.");
             return;
         }
-        VillagerWalletService.DepositResult result = VillagerWalletService.tryDepositExcessEmeralds(villager);
+        VillagerWalletService.DepositResult result = VillagerWalletService.tryDepositExcessCurrency(villager);
         if (result.storageUnavailable()) {
             sendVillagerNotice(player, villager, "Assigned storage is unavailable.");
         } else if (!result.assignedStorageAvailable()) {
-            sendVillagerNotice(player, villager, "No assigned storage. I kept the emeralds in my wallet.");
+            sendVillagerNotice(player, villager, "No assigned storage. I kept the currency in my wallet.");
         } else if (result.deposited() <= 0) {
-            sendVillagerNotice(player, villager, "Assigned storage is full. I kept the emeralds in my wallet.");
+            sendVillagerNotice(player, villager, "Assigned storage is full. I kept the currency in my wallet.");
         } else if (result.remaining() > 0) {
-            sendVillagerNotice(player, villager, "Deposited " + result.deposited() + " emerald"
-                    + plural(result.deposited()) + ". Storage is full, so I kept "
-                    + result.remaining() + " in my wallet.");
+            sendVillagerNotice(player, villager, "Deposited " + formatCurrency(level, result.deposited())
+                    + ". Storage is full, so I kept "
+                    + formatCurrency(level, result.remaining()) + " in my wallet.");
         } else {
-            sendVillagerNotice(player, villager, "Deposited " + result.deposited() + " emerald"
-                    + plural(result.deposited()) + " into assigned storage.");
+            sendVillagerNotice(player, villager, "Deposited " + formatCurrency(level, result.deposited())
+                    + " into assigned storage.");
         }
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
     }
@@ -703,34 +703,34 @@ public final class VillagerInteractionService {
         return VillagerRetaliationItems.isClipboard(offhand) ? offhand : ItemStack.EMPTY;
     }
 
-    private static int countEmeralds(ServerPlayer player) {
+    private static int countCurrency(ServerPlayer player) {
         int count = 0;
         for (ItemStack stack : player.getInventory().items) {
-            if (stack.is(Items.EMERALD)) {
+            if (VillagerCurrencyResources.isCurrency(player.serverLevel().getServer(), stack)) {
                 count += stack.getCount();
             }
         }
         for (ItemStack stack : player.getInventory().offhand) {
-            if (stack.is(Items.EMERALD)) {
+            if (VillagerCurrencyResources.isCurrency(player.serverLevel().getServer(), stack)) {
                 count += stack.getCount();
             }
         }
         return count;
     }
 
-    private static void removeEmeralds(ServerPlayer player, int count) {
+    private static void removeCurrency(ServerPlayer player, int count) {
         int remaining = count;
-        remaining = removeEmeraldsFrom(player.getInventory().items, remaining);
+        remaining = removeCurrencyFrom(player, player.getInventory().items, remaining);
         if (remaining > 0) {
-            removeEmeraldsFrom(player.getInventory().offhand, remaining);
+            removeCurrencyFrom(player, player.getInventory().offhand, remaining);
         }
     }
 
-    private static void giveEmeralds(ServerPlayer player, int count) {
+    private static void giveCurrency(ServerPlayer player, int count) {
         int remaining = count;
         while (remaining > 0) {
-            int chunk = Math.min(64, remaining);
-            ItemStack stack = new ItemStack(Items.EMERALD, chunk);
+            int chunk = Math.min(VillagerCurrencyResources.maxStackSize(player.serverLevel().getServer()), remaining);
+            ItemStack stack = VillagerCurrencyResources.createStack(player.serverLevel().getServer(), chunk);
             if (!player.getInventory().add(stack)) {
                 player.drop(stack, false);
             }
@@ -738,13 +738,13 @@ public final class VillagerInteractionService {
         }
     }
 
-    private static int removeEmeraldsFrom(List<ItemStack> stacks, int count) {
+    private static int removeCurrencyFrom(ServerPlayer player, List<ItemStack> stacks, int count) {
         int remaining = count;
         for (ItemStack stack : stacks) {
             if (remaining <= 0) {
                 break;
             }
-            if (!stack.is(Items.EMERALD)) {
+            if (!VillagerCurrencyResources.isCurrency(player.serverLevel().getServer(), stack)) {
                 continue;
             }
             int removed = Math.min(remaining, stack.getCount());
@@ -752,6 +752,10 @@ public final class VillagerInteractionService {
             remaining -= removed;
         }
         return remaining;
+    }
+
+    private static String formatCurrency(ServerLevel level, int count) {
+        return VillagerCurrencyResources.format(level.getServer(), count);
     }
 
     private static String plural(int count) {

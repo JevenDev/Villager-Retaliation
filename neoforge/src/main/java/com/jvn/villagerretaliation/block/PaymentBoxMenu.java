@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.block;
 
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -9,7 +11,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 public final class PaymentBoxMenu extends AbstractContainerMenu {
     private static final int ROW_COUNT = 3;
@@ -27,6 +28,7 @@ public final class PaymentBoxMenu extends AbstractContainerMenu {
     private static final int PLAYER_HOTBAR_Y = 143;
 
     private final Container container;
+    private final MinecraftServer server;
 
     public PaymentBoxMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
         this(containerId, playerInventory, new SimpleContainer(BOX_SLOT_COUNT));
@@ -36,6 +38,7 @@ public final class PaymentBoxMenu extends AbstractContainerMenu {
         super(VillagerRetaliationMenus.PAYMENT_BOX.get(), containerId);
         checkContainerSize(container, BOX_SLOT_COUNT);
         this.container = container;
+        this.server = playerInventory.player.level().getServer();
         container.startOpen(playerInventory.player);
         addPaymentSlots(container);
         addPlayerInventory(playerInventory);
@@ -65,7 +68,7 @@ public final class PaymentBoxMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            if (!sourceStack.is(Items.EMERALD) || !moveItemStackTo(sourceStack, 0, BOX_SLOT_COUNT, false)) {
+            if (!VillagerCurrencyResources.isCurrency(this.server, sourceStack) || !moveItemStackTo(sourceStack, 0, BOX_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
         }
@@ -96,7 +99,8 @@ public final class PaymentBoxMenu extends AbstractContainerMenu {
                         container,
                         column + row * 9,
                         BOX_X + column * SLOT_SIZE,
-                        BOX_Y + row * SLOT_SIZE
+                        BOX_Y + row * SLOT_SIZE,
+                        this.server
                 ));
             }
         }
@@ -127,13 +131,16 @@ public final class PaymentBoxMenu extends AbstractContainerMenu {
     }
 
     private static final class PaymentSlot extends Slot {
-        private PaymentSlot(Container container, int slot, int x, int y) {
+        private final MinecraftServer server;
+
+        private PaymentSlot(Container container, int slot, int x, int y, MinecraftServer server) {
             super(container, slot, x, y);
+            this.server = server;
         }
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return stack.is(Items.EMERALD);
+            return VillagerCurrencyResources.isCurrency(this.server, stack);
         }
     }
 }

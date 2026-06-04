@@ -122,6 +122,44 @@ Use tags with `#` when any item in the tag should count:
 
 The same pattern is used in gifts, pacification, and some forced-dialogue payment selectors.
 
+## Currency
+
+Villager Retaliation's hire payments, payment boxes, wallet deposits, wallet UI, default currency drops, and emerald-default skill-trade costs use:
+
+```text
+data/villagerretaliation/currency/default.json
+```
+
+Built-in default:
+
+```json
+{
+  "item": "minecraft:emerald",
+  "name": "emerald",
+  "plural_name": "emeralds",
+  "wallet_label": "Emeralds"
+}
+```
+
+Fields:
+
+| Field | Meaning |
+| --- | --- |
+| `item` | Primary currency item. Refunds, wallet deposits, drops, and emerald-default skill trade costs use this item. |
+| `accepted_items` / `items` | Extra item ids accepted as equivalent payment. |
+| `accepted_tags` / `tags` | Item tags accepted as equivalent payment. Prefixing with `#` is optional here. |
+| `name` | Singular display name used in notices. |
+| `plural_name` | Plural display name used in notices. |
+| `wallet_label` | Label shown in the villager interaction wallet line. |
+
+Payment-box recipes and client-side "hold currency" checks also use the `villagerretaliation:currency` item tag:
+
+```text
+data/villagerretaliation/tags/item/currency.json
+```
+
+Keep that tag aligned with your currency item so crafting recipes, payment boxes, and client hints all agree.
+
 ## Conditions
 
 `conditions` are the preferred way to express complex logic in newer beta.12 content. A condition array usually means all listed conditions must pass.

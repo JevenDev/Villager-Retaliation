@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.block;
 
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -9,7 +10,6 @@ import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -38,7 +38,7 @@ public final class PaymentBoxBlockEntity extends RandomizableContainerBlockEntit
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return stack.is(Items.EMERALD);
+        return VillagerCurrencyResources.isCurrency(this.level == null ? null : this.level.getServer(), stack);
     }
 
     @Override

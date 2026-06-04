@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.jvn.villagerretaliation.client.interaction.ClientVillagerConversationState;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.network.VillagerReputationRequestPayload;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
@@ -14,7 +15,6 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -135,7 +135,7 @@ public final class VillagerReputationHoverTooltipOverlay {
         }
 
         if (VillagerRetaliationConfig.VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD.get()
-                && !holdingEmerald(minecraft.player)) {
+                && !holdingCurrency(minecraft.player)) {
             return Optional.empty();
         }
 
@@ -153,8 +153,9 @@ public final class VillagerReputationHoverTooltipOverlay {
                 .map(entry -> new HoverEntry(entry.reputation(), entry.level()));
     }
 
-    private static boolean holdingEmerald(Player player) {
-        return player.getMainHandItem().is(Items.EMERALD) || player.getOffhandItem().is(Items.EMERALD);
+    private static boolean holdingCurrency(Player player) {
+        return VillagerCurrencyResources.isCurrency(null, player.getMainHandItem())
+                || VillagerCurrencyResources.isCurrency(null, player.getOffhandItem());
     }
 
     private static void renderTooltip(GuiGraphics graphics, Minecraft minecraft, HoverEntry entry, float alphaFactor) {

@@ -106,6 +106,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final int maxWalletEmeralds;
     private final int lifetimeWalletEarned;
     private final int lifetimeWalletDeposited;
+    private final String walletCurrencyName;
+    private final String walletCurrencyPluralName;
+    private final String walletCurrencyLabel;
     private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
@@ -162,6 +165,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             int maxWalletEmeralds,
             int lifetimeWalletEarned,
             int lifetimeWalletDeposited,
+            String walletCurrencyName,
+            String walletCurrencyPluralName,
+            String walletCurrencyLabel,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
@@ -189,6 +195,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.maxWalletEmeralds = Math.max(0, maxWalletEmeralds);
         this.lifetimeWalletEarned = Math.max(0, lifetimeWalletEarned);
         this.lifetimeWalletDeposited = Math.max(0, lifetimeWalletDeposited);
+        this.walletCurrencyName = blankToDefault(walletCurrencyName, "emerald");
+        this.walletCurrencyPluralName = blankToDefault(walletCurrencyPluralName, "emeralds");
+        this.walletCurrencyLabel = blankToDefault(walletCurrencyLabel, "Emeralds");
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
@@ -1572,15 +1581,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private String walletText() {
-        return translate("info.wallet", this.walletEmeralds, this.maxWalletEmeralds);
+        return translate("info.wallet", this.walletCurrencyLabel, this.walletEmeralds, this.maxWalletEmeralds);
     }
 
     private String walletTooltipTitle() {
-        return translate("info.wallet.tooltip.title");
+        return translate("info.wallet.tooltip.title", this.walletCurrencyPluralName);
     }
 
     private String walletTooltipBody() {
-        return translate("info.wallet.tooltip.body");
+        return translate("info.wallet.tooltip.body", this.walletCurrencyPluralName);
     }
 
     private int reputationColor() {
@@ -1973,6 +1982,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         String key = "gender." + genderName.trim().toLowerCase(Locale.ROOT);
         return hasTranslation(key) ? translate(key) : genderName;
+    }
+
+    private static String blankToDefault(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 
     private static String backLabel() {

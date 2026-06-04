@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.loot;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationCombatWeaponFactory;
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.toucanlib.util.ToucanItemStacks;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -29,7 +30,7 @@ public final class VillagerLootHandler {
 
         RandomSource random = villager.getRandom();
         if (ToucanRandom.chance(random, VillagerRetaliationConfig.VILLAGER_EMERALD_DROP_CHANCE.get())) {
-            ToucanLivingDrops.addDrop(event, new ItemStack(Items.EMERALD, ToucanRandom.betweenInclusive(random, 1, 5)));
+            ToucanLivingDrops.addDrop(event, VillagerCurrencyResources.createStack(villager.level().getServer(), ToucanRandom.betweenInclusive(random, 1, 5)));
         }
 
         if (ToucanRandom.chance(random, VillagerRetaliationConfig.VILLAGER_BREAD_DROP_CHANCE.get())) {

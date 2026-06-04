@@ -1,10 +1,11 @@
 package com.jvn.villagerretaliation.trade;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 
 public final class SkillTradeQualityScaler {
     private SkillTradeQualityScaler() {
@@ -35,8 +36,8 @@ public final class SkillTradeQualityScaler {
         return scaleStackCount(baseCount, quality(context).countMultiplier());
     }
 
-    public static int emeraldCost(SkillTradeScalingContext context, Item costItem, int baseCount) {
-        if (!scalesQuality(context) || !context.scaling().scalesCost() || costItem != Items.EMERALD) {
+    public static int currencyCost(MinecraftServer server, SkillTradeScalingContext context, Item costItem, int baseCount) {
+        if (!scalesQuality(context) || !context.scaling().scalesCost() || costItem != VillagerCurrencyResources.primaryItem(server)) {
             return Math.clamp(baseCount, 1, 64);
         }
         return scaleStackCount(baseCount, quality(context).emeraldCostMultiplier());

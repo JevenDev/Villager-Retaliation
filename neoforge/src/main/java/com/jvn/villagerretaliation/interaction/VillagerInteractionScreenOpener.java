@@ -127,6 +127,7 @@ public final class VillagerInteractionScreenOpener {
         boolean hiredByPlayer = HiredVillagerContractService.isHiredBy(level, villager, player);
         boolean hiredAnyPlayer = HiredVillagerContractService.isHired(level, villager);
         VillagerWalletService.WalletSnapshot wallet = VillagerWalletService.getWallet(villager);
+        VillagerCurrencyResources.Text currencyText = VillagerCurrencyResources.text(level.getServer());
         VillagerReputationNetworking.sendProfile(player, villager, profile);
         return new OpenVillagerInteractionPayload(
                 villager.getId(),
@@ -149,6 +150,9 @@ public final class VillagerInteractionScreenOpener {
                 VillagerWalletService.getVendorCurrencyCap(villager),
                 wallet.lifetimeEarned(),
                 wallet.lifetimeDeposited(),
+                currencyText.name(),
+                currencyText.pluralName(),
+                currencyText.walletLabel(),
                 forceCameraTowardsVillager,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),

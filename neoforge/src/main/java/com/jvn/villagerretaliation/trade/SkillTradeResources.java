@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
@@ -167,12 +168,13 @@ public final class SkillTradeResources {
         DatapackResourceLoader.forEachJsonResource(
                 server,
                 SKILL_TRADE_ROOT,
-                (location, resource) -> readFile(location, resource, definitions));
+                (location, resource) -> readFile(server, location, resource, definitions));
         LOGGER.info("Loaded {} Villager Retaliation skill trade definitions.", definitions.size());
         return new SkillTradePoolData(List.copyOf(definitions.values()));
     }
 
     private static void readFile(
+            MinecraftServer server,
             ResourceLocation location,
             Resource resource,
             Map<ResourceLocation, SkillTradeDefinition> definitions) {
@@ -182,18 +184,19 @@ public final class SkillTradeResources {
                 definitions.clear();
                 LOGGER.info("Villager Retaliation skill trade file {} requested global replace.", location);
             }
-            readEntries(location, root, definitions);
+            readEntries(server, location, root, definitions);
         });
     }
 
     private static void readEntries(
+            MinecraftServer server,
             ResourceLocation location,
             JsonObject root,
             Map<ResourceLocation, SkillTradeDefinition> definitions) {
         JsonArray entries = root.getAsJsonArray("entries");
         if (entries == null) {
             if (looksLikeEntry(root)) {
-                readEntry(location, root, 0, definitions);
+                readEntry(server, location, root, 0, definitions);
             }
             return;
         }
@@ -205,12 +208,13 @@ public final class SkillTradeResources {
                 index++;
                 continue;
             }
-            readEntry(location, element.getAsJsonObject(), index, definitions);
+            readEntry(server, location, element.getAsJsonObject(), index, definitions);
             index++;
         }
     }
 
     private static void readEntry(
+            MinecraftServer server,
             ResourceLocation location,
             JsonObject entry,
             int index,
@@ -222,11 +226,12 @@ public final class SkillTradeResources {
             return;
         }
 
-        Optional<SkillTradeDefinition> definition = parseDefinition(location, entry, index, id);
+        Optional<SkillTradeDefinition> definition = parseDefinition(server, location, entry, index, id);
         definition.ifPresent(value -> definitions.put(value.id(), value));
     }
 
     private static Optional<SkillTradeDefinition> parseDefinition(
+            MinecraftServer server,
             ResourceLocation location,
             JsonObject entry,
             int index,
@@ -270,14 +275,14 @@ public final class SkillTradeResources {
                 readInt(entry, "villager_level", "villagerLevel", 1),
                 readChance(location, context, entry),
                 readInt(entry, "weight", 1),
-                readCost(location, context, entry),
+                readCost(server, location, context, entry),
                 result.get(),
                 readMaxUses(location, context, entry),
                 readInt(entry, "xp", 0),
                 (float) readDouble(entry, "price_multiplier", "priceMultiplier", 0.05D),
                 readConditions(location, context, entry),
                 readQualityScaling(location, context, entry),
-                readRequestMetadata(location, context, entry),
+                readRequestMetadata(server, location, context, entry),
                 pool
         ));
     }
@@ -396,14 +401,14 @@ public final class SkillTradeResources {
         return Math.clamp(chance, 0.0D, 1.0D);
     }
 
-    private static SkillTradeCost readCost(ResourceLocation location, String context, JsonObject entry) {
+    private static SkillTradeCost readCost(MinecraftServer server, ResourceLocation location, String context, JsonObject entry) {
         JsonObject cost = readObject(entry, "cost");
         if (cost == null) {
-            return SkillTradeCost.DEFAULT;
+            return new SkillTradeCost(VillagerCurrencyResources.primaryItem(server), 1, SkillTradeCost.SkillDiscount.DISABLED);
         }
 
         DatapackDiagnostics.warnUnknownKeys(location, "skill trade cost", context, cost, COST_KEYS);
-        Item item = readItem(cost, "item").orElse(Items.EMERALD);
+        Item item = resolveCurrencySentinel(server, readItem(cost, "item").orElse(Items.EMERALD));
         return new SkillTradeCost(
                 item,
                 readInt(cost, "count", 1),
@@ -613,7 +618,7 @@ public final class SkillTradeResources {
         );
     }
 
-    private static SkillTradeRequestMetadata readRequestMetadata(ResourceLocation location, String context, JsonObject entry) {
+    private static SkillTradeRequestMetadata readRequestMetadata(MinecraftServer server, ResourceLocation location, String context, JsonObject entry) {
         JsonObject request = readObject(entry, "request");
         if (request == null) {
             return SkillTradeRequestMetadata.NOT_TARGETABLE;
@@ -626,7 +631,7 @@ public final class SkillTradeResources {
                 readReputationLevel(request, "min_reputation", "minReputation", VillagerReputationLevel.RESPECTED),
                 readInt(request, "wait_days", "waitDays", 0),
                 readInt(request, "cooldown_days", "cooldownDays", 0),
-                readRequestCost(location, context, request)
+                readRequestCost(server, location, context, request)
         );
     }
 
@@ -646,7 +651,7 @@ public final class SkillTradeResources {
         }
     }
 
-    private static SpecialOrderCost readRequestCost(ResourceLocation location, String context, JsonObject request) {
+    private static SpecialOrderCost readRequestCost(MinecraftServer server, ResourceLocation location, String context, JsonObject request) {
         JsonObject cost = readObject(request, "extra_cost");
         if (cost == null) {
             cost = readObject(request, "extraCost");
@@ -656,8 +661,12 @@ public final class SkillTradeResources {
         }
 
         DatapackDiagnostics.warnUnknownKeys(location, "skill trade request extra_cost", context, cost, REQUEST_COST_KEYS);
-        Item item = readItem(cost, "item").orElse(Items.EMERALD);
+        Item item = resolveCurrencySentinel(server, readItem(cost, "item").orElse(Items.EMERALD));
         return new SpecialOrderCost(item, readInt(cost, "count", 0));
+    }
+
+    private static Item resolveCurrencySentinel(MinecraftServer server, Item item) {
+        return item == Items.EMERALD ? VillagerCurrencyResources.primaryItem(server) : item;
     }
 
     private static Set<SkillTradeConfigFlag> readConfigFlags(

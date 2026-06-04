@@ -10,7 +10,7 @@
       "item": "minecraft:warped_planks"
     },
     "E": {
-      "item": "minecraft:emerald"
+      "tag": "villagerretaliation:currency"
     }
   },
   "result": {

@@ -10,7 +10,7 @@
       "item": "minecraft:bamboo_planks"
     },
     "E": {
-      "item": "minecraft:emerald"
+      "tag": "villagerretaliation:currency"
     }
   },
   "result": {

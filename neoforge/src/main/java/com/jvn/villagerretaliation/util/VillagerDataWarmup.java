@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerSavedData;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerService;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.interaction.VillagerGiftResources;
 import com.jvn.villagerretaliation.loot.ProfessionLootResources;
 import com.jvn.villagerretaliation.notification.VillagerNotificationResources;
@@ -35,6 +36,7 @@ public final class VillagerDataWarmup {
         VillagerGiftResources.warm(server);
         ProfessionLootResources.warm(server);
         SkillTradeResources.warm(server);
+        VillagerCurrencyResources.warm(server);
         VillagerPacifyPaymentResources.warm(server);
         VillagerNotificationResources.warm(server);
         ForcedDialogueResources.warm(server);
@@ -65,6 +67,7 @@ public final class VillagerDataWarmup {
         VillagerGiftResources.clearCache();
         ProfessionLootResources.clearCache();
         SkillTradeResources.clearCache();
+        VillagerCurrencyResources.clearCache();
         VillagerPacifyPaymentResources.clearCache();
         VillagerNotificationResources.clearCache();
         ForcedDialogueResources.clearCache();

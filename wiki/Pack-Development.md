@@ -12,6 +12,7 @@ Use a datapack for behavior and authored text:
   data/
     villagerretaliation/
       gifts/
+      currency/
       notifications/
       pacification/
       profession_loot/
@@ -48,6 +49,7 @@ These systems are intentionally fixed to the mod namespace:
 | --- | --- |
 | Notifications | `villagerretaliation` |
 | Gifts | `villagerretaliation` |
+| Currency | `villagerretaliation` |
 | Pacification | `villagerretaliation` |
 | Profession loot rules | `villagerretaliation` |
 | Villager names | `villagerretaliation` |
@@ -86,6 +88,7 @@ Use your own file names when you want additive content:
 data/my_pack/dialogue/en_us/my_pack/lines/rumors.json
 data/villagerretaliation/notifications/en_us/my_pack/world_text.json
 data/villagerretaliation/gifts/my_pack_preferences.json
+data/villagerretaliation/currency/default.json
 ```
 
 ## Suggested Workflow

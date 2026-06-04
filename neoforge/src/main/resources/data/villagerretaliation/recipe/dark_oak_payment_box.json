@@ -10,7 +10,7 @@
       "item": "minecraft:dark_oak_planks"
     },
     "E": {
-      "item": "minecraft:emerald"
+      "tag": "villagerretaliation:currency"
     }
   },
   "result": {

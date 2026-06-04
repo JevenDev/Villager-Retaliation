@@ -14,7 +14,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 public final class VillagerWalletService {
     private static final String WALLET_TAG = "VillagerRetaliationWallet";
@@ -98,6 +97,10 @@ public final class VillagerWalletService {
     }
 
     public static int addEmeralds(Villager villager, int amount, WalletSource source) {
+        return addCurrency(villager, amount, source);
+    }
+
+    public static int addCurrency(Villager villager, int amount, WalletSource source) {
         if (amount <= 0) {
             return 0;
         }
@@ -113,10 +116,18 @@ public final class VillagerWalletService {
     }
 
     public static boolean canSpendEmeralds(Villager villager, int amount) {
+        return canSpendCurrency(villager, amount);
+    }
+
+    public static boolean canSpendCurrency(Villager villager, int amount) {
         return amount <= 0 || hasUnlimitedCurrency() || getCurrentEmeralds(villager) >= amount;
     }
 
     public static boolean spendEmeralds(Villager villager, int amount, WalletSource source) {
+        return spendCurrency(villager, amount, source);
+    }
+
+    public static boolean spendCurrency(Villager villager, int amount, WalletSource source) {
         if (amount <= 0) {
             return true;
         }
@@ -181,7 +192,7 @@ public final class VillagerWalletService {
 
         if (getDepositAmount(villager) > 0 && wallet.getLong(LAST_DEPOSIT_DAY_TAG) < day) {
             wallet.putLong(LAST_DEPOSIT_DAY_TAG, day);
-            tryDepositExcessEmeralds(villager);
+            tryDepositExcessCurrency(villager);
         }
     }
 
@@ -194,16 +205,28 @@ public final class VillagerWalletService {
     }
 
     public static boolean canDepositWalletEmeralds(Villager villager) {
+        return canDepositWalletCurrency(villager);
+    }
+
+    public static boolean canDepositWalletCurrency(Villager villager) {
         return getDepositAmount(villager) > 0
                 && villager.level() instanceof ServerLevel level
                 && AssignedStorageService.hasAssignedStorage(level, villager);
     }
 
     public static DepositResult tryDepositExcessEmeralds(Villager villager) {
+        return tryDepositExcessCurrency(villager);
+    }
+
+    public static DepositResult tryDepositExcessCurrency(Villager villager) {
         return tryDepositEmeralds(villager, getDepositAmount(villager));
     }
 
     public static DepositResult tryDepositEmeralds(Villager villager, int amount) {
+        return tryDepositCurrency(villager, amount);
+    }
+
+    public static DepositResult tryDepositCurrency(Villager villager, int amount) {
         if (amount <= 0) {
             return DepositResult.none();
         }
@@ -220,8 +243,8 @@ public final class VillagerWalletService {
         int remaining = requested;
         int deposited = 0;
         while (remaining > 0) {
-            int chunk = Math.min(64, remaining);
-            ItemStack stack = createProtectedEmeraldStack(villager, chunk, "earnings_deposit");
+            int chunk = Math.min(VillagerCurrencyResources.maxStackSize(level.getServer()), remaining);
+            ItemStack stack = createProtectedCurrencyStack(villager, chunk, "earnings_deposit");
             ItemStack remainder = AssignedStorageService.depositStack(villager, stack);
             int moved = chunk - remainder.getCount();
             if (moved <= 0) {
@@ -242,19 +265,20 @@ public final class VillagerWalletService {
     }
 
     public static ItemStack createProtectedEmeraldStack(Villager villager, int count, String reason) {
-        int safeCount = Mth.clamp(count, 0, Items.EMERALD.getDefaultMaxStackSize());
-        if (safeCount <= 0) {
-            return ItemStack.EMPTY;
-        }
-        return ProtectedVillagerProperty.mark(new ItemStack(Items.EMERALD, safeCount), villager, reason);
+        return createProtectedCurrencyStack(villager, count, reason);
+    }
+
+    public static ItemStack createProtectedCurrencyStack(Villager villager, int count, String reason) {
+        ItemStack stack = VillagerCurrencyResources.createStack(villager.level().getServer(), count);
+        return stack.isEmpty() ? ItemStack.EMPTY : ProtectedVillagerProperty.mark(stack, villager, reason);
     }
 
     public static boolean canAffordPurchase(Villager villager, int amount) {
-        return canSpendEmeralds(villager, amount);
+        return canSpendCurrency(villager, amount);
     }
 
     public static boolean payFromWallet(Villager villager, int amount, WalletSource source) {
-        return spendEmeralds(villager, amount, source);
+        return spendCurrency(villager, amount, source);
     }
 
     public static int getVendorCurrencyAvailable(Villager villager) {

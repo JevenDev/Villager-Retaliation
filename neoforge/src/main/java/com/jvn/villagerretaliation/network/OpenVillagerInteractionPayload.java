@@ -43,6 +43,9 @@ public record OpenVillagerInteractionPayload(
         int maxWalletEmeralds,
         int lifetimeWalletEarned,
         int lifetimeWalletDeposited,
+        String walletCurrencyName,
+        String walletCurrencyPluralName,
+        String walletCurrencyLabel,
         boolean forceCameraTowardsVillager,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
@@ -75,6 +78,9 @@ public record OpenVillagerInteractionPayload(
         buffer.writeVarInt(payload.maxWalletEmeralds());
         buffer.writeVarInt(payload.lifetimeWalletEarned());
         buffer.writeVarInt(payload.lifetimeWalletDeposited());
+        buffer.writeUtf(payload.walletCurrencyName(), 64);
+        buffer.writeUtf(payload.walletCurrencyPluralName(), 64);
+        buffer.writeUtf(payload.walletCurrencyLabel(), 64);
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
@@ -105,6 +111,9 @@ public record OpenVillagerInteractionPayload(
                 buffer.readVarInt(),
                 buffer.readVarInt(),
                 buffer.readVarInt(),
+                buffer.readUtf(64),
+                buffer.readUtf(64),
+                buffer.readUtf(64),
                 buffer.readBoolean(),
                 readDialogueOptions(buffer),
                 readStringList(buffer),
