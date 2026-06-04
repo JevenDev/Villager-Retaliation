@@ -21,9 +21,9 @@ import org.lwjgl.glfw.GLFW;
 public final class ClipboardWorkforceScreen extends Screen {
     private static final int TEXTURE_WIDTH = 145;
     private static final int TEXTURE_HEIGHT = 194;
-    private static final int CONTENT_LEFT = 13;
-    private static final int CONTENT_RIGHT = 133;
-    private static final int CONTENT_TOP = 42;
+    private static final int CONTENT_LEFT = 18;
+    private static final int CONTENT_RIGHT = 121;
+    private static final int CONTENT_TOP = 43;
     private static final int CONTENT_BOTTOM = 181;
     private static final int TITLE_Y = 34;
     private static final int PAGE_BUTTON_WIDTH = 23;
@@ -272,7 +272,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         if (hovered) {
             graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 31, HOVER_FILL);
         }
-        drawLine(graphics, Component.literal(fit(worker.displayName(), CONTENT_RIGHT - CONTENT_LEFT - 12)), CONTENT_LEFT, y, TEXT);
+        drawLine(graphics, Component.literal(worker.displayName()), CONTENT_LEFT, y, CONTENT_RIGHT - 10, TEXT);
         if (hasWarning(worker)) {
             drawLine(graphics, Component.literal("!"), CONTENT_RIGHT - 6, y, WARNING);
         }
@@ -326,19 +326,21 @@ public final class ClipboardWorkforceScreen extends Screen {
             graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + ROW_HEIGHT - 1, selected ? SELECTED_FILL : HOVER_FILL);
         }
         drawLine(graphics, Component.literal(selected ? ">" : ""), CONTENT_LEFT - 8, y, TEXT);
-        drawLine(graphics, label, CONTENT_LEFT, y, muted ? MUTED : TEXT);
         drawRight(graphics, Component.literal(value), CONTENT_RIGHT, y, muted ? MUTED : TEXT);
+        drawLine(graphics, label, CONTENT_LEFT, y, CONTENT_RIGHT - this.font.width(value) - 8, muted ? MUTED : TEXT);
         this.rowActions.add(new RowAction(kind, role, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + ROW_HEIGHT - 1));
         return y + ROW_HEIGHT;
     }
 
     private void renderBackRow(GuiGraphics graphics, double mouseX, double mouseY) {
-        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, CONTENT_TOP - 2, CONTENT_LEFT + 42, CONTENT_TOP + 9);
+        Component back = Component.translatable("villagerretaliation.gui.clipboard_workforce.back");
+        int right = CONTENT_LEFT + Math.min(46, this.font.width(back) + 4);
+        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, CONTENT_TOP - 2, right, CONTENT_TOP + 9);
         if (hovered) {
-            graphics.fill(CONTENT_LEFT - 2, CONTENT_TOP - 2, CONTENT_LEFT + 42, CONTENT_TOP + 9, HOVER_FILL);
+            graphics.fill(CONTENT_LEFT - 2, CONTENT_TOP - 2, right, CONTENT_TOP + 9, HOVER_FILL);
         }
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.back"), CONTENT_LEFT, CONTENT_TOP, TEXT);
-        this.rowActions.add(new RowAction(RowKind.BACK, null, CONTENT_LEFT - 2, CONTENT_TOP - 2, CONTENT_LEFT + 42, CONTENT_TOP + 9));
+        drawLine(graphics, back, CONTENT_LEFT, CONTENT_TOP, TEXT);
+        this.rowActions.add(new RowAction(RowKind.BACK, null, CONTENT_LEFT - 2, CONTENT_TOP - 2, right, CONTENT_TOP + 9));
     }
 
     private void renderOverviewPageButton(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -363,7 +365,8 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private void drawMetricPair(GuiGraphics graphics, int y, Component left, Component right) {
-        drawLine(graphics, left, CONTENT_LEFT, y, TEXT);
+        int rightWidth = this.font.width(right);
+        drawLine(graphics, left, CONTENT_LEFT, y, CONTENT_RIGHT - rightWidth - 4, TEXT);
         drawRight(graphics, right, CONTENT_RIGHT, y, TEXT);
     }
 
@@ -384,15 +387,26 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private void drawLine(GuiGraphics graphics, Component text, int x, int y, int color) {
-        graphics.drawString(this.font, text, x, y, color, false);
+        drawLine(graphics, text, x, y, CONTENT_RIGHT, color);
+    }
+
+    private void drawLine(GuiGraphics graphics, Component text, int x, int y, int right, int color) {
+        int width = right - x;
+        if (width <= 0) {
+            return;
+        }
+        graphics.drawString(this.font, fit(text.getString(), width), x, y, color, false);
     }
 
     private void drawRight(GuiGraphics graphics, Component text, int right, int y, int color) {
-        graphics.drawString(this.font, text, right - this.font.width(text), y, color, false);
+        String line = fit(text.getString(), right - CONTENT_LEFT);
+        graphics.drawString(this.font, line, right - this.font.width(line), y, color, false);
     }
 
     private void drawCentered(GuiGraphics graphics, Component text, int y, int color) {
-        graphics.drawString(this.font, text, (TEXTURE_WIDTH - this.font.width(text)) / 2, y, color, false);
+        int width = CONTENT_RIGHT - CONTENT_LEFT;
+        String line = fit(text.getString(), width);
+        graphics.drawString(this.font, line, CONTENT_LEFT + (width - this.font.width(line)) / 2, y, color, false);
     }
 
     private List<WorkerRow> workersForSelectedRole() {

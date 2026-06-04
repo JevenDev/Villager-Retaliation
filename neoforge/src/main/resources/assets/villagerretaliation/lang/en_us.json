@@ -495,6 +495,7 @@
   "villagerretaliation.gui.clipboard.show_storage": "Show Clipboard Storage",
   "villagerretaliation.gui.clipboard.remove_storage": "Remove Assigned Storage",
   "villagerretaliation.gui.clipboard.clear_selection": "Clear Clipboard Selection",
+  "villagerretaliation.gui.clipboard_workforce.back": "< Back",
   "villagerretaliation.gui.clipboard_workforce.title": "Village Workforce",
   "villagerretaliation.gui.clipboard_workforce.unknown": "--",
   "villagerretaliation.gui.clipboard_workforce.hired": "Hired Villagers: %s / %s",
