@@ -1,0 +1,257 @@
+{
+  "display": {
+    "description": "Beetroot Bundle quest offer, reminder, and turn-in scene.",
+    "title": "Beetroot Bundle"
+  },
+  "entries": [
+    {
+      "conditions": [
+        {
+          "state": "available",
+          "type": "quest"
+        }
+      ],
+      "id": "offer",
+      "label": "Beetroot Bundle",
+      "order": -18,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "conditions": [
+        {
+          "state": "in_progress",
+          "type": "quest"
+        }
+      ],
+      "id": "reminder",
+      "label": "About Beetroot Bundle",
+      "order": -18,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "conditions": [
+        {
+          "state": "ready",
+          "type": "quest"
+        }
+      ],
+      "id": "turn_in",
+      "label": "About Beetroot Bundle",
+      "order": -18,
+      "request": "question",
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "id": "villagerretaliation:beetroot_bundle",
+  "nodes": {
+    "abandon_cancel": {
+      "end": true,
+      "lines": [
+        "Good. The pantry can stay worried in an orderly way."
+      ]
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Put Beetroot Bundle aside for now?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "abandon_cancel"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will set the beetroot bundle aside. Return if the pantry still needs filling."
+            ],
+            "abandoned_cooldown": [
+              "I will pause the beetroot count for now. Let the pantry sort itself before asking again."
+            ],
+            "abandoned_forever": [
+              "Then the beetroot request is closed for good."
+            ],
+            "unavailable": [
+              "There is no beetroot bundle here for me to shelve."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "active_cancel": {
+      "end": true,
+      "lines": [
+        "Then keep the bundle close until you are ready."
+      ]
+    },
+    "active_menu": {
+      "lines": [
+        "Beetroot Bundle is still open. I can repeat the details, or close my notes if you are done."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me what to do",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "Beetroot Bundle is complete. The village can use this, and you have earned the reward."
+            ],
+            "inactive": [
+              "The pantry is not accepting beetroot right now."
+            ],
+            "missing_objectives": [
+              "Beetroot Bundle is still short. The tracker has the exact count."
+            ],
+            "missing_proof": [
+              "Beetroot Bundle still needs the beetroot in your pack before I can close it."
+            ],
+            "missing_target": [
+              "Beetroot Bundle is not at the right count yet, bring the rest before turning it in."
+            ],
+            "unavailable": [
+              "This beetroot request is not ready to close yet."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "end": true,
+      "lines": [
+        "Then the soup will remain honest and a little too pale."
+      ]
+    },
+    "offer": {
+      "lines": [
+        "The pantry looks organized, which is not the same as prepared.",
+        "A bundle of beetroot would make the next few meals feel less accidental."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I can bring beetroot",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "action": "remind",
+          "lines": {
+            "inactive": [
+              "The pantry has no active beetroot count at the moment."
+            ],
+            "reminder": [
+              "Beetroot Bundle: I still need the beetroot. Bring the full count back to me."
+            ],
+            "unavailable": [
+              "That beetroot request is not in your hands right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "action": "start",
+          "lines": {
+            "already_completed": [
+              "The beetroot bundle is already settled."
+            ],
+            "locate_failed": [
+              "Beetroot Bundle cannot be posted from here right now."
+            ],
+            "started": [
+              "Beetroot Bundle is yours now. Bring the beetroot back when the count is ready."
+            ],
+            "unavailable": [
+              "The pantry is not asking you for beetroot right now."
+            ]
+          },
+          "type": "quest"
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "If you have the beetroot, we can settle Beetroot Bundle."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Show what I brought",
+          "next": "complete_quest",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
+        }
+      ]
+    },
+    "turn_in_wait": {
+      "end": true,
+      "lines": [
+        "Keep the beetroot close until the pantry is ready for it."
+      ]
+    }
+  }
+}
