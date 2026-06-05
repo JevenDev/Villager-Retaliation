@@ -498,6 +498,7 @@
   "villagerretaliation.gui.recruit.end_hire_confirm": "Yes, end contract",
   "villagerretaliation.gui.recruit.stop_following": "Stop Following",
   "villagerretaliation.gui.recruit.follow_me": "Follow Me",
+  "villagerretaliation.gui.recruit.stay_here": "Stay Here",
   "villagerretaliation.gui.clipboard.assign_storage": "Assign Clipboard Storage",
   "villagerretaliation.gui.clipboard.show_storage": "Show Clipboard Storage",
   "villagerretaliation.gui.clipboard.remove_storage": "Remove Assigned Storage",

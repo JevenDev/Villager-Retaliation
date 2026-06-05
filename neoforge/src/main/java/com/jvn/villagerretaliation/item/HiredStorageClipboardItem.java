@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -168,7 +169,9 @@ public final class HiredStorageClipboardItem extends Item {
                     + (draft.first() == null ? "0" : draft.second() == null ? "1" : "2")
                     + "/2"));
         }
-        tooltip.add(Component.literal("Mode: " + mode(stack).label()));
+        ClipboardMode currentMode = mode(stack);
+        tooltip.add(Component.literal("Mode: ").withStyle(ChatFormatting.GRAY)
+                .append(currentMode.labelComponent()));
     }
 
     public static ClipboardMode mode(ItemStack stack) {
@@ -198,7 +201,8 @@ public final class HiredStorageClipboardItem extends Item {
             return;
         }
         ClipboardMode next = cycleMode(clipboard, delta);
-        player.displayClientMessage(Component.literal("Clipboard mode: " + next.label()), true);
+        player.displayClientMessage(Component.literal("Clipboard mode: ")
+                .append(next.labelComponent()), true);
     }
 
     public static List<StoragePosition> selectedContainers(ItemStack stack) {
@@ -519,6 +523,19 @@ public final class HiredStorageClipboardItem extends Item {
 
         public String label() {
             return this.label;
+        }
+
+        public Component labelComponent() {
+            return Component.literal(this.label).withStyle(color());
+        }
+
+        public ChatFormatting color() {
+            return switch (this) {
+                case ASSIGN_PAYMENT -> ChatFormatting.GREEN;
+                case ASSIGN_STORAGE -> ChatFormatting.BLUE;
+                case WORK_AREA -> ChatFormatting.YELLOW;
+                case SET_WORK_AREA -> ChatFormatting.GOLD;
+            };
         }
 
         private ClipboardMode cycle(int delta) {

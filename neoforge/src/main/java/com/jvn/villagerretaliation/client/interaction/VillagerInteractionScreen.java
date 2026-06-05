@@ -99,6 +99,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private DialogueDisposition mood;
     private VillagerMood primaryMood;
     private boolean followingPlayer;
+    private boolean stayingHere;
     private final boolean forcedDialogue;
     private final boolean clipboardMenu;
     private boolean hiredByPlayer;
@@ -160,6 +161,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             DialogueDisposition mood,
             VillagerMood primaryMood,
             boolean followingPlayer,
+            boolean stayingHere,
             boolean forcedDialogue,
             boolean clipboardMenu,
             boolean hiredByPlayer,
@@ -192,6 +194,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.mood = mood;
         this.primaryMood = primaryMood == null ? VillagerMood.NEUTRAL : primaryMood;
         this.followingPlayer = followingPlayer;
+        this.stayingHere = stayingHere;
         this.forcedDialogue = forcedDialogue;
         this.clipboardMenu = clipboardMenu;
         this.hiredByPlayer = hiredByPlayer;
@@ -570,9 +573,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             openEndContractConfirmationPage();
             requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_END_HIRE_CONFIRMATION);
         });
-        this.options.add(DialogueOption.enabled(
-                this.followingPlayer ? translate("recruit.stop_following") : translate("recruit.follow_me"),
-                () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
+        if (this.followingPlayer) {
+            addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
+            addOption("recruit.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
+        } else if (this.stayingHere) {
+            addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
+            addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
+        } else {
+            addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
+            addOption("recruit.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
+        }
     }
 
     private void addStorageOptions() {
@@ -1109,7 +1119,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void requestRecruit(VillagerRecruitRequestPayload.Action action) {
         sendToServer(new VillagerRecruitRequestPayload(this.villagerEntityId, action));
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
-            this.followingPlayer = !this.followingPlayer;
+            this.followingPlayer = true;
+            this.stayingHere = false;
+        } else if (action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
+            this.followingPlayer = false;
+            this.stayingHere = true;
+        } else if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING) {
+            this.followingPlayer = false;
+            this.stayingHere = false;
         }
     }
 

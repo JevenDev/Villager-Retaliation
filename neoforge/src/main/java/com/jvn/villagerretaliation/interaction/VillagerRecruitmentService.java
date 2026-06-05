@@ -35,6 +35,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerRecruitmentService {
     private static final String FOLLOWING_PLAYER_KEY = "VillagerRetaliationFollowingPlayer";
+    private static final String FOLLOW_MODE_KEY = "VillagerRetaliationFollowMode";
+    private static final String FOLLOW_MODE_FOLLOW = "follow";
+    private static final String FOLLOW_MODE_STAY = "stay";
     private static final String FOLLOW_START_HEALTH_KEY = "VillagerRetaliationFollowStartHealth";
     private static final String FOLLOW_MIN_HEALTH_KEY = "VillagerRetaliationFollowMinHealth";
     private static final String FOLLOW_START_X_KEY = "VillagerRetaliationFollowStartX";
@@ -44,8 +47,14 @@ public final class VillagerRecruitmentService {
     private static final String FOLLOW_MAX_DISTANCE_KEY = "VillagerRetaliationFollowMaxDistance";
     private static final String FOLLOW_USED_BOAT_KEY = "VillagerRetaliationFollowUsedBoat";
     private static final String FOLLOW_CROSSED_OCEAN_KEY = "VillagerRetaliationFollowCrossedOcean";
+    private static final String STAY_ANCHOR_X_KEY = "VillagerRetaliationStayAnchorX";
+    private static final String STAY_ANCHOR_Y_KEY = "VillagerRetaliationStayAnchorY";
+    private static final String STAY_ANCHOR_Z_KEY = "VillagerRetaliationStayAnchorZ";
     private static final double FOLLOW_START_DISTANCE_SQR = 5.0D * 5.0D;
     private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
+    private static final double STAY_RETURN_START_DISTANCE_SQR = 2.25D * 2.25D;
+    private static final double STAY_RETURN_STOP_DISTANCE_SQR = 1.25D * 1.25D;
+    private static final double STAY_HERE_SPEED = 0.52D;
     private static final double FOLLOW_SPEED = 0.62D;
     private static final int FOLLOW_PATH_RECALCULATION_MIN_TICKS = 4;
     private static final int FOLLOW_PATH_RECALCULATION_RANDOM_TICKS = 7;
@@ -76,7 +85,14 @@ public final class VillagerRecruitmentService {
 
     public static boolean isFollowing(Villager villager, ServerPlayer player) {
         return villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
-                && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(player.getUUID());
+                && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(player.getUUID())
+                && isFollowMode(villager);
+    }
+
+    public static boolean isStayingHere(Villager villager, ServerPlayer player) {
+        return villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
+                && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(player.getUUID())
+                && isStayMode(villager);
     }
 
     public static boolean isFollowingAnyPlayer(Villager villager) {
@@ -95,15 +111,13 @@ public final class VillagerRecruitmentService {
                 && HiredVillagerContractService.isHired(level, villager);
     }
 
-    public static boolean toggleFollow(ServerLevel level, Villager villager, ServerPlayer player) {
-        if (isFollowing(villager, player)) {
-            stopFollowing(level, villager, player);
-            sendNoLongerFollowingNotice(player, villager);
-            return false;
-        }
+    public static void startFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
         beginFollowing(level, villager, player);
         sendFollowingNotice(player, villager);
-        return true;
+    }
+
+    public static void stayHere(ServerLevel level, Villager villager, ServerPlayer player) {
+        beginStayingHere(level, villager, player);
     }
 
     public static void stopFollowing(Villager villager) {
@@ -238,19 +252,28 @@ public final class VillagerRecruitmentService {
 
         UUID playerId = villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY);
         ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
-        updateTravelMemoryIfReady(level, villager);
-        if (!isValidFollowTarget(level, villager, player)) {
-            clearFollowTarget(villager);
-            return;
-        }
-        syncVehicleWithPlayer(villager, player);
-        if (isBeyondMaxFollowDistance(villager, player)) {
-            stopFollowingBecauseLeftBehind(level, villager, player);
-            sendNoLongerFollowingNotice(player, villager);
-            return;
+        if (isFollowMode(villager)) {
+            updateTravelMemoryIfReady(level, villager);
+            if (!isValidFollowTarget(level, villager, player)) {
+                clearFollowTarget(villager);
+                return;
+            }
+            syncVehicleWithPlayer(villager, player);
+            if (isBeyondMaxFollowDistance(villager, player)) {
+                stopFollowingBecauseLeftBehind(level, villager, player);
+                sendNoLongerFollowingNotice(player, villager);
+                return;
+            }
+        } else if (player != null) {
+            dismountFollower(villager);
         }
         if (villager.isSleeping() || villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
             suppressFollowerAiIfNeeded(villager);
+            return;
+        }
+
+        if (isStayMode(villager)) {
+            maintainStayHere(villager);
             return;
         }
 
@@ -536,6 +559,10 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().remove(FOLLOW_MAX_DISTANCE_KEY);
         villager.getPersistentData().remove(FOLLOW_USED_BOAT_KEY);
         villager.getPersistentData().remove(FOLLOW_CROSSED_OCEAN_KEY);
+        villager.getPersistentData().remove(FOLLOW_MODE_KEY);
+        villager.getPersistentData().remove(STAY_ANCHOR_X_KEY);
+        villager.getPersistentData().remove(STAY_ANCHOR_Y_KEY);
+        villager.getPersistentData().remove(STAY_ANCHOR_Z_KEY);
         villager.getNavigation().stop();
     }
 
@@ -548,6 +575,7 @@ public final class VillagerRecruitmentService {
     private static void beginFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
         BlockPos start = villager.blockPosition();
         villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, player.getUUID());
+        villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_FOLLOW);
         villager.getPersistentData().putFloat(FOLLOW_START_HEALTH_KEY, villager.getHealth());
         villager.getPersistentData().putFloat(FOLLOW_MIN_HEALTH_KEY, villager.getHealth());
         villager.getPersistentData().putInt(FOLLOW_START_X_KEY, start.getX());
@@ -557,6 +585,19 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().putInt(FOLLOW_MAX_DISTANCE_KEY, 0);
         villager.getPersistentData().putBoolean(FOLLOW_USED_BOAT_KEY, false);
         villager.getPersistentData().putBoolean(FOLLOW_CROSSED_OCEAN_KEY, isOceanBiome(level, start));
+        villager.getPersistentData().remove(STAY_ANCHOR_X_KEY);
+        villager.getPersistentData().remove(STAY_ANCHOR_Y_KEY);
+        villager.getPersistentData().remove(STAY_ANCHOR_Z_KEY);
+    }
+
+    private static void beginStayingHere(ServerLevel level, Villager villager, ServerPlayer player) {
+        BlockPos anchor = villager.blockPosition();
+        villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, player.getUUID());
+        villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_STAY);
+        villager.getPersistentData().putInt(STAY_ANCHOR_X_KEY, anchor.getX());
+        villager.getPersistentData().putInt(STAY_ANCHOR_Y_KEY, anchor.getY());
+        villager.getPersistentData().putInt(STAY_ANCHOR_Z_KEY, anchor.getZ());
+        stopFollowNavigation(villager);
     }
 
     private static void stopFollowingBecauseLeftBehind(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -651,6 +692,43 @@ public final class VillagerRecruitmentService {
                 : villager.getHealth();
         minHealth = Math.min(minHealth, villager.getHealth());
         return minHealth + 0.5F < startHealth;
+    }
+
+    private static boolean isFollowMode(Villager villager) {
+        return FOLLOW_MODE_FOLLOW.equals(villager.getPersistentData().getString(FOLLOW_MODE_KEY))
+                || !villager.getPersistentData().contains(FOLLOW_MODE_KEY);
+    }
+
+    private static boolean isStayMode(Villager villager) {
+        return FOLLOW_MODE_STAY.equals(villager.getPersistentData().getString(FOLLOW_MODE_KEY));
+    }
+
+    private static void maintainStayHere(Villager villager) {
+        suppressFollowerAiIfNeeded(villager);
+        BlockPos anchor = stayAnchor(villager);
+        if (anchor == null) {
+            return;
+        }
+        double distanceSqr = villager.distanceToSqr(anchor.getX() + 0.5D, anchor.getY(), anchor.getZ() + 0.5D);
+        if (distanceSqr > STAY_RETURN_START_DISTANCE_SQR) {
+            villager.getLookControl().setLookAt(anchor.getX() + 0.5D, anchor.getY(), anchor.getZ() + 0.5D, 20.0F, 20.0F);
+            villager.getNavigation().moveTo(anchor.getX() + 0.5D, anchor.getY(), anchor.getZ() + 0.5D, STAY_HERE_SPEED);
+        } else if (distanceSqr < STAY_RETURN_STOP_DISTANCE_SQR) {
+            stopFollowNavigation(villager);
+        }
+    }
+
+    private static BlockPos stayAnchor(Villager villager) {
+        if (!villager.getPersistentData().contains(STAY_ANCHOR_X_KEY)
+                || !villager.getPersistentData().contains(STAY_ANCHOR_Y_KEY)
+                || !villager.getPersistentData().contains(STAY_ANCHOR_Z_KEY)) {
+            return null;
+        }
+        return new BlockPos(
+                villager.getPersistentData().getInt(STAY_ANCHOR_X_KEY),
+                villager.getPersistentData().getInt(STAY_ANCHOR_Y_KEY),
+                villager.getPersistentData().getInt(STAY_ANCHOR_Z_KEY)
+        );
     }
 
     private static void rememberBetrayedFollower(Villager villager, Player attacker) {

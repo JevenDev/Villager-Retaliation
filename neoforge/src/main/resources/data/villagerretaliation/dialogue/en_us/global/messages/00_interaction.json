@@ -40,6 +40,21 @@
       ]
     },
     {
+      "key": "interaction.follow_hold_position",
+      "lines": [
+        "All right. I will hold this spot.",
+        "Very well. I will stay exactly here until it is safe to move.",
+        "I understand. I will keep to this place.",
+        "Then this is where I stand.",
+        "I will remain here and return to this spot if trouble pulls me away.",
+        "Right. I will wait on this ground for you.",
+        "I can hold here. If danger comes, I will come back once it passes.",
+        "This place will do. I will keep it.",
+        "Understood. I will stay planted here.",
+        "Then I am staying here unless I must run or fight."
+      ]
+    },
+    {
       "key": "opening.return_after_absence",
       "lines": [
         "Been {days_since_seen} {day_or_days} since I saw you. What brings you <pulse>back</pulse>?",
@@ -403,6 +418,306 @@
         "Understood. That closes our agreement, with {refund_amount} returned to you.",
         "All right. The contract is done, and you are refunded {refund_amount}.",
         "Then we part ways here. The contract is ended, and {refund_amount} comes back to you."
+      ]
+    },
+    {
+      "key": "interaction.hired_contract_days_left",
+      "lines": [
+        "We still have {time_remaining} left on our contract.",
+        "There are {time_remaining} remaining in our agreement.",
+        "Our contract has {time_remaining} left to run.",
+        "You still have me for {time_remaining}.",
+        "This arrangement lasts another {time_remaining}.",
+        "We have {time_remaining} left before the contract ends.",
+        "The contract will hold for {time_remaining} more.",
+        "There is still {time_remaining} left on my hire.",
+        "Our agreement continues for {time_remaining} yet.",
+        "I am under contract with you for {time_remaining} longer."
+      ]
+    },
+    {
+      "key": "interaction.hired_contract_taken",
+      "lines": [
+        "I am already under contract.",
+        "Someone has already hired me.",
+        "My contract is already spoken for.",
+        "I am already bound to another agreement.",
+        "I am not free to take another contract.",
+        "My labor is already promised elsewhere.",
+        "I already serve under contract.",
+        "Another agreement has claimed my time already.",
+        "I cannot take a new contract while this one stands.",
+        "I have a contract already, and it still holds."
+      ]
+    },
+    {
+      "key": "interaction.contract_offer_overview",
+      "lines": [
+        "I can work as {available_roles}. My daily rate is {contract_cost}.",
+        "The roles I can take are {available_roles}, and it costs {contract_cost} per day.",
+        "You may hire me as {available_roles}. The price is {contract_cost} each day.",
+        "I am available for {available_roles}, for {contract_cost} a day.",
+        "If you want my service, I can work as {available_roles}. Daily cost: {contract_cost}.",
+        "I could take the role of {available_roles}. My pay is {contract_cost} per day.",
+        "For {contract_cost} each day, I can serve as {available_roles}.",
+        "My available work is {available_roles}, and the daily rate is {contract_cost}.",
+        "I can be hired for {available_roles}. It will cost {contract_cost} a day.",
+        "These are the roles I can fill: {available_roles}. My daily cost is {contract_cost}."
+      ]
+    },
+    {
+      "key": "interaction.hire_cost",
+      "lines": [
+        "Hiring me for {time_remaining} costs {contract_cost}.",
+        "For {time_remaining} of work, the price is {contract_cost}.",
+        "That contract would cost {contract_cost} for {time_remaining}.",
+        "If you want me for {time_remaining}, it will be {contract_cost}.",
+        "My rate for {time_remaining} comes to {contract_cost}.",
+        "To hire me for {time_remaining}, you would need {contract_cost}.",
+        "That length of contract costs {contract_cost}. You would have me for {time_remaining}.",
+        "For a term of {time_remaining}, I ask {contract_cost}.",
+        "The cost of hiring me for {time_remaining} is {contract_cost}.",
+        "A {time_remaining} contract with me would be {contract_cost}."
+      ]
+    },
+    {
+      "key": "interaction.hire_started",
+      "lines": [
+        "Then I am yours for {time_remaining} as {role}, for {contract_cost}.",
+        "Very well. I will serve as {role} for {time_remaining}. The contract is {contract_cost}.",
+        "Understood. You have hired me as {role} for {time_remaining}, at {contract_cost}.",
+        "All right. I will work as {role} for {time_remaining}. You have paid {contract_cost}.",
+        "Then the contract begins. I will serve as {role} for {time_remaining}.",
+        "Very well. For {contract_cost}, I am hired as {role} for {time_remaining}.",
+        "It is settled. I will take the role of {role} for {time_remaining}.",
+        "Then we have an agreement: {role} work for {time_remaining}, at {contract_cost}.",
+        "Our contract is made. I will serve as {role} for {time_remaining}.",
+        "So be it. I am hired as {role} for {time_remaining}, for {contract_cost}."
+      ]
+    },
+    {
+      "key": "interaction.extend_cost",
+      "lines": [
+        "An extension of {time_remaining} costs {contract_cost}.",
+        "To add {time_remaining} to the contract, you would pay {contract_cost}.",
+        "That extension would cost {contract_cost} for {time_remaining} more.",
+        "If you want {time_remaining} more, the price is {contract_cost}.",
+        "Adding {time_remaining} to our agreement comes to {contract_cost}.",
+        "The cost to extend this contract by {time_remaining} is {contract_cost}.",
+        "For {contract_cost}, I can add {time_remaining} to the contract.",
+        "A further {time_remaining} would require {contract_cost}.",
+        "To continue our arrangement for {time_remaining} longer, it will cost {contract_cost}.",
+        "That much more time costs {contract_cost}: {time_remaining} added to the contract."
+      ]
+    },
+    {
+      "key": "interaction.extend_unavailable",
+      "lines": [
+        "I cannot extend the contract right now.",
+        "That agreement cannot be lengthened at the moment.",
+        "For now, this contract will not extend.",
+        "I am not able to renew the contract right now.",
+        "The contract cannot be adjusted further at the moment.",
+        "That extension is not possible just now.",
+        "I cannot add more time to the contract right now.",
+        "This agreement will not take an extension at the moment.",
+        "No, I cannot extend our contract right now.",
+        "The contract refuses to grow any longer for now."
+      ]
+    },
+    {
+      "key": "interaction.extend_success",
+      "lines": [
+        "Very well. I have added {time_remaining} to our contract. We now have {new_time_remaining} left.",
+        "The contract is extended by {time_remaining} for {contract_cost}. {new_time_remaining} remain.",
+        "Understood. Our agreement now runs {time_remaining} longer, leaving {new_time_remaining} in all.",
+        "All right. For {contract_cost}, I will stay on another {time_remaining}.",
+        "Then the contract continues. I have added {time_remaining}, so {new_time_remaining} remain.",
+        "Very good. Our agreement has been lengthened by {time_remaining}. We have {new_time_remaining} left.",
+        "It is done. The contract is extended by {time_remaining}, with {new_time_remaining} remaining.",
+        "Then I remain in your service for {time_remaining} more. That leaves {new_time_remaining} on the contract.",
+        "So be it. For {contract_cost}, the contract grows by {time_remaining}.",
+        "Our arrangement has been extended. Add {time_remaining}, and we now stand at {new_time_remaining} remaining."
+      ]
+    },
+    {
+      "key": "interaction.role_requires_hire",
+      "lines": [
+        "Hire me first, then choose my work.",
+        "Give me a contract first, and then assign my role.",
+        "Set me under hire before you choose what I do.",
+        "I need to be hired before you direct my work.",
+        "Put me under contract first, then we can speak of roles.",
+        "First hire me. After that, choose my work.",
+        "My role comes after the contract, not before it.",
+        "I cannot take an assigned role until you hire me.",
+        "Make the contract first, then tell me what work you want.",
+        "Hire me, and then we can decide my duties."
+      ]
+    },
+    {
+      "key": "interaction.role_not_suitable",
+      "lines": [
+        "{role} does not suit my profession or skills.",
+        "I am not well fitted for {role}.",
+        "{role} is not work I am suited to.",
+        "My training does not lend itself to {role}.",
+        "I would not be a good choice for {role}.",
+        "That role does not match what I know how to do.",
+        "{role} is not a proper fit for me.",
+        "My profession and skills do not favor {role}.",
+        "I am not the right villager for {role}.",
+        "You should choose someone better suited than me for {role}."
+      ]
+    },
+    {
+      "key": "interaction.role_assigned",
+      "lines": [
+        "Very well. I will serve as {role}.",
+        "Understood. My role is now {role}.",
+        "All right. I will take up {role} duties.",
+        "Then {role} is my work now.",
+        "So be it. I will act as {role}.",
+        "I understand. You have assigned me to {role}.",
+        "Very good. I will work in the role of {role}.",
+        "Then I am set to {role}.",
+        "Our arrangement is clear. I will serve as {role}.",
+        "I will take that role: {role}."
+      ]
+    },
+    {
+      "key": "interaction.role_overview",
+      "lines": [
+        "I am serving as {role}. I can also take {available_roles}.",
+        "My current role is {role}. The roles open to me are {available_roles}.",
+        "Right now I work as {role}. Available roles for me are {available_roles}.",
+        "At present I am assigned to {role}. I am able to serve as {available_roles}.",
+        "My duty is {role} for now. I could also take {available_roles}.",
+        "I am currently set as {role}. These are my available roles: {available_roles}.",
+        "For the moment I serve as {role}. Other roles I can take are {available_roles}.",
+        "You have me working as {role}. I am available for {available_roles} as well.",
+        "My present assignment is {role}. I can fill these roles: {available_roles}.",
+        "I stand as {role} right now, though I am capable of {available_roles}."
+      ]
+    },
+    {
+      "key": "interaction.work_report.combat",
+      "lines": [
+        "I am on guard in {work_area}, {activity}. {status_detail}",
+        "My combat duty holds in {work_area}. I am {activity}. {status_detail}",
+        "I am keeping watch over {work_area}. At the moment I am {activity}.",
+        "Guard work is underway around {work_area}. I am {activity}. {status_detail}",
+        "I am standing to in {work_area}, with my attention on {target}. {status_detail}",
+        "My patrol remains centered on {work_area}. I am {activity}. Efficiency sits near {efficiency} percent.",
+        "I am holding this ground in {work_area}. Right now I am {activity}.",
+        "Combat duty has me working through {work_area}. I am {activity}. {status_detail}",
+        "I am keeping the area safe in {work_area}. My present business is {activity}.",
+        "My guard assignment remains in {work_area}, and I am {activity}. {status_detail}"
+      ]
+    },
+    {
+      "key": "interaction.work_report.mining",
+      "lines": [
+        "I am working the ground in {work_area}, {activity}. {status_detail}",
+        "My mining is focused on {work_area}. At the moment I am {activity}.",
+        "I am tending to the mine in {work_area}. My current target is {target}.",
+        "The mining work continues in {work_area}. I am {activity}. {status_detail}",
+        "I am searching the stone in {work_area}, {activity}. Efficiency is about {efficiency} percent.",
+        "My pick is busy in {work_area}. Right now I am {activity}.",
+        "I am keeping to the mining bounds in {work_area}. My present task is {activity}.",
+        "Work in the mine is moving along. I am {activity} around {target}.",
+        "I am still at the mining job in {work_area}, {activity}. {status_detail}",
+        "The excavation is under way in {work_area}. I am {activity} for now."
+      ]
+    },
+    {
+      "key": "interaction.work_report.logging",
+      "lines": [
+        "I am working the trees in {work_area}, {activity}. {status_detail}",
+        "My logging duty runs through {work_area}. Right now I am {activity}.",
+        "I am minding the timber in {work_area}. My attention is on {target}.",
+        "The logging work continues in {work_area}. I am {activity}.",
+        "I am moving through {work_area} for wood, {activity}. {status_detail}",
+        "My axe work remains in {work_area}. At present I am {activity}. Efficiency is near {efficiency} percent.",
+        "I am still on logging duty in {work_area}, {activity}.",
+        "The tree work is going on in {work_area}. My current business is {activity}.",
+        "I am handling the logging in {work_area}. I am {activity} around {target}.",
+        "Timber work holds my day in {work_area}. I am {activity}. {status_detail}"
+      ]
+    },
+    {
+      "key": "interaction.work_report.farming",
+      "lines": [
+        "I am tending the fields in {work_area}, {activity}. {status_detail}",
+        "My farming work is in {work_area}. At the moment I am {activity}.",
+        "I am looking after the crops in {work_area}. My present focus is {target}.",
+        "The field work continues in {work_area}. I am {activity}.",
+        "I am busy with the farm in {work_area}, {activity}. Efficiency is about {efficiency} percent.",
+        "My hands are in the soil at {work_area}. Right now I am {activity}.",
+        "I am keeping to the farm bounds in {work_area}. My current task is {activity}.",
+        "The crops still need me in {work_area}, so I am {activity}. {status_detail}",
+        "I am carrying on with the farming in {work_area}. My attention is on {target}.",
+        "Work in the fields is moving along. I am {activity} in {work_area}."
+      ]
+    },
+    {
+      "key": "interaction.work_report.brewing",
+      "lines": [
+        "I am handling brewing matters in {work_area}, {activity}. {status_detail}",
+        "My brewing assignment is tied to {work_area}. Right now I am {activity}.",
+        "I am keeping watch over the brewing work in {work_area}. My focus is {target}.",
+        "The brewing duty continues in {work_area}. I am {activity}.",
+        "I am set to brewing work in {work_area}, {activity}. {status_detail}",
+        "Brewing is my charge in {work_area}. At present I am {activity}. Efficiency stands near {efficiency} percent.",
+        "I am still on brewing duty around {work_area}. My current business is {activity}.",
+        "The potion work is not forgotten in {work_area}; I am {activity}.",
+        "I am tending brewing concerns in {work_area}. My attention is on {target}.",
+        "My brewing report is simple: in {work_area}, I am {activity}. {status_detail}"
+      ]
+    },
+    {
+      "key": "interaction.work_report.navigation",
+      "lines": [
+        "I am serving as a guide in {work_area}, {activity}. {status_detail}",
+        "My navigation work centers on {work_area}. At the moment I am {activity}.",
+        "I am keeping track of routes in {work_area}. My present focus is {target}.",
+        "The navigation duty continues around {work_area}. I am {activity}.",
+        "I am working the paths in {work_area}, {activity}. {status_detail}",
+        "Guiding work remains my charge in {work_area}. Right now I am {activity}. Efficiency is near {efficiency} percent.",
+        "I am still occupied with navigation in {work_area}. My current business is {activity}.",
+        "My route work is tied to {work_area}, and I am {activity}.",
+        "I am minding the way through {work_area}. My attention is on {target}.",
+        "For navigation, this is my report: I am {activity} in {work_area}. {status_detail}"
+      ]
+    },
+    {
+      "key": "interaction.work_report.animal_handling",
+      "lines": [
+        "I am tending the animals in {work_area}, {activity}. {status_detail}",
+        "My animal work belongs to {work_area}. Right now I am {activity}.",
+        "I am looking after stock in {work_area}. My present concern is {target}.",
+        "The animal-handling duty continues in {work_area}. I am {activity}.",
+        "I am at work with the animals in {work_area}, {activity}.",
+        "My handling duties remain in {work_area}. At present I am {activity}. Efficiency is about {efficiency} percent.",
+        "I am still busy with the creatures in {work_area}. My current business is {activity}.",
+        "Animal work keeps me in {work_area}, and I am {activity}. {status_detail}",
+        "I am managing the pen and herd in {work_area}. My attention is on {target}.",
+        "My report on the animals is this: in {work_area}, I am {activity}. {status_detail}"
+      ]
+    },
+    {
+      "key": "interaction.work_report.nitwit",
+      "lines": [
+        "I am doing my best in {work_area}, {activity}. {status_detail}",
+        "My nitwit duties keep me in {work_area}. Right now I am {activity}.",
+        "I am occupied in {work_area}, and my present focus is {target}.",
+        "The important work of being me continues in {work_area}. I am {activity}.",
+        "I am still busy in {work_area}, {activity}. Efficiency is somehow {efficiency} percent.",
+        "My current report is that I am {activity} in {work_area}. {status_detail}",
+        "I am handling matters in my own fashion around {work_area}. At present I am {activity}.",
+        "Work, of a sort, continues in {work_area}. I am {activity}.",
+        "I am keeping to my assignment in {work_area}. My attention is on {target}.",
+        "If you must know, I am {activity} in {work_area}. {status_detail}"
       ]
     },
     {

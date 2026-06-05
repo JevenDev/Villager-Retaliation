@@ -13,10 +13,10 @@ public final class HiredRoleWorkerRegistry {
         register(new MiningWorker());
         register(new FarmingWorker());
         register(new NitwitWorker());
-        register(new StatusOnlyWorker(HiredVillagerRole.BREWING, "Brewing automation is waiting for a configured brewing stand and supplies."));
-        register(new StatusOnlyWorker(HiredVillagerRole.NAVIGATION, "Navigation work is ready for target discovery configuration."));
-        register(new StatusOnlyWorker(HiredVillagerRole.ANIMAL_HANDLING, "Animal handling is waiting for lure supplies and a safe pen."));
-        register(new StatusOnlyWorker(HiredVillagerRole.COMBAT, "Guard duty active. Combat is handled by existing retaliation systems."));
+        register(new StatusOnlyWorker(HiredVillagerRole.BREWING, "I am ready to brew once there is a proper stand and the needed supplies."));
+        register(new StatusOnlyWorker(HiredVillagerRole.NAVIGATION, "I am ready to guide the way once you settle on where I should lead."));
+        register(new StatusOnlyWorker(HiredVillagerRole.ANIMAL_HANDLING, "I am ready to tend the animals once there are lures and a safe pen."));
+        register(new StatusOnlyWorker(HiredVillagerRole.COMBAT, "I remain on guard and ready to answer trouble."));
     }
 
     private HiredRoleWorkerRegistry() {

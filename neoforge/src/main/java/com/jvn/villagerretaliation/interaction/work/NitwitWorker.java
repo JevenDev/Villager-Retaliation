@@ -24,7 +24,7 @@ public final class NitwitWorker implements HiredRoleWorker {
         if (level.getGameTime() - lastNotice < 20L * 60L) {
             HiredWorkerBrain.setLastTargetScanResult(context, "nitwit_cooldown");
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.IDLE);
-            return WorkResult.idle("Nitwit is wandering productively-adjacent.");
+            return WorkResult.idle("I am helping in my own hard-to-measure way.");
         }
         context.state().putLong("NitwitNoticeTick", level.getGameTime());
         String line = LINES[Math.floorMod((int) (level.getGameTime() / 1200L + villager.getId()), LINES.length)];

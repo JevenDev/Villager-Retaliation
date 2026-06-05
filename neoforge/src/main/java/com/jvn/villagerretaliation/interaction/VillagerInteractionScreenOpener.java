@@ -141,6 +141,7 @@ public final class VillagerInteractionScreenOpener {
                 mood,
                 primaryMood,
                 VillagerRecruitmentService.isFollowing(villager, player),
+                VillagerRecruitmentService.isStayingHere(villager, player),
                 forcedConversation,
                 clipboardMenu,
                 hiredByPlayer,

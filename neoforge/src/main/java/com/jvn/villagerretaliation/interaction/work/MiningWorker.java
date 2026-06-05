@@ -49,16 +49,16 @@ public final class MiningWorker extends AbstractBlockWorker {
                     : MiningState.WAITING_NO_TARGETS);
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("No exposed ores in the current pocket. Walking to assigned storage.");
+                return WorkResult.progressed("There is no exposed ore in this pocket, so I am heading to storage for now.");
             }
             if (roamInsideWorkArea(level, villager, context, 0.4D)) {
-                return WorkResult.progressed("No exposed ores nearby. Roaming the assigned area.");
+                return WorkResult.progressed("I see no exposed ore nearby, so I am searching the work area.");
             }
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             ensureNoTargetScanCooldown(level, context);
             return WorkResult.idle(depositResult == DepositResult.DEPOSITED
-                    ? "Depositing mined output. No exposed ore nearby."
-                    : "No exposed ores in radius. Waiting for new mining instructions.");
+                    ? "I am putting away what I mined while I wait for fresh ore to show itself."
+                    : "There is no exposed ore within reach just now.");
         }
 
         BlockState targetState = level.getBlockState(target.blockPos());
@@ -71,7 +71,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             setMiningState(context, MiningState.BLOCKED_MISSING_TOOL);
             HiredWorkerBrain.setFailure(context, "missing_pickaxe", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
-            return WorkResult.idle("Paused: mining needs a pickaxe that can harvest the target ore.");
+            return WorkResult.idle("I need a better pickaxe before I can break that ore.");
         }
 
         prepareBreakingTarget(level, context, villager, target);
@@ -86,13 +86,13 @@ public final class MiningWorker extends AbstractBlockWorker {
                     clearActiveBreakingTarget(level, context, villager);
                     HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 20L * 30L);
                     setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
-                    return WorkResult.idle("Mining target blocked. Looking for another exposed ore.");
+                    return WorkResult.idle("That ore is blocked off. I am looking for another vein I can reach.");
                 }
-                return WorkResult.progressed("Mining target blocked. Repositioning for a reachable ore face.");
+                return WorkResult.progressed("That ore is awkward from here, so I am changing my position.");
             }
             return WorkResult.progressed(closeEnough && !hasLineOfSight
-                    ? "No direct line of sight to mining target. Repositioning."
-                    : "Moving to mining target.");
+                    ? "I cannot get a clean swing at that ore yet, so I am repositioning."
+                    : "I am moving toward the ore now.");
         }
 
         clearWorkPathFailure(villager, target.blockPos());
@@ -107,7 +107,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             context.setProgressTicks(progress);
             swingWorkTool(villager);
             showBreakProgress(level, villager, target.blockPos(), progress, needed);
-            return WorkResult.progressed("Mining in progress: " + progress + "/" + needed + ".");
+            return WorkResult.progressed("I am working the ore face now.");
         }
 
         List<ItemStack> drops = Block.getDrops(
@@ -123,7 +123,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             if (depositResult == DepositResult.MOVING) {
                 setMiningState(context, MiningState.DEPOSIT_OUTPUT);
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("Output full. Walking to assigned storage before mining more.");
+                return WorkResult.progressed("My packs are full, so I am taking the ore to storage before I continue.");
             }
         }
         if (!context.canStoreOutputs(drops)) {
@@ -131,7 +131,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             setMiningState(context, MiningState.BLOCKED_OUTPUT_FULL);
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("Paused: mining output is full.");
+            return WorkResult.idle("I cannot carry more ore, and I have nowhere to stow it.");
         }
 
         context.setProgressTicks(0);
@@ -139,7 +139,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             setMiningState(context, MiningState.BLOCKED_OUTPUT_FULL);
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("Paused: mining output is full.");
+            return WorkResult.idle("I cannot carry more ore, and I have nowhere to stow it.");
         }
         HiredOreBlockTracker.onBlockBroken(level, target.blockPos());
         HiredWorkPlan.removeTarget(context, target.blockPos());
@@ -158,7 +158,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             prepareBreakingTarget(level, context, villager, nextTarget);
             setMiningState(context, MiningState.PATH_TO_TARGET);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, nextTarget.blockPos());
-            return WorkResult.progressed("Mined block and collected output. Continuing to the next exposed ore.");
+            return WorkResult.progressed("That ore is mined out, and I am moving on to the next exposed vein.");
         }
 
         clearMiningAnchor(context);
@@ -168,16 +168,16 @@ public final class MiningWorker extends AbstractBlockWorker {
                 : MiningState.WAITING_NO_TARGETS);
         if (depositResult == DepositResult.MOVING) {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-            return WorkResult.progressed("Mined block and collected output. Walking to assigned storage.");
+            return WorkResult.progressed("I have gathered the ore and am taking it to storage.");
         }
         if (roamInsideWorkArea(level, villager, context, 0.4D)) {
-            return WorkResult.progressed("Mined block and collected output. Roaming the assigned area.");
+            return WorkResult.progressed("I have gathered what I could, and I am searching the area for more ore.");
         }
         setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
         ensureNoTargetScanCooldown(level, context);
         return WorkResult.progressed(depositResult == DepositResult.DEPOSITED
-                ? "Mined block, collected output, and deposited mined output."
-                : "Mined block and collected output. No exposed ores remain nearby.");
+                ? "I mined the ore, gathered it, and put it away."
+                : "I mined the ore and gathered it, but there is no other exposed vein nearby.");
     }
 
     private HiredPathTarget resolveTarget(ServerLevel level, Villager villager, HiredWorkContext context) {

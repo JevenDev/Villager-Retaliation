@@ -312,9 +312,22 @@ public final class VillagerInteractionService {
         }
 
         focusVillagerOnPlayer(villager, player);
-        if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
-            boolean nowFollowing = VillagerRecruitmentService.toggleFollow(level, villager, player);
-            String responseText = message(createDialogueContext(level, player, villager), nowFollowing ? "interaction.follow_start" : "interaction.follow_stay");
+        if (action == VillagerRecruitRequestPayload.Action.FOLLOW
+                || action == VillagerRecruitRequestPayload.Action.STAY_HERE
+                || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING) {
+            String responseKey;
+            if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
+                VillagerRecruitmentService.startFollowing(level, villager, player);
+                responseKey = "interaction.follow_start";
+            } else if (action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
+                VillagerRecruitmentService.stayHere(level, villager, player);
+                responseKey = "interaction.follow_hold_position";
+            } else {
+                VillagerRecruitmentService.stopFollowing(level, villager, player);
+                VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
+                responseKey = "interaction.follow_stay";
+            }
+            String responseText = message(createDialogueContext(level, player, villager), responseKey);
             sendVillagerNotice(player, villager, responseText);
             PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
             VillagerConversationService.endForPlayer(player, false);
@@ -428,13 +441,21 @@ public final class VillagerInteractionService {
             return true;
         }
         if (HiredVillagerContractService.isHired(level, villager)) {
-            sendVillagerNotice(player, villager, "I already have a contract.");
+            sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
             return true;
         }
 
         int cost = HiredVillagerContractService.getHireCost(level, villager, player, days);
         if (countCurrency(player) < cost) {
-            sendVillagerNotice(player, villager, "Hiring for " + days + " day" + plural(days) + " costs " + formatCurrency(level, cost) + ".");
+            sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.hire_cost",
+                    Map.of(
+                            "time_remaining", formatDaysRemaining(days),
+                            "contract_cost", formatCurrency(level, cost)
+                    )
+            );
             return true;
         }
         removeCurrency(player, cost);
@@ -442,9 +463,16 @@ public final class VillagerInteractionService {
         HiredVillagerWorkService.resetForNewContract(level, villager);
         VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         VillagerRecruitmentService.sendHiredNotice(player, villager);
-        sendVillagerNotice(player, villager, "Hired for " + days + " day" + plural(days) + " for "
-                + formatCurrency(level, cost) + " as "
-                + HiredVillagerContractService.activeRole(level, villager).label() + ".");
+        sendVillagerNotice(
+                player,
+                villager,
+                "interaction.hire_started",
+                Map.of(
+                        "time_remaining", formatDaysRemaining(days),
+                        "contract_cost", formatCurrency(level, cost),
+                        "role", HiredVillagerContractService.activeRole(level, villager).label()
+                )
+        );
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
         return true;
     }
@@ -472,20 +500,34 @@ public final class VillagerInteractionService {
         }
         int cost = HiredVillagerContractService.getHireCost(level, villager, player, days);
         if (countCurrency(player) < cost) {
-            sendVillagerNotice(player, villager, "A " + days + " day" + plural(days)
-                    + " extension costs " + formatCurrency(level, cost) + ".");
+            sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.extend_cost",
+                    Map.of(
+                            "time_remaining", formatDaysRemaining(days),
+                            "contract_cost", formatCurrency(level, cost)
+                    )
+            );
             return true;
         }
         if (!HiredVillagerContractService.extendHireContract(level, villager, player, days, cost)) {
-            sendVillagerNotice(player, villager, "This contract cannot be extended right now.");
+            sendVillagerNotice(player, villager, "interaction.extend_unavailable");
             return true;
         }
         removeCurrency(player, cost);
         VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
-        sendVillagerNotice(player, villager, "Contract extended by " + days + " day" + plural(days)
-                + " for " + formatCurrency(level, cost) + ". "
-                + HiredVillagerContractService.getRemainingHireDays(level, villager) + " day"
-                + plural(HiredVillagerContractService.getRemainingHireDays(level, villager)) + " remaining.");
+        int remainingDays = HiredVillagerContractService.getRemainingHireDays(level, villager);
+        sendVillagerNotice(
+                player,
+                villager,
+                "interaction.extend_success",
+                Map.of(
+                        "time_remaining", formatDaysRemaining(days),
+                        "contract_cost", formatCurrency(level, cost),
+                        "new_time_remaining", formatDaysRemaining(remainingDays)
+                )
+        );
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
         return true;
     }
@@ -510,14 +552,24 @@ public final class VillagerInteractionService {
             return false;
         }
         if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "Hire me first, then choose my work.");
+            sendVillagerNotice(player, villager, "interaction.role_requires_hire");
             return true;
         }
         if (!HiredVillagerContractService.setActiveRole(level, villager, role)) {
-            sendVillagerNotice(player, villager, role.label() + " is not a good fit for my profession or skills.");
+            sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.role_not_suitable",
+                    Map.of("role", role.label())
+            );
             return true;
         }
-        sendVillagerNotice(player, villager, "Assigned role: " + role.label() + ".");
+        sendVillagerNotice(
+                player,
+                villager,
+                "interaction.role_assigned",
+                Map.of("role", role.label())
+        );
         return true;
     }
 
@@ -567,7 +619,7 @@ public final class VillagerInteractionService {
 
     private static void sendHiredRoleNotice(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!HiredVillagerContractService.isHired(level, villager)) {
-            sendVillagerNotice(player, villager, "Hire me first, then choose my work.");
+            sendVillagerNotice(player, villager, "interaction.role_requires_hire");
             return;
         }
         if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
@@ -575,26 +627,42 @@ public final class VillagerInteractionService {
             return;
         }
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        sendVillagerNotice(player, villager, "Current role: " + role.label() + ". Available roles: "
-                + HiredVillagerRoles.roleSummary(level, villager) + ".");
+        sendVillagerNotice(
+                player,
+                villager,
+                "interaction.role_overview",
+                Map.of(
+                        "role", role.label(),
+                        "available_roles", HiredVillagerRoles.roleSummary(level, villager)
+                )
+        );
     }
 
     private static void sendHiredContractNotice(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!HiredVillagerContractService.isHired(level, villager)) {
             int dailyCost = HiredVillagerContractService.getDailyCost(level, villager, player);
-            sendVillagerNotice(player, villager, "Available roles: " + HiredVillagerRoles.roleSummary(level, villager)
-                    + ". Daily cost: " + formatCurrency(level, dailyCost) + ".");
+            sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.contract_offer_overview",
+                    Map.of(
+                            "available_roles", HiredVillagerRoles.roleSummary(level, villager),
+                            "contract_cost", formatCurrency(level, dailyCost)
+                    )
+            );
             return;
         }
         if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "I am already under contract.");
+            sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
             return;
         }
         int remainingDays = HiredVillagerContractService.getRemainingHireDays(level, villager);
-        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        sendVillagerNotice(player, villager, "Contract: " + remainingDays + " day" + plural(remainingDays)
-                + " remaining, role " + role.label() + ". Available roles: "
-                + HiredVillagerRoles.roleSummary(level, villager) + ".");
+        sendVillagerNotice(
+                player,
+                villager,
+                "interaction.hired_contract_days_left",
+                Map.of("time_remaining", formatDaysRemaining(remainingDays))
+        );
     }
 
     private static void assignClipboardStorage(ServerPlayer player, ServerLevel level, Villager villager, ItemStack clipboard) {
@@ -773,6 +841,10 @@ public final class VillagerInteractionService {
 
     private static String plural(int count) {
         return count == 1 ? "" : "s";
+    }
+
+    private static String formatDaysRemaining(int count) {
+        return count + " day" + plural(count);
     }
 
     public static void handleReputationRequest(ServerPlayer player, int entityId) {

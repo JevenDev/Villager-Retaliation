@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -64,7 +65,7 @@ public final class HiredVillagerWorkService {
             initializeDefaults(waitingState, villager);
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(waitingState, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            setStatus(waitingState, "Waiting for hirer to be online.");
+            setStatus(waitingState, "I am waiting for the one who hired me to return.");
             return;
         }
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, hirer)) {
@@ -75,13 +76,13 @@ public final class HiredVillagerWorkService {
         if (session.worker() == null) {
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            setStatus(session.state(), "Paused: no worker exists for " + session.role().label() + ".");
+            setStatus(session.state(), "I have no proper work routine for " + session.role().label() + " yet.");
             return;
         }
         if (!session.state().getBoolean("Enabled")) {
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            setStatus(session.state(), "Paused by hirer.");
+            setStatus(session.state(), "You have told me to hold for now.");
             return;
         }
 
@@ -98,7 +99,7 @@ public final class HiredVillagerWorkService {
 
         long nextWorkGameTime = session.state().getLong("NextWorkGameTime");
         if (nextWorkGameTime > level.getGameTime()) {
-            setStatus(session.state(), "Preparing for next task. Cooldown: " + (nextWorkGameTime - level.getGameTime()) + " ticks.");
+            setStatus(session.state(), "I am catching my breath before the next task.");
             return;
         }
 
@@ -120,14 +121,14 @@ public final class HiredVillagerWorkService {
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         if (!villager.getNavigation().isDone() && navigationTarget != null && context.isInsideWorkArea(navigationTarget)) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, navigationTarget);
-            setStatus(state, "Outside assigned area. Returning to work area.");
+            setStatus(state, "I have drifted beyond the work bounds, so I am heading back.");
             return true;
         }
 
         long gameTime = level.getGameTime();
         if (gameTime < state.getLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG)) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, null);
-            setStatus(state, "Outside assigned area. Waiting before retrying path back.");
+            setStatus(state, "I am outside the work bounds and waiting a moment before trying the path back again.");
             return true;
         }
 
@@ -136,18 +137,18 @@ public final class HiredVillagerWorkService {
             villager.getNavigation().stop();
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
-            setStatus(state, "Outside assigned area, but no reachable path back was found yet.");
+            setStatus(state, "I am outside the work bounds, and I have not found a good way back yet.");
             return true;
         }
 
         if (villager.getNavigation().moveTo(returnPath.path(), 1.0D)) {
             state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnPath.target());
-            setStatus(state, "Outside assigned area. Returning to work area.");
+            setStatus(state, "I have drifted beyond the work bounds, so I am heading back.");
         } else {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
-            setStatus(state, "Outside assigned area, but movement back could not start.");
+            setStatus(state, "I know I must return to the work bounds, but I could not get moving yet.");
         }
         return true;
     }
@@ -212,21 +213,19 @@ public final class HiredVillagerWorkService {
 
     public static void sendStatus(ServerPlayer player, ServerLevel level, Villager villager) {
         HiredWorkSession session = HiredWorkSession.active(level, villager);
-        String status = session.state().getString("Status");
         HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
-        VillagerInteractionService.sendVillagerNotice(player, villager,
-                "Work: " + (session.state().getBoolean("Enabled") ? "running" : "paused")
-                        + ", role " + session.role().label()
-                        + ", area " + areaDescription(session.area())
-                        + ", max radius " + session.maxRadius()
-                        + ", supplies " + (session.state().getBoolean("UseAssignedStorageForSupplies") ? "job+assigned" : "job")
-                        + ", auto-deposit " + (session.state().getBoolean("AutoDepositOutputs") ? "on" : "off")
-                        + ", starvation days " + session.state().getInt("StarvationDays")
-                        + ", efficiency " + session.efficiency() + "%"
-                        + ", task " + snapshot.taskState().label()
-                        + ", target " + HiredWorkerBrain.formatPos(snapshot.targetPos())
-                        + ". "
-                        + (status.isBlank() ? "No task yet." : status));
+        VillagerInteractionService.sendVillagerNotice(
+                player,
+                villager,
+                workReportMessageKey(session.role()),
+                Map.of(
+                        "activity", describeWorkActivity(session, snapshot),
+                        "status_detail", describeStatusDetail(session),
+                        "work_area", areaDescription(session.area()),
+                        "efficiency", Integer.toString(session.efficiency()),
+                        "target", describeCurrentTarget(snapshot)
+                )
+        );
     }
 
     public static List<String> debugLines(ServerLevel level, Villager villager) {
@@ -297,7 +296,7 @@ public final class HiredVillagerWorkService {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
         state.putBoolean("Enabled", !state.getBoolean("Enabled"));
-        setStatus(state, state.getBoolean("Enabled") ? "Work resumed." : "Work paused by hirer.");
+        setStatus(state, state.getBoolean("Enabled") ? "I am back to work." : "You have asked me to pause my work.");
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
     }
 
@@ -310,7 +309,7 @@ public final class HiredVillagerWorkService {
         state.putInt("Radius", radius);
         BlockPos center = workCenter(state, villager);
         setWorkAreaBounds(state, defaultMin(center, radius), defaultMax(center, radius));
-        setStatus(state, "Work radius set to " + radius + ". Skill cap: " + max + ".");
+        setStatus(state, "My work range is now set to " + radius + " blocks. I cannot manage beyond " + max + ".");
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
     }
 
@@ -318,7 +317,9 @@ public final class HiredVillagerWorkService {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
         state.putBoolean("UseAssignedStorageForSupplies", !state.getBoolean("UseAssignedStorageForSupplies"));
-        setStatus(state, "Assigned storage supplies " + (state.getBoolean("UseAssignedStorageForSupplies") ? "enabled." : "disabled."));
+        setStatus(state, state.getBoolean("UseAssignedStorageForSupplies")
+                ? "I may draw supplies from the assigned storage now."
+                : "I will stick to what I carry and what is in my work gear.");
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
     }
 
@@ -326,7 +327,9 @@ public final class HiredVillagerWorkService {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
         state.putBoolean("AutoDepositOutputs", !state.getBoolean("AutoDepositOutputs"));
-        setStatus(state, "Auto-deposit outputs " + (state.getBoolean("AutoDepositOutputs") ? "enabled." : "disabled."));
+        setStatus(state, state.getBoolean("AutoDepositOutputs")
+                ? "I will put away my finished goods on my own."
+                : "I will keep what I gather until told otherwise.");
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
     }
 
@@ -337,18 +340,18 @@ public final class HiredVillagerWorkService {
             case LOGGING -> {
                 String current = state.getString("LoggingFilter");
                 state.putString("LoggingFilter", current == null || current.isBlank() || "any".equals(current) ? "oak_log" : "any");
-                setStatus(state, "Logging filter cycled to " + state.getString("LoggingFilter") + ".");
+                setStatus(state, "I will now favor " + state.getString("LoggingFilter") + " when I look for timber.");
             }
             case FARMING -> {
                 String current = state.getString("CropMode");
                 state.putString("CropMode", "harvest_replant".equals(current) ? "harvest_only" : "harvest_replant");
-                setStatus(state, "Farming mode set to " + state.getString("CropMode") + ".");
+                setStatus(state, "My farming approach is now " + state.getString("CropMode") + ".");
             }
-            case BREWING -> setStatus(state, "Brewing route cycled. MVP supports status-only brewing setup.");
-            case NAVIGATION -> setStatus(state, "Navigation target cycled. MVP stores configuration and reports status.");
-            case ANIMAL_HANDLING -> setStatus(state, "Animal handling target cycled. MVP waits for lures and safe pen support.");
-            case NITWIT -> setStatus(state, "Nitwit focus cycled. Expect occasional deeply questionable reports.");
-            default -> setStatus(state, role.label() + " has no extra configuration yet.");
+            case BREWING -> setStatus(state, "I have adjusted my brewing routine as much as I can for now.");
+            case NAVIGATION -> setStatus(state, "I have shifted my navigation focus for the next route.");
+            case ANIMAL_HANDLING -> setStatus(state, "I have changed what I am watching for with the animals.");
+            case NITWIT -> setStatus(state, "I have rearranged my very particular style of helping.");
+            default -> setStatus(state, "There is no extra setup for " + role.label() + " just yet.");
         }
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
     }
@@ -392,9 +395,9 @@ public final class HiredVillagerWorkService {
         state.putInt("Radius", radius);
         setWorkAreaBounds(state, min, max);
         String capNotice = capped
-                ? role.label() + " skill caps this villager at " + maxRadius + " blocks from center, so the assigned bounds were trimmed inward. "
+                ? "My " + role.label() + " skill only lets me manage " + maxRadius + " blocks from the center, so I tightened the bounds a bit. "
                 : "";
-        setStatus(state, capNotice + "Work area set to " + areaDescription(new WorkArea(center, min, max, radius, verticalRadius)) + ". Skill cap: " + maxRadius + ".");
+        setStatus(state, capNotice + "My work area is now " + areaDescription(new WorkArea(center, min, max, radius, verticalRadius)) + ".");
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
         return true;
     }
@@ -576,6 +579,60 @@ public final class HiredVillagerWorkService {
 
     private static String valueOrNone(String value) {
         return value == null || value.isBlank() ? "none" : value;
+    }
+
+    private static String workReportMessageKey(HiredVillagerRole role) {
+        return switch (role) {
+            case COMBAT -> "interaction.work_report.combat";
+            case MINING -> "interaction.work_report.mining";
+            case LOGGING -> "interaction.work_report.logging";
+            case FARMING -> "interaction.work_report.farming";
+            case BREWING -> "interaction.work_report.brewing";
+            case NAVIGATION -> "interaction.work_report.navigation";
+            case ANIMAL_HANDLING -> "interaction.work_report.animal_handling";
+            case NITWIT -> "interaction.work_report.nitwit";
+        };
+    }
+
+    private static String describeWorkActivity(HiredWorkSession session, HiredWorkerBrain.Snapshot snapshot) {
+        if (!session.state().getBoolean("Enabled")) {
+            return "resting until you ask me to resume";
+        }
+        return switch (snapshot.taskState()) {
+            case IDLE, AWAITING_INSTRUCTION -> "waiting for the next bit of work";
+            case SELECTING_TARGET -> "looking over the area for the next task";
+            case MOVING_TO_TARGET -> "heading toward " + describeCurrentTarget(snapshot);
+            case VALIDATING_TARGET -> "checking the spot at " + describeCurrentTarget(snapshot);
+            case WORKING -> "working at " + describeCurrentTarget(snapshot);
+            case COLLECTING_OUTPUT -> "gathering what I finished at " + describeCurrentTarget(snapshot);
+            case FINDING_CHAIN_TARGET -> "looking for the next useful spot near " + describeCurrentTarget(snapshot);
+            case MOVING_TO_STORAGE -> "carrying goods toward " + describeCurrentTarget(snapshot);
+            case RETURNING_TO_WORK_AREA -> "making my way back into the work area";
+            case DEPOSITING -> "putting supplies away at " + describeCurrentTarget(snapshot);
+            case PAUSED_FULL_INVENTORY -> "stopped because my inventory is full";
+            case PAUSED_NO_STORAGE -> "waiting because there is nowhere proper to store things";
+            case FAILED_COOLDOWN -> "waiting a moment before I try that again";
+            case PAUSED_MISSING_TOOL -> "waiting because I do not have the right tool";
+        };
+    }
+
+    private static String describeStatusDetail(HiredWorkSession session) {
+        String status = session.state().getString("Status");
+        if (status == null || status.isBlank()) {
+            return "Nothing needs doing just now.";
+        }
+        return status;
+    }
+
+    private static String describeCurrentTarget(HiredWorkerBrain.Snapshot snapshot) {
+        BlockPos target = snapshot.taskState().keepsStorageTarget() ? snapshot.storageTargetPos() : snapshot.targetPos();
+        if (target == null && snapshot.storageTargetPos() != null) {
+            target = snapshot.storageTargetPos();
+        }
+        if (target == null && snapshot.targetPos() != null) {
+            target = snapshot.targetPos();
+        }
+        return target == null ? "no fixed spot just now" : HiredWorkerBrain.formatPos(target);
     }
 
     private static void handleDailyFood(

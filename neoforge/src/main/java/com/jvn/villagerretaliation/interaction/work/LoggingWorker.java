@@ -50,18 +50,18 @@ public final class LoggingWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             if (isTreeScanInProgress(context)) {
                 setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-                return WorkResult.progressed("Scanning assigned area for safe tree logs.");
+                return WorkResult.progressed("I am searching the work area for a sound tree to cut.");
             }
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("No safe tree logs found in radius. Walking to assigned storage.");
+                return WorkResult.progressed("I found no good timber nearby, so I am heading to storage for now.");
             }
             if (roamInsideWorkArea(level, villager, context, 0.4D)) {
-                return WorkResult.progressed("No safe tree logs found. Roaming the assigned area.");
+                return WorkResult.progressed("I found no good timber yet, so I am ranging through the work area.");
             }
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("No safe tree logs found in radius.");
+            return WorkResult.idle("There is no good timber within reach just now.");
         }
 
         BlockState targetState = level.getBlockState(target.blockPos());
@@ -72,7 +72,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "missing_axe", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
-            return WorkResult.idle("Paused: logging needs an axe in job gear or supplies.");
+            return WorkResult.idle("I need a proper axe before I can keep logging.");
         }
 
         prepareBreakingTarget(level, context, villager, target);
@@ -84,11 +84,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     clearActiveBreakingTarget(level, context, villager);
                     HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 20L * 30L);
                     setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
-                    return WorkResult.idle("Tree log blocked. Looking for another reachable trunk.");
+                    return WorkResult.idle("That trunk will not do. I am looking for another I can reach.");
                 }
-                return WorkResult.progressed("Tree log blocked. Repositioning for a reachable trunk face.");
+                return WorkResult.progressed("That trunk is awkward from here, so I am changing my approach.");
             }
-            return WorkResult.progressed("Moving to reachable tree face.");
+            return WorkResult.progressed("I am moving into place to work that tree.");
         }
         clearWorkPathFailure(villager, target.blockPos());
         holdMiningPosition(villager, target);
@@ -101,7 +101,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             context.setProgressTicks(progress);
             swingWorkTool(villager);
             showBreakProgress(level, villager, target.blockPos(), progress, needed);
-            return WorkResult.progressed("Logging tree: " + progress + "/" + needed + ".");
+            return WorkResult.progressed("I am chopping through the trunk now.");
         }
 
         context.setProgressTicks(0);
@@ -114,29 +114,29 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 if (harvestResult.completed()) {
                     HiredWorkPlan.removeTarget(context, target.blockPos());
                     clearActiveBreakingTarget(level, context, villager);
-                    return WorkResult.completed("Cut " + harvestResult.logsCut() + " tree logs.");
+                    return WorkResult.completed("I finished felling the tree and gathered " + harvestResult.logsCut() + " logs.");
                 }
             }
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("Output full. Walking to assigned storage before logging more.");
+                return WorkResult.progressed("My hands are full of timber, so I am taking it to storage first.");
             }
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("Paused: output storage is full.");
+            return WorkResult.idle("I cannot carry more timber, and there is nowhere to put it.");
         }
         if (harvestResult == TreeHarvestResult.TARGET_CHANGED) {
             HiredWorkPlan.removeTarget(context, target.blockPos());
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN);
-            return WorkResult.idle("Tree target changed.");
+            return WorkResult.idle("That tree is no longer fit for the work I had in mind.");
         }
         HiredWorkPlan.removeTarget(context, target.blockPos());
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
-        return WorkResult.completed("Cut " + harvestResult.logsCut() + " tree logs.");
+        return WorkResult.completed("I finished felling the tree and gathered " + harvestResult.logsCut() + " logs.");
     }
 
     private HiredPathTarget findTreeLog(ServerLevel level, Villager villager, HiredWorkContext context) {

@@ -68,6 +68,8 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
         CONFIGURE_NAVIGATION,
         CONFIGURE_ANIMAL_HANDLING,
         CONFIGURE_NITWIT,
-        FOLLOW
+        FOLLOW,
+        STAY_HERE,
+        STOP_FOLLOWING
     }
 }
