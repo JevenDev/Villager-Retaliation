@@ -44,6 +44,8 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
         SHOW_PAYMENT_STORAGE,
         REMOVE_PAYMENT_STORAGE,
         TOGGLE_AUTO_PAYMENT,
+        PROMPT_END_HIRE_CONFIRMATION,
+        DECLINE_END_HIRE_CONFIRMATION,
         END_HIRE,
         VIEW_ROLE,
         SET_ROLE_COMBAT,

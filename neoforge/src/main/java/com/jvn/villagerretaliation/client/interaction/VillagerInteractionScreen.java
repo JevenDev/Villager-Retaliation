@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
@@ -30,6 +31,7 @@ import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -109,6 +111,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final String walletCurrencyName;
     private final String walletCurrencyPluralName;
     private final String walletCurrencyLabel;
+    private final EnumSet<HiredVillagerRole> availableHiredRoles;
+    private final HiredVillagerRole activeHiredRole;
     private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
@@ -169,6 +173,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             String walletCurrencyPluralName,
             String walletCurrencyLabel,
             boolean forceCameraTowardsVillager,
+            List<HiredVillagerRole> availableHiredRoles,
+            HiredVillagerRole activeHiredRole,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
@@ -198,6 +204,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.walletCurrencyName = blankToDefault(walletCurrencyName, "emerald");
         this.walletCurrencyPluralName = blankToDefault(walletCurrencyPluralName, "emeralds");
         this.walletCurrencyLabel = blankToDefault(walletCurrencyLabel, "Emeralds");
+        this.availableHiredRoles = availableHiredRoles == null || availableHiredRoles.isEmpty()
+                ? EnumSet.noneOf(HiredVillagerRole.class)
+                : EnumSet.copyOf(availableHiredRoles);
+        this.activeHiredRole = activeHiredRole;
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
@@ -468,10 +478,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addRelationshipOptions();
         } else if (this.page == DialoguePage.RECRUIT) {
             addRecruitOptions();
+        } else if (this.page == DialoguePage.STORAGE) {
+            addStorageOptions();
+        } else if (this.page == DialoguePage.PAYMENT) {
+            addPaymentOptions();
         } else if (this.page == DialoguePage.HIRE) {
             addHireOptions();
         } else if (this.page == DialoguePage.CONTRACT) {
             addContractOptions();
+        } else if (this.page == DialoguePage.END_CONTRACT_CONFIRMATION) {
+            addEndContractConfirmationOptions();
         } else if (this.page == DialoguePage.CONTRACT_EXTENSION) {
             addContractExtensionOptions();
         } else if (this.page == DialoguePage.ROLE) {
@@ -540,24 +556,37 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addOption("recruit.about_contract", this::openContractPage);
         } else if (this.hiredByOtherPlayer) {
             addOption("recruit.contract", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
-        } else {
+        } else if (canHireVillager()) {
             addOption("recruit.hire", this::openHirePage);
         }
         addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
-        addOption("recruit.show_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SHOW_STORAGE));
-        addOption("recruit.deposit_earnings", () -> requestRecruit(VillagerRecruitRequestPayload.Action.DEPOSIT_EARNINGS));
-        addOption("recruit.remove_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_STORAGE));
+        addOption("recruit.storage", this::openStoragePage);
         if (this.hiredByPlayer) {
-            addOption("recruit.auto_payment", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_PAYMENT));
-            addOption("recruit.show_payment_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SHOW_PAYMENT_STORAGE));
-            addOption("recruit.remove_payment_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_PAYMENT_STORAGE));
+            addOption("recruit.payment", this::openPaymentPage);
             addOption("recruit.about_role", this::openRolePage);
             addOption("recruit.work", this::openWorkPage);
         }
-        addOption("recruit.end_hire", () -> requestRecruit(VillagerRecruitRequestPayload.Action.END_HIRE));
+        addOption("recruit.end_hire", () -> {
+            openEndContractConfirmationPage();
+            requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_END_HIRE_CONFIRMATION);
+        });
         this.options.add(DialogueOption.enabled(
                 this.followingPlayer ? translate("recruit.stop_following") : translate("recruit.follow_me"),
                 () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
+    }
+
+    private void addStorageOptions() {
+        addOption("recruit.show_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SHOW_STORAGE));
+        addOption("recruit.deposit_earnings", () -> requestRecruit(VillagerRecruitRequestPayload.Action.DEPOSIT_EARNINGS));
+        addOption("recruit.remove_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_STORAGE));
+        addOption("recruit.nevermind", this::openRecruitPage);
+    }
+
+    private void addPaymentOptions() {
+        addOption("recruit.auto_payment", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_PAYMENT));
+        addOption("recruit.show_payment_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SHOW_PAYMENT_STORAGE));
+        addOption("recruit.remove_payment_storage", () -> requestRecruit(VillagerRecruitRequestPayload.Action.REMOVE_PAYMENT_STORAGE));
+        addOption("recruit.nevermind", this::openRecruitPage);
     }
 
     private void addHireOptions() {
@@ -574,6 +603,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.contract_days_left", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
         addOption("recruit.extend_contract", this::openContractExtensionPage);
         addOption("recruit.nevermind", this::openRecruitPage);
+    }
+
+    private void addEndContractConfirmationOptions() {
+        addOption("recruit.end_hire_confirm", () -> requestRecruit(VillagerRecruitRequestPayload.Action.END_HIRE));
+        addOption("recruit.nevermind", () -> {
+            requestRecruit(VillagerRecruitRequestPayload.Action.DECLINE_END_HIRE_CONFIRMATION);
+            openRecruitPage();
+        });
     }
 
     private void addContractExtensionOptions() {
@@ -593,14 +630,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addRoleChangeOptions() {
-        addOption("recruit.role_combat", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_COMBAT));
-        addOption("recruit.role_mining", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_MINING));
-        addOption("recruit.role_logging", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_LOGGING));
-        addOption("recruit.role_farming", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_FARMING));
-        addOption("recruit.role_brewing", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_BREWING));
-        addOption("recruit.role_navigation", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_NAVIGATION));
-        addOption("recruit.role_animal_handling", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_ANIMAL_HANDLING));
-        addOption("recruit.role_nitwit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.SET_ROLE_NITWIT));
+        addRoleChangeOption(HiredVillagerRole.COMBAT, "recruit.role_combat", VillagerRecruitRequestPayload.Action.SET_ROLE_COMBAT);
+        addRoleChangeOption(HiredVillagerRole.MINING, "recruit.role_mining", VillagerRecruitRequestPayload.Action.SET_ROLE_MINING);
+        addRoleChangeOption(HiredVillagerRole.LOGGING, "recruit.role_logging", VillagerRecruitRequestPayload.Action.SET_ROLE_LOGGING);
+        addRoleChangeOption(HiredVillagerRole.FARMING, "recruit.role_farming", VillagerRecruitRequestPayload.Action.SET_ROLE_FARMING);
+        addRoleChangeOption(HiredVillagerRole.BREWING, "recruit.role_brewing", VillagerRecruitRequestPayload.Action.SET_ROLE_BREWING);
+        addRoleChangeOption(HiredVillagerRole.NAVIGATION, "recruit.role_navigation", VillagerRecruitRequestPayload.Action.SET_ROLE_NAVIGATION);
+        addRoleChangeOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling", VillagerRecruitRequestPayload.Action.SET_ROLE_ANIMAL_HANDLING);
+        addRoleChangeOption(HiredVillagerRole.NITWIT, "recruit.role_nitwit", VillagerRecruitRequestPayload.Action.SET_ROLE_NITWIT);
         addOption("recruit.nevermind", this::openRolePage);
     }
 
@@ -611,13 +648,38 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.work_radius_down", () -> requestRecruit(VillagerRecruitRequestPayload.Action.DECREASE_WORK_RADIUS));
         addOption("recruit.work_assigned_supplies", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES));
         addOption("recruit.work_auto_deposit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS));
-        addOption("recruit.work_config_logging", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_LOGGING));
-        addOption("recruit.work_config_farming", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING));
-        addOption("recruit.work_config_brewing", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_BREWING));
-        addOption("recruit.work_config_navigation", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_NAVIGATION));
-        addOption("recruit.work_config_animal_handling", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_ANIMAL_HANDLING));
-        addOption("recruit.work_config_nitwit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT));
+        addRoleWorkConfigOption(HiredVillagerRole.LOGGING, "recruit.work_config_logging", VillagerRecruitRequestPayload.Action.CONFIGURE_LOGGING);
+        addRoleWorkConfigOption(HiredVillagerRole.FARMING, "recruit.work_config_farming", VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING);
+        addRoleWorkConfigOption(HiredVillagerRole.BREWING, "recruit.work_config_brewing", VillagerRecruitRequestPayload.Action.CONFIGURE_BREWING);
+        addRoleWorkConfigOption(HiredVillagerRole.NAVIGATION, "recruit.work_config_navigation", VillagerRecruitRequestPayload.Action.CONFIGURE_NAVIGATION);
+        addRoleWorkConfigOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.work_config_animal_handling", VillagerRecruitRequestPayload.Action.CONFIGURE_ANIMAL_HANDLING);
+        addRoleWorkConfigOption(HiredVillagerRole.NITWIT, "recruit.work_config_nitwit", VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT);
         addOption("recruit.nevermind", this::openRecruitPage);
+    }
+
+    private void addRoleChangeOption(HiredVillagerRole role, String labelKey, VillagerRecruitRequestPayload.Action action) {
+        if (canOfferHiredRole(role)) {
+            addOption(labelKey, () -> requestRecruit(action));
+        }
+    }
+
+    private void addRoleWorkConfigOption(HiredVillagerRole role, String labelKey, VillagerRecruitRequestPayload.Action action) {
+        if (isActiveHiredRole(role)) {
+            addOption(labelKey, () -> requestRecruit(action));
+        }
+    }
+
+    private boolean canOfferHiredRole(HiredVillagerRole role) {
+        return this.availableHiredRoles.contains(role);
+    }
+
+    private boolean isActiveHiredRole(HiredVillagerRole role) {
+        return this.activeHiredRole == role;
+    }
+
+    private boolean canHireVillager() {
+        return this.reputationLevel != null
+                && this.reputationLevel.trustRank() >= VillagerReputationLevel.NEUTRAL.trustRank();
     }
 
     private void addClipboardMenuOptions() {
@@ -760,12 +822,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.RECRUIT);
     }
 
+    private void openStoragePage() {
+        openPage(DialoguePage.STORAGE);
+    }
+
+    private void openPaymentPage() {
+        openPage(DialoguePage.PAYMENT);
+    }
+
     private void openHirePage() {
         openPage(DialoguePage.HIRE);
     }
 
     private void openContractPage() {
         openPage(DialoguePage.CONTRACT);
+    }
+
+    private void openEndContractConfirmationPage() {
+        openPage(DialoguePage.END_CONTRACT_CONFIRMATION);
     }
 
     private void openContractExtensionPage() {
@@ -854,6 +928,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         if (this.page == DialoguePage.HIRE) {
+            openPage(DialoguePage.RECRUIT);
+            return;
+        }
+        if (this.page == DialoguePage.STORAGE || this.page == DialoguePage.PAYMENT) {
+            openPage(DialoguePage.RECRUIT);
+            return;
+        }
+        if (this.page == DialoguePage.END_CONTRACT_CONFIRMATION) {
             openPage(DialoguePage.RECRUIT);
             return;
         }
@@ -2011,8 +2093,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         DESCENDANTS,
         RELATIONSHIPS,
         RECRUIT,
+        STORAGE,
+        PAYMENT,
         HIRE,
         CONTRACT,
+        END_CONTRACT_CONFIRMATION,
         CONTRACT_EXTENSION,
         ROLE,
         ROLE_CHANGE,

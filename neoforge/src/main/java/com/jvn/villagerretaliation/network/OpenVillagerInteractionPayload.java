@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeReference;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
@@ -47,6 +48,8 @@ public record OpenVillagerInteractionPayload(
         String walletCurrencyPluralName,
         String walletCurrencyLabel,
         boolean forceCameraTowardsVillager,
+        List<HiredVillagerRole> availableHiredRoles,
+        HiredVillagerRole activeHiredRole,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames,
@@ -82,6 +85,8 @@ public record OpenVillagerInteractionPayload(
         buffer.writeUtf(payload.walletCurrencyPluralName(), 64);
         buffer.writeUtf(payload.walletCurrencyLabel(), 64);
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
+        writeHiredRoles(buffer, payload.availableHiredRoles());
+        buffer.writeEnum(payload.activeHiredRole());
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
         writeStringList(buffer, payload.knownDislikedGiftNames());
@@ -115,12 +120,30 @@ public record OpenVillagerInteractionPayload(
                 buffer.readUtf(64),
                 buffer.readUtf(64),
                 buffer.readBoolean(),
+                readHiredRoles(buffer),
+                buffer.readEnum(HiredVillagerRole.class),
                 readDialogueOptions(buffer),
                 readStringList(buffer),
                 readStringList(buffer),
                 readFamilyTree(buffer),
                 readRelationships(buffer)
         );
+    }
+
+    private static void writeHiredRoles(RegistryFriendlyByteBuf buffer, List<HiredVillagerRole> roles) {
+        buffer.writeVarInt(roles.size());
+        for (HiredVillagerRole role : roles) {
+            buffer.writeEnum(role);
+        }
+    }
+
+    private static List<HiredVillagerRole> readHiredRoles(RegistryFriendlyByteBuf buffer) {
+        int size = buffer.readVarInt();
+        List<HiredVillagerRole> roles = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            roles.add(buffer.readEnum(HiredVillagerRole.class));
+        }
+        return roles;
     }
 
     private static void writeDialogueOptions(RegistryFriendlyByteBuf buffer, List<DialogueOptionDefinition> options) {

@@ -346,6 +346,66 @@
       ]
     },
     {
+      "key": "interaction.end_hire_confirmation_prompt",
+      "lines": [
+        "Are you sure you want to end our contract early?",
+        "You would end our contract before its time? Are you sure?",
+        "Do you truly want to cut our contract short?",
+        "Are you certain you want to end this contract early?",
+        "You are asking to end our agreement early. Are you sure?",
+        "Would you really end our contract before it is finished?",
+        "You want to stop our contract early. Is that final?",
+        "Are you sure you want to dismiss me before the contract ends?",
+        "Do you mean to end our contract now, before the agreed time?",
+        "If you end our contract early, that will be the end of it. Are you sure?"
+      ]
+    },
+    {
+      "key": "interaction.end_hire_confirmation_declined",
+      "lines": [
+        "All right. We will keep the contract as it is.",
+        "Very well. Our contract stays in place.",
+        "Understood. We continue as agreed.",
+        "No trouble then. I will remain under contract.",
+        "All right. Nothing changes between us.",
+        "Good. We will carry on with the contract.",
+        "Very well. I will stay on until the contract ends.",
+        "Then we keep to the original agreement.",
+        "Understood. The contract remains active.",
+        "All right. We will leave the contract untouched."
+      ]
+    },
+    {
+      "key": "interaction.end_hire_confirmation_accepted",
+      "lines": [
+        "Then our contract is ended.",
+        "Very well. Our agreement ends here.",
+        "Understood. The contract is over.",
+        "All right. We are finished with this contract.",
+        "Then that is the end of our arrangement.",
+        "Very well. I am released from the contract.",
+        "Our contract ends now.",
+        "Understood. That closes our agreement.",
+        "All right. The contract is done.",
+        "Then we part ways here. The contract is ended."
+      ]
+    },
+    {
+      "key": "interaction.end_hire_confirmation_accepted_refund",
+      "lines": [
+        "Then our contract is ended. I have returned {refund_amount}.",
+        "Very well. Our agreement ends here, and you receive {refund_amount} back.",
+        "Understood. The contract is over. Here is {refund_amount} returned to you.",
+        "All right. We are finished with this contract, and {refund_amount} has been refunded.",
+        "Then that is the end of our arrangement. You get {refund_amount} back.",
+        "Very well. I am released from the contract, and {refund_amount} is returned.",
+        "Our contract ends now. I have refunded {refund_amount}.",
+        "Understood. That closes our agreement, with {refund_amount} returned to you.",
+        "All right. The contract is done, and you are refunded {refund_amount}.",
+        "Then we part ways here. The contract is ended, and {refund_amount} comes back to you."
+      ]
+    },
+    {
       "key": "interaction.hire_unavailable",
       "lines": [
         "I cannot be hired yet.",

@@ -109,6 +109,8 @@ public final class VillagerInteractionClientHandler {
                 payload.walletCurrencyPluralName(),
                 payload.walletCurrencyLabel(),
                 payload.forceCameraTowardsVillager(),
+                payload.availableHiredRoles(),
+                payload.activeHiredRole(),
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames(),

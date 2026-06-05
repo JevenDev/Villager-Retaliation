@@ -337,6 +337,8 @@ public final class VillagerInteractionService {
         switch (action) {
             case VIEW_CONTRACT -> sendHiredContractNotice(player, level, villager);
             case VIEW_ROLE -> sendHiredRoleNotice(player, level, villager);
+            case PROMPT_END_HIRE_CONFIRMATION -> sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_prompt");
+            case DECLINE_END_HIRE_CONFIRMATION -> sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_declined");
             case OPEN_JOB_INVENTORY -> {
                 if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
                     sendVillagerNotice(player, villager, "Only the hiring player can open hired job inventory.");
@@ -361,9 +363,16 @@ public final class VillagerInteractionService {
                     giveCurrency(player, refund);
                 }
                 VillagerRecruitmentService.sendFiredNotice(player, villager);
-                sendVillagerNotice(player, villager, refund > 0
-                        ? "Contract ended. Refunded " + formatCurrency(level, refund) + "."
-                        : "Contract ended.");
+                if (refund > 0) {
+                    sendVillagerNotice(
+                            player,
+                            villager,
+                            "interaction.end_hire_confirmation_accepted_refund",
+                            Map.of("refund_amount", formatCurrency(level, refund))
+                    );
+                } else {
+                    sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_accepted");
+                }
                 VillagerInteractionScreenOpener.refreshNormal(player, villager);
             }
             default -> sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
@@ -538,6 +547,10 @@ public final class VillagerInteractionService {
         }
         if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
             sendVillagerNotice(player, villager, "Only the hiring player can manage hired work.");
+            return true;
+        }
+        if (configureRole != null && HiredVillagerContractService.activeRole(level, villager) != configureRole) {
+            sendVillagerNotice(player, villager, "Assign me to " + configureRole.label() + " before configuring that work.");
             return true;
         }
         switch (action) {
