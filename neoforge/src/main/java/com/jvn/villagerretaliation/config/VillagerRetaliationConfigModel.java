@@ -449,7 +449,7 @@ public final class VillagerRetaliationConfigModel {
         public int hostileThreshold = -100;
 
         @RangeConstraint(min = -10000, max = 10000)
-        public int despisedThreshold = -250;
+        public int despisedThreshold = -400;
 
         @RangeConstraint(min = -10000, max = 10000)
         public int fearedThreshold = -750;
