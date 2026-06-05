@@ -41,6 +41,9 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
 
     @Override
     public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (!context.hasWorkArea()) {
+            return;
+        }
         if (context.progressTicks() <= 0) {
             return;
         }
@@ -255,6 +258,15 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
                 targets,
                 MAX_TARGETS_TO_PATHFIND,
                 context::isInsideWorkArea).search().target();
+    }
+
+    protected WorkResult waitForWorkAreaAssignment(ServerLevel level, Villager villager, HiredWorkContext context) {
+        HiredWorkPlan.clear(context);
+        clearActiveBreakingTarget(level, context, villager);
+        HiredWorkerBrain.setFailure(context, "no_work_area", 0L);
+        HiredWorkerBrain.setLastTargetScanResult(context, "no_work_area");
+        setTaskState(context, HiredWorkerTaskState.NO_WORK_AREA);
+        return WorkResult.idle("No work area assigned.");
     }
 
     protected HiredPathTarget plannedTarget(

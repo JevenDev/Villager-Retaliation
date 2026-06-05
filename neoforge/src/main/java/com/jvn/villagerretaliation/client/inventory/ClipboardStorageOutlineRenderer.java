@@ -31,6 +31,8 @@ public final class ClipboardStorageOutlineRenderer {
     private static final int ASSIGNED_COLOR = 0xFFFFD54A;
     private static final int PAYMENT_COLOR = 0xFF46E06E;
     private static final int WORK_AREA_COLOR = 0xFF65D889;
+    private static final int WORK_AREA_CENTER_COLOR = 0xFFFFF176;
+    private static final int WORK_AREA_CORNER_COLOR = 0xFFFF8A65;
     private static final List<OutlinedStoragePosition> ASSIGNED_POSITIONS = new ArrayList<>();
     private static final List<WorkAreaPosition> WORK_AREAS = new ArrayList<>();
     private static long assignedVisibleUntilGameTime;
@@ -70,7 +72,13 @@ public final class ClipboardStorageOutlineRenderer {
                 WORK_AREAS.add(new WorkAreaPosition(
                         ResourceKey.create(Registries.DIMENSION, entry.dimension()),
                         entry.min(),
-                        entry.max()
+                        entry.max(),
+                        entry.center(),
+                        entry.showCenter(),
+                        entry.firstCorner(),
+                        entry.showFirstCorner(),
+                        entry.secondCorner(),
+                        entry.showSecondCorner()
                 ));
             }
             workAreasVisibleUntilGameTime = minecraft.level.getGameTime() + payload.ticks();
@@ -105,6 +113,11 @@ public final class ClipboardStorageOutlineRenderer {
                 renderWorkAreas(event, WORK_AREAS, WORK_AREA_COLOR);
             } else {
                 WORK_AREAS.clear();
+            }
+            if (minecraft.level.getGameTime() <= assignedVisibleUntilGameTime) {
+                renderAssignedPositions(event, ASSIGNED_POSITIONS);
+            } else {
+                ASSIGNED_POSITIONS.clear();
             }
         }
     }
@@ -174,6 +187,15 @@ public final class ClipboardStorageOutlineRenderer {
                 continue;
             }
             LevelRenderer.renderLineBox(poseStack, consumer, workAreaBox(area), red, green, blue, alpha);
+            if (area.showCenter() && minecraft.level.hasChunkAt(area.center())) {
+                renderColoredBox(poseStack, consumer, markerBox(area.center()), WORK_AREA_CENTER_COLOR);
+            }
+            if (area.showFirstCorner() && minecraft.level.hasChunkAt(area.firstCorner())) {
+                renderColoredBox(poseStack, consumer, markerBox(area.firstCorner()), WORK_AREA_CORNER_COLOR);
+            }
+            if (area.showSecondCorner() && minecraft.level.hasChunkAt(area.secondCorner())) {
+                renderColoredBox(poseStack, consumer, markerBox(area.secondCorner()), WORK_AREA_CORNER_COLOR);
+            }
         }
         poseStack.popPose();
         bufferSource.endBatch(RenderType.lines());
@@ -190,6 +212,18 @@ public final class ClipboardStorageOutlineRenderer {
                 max.getY() + 1.0D,
                 max.getZ() + 1.0D
         ).inflate(0.003D);
+    }
+
+    private static AABB markerBox(BlockPos pos) {
+        return new AABB(pos).inflate(0.01D);
+    }
+
+    private static void renderColoredBox(PoseStack poseStack, VertexConsumer consumer, AABB box, int color) {
+        float red = ((color >> 16) & 0xFF) / 255.0F;
+        float green = ((color >> 8) & 0xFF) / 255.0F;
+        float blue = (color & 0xFF) / 255.0F;
+        float alpha = ((color >> 24) & 0xFF) / 255.0F;
+        LevelRenderer.renderLineBox(poseStack, consumer, box, red, green, blue, alpha);
     }
 
     private static AABB outlineBox(Level level, BlockPos pos) {
@@ -213,7 +247,16 @@ public final class ClipboardStorageOutlineRenderer {
         return VillagerRetaliationItems.isClipboard(mainHand) ? mainHand : minecraft.player.getOffhandItem();
     }
 
-    private record WorkAreaPosition(ResourceKey<Level> dimension, BlockPos min, BlockPos max) {
+    private record WorkAreaPosition(
+            ResourceKey<Level> dimension,
+            BlockPos min,
+            BlockPos max,
+            BlockPos center,
+            boolean showCenter,
+            BlockPos firstCorner,
+            boolean showFirstCorner,
+            BlockPos secondCorner,
+            boolean showSecondCorner) {
     }
 
     private record OutlinedStoragePosition(ResourceKey<Level> dimension, BlockPos pos, boolean payment) {

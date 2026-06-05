@@ -3,7 +3,16 @@ package com.jvn.villagerretaliation.network;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
-public record ClipboardWorkAreaEntry(ResourceLocation dimension, BlockPos min, BlockPos max) {
+public record ClipboardWorkAreaEntry(
+        ResourceLocation dimension,
+        BlockPos min,
+        BlockPos max,
+        BlockPos center,
+        boolean showCenter,
+        BlockPos firstCorner,
+        boolean showFirstCorner,
+        BlockPos secondCorner,
+        boolean showSecondCorner) {
     public ClipboardWorkAreaEntry {
         BlockPos normalizedMin = new BlockPos(
                 Math.min(min.getX(), max.getX()),
@@ -15,5 +24,15 @@ public record ClipboardWorkAreaEntry(ResourceLocation dimension, BlockPos min, B
                 Math.max(min.getZ(), max.getZ()));
         min = normalizedMin;
         max = normalizedMax;
+        center = center == null ? new BlockPos(
+                Math.floorDiv(min.getX() + max.getX(), 2),
+                Math.floorDiv(min.getY() + max.getY(), 2),
+                Math.floorDiv(min.getZ() + max.getZ(), 2)) : center.immutable();
+        firstCorner = firstCorner == null ? min : firstCorner.immutable();
+        secondCorner = secondCorner == null ? max : secondCorner.immutable();
+    }
+
+    public ClipboardWorkAreaEntry(ResourceLocation dimension, BlockPos min, BlockPos max) {
+        this(dimension, min, max, null, false, null, false, null, false);
     }
 }

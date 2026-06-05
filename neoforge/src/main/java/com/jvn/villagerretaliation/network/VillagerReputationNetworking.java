@@ -230,6 +230,17 @@ public final class VillagerReputationNetworking {
                     )))
         );
         network.playToServer(
+                ClipboardWorkAreaActionPayload.TYPE,
+                ClipboardWorkAreaActionPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleClipboardWorkAreaAction(
+                            player,
+                            payload.villagerId(),
+                            payload.action(),
+                            payload.steps()
+                    )))
+        );
+        network.playToServer(
                 ClipboardModeChangePayload.TYPE,
                 ClipboardModeChangePayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->

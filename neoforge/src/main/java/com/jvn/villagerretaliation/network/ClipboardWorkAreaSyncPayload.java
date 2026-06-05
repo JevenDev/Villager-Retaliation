@@ -23,12 +23,26 @@ public record ClipboardWorkAreaSyncPayload(List<ClipboardWorkAreaEntry> entries,
         return new ClipboardWorkAreaSyncPayload(List.of(new ClipboardWorkAreaEntry(dimension, min, max)), ticks);
     }
 
+    public static ClipboardWorkAreaSyncPayload assigned(ResourceLocation dimension, BlockPos min, BlockPos max, BlockPos center, int ticks) {
+        return new ClipboardWorkAreaSyncPayload(List.of(new ClipboardWorkAreaEntry(dimension, min, max, center, true, min, false, max, false)), ticks);
+    }
+
+    public static ClipboardWorkAreaSyncPayload selection(ResourceLocation dimension, BlockPos first, BlockPos second, int ticks) {
+        return new ClipboardWorkAreaSyncPayload(List.of(new ClipboardWorkAreaEntry(dimension, first, second, null, false, first, true, second, true)), ticks);
+    }
+
     private static void encode(RegistryFriendlyByteBuf buffer, ClipboardWorkAreaSyncPayload payload) {
         buffer.writeVarInt(Math.min(MAX_ENTRIES, payload.entries().size()));
         for (ClipboardWorkAreaEntry entry : payload.entries()) {
             buffer.writeResourceLocation(entry.dimension());
             buffer.writeBlockPos(entry.min());
             buffer.writeBlockPos(entry.max());
+            buffer.writeBlockPos(entry.center());
+            buffer.writeBoolean(entry.showCenter());
+            buffer.writeBlockPos(entry.firstCorner());
+            buffer.writeBoolean(entry.showFirstCorner());
+            buffer.writeBlockPos(entry.secondCorner());
+            buffer.writeBoolean(entry.showSecondCorner());
         }
         buffer.writeVarInt(payload.ticks());
     }
@@ -40,7 +54,13 @@ public record ClipboardWorkAreaSyncPayload(List<ClipboardWorkAreaEntry> entries,
             entries.add(new ClipboardWorkAreaEntry(
                     buffer.readResourceLocation(),
                     buffer.readBlockPos(),
-                    buffer.readBlockPos()
+                    buffer.readBlockPos(),
+                    buffer.readBlockPos(),
+                    buffer.readBoolean(),
+                    buffer.readBlockPos(),
+                    buffer.readBoolean(),
+                    buffer.readBlockPos(),
+                    buffer.readBoolean()
             ));
         }
         return new ClipboardWorkAreaSyncPayload(entries, buffer.readVarInt());

@@ -58,8 +58,6 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
         SET_ROLE_NITWIT,
         VIEW_WORK_STATUS,
         TOGGLE_WORK_ENABLED,
-        INCREASE_WORK_RADIUS,
-        DECREASE_WORK_RADIUS,
         TOGGLE_USE_ASSIGNED_SUPPLIES,
         TOGGLE_AUTO_DEPOSIT_OUTPUTS,
         CONFIGURE_LOGGING,

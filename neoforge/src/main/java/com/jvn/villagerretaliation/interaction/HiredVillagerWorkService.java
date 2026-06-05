@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -39,9 +40,6 @@ import net.minecraft.world.level.pathfinder.Path;
 
 public final class HiredVillagerWorkService {
     private static final String TAG = "VillagerRetaliationHiredWork";
-    private static final String WORK_CENTER_POS_TAG = "WorkCenterPos";
-    private static final String WORK_MIN_POS_TAG = "WorkMinPos";
-    private static final String WORK_MAX_POS_TAG = "WorkMaxPos";
     private static final String NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG = "NextWorkAreaReturnPathGameTime";
     private static final long DAY_TICKS = 24000L;
     private static final int MIN_WORK_RADIUS = 4;
@@ -113,6 +111,10 @@ public final class HiredVillagerWorkService {
     }
 
     private static boolean returnVillagerToWorkArea(ServerLevel level, Villager villager, HiredWorkContext context, CompoundTag state) {
+        if (!context.hasWorkArea()) {
+            state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
+            return false;
+        }
         if (context.isInsideWorkArea(villager.blockPosition())) {
             state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
             return false;
@@ -234,7 +236,7 @@ public final class HiredVillagerWorkService {
         int outputStacks = session.inventory().collectOutputItems().size();
         int outputItems = session.inventory().collectOutputItems().stream().mapToInt(output -> output.stack().getCount()).sum();
         boolean hasAssignedStorage = AssignedStorageService.hasAssignedStorage(level, villager);
-        boolean canDepositNow = AssignedStorageService.canInteractWithAssignedStorage(villager, pos -> isInsideWorkArea(session.area(), pos));
+        boolean canDepositNow = AssignedStorageService.canInteractWithAssignedStorage(villager, pos -> session.area().contains(pos));
 
         List<String> lines = new ArrayList<>();
         lines.add("Hired worker debug: role=" + session.role().serializedName()
@@ -252,7 +254,9 @@ public final class HiredVillagerWorkService {
                 + ", retryCooldown=" + snapshot.retryCooldownTicks()
                 + ", lastScan=" + valueOrNone(snapshot.lastTargetScanResult()));
         lines.add("Work area: " + areaDescription(session.area())
-                + ", radius=" + session.area().radius()
+                + ", assigned=" + session.area().explicitlyAssigned()
+                + ", usable=" + session.area().usable()
+                + ", radius=" + session.area().horizontalRadius()
                 + ", verticalRadius=" + session.area().verticalRadius()
                 + ", maxRadius=" + session.maxRadius());
         lines.add("Inventory/storage: outputStacks=" + outputStacks
@@ -271,14 +275,11 @@ public final class HiredVillagerWorkService {
         state.remove("NextWorkGameTime");
         state.remove("ProgressTicks");
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        int radius = Mth.clamp(
-                VillagerRetaliationConfig.HIRED_WORK_DEFAULT_RADIUS.get(),
-                MIN_WORK_RADIUS,
-                maxWorkRadius(level, villager, role));
-        state.putInt("Radius", radius);
+        int radius = roleDefaultHorizontalRadius(role, maxWorkRadius(level, villager, role));
+        int verticalRadius = roleDefaultVerticalRadius(role, maxWorkRadius(level, villager, role));
         BlockPos center = villager.blockPosition();
-        setWorkAreaBounds(state, defaultMin(center, radius), defaultMax(center, radius));
-        stopWork(level, villager, role, "Waiting for work assignment.");
+        HiredWorkArea.fromCenter(center, radius, verticalRadius, false).save(state);
+        stopWork(level, villager, role, "No work area assigned.");
     }
 
     public static void stopWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
@@ -305,12 +306,67 @@ public final class HiredVillagerWorkService {
         initializeDefaults(state, villager);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         int max = maxWorkRadius(level, villager, role);
-        int radius = Mth.clamp(state.getInt("Radius") + delta, MIN_WORK_RADIUS, max);
-        state.putInt("Radius", radius);
-        BlockPos center = workCenter(state, villager);
-        setWorkAreaBounds(state, defaultMin(center, radius), defaultMax(center, radius));
-        setStatus(state, "My work range is now set to " + radius + " blocks. I cannot manage beyond " + max + ".");
+        HiredWorkArea area = workAreaWithinMax(state, villager, max);
+        int radius = HiredWorkArea.clampRadius(area.horizontalRadius() + delta, MIN_WORK_RADIUS, max);
+        HiredWorkArea.fromCenter(area.center(), radius, area.verticalRadius(), true).clampedTo(max).save(state);
+        setStatus(state, "My job site horizontal range is now " + radius + " blocks. I cannot manage beyond " + max + ".");
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
+    }
+
+    public static void changeVerticalRadius(ServerPlayer player, ServerLevel level, Villager villager, int delta) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        int max = maxWorkRadius(level, villager, role);
+        HiredWorkArea area = workAreaWithinMax(state, villager, max);
+        int verticalRadius = HiredWorkArea.clampRadius(area.verticalRadius() + delta, 1, max);
+        HiredWorkArea.fromCenter(area.center(), area.horizontalRadius(), verticalRadius, true).clampedTo(max).save(state);
+        setStatus(state, "My job site vertical range is now " + verticalRadius + " blocks. I cannot manage beyond " + max + ".");
+        VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
+    }
+
+    public static void changeBounds(ServerPlayer player, ServerLevel level, Villager villager, Direction direction, int delta) {
+        if (direction == null || delta == 0) {
+            return;
+        }
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        int max = maxWorkRadius(level, villager, role);
+        HiredWorkArea area = workAreaWithinMax(state, villager, max);
+        BlockPos center = area.center();
+        BlockPos min = area.min();
+        BlockPos maxPos = area.max();
+        switch (direction) {
+            case NORTH -> min = new BlockPos(min.getX(), min.getY(), Mth.clamp(min.getZ() - delta, center.getZ() - max, center.getZ()));
+            case SOUTH -> maxPos = new BlockPos(maxPos.getX(), maxPos.getY(), Mth.clamp(maxPos.getZ() + delta, center.getZ(), center.getZ() + max));
+            case WEST -> min = new BlockPos(Mth.clamp(min.getX() - delta, center.getX() - max, center.getX()), min.getY(), min.getZ());
+            case EAST -> maxPos = new BlockPos(Mth.clamp(maxPos.getX() + delta, center.getX(), center.getX() + max), maxPos.getY(), maxPos.getZ());
+            case DOWN -> min = new BlockPos(min.getX(), Mth.clamp(min.getY() - delta, center.getY() - max, center.getY()), min.getZ());
+            case UP -> maxPos = new BlockPos(maxPos.getX(), Mth.clamp(maxPos.getY() + delta, center.getY(), center.getY() + max), maxPos.getZ());
+        }
+        new HiredWorkArea(center, min, maxPos, area.horizontalRadius(), area.verticalRadius(), true, true)
+                .clampedTo(max)
+                .save(state);
+        setStatus(state, "My job site is now " + workArea(state, villager).rangeDescription() + ".");
+        VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
+    }
+
+    public static void setWorkCenterHere(ServerPlayer player, ServerLevel level, Villager villager) {
+        assignCenteredWorkArea(player, level, villager, player.blockPosition(), false);
+    }
+
+    public static void resetWorkCenterToVillager(ServerPlayer player, ServerLevel level, Villager villager) {
+        assignCenteredWorkArea(player, level, villager, villager.blockPosition(), true);
+    }
+
+    public static void previewWorkArea(ServerPlayer player, ServerLevel level, Villager villager) {
+        HiredWorkArea area = workArea(level, villager);
+        if (!area.usable()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "No work area assigned.");
+            return;
+        }
+        com.jvn.villagerretaliation.item.HiredStorageClipboardItem.sendWorkAreaOutline(player, level, villager);
     }
 
     public static void toggleAssignedSupplies(ServerPlayer player, ServerLevel level, Villager villager) {
@@ -367,7 +423,7 @@ public final class HiredVillagerWorkService {
         workAreaWithinMax(state, villager, maxWorkRadius(level, villager, role));
     }
 
-    public static WorkArea workArea(ServerLevel level, Villager villager) {
+    public static HiredWorkArea workArea(ServerLevel level, Villager villager) {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
@@ -377,29 +433,37 @@ public final class HiredVillagerWorkService {
     public static boolean setWorkArea(ServerPlayer player, ServerLevel level, Villager villager, BlockPos first, BlockPos second) {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
-        BlockPos min = minPos(first, second);
-        BlockPos max = maxPos(first, second);
-        BlockPos center = centerPos(min, max);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         int maxRadius = maxWorkRadius(level, villager, role);
-        int horizontalRadius = horizontalRadius(center, min, max);
-        int verticalRadius = verticalRadius(center, min, max);
-        boolean capped = horizontalRadius > maxRadius || verticalRadius > maxRadius;
-        if (capped) {
-            min = clampedMin(center, min, maxRadius);
-            max = clampedMax(center, max, maxRadius);
-            horizontalRadius = horizontalRadius(center, min, max);
-            verticalRadius = verticalRadius(center, min, max);
-        }
-        int radius = Math.max(MIN_WORK_RADIUS, horizontalRadius);
-        state.putInt("Radius", radius);
-        setWorkAreaBounds(state, min, max);
+        HiredWorkArea requested = HiredWorkArea.fromBounds(first, second, true);
+        HiredWorkArea area = requested.clampedTo(maxRadius);
+        boolean capped = requested.horizontalRadius() > area.horizontalRadius()
+                || requested.verticalRadius() > area.verticalRadius();
+        area.save(state);
         String capNotice = capped
-                ? "My " + role.label() + " skill only lets me manage " + maxRadius + " blocks from the center, so I tightened the bounds a bit. "
+                ? "This area is too large for this worker; clamped to their current skill range. "
                 : "";
-        setStatus(state, capNotice + "My work area is now " + areaDescription(new WorkArea(center, min, max, radius, verticalRadius)) + ".");
+        setStatus(state, capNotice + "Custom work box selected: " + dimensions(area) + " blocks.");
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
         return true;
+    }
+
+    private static void assignCenteredWorkArea(ServerPlayer player, ServerLevel level, Villager villager, BlockPos center, boolean villagerCenter) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        int maxRadius = maxWorkRadius(level, villager, role);
+        HiredWorkArea current = workAreaWithinMax(state, villager, maxRadius);
+        int horizontalRadius = current.explicitlyAssigned()
+                ? current.horizontalRadius()
+                : roleDefaultHorizontalRadius(role, maxRadius);
+        int verticalRadius = current.explicitlyAssigned()
+                ? current.verticalRadius()
+                : roleDefaultVerticalRadius(role, maxRadius);
+        HiredWorkArea.fromCenter(center, horizontalRadius, verticalRadius, true).clampedTo(maxRadius).save(state);
+        setStatus(state, (villagerCenter ? "My job site is reset to my position: " : "My job site center is now here: ")
+                + workArea(state, villager).rangeDescription() + ".");
+        VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
     }
 
     static CompoundTag state(Villager villager) {
@@ -411,14 +475,20 @@ public final class HiredVillagerWorkService {
     }
 
     static void initializeDefaults(CompoundTag state, Villager villager) {
+        boolean hadStoredArea = state.contains(HiredWorkArea.WORK_CENTER_POS_TAG, Tag.TAG_LONG)
+                && state.contains(HiredWorkArea.WORK_MIN_POS_TAG, Tag.TAG_LONG)
+                && state.contains(HiredWorkArea.WORK_MAX_POS_TAG, Tag.TAG_LONG);
         if (!state.contains("Enabled", Tag.TAG_BYTE)) {
             state.putBoolean("Enabled", true);
         }
-        if (!state.contains("Radius", Tag.TAG_INT)) {
-            state.putInt("Radius", Mth.clamp(
+        if (!state.contains(HiredWorkArea.RADIUS_TAG, Tag.TAG_INT)) {
+            state.putInt(HiredWorkArea.RADIUS_TAG, Mth.clamp(
                     VillagerRetaliationConfig.HIRED_WORK_DEFAULT_RADIUS.get(),
                     MIN_WORK_RADIUS,
                     baseWorkRadiusCap()));
+        }
+        if (!state.contains(HiredWorkArea.WORK_AREA_ASSIGNED_TAG, Tag.TAG_BYTE)) {
+            state.putBoolean(HiredWorkArea.WORK_AREA_ASSIGNED_TAG, false);
         }
         if (!state.contains("UseAssignedStorageForSupplies", Tag.TAG_BYTE)) {
             state.putBoolean("UseAssignedStorageForSupplies", false);
@@ -439,50 +509,35 @@ public final class HiredVillagerWorkService {
             state.putString("Status", "Waiting for work tick.");
         }
         HiredWorkerBrain.initialize(state);
-        if (!state.contains(WORK_CENTER_POS_TAG, Tag.TAG_LONG)) {
-            state.putLong(WORK_CENTER_POS_TAG, villager.blockPosition().asLong());
-        }
-        if (!state.contains(WORK_MIN_POS_TAG, Tag.TAG_LONG) || !state.contains(WORK_MAX_POS_TAG, Tag.TAG_LONG)) {
-            int radius = Mth.clamp(state.getInt("Radius"), MIN_WORK_RADIUS, baseWorkRadiusCap());
-            BlockPos center = workCenter(state, villager);
-            setWorkAreaBounds(state, defaultMin(center, radius), defaultMax(center, radius));
+        if (!hadStoredArea) {
+            int radius = Mth.clamp(state.getInt(HiredWorkArea.RADIUS_TAG), MIN_WORK_RADIUS, baseWorkRadiusCap());
+            HiredWorkArea.fromCenter(villager.blockPosition(), radius, Math.min(radius, 8), state.getBoolean(HiredWorkArea.WORK_AREA_ASSIGNED_TAG)).save(state);
         }
     }
 
     private static BlockPos workCenter(CompoundTag state, Villager villager) {
-        if (!state.contains(WORK_CENTER_POS_TAG, Tag.TAG_LONG)) {
-            state.putLong(WORK_CENTER_POS_TAG, villager.blockPosition().asLong());
+        if (!state.contains(HiredWorkArea.WORK_CENTER_POS_TAG, Tag.TAG_LONG)) {
+            state.putLong(HiredWorkArea.WORK_CENTER_POS_TAG, villager.blockPosition().asLong());
         }
-        return BlockPos.of(state.getLong(WORK_CENTER_POS_TAG));
+        return BlockPos.of(state.getLong(HiredWorkArea.WORK_CENTER_POS_TAG));
     }
 
-    private static WorkArea workArea(CompoundTag state, Villager villager) {
-        if (!state.contains(WORK_MIN_POS_TAG, Tag.TAG_LONG) || !state.contains(WORK_MAX_POS_TAG, Tag.TAG_LONG)) {
+    private static HiredWorkArea workArea(CompoundTag state, Villager villager) {
+        if (!state.contains(HiredWorkArea.WORK_MIN_POS_TAG, Tag.TAG_LONG) || !state.contains(HiredWorkArea.WORK_MAX_POS_TAG, Tag.TAG_LONG)) {
             initializeDefaults(state, villager);
         }
-        BlockPos min = BlockPos.of(state.getLong(WORK_MIN_POS_TAG));
-        BlockPos max = BlockPos.of(state.getLong(WORK_MAX_POS_TAG));
-        BlockPos center = workCenter(state, villager);
-        int radius = Math.max(1, horizontalRadius(center, min, max));
-        int verticalRadius = Math.max(1, verticalRadius(center, min, max));
-        return new WorkArea(center, min, max, radius, verticalRadius);
+        return HiredWorkArea.fromState(state, workCenter(state, villager));
     }
 
-    static WorkArea workAreaWithinMax(CompoundTag state, Villager villager, int maxRadius) {
+    static HiredWorkArea workAreaWithinMax(CompoundTag state, Villager villager, int maxRadius) {
         int safeMaxRadius = Math.max(MIN_WORK_RADIUS, maxRadius);
-        WorkArea area = workArea(state, villager);
-        BlockPos center = area.center();
-        BlockPos min = area.min();
-        BlockPos max = area.max();
-        BlockPos clampedMin = clampedMin(center, min, safeMaxRadius);
-        BlockPos clampedMax = clampedMax(center, max, safeMaxRadius);
-        if (!clampedMin.equals(min) || !clampedMax.equals(max) || state.getInt("Radius") > safeMaxRadius) {
-            setWorkAreaBounds(state, clampedMin, clampedMax);
-            WorkArea clamped = workArea(state, villager);
-            state.putInt("Radius", Mth.clamp(clamped.radius(), MIN_WORK_RADIUS, safeMaxRadius));
+        HiredWorkArea area = workArea(state, villager);
+        HiredWorkArea clamped = area.clampedTo(safeMaxRadius);
+        if (!clamped.min().equals(area.min()) || !clamped.max().equals(area.max()) || state.getInt(HiredWorkArea.RADIUS_TAG) > safeMaxRadius) {
+            clamped.save(state);
             return clamped;
         }
-        state.putInt("Radius", Mth.clamp(area.radius(), MIN_WORK_RADIUS, safeMaxRadius));
+        state.putInt(HiredWorkArea.RADIUS_TAG, Mth.clamp(area.horizontalRadius(), MIN_WORK_RADIUS, safeMaxRadius));
         return area;
     }
 
@@ -498,79 +553,33 @@ public final class HiredVillagerWorkService {
         return Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_DEFAULT_RADIUS.get(), MIN_WORK_RADIUS, MAX_SKILLED_WORK_RADIUS);
     }
 
-    private static BlockPos clampedMin(BlockPos center, BlockPos min, int maxRadius) {
-        int safeRadius = Math.max(MIN_WORK_RADIUS, maxRadius);
-        return new BlockPos(
-                Math.max(min.getX(), center.getX() - safeRadius),
-                Math.max(min.getY(), center.getY() - safeRadius),
-                Math.max(min.getZ(), center.getZ() - safeRadius));
+    private static int roleDefaultHorizontalRadius(HiredVillagerRole role, int maxRadius) {
+        int preferred = switch (role) {
+            case MINING -> 24;
+            case LOGGING -> 32;
+            case FARMING -> 24;
+            default -> 24;
+        };
+        return HiredWorkArea.clampRadius(preferred, MIN_WORK_RADIUS, maxRadius);
     }
 
-    private static BlockPos clampedMax(BlockPos center, BlockPos max, int maxRadius) {
-        int safeRadius = Math.max(MIN_WORK_RADIUS, maxRadius);
-        return new BlockPos(
-                Math.min(max.getX(), center.getX() + safeRadius),
-                Math.min(max.getY(), center.getY() + safeRadius),
-                Math.min(max.getZ(), center.getZ() + safeRadius));
+    private static int roleDefaultVerticalRadius(HiredVillagerRole role, int maxRadius) {
+        int preferred = switch (role) {
+            case LOGGING -> 16;
+            case FARMING -> 6;
+            default -> 8;
+        };
+        return HiredWorkArea.clampRadius(preferred, 1, maxRadius);
     }
 
-    private static void setWorkAreaBounds(CompoundTag state, BlockPos min, BlockPos max) {
-        BlockPos normalizedMin = minPos(min, max);
-        BlockPos normalizedMax = maxPos(min, max);
-        BlockPos center = centerPos(normalizedMin, normalizedMax);
-        state.putLong(WORK_CENTER_POS_TAG, center.asLong());
-        state.putLong(WORK_MIN_POS_TAG, normalizedMin.asLong());
-        state.putLong(WORK_MAX_POS_TAG, normalizedMax.asLong());
+    private static String dimensions(HiredWorkArea area) {
+        return (area.max().getX() - area.min().getX() + 1)
+                + "x" + (area.max().getY() - area.min().getY() + 1)
+                + "x" + (area.max().getZ() - area.min().getZ() + 1);
     }
 
-    private static BlockPos defaultMin(BlockPos center, int radius) {
-        int safeRadius = Math.max(1, radius);
-        int verticalRadius = Math.min(safeRadius, 8);
-        return center.offset(-safeRadius, -verticalRadius, -safeRadius);
-    }
-
-    private static BlockPos defaultMax(BlockPos center, int radius) {
-        int safeRadius = Math.max(1, radius);
-        int verticalRadius = Math.min(safeRadius, 8);
-        return center.offset(safeRadius, verticalRadius, safeRadius);
-    }
-
-    private static BlockPos minPos(BlockPos first, BlockPos second) {
-        return new BlockPos(
-                Math.min(first.getX(), second.getX()),
-                Math.min(first.getY(), second.getY()),
-                Math.min(first.getZ(), second.getZ()));
-    }
-
-    private static BlockPos maxPos(BlockPos first, BlockPos second) {
-        return new BlockPos(
-                Math.max(first.getX(), second.getX()),
-                Math.max(first.getY(), second.getY()),
-                Math.max(first.getZ(), second.getZ()));
-    }
-
-    private static BlockPos centerPos(BlockPos min, BlockPos max) {
-        return new BlockPos(
-                Math.floorDiv(min.getX() + max.getX(), 2),
-                Math.floorDiv(min.getY() + max.getY(), 2),
-                Math.floorDiv(min.getZ() + max.getZ(), 2));
-    }
-
-    private static int horizontalRadius(BlockPos center, BlockPos min, BlockPos max) {
-        return Math.max(
-                Math.max(Math.abs(center.getX() - min.getX()), Math.abs(max.getX() - center.getX())),
-                Math.max(Math.abs(center.getZ() - min.getZ()), Math.abs(max.getZ() - center.getZ())));
-    }
-
-    private static int verticalRadius(BlockPos center, BlockPos min, BlockPos max) {
-        return Math.max(Math.abs(center.getY() - min.getY()), Math.abs(max.getY() - center.getY()));
-    }
-
-    private static String areaDescription(WorkArea area) {
-        BlockPos min = area.min();
-        BlockPos max = area.max();
-        return min.getX() + " " + min.getY() + " " + min.getZ()
-                + " to " + max.getX() + " " + max.getY() + " " + max.getZ();
+    private static String areaDescription(HiredWorkArea area) {
+        return area.usable() ? area.boundsDescription() : "No work area assigned";
     }
 
     private static void setStatus(CompoundTag state, String status) {
@@ -609,6 +618,7 @@ public final class HiredVillagerWorkService {
             case MOVING_TO_STORAGE -> "carrying goods toward " + describeCurrentTarget(snapshot);
             case RETURNING_TO_WORK_AREA -> "making my way back into the work area";
             case DEPOSITING -> "putting supplies away at " + describeCurrentTarget(snapshot);
+            case NO_WORK_AREA -> "waiting for you to assign a job site";
             case PAUSED_FULL_INVENTORY -> "stopped because my inventory is full";
             case PAUSED_NO_STORAGE -> "waiting because there is nowhere proper to store things";
             case FAILED_COOLDOWN -> "waiting a moment before I try that again";
@@ -688,7 +698,7 @@ public final class HiredVillagerWorkService {
             HiredJobInventory inventory,
             int neededNutrition,
             boolean assignedSupplies,
-            WorkArea area) {
+            HiredWorkArea area) {
         int nutrition = 0;
         for (int slot : inventory.supplySlots()) {
             ItemStack stack = inventory.getItem(slot);
@@ -709,18 +719,9 @@ public final class HiredVillagerWorkService {
                     villager,
                     stack -> stack.get(DataComponents.FOOD) != null,
                     neededNutrition - nutrition,
-                    pos -> isInsideWorkArea(area, pos));
+                    area::contains);
         }
         return nutrition;
-    }
-
-    private static boolean isInsideWorkArea(WorkArea area, BlockPos pos) {
-        return pos.getX() >= area.min().getX()
-                && pos.getX() <= area.max().getX()
-                && pos.getY() >= area.min().getY()
-                && pos.getY() <= area.max().getY()
-                && pos.getZ() >= area.min().getZ()
-                && pos.getZ() <= area.max().getZ();
     }
 
     private static int roleFoodCost(HiredVillagerRole role) {
@@ -807,8 +808,5 @@ public final class HiredVillagerWorkService {
         }
         state.putLong("LastNoticeTick", now);
         VillagerInteractionService.sendVillagerNotice(hirer, villager, message);
-    }
-
-    public record WorkArea(BlockPos center, BlockPos min, BlockPos max, int radius, int verticalRadius) {
     }
 }

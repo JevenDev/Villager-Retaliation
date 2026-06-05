@@ -23,6 +23,7 @@ import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
@@ -51,6 +52,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
@@ -419,6 +422,102 @@ public final class VillagerInteractionService {
         }
     }
 
+    public static void handleClipboardWorkAreaAction(ServerPlayer player, UUID villagerId, ClipboardWorkAreaActionPayload.Action action, int steps) {
+        if (player == null || player.server == null || villagerId == null || action == null) {
+            return;
+        }
+        int stepCount = Math.max(1, Math.min(5, steps));
+        Optional<HiredVillagerTarget> target = findHiredVillagerByUuid(player, villagerId);
+        if (target.isEmpty()) {
+            player.displayClientMessage(Component.literal("That worker is not available right now."), true);
+            return;
+        }
+
+        HiredVillagerTarget contextTarget = target.get();
+        ServerLevel level = contextTarget.level();
+        Villager villager = contextTarget.villager();
+        if (findClipboard(player).isEmpty()) {
+            sendVillagerNotice(player, villager, "Hold the clipboard to manage assigned work areas.");
+            return;
+        }
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            sendVillagerNotice(player, villager, "Only the hiring player can manage hired work.");
+            return;
+        }
+
+        if (action == ClipboardWorkAreaActionPayload.Action.SET_CENTER_HERE
+                && !level.dimension().equals(player.serverLevel().dimension())) {
+            sendVillagerNotice(player, villager, "Stand in the same dimension as this worker to set the job site center.");
+            return;
+        }
+
+        if (level == player.serverLevel()) {
+            focusVillagerOnPlayer(villager, player);
+        }
+        switch (action) {
+            case SET_CENTER_HERE -> HiredVillagerWorkService.setWorkCenterHere(player, level, villager);
+            case RESET_CENTER_TO_VILLAGER -> HiredVillagerWorkService.resetWorkCenterToVillager(player, level, villager);
+            case PREVIEW -> HiredVillagerWorkService.previewWorkArea(player, level, villager);
+            case INCREASE_HORIZONTAL_RANGE -> HiredVillagerWorkService.changeRadius(player, level, villager, 4 * stepCount);
+            case DECREASE_HORIZONTAL_RANGE -> HiredVillagerWorkService.changeRadius(player, level, villager, -4 * stepCount);
+            case INCREASE_VERTICAL_RANGE -> HiredVillagerWorkService.changeVerticalRadius(player, level, villager, 2 * stepCount);
+            case DECREASE_VERTICAL_RANGE -> HiredVillagerWorkService.changeVerticalRadius(player, level, villager, -2 * stepCount);
+            case EXPAND_NORTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.NORTH, 4 * stepCount);
+            case EXPAND_EAST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.EAST, 4 * stepCount);
+            case EXPAND_SOUTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.SOUTH, 4 * stepCount);
+            case EXPAND_WEST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.WEST, 4 * stepCount);
+            case CONTRACT_NORTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.NORTH, -4 * stepCount);
+            case CONTRACT_EAST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.EAST, -4 * stepCount);
+            case CONTRACT_SOUTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.SOUTH, -4 * stepCount);
+            case CONTRACT_WEST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.WEST, -4 * stepCount);
+            case EXPAND_UP -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.UP, 2 * stepCount);
+            case EXPAND_DOWN -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.DOWN, 2 * stepCount);
+            case CONTRACT_UP -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.UP, -2 * stepCount);
+            case CONTRACT_DOWN -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.DOWN, -2 * stepCount);
+        }
+        if (actionPreviewsWorkArea(action)) {
+            HiredVillagerWorkService.previewWorkArea(player, level, villager);
+        }
+    }
+
+    private static boolean actionPreviewsWorkArea(ClipboardWorkAreaActionPayload.Action action) {
+        return switch (action) {
+            case SET_CENTER_HERE,
+                    RESET_CENTER_TO_VILLAGER,
+                    INCREASE_HORIZONTAL_RANGE,
+                    DECREASE_HORIZONTAL_RANGE,
+                    INCREASE_VERTICAL_RANGE,
+                    DECREASE_VERTICAL_RANGE,
+                    EXPAND_NORTH,
+                    EXPAND_EAST,
+                    EXPAND_SOUTH,
+                    EXPAND_WEST,
+                    CONTRACT_NORTH,
+                    CONTRACT_EAST,
+                    CONTRACT_SOUTH,
+                    CONTRACT_WEST,
+                    EXPAND_UP,
+                    EXPAND_DOWN,
+                    CONTRACT_UP,
+                    CONTRACT_DOWN -> true;
+            case PREVIEW -> false;
+        };
+    }
+
+    private static Optional<HiredVillagerTarget> findHiredVillagerByUuid(ServerPlayer player, UUID villagerId) {
+        for (ServerLevel level : player.server.getAllLevels()) {
+            for (Entity entity : level.getAllEntities()) {
+                if (!(entity instanceof Villager villager) || !villager.isAlive() || !villager.getUUID().equals(villagerId)) {
+                    continue;
+                }
+                if (HiredVillagerContractService.isHiredBy(level, villager, player)) {
+                    return Optional.of(new HiredVillagerTarget(level, villager));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private static boolean handleHireDurationRequest(
             ServerPlayer player,
             ServerLevel level,
@@ -590,8 +689,6 @@ public final class VillagerInteractionService {
         boolean workAction = configureRole != null
                 || action == VillagerRecruitRequestPayload.Action.VIEW_WORK_STATUS
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED
-                || action == VillagerRecruitRequestPayload.Action.INCREASE_WORK_RADIUS
-                || action == VillagerRecruitRequestPayload.Action.DECREASE_WORK_RADIUS
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS;
         if (!workAction) {
@@ -608,8 +705,6 @@ public final class VillagerInteractionService {
         switch (action) {
             case VIEW_WORK_STATUS -> HiredVillagerWorkService.sendStatus(player, level, villager);
             case TOGGLE_WORK_ENABLED -> HiredVillagerWorkService.toggleEnabled(player, level, villager);
-            case INCREASE_WORK_RADIUS -> HiredVillagerWorkService.changeRadius(player, level, villager, 4);
-            case DECREASE_WORK_RADIUS -> HiredVillagerWorkService.changeRadius(player, level, villager, -4);
             case TOGGLE_USE_ASSIGNED_SUPPLIES -> HiredVillagerWorkService.toggleAssignedSupplies(player, level, villager);
             case TOGGLE_AUTO_DEPOSIT_OUTPUTS -> HiredVillagerWorkService.toggleAutoDeposit(player, level, villager);
             default -> HiredVillagerWorkService.configureRole(player, level, villager, configureRole);
@@ -1531,6 +1626,9 @@ public final class VillagerInteractionService {
     }
 
     private record ReputationSnapshot(int value, VillagerReputationLevel level) {
+    }
+
+    private record HiredVillagerTarget(ServerLevel level, Villager villager) {
     }
 
     private record DialogueContextSnapshots(

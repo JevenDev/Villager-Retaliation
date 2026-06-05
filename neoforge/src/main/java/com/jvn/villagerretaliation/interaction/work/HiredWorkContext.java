@@ -17,6 +17,8 @@ public record HiredWorkContext(
         BlockPos workMin,
         BlockPos workMax,
         int radius,
+        int verticalRadius,
+        boolean hasWorkArea,
         int efficiency,
         boolean autoDepositOutputs,
         boolean useAssignedStorageForSupplies) {
@@ -33,15 +35,11 @@ public record HiredWorkContext(
     }
 
     public int verticalRadius() {
-        return Math.max(1, Math.max(
-                Math.abs(this.workCenter.getY() - this.workMin.getY()),
-                Math.abs(this.workMax.getY() - this.workCenter.getY())));
+        return Math.max(1, this.verticalRadius);
     }
 
     public int horizontalSearchRadius() {
-        return Math.max(1, Math.max(
-                Math.max(Math.abs(this.workCenter.getX() - this.workMin.getX()), Math.abs(this.workMax.getX() - this.workCenter.getX())),
-                Math.max(Math.abs(this.workCenter.getZ() - this.workMin.getZ()), Math.abs(this.workMax.getZ() - this.workCenter.getZ()))));
+        return Math.max(1, this.radius);
     }
 
     public Iterable<BlockPos> workAreaPositions() {
@@ -53,7 +51,8 @@ public record HiredWorkContext(
     }
 
     public boolean isInsideWorkArea(BlockPos pos) {
-        return pos.getX() >= this.workMin.getX()
+        return this.hasWorkArea
+                && pos.getX() >= this.workMin.getX()
                 && pos.getX() <= this.workMax.getX()
                 && pos.getY() >= this.workMin.getY()
                 && pos.getY() <= this.workMax.getY()

@@ -59,11 +59,12 @@ public final class ClipboardWorkforceService {
                 boolean inventoryFull = brain.taskState() == HiredWorkerTaskState.PAUSED_FULL_INVENTORY
                         || !session.inventory().hasOutputSpace();
                 boolean noStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE || !storageAssigned;
-                boolean noTargets = isNoTargetState(brain);
-                boolean tooFar = !session.context().isInsideWorkArea(villager.blockPosition());
+                boolean noWorkArea = !session.context().hasWorkArea() || brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA;
+                boolean noTargets = !noWorkArea && isNoTargetState(brain);
+                boolean tooFar = !noWorkArea && !session.context().isInsideWorkArea(villager.blockPosition());
                 int dailyWage = HiredVillagerContractService.getContractDailyCost(level, villager, player);
                 boolean unpaid = false;
-                WorkerStatus status = status(role, brain.taskState(), inventoryFull, noStorage, noTargets, unpaid, tooFar);
+                WorkerStatus status = status(role, brain.taskState(), inventoryFull, noStorage, noWorkArea, noTargets, unpaid, tooFar);
 
                 jobCounts.merge(role, 1, Integer::sum);
                 assignedStorage += storageCount;
@@ -76,6 +77,7 @@ public final class ClipboardWorkforceService {
                 }
                 addWarning(warningCounts, WarningType.NO_STORAGE, role, noStorage);
                 addWarning(warningCounts, WarningType.INVENTORY_FULL, role, inventoryFull);
+                addWarning(warningCounts, WarningType.NO_WORK_AREA, role, noWorkArea);
                 addWarning(warningCounts, WarningType.NO_TARGETS, role, noTargets);
                 addWarning(warningCounts, WarningType.TOO_FAR, role, tooFar);
                 workers.add(new WorkerRow(
@@ -86,11 +88,17 @@ public final class ClipboardWorkforceService {
                         targetText(brain),
                         storageAssigned,
                         storageCount,
-                        session.area().radius(),
+                        session.area().horizontalRadius(),
+                        session.area().usable(),
+                        session.area().centerDescription(),
+                        session.area().horizontalRadius(),
+                        session.area().verticalRadius(),
+                        session.area().usable() ? "center" : "missing",
                         dailyWage,
                         inventoryFull,
                         unpaid,
                         noStorage,
+                        noWorkArea,
                         noTargets,
                         tooFar
                 ));
@@ -124,7 +132,7 @@ public final class ClipboardWorkforceService {
             return false;
         }
         return switch (state) {
-            case IDLE, AWAITING_INSTRUCTION, FAILED_COOLDOWN, PAUSED_FULL_INVENTORY, PAUSED_NO_STORAGE, PAUSED_MISSING_TOOL -> false;
+            case IDLE, AWAITING_INSTRUCTION, NO_WORK_AREA, FAILED_COOLDOWN, PAUSED_FULL_INVENTORY, PAUSED_NO_STORAGE, PAUSED_MISSING_TOOL -> false;
             default -> true;
         };
     }
@@ -134,11 +142,15 @@ public final class ClipboardWorkforceService {
             HiredWorkerTaskState taskState,
             boolean inventoryFull,
             boolean noStorage,
+            boolean noWorkArea,
             boolean noTargets,
             boolean unpaid,
             boolean tooFar) {
         if (unpaid) {
             return WorkerStatus.UNPAID;
+        }
+        if (noWorkArea) {
+            return WorkerStatus.NO_WORK_AREA;
         }
         if (tooFar) {
             return WorkerStatus.TOO_FAR;

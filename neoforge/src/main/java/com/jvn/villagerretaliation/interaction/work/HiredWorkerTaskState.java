@@ -17,6 +17,7 @@ public enum HiredWorkerTaskState {
     PAUSED_NO_STORAGE("paused_no_storage"),
     FAILED_COOLDOWN("failed_cooldown"),
     AWAITING_INSTRUCTION("awaiting_instruction"),
+    NO_WORK_AREA("no_work_area"),
     PAUSED_MISSING_TOOL("paused_missing_tool");
 
     private final String id;

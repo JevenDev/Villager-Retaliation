@@ -14,7 +14,7 @@ public record HiredWorkSession(
         HiredRoleWorker worker,
         HiredJobInventory inventory,
         int maxRadius,
-        HiredVillagerWorkService.WorkArea area,
+        HiredWorkArea area,
         int efficiency,
         HiredWorkContext context) {
     public static HiredWorkSession active(ServerLevel level, Villager villager) {
@@ -28,7 +28,7 @@ public record HiredWorkSession(
         HiredRoleWorker worker = HiredRoleWorkerRegistry.get(safeRole);
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         int maxRadius = HiredVillagerWorkService.maxWorkRadius(level, villager, safeRole);
-        HiredVillagerWorkService.WorkArea area = HiredVillagerWorkService.workAreaWithinMax(state, villager, maxRadius);
+        HiredWorkArea area = HiredVillagerWorkService.workAreaWithinMax(state, villager, maxRadius);
         int efficiency = HiredVillagerWorkService.efficiencyPercent(level, villager, safeRole, state, inventory);
         HiredWorkContext context = new HiredWorkContext(
                 inventory,
@@ -36,7 +36,9 @@ public record HiredWorkSession(
                 area.center(),
                 area.min(),
                 area.max(),
-                area.radius(),
+                area.horizontalRadius(),
+                area.verticalRadius(),
+                area.usable(),
                 efficiency,
                 state.getBoolean("AutoDepositOutputs"),
                 state.getBoolean("UseAssignedStorageForSupplies"));

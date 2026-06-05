@@ -14,12 +14,14 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot) implements CustomPacketPayload {
+    private static final int PROTOCOL_VERSION = 2;
     public static final Type<ClipboardWorkforceSyncPayload> TYPE = VillagerPayloads.type("clipboard_workforce_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, ClipboardWorkforceSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(ClipboardWorkforceSyncPayload::encode, ClipboardWorkforceSyncPayload::decode);
 
     private static void encode(RegistryFriendlyByteBuf buffer, ClipboardWorkforceSyncPayload payload) {
         ClipboardWorkforceSnapshot snapshot = payload.snapshot() == null ? ClipboardWorkforceSnapshot.empty() : payload.snapshot();
+        buffer.writeVarInt(PROTOCOL_VERSION);
         buffer.writeVarInt(snapshot.totalHired());
         buffer.writeVarInt(snapshot.maxHired());
         buffer.writeVarInt(snapshot.workingCount());
@@ -34,6 +36,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
     }
 
     private static ClipboardWorkforceSyncPayload decode(RegistryFriendlyByteBuf buffer) {
+        int protocolVersion = buffer.readVarInt();
         return new ClipboardWorkforceSyncPayload(new ClipboardWorkforceSnapshot(
                 buffer.readVarInt(),
                 buffer.readVarInt(),
@@ -77,10 +80,16 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
             buffer.writeBoolean(worker.storageAssigned());
             buffer.writeVarInt(worker.storageCount());
             buffer.writeVarInt(worker.workRadius());
+            buffer.writeBoolean(worker.hasWorkArea());
+            buffer.writeUtf(worker.workAreaCenter(), 64);
+            buffer.writeVarInt(worker.horizontalRadius());
+            buffer.writeVarInt(worker.verticalRadius());
+            buffer.writeUtf(worker.areaStatus(), 32);
             buffer.writeVarInt(worker.dailyWage());
             buffer.writeBoolean(worker.inventoryFull());
             buffer.writeBoolean(worker.unpaid());
             buffer.writeBoolean(worker.noStorage());
+            buffer.writeBoolean(worker.noWorkArea());
             buffer.writeBoolean(worker.noTargets());
             buffer.writeBoolean(worker.tooFar());
         }
@@ -99,7 +108,13 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
                     buffer.readBoolean(),
                     buffer.readVarInt(),
                     buffer.readVarInt(),
+                    buffer.readBoolean(),
+                    buffer.readUtf(64),
                     buffer.readVarInt(),
+                    buffer.readVarInt(),
+                    buffer.readUtf(32),
+                    buffer.readVarInt(),
+                    buffer.readBoolean(),
                     buffer.readBoolean(),
                     buffer.readBoolean(),
                     buffer.readBoolean(),

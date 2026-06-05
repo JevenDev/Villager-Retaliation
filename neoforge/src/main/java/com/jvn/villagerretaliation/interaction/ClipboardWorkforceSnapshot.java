@@ -37,10 +37,16 @@ public record ClipboardWorkforceSnapshot(
             boolean storageAssigned,
             int storageCount,
             int workRadius,
+            boolean hasWorkArea,
+            String workAreaCenter,
+            int horizontalRadius,
+            int verticalRadius,
+            String areaStatus,
             int dailyWage,
             boolean inventoryFull,
             boolean unpaid,
             boolean noStorage,
+            boolean noWorkArea,
             boolean noTargets,
             boolean tooFar) {
     }
@@ -57,6 +63,7 @@ public record ClipboardWorkforceSnapshot(
         BREWING,
         DEPOSITING,
         WAITING,
+        NO_WORK_AREA,
         NO_TARGETS,
         NO_STORAGE,
         INVENTORY_FULL,
@@ -66,6 +73,7 @@ public record ClipboardWorkforceSnapshot(
     }
 
     public enum WarningType {
+        NO_WORK_AREA,
         NO_STORAGE,
         INVENTORY_FULL,
         UNPAID,

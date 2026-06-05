@@ -29,6 +29,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         expireWorkPathMemory(level);
+        if (!context.hasWorkArea()) {
+            return waitForWorkAreaAssignment(level, villager, context);
+        }
 
         setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
         HiredPathTarget target = findMatureCrop(level, villager, context);

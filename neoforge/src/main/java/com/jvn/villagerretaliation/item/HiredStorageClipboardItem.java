@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummar
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
@@ -291,7 +292,7 @@ public final class HiredStorageClipboardItem extends Item {
         return switch (mode(stack)) {
             case ASSIGN_STORAGE, ASSIGN_PAYMENT -> selectContainer(level, player, stack, pos);
             case WORK_AREA -> {
-                player.displayClientMessage(Component.literal("View work area mode: use the clipboard on a hired villager."), true);
+                player.displayClientMessage(Component.literal("Preview Job Site mode: use the clipboard on a hired villager."), true);
                 yield InteractionResult.SUCCESS;
             }
             case SET_WORK_AREA -> selectWorkAreaPosition(level, player, stack, pos, WorkAreaPosition.SECOND);
@@ -336,12 +337,12 @@ public final class HiredStorageClipboardItem extends Item {
     private static String workAreaPositionMessage(WorkAreaPosition position, BlockPos first, BlockPos second) {
         if (position == WorkAreaPosition.FIRST) {
             return second == null
-                    ? "Work area position 1 selected. Right-click a block to set position 2."
-                    : "Work area position 1 selected. Use the clipboard on a hired villager to assign it.";
+                    ? "Corner 1 set. Right-click the opposite corner, then use the clipboard on the hired villager."
+                    : "Corner 1 set. Use the clipboard on the hired villager to apply this custom work box.";
         }
         return first == null
-                ? "Work area position 2 selected. Left-click a block to set position 1."
-                : "Work area position 2 selected. Use the clipboard on a hired villager to assign it.";
+                ? "Corner 2 set. Left-click the opposite corner, then use the clipboard on the hired villager."
+                : "Corner 2 set. Use the clipboard on the hired villager to apply this custom work box.";
     }
 
     public static void sendAssignedStorageOutlines(ServerPlayer player, List<AssignedContainerRecord> records) {
@@ -355,13 +356,21 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public static void sendWorkAreaOutline(ServerPlayer player, ServerLevel level, Villager villager) {
-        HiredVillagerWorkService.WorkArea area = HiredVillagerWorkService.workArea(level, villager);
-        PacketDistributor.sendToPlayer(player, ClipboardWorkAreaSyncPayload.single(level.dimension().location(), area.min(), area.max(), 200));
-        player.displayClientMessage(Component.literal("Showing work area."), true);
+        HiredWorkArea area = HiredVillagerWorkService.workArea(level, villager);
+        if (!area.usable()) {
+            player.displayClientMessage(Component.literal("No work area assigned."), true);
+            return;
+        }
+        PacketDistributor.sendToPlayer(player, ClipboardWorkAreaSyncPayload.assigned(level.dimension().location(), area.min(), area.max(), area.center(), 200));
+        List<AssignedContainerRecord> assigned = AssignedStorageService.assignedStorage(level, villager);
+        if (!assigned.isEmpty()) {
+            sendAssignedStorageOutlines(player, assigned);
+        }
+        player.displayClientMessage(Component.literal("Showing job site: " + area.rangeDescription() + "."), true);
     }
 
     private static void sendSelectedWorkAreaOutline(ServerPlayer player, ServerLevel level, BlockPos first, BlockPos second) {
-        PacketDistributor.sendToPlayer(player, ClipboardWorkAreaSyncPayload.single(level.dimension().location(), first, second, 120));
+        PacketDistributor.sendToPlayer(player, ClipboardWorkAreaSyncPayload.selection(level.dimension().location(), first, second, 120));
     }
 
     private static void assignSelectedWorkArea(ServerPlayer player, ServerLevel level, Villager villager, ItemStack stack) {
@@ -507,10 +516,10 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public enum ClipboardMode {
-        ASSIGN_STORAGE("assign_storage", "Assign inventories"),
-        ASSIGN_PAYMENT("assign_payment", "Assign payment"),
-        WORK_AREA("work_area", "View work area"),
-        SET_WORK_AREA("set_work_area", "Set work area");
+        ASSIGN_STORAGE("assign_storage", "Assign Output Storage"),
+        ASSIGN_PAYMENT("assign_payment", "Assign Payment Box"),
+        WORK_AREA("work_area", "Preview Job Site"),
+        SET_WORK_AREA("set_work_area", "Edit Job Site");
 
         private static final ClipboardMode[] VALUES = values();
         private final String id;
