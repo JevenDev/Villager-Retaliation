@@ -522,7 +522,7 @@
   "villagerretaliation.gui.clipboard_workforce.job_site_unavailable": "Worker unavailable.",
   "villagerretaliation.gui.clipboard_workforce.job_site_preview": "Preview Job Site",
   "villagerretaliation.gui.clipboard_workforce.job_site_center_here": "Set Center Here",
-  "villagerretaliation.gui.clipboard_workforce.job_site_center_villager": "Reset to Villager Position",
+  "villagerretaliation.gui.clipboard_workforce.job_site_center_villager": "Use Villager Position",
   "villagerretaliation.gui.clipboard_workforce.warning_header": "Warnings",
   "villagerretaliation.gui.clipboard_workforce.no_warnings": "No warnings.",
   "villagerretaliation.gui.clipboard_workforce.more_warnings": "+%s more",
