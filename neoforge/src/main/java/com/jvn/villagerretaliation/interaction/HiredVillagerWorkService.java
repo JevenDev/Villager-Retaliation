@@ -348,7 +348,8 @@ public final class HiredVillagerWorkService {
         new HiredWorkArea(center, min, maxPos, area.horizontalRadius(), area.verticalRadius(), true, true)
                 .clampedTo(max)
                 .save(state);
-        setStatus(state, "My job site is now " + workArea(state, villager).rangeDescription() + ".");
+        HiredWorkArea updated = workArea(state, villager);
+        setStatus(state, "My job site bounds are now " + dimensions(updated) + " (" + updated.boundsDescription() + ").");
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));
     }
 

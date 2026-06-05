@@ -422,7 +422,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                         this.selectedWorker.verticalRadius())
                 : Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_missing");
         drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area", area), CONTENT_LEFT, y + 10, this.selectedWorker.noWorkArea() ? WARNING : MUTED);
-        y = CONTENT_TOP + 43;
+        y = CONTENT_TOP + 47;
         y = drawJobSiteActionRow(
                 graphics,
                 mouseX,
@@ -885,7 +885,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private int panelLeft(float scale) {
         float panelWidth = TEXTURE_WIDTH * scale;
         if (isJobSitePage()) {
-            float toolCenter = this.width * 0.375F;
+            float toolCenter = this.width * 0.25F;
             return Math.round(Mth.clamp(toolCenter - panelWidth / 2.0F, 6.0F, Math.max(6.0F, this.width - panelWidth - 6.0F)));
         }
         return Math.round((this.width - panelWidth) / 2.0F);

@@ -462,18 +462,18 @@ public final class VillagerInteractionService {
             case DECREASE_HORIZONTAL_RANGE -> HiredVillagerWorkService.changeRadius(player, level, villager, -4 * stepCount);
             case INCREASE_VERTICAL_RANGE -> HiredVillagerWorkService.changeVerticalRadius(player, level, villager, 2 * stepCount);
             case DECREASE_VERTICAL_RANGE -> HiredVillagerWorkService.changeVerticalRadius(player, level, villager, -2 * stepCount);
-            case EXPAND_NORTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.NORTH, 4 * stepCount);
-            case EXPAND_EAST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.EAST, 4 * stepCount);
-            case EXPAND_SOUTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.SOUTH, 4 * stepCount);
-            case EXPAND_WEST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.WEST, 4 * stepCount);
-            case CONTRACT_NORTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.NORTH, -4 * stepCount);
-            case CONTRACT_EAST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.EAST, -4 * stepCount);
-            case CONTRACT_SOUTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.SOUTH, -4 * stepCount);
-            case CONTRACT_WEST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.WEST, -4 * stepCount);
-            case EXPAND_UP -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.UP, 2 * stepCount);
-            case EXPAND_DOWN -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.DOWN, 2 * stepCount);
-            case CONTRACT_UP -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.UP, -2 * stepCount);
-            case CONTRACT_DOWN -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.DOWN, -2 * stepCount);
+            case EXPAND_NORTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.NORTH, stepCount);
+            case EXPAND_EAST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.EAST, stepCount);
+            case EXPAND_SOUTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.SOUTH, stepCount);
+            case EXPAND_WEST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.WEST, stepCount);
+            case CONTRACT_NORTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.NORTH, -stepCount);
+            case CONTRACT_EAST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.EAST, -stepCount);
+            case CONTRACT_SOUTH -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.SOUTH, -stepCount);
+            case CONTRACT_WEST -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.WEST, -stepCount);
+            case EXPAND_UP -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.UP, stepCount);
+            case EXPAND_DOWN -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.DOWN, stepCount);
+            case CONTRACT_UP -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.UP, -stepCount);
+            case CONTRACT_DOWN -> HiredVillagerWorkService.changeBounds(player, level, villager, Direction.DOWN, -stepCount);
         }
         if (actionPreviewsWorkArea(action)) {
             HiredVillagerWorkService.previewWorkArea(player, level, villager);
