@@ -440,13 +440,23 @@ public class VillagerSocialGraphSavedData extends SavedData {
             return BreedingValidation.blocked("That is the same villager.");
         }
         if (VillagerRetaliationConfig.ENABLE_OPPOSITE_GENDER_BREEDING_RULES.get()
-                && firstProfile.gender() == secondProfile.gender()) {
-            return BreedingValidation.blocked("Villagers need opposite genders to have a baby.");
+                && !compatibleBreedingPair(firstProfile.gender(), secondProfile.gender())) {
+            return BreedingValidation.blocked("Villagers need a compatible gender pairing to have a baby.");
         }
         if (isTooCloselyRelated(first.getUUID(), second.getUUID())) {
             return BreedingValidation.blocked("Those villagers are too closely related.");
         }
         return BreedingValidation.success();
+    }
+
+    private static boolean compatibleBreedingPair(VillagerGender firstGender, VillagerGender secondGender) {
+        if (firstGender == null || secondGender == null) {
+            return false;
+        }
+        if (firstGender == VillagerGender.NON_BINARY || secondGender == VillagerGender.NON_BINARY) {
+            return firstGender != secondGender;
+        }
+        return firstGender != secondGender;
     }
 
     public BreedingValidation validateAdoptionParents(ServerLevel level, Villager first, Villager second) {

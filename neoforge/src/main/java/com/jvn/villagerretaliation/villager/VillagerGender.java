@@ -4,7 +4,8 @@ import java.util.Locale;
 
 public enum VillagerGender {
     MALE("male", "Male"),
-    FEMALE("female", "Female");
+    FEMALE("female", "Female"),
+    NON_BINARY("non_binary", "Non-binary");
 
     private final String serializedName;
     private final String displayName;

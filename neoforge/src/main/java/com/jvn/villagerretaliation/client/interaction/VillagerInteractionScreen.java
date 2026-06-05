@@ -498,23 +498,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.familyTree.hasDescendants()) {
             this.options.add(DialogueOption.enabled(translate("family.descendants"), this::openDescendantsPage));
         }
-        addFamilyRows("family.father", this.familyTree.maleParents());
-        addFamilyRows("family.mother", this.familyTree.femaleParents());
-        addFamilyRows("family.birth_father", this.familyTree.maleBirthParents());
-        addFamilyRows("family.birth_mother", this.familyTree.femaleBirthParents());
-        addFamilyRows("family.adoptive_father", this.familyTree.maleAdoptiveParents());
-        addFamilyRows("family.adoptive_mother", this.familyTree.femaleAdoptiveParents());
-        addFamilyRows("family.step_father", this.familyTree.maleStepParents());
-        addFamilyRows("family.step_mother", this.familyTree.femaleStepParents());
-        addFamilyRows("family.brother", this.familyTree.brothers());
-        addFamilyRows("family.sister", this.familyTree.sisters());
-        addFamilyRows("family.uncle", this.familyTree.uncles());
-        addFamilyRows("family.aunt", this.familyTree.aunts());
-        addFamilyRows("family.nephew", this.familyTree.nephews());
-        addFamilyRows("family.niece", this.familyTree.nieces());
-        addGenderedFamilyRows("family.male_cousin", "family.female_cousin", this.familyTree.cousins());
-        addGenderedFamilyRows("family.husband", "family.wife", this.familyTree.spouses());
-        addGenderedFamilyRows("family.son", "family.daughter", this.familyTree.children());
+        addGenderedFamilyRows("family.father", "family.mother", "family.parent", this.familyTree.parents());
+        addGenderedFamilyRows("family.birth_father", "family.birth_mother", "family.birth_parent", this.familyTree.birthParents());
+        addGenderedFamilyRows("family.adoptive_father", "family.adoptive_mother", "family.adoptive_parent", this.familyTree.adoptiveParents());
+        addGenderedFamilyRows("family.step_father", "family.step_mother", "family.step_parent", this.familyTree.stepParents());
+        addGenderedFamilyRows("family.brother", "family.sister", "family.sibling", this.familyTree.siblings());
+        addGenderedFamilyRows("family.uncle", "family.aunt", "family.aunt_uncle", this.familyTree.auntsUncles());
+        addGenderedFamilyRows("family.nephew", "family.niece", "family.nibling", this.familyTree.niecesNephews());
+        addGenderedFamilyRows("family.male_cousin", "family.female_cousin", "family.non_binary_cousin", this.familyTree.cousins());
+        addGenderedFamilyRows("family.husband", "family.wife", "family.spouse", this.familyTree.spouses());
+        addGenderedFamilyRows("family.son", "family.daughter", "family.child", this.familyTree.children());
         addFamilyRows("family.friend", this.familyTree.friends());
         addFamilyRows("family.rival", this.familyTree.rivals());
         if (this.options.isEmpty()) {
@@ -532,6 +525,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     femaleDescendantLabel(generation.generation()),
                     VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.FEMALE)
             );
+            addFamilyRows(
+                    nonBinaryDescendantLabel(generation.generation()),
+                    VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.NON_BINARY)
+            );
         }
         if (this.options.isEmpty()) {
             addPassiveOption("family.no_descendants");
@@ -547,6 +544,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addFamilyRows(
                     femaleAncestorLabel(generation.generation()),
                     VillagerFamilyTreeSnapshot.membersByGender(generation.ancestors(), VillagerGender.FEMALE)
+            );
+            addFamilyRows(
+                    nonBinaryAncestorLabel(generation.generation()),
+                    VillagerFamilyTreeSnapshot.membersByGender(generation.ancestors(), VillagerGender.NON_BINARY)
             );
         }
         if (this.options.isEmpty()) {
@@ -569,10 +570,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void addGenderedFamilyRows(
             String maleLabel,
             String femaleLabel,
+            String nonBinaryLabel,
             List<VillagerFamilyTreeSnapshot.FamilyMember> members
     ) {
         addFamilyRows(maleLabel, VillagerFamilyTreeSnapshot.membersByGender(members, VillagerGender.MALE));
         addFamilyRows(femaleLabel, VillagerFamilyTreeSnapshot.membersByGender(members, VillagerGender.FEMALE));
+        addFamilyRows(nonBinaryLabel, VillagerFamilyTreeSnapshot.membersByGender(members, VillagerGender.NON_BINARY));
     }
 
     private void addFamilyRows(String labelKey, List<VillagerFamilyTreeSnapshot.FamilyMember> members) {
@@ -1673,12 +1676,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return generationLabel("family.ancestor.female.grand", generation);
     }
 
+    private static String nonBinaryAncestorLabel(int generation) {
+        return generationLabel("family.ancestor.non_binary.grand", generation);
+    }
+
     private static String maleDescendantLabel(int generation) {
         return generationLabel("family.descendant.male.grand", generation);
     }
 
     private static String femaleDescendantLabel(int generation) {
         return generationLabel("family.descendant.female.grand", generation);
+    }
+
+    private static String nonBinaryDescendantLabel(int generation) {
+        return generationLabel("family.descendant.non_binary.grand", generation);
     }
 
     private static String generationLabel(String grandKey, int generation) {
