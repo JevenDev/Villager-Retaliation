@@ -544,8 +544,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (this.relationships.hasRelationships()) {
                 addOption("root.relationships", this::openRelationshipPage);
             }
+            addRootRecruitmentOptions();
         }
         addOption("root.goodbye", this::leaveConversation);
+    }
+
+    private void addRootRecruitmentOptions() {
+        if (this.followingPlayer) {
+            if (canCommandStayHere()) {
+                addOption("recruit.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
+            }
+        } else if (this.stayingHere) {
+            addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
+        } else {
+            addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
+            if (canCommandStayHere()) {
+                addOption("recruit.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
+            }
+        }
     }
 
     private void addProfileOptions() {
@@ -575,13 +591,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         });
         if (this.followingPlayer) {
             addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
-            addOption("recruit.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
         } else if (this.stayingHere) {
-            addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
             addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
-        } else {
-            addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
-            addOption("recruit.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
         }
     }
 
@@ -686,6 +697,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean canHireVillager() {
+        return this.reputationLevel != null
+                && this.reputationLevel.trustRank() >= VillagerReputationLevel.NEUTRAL.trustRank();
+    }
+
+    private boolean canCommandStayHere() {
         return this.reputationLevel != null
                 && this.reputationLevel.trustRank() >= VillagerReputationLevel.NEUTRAL.trustRank();
     }

@@ -323,6 +323,10 @@ public final class VillagerInteractionService {
                 VillagerRecruitmentService.startFollowing(level, villager, player);
                 responseKey = "interaction.follow_start";
             } else if (action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
+                if (!VillagerRecruitmentService.canCommandStayHere(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
+                    return;
+                }
                 VillagerRecruitmentService.stayHere(level, villager, player);
                 responseKey = "interaction.follow_hold_position";
             } else {

@@ -83,6 +83,10 @@ public final class VillagerRecruitmentService {
                 >= VillagerReputationLevel.NEUTRAL.trustRank();
     }
 
+    public static boolean canCommandStayHere(ServerLevel level, Villager villager, ServerPlayer player) {
+        return canRecruit(level, villager, player);
+    }
+
     public static boolean isFollowing(Villager villager, ServerPlayer player) {
         return villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
                 && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(player.getUUID())
@@ -117,6 +121,9 @@ public final class VillagerRecruitmentService {
     }
 
     public static void stayHere(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!canCommandStayHere(level, villager, player)) {
+            return;
+        }
         beginStayingHere(level, villager, player);
     }
 
