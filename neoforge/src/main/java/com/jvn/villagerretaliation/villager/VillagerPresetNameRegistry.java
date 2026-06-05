@@ -136,7 +136,11 @@ public final class VillagerPresetNameRegistry {
     }
 
     private static VillagerGender deterministicGender(AbstractVillager villager) {
-        return Math.floorMod(villager.getUUID().hashCode(), 2) == 0 ? VillagerGender.MALE : VillagerGender.FEMALE;
+        return switch (Math.floorMod(villager.getUUID().hashCode(), 10)) {
+            case 0 -> VillagerGender.NON_BINARY;
+            case 1, 2, 3, 4, 5 -> VillagerGender.MALE;
+            default -> VillagerGender.FEMALE;
+        };
     }
 
     private static boolean isLegacyNameKey(String value) {
@@ -178,13 +182,14 @@ public final class VillagerPresetNameRegistry {
     private static NamePool readNamePool(MinecraftServer server) {
         List<String> maleNames = new ArrayList<>();
         List<String> femaleNames = new ArrayList<>();
+        List<String> nonBinaryNames = new ArrayList<>();
         List<String> fallbackNames = new ArrayList<>();
         DatapackResourceLoader.forEachJsonResource(
                 server,
                 VILLAGER_NAMES_ROOT,
                 location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID),
-                (location, resource) -> readNameFile(location, resource, maleNames, femaleNames, fallbackNames));
-        return new NamePool(List.copyOf(maleNames), List.copyOf(femaleNames), List.copyOf(fallbackNames));
+                (location, resource) -> readNameFile(location, resource, maleNames, femaleNames, nonBinaryNames, fallbackNames));
+        return new NamePool(List.copyOf(maleNames), List.copyOf(femaleNames), List.copyOf(nonBinaryNames), List.copyOf(fallbackNames));
     }
 
     private static void readNameFile(
@@ -192,15 +197,18 @@ public final class VillagerPresetNameRegistry {
             Resource resource,
             List<String> maleNames,
             List<String> femaleNames,
+            List<String> nonBinaryNames,
             List<String> fallbackNames) {
         DatapackResourceLoader.readObject(location, "villager names", resource).ifPresent(root -> {
             if (readBoolean(root, "replace", false)) {
                 maleNames.clear();
                 femaleNames.clear();
+                nonBinaryNames.clear();
                 fallbackNames.clear();
             }
             maleNames.addAll(readNames(root.getAsJsonArray("male_names")));
             femaleNames.addAll(readNames(root.getAsJsonArray("female_names")));
+            nonBinaryNames.addAll(readNames(root.getAsJsonArray("non_binary_names")));
             fallbackNames.addAll(readNames(root.getAsJsonArray("names")));
         });
     }
@@ -228,29 +236,35 @@ public final class VillagerPresetNameRegistry {
         return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
     }
 
-    private record NamePool(List<String> maleNames, List<String> femaleNames, List<String> fallbackNames) {
+    private record NamePool(List<String> maleNames, List<String> femaleNames, List<String> nonBinaryNames, List<String> fallbackNames) {
         private static NamePool empty() {
-            return new NamePool(List.of(), List.of(), List.of());
+            return new NamePool(List.of(), List.of(), List.of(), List.of());
         }
 
         private boolean isEmpty() {
-            return this.maleNames.isEmpty() && this.femaleNames.isEmpty() && this.fallbackNames.isEmpty();
+            return this.maleNames.isEmpty()
+                    && this.femaleNames.isEmpty()
+                    && this.nonBinaryNames.isEmpty()
+                    && this.fallbackNames.isEmpty();
         }
 
         private List<String> namesFor(VillagerGender gender) {
             return switch (gender) {
                 case MALE -> this.maleNames;
                 case FEMALE -> this.femaleNames;
+                case NON_BINARY -> this.nonBinaryNames;
             };
         }
 
         private List<String> allNames() {
-            if (this.maleNames.isEmpty() && this.femaleNames.isEmpty()) {
+            if (this.maleNames.isEmpty() && this.femaleNames.isEmpty() && this.nonBinaryNames.isEmpty()) {
                 return this.fallbackNames;
             }
-            List<String> names = new ArrayList<>(this.maleNames.size() + this.femaleNames.size() + this.fallbackNames.size());
+            List<String> names = new ArrayList<>(
+                    this.maleNames.size() + this.femaleNames.size() + this.nonBinaryNames.size() + this.fallbackNames.size());
             names.addAll(this.maleNames);
             names.addAll(this.femaleNames);
+            names.addAll(this.nonBinaryNames);
             names.addAll(this.fallbackNames);
             return List.copyOf(names);
         }
@@ -261,10 +275,18 @@ public final class VillagerPresetNameRegistry {
             }
             boolean male = containsIgnoreCase(this.maleNames, name);
             boolean female = containsIgnoreCase(this.femaleNames, name);
-            if (male == female) {
+            boolean nonBinary = containsIgnoreCase(this.nonBinaryNames, name);
+            int matches = (male ? 1 : 0) + (female ? 1 : 0) + (nonBinary ? 1 : 0);
+            if (matches != 1) {
                 return Optional.empty();
             }
-            return Optional.of(male ? VillagerGender.MALE : VillagerGender.FEMALE);
+            if (male) {
+                return Optional.of(VillagerGender.MALE);
+            }
+            if (female) {
+                return Optional.of(VillagerGender.FEMALE);
+            }
+            return Optional.of(VillagerGender.NON_BINARY);
         }
 
         private static boolean containsIgnoreCase(List<String> names, String name) {
