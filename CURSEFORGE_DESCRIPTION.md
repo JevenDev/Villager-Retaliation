@@ -89,7 +89,7 @@ Villagers also remember when they last saw you. Return after enough in-game days
 
 ### Quests
 
-Villagers can offer built-in quests through conversation. The player wiki currently covers 21 built-in quests across Dangerous Commissions, Lost Civilization, Old Roads, Village Defense, and Village Supply.
+Villagers can offer built-in quests through conversation. The player wiki currently covers 26 built-in quests across Dangerous Commissions, Lost Civilization, Old Roads, Village Defense, and Village Supply.
 
 Quest flow is meant to feel natural:
 

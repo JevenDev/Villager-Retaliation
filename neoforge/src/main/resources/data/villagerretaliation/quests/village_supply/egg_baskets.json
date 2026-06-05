@@ -1,0 +1,101 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Egg Baskets is already settled."
+    ],
+    "inactive": [
+      "The breakfast baskets are not being counted right now."
+    ],
+    "locate_failed": [
+      "No kitchen slate is ready for another egg request yet."
+    ],
+    "missing_proof": [
+      "Bring the eggs before I call the baskets full."
+    ],
+    "missing_target": [
+      "The kitchen still needs 12 eggs."
+    ],
+    "reminder": [
+      "Twelve eggs for the kitchen. Fragile, useful, and always somehow more urgent than they sound."
+    ],
+    "start": [
+      "Bring 12 eggs. A quiet morning starts with full baskets."
+    ],
+    "turn_in": [
+      "Good. That is breakfast, broth, and one less complaint before dawn."
+    ],
+    "unavailable": [
+      "The egg request is closed for now."
+    ]
+  },
+  "display": {
+    "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
+    "title": "Egg Baskets"
+  },
+  "id": "villagerretaliation:egg_baskets",
+  "objectives": [
+    {
+      "count": 12,
+      "id": "bring_eggs",
+      "item": "minecraft:egg",
+      "tracker": {
+        "complete_text": "The egg baskets are full and ready.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 12 eggs for the kitchen baskets."
+      },
+      "type": "item_check"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:farmer",
+      "minecraft:butcher"
+    ],
+    "skills": {
+      "animal_handling": {
+        "min": 5
+      },
+      "cooking": {
+        "min": 4
+      }
+    }
+  },
+  "questline": "village_supply",
+  "rewards": {
+    "experience": 45,
+    "gossip_reputation": 2,
+    "loot_table": "villagerretaliation:quest/egg_baskets",
+    "memory_event": "player_completed_quest",
+    "reputation": 4
+  },
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Egg Baskets"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 12 eggs for the kitchen baskets."
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the eggs."
+      }
+    },
+    "title": "Egg Baskets"
+  }
+}

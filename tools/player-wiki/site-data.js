@@ -1309,6 +1309,114 @@ window.VR_WIKI_DATA = {
       }
     },
     {
+      "id": "villagerretaliation:beetroot_bundle",
+      "slug": "beetroot_bundle",
+      "title": "Beetroot Bundle",
+      "description": "Bring beetroot for stews, pickling jars, and simple sickroom meals.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Farmer",
+          "Cleric"
+        ],
+        "skills": [
+          {
+            "skill": "Farming",
+            "min": 5,
+            "max": null
+          },
+          {
+            "skill": "Medicine",
+            "min": 4,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "16 Beetroot"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 16 beetroot for the pantry.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the beetroot.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 50,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/beetroot_bundle",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Baked Potato",
+            "count": "4-7",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Honey Bottle",
+            "count": "1-2",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The pantry looks organized, which is not the same as prepared.",
+          "A bundle of beetroot would make the next few meals feel less accidental."
+        ],
+        "accept": "I can bring beetroot",
+        "decline": "Another time",
+        "started": [
+          "Beetroot Bundle is yours now. Bring the beetroot back when the count is ready."
+        ],
+        "reminder": [
+          "Beetroot Bundle: I still need the beetroot. Bring the full count back to me."
+        ],
+        "completed": [
+          "Beetroot Bundle is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Beetroot Bundle is not at the right count yet, bring the rest before turning it in.",
+          "Beetroot Bundle still needs the beetroot in your pack before I can close it.",
+          "Beetroot Bundle is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
       "id": "villagerretaliation:berry_picking",
       "slug": "berry_picking",
       "title": "Berry Picking",
@@ -1408,6 +1516,114 @@ window.VR_WIKI_DATA = {
           "Berry Picking is not at the right count yet; bring the rest before turning it in.",
           "Berry Picking still needs the sweet berries in your pack before I can close it.",
           "Berry Picking is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:bottle_stock",
+      "slug": "bottle_stock",
+      "title": "Bottle Stock",
+      "description": "Bring glass bottles for tonics, inks, and careful measuring.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Cleric",
+          "Librarian"
+        ],
+        "skills": [
+          {
+            "skill": "Medicine",
+            "min": 5,
+            "max": null
+          },
+          {
+            "skill": "Scholarship",
+            "min": 5,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "12 Glass Bottle"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 12 glass bottles for the shelf.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the glass bottles.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 55,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/bottle_stock",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "5-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Honey Bottle",
+            "count": "1-2",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Paper",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "3-5",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "We are down to rinsing old bottles and hoping memory counts as sanitation.",
+          "Fresh glass would improve both medicine and morale."
+        ],
+        "accept": "I can bring bottles",
+        "decline": "Another time",
+        "started": [
+          "Bottle Stock is yours now. Bring the glass bottles back when the count is ready."
+        ],
+        "reminder": [
+          "Bottle Stock: I still need the glass bottles. Bring the full count back to me."
+        ],
+        "completed": [
+          "Bottle Stock is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Bottle Stock is not at the right count yet; bring the rest before turning it in.",
+          "Bottle Stock still needs the glass bottles in your pack before I can close it.",
+          "Bottle Stock is still short. The tracker has the exact count."
         ]
       }
     },
@@ -1612,6 +1828,222 @@ window.VR_WIKI_DATA = {
           "Clay Repairs is not at the right count yet; bring the rest before turning it in.",
           "Clay Repairs still needs the clay in your pack before I can close it.",
           "Clay Repairs is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:egg_baskets",
+      "slug": "egg_baskets",
+      "title": "Egg Baskets",
+      "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Farmer",
+          "Butcher"
+        ],
+        "skills": [
+          {
+            "skill": "Animal Handling",
+            "min": 5,
+            "max": null
+          },
+          {
+            "skill": "Cooking",
+            "min": 4,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "12 Egg"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 12 eggs for the kitchen baskets.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the eggs.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 45,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/egg_baskets",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "4-7",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Bread",
+            "count": "3-5",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Pumpkin Pie",
+            "count": "1-2",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "We are shorter on eggs than we are on patience.",
+          "That usually ends with breakfast becoming a rumor."
+        ],
+        "accept": "I can fill the egg baskets",
+        "decline": "Another time",
+        "started": [
+          "Egg Baskets is yours now. Bring the eggs back when the count is ready."
+        ],
+        "reminder": [
+          "Egg Baskets: I still need the eggs. Bring the full count back to me."
+        ],
+        "completed": [
+          "Egg Baskets is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Egg Baskets is not at the right count yet; bring the rest before turning it in.",
+          "Egg Baskets still needs the eggs in your pack before I can close it.",
+          "Egg Baskets is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:feather_fletching",
+      "slug": "feather_fletching",
+      "title": "Feather Fletching",
+      "description": "Bring feathers so arrows and message shafts can be finished in proper batches.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Fletcher",
+          "Shepherd"
+        ],
+        "skills": [
+          {
+            "skill": "Archery",
+            "min": 4,
+            "max": null
+          },
+          {
+            "skill": "Animal Handling",
+            "min": 5,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "16 Feather"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 16 feathers for the fletching bench.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the feathers.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 55,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/feather_fletching",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "5-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Arrow",
+            "count": "12-24",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Flint",
+            "count": "2-5",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "I have shafts waiting on one side and patience failing on the other.",
+          "A bundle of feathers would fix both problems."
+        ],
+        "accept": "I can bring feathers",
+        "decline": "Another time",
+        "started": [
+          "Feather Fletching is yours now. Bring the feathers back when the count is ready."
+        ],
+        "reminder": [
+          "Feather Fletching: I still need the feathers. Bring the full count back to me."
+        ],
+        "completed": [
+          "Feather Fletching is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Feather Fletching is not at the right count yet; bring the rest before turning it in.",
+          "Feather Fletching still needs the feathers in your pack before I can close it.",
+          "Feather Fletching is still short. The tracker has the exact count."
         ]
       }
     },
@@ -2246,6 +2678,115 @@ window.VR_WIKI_DATA = {
           "Seed Stockpile is not at the right count yet; bring the rest before turning it in.",
           "Seed Stockpile still needs the wheat seeds in your pack before I can close it.",
           "Seed Stockpile is still short. The tracker has the exact count."
+        ]
+      }
+    },
+    {
+      "id": "villagerretaliation:torch_bundle",
+      "slug": "torch_bundle",
+      "title": "Torch Bundle",
+      "description": "Bring torches so storehouses, pens, and work corners stay usable after dusk.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Mason",
+          "Toolsmith",
+          "Cleric"
+        ],
+        "skills": [
+          {
+            "skill": "Crafting",
+            "min": 6,
+            "max": null
+          },
+          {
+            "skill": "Mining",
+            "min": 4,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "16 Torch"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring 16 torches for the watch rack.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the torches.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 50,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/torch_bundle",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Coal",
+            "count": "4-8",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Stick",
+            "count": "8-16",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "A few corners of the village are getting ideas after dusk.",
+          "More torches would remind them who actually lives here."
+        ],
+        "accept": "I can bring torches",
+        "decline": "Another time",
+        "started": [
+          "Torch Bundle is yours now. Bring the torches back when the count is ready."
+        ],
+        "reminder": [
+          "Torch Bundle: I still need the torches. Bring the full count back to me."
+        ],
+        "completed": [
+          "Torch Bundle is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Torch Bundle is not at the right count yet; bring the rest before turning it in.",
+          "Torch Bundle still needs the torches in your pack before I can close it.",
+          "Torch Bundle is still short. The tracker has the exact count."
         ]
       }
     },
@@ -5786,11 +6327,11 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 25966,
+    "dialogueLinesEstimate": 26011,
     "dialogueLineBreakdown": {
       "dialogue": 25550,
       "forcedDialogue": 220,
-      "dialogueTrees": 196
+      "dialogueTrees": 241
     }
   }
 };
