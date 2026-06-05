@@ -24,6 +24,7 @@ import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.villager.VillagerGender;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.mojang.brigadier.StringReader;
@@ -114,6 +115,15 @@ public final class VillagerRetaliationCommands {
                                                                 VillagerSocialAttributes.MAX_VALUE
                                                         ))
                                                                 .executes(VillagerRetaliationCommands::setProfileAttribute)))))
+                                .then(literal("set_gender")
+                                        .then(targetArgument()
+                                                .then(argument("gender", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                                Arrays.stream(VillagerGender.values())
+                                                                        .map(VillagerGender::serializedName),
+                                                                builder
+                                                        ))
+                                                        .executes(VillagerRetaliationCommands::setProfileGender))))
                                 .then(literal("export")
                                         .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::exportProfile))))
@@ -598,6 +608,36 @@ public final class VillagerRetaliationCommands {
         syncProfileIfPlayer(source, villager, profile);
         source.sendSuccess(() -> Component.literal(VillagerProfileManager.exportProfile(profile)), false);
         return 1;
+    }
+
+    private static int setProfileGender(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        String genderName = StringArgumentType.getString(context, "gender");
+        VillagerGender gender = VillagerGender.bySerializedName(genderName);
+        if (gender == null) {
+            source.sendFailure(Component.literal("Unknown villager gender: " + genderName));
+            return 0;
+        }
+
+        VillagerGender currentGender = VillagerPresetNameRegistry.resolveGender(villager);
+        boolean changed = currentGender != gender;
+        VillagerPresetNameRegistry.setStoredGender(villager, gender);
+        if (villager instanceof Villager socialVillager) {
+            VillagerSocialGraphSavedData.get(level).ensureProfile(level, socialVillager);
+        }
+
+        String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        source.sendSuccess(
+                () -> Component.literal("Set " + name + "'s gender to " + gender.serializedName()
+                        + (changed ? "." : " (unchanged).")),
+                true
+        );
+        return changed ? 1 : 0;
     }
 
     private static int explainDialogue(CommandContext<CommandSourceStack> context, String optionId) throws CommandSyntaxException {

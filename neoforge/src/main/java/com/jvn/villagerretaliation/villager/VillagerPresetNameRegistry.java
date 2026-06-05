@@ -77,6 +77,13 @@ public final class VillagerPresetNameRegistry {
         return resolveClientStoredGender(villager);
     }
 
+    public static void setStoredGender(AbstractVillager villager, VillagerGender gender) {
+        if (villager == null || gender == null) {
+            return;
+        }
+        villager.getPersistentData().putString(PERSISTENT_GENDER_KEY, gender.serializedName());
+    }
+
     private static String resolveStoredName(AbstractVillager villager, MinecraftServer server) {
         String storedName = villager.getPersistentData().getString(PERSISTENT_NAME_KEY).trim();
         if (!storedName.isBlank()) {
