@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerSkillGrowthService;
-import com.jvn.villagerretaliation.skill.VillagerTradeLevelingService;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
 import com.jvn.villagerretaliation.trade.VillagerTradeWalletService;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
@@ -211,10 +210,9 @@ public final class VillagerReputationEvents {
                     storeTradePayments(level, villageResident, serverPlayer, event.getMerchantOffer());
                 }
                 VillagerTradeWalletService.onTradeCompleted(level, villageResident, event.getMerchantOffer());
-                if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+                if (serverPlayer != null) {
                     VillagerTradeWalletService.syncOffers(serverPlayer, villageResident);
                 }
-                VillagerTradeLevelingService.onTradeCompleted(level, villageResident, event.getMerchantOffer());
             }
             VillagerAmbientIndicatorService.onTradeCompleted(level, villager, event.getEntity());
             if (event.getEntity() instanceof ServerPlayer serverPlayer) {
