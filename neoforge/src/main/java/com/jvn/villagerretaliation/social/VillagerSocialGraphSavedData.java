@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.social;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -438,7 +439,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
         if (first.getUUID().equals(second.getUUID())) {
             return BreedingValidation.blocked("That is the same villager.");
         }
-        if (firstProfile.gender() == secondProfile.gender()) {
+        if (VillagerRetaliationConfig.ENABLE_OPPOSITE_GENDER_BREEDING_RULES.get()
+                && firstProfile.gender() == secondProfile.gender()) {
             return BreedingValidation.blocked("Villagers need opposite genders to have a baby.");
         }
         if (isTooCloselyRelated(first.getUUID(), second.getUUID())) {

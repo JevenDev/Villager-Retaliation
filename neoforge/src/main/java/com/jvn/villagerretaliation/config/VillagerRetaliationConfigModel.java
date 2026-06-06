@@ -241,6 +241,8 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean enableFamilyBreedingRules = true;
 
+        public boolean enableOppositeGenderBreedingRules = true;
+
         public boolean enableParentReputationInheritance = true;
     }
 
