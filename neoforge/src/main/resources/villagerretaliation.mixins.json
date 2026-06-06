@@ -4,11 +4,14 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AbstractContainerMenuAccessor",
-    "VillagerBrainTickMixin"
+    "VillagerBrainTickMixin",
+    "VillagerTradeLevelingMixin"
   ],
   "client": [
     "client.ChatComponentMixin",
     "client.MerchantScreenMixin",
+    "client.MerchantContainerMixin",
+    "client.MerchantResultSlotMixin",
     "client.QuestItemEntityGlowMixin",
     "client.QuestItemEntityOutlineColorMixin",
     "client.QuestItemHeldGlowMixin"

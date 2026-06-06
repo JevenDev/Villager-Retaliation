@@ -331,7 +331,8 @@ public final class VillagerReputationNetworking {
                 profile.generatedVersion(),
                 profile.socialAttributes(),
                 profile.skillGeneratedVersion(),
-                profile.skills()
+                profile.skills(),
+                profile.tradeLevelSkillAdjustedXpProgress()
         ));
     }
 
