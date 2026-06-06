@@ -2,7 +2,7 @@
 
 ## 1.0.0-beta.12-hotfix.2 - 2026-06-06
 
-Beta.13-hotfix.2 expands the beta.13 follow-up with broader gender support, new Village Supply quest content, and a debug command for correcting villager gender data in-world.
+Beta.12-hotfix.2 expands the beta.13 follow-up with broader gender support, new Village Supply quest content, operator gender correction tooling, and refined skill-based villager trade leveling with synced merchant-screen feedback.
 
 ### Added
 
@@ -15,6 +15,15 @@ Beta.13-hotfix.2 expands the beta.13 follow-up with broader gender support, new 
 
 - Built-in quest totals documented in the README, CurseForge description, and generated player wiki now reflect the added Village Supply questline content.
 - Villager gender chosen through the new command is now persisted on the villager so profile data and future loads keep the override.
+- Added skill-based trade-level XP scaling driven by the villager's primary profession skill, including persisted fractional progress so slowed or boosted trade XP carries cleanly across trades.
+- Merchant trade UI now displays the adjusted trade-level XP gain using synced villager profile data instead of showing stale vanilla-only values.
+- Skill-based trade leveling now guarantees at least 1 visible trade-level XP from XP-bearing trades, matching the updated config tooltip and avoiding zero-looking progress on valid trades.
+
+### Fixed
+
+- Fixed skill-based trade-level XP progress desync between server-side villager leveling and the client merchant display.
+- Fixed adjusted trade XP being lost between trades by syncing and caching the remaining fractional progress in villager profile payloads.
+- Fixed merchant result and container flows bypassing adjusted trade-level XP presentation after a trade completed or when trade offers refreshed.
 
 ## 1.0.0-beta.12-hotfix.1 - 2026-06-02
 
