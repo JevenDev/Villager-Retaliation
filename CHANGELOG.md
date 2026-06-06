@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0-beta.12-hotfix.2 - 2026-06-06
+
+Beta.13-hotfix.2 expands the beta.13 follow-up with broader gender support, new Village Supply quest content, and a debug command for correcting villager gender data in-world.
+
+### Added
+
+- Added non-binary villager gender support across social data, breeding compatibility checks, profile/family UI labels, deterministic preset-name selection, and English localization.
+- Added five new built-in Village Supply quests: `beetroot_bundle`, `bottle_stock`, `egg_baskets`, `feather_fletching`, and `torch_bundle`, each with authored quest definitions, dialogue trees, loot tables, and player-wiki coverage.
+- Added `/villagerretaliation profile set_gender` so operators can set a villager's stored gender directly in-game.
+- Added more preset villager names to the built-in male and female name pools.
+
+### Changed
+
+- Built-in quest totals documented in the README, CurseForge description, and generated player wiki now reflect the added Village Supply questline content.
+- Villager gender chosen through the new command is now persisted on the villager so profile data and future loads keep the override.
+
 ## 1.0.0-beta.12-hotfix.1 - 2026-06-02
 
 Beta.12-hotfix.1 is a focused stability follow-up for beta.12. It fixes duplicate skill-trade registration and makes the villager interaction UI behave consistently across UI scale and text-scale settings.
