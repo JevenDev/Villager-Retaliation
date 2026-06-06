@@ -37,6 +37,7 @@ public final class VillagerProfileClientCache {
                 payload.attributes(),
                 payload.skillGeneratedVersion(),
                 payload.skills(),
+                payload.tradeLevelSkillAdjustedXpProgress(),
                 gameTime
         );
         BY_VILLAGER_UUID.put(payload.villagerId(), entry);
@@ -55,6 +56,16 @@ public final class VillagerProfileClientCache {
     public static Optional<DisplayEntry> get(int entityId) {
         UUID mappedId = ENTITY_ID_TO_UUID.get(entityId);
         return mappedId == null ? Optional.empty() : Optional.ofNullable(BY_VILLAGER_UUID.get(mappedId));
+    }
+
+    public static void updateTradeLevelSkillAdjustedXpProgress(int entityId, double progress) {
+        Optional<DisplayEntry> entry = get(entityId);
+        if (entry.isEmpty()) {
+            return;
+        }
+
+        DisplayEntry current = entry.get();
+        BY_VILLAGER_UUID.put(current.villagerId(), current.withTradeLevelSkillAdjustedXpProgress(progress));
     }
 
     public static void clear() {
@@ -101,6 +112,7 @@ public final class VillagerProfileClientCache {
             VillagerSocialAttributes attributes,
             int skillGeneratedVersion,
             VillagerSkillSet skills,
+            double tradeLevelSkillAdjustedXpProgress,
             long lastUpdateGameTime) {
         public int value(VillagerSocialAttribute attribute) {
             return this.attributes.get(attribute);
@@ -121,5 +133,26 @@ public final class VillagerProfileClientCache {
         public List<VillagerSkillValue> bestSkills(int limit) {
             return this.skills.best(limit);
         }
+
+        private DisplayEntry withTradeLevelSkillAdjustedXpProgress(double progress) {
+            return new DisplayEntry(
+                    this.entityId,
+                    this.villagerId,
+                    this.professionKey,
+                    this.generatedVersion,
+                    this.attributes,
+                    this.skillGeneratedVersion,
+                    this.skills,
+                    clampFractionalProgress(progress),
+                    this.lastUpdateGameTime
+            );
+        }
+    }
+
+    private static double clampFractionalProgress(double progress) {
+        if (!Double.isFinite(progress)) {
+            return 0.0D;
+        }
+        return Math.max(0.0D, Math.min(0.999_999D, progress));
     }
 }

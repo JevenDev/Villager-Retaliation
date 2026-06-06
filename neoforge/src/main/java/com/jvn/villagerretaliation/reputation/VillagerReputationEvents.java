@@ -4,8 +4,8 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerSkillGrowthService;
-import com.jvn.villagerretaliation.skill.VillagerTradeLevelingService;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -201,18 +201,18 @@ public final class VillagerReputationEvents {
     public static void onTradeWithVillager(TradeWithVillagerEvent event) {
         AbstractVillager villager = event.getAbstractVillager();
         if (villager.level() instanceof ServerLevel level) {
+            int completedTradeCount = VillagerTradeUseTracker.completedTradeCount(villager, event.getMerchantOffer());
             VillagerReputationManager.addTradeReputation(level, villager, event.getEntity());
             if (villager instanceof Villager villageResident) {
-                if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+                ServerPlayer serverPlayer = event.getEntity() instanceof ServerPlayer player ? player : null;
+                if (serverPlayer != null) {
                     storeTradePayments(level, villageResident, serverPlayer, event.getMerchantOffer());
                 }
-                VillagerTradeLevelingService.onTradeCompleted(level, villageResident, event.getMerchantOffer());
             }
             VillagerAmbientIndicatorService.onTradeCompleted(level, villager, event.getEntity());
             if (event.getEntity() instanceof ServerPlayer serverPlayer) {
                 VillagerReputationAdvancements.onTradeCompleted(level, serverPlayer, villager);
             }
-            int completedTradeCount = VillagerTradeUseTracker.completedTradeCount(villager, event.getMerchantOffer());
             VillagerSkillGrowthService.onTradeCompleted(
                     level,
                     villager,
@@ -249,6 +249,13 @@ public final class VillagerReputationEvents {
                 VillagerTradeUseTracker.snapshotOffers(villager);
                 VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
                 VillagerReputationManager.syncToTrackingPlayer(level, villager, player.getUUID());
+                if (player instanceof ServerPlayer serverPlayer) {
+                    VillagerReputationNetworking.sendProfile(
+                            serverPlayer,
+                            villager,
+                            VillagerProfileManager.getOrCreateProfile(level, villager)
+                    );
+                }
                 return;
             }
         }

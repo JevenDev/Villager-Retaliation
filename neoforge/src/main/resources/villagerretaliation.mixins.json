@@ -2,8 +2,13 @@
   "required": true,
   "package": "com.jvn.villagerretaliation.mixin",
   "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "VillagerTradeLevelingMixin"
+  ],
   "client": [
     "client.ChatComponentMixin",
+    "client.MerchantContainerMixin",
+    "client.MerchantResultSlotMixin",
     "client.QuestItemEntityGlowMixin",
     "client.QuestItemEntityOutlineColorMixin",
     "client.QuestItemHeldGlowMixin"

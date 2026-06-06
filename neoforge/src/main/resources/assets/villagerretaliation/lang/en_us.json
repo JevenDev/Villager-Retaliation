@@ -813,7 +813,7 @@
   "text.config.villagerretaliation.option.trade.enableSkillBasedTradeLeveling": "Enable Skill-Based Trade Leveling",
   "text.config.villagerretaliation.option.trade.enableSkillBasedTradeLeveling.tooltip": "When true, a villager's primary profession skill slows or restores vanilla villager trade-level XP gain.",
   "text.config.villagerretaliation.option.trade.skillBasedTradeLevelingMinMultiplier": "Skill-Based Trade Leveling Min Multiplier",
-  "text.config.villagerretaliation.option.trade.skillBasedTradeLevelingMinMultiplier.tooltip": "Villager trade-level XP multiplier at the lowest primary profession skill. 0.2 means very low-skill villagers level about five times slower.",
+  "text.config.villagerretaliation.option.trade.skillBasedTradeLevelingMinMultiplier.tooltip": "Villager trade-level XP multiplier at the lowest primary profession skill. XP-bearing trades still grant at least 1 visible trade-level XP.",
   "text.config.villagerretaliation.option.trade.skillBasedTradeLevelingMaxMultiplier": "Skill-Based Trade Leveling Max Multiplier",
   "text.config.villagerretaliation.option.trade.skillBasedTradeLevelingMaxMultiplier.tooltip": "Villager trade-level XP multiplier at the highest primary profession skill. Keep at 1.0 for high-skill villagers to level at vanilla speed.",
   "text.config.villagerretaliation.option.trade.enableSkillGrowthFeedback": "Enable Skill Growth Feedback",

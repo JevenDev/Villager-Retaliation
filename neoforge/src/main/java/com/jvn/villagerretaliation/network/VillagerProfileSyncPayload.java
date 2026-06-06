@@ -38,7 +38,8 @@ public record VillagerProfileSyncPayload(
         int mining,
         int leatherworking,
         int diplomacy,
-        int survival) implements CustomPacketPayload {
+        int survival,
+        double tradeLevelSkillAdjustedXpProgress) implements CustomPacketPayload {
     public static final Type<VillagerProfileSyncPayload> TYPE = VillagerPayloads.type("villager_profile_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerProfileSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(VillagerProfileSyncPayload::encode, VillagerProfileSyncPayload::decode);
@@ -77,7 +78,8 @@ public record VillagerProfileSyncPayload(
             int generatedVersion,
             VillagerSocialAttributes attributes,
             int skillGeneratedVersion,
-            VillagerSkillSet skills) {
+            VillagerSkillSet skills,
+            double tradeLevelSkillAdjustedXpProgress) {
         VillagerSocialAttributes safeAttributes = attributes == null ? VillagerSocialAttributes.DEFAULT : attributes;
         VillagerSkillSet safeSkills = skills == null ? VillagerSkillSet.DEFAULT : skills.completeWith(VillagerSkillSet.DEFAULT);
         Map<VillagerSkill, Integer> values = safeSkills.asMap();
@@ -109,7 +111,8 @@ public record VillagerProfileSyncPayload(
                 values.get(VillagerSkill.MINING),
                 values.get(VillagerSkill.LEATHERWORKING),
                 values.get(VillagerSkill.DIPLOMACY),
-                values.get(VillagerSkill.SURVIVAL)
+                values.get(VillagerSkill.SURVIVAL),
+                clampFractionalProgress(tradeLevelSkillAdjustedXpProgress)
         );
     }
 
@@ -142,6 +145,7 @@ public record VillagerProfileSyncPayload(
         buffer.writeVarInt(payload.leatherworking());
         buffer.writeVarInt(payload.diplomacy());
         buffer.writeVarInt(payload.survival());
+        buffer.writeDouble(payload.tradeLevelSkillAdjustedXpProgress());
     }
 
     private static VillagerProfileSyncPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -173,8 +177,16 @@ public record VillagerProfileSyncPayload(
                 buffer.readVarInt(),
                 buffer.readVarInt(),
                 buffer.readVarInt(),
-                buffer.readVarInt()
+                buffer.readVarInt(),
+                buffer.readDouble()
         );
+    }
+
+    private static double clampFractionalProgress(double progress) {
+        if (!Double.isFinite(progress)) {
+            return 0.0D;
+        }
+        return Math.max(0.0D, Math.min(0.999_999D, progress));
     }
 
     @Override
