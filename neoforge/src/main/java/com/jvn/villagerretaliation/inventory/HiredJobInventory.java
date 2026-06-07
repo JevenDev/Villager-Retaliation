@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.inventory;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import net.minecraft.core.BlockPos;
@@ -125,6 +126,7 @@ public final class HiredJobInventory implements Container {
             if (equipmentSlot != null) {
                 updateLiveEquipmentAfterJobSlotChange(equipmentSlot, previousStack);
             }
+            resetEmptySlotType(slot);
             setChanged();
         }
         return removed;
@@ -145,6 +147,9 @@ public final class HiredJobInventory implements Container {
         if (equipmentSlot != null && !removed.isEmpty()) {
             updateLiveEquipmentAfterJobSlotChange(equipmentSlot, previousStack);
             setChanged();
+        } else if (!removed.isEmpty()) {
+            resetEmptySlotType(slot);
+            setChanged();
         }
         return removed;
     }
@@ -161,7 +166,9 @@ public final class HiredJobInventory implements Container {
         }
 
         this.items.set(slot, stack);
-        if (!stack.isEmpty() && ProtectedVillagerProperty.isProtected(stack)) {
+        if (stack.isEmpty()) {
+            this.slotTypes[slot] = defaultType(slot);
+        } else if (ProtectedVillagerProperty.isProtected(stack)) {
             this.slotTypes[slot] = HiredJobInventorySlotType.PROTECTED_PROPERTY;
         } else if (this.slotTypes[slot] == HiredJobInventorySlotType.PROTECTED_PROPERTY) {
             this.slotTypes[slot] = defaultType(slot);
@@ -262,6 +269,7 @@ public final class HiredJobInventory implements Container {
             stack.shrink(removed);
             if (stack.isEmpty()) {
                 this.items.set(slot, ItemStack.EMPTY);
+                resetEmptySlotType(slot);
             }
             setChanged();
             return consumed;
@@ -339,6 +347,7 @@ public final class HiredJobInventory implements Container {
             stack.shrink(removed);
             if (stack.isEmpty()) {
                 this.items.set(slot, ItemStack.EMPTY);
+                resetEmptySlotType(slot);
             }
             remaining -= removed;
             consumed += removed;
@@ -358,11 +367,15 @@ public final class HiredJobInventory implements Container {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
-        for (int slot : outputSlots()) {
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (!canInsertOutputIntoSlot(this.items, slot)) {
+                continue;
+            }
             ItemStack current = this.items.get(slot);
             if (current.isEmpty()) {
                 int moved = Math.min(remainder.getCount(), remainder.getMaxStackSize());
                 this.items.set(slot, remainder.copyWithCount(moved));
+                this.slotTypes[slot] = HiredJobInventorySlotType.OUTPUT;
                 remainder.shrink(moved);
             } else if (ItemStack.isSameItemSameComponents(current, remainder)
                     && current.getCount() < current.getMaxStackSize()) {
@@ -383,7 +396,8 @@ public final class HiredJobInventory implements Container {
 
     public boolean hasOutputSpace() {
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
-            if (isOutputSlot(slot) && this.items.get(slot).isEmpty()) {
+            if (canInsertOutputIntoSlot(this.items, slot)
+                    && this.items.get(slot).getCount() < this.items.get(slot).getMaxStackSize()) {
                 return true;
             }
         }
@@ -393,9 +407,7 @@ public final class HiredJobInventory implements Container {
     public boolean canStoreOutputs(List<ItemStack> stacks) {
         NonNullList<ItemStack> simulated = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
-            if (isOutputSlot(slot)) {
-                simulated.set(slot, this.items.get(slot).copy());
-            }
+            simulated.set(slot, this.items.get(slot).copy());
         }
         for (ItemStack stack : stacks) {
             if (!simulateOutputInsert(simulated, stack.copy()).isEmpty()) {
@@ -426,27 +438,7 @@ public final class HiredJobInventory implements Container {
     }
 
     public boolean depositOutputToAssignedStorage() {
-        if (this.collectOutputItems().isEmpty()) {
-            return false;
-        }
-        boolean changed = false;
-        for (OutputStack output : collectOutputItems()) {
-            ItemStack remainder = AssignedStorageService.depositStack(this.villager, output.stack());
-            int moved = output.stack().getCount() - remainder.getCount();
-            if (moved <= 0) {
-                continue;
-            }
-            ItemStack current = this.items.get(output.slot());
-            current.shrink(moved);
-            if (current.isEmpty()) {
-                this.items.set(output.slot(), ItemStack.EMPTY);
-            }
-            changed = true;
-        }
-        if (changed) {
-            setChanged();
-        }
-        return changed;
+        return depositOneOutputStack(output -> AssignedStorageService.depositStack(this.villager, output.stack()));
     }
 
     public boolean depositOutputToNearbyAssignedStorage() {
@@ -454,37 +446,26 @@ public final class HiredJobInventory implements Container {
     }
 
     public boolean depositOutputToNearbyAssignedStorage(Predicate<BlockPos> positionFilter) {
-        if (this.collectOutputItems().isEmpty()) {
-            return false;
-        }
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
-        boolean changed = false;
-        for (OutputStack output : collectOutputItems()) {
-            ItemStack remainder = AssignedStorageService.depositStackNearVillager(this.villager, output.stack(), safeFilter);
-            int moved = output.stack().getCount() - remainder.getCount();
-            if (moved <= 0) {
-                continue;
-            }
-            ItemStack current = this.items.get(output.slot());
-            current.shrink(moved);
-            if (current.isEmpty()) {
-                this.items.set(output.slot(), ItemStack.EMPTY);
-            }
-            changed = true;
-        }
-        if (changed) {
-            setChanged();
-        }
-        return changed;
+        return depositOneOutputStack(output -> AssignedStorageService.depositStackNearVillager(
+                this.villager,
+                output.stack(),
+                safeFilter));
     }
 
     public boolean depositOutputToAssignedStorageAt(BlockPos storagePos) {
-        if (storagePos == null || this.collectOutputItems().isEmpty()) {
+        if (storagePos == null) {
             return false;
         }
-        boolean changed = false;
+        return depositOneOutputStack(output -> AssignedStorageService.depositStackAtAssignedStorage(
+                this.villager,
+                storagePos,
+                output.stack()));
+    }
+
+    private boolean depositOneOutputStack(Function<OutputStack, ItemStack> depositor) {
         for (OutputStack output : collectOutputItems()) {
-            ItemStack remainder = AssignedStorageService.depositStackAtAssignedStorage(this.villager, storagePos, output.stack());
+            ItemStack remainder = depositor.apply(output);
             int moved = output.stack().getCount() - remainder.getCount();
             if (moved <= 0) {
                 continue;
@@ -493,13 +474,12 @@ public final class HiredJobInventory implements Container {
             current.shrink(moved);
             if (current.isEmpty()) {
                 this.items.set(output.slot(), ItemStack.EMPTY);
+                resetEmptySlotType(output.slot());
             }
-            changed = true;
-        }
-        if (changed) {
             setChanged();
+            return true;
         }
-        return changed;
+        return false;
     }
 
     private ItemStack simulateOutputInsert(NonNullList<ItemStack> simulated, ItemStack stack) {
@@ -508,7 +488,7 @@ public final class HiredJobInventory implements Container {
         }
         ItemStack remainder = stack.copy();
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
-            if (!isOutputSlot(slot)) {
+            if (!canInsertOutputIntoSlot(simulated, slot)) {
                 continue;
             }
             ItemStack current = simulated.get(slot);
@@ -527,6 +507,21 @@ public final class HiredJobInventory implements Container {
             }
         }
         return remainder;
+    }
+
+    private boolean canInsertOutputIntoSlot(NonNullList<ItemStack> inventory, int slot) {
+        if (!isValidSlot(slot) || ProtectedVillagerProperty.isProtected(inventory.get(slot))) {
+            return false;
+        }
+        HiredJobInventorySlotType type = slotType(slot);
+        return type == HiredJobInventorySlotType.OUTPUT
+                || type == HiredJobInventorySlotType.SUPPLY && this.items.get(slot).isEmpty();
+    }
+
+    private void resetEmptySlotType(int slot) {
+        if (isValidSlot(slot) && this.items.get(slot).isEmpty()) {
+            this.slotTypes[slot] = defaultType(slot);
+        }
     }
 
     private void load() {

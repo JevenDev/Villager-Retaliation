@@ -45,6 +45,8 @@ import net.minecraft.world.level.pathfinder.Path;
 public final class HiredVillagerWorkService {
     private static final String TAG = "VillagerRetaliationHiredWork";
     private static final String NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG = "NextWorkAreaReturnPathGameTime";
+    private static final String STORAGE_FULL_NOTICE_SHOWN_TAG = "StorageFullNoticeShown";
+    private static final String STORAGE_FULL_NOTICE = "I have no where left to deposit these collected items.";
     private static final long DAY_TICKS = 24000L;
     private static final int MIN_WORK_RADIUS = 4;
     private static final int SKILL_RADIUS_BASELINE = 50;
@@ -117,6 +119,7 @@ public final class HiredVillagerWorkService {
         handleDailyFood(level, villager, hirer, session);
         WorkResult result = session.worker().tick(level, villager, hirer, session.context());
         setStatus(session.state(), result.status() + " Efficiency: " + session.efficiency() + "%.");
+        maybeNotifyStorageFull(level, villager, hirer, session.context(), session.state());
         if (result.awardsSkillGrowth()) {
             HiredWorkSkillGrowthService.onWorkCompleted(level, villager, hirer, session.role(), session.state());
         }
@@ -146,6 +149,14 @@ public final class HiredVillagerWorkService {
             state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
             return false;
         }
+        HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        if ((brain.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
+                || brain.taskState() == HiredWorkerTaskState.DEPOSITING
+                || brain.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL)
+                && brain.storageTargetPos() != null) {
+            state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
+            return false;
+        }
         if (canWorkFromOutsideArea(session, villager.blockPosition())) {
             state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
             return false;
@@ -168,10 +179,22 @@ public final class HiredVillagerWorkService {
 
         ReturnPath returnPath = findWorkAreaReturnPath(level, villager, context);
         if (returnPath == null) {
-            villager.getNavigation().stop();
-            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
-            setStatus(state, "I am outside the work bounds, and I have not found a good way back yet.");
+            if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, context.workCenter(), WORK_AREA_RETURN_WALK_SPEED)) {
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+                setStatus(state, "I am using the ladder to get back into the work area.");
+            } else {
+                villager.getNavigation().stop();
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+                state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
+                setStatus(state, "I am outside the work bounds, and I have not found a good way back yet.");
+            }
+            return true;
+        }
+
+        if (Math.abs(villager.blockPosition().getY() - returnPath.target().getY()) > 2
+                && VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, returnPath.target(), WORK_AREA_RETURN_WALK_SPEED)) {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnPath.target());
+            setStatus(state, "I am using the ladder to get back into the work area.");
             return true;
         }
 
@@ -181,9 +204,14 @@ public final class HiredVillagerWorkService {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnPath.target());
             setStatus(state, "I have drifted beyond the work bounds, so I am heading back.");
         } else {
-            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
-            setStatus(state, "I know I must return to the work bounds, but I could not get moving yet.");
+            if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, returnPath.target(), WORK_AREA_RETURN_WALK_SPEED)) {
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnPath.target());
+                setStatus(state, "I am using the ladder to get back into the work area.");
+            } else {
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+                state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
+                setStatus(state, "I know I must return to the work bounds, but I could not get moving yet.");
+            }
         }
         return true;
     }
@@ -703,6 +731,7 @@ public final class HiredVillagerWorkService {
             case MOVING_TO_STORAGE -> "carrying goods toward " + describeCurrentTarget(snapshot);
             case RETURNING_TO_WORK_AREA -> "making my way back into the work area";
             case DEPOSITING -> "putting supplies away at " + describeCurrentTarget(snapshot);
+            case PAUSED_STORAGE_FULL -> "waiting near full storage at " + describeCurrentTarget(snapshot);
             case NO_WORK_AREA -> "waiting for you to assign a job site";
             case PAUSED_FULL_INVENTORY -> "stopped because my inventory is full";
             case PAUSED_NO_STORAGE -> "waiting because there is nowhere proper to store things";
@@ -895,5 +924,25 @@ public final class HiredVillagerWorkService {
         }
         state.putLong("LastNoticeTick", now);
         VillagerInteractionService.sendVillagerNotice(hirer, villager, message);
+    }
+
+    private static void maybeNotifyStorageFull(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer hirer,
+            HiredWorkContext context,
+            CompoundTag state) {
+        HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        if (brain.taskState() != HiredWorkerTaskState.PAUSED_STORAGE_FULL) {
+            if (!context.hasOutputToDeposit()) {
+                state.remove(STORAGE_FULL_NOTICE_SHOWN_TAG);
+            }
+            return;
+        }
+        if (state.getBoolean(STORAGE_FULL_NOTICE_SHOWN_TAG)) {
+            return;
+        }
+        state.putBoolean(STORAGE_FULL_NOTICE_SHOWN_TAG, true);
+        VillagerInteractionService.sendVillagerNotice(hirer, villager, STORAGE_FULL_NOTICE);
     }
 }

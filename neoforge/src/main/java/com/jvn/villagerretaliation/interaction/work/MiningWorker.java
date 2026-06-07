@@ -68,6 +68,10 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
 
         HiredMiningMode mode = HiredMiningMode.fromState(context.state());
+        WorkResult fullInventoryResult = depositFullInventoryBeforeMining(level, villager, context);
+        if (fullInventoryResult != null) {
+            return fullInventoryResult;
+        }
         if (mode.excavatesArea()) {
             WorkResult supportResult = maintainExcavationSupports(level, villager, context, deepestOpenSupportY(level, context));
             if (supportResult != null) {
@@ -85,6 +89,9 @@ public final class MiningWorker extends AbstractBlockWorker {
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed(noTargetDepositStatus(mode));
+            }
+            if (depositResult == DepositResult.STORAGE_FULL) {
+                return WorkResult.idle(storageFullStatus(context));
             }
             if (depositResult != DepositResult.UNAVAILABLE && isExcavationComplete(level, context, mode)) {
                 setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
@@ -115,6 +122,10 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setFailure(context, "missing_pickaxe", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
             return WorkResult.idle(missingToolStatus(mode));
+        }
+        WorkResult outputCapacityResult = depositBeforeMiningIfTargetDropsDoNotFit(level, villager, context, target, targetState, tool);
+        if (outputCapacityResult != null) {
+            return outputCapacityResult;
         }
 
         prepareBreakingTarget(level, context, villager, target);
@@ -230,6 +241,9 @@ public final class MiningWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             return WorkResult.skilledProgress("I have gathered the mined output and am taking it to storage.");
         }
+        if (depositResult == DepositResult.STORAGE_FULL) {
+            return WorkResult.idle(storageFullStatus(context));
+        }
         if (depositResult != DepositResult.UNAVAILABLE && isExcavationComplete(level, context, mode)) {
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             ensureNoTargetScanCooldown(level, context);
@@ -237,6 +251,10 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
         if (roamInsideWorkArea(level, villager, context, 0.4D)) {
             return WorkResult.skilledProgress(completedSearchingStatus(mode));
+        }
+        if (mode.excavatesArea()) {
+            setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
+            return WorkResult.skilledProgress(continuingExcavationStatus(depositResult));
         }
         setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
         ensureNoTargetScanCooldown(level, context);
@@ -254,6 +272,66 @@ public final class MiningWorker extends AbstractBlockWorker {
             return resolveExcavationTarget(level, villager, context);
         }
         return resolveOreTarget(level, villager, context);
+    }
+
+    private WorkResult depositFullInventoryBeforeMining(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
+        boolean storageTrip = worker.storageTargetPos() != null
+                && (worker.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
+                || worker.taskState() == HiredWorkerTaskState.DEPOSITING
+                || worker.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL);
+        if (!storageTrip && (context.hasOutputSpace() || !context.hasOutputToDeposit())) {
+            return null;
+        }
+        return depositBeforeMining(level, villager, context);
+    }
+
+    private WorkResult depositBeforeMiningIfTargetDropsDoNotFit(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredPathTarget target,
+            BlockState targetState,
+            ItemStack tool) {
+        List<ItemStack> drops = Block.getDrops(
+                targetState,
+                level,
+                target.blockPos(),
+                level.getBlockEntity(target.blockPos()),
+                villager,
+                tool);
+        if (context.canStoreOutputs(drops)) {
+            return null;
+        }
+        return depositBeforeMining(level, villager, context);
+    }
+
+    private WorkResult depositBeforeMining(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        clearActiveBreakingTarget(level, context, villager);
+        DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.55D);
+        if (depositResult == DepositResult.DEPOSITED) {
+            setMiningState(context, MiningState.DEPOSIT_OUTPUT);
+            return WorkResult.progressed("I put away my mined output and am checking my packs before I continue.");
+        }
+        if (depositResult == DepositResult.MOVING) {
+            setMiningState(context, MiningState.DEPOSIT_OUTPUT);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+            return WorkResult.progressed("My packs are full, so I am taking the mined output to storage before I continue.");
+        }
+        if (depositResult == DepositResult.STORAGE_FULL) {
+            setMiningState(context, MiningState.BLOCKED_OUTPUT_FULL);
+            return WorkResult.idle(storageFullStatus(context));
+        }
+        setMiningState(context, MiningState.BLOCKED_OUTPUT_FULL);
+        HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+        setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
+        return WorkResult.idle("I cannot carry more ore, and I have nowhere to stow it.");
     }
 
     private HiredPathTarget resolveOreTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -657,7 +735,6 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             HiredPathTarget target,
             double speed) {
-        faceBlock(villager, target);
         if (canReachSupportPlacement(level, villager, target.blockPos())) {
             holdMiningPosition(villager, target);
             return true;
@@ -1163,7 +1240,6 @@ public final class MiningWorker extends AbstractBlockWorker {
                 || !context.isLoaded(level, target.approachPos())) {
             return false;
         }
-        faceBlock(villager, target);
         if (canStartMining(level, villager, context, target, mode)) {
             holdMiningPosition(villager, target);
             return true;
@@ -1341,6 +1417,12 @@ public final class MiningWorker extends AbstractBlockWorker {
         return mode.excavatesArea()
                 ? "I cleared that block and gathered it, but there is no other reachable face nearby."
                 : "I mined the ore and gathered it, but there is no other exposed vein nearby.";
+    }
+
+    private static String continuingExcavationStatus(DepositResult depositResult) {
+        return depositResult == DepositResult.DEPOSITED
+                ? "I cleared that block, gathered it, put it away, and am checking for the next reachable face."
+                : "I cleared that block and gathered it. I am checking the assigned area for the next reachable face.";
     }
 
     private static String completedExcavationStatus(DepositResult depositResult) {

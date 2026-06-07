@@ -14,6 +14,7 @@ public enum HiredWorkerTaskState {
     RETURNING_TO_WORK_AREA("returning_to_work_area"),
     DEPOSITING("depositing"),
     PAUSED_FULL_INVENTORY("paused_full_inventory"),
+    PAUSED_STORAGE_FULL("paused_storage_full"),
     PAUSED_NO_STORAGE("paused_no_storage"),
     FAILED_COOLDOWN("failed_cooldown"),
     AWAITING_INSTRUCTION("awaiting_instruction"),
@@ -50,7 +51,7 @@ public enum HiredWorkerTaskState {
     }
 
     public boolean keepsStorageTarget() {
-        return this == MOVING_TO_STORAGE || this == DEPOSITING;
+        return this == MOVING_TO_STORAGE || this == DEPOSITING || this == PAUSED_STORAGE_FULL;
     }
 
     public static HiredWorkerTaskState byId(String value) {

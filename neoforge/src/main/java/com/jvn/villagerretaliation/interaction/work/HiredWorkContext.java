@@ -65,12 +65,11 @@ public record HiredWorkContext(
     }
 
     public boolean depositOutputs(Villager villager) {
-        return this.autoDepositOutputs && this.inventory.depositOutputToNearbyAssignedStorage(this::isInsideWorkArea);
+        return this.autoDepositOutputs && this.inventory.depositOutputToNearbyAssignedStorage();
     }
 
     public boolean depositOutputsAtStorage(Villager villager, BlockPos storagePos) {
         return this.autoDepositOutputs
-                && this.isInsideWorkArea(storagePos)
                 && this.inventory.depositOutputToAssignedStorageAt(storagePos);
     }
 
@@ -78,21 +77,24 @@ public record HiredWorkContext(
         return this.inventory.hasOutputItems();
     }
 
+    public boolean hasOutputSpace() {
+        return this.inventory.hasOutputSpace();
+    }
+
     public boolean canDepositOutputsNow(Villager villager) {
         return this.autoDepositOutputs
                 && this.inventory.hasOutputItems()
-                && AssignedStorageService.canInteractWithAssignedStorage(villager, this::isInsideWorkArea);
+                && AssignedStorageService.canInteractWithAssignedStorage(villager);
     }
 
     public boolean canDepositOutputsAtStorageNow(Villager villager, BlockPos storagePos) {
         return this.autoDepositOutputs
                 && this.inventory.hasOutputItems()
-                && this.isInsideWorkArea(storagePos)
                 && AssignedStorageService.canInteractWithAssignedStorage(villager, storagePos);
     }
 
     public BlockPos nearestDepositStorage(ServerLevel level, Villager villager) {
-        return AssignedStorageService.nearestAssignedStoragePos(level, villager, this::isInsideWorkArea);
+        return AssignedStorageService.nearestAssignedStoragePos(level, villager);
     }
 
     public boolean canStoreOutputs(List<ItemStack> stacks) {

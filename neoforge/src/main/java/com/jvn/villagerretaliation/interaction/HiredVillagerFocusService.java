@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -79,8 +81,14 @@ public final class HiredVillagerFocusService {
                 .map(GlobalPos::pos)
                 .orElse(null);
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
+        boolean storageNavigation = worker.storageTargetPos() != null
+                && (worker.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
+                || worker.taskState() == HiredWorkerTaskState.DEPOSITING
+                || worker.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL);
         boolean stopNavigation = navigationTarget != null
-                && (!context.isInsideWorkArea(navigationTarget) || navigationTarget.equals(jobSite));
+                && ((!storageNavigation && !context.isInsideWorkArea(navigationTarget))
+                || navigationTarget.equals(jobSite));
         if (stopNavigation) {
             villager.getNavigation().stop();
         }
@@ -95,10 +103,10 @@ public final class HiredVillagerFocusService {
                 NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG,
                 gameTime + PROFESSION_SUPPRESSION_INTERVAL_TICKS);
 
-        if (brain.getMemory(MemoryModuleType.WALK_TARGET).isPresent()) {
+        if (!storageNavigation && brain.getMemory(MemoryModuleType.WALK_TARGET).isPresent()) {
             brain.eraseMemory(MemoryModuleType.WALK_TARGET);
         }
-        if (brain.getMemory(MemoryModuleType.PATH).isPresent()) {
+        if (!storageNavigation && brain.getMemory(MemoryModuleType.PATH).isPresent()) {
             brain.eraseMemory(MemoryModuleType.PATH);
         }
         if (brain.isActive(Activity.WORK)) {

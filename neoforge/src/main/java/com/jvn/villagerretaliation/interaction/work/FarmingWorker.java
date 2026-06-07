@@ -46,6 +46,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("There are no ripe crops nearby, so I am heading to storage for now.");
             }
+            if (depositResult == DepositResult.STORAGE_FULL) {
+                return WorkResult.idle(storageFullStatus(context));
+            }
             if (roamInsideWorkArea(level, villager, context, 0.35D)) {
                 return WorkResult.progressed("I found nothing ripe yet, so I am walking the fields.");
             }
@@ -104,6 +107,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("My hands are full from the harvest, so I am taking it to storage first.");
+            }
+            if (depositResult == DepositResult.STORAGE_FULL) {
+                return WorkResult.idle(storageFullStatus(context));
             }
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);

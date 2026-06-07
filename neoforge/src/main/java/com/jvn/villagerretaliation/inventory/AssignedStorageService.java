@@ -182,6 +182,13 @@ public final class AssignedStorageService {
         return stack;
     }
 
+    public static void closeStorageFeedback(ServerLevel level, BlockPos storagePos) {
+        if (level == null || storagePos == null) {
+            return;
+        }
+        VillagerInventoryOverflowService.closeContainerFeedbackNow(level, storagePos);
+    }
+
     public static boolean canInteractWithAssignedStorage(Villager villager) {
         return canInteractWithAssignedStorage(villager, ignored -> true);
     }

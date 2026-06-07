@@ -60,6 +60,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("I found no good timber nearby, so I am heading to storage for now.");
             }
+            if (depositResult == DepositResult.STORAGE_FULL) {
+                return WorkResult.idle(storageFullStatus(context));
+            }
             if (roamInsideWorkArea(level, villager, context, 0.4D)) {
                 return WorkResult.progressed("I found no good timber yet, so I am ranging through the work area.");
             }
@@ -123,6 +126,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("My hands are full of timber, so I am taking it to storage first.");
+            }
+            if (depositResult == DepositResult.STORAGE_FULL) {
+                return WorkResult.idle(storageFullStatus(context));
             }
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);

@@ -38,7 +38,7 @@ import net.minecraft.world.level.block.state.BlockState;
 final class VillagerInventoryOverflowService {
     private static final int SCAN_INTERVAL_TICKS = 100;
     private static final int SCAN_RADIUS = 12;
-    private static final int CONTAINER_CLOSE_DELAY_TICKS = 20;
+    private static final int CONTAINER_CLOSE_DELAY_TICKS = 80;
     private static final String OWNER_ITEM_TAG = "VillagerRetaliationOwner";
     private static final String OWNER_UUID_TAG = "Villager";
     private static final String OWNER_NAME_TAG = "VillagerName";
@@ -236,29 +236,56 @@ final class VillagerInventoryOverflowService {
     }
 
     static void openUsedContainers(ServerLevel level, List<ContainerCandidate> usedContainers) {
+        closePendingContainersIfDue(level);
         for (ContainerCandidate candidate : usedContainers) {
             openContainerFeedback(level, candidate.pos());
         }
     }
 
     private static void openContainerFeedback(ServerLevel level, BlockPos pos) {
+        if (extendOpenContainerSession(level, pos)) {
+            return;
+        }
         BlockState state = level.getBlockState(pos);
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof ChestBlockEntity && ChestBlockEntity.getOpenCount(level, pos) <= 0) {
             level.blockEvent(pos, state.getBlock(), ChestBlock.EVENT_SET_OPEN_COUNT, 1);
             level.playSound(null, pos, SoundEvents.CHEST_OPEN, SoundSource.BLOCKS, 0.5F, 0.9F + level.random.nextFloat() * 0.1F);
-            scheduleContainerClose(level, pos);
         } else if (blockEntity instanceof BarrelBlockEntity
                 && state.hasProperty(BarrelBlock.OPEN)
                 && !state.getValue(BarrelBlock.OPEN)) {
             level.setBlock(pos, state.setValue(BarrelBlock.OPEN, true), Block.UPDATE_CLIENTS);
             level.playSound(null, pos, SoundEvents.BARREL_OPEN, SoundSource.BLOCKS, 0.5F, 0.9F + level.random.nextFloat() * 0.1F);
-            scheduleContainerClose(level, pos);
         } else if (blockEntity instanceof ShulkerBoxBlockEntity shulkerBox && shulkerBox.isClosed()) {
             level.blockEvent(pos, state.getBlock(), ShulkerBoxBlockEntity.EVENT_SET_OPEN_COUNT, 1);
             level.playSound(null, pos, SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, 0.9F + level.random.nextFloat() * 0.1F);
+        }
+        if (blockEntity instanceof ChestBlockEntity
+                || blockEntity instanceof BarrelBlockEntity
+                || blockEntity instanceof ShulkerBoxBlockEntity) {
             scheduleContainerClose(level, pos);
         }
+    }
+
+    static void closeContainerFeedbackNow(ServerLevel level, BlockPos pos) {
+        if (pos == null) {
+            return;
+        }
+        ContainerFeedbackKey key = new ContainerFeedbackKey(level.dimension(), pos.immutable());
+        if (PENDING_CONTAINER_CLOSES.remove(key) == null) {
+            return;
+        }
+        closeContainerFeedback(level, pos);
+    }
+
+    private static boolean extendOpenContainerSession(ServerLevel level, BlockPos pos) {
+        ContainerFeedbackKey key = new ContainerFeedbackKey(level.dimension(), pos.immutable());
+        Long closeGameTime = PENDING_CONTAINER_CLOSES.get(key);
+        if (closeGameTime == null || closeGameTime <= level.getGameTime()) {
+            return false;
+        }
+        PENDING_CONTAINER_CLOSES.put(key, level.getGameTime() + CONTAINER_CLOSE_DELAY_TICKS);
+        return true;
     }
 
     private static void scheduleContainerClose(ServerLevel level, BlockPos pos) {
