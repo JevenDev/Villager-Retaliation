@@ -394,6 +394,12 @@ public final class HiredVillagerWorkService {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
         switch (role) {
+            case COMBAT -> {
+                HiredCombatMode current = HiredCombatMode.fromState(state);
+                HiredCombatMode next = current.next();
+                state.putString(HiredCombatMode.STATE_TAG, next.serializedName());
+                setStatus(state, "My combat orders are now " + next.label() + ".");
+            }
             case LOGGING -> {
                 String current = state.getString("LoggingFilter");
                 state.putString("LoggingFilter", current == null || current.isBlank() || "any".equals(current) ? "oak_log" : "any");
@@ -505,6 +511,9 @@ public final class HiredVillagerWorkService {
         }
         if (!state.contains("NavigationTargetType", Tag.TAG_STRING)) {
             state.putString("NavigationTargetType", "interesting");
+        }
+        if (!state.contains(HiredCombatMode.STATE_TAG, Tag.TAG_STRING)) {
+            state.putString(HiredCombatMode.STATE_TAG, HiredCombatMode.GUARD.serializedName());
         }
         if (!state.contains("Status", Tag.TAG_STRING)) {
             state.putString("Status", "Waiting for work tick.");
@@ -745,8 +754,10 @@ public final class HiredVillagerWorkService {
         int max = Math.max(min, VillagerRetaliationConfig.HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT.get());
         int efficiency = VillagerRetaliationConfig.HIRED_WORK_BASE_EFFICIENCY_PERCENT.get();
         efficiency += (HiredVillagerRoles.roleScore(level, villager, role) - 50) / 2;
-        if (HiredVillagerRoles.availableRoles(level, villager).contains(role)) {
+        if (HiredVillagerRoles.isSkillUnlocked(level, villager, role)) {
             efficiency += 10;
+        } else if (HiredVillagerRoles.isProfessionPreferred(villager, role)) {
+            efficiency += 3;
         }
         VillagerMoodState mood = VillagerMoodService.mood(level, villager);
         efficiency += switch (mood.primaryMood()) {

@@ -31,6 +31,7 @@ import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -122,6 +123,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final VillagerFamilyTreeSnapshot familyTree;
     private final VillagerRelationshipSnapshot relationships;
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
+    private final EnumMap<DialoguePage, VillagerInteractionScreenState.OptionListPosition> rememberedPageOptionPositions =
+            new EnumMap<>(DialoguePage.class);
     private DialoguePage page = DialoguePage.ROOT;
     private boolean closingFromServer;
     private boolean replacingFromServer;
@@ -521,6 +524,25 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         ensureSelectedVisible();
     }
 
+    private void rememberCurrentPageOptionListPosition() {
+        if (this.page == DialoguePage.ROOT) {
+            return;
+        }
+        this.rememberedPageOptionPositions.put(this.page, this.state.captureOptionListPosition());
+    }
+
+    private void restoreRememberedPageOptionListPosition(DialoguePage page) {
+        if (page == DialoguePage.ROOT) {
+            return;
+        }
+        VillagerInteractionScreenState.OptionListPosition rememberedPosition = this.rememberedPageOptionPositions.get(page);
+        if (rememberedPosition == null) {
+            return;
+        }
+        this.state.restoreOptionListPosition(rememberedPosition, this.options.size(), maxOptionScroll());
+        ensureSelectedVisible();
+    }
+
     private void addDialogueOptions() {
         for (DialogueOptionDefinition option : this.dialogueOptions) {
             addDialogueOption(option.label(), option.id());
@@ -667,6 +689,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.work_toggle", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED));
         addOption("recruit.work_assigned_supplies", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES));
         addOption("recruit.work_auto_deposit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS));
+        addRoleWorkConfigOption(HiredVillagerRole.COMBAT, "recruit.work_config_combat", VillagerRecruitRequestPayload.Action.CONFIGURE_COMBAT);
         addRoleWorkConfigOption(HiredVillagerRole.LOGGING, "recruit.work_config_logging", VillagerRecruitRequestPayload.Action.CONFIGURE_LOGGING);
         addRoleWorkConfigOption(HiredVillagerRole.FARMING, "recruit.work_config_farming", VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING);
         addRoleWorkConfigOption(HiredVillagerRole.BREWING, "recruit.work_config_brewing", VillagerRecruitRequestPayload.Action.CONFIGURE_BREWING);
@@ -1160,6 +1183,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openPage(DialoguePage page) {
         DialoguePage previousPage = this.page;
+        rememberCurrentPageOptionListPosition();
         this.page = page;
         if (page == DialoguePage.SKILLS && previousPage != DialoguePage.SKILLS) {
             this.experimentalSkillsAnimationStartMillis = Util.getMillis();
@@ -1168,6 +1192,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.experimentalSkillsExitStartMillis = Util.getMillis();
         }
         rebuildOptions();
+        restoreRememberedPageOptionListPosition(page);
     }
 
     private void clearSelectedSkillDetails() {

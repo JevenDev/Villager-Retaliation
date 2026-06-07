@@ -483,6 +483,7 @@
   "villagerretaliation.gui.recruit.work_vertical_down": "Decrease Vertical Range",
   "villagerretaliation.gui.recruit.work_assigned_supplies": "Use Assigned Supplies",
   "villagerretaliation.gui.recruit.work_auto_deposit": "Auto-Deposit Outputs",
+  "villagerretaliation.gui.recruit.work_config_combat": "Configure Combat",
   "villagerretaliation.gui.recruit.work_config_logging": "Configure Logging",
   "villagerretaliation.gui.recruit.work_config_farming": "Configure Farming",
   "villagerretaliation.gui.recruit.work_config_brewing": "Configure Brewing",

@@ -673,6 +673,7 @@ public final class VillagerInteractionService {
                 "interaction.role_assigned",
                 Map.of("role", role.label())
         );
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
         return true;
     }
 
@@ -682,6 +683,7 @@ public final class VillagerInteractionService {
             Villager villager,
             VillagerRecruitRequestPayload.Action action) {
         HiredVillagerRole configureRole = switch (action) {
+            case CONFIGURE_COMBAT -> HiredVillagerRole.COMBAT;
             case CONFIGURE_LOGGING -> HiredVillagerRole.LOGGING;
             case CONFIGURE_FARMING -> HiredVillagerRole.FARMING;
             case CONFIGURE_BREWING -> HiredVillagerRole.BREWING;

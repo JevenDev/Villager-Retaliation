@@ -615,6 +615,19 @@ public final class VillagerRetaliationHandler {
         anger(villager, attacker, true, true);
     }
 
+    public static boolean engageCustomTarget(Villager villager, LivingEntity target, boolean announceRetaliation) {
+        if (villager == null
+                || target == null
+                || !villager.isAlive()
+                || !target.isAlive()
+                || villager == target
+                || !villager.canAttack(target)) {
+            return false;
+        }
+        anger(villager, target, false, announceRetaliation);
+        return true;
+    }
+
     private static void anger(Villager villager, LivingEntity attacker, boolean allowForcedDialogue, boolean announceRetaliation) {
         if (villager.isBaby()) {
             return;

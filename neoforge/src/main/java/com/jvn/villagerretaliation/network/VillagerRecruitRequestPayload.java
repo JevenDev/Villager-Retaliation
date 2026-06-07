@@ -60,6 +60,7 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
         TOGGLE_WORK_ENABLED,
         TOGGLE_USE_ASSIGNED_SUPPLIES,
         TOGGLE_AUTO_DEPOSIT_OUTPUTS,
+        CONFIGURE_COMBAT,
         CONFIGURE_LOGGING,
         CONFIGURE_FARMING,
         CONFIGURE_BREWING,

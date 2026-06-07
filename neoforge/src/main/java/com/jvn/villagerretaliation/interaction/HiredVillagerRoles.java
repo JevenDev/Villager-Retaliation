@@ -30,7 +30,7 @@ public final class HiredVillagerRoles {
     public static List<HiredVillagerRole> availableRoles(ServerLevel level, Villager villager) {
         EnumSet<HiredVillagerRole> roles = preferredRoles(villager);
         for (HiredVillagerRole role : HiredVillagerRole.values()) {
-            if (roleScore(level, villager, role) >= SKILL_UNLOCK_THRESHOLD) {
+            if (isSkillUnlocked(level, villager, role)) {
                 roles.add(role);
             }
         }
@@ -70,6 +70,17 @@ public final class HiredVillagerRoles {
         return best;
     }
 
+    public static boolean isSkillUnlocked(ServerLevel level, Villager villager, HiredVillagerRole role) {
+        if (!isProfessionEligible(villager, role)) {
+            return false;
+        }
+        return roleScore(level, villager, role) >= SKILL_UNLOCK_THRESHOLD;
+    }
+
+    public static boolean isProfessionPreferred(Villager villager, HiredVillagerRole role) {
+        return preferredRoles(villager).contains(role);
+    }
+
     public static String roleSummary(ServerLevel level, Villager villager) {
         List<HiredVillagerRole> roles = availableRoles(level, villager);
         List<String> labels = roles.stream().map(HiredVillagerRole::label).toList();
@@ -88,5 +99,12 @@ public final class HiredVillagerRoles {
             case "fletcher" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.LOGGING);
             default -> EnumSet.noneOf(HiredVillagerRole.class);
         };
+    }
+
+    private static boolean isProfessionEligible(Villager villager, HiredVillagerRole role) {
+        if (role != HiredVillagerRole.NITWIT) {
+            return true;
+        }
+        return "nitwit".equals(VillagerProfessionSkills.professionKey(villager));
     }
 }
