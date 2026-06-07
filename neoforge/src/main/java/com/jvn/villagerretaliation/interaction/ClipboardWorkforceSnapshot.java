@@ -42,6 +42,7 @@ public record ClipboardWorkforceSnapshot(
             int horizontalRadius,
             int verticalRadius,
             String areaStatus,
+            String workMode,
             int dailyWage,
             boolean inventoryFull,
             boolean unpaid,

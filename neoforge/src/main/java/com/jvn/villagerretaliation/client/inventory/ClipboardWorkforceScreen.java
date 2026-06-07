@@ -56,7 +56,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int SELECTED_FILL = 0x3DA65C2B;
     private static final int ROW_HEIGHT = 11;
     private static final int ROW_OPTION_HEIGHT = 12;
-    private static final int WORKER_ROW_HEIGHT = 56;
+    private static final int WORKER_ROW_HEIGHT = 66;
     private static final int WRAPPED_LINE_STEP = 9;
     private static final int HEADER_DIVIDER_Y = 10;
     private static final int HEADER_ROW_START_OFFSET = 14;
@@ -371,6 +371,9 @@ public final class ClipboardWorkforceScreen extends Screen {
         if (!worker.target().isBlank()) {
             lineY = drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_target", Component.literal(worker.target())), CONTENT_LEFT, lineY, MUTED);
         }
+        if (!worker.workMode().isBlank()) {
+            lineY = drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_mode", Component.literal(worker.workMode())), CONTENT_LEFT, lineY, MUTED);
+        }
         return drawWrappedLines(graphics, workerStorageText(worker), CONTENT_LEFT, lineY + 1, worker.noStorage() ? WARNING : MUTED);
     }
 
@@ -379,6 +382,9 @@ public final class ClipboardWorkforceScreen extends Screen {
         lineY += wrappedLineCount(Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area", workerAreaText(worker))) * WRAPPED_LINE_STEP;
         if (!worker.target().isBlank()) {
             lineY += wrappedLineCount(Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_target", Component.literal(worker.target()))) * WRAPPED_LINE_STEP;
+        }
+        if (!worker.workMode().isBlank()) {
+            lineY += wrappedLineCount(Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_mode", Component.literal(worker.workMode()))) * WRAPPED_LINE_STEP;
         }
         return lineY + 1 + wrappedLineCount(workerStorageText(worker)) * WRAPPED_LINE_STEP;
     }
@@ -444,6 +450,17 @@ public final class ClipboardWorkforceScreen extends Screen {
                 y,
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_center_villager"),
                 ClipboardWorkAreaActionPayload.Action.RESET_CENTER_TO_VILLAGER);
+        if (this.selectedWorker.role() == HiredVillagerRole.MINING) {
+            y = drawJobSiteActionRow(
+                    graphics,
+                    mouseX,
+                    mouseY,
+                    y,
+                    Component.translatable(
+                            "villagerretaliation.gui.clipboard_workforce.job_site_configure_mining",
+                            Component.literal(this.selectedWorker.workMode())),
+                    ClipboardWorkAreaActionPayload.Action.CONFIGURE_ROLE);
+        }
         y = drawJobSiteDirectionRow(
                 graphics,
                 mouseX,

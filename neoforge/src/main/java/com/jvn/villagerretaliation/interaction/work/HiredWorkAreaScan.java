@@ -24,7 +24,7 @@ final class HiredWorkAreaScan {
         List<BlockPos> candidates = new ArrayList<>();
 
         while (visited < totalPositions && visited < safeMaxPositions) {
-            BlockPos pos = positionAt(context.workMin(), sizeX, sizeY, index);
+            BlockPos pos = positionAt(context.workMin(), context.workMax(), sizeX, sizeZ, index);
             if (candidateFilter.test(pos)) {
                 candidates.add(pos);
             }
@@ -49,12 +49,12 @@ final class HiredWorkAreaScan {
         context.state().remove(cursorTag);
     }
 
-    private static BlockPos positionAt(BlockPos min, int sizeX, int sizeY, long index) {
+    private static BlockPos positionAt(BlockPos min, BlockPos max, int sizeX, int sizeZ, long index) {
         int xOffset = (int) (index % sizeX);
-        long yzIndex = index / sizeX;
-        int yOffset = (int) (yzIndex % sizeY);
-        int zOffset = (int) (yzIndex / sizeY);
-        return new BlockPos(min.getX() + xOffset, min.getY() + yOffset, min.getZ() + zOffset);
+        long zyIndex = index / sizeX;
+        int zOffset = (int) (zyIndex % sizeZ);
+        int yOffset = (int) (zyIndex / sizeZ);
+        return new BlockPos(min.getX() + xOffset, max.getY() - yOffset, min.getZ() + zOffset);
     }
 
     record Result(List<BlockPos> candidates, long visitedPositions, boolean completedFullPass) {

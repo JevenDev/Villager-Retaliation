@@ -648,6 +648,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     protected void damageTool(HiredWorkContext context, Villager villager, ItemStack tool) {
         if (!tool.isEmpty() && tool.isDamageableItem()) {
             tool.hurtAndBreak(1, villager, EquipmentSlot.MAINHAND);
+            context.inventory().syncMainHandEquipment();
             context.inventory().setChanged();
         }
     }

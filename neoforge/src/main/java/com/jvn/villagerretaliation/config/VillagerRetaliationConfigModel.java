@@ -342,8 +342,8 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean enableHiredWorkSkillGrowth = true;
 
-        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
-        public double hiredWorkSkillGrowthAmount = 0.2D;
+        @Nest
+        public HiredWorkSkillGrowth hiredWorkSkillGrowth = new HiredWorkSkillGrowth();
 
         @RangeConstraint(min = 0, max = 16)
         public int hiredWorkFoodCostCombat = 2;
@@ -368,6 +368,32 @@ public final class VillagerRetaliationConfigModel {
 
         @RangeConstraint(min = 0, max = 16)
         public int hiredWorkFoodCostNitwit = 1;
+    }
+
+    public static final class HiredWorkSkillGrowth {
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double combat = 0.2D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double mining = 0.1D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double logging = 0.2D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double farming = 0.2D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double brewing = 0.2D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double navigation = 0.2D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double animalHandling = 0.2D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double nitwit = 0.2D;
     }
 
     public static final class Retaliation {

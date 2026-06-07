@@ -14,7 +14,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "19";
+    private static final String PROTOCOL_VERSION = "21";
 
     private VillagerReputationNetworking() {
     }
@@ -116,6 +116,12 @@ public final class VillagerReputationNetworking {
                 ClipboardWorkAreaSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
                 "accept"
+        );
+        network.safePlayToClientThreaded(
+                HiredDebugPreviewSyncPayload.TYPE,
+                HiredDebugPreviewSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
+                "acceptDebugPreview"
         );
         network.safePlayToClientThreaded(
                 ClipboardWorkforceSyncPayload.TYPE,

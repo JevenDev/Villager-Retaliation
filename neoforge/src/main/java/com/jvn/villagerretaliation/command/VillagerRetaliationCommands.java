@@ -5,6 +5,7 @@ import static net.minecraft.commands.Commands.literal;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
@@ -221,8 +222,62 @@ public final class VillagerRetaliationCommands {
     private static LiteralArgumentBuilder<CommandSourceStack> hiredDebugCommands() {
         return literal("hired")
                 .then(literal("debug")
+                        .then(literal("previews")
+                                .then(literal("toggle")
+                                        .executes(context -> toggleHiredDebugPreviews(context, HiredDebugPreviewService.DEFAULT_RADIUS))
+                                        .then(argument("radius", DoubleArgumentType.doubleArg(1.0D, HiredDebugPreviewService.MAX_RADIUS))
+                                                .executes(context -> toggleHiredDebugPreviews(
+                                                        context,
+                                                        DoubleArgumentType.getDouble(context, "radius")))))
+                                .then(literal("on")
+                                        .executes(context -> setHiredDebugPreviews(context, true, HiredDebugPreviewService.DEFAULT_RADIUS))
+                                        .then(argument("radius", DoubleArgumentType.doubleArg(1.0D, HiredDebugPreviewService.MAX_RADIUS))
+                                                .executes(context -> setHiredDebugPreviews(
+                                                        context,
+                                                        true,
+                                                        DoubleArgumentType.getDouble(context, "radius")))))
+                                .then(literal("off")
+                                        .executes(context -> setHiredDebugPreviews(context, false, HiredDebugPreviewService.DEFAULT_RADIUS))))
                         .then(targetArgument()
                                 .executes(VillagerRetaliationCommands::debugHiredWork)));
+    }
+
+    private static int toggleHiredDebugPreviews(CommandContext<CommandSourceStack> context, double radius) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so nearby hired villagers can be previewed."));
+            return 0;
+        }
+        HiredDebugPreviewService.DebugPreviewSummary summary = HiredDebugPreviewService.toggle(player, radius);
+        sendHiredDebugPreviewSummary(source, summary);
+        return summary.enabled() ? 1 : 0;
+    }
+
+    private static int setHiredDebugPreviews(CommandContext<CommandSourceStack> context, boolean enabled, double radius) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so nearby hired villagers can be previewed."));
+            return 0;
+        }
+        HiredDebugPreviewService.DebugPreviewSummary summary = HiredDebugPreviewService.setEnabled(player, enabled, radius);
+        sendHiredDebugPreviewSummary(source, summary);
+        return summary.enabled() ? 1 : 0;
+    }
+
+    private static void sendHiredDebugPreviewSummary(CommandSourceStack source, HiredDebugPreviewService.DebugPreviewSummary summary) {
+        if (!summary.enabled()) {
+            source.sendSuccess(() -> Component.literal("Hired debug previews disabled."), false);
+            return;
+        }
+        source.sendSuccess(() -> Component.literal("Hired debug previews enabled within "
+                + (int) Math.round(summary.radius())
+                + " blocks: "
+                + summary.villagers()
+                + " hired villagers, "
+                + summary.workAreas()
+                + " job sites, "
+                + summary.storage()
+                + " containers."), false);
     }
 
     private static int debugHiredWork(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

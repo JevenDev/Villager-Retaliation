@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.0.0-beta.13 - 2026-06-07
+
+Beta.13 is the Hired Help update. It expands recruitment into a full hired-worker system with contracts, roles, storage, work areas, wallets, payment tooling, and broader workforce behavior support after beta.12.
+
+### Added
+
+- Added hired villager contracts with duration selection, hired-role selection, daily pricing, early-end refunds, and dedicated interaction submenus so recruited villagers can be managed as paid helpers instead of simple followers.
+- Added clipboard-based hired storage management with assigned storage tracking, protected job inventory handling, clipboard-specific villager actions, storage syncing, and world-space storage outlines for worker logistics.
+- Added split villager inventory management with separate Personal and Job views, dedicated job equipment and storage slots, and safeguards for preserving displaced equipment when hired workers swap or restore gear.
+- Added persistent villager wallets, deposited-earnings tracking, wallet UI, wallet-capacity tuning, and an optional unlimited-wallet config for servers that do not want worker savings capped.
+- Added data-driven currency resources under `data/villagerretaliation/currency/`, making wallet labels, default trade currency, refunds, deposits, payment-box behavior, and other hire/trade payments configurable instead of hardcoded to emerald only.
+- Added payment boxes with block, menu, screen, recipe, loot-table, and currency-tag support, plus auto-payment handling for depositing worker pay and other configured currency items.
+- Added hired work sessions, work plans, worker registry/focus tracking, bounded work-area assignment, and profession-linked hired roles for Combat, Mining, Logging, Farming, Brewing, Navigation, Animal Handling, and Nitwit work.
+- Added hired combat-role support with combat worker behavior and multiple combat modes for guarding, roaming, sweeping the area for non-villager threats, or hunting animals inside an assigned work zone.
+- Added hired-work role scoring and optional skill growth so worker efficiency and role unlocks reflect a villager's actual skill profile and can improve gradually through paid work.
+- Added clipboard workforce UI pages with synced workforce snapshots, overview/status views, warnings, and in-game management for hired villagers and their assigned workspaces.
+- Added Stay Here recruit behavior so a recruited villager can hold position when ordered, instead of only following the player.
+- Added `enableOppositeGenderBreedingRules` so packs and servers can require opposite-gender pairing for villager breeding when desired.
+
+### Changed
+
+- Expanded recruitment from beta.11/beta.12's simpler follow-and-inventory flow into a contract-driven hired-help system with role, duration, job inventory, assigned storage, work-area, and workforce-management support surfaced directly in the interaction UI.
+- Villager trades, wallet deposits, payment boxes, villager drops, and other currency-sensitive systems now read from the shared currency resource and `villagerretaliation:currency` item tag instead of assuming an emerald-only economy.
+- Recruited worker behavior now stays more tightly bound to assigned work areas, persists hired/work state across level transitions, and recovers more safely when work sessions end or world state changes.
+- Clipboard and workforce screens received a broader usability pass across layout, pagination, row spacing, warning visibility, text bounds, and keyboard-aware row selection so larger hired-worker lists stay manageable.
+- The villager interaction and merchant presentation now better reflect beta.13 systems, including hired-role support in the interaction UI, synced name-tag config, and extended merchant background rendering for the expanded trade-leveling display.
+- The `despised` reputation threshold now defaults to `-400`, making the most hostile reputation tier easier to reach than in older betas.
+- Stay Here commands are now gated by trust, so suspicious or hostile players cannot lock recruited villagers in place.
+
+### Fixed
+
+- Fixed duplicate villager and wandering-trader skill trades caused by repeated registration against mutable or previously registered trade pools.
+- Fixed interaction-screen layout, hit detection, and tooltip positioning issues across non-default UI scale and text-scale settings.
+- Fixed adjusted trade-level XP desync between server-side villager leveling and the merchant screen, including result-slot and trade-refresh flows that previously bypassed the updated display.
+- Fixed displaced or swapped hired-worker equipment being lost, mixed into the wrong inventory context, or restored unsafely when job gear changed.
+- Fixed several hired-worker stability issues around navigation, task cleanup, deposit logic, work-area scans, and session persistence so workers are less likely to wander incorrectly, stall, or keep stale work state.
+
 ## 1.0.0-beta.12-hotfix.2 - 2026-06-06
 
 Beta.12-hotfix.2 expands the beta.13 follow-up with broader gender support, new Village Supply quest content, operator gender correction tooling, and refined skill-based villager trade leveling with synced merchant-screen feedback.

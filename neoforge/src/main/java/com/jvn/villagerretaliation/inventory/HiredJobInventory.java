@@ -277,6 +277,11 @@ public final class HiredJobInventory implements Container {
         return selected;
     }
 
+    public void syncMainHandEquipment() {
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, EquipmentSlot.MAINHAND, this.items.get(MAINHAND_SLOT));
+        setChanged();
+    }
+
     public int consumeSupply(Predicate<ItemStack> predicate, int count) {
         int remaining = Math.max(0, count);
         if (remaining <= 0) {

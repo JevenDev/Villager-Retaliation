@@ -690,6 +690,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.work_assigned_supplies", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES));
         addOption("recruit.work_auto_deposit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS));
         addRoleWorkConfigOption(HiredVillagerRole.COMBAT, "recruit.work_config_combat", VillagerRecruitRequestPayload.Action.CONFIGURE_COMBAT);
+        addRoleWorkConfigOption(HiredVillagerRole.MINING, "recruit.work_config_mining", VillagerRecruitRequestPayload.Action.CONFIGURE_MINING);
         addRoleWorkConfigOption(HiredVillagerRole.LOGGING, "recruit.work_config_logging", VillagerRecruitRequestPayload.Action.CONFIGURE_LOGGING);
         addRoleWorkConfigOption(HiredVillagerRole.FARMING, "recruit.work_config_farming", VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING);
         addRoleWorkConfigOption(HiredVillagerRole.BREWING, "recruit.work_config_brewing", VillagerRecruitRequestPayload.Action.CONFIGURE_BREWING);

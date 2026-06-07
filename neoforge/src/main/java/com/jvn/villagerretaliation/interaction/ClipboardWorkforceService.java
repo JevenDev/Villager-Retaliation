@@ -94,6 +94,7 @@ public final class ClipboardWorkforceService {
                         session.area().horizontalRadius(),
                         session.area().verticalRadius(),
                         session.area().usable() ? "center" : "missing",
+                        workModeText(role, session.state()),
                         dailyWage,
                         inventoryFull,
                         unpaid,
@@ -196,6 +197,14 @@ public final class ClipboardWorkforceService {
             return HiredWorkerBrain.formatPos(brain.storageTargetPos());
         }
         return "";
+    }
+
+    private static String workModeText(HiredVillagerRole role, net.minecraft.nbt.CompoundTag state) {
+        return switch (role) {
+            case MINING -> HiredMiningMode.fromState(state).label();
+            case COMBAT -> HiredCombatMode.fromState(state).label();
+            default -> "";
+        };
     }
 
     private static void addWarning(Map<WarningKey, Integer> warnings, WarningType type, HiredVillagerRole role, boolean active) {

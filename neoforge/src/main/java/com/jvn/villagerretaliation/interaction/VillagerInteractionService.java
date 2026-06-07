@@ -462,6 +462,7 @@ public final class VillagerInteractionService {
             case SET_CENTER_HERE -> HiredVillagerWorkService.setWorkCenterHere(player, level, villager);
             case RESET_CENTER_TO_VILLAGER -> HiredVillagerWorkService.resetWorkCenterToVillager(player, level, villager);
             case PREVIEW -> HiredVillagerWorkService.previewWorkArea(player, level, villager);
+            case CONFIGURE_ROLE -> HiredVillagerWorkService.configureRole(player, level, villager, HiredVillagerContractService.activeRole(level, villager));
             case INCREASE_HORIZONTAL_RANGE -> HiredVillagerWorkService.changeRadius(player, level, villager, 4 * stepCount);
             case DECREASE_HORIZONTAL_RANGE -> HiredVillagerWorkService.changeRadius(player, level, villager, -4 * stepCount);
             case INCREASE_VERTICAL_RANGE -> HiredVillagerWorkService.changeVerticalRadius(player, level, villager, 2 * stepCount);
@@ -504,7 +505,7 @@ public final class VillagerInteractionService {
                     EXPAND_DOWN,
                     CONTRACT_UP,
                     CONTRACT_DOWN -> true;
-            case PREVIEW -> false;
+            case PREVIEW, CONFIGURE_ROLE -> false;
         };
     }
 
@@ -684,6 +685,7 @@ public final class VillagerInteractionService {
             VillagerRecruitRequestPayload.Action action) {
         HiredVillagerRole configureRole = switch (action) {
             case CONFIGURE_COMBAT -> HiredVillagerRole.COMBAT;
+            case CONFIGURE_MINING -> HiredVillagerRole.MINING;
             case CONFIGURE_LOGGING -> HiredVillagerRole.LOGGING;
             case CONFIGURE_FARMING -> HiredVillagerRole.FARMING;
             case CONFIGURE_BREWING -> HiredVillagerRole.BREWING;

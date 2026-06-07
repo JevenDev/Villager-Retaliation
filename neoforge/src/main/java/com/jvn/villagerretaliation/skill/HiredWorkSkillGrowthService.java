@@ -37,7 +37,7 @@ public final class HiredWorkSkillGrowthService {
             return;
         }
 
-        double amount = Math.max(0.0D, VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_AMOUNT.get());
+        double amount = roleGrowthAmount(role);
         if (amount <= 0.0D) {
             return;
         }
@@ -113,6 +113,20 @@ public final class HiredWorkSkillGrowthService {
             workState.put(PROGRESS_TAG, new CompoundTag());
         }
         return workState.getCompound(PROGRESS_TAG);
+    }
+
+    private static double roleGrowthAmount(HiredVillagerRole role) {
+        double amount = switch (role) {
+            case COMBAT -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_COMBAT.get();
+            case MINING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.get();
+            case LOGGING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_LOGGING.get();
+            case FARMING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_FARMING.get();
+            case BREWING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_BREWING.get();
+            case NAVIGATION -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NAVIGATION.get();
+            case ANIMAL_HANDLING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_ANIMAL_HANDLING.get();
+            case NITWIT -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NITWIT.get();
+        };
+        return Math.max(0.0D, amount);
     }
 
     private static void sendFeedback(ServerPlayer player, Villager villager, VillagerSkill skill) {

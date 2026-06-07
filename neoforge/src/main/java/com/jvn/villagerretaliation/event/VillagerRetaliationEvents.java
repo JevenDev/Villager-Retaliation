@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
@@ -114,6 +115,7 @@ public final class VillagerRetaliationEvents {
         HiredOreBlockTracker.clearRuntimeState();
         VillagerTradeMemory.clearRuntimeState();
         VillagerSocialGraphService.clearRuntimeState();
+        HiredDebugPreviewService.clearRuntimeState();
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -219,6 +221,7 @@ public final class VillagerRetaliationEvents {
             VillagerReputationAdvancements.onPlayerTick(player);
             VillagerRecruitmentService.onPlayerTick(player);
             VillagerQuestService.onPlayerTick(player);
+            HiredDebugPreviewService.onPlayerTick(player);
             return;
         }
         if (entity instanceof Villager villager) {

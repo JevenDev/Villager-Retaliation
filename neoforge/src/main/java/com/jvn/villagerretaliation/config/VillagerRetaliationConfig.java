@@ -120,7 +120,14 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> HIRED_WORK_MINIMUM_EFFICIENCY_PERCENT = bind("balance.hiredWorkMinimumEfficiencyPercent", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT = bind("balance.hiredWorkMaximumEfficiencyPercent", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_HIRED_WORK_SKILL_GROWTH = bind("balance.enableHiredWorkSkillGrowth", Boolean.class);
-    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_AMOUNT = bind("balance.hiredWorkSkillGrowthAmount", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_COMBAT = bind("balance.hiredWorkSkillGrowth.combat", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_MINING = bind("balance.hiredWorkSkillGrowth.mining", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_LOGGING = bind("balance.hiredWorkSkillGrowth.logging", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_FARMING = bind("balance.hiredWorkSkillGrowth.farming", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_BREWING = bind("balance.hiredWorkSkillGrowth.brewing", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_NAVIGATION = bind("balance.hiredWorkSkillGrowth.navigation", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_ANIMAL_HANDLING = bind("balance.hiredWorkSkillGrowth.animalHandling", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_NITWIT = bind("balance.hiredWorkSkillGrowth.nitwit", Double.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_COMBAT = bind("balance.hiredWorkFoodCostCombat", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_MINING = bind("balance.hiredWorkFoodCostMining", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_LOGGING = bind("balance.hiredWorkFoodCostLogging", Integer.class);

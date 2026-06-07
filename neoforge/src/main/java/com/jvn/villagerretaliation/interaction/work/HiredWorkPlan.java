@@ -19,7 +19,7 @@ public final class HiredWorkPlan {
     private HiredWorkPlan() {
     }
 
-    static void clear(HiredWorkContext context) {
+    public static void clear(HiredWorkContext context) {
         context.state().remove(PLAN_TARGETS_TAG);
         context.state().remove(PLAN_OBJECTIVE_TYPE_TAG);
         context.state().remove(PLAN_OBJECTIVE_ANCHOR_TAG);
