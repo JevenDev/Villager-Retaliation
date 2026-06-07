@@ -161,7 +161,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             prepareBreakingTarget(level, context, villager, nextTarget);
             setMiningState(context, MiningState.PATH_TO_TARGET);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, nextTarget.blockPos());
-            return WorkResult.progressed("That ore is mined out, and I am moving on to the next exposed vein.");
+            return WorkResult.skilledProgress("That ore is mined out, and I am moving on to the next exposed vein.");
         }
 
         clearMiningAnchor(context);
@@ -171,14 +171,14 @@ public final class MiningWorker extends AbstractBlockWorker {
                 : MiningState.WAITING_NO_TARGETS);
         if (depositResult == DepositResult.MOVING) {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-            return WorkResult.progressed("I have gathered the ore and am taking it to storage.");
+            return WorkResult.skilledProgress("I have gathered the ore and am taking it to storage.");
         }
         if (roamInsideWorkArea(level, villager, context, 0.4D)) {
-            return WorkResult.progressed("I have gathered what I could, and I am searching the area for more ore.");
+            return WorkResult.skilledProgress("I have gathered what I could, and I am searching the area for more ore.");
         }
         setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
         ensureNoTargetScanCooldown(level, context);
-        return WorkResult.progressed(depositResult == DepositResult.DEPOSITED
+        return WorkResult.completed(depositResult == DepositResult.DEPOSITED
                 ? "I mined the ore, gathered it, and put it away."
                 : "I mined the ore and gathered it, but there is no other exposed vein nearby.");
     }

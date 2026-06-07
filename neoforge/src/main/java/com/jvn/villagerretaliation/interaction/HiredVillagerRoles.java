@@ -63,11 +63,27 @@ public final class HiredVillagerRoles {
     }
 
     public static int roleScore(ServerLevel level, Villager villager, HiredVillagerRole role) {
-        int best = 0;
-        for (VillagerSkill skill : ROLE_SKILLS.getOrDefault(role, List.of())) {
-            best = Math.max(best, VillagerProfileManager.getSkill(level, villager, skill));
+        List<VillagerSkill> skills = roleSkills(role);
+        if (skills.isEmpty()) {
+            return 0;
         }
-        return best;
+
+        int total = 0;
+        int lowest = 100;
+        int highest = 0;
+        for (VillagerSkill skill : skills) {
+            int value = VillagerProfileManager.getSkill(level, villager, skill);
+            total += value;
+            lowest = Math.min(lowest, value);
+            highest = Math.max(highest, value);
+        }
+
+        int average = Math.round(total / (float) skills.size());
+        return Math.round(average * 0.7F + lowest * 0.2F + highest * 0.1F);
+    }
+
+    public static List<VillagerSkill> roleSkills(HiredVillagerRole role) {
+        return ROLE_SKILLS.getOrDefault(role, List.of());
     }
 
     public static boolean isSkillUnlocked(ServerLevel level, Villager villager, HiredVillagerRole role) {

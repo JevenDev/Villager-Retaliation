@@ -14,7 +14,7 @@ import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
-import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
+import com.jvn.villagerretaliation.skill.HiredWorkSkillGrowthService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -104,6 +104,9 @@ public final class HiredVillagerWorkService {
         handleDailyFood(level, villager, hirer, session);
         WorkResult result = session.worker().tick(level, villager, hirer, session.context());
         setStatus(session.state(), result.status() + " Efficiency: " + session.efficiency() + "%.");
+        if (result.awardsSkillGrowth()) {
+            HiredWorkSkillGrowthService.onWorkCompleted(level, villager, hirer, session.role(), session.state());
+        }
         if (result.completed()) {
             session.state().putLong("NextWorkGameTime", level.getGameTime() + nextTaskCooldownTicks(session.efficiency()));
             maybeNotify(level, villager, hirer, session.state(), result.status(), 20L * 30L);

@@ -313,8 +313,9 @@ Planned focus:
 
 * Hiring villagers
 * Expanded follow behavior
-* Profession-based hired roles
-* Villagers helping with jobs and tasks
+* Hired jobs linked to villager professions and relevant skills
+* Skill-based job efficiency, so a profession match with weak job skills works more slowly
+* Hired work that gradually improves the skills used by that job
 * Better inventory, gear, and equipment support for recruited villagers
 
 ### Beta 14 - Housing and Settlements Update

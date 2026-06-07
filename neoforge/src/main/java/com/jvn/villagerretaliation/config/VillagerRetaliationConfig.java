@@ -119,6 +119,8 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> HIRED_WORK_BASE_EFFICIENCY_PERCENT = bind("balance.hiredWorkBaseEfficiencyPercent", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_MINIMUM_EFFICIENCY_PERCENT = bind("balance.hiredWorkMinimumEfficiencyPercent", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT = bind("balance.hiredWorkMaximumEfficiencyPercent", Integer.class);
+    public static final ConfigValue<Boolean> ENABLE_HIRED_WORK_SKILL_GROWTH = bind("balance.enableHiredWorkSkillGrowth", Boolean.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_AMOUNT = bind("balance.hiredWorkSkillGrowthAmount", Double.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_COMBAT = bind("balance.hiredWorkFoodCostCombat", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_MINING = bind("balance.hiredWorkFoodCostMining", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_LOGGING = bind("balance.hiredWorkFoodCostLogging", Integer.class);

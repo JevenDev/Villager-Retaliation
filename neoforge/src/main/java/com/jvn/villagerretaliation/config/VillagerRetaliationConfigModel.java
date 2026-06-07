@@ -340,6 +340,11 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 1, max = 300)
         public int hiredWorkMaximumEfficiencyPercent = 175;
 
+        public boolean enableHiredWorkSkillGrowth = true;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double hiredWorkSkillGrowthAmount = 0.2D;
+
         @RangeConstraint(min = 0, max = 16)
         public int hiredWorkFoodCostCombat = 2;
 
