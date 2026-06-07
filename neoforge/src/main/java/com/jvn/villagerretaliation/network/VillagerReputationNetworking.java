@@ -256,6 +256,16 @@ public final class VillagerReputationNetworking {
                     )))
         );
         network.playToServer(
+                ClipboardPreviewTogglePayload.TYPE,
+                ClipboardPreviewTogglePayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> com.jvn.villagerretaliation.debug.HiredDebugPreviewService.setEnabled(
+                                player,
+                                payload.enabled(),
+                                com.jvn.villagerretaliation.debug.HiredDebugPreviewService.DEFAULT_RADIUS
+                        )))
+        );
+        network.playToServer(
                 VillagerConversationEndRequestPayload.TYPE,
                 VillagerConversationEndRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->

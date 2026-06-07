@@ -231,6 +231,7 @@ public final class VillagerRetaliationEvents {
             HiredVillagerWorkService.onVillagerTickPost(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerTaskNavigationUtil.tickPathDoors(level, villager);
+                VillagerTaskNavigationUtil.tickPathLadders(level, villager);
             }
             rememberWeatherEventNearVillager(villager);
             if (villager.level() instanceof ServerLevel level) {

@@ -17,6 +17,7 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -24,10 +25,14 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public final class VillagerTaskNavigationUtil {
     private static final double DOOR_REACH_DISTANCE = 2.25D;
     private static final double DOOR_REACH_DISTANCE_SQR = DOOR_REACH_DISTANCE * DOOR_REACH_DISTANCE;
+    private static final double LADDER_CENTERING_DISTANCE_SQR = 0.36D;
+    private static final double LADDER_HORIZONTAL_TARGET_DISTANCE_SQR = 2.25D;
+    private static final double LADDER_CLIMB_SPEED = 0.18D;
     private static final Map<UUID, Set<GlobalPos>> DOORS_TO_CLOSE = new HashMap<>();
 
     private VillagerTaskNavigationUtil() {
@@ -52,6 +57,45 @@ public final class VillagerTaskNavigationUtil {
             openDoorAtPathNode(level, villager, nextNode);
         }
         closeRememberedDoors(level, villager, previousNode, nextNode);
+    }
+
+    public static void tickPathLadders(ServerLevel level, Villager villager) {
+        BlockPos target = villager.getNavigation().getTargetPos();
+        if (target != null) {
+            moveOnLadderToward(level, villager, target, 0.45D);
+        }
+    }
+
+    public static boolean moveOnLadderToward(ServerLevel level, Villager villager, BlockPos target, double speed) {
+        if (target == null) {
+            return false;
+        }
+        BlockPos ladder = ladderTouching(level, villager.blockPosition());
+        if (ladder == null) {
+            return false;
+        }
+        double targetDx = (target.getX() + 0.5D) - (ladder.getX() + 0.5D);
+        double targetDz = (target.getZ() + 0.5D) - (ladder.getZ() + 0.5D);
+        if (targetDx * targetDx + targetDz * targetDz > LADDER_HORIZONTAL_TARGET_DISTANCE_SQR) {
+            return false;
+        }
+        double centerX = ladder.getX() + 0.5D;
+        double centerZ = ladder.getZ() + 0.5D;
+        double dx = centerX - villager.getX();
+        double dz = centerZ - villager.getZ();
+        if (dx * dx + dz * dz > LADDER_CENTERING_DISTANCE_SQR) {
+            villager.getMoveControl().setWantedPosition(centerX, villager.getY(), centerZ, speed);
+            return true;
+        }
+        double yDelta = target.getY() + 0.1D - villager.getY();
+        if (Math.abs(yDelta) < 0.08D) {
+            return false;
+        }
+        double climb = Math.clamp(yDelta, -LADDER_CLIMB_SPEED, LADDER_CLIMB_SPEED);
+        Vec3 motion = villager.getDeltaMovement();
+        villager.setDeltaMovement(motion.x * 0.65D, climb, motion.z * 0.65D);
+        villager.setOnGround(false);
+        return true;
     }
 
     public static void clearRuntimeState() {
@@ -111,6 +155,21 @@ public final class VillagerTaskNavigationUtil {
         if (doors.isEmpty()) {
             DOORS_TO_CLOSE.remove(villager.getUUID());
         }
+    }
+
+    private static BlockPos ladderTouching(ServerLevel level, BlockPos pos) {
+        if (level.hasChunkAt(pos) && level.getBlockState(pos).is(Blocks.LADDER)) {
+            return pos;
+        }
+        BlockPos above = pos.above();
+        if (level.hasChunkAt(above) && level.getBlockState(above).is(Blocks.LADDER)) {
+            return above;
+        }
+        BlockPos below = pos.below();
+        if (level.hasChunkAt(below) && level.getBlockState(below).is(Blocks.LADDER)) {
+            return below;
+        }
+        return null;
     }
 
     private static boolean isCurrentPathNode(BlockPos pos, Node node) {

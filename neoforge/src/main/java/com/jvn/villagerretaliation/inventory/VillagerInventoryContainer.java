@@ -197,6 +197,10 @@ final class VillagerInventoryContainer implements Container {
         setChanged();
     }
 
+    void refreshFromVillager() {
+        loadInventory();
+    }
+
     static boolean isArmorSlot(int slot) {
         return slot >= 0 && slot < ARMOR_SLOT_COUNT;
     }

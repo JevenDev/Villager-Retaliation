@@ -33,8 +33,8 @@ import org.joml.Matrix4f;
 public final class ClipboardStorageOutlineRenderer {
     private static final int SELECTED_COLOR = 0xFF3FA7FF;
     private static final int ASSIGNED_COLOR = 0xFFFFD54A;
-    private static final int PAYMENT_COLOR = 0xFF46E06E;
-    private static final int WORK_AREA_COLOR = 0xFF65D889;
+    private static final int PAYMENT_COLOR = 0xFF3FA7FF;
+    private static final int WORK_AREA_COLOR = 0xFFFF4A3F;
     private static final int WORK_AREA_CENTER_COLOR = 0xFFFFF176;
     private static final int WORK_AREA_CORNER_COLOR = 0xFFFF8A65;
     private static final List<OutlinedStoragePosition> ASSIGNED_POSITIONS = new ArrayList<>();
@@ -45,6 +45,9 @@ public final class ClipboardStorageOutlineRenderer {
     private static long workAreasVisibleUntilGameTime;
     private static long debugPreviewVisibleUntilGameTime;
     private static boolean debugPreviewEnabled;
+    private static boolean nearbyWorkAreaPreviewsEnabled;
+    private static boolean nearbyStoragePreviewsEnabled;
+    private static boolean nearbyPaymentPreviewsEnabled;
 
     private ClipboardStorageOutlineRenderer() {
     }
@@ -104,7 +107,15 @@ public final class ClipboardStorageOutlineRenderer {
             debugPreviewEnabled = payload.enabled();
             if (minecraft.level == null || !payload.enabled()) {
                 debugPreviewVisibleUntilGameTime = 0L;
+                nearbyWorkAreaPreviewsEnabled = false;
+                nearbyStoragePreviewsEnabled = false;
+                nearbyPaymentPreviewsEnabled = false;
                 return;
+            }
+            if (!anyNearbyPreviewEnabled()) {
+                nearbyWorkAreaPreviewsEnabled = true;
+                nearbyStoragePreviewsEnabled = true;
+                nearbyPaymentPreviewsEnabled = true;
             }
             for (HiredDebugPreviewSyncPayload.WorkAreaEntry entry : payload.workAreas()) {
                 DEBUG_WORK_AREAS.add(new WorkAreaPosition(
@@ -143,6 +154,9 @@ public final class ClipboardStorageOutlineRenderer {
             DEBUG_ASSIGNED_POSITIONS.clear();
             DEBUG_WORK_AREAS.clear();
             debugPreviewEnabled = false;
+            nearbyWorkAreaPreviewsEnabled = false;
+            nearbyStoragePreviewsEnabled = false;
+            nearbyPaymentPreviewsEnabled = false;
             return;
         }
 
@@ -181,24 +195,67 @@ public final class ClipboardStorageOutlineRenderer {
     }
 
     private static void renderDebugPreview(RenderLevelStageEvent event, Minecraft minecraft) {
-        if (!debugPreviewEnabled) {
+        if (!debugPreviewEnabled || !anyNearbyPreviewEnabled()) {
             return;
         }
         if (minecraft.level.getGameTime() > debugPreviewVisibleUntilGameTime) {
             DEBUG_WORK_AREAS.clear();
             DEBUG_ASSIGNED_POSITIONS.clear();
             debugPreviewEnabled = false;
+            nearbyWorkAreaPreviewsEnabled = false;
+            nearbyStoragePreviewsEnabled = false;
+            nearbyPaymentPreviewsEnabled = false;
             return;
         }
-        renderWorkAreas(event, DEBUG_WORK_AREAS, WORK_AREA_COLOR);
-        renderAssignedPositions(event, DEBUG_ASSIGNED_POSITIONS);
-        renderDebugLabels(event, DEBUG_WORK_AREAS, DEBUG_ASSIGNED_POSITIONS);
+        if (nearbyWorkAreaPreviewsEnabled) {
+            renderWorkAreas(event, DEBUG_WORK_AREAS, WORK_AREA_COLOR);
+        }
+        renderAssignedPositions(event, DEBUG_ASSIGNED_POSITIONS, nearbyStoragePreviewsEnabled, nearbyPaymentPreviewsEnabled);
+        renderDebugLabels(
+                event,
+                nearbyWorkAreaPreviewsEnabled ? DEBUG_WORK_AREAS : List.of(),
+                DEBUG_ASSIGNED_POSITIONS,
+                nearbyStoragePreviewsEnabled,
+                nearbyPaymentPreviewsEnabled);
+    }
+
+    public static boolean toggleNearbyWorkAreaPreviews() {
+        nearbyWorkAreaPreviewsEnabled = !nearbyWorkAreaPreviewsEnabled;
+        return nearbyWorkAreaPreviewsEnabled;
+    }
+
+    public static boolean toggleNearbyStoragePreviews() {
+        nearbyStoragePreviewsEnabled = !nearbyStoragePreviewsEnabled;
+        return nearbyStoragePreviewsEnabled;
+    }
+
+    public static boolean toggleNearbyPaymentPreviews() {
+        nearbyPaymentPreviewsEnabled = !nearbyPaymentPreviewsEnabled;
+        return nearbyPaymentPreviewsEnabled;
+    }
+
+    public static boolean nearbyWorkAreaPreviewsEnabled() {
+        return nearbyWorkAreaPreviewsEnabled;
+    }
+
+    public static boolean nearbyStoragePreviewsEnabled() {
+        return nearbyStoragePreviewsEnabled;
+    }
+
+    public static boolean nearbyPaymentPreviewsEnabled() {
+        return nearbyPaymentPreviewsEnabled;
+    }
+
+    public static boolean anyNearbyPreviewEnabled() {
+        return nearbyWorkAreaPreviewsEnabled || nearbyStoragePreviewsEnabled || nearbyPaymentPreviewsEnabled;
     }
 
     private static void renderDebugLabels(
             RenderLevelStageEvent event,
             List<WorkAreaPosition> workAreas,
-            List<OutlinedStoragePosition> storagePositions) {
+            List<OutlinedStoragePosition> storagePositions,
+            boolean includeNormalStorage,
+            boolean includePaymentStorage) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
             return;
@@ -214,11 +271,14 @@ public final class ClipboardStorageOutlineRenderer {
             labels.add(new DebugLabelPosition(
                     new Vec3(area.center().getX() + 0.5D, area.max().getY() + 1.35D, area.center().getZ() + 0.5D),
                     area.ownerName(),
-                    area.jobName()
+                    area.jobName(),
+                    WORK_AREA_COLOR
             ));
         }
         for (OutlinedStoragePosition position : storagePositions) {
             if (!position.dimension().equals(currentDimension)
+                    || position.payment() && !includePaymentStorage
+                    || !position.payment() && !includeNormalStorage
                     || position.ownerName().isBlank()
                     || !minecraft.level.hasChunkAt(position.pos())) {
                 continue;
@@ -226,7 +286,8 @@ public final class ClipboardStorageOutlineRenderer {
             labels.add(new DebugLabelPosition(
                     new Vec3(position.pos().getX() + 0.5D, position.pos().getY() + 1.25D, position.pos().getZ() + 0.5D),
                     position.ownerName(),
-                    ""
+                    "",
+                    position.payment() ? PAYMENT_COLOR : ASSIGNED_COLOR
             ));
         }
         renderLabels(event, labels);
@@ -248,9 +309,9 @@ public final class ClipboardStorageOutlineRenderer {
             poseStack.mulPose(minecraft.getEntityRenderDispatcher().cameraOrientation());
             poseStack.scale(0.025F, -0.025F, 0.025F);
             Matrix4f pose = poseStack.last().pose();
-            renderLabelLine(font, bufferSource, pose, label.ownerName(), 0.0F, background);
+            renderLabelLine(font, bufferSource, pose, label.ownerName(), 0.0F, background, label.color());
             if (!label.jobName().isBlank()) {
-                renderLabelLine(font, bufferSource, pose, label.jobName(), font.lineHeight + 1.0F, background);
+                renderLabelLine(font, bufferSource, pose, label.jobName(), font.lineHeight + 1.0F, background, label.color());
             }
             poseStack.popPose();
         }
@@ -263,22 +324,35 @@ public final class ClipboardStorageOutlineRenderer {
             Matrix4f pose,
             String text,
             float y,
-            int background) {
+            int background,
+            int color) {
         Component component = Component.literal(text);
         float x = -font.width(component) / 2.0F;
-        font.drawInBatch(component, x, y, 0xFFDDDDDD, false, pose, bufferSource, Font.DisplayMode.SEE_THROUGH, background, 15728880);
-        font.drawInBatch(component, x, y, 0xFFFFFFFF, false, pose, bufferSource, Font.DisplayMode.NORMAL, 0, 15728880);
+        font.drawInBatch(component, x, y, color, false, pose, bufferSource, Font.DisplayMode.SEE_THROUGH, background, 15728880);
+        font.drawInBatch(component, x, y, color, false, pose, bufferSource, Font.DisplayMode.NORMAL, 0, 15728880);
     }
 
     private static void renderAssignedPositions(RenderLevelStageEvent event, List<OutlinedStoragePosition> positions) {
+        renderAssignedPositions(event, positions, true, true);
+    }
+
+    private static void renderAssignedPositions(
+            RenderLevelStageEvent event,
+            List<OutlinedStoragePosition> positions,
+            boolean includeNormalStorage,
+            boolean includePaymentStorage) {
         List<StoragePosition> normal = new ArrayList<>();
         List<StoragePosition> payment = new ArrayList<>();
         for (OutlinedStoragePosition position : positions) {
             StoragePosition storagePosition = new StoragePosition(position.dimension(), position.pos());
             if (position.payment()) {
-                payment.add(storagePosition);
+                if (includePaymentStorage) {
+                    payment.add(storagePosition);
+                }
             } else {
-                normal.add(storagePosition);
+                if (includeNormalStorage) {
+                    normal.add(storagePosition);
+                }
             }
         }
         renderPositions(event, normal, ASSIGNED_COLOR);
@@ -412,6 +486,6 @@ public final class ClipboardStorageOutlineRenderer {
     private record OutlinedStoragePosition(ResourceKey<Level> dimension, BlockPos pos, boolean payment, String ownerName) {
     }
 
-    private record DebugLabelPosition(Vec3 pos, String ownerName, String jobName) {
+    private record DebugLabelPosition(Vec3 pos, String ownerName, String jobName, int color) {
     }
 }

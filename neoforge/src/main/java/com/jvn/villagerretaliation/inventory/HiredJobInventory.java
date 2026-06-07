@@ -19,7 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 public final class HiredJobInventory implements Container {
-    public static final int SLOT_COUNT = 27;
+    public static final int SLOT_COUNT = 33;
     public static final int MAINHAND_SLOT = 4;
     public static final int OFFHAND_SLOT = 5;
     private static final int ARMOR_SLOT_COUNT = 4;
@@ -83,6 +83,10 @@ public final class HiredJobInventory implements Container {
             }
         }
         inventory.clearContent();
+    }
+
+    public void refreshFromVillager() {
+        load();
     }
 
     @Override
@@ -225,6 +229,44 @@ public final class HiredJobInventory implements Container {
             }
         }
         return slots;
+    }
+
+    public boolean hasOutput(Predicate<ItemStack> predicate) {
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        for (int slot : outputSlots()) {
+            ItemStack stack = this.items.get(slot);
+            if (!stack.isEmpty()
+                    && !ProtectedVillagerProperty.isProtected(stack)
+                    && safePredicate.test(stack)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public ItemStack consumeOutput(Predicate<ItemStack> predicate, int count) {
+        int remaining = Math.max(0, count);
+        if (remaining <= 0) {
+            return ItemStack.EMPTY;
+        }
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        for (int slot : outputSlots()) {
+            ItemStack stack = this.items.get(slot);
+            if (stack.isEmpty()
+                    || ProtectedVillagerProperty.isProtected(stack)
+                    || !safePredicate.test(stack)) {
+                continue;
+            }
+            int removed = Math.min(remaining, stack.getCount());
+            ItemStack consumed = stack.copyWithCount(removed);
+            stack.shrink(removed);
+            if (stack.isEmpty()) {
+                this.items.set(slot, ItemStack.EMPTY);
+            }
+            setChanged();
+            return consumed;
+        }
+        return ItemStack.EMPTY;
     }
 
     public ItemStack findSupply(Predicate<ItemStack> predicate) {
@@ -488,6 +530,10 @@ public final class HiredJobInventory implements Container {
     }
 
     private void load() {
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            this.items.set(slot, ItemStack.EMPTY);
+            this.slotTypes[slot] = defaultType(slot);
+        }
         CompoundTag tag = this.villager.getPersistentData().getCompound(TAG);
         if (tag.isEmpty()) {
             return;
@@ -683,7 +729,7 @@ public final class HiredJobInventory implements Container {
     }
 
     private static HiredJobInventorySlotType defaultType(int slot) {
-        if (slot < 9) {
+        if (equipmentSlotForJobSlot(slot) != null) {
             return HiredJobInventorySlotType.GEAR;
         }
         if (slot < 18) {

@@ -142,6 +142,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     @Override
     public void broadcastChanges() {
+        refreshVillagerInventory();
         super.broadcastChanges();
         holdVillager();
         checkNetheriteAdvancement();
@@ -365,6 +366,17 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         this.villager.getNavigation().stop();
         this.villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         this.villager.getBrain().eraseMemory(MemoryModuleType.PATH);
+    }
+
+    private void refreshVillagerInventory() {
+        if (this.villager == null) {
+            return;
+        }
+        if (this.villagerInventory instanceof HiredJobInventory jobInventory) {
+            jobInventory.refreshFromVillager();
+        } else if (this.villagerInventory instanceof VillagerInventoryContainer personalInventory) {
+            personalInventory.refreshFromVillager();
+        }
     }
 
     private void checkNetheriteAdvancement() {

@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WarningSummary;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerRow;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.network.ClipboardPreviewTogglePayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -118,9 +119,27 @@ public final class ClipboardWorkforceScreen extends Screen {
                 TEXTURE_HEIGHT,
                 TEXTURE_WIDTH,
                 TEXTURE_HEIGHT);
-        renderClipboardTab(graphics, mouseX, mouseY, VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_1_TEXTURE, TAB_1_TOP);
-        renderClipboardTab(graphics, mouseX, mouseY, VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_2_TEXTURE, TAB_2_TOP);
-        renderClipboardTab(graphics, mouseX, mouseY, VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_3_TEXTURE, TAB_3_TOP);
+        renderClipboardTab(
+                graphics,
+                mouseX,
+                mouseY,
+                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_1_TEXTURE,
+                TAB_1_TOP,
+                ClipboardStorageOutlineRenderer.nearbyWorkAreaPreviewsEnabled());
+        renderClipboardTab(
+                graphics,
+                mouseX,
+                mouseY,
+                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_2_TEXTURE,
+                TAB_2_TOP,
+                ClipboardStorageOutlineRenderer.nearbyStoragePreviewsEnabled());
+        renderClipboardTab(
+                graphics,
+                mouseX,
+                mouseY,
+                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_3_TEXTURE,
+                TAB_3_TOP,
+                ClipboardStorageOutlineRenderer.nearbyPaymentPreviewsEnabled());
         graphics.blit(
                 VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_PAPER_TEXTURE,
                 0,
@@ -133,8 +152,14 @@ public final class ClipboardWorkforceScreen extends Screen {
                 TEXTURE_HEIGHT);
     }
 
-    private static void renderClipboardTab(GuiGraphics graphics, double mouseX, double mouseY, ResourceLocation texture, int top) {
-        int left = isClipboardTabHovered(mouseX, mouseY, top) ? TAB_LEFT - TAB_HOVER_OFFSET : TAB_LEFT;
+    private static void renderClipboardTab(
+            GuiGraphics graphics,
+            double mouseX,
+            double mouseY,
+            ResourceLocation texture,
+            int top,
+            boolean active) {
+        int left = active || isClipboardTabHovered(mouseX, mouseY, top) ? TAB_LEFT - TAB_HOVER_OFFSET : TAB_LEFT;
         graphics.blit(
                 texture,
                 left,
@@ -159,6 +184,9 @@ public final class ClipboardWorkforceScreen extends Screen {
         float scale = panelScale();
         double panelMouseX = (mouseX - panelLeft(scale)) / scale;
         double panelMouseY = (mouseY - panelTop(scale)) / scale;
+        if (handleClipboardTabClick(panelMouseX, panelMouseY)) {
+            return true;
+        }
         for (RowAction row : this.rowActions) {
             if (!row.contains(panelMouseX, panelMouseY)) {
                 continue;
@@ -207,6 +235,17 @@ public final class ClipboardWorkforceScreen extends Screen {
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private boolean handleClipboardTabClick(double panelMouseX, double panelMouseY) {
+        ClipboardPreviewTab tab = hoveredPreviewTab(panelMouseX, panelMouseY);
+        if (tab == null) {
+            return false;
+        }
+        playPageSound();
+        tab.toggle();
+        PacketDistributor.sendToServer(new ClipboardPreviewTogglePayload(ClipboardStorageOutlineRenderer.anyNearbyPreviewEnabled()));
+        return true;
     }
 
     @Override
@@ -880,6 +919,11 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private void renderHoveredTooltip(GuiGraphics graphics, int mouseX, int mouseY, double panelMouseX, double panelMouseY) {
+        ClipboardPreviewTab tab = hoveredPreviewTab(panelMouseX, panelMouseY);
+        if (tab != null) {
+            graphics.renderComponentTooltip(this.font, tab.tooltip(), mouseX, mouseY);
+            return;
+        }
         for (RowAction row : this.rowActions) {
             if (row.tooltip().isEmpty() || !row.contains(panelMouseX, panelMouseY)) {
                 continue;
@@ -887,6 +931,15 @@ public final class ClipboardWorkforceScreen extends Screen {
             graphics.renderComponentTooltip(this.font, row.tooltip(), mouseX, mouseY);
             return;
         }
+    }
+
+    private static ClipboardPreviewTab hoveredPreviewTab(double mouseX, double mouseY) {
+        for (ClipboardPreviewTab tab : ClipboardPreviewTab.values()) {
+            if (isClipboardTabHovered(mouseX, mouseY, tab.top())) {
+                return tab;
+            }
+        }
+        return null;
     }
 
     private boolean isJobSitePage() {
@@ -930,6 +983,63 @@ public final class ClipboardWorkforceScreen extends Screen {
         PAYMENT,
         WORKER,
         JOB_SITE_ACTION
+    }
+
+    private enum ClipboardPreviewTab {
+        WORK_AREAS(
+                TAB_1_TOP,
+                "villagerretaliation.gui.clipboard_workforce.preview_tab.work_areas",
+                "villagerretaliation.gui.clipboard_workforce.preview_tab.work_areas.detail",
+                0xFFFF4A3F) {
+            @Override
+            void toggle() {
+                ClipboardStorageOutlineRenderer.toggleNearbyWorkAreaPreviews();
+            }
+        },
+        STORAGE(
+                TAB_2_TOP,
+                "villagerretaliation.gui.clipboard_workforce.preview_tab.storage",
+                "villagerretaliation.gui.clipboard_workforce.preview_tab.storage.detail",
+                0xFFFFD54A) {
+            @Override
+            void toggle() {
+                ClipboardStorageOutlineRenderer.toggleNearbyStoragePreviews();
+            }
+        },
+        PAYMENT(
+                TAB_3_TOP,
+                "villagerretaliation.gui.clipboard_workforce.preview_tab.payment",
+                "villagerretaliation.gui.clipboard_workforce.preview_tab.payment.detail",
+                0xFF3FA7FF) {
+            @Override
+            void toggle() {
+                ClipboardStorageOutlineRenderer.toggleNearbyPaymentPreviews();
+            }
+        };
+
+        private final int top;
+        private final String titleKey;
+        private final String detailKey;
+        private final int titleColor;
+
+        ClipboardPreviewTab(int top, String titleKey, String detailKey, int titleColor) {
+            this.top = top;
+            this.titleKey = titleKey;
+            this.detailKey = detailKey;
+            this.titleColor = titleColor;
+        }
+
+        int top() {
+            return this.top;
+        }
+
+        List<Component> tooltip() {
+            return List.of(
+                    Component.translatable(this.titleKey).withColor(this.titleColor),
+                    Component.translatable(this.detailKey).withStyle(ChatFormatting.GRAY));
+        }
+
+        abstract void toggle();
     }
 
     private record OverviewRow(RowKind kind, HiredVillagerRole role, Component label, String value, boolean muted) {
