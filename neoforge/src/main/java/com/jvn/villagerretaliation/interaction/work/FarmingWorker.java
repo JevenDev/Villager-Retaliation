@@ -20,6 +20,14 @@ public final class FarmingWorker extends AbstractBlockWorker {
     private static final int MAX_CROP_SCAN_POSITIONS_PER_WORK_TICK = 1536;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
     private static final int MAX_PLANNED_CROP_TARGETS = 24;
+    private static final HiredTargetSearch.Messages CROP_SEARCH_MESSAGES = new HiredTargetSearch.Messages(
+            "active_crop_target",
+            "planned_crop_target",
+            "crop_scan_cooldown",
+            "crop_scan_full_no_reachable_targets",
+            "crop_scan_partial_",
+            "crop_target_found",
+            NO_TARGET_SCAN_COOLDOWN_TICKS);
 
     @Override
     public HiredVillagerRole role() {
@@ -123,54 +131,23 @@ public final class FarmingWorker extends AbstractBlockWorker {
     }
 
     private HiredPathTarget findMatureCrop(ServerLevel level, Villager villager, HiredWorkContext context) {
-        HiredPathTarget active = activeWorkTarget(level, context, villager);
-        if (active != null
-                && context.isInsideWorkArea(active.blockPos())
-                && context.isLoaded(level, active.blockPos())
-                && isMatureCrop(level, active.blockPos())) {
-            HiredWorkerBrain.setLastTargetScanResult(context, "active_crop_target");
-            return active;
-        }
-        HiredPathTarget planned = plannedTarget(
+        return HiredTargetSearch.find(
                 level,
-                villager,
                 context,
+                () -> activeWorkTarget(level, context, villager),
+                target -> context.isInsideWorkArea(target.blockPos())
+                        && context.isLoaded(level, target.blockPos())
+                        && isMatureCrop(level, target.blockPos()),
+                filter -> plannedTarget(level, villager, context, filter, MAX_PLANNED_CROP_TARGETS),
                 pos -> context.isInsideWorkArea(pos)
                         && context.isLoaded(level, pos)
                         && isMatureCrop(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos),
-                MAX_PLANNED_CROP_TARGETS);
-        if (planned != null) {
-            HiredWorkerBrain.setLastTargetScanResult(context, "planned_crop_target");
-            return planned;
-        }
-        if (level.getGameTime() < context.state().getLong(NEXT_CROP_SCAN_GAME_TIME_TAG)) {
-            HiredWorkerBrain.setLastTargetScanResult(context, "crop_scan_cooldown");
-            return null;
-        }
-
-        HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
-                context,
+                NEXT_CROP_SCAN_GAME_TIME_TAG,
                 CROP_SCAN_CURSOR_TAG,
                 MAX_CROP_SCAN_POSITIONS_PER_WORK_TICK,
-                pos -> context.isInsideWorkArea(pos)
-                        && context.isLoaded(level, pos)
-                        && isMatureCrop(level, pos)
-                        && !isTemporarilyAvoidedTarget(level, villager, pos));
-        HiredPathTarget target = rebuildCropObjective(level, villager, context, scan.candidates());
-        if (target == null) {
-            if (scan.completedFullPass()) {
-                context.state().putLong(NEXT_CROP_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
-                HiredWorkerBrain.setLastTargetScanResult(context, "crop_scan_full_no_reachable_targets");
-            } else {
-                HiredWorkerBrain.setLastTargetScanResult(context, "crop_scan_partial_" + scan.visitedPositions());
-            }
-        } else {
-            HiredWorkAreaScan.clearCursor(context, CROP_SCAN_CURSOR_TAG);
-            context.state().remove(NEXT_CROP_SCAN_GAME_TIME_TAG);
-            HiredWorkerBrain.setLastTargetScanResult(context, "crop_target_found");
-        }
-        return target;
+                candidates -> rebuildCropObjective(level, villager, context, candidates),
+                CROP_SEARCH_MESSAGES);
     }
 
     private static boolean isCropScanInProgress(HiredWorkContext context) {

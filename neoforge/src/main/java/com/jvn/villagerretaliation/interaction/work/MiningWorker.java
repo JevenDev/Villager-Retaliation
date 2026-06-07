@@ -45,6 +45,14 @@ public final class MiningWorker extends AbstractBlockWorker {
     private static final int MAX_PLANNED_MINING_TARGETS = 20;
     private static final int MAX_EXCAVATION_SCAN_POSITIONS = 768;
     private static final int EXCAVATION_TORCH_LAYER_INTERVAL = 5;
+    private static final HiredTargetSearch.Messages EXCAVATION_SEARCH_MESSAGES = new HiredTargetSearch.Messages(
+            "active_excavation_target",
+            "planned_excavation_target",
+            "excavation_scan_cooldown",
+            "no_targets",
+            "excavation_scan_partial_",
+            "excavation_targets_found",
+            NO_TARGET_SCAN_COOLDOWN_TICKS);
 
     private enum HorizontalAxis {
         X,
@@ -395,32 +403,38 @@ public final class MiningWorker extends AbstractBlockWorker {
     }
 
     private HiredPathTarget resolveExcavationTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
-        HiredPathTarget active = activeExcavationWorkTarget(level, context, villager);
-        if (active != null && isValidExcavationTarget(level, villager, context, active.blockPos())) {
-            return active;
-        }
-        if (storedWorkTarget(context.state()) != null) {
-            clearActiveBreakingTarget(level, context, villager);
-        }
-
-        HiredPathTarget planned = plannedExcavationTarget(
+        return HiredTargetSearch.find(
                 level,
-                villager,
                 context,
+                () -> {
+                    HiredPathTarget active = activeExcavationWorkTarget(level, context, villager);
+                    if (active == null && storedWorkTarget(context.state()) != null) {
+                        clearActiveBreakingTarget(level, context, villager);
+                    }
+                    return active;
+                },
+                target -> isValidExcavationTarget(level, villager, context, target.blockPos()),
+                filter -> {
+                    HiredPathTarget planned = plannedExcavationTarget(
+                            level,
+                            villager,
+                            context,
+                            filter,
+                            MAX_PLANNED_MINING_TARGETS);
+                    if (planned != null) {
+                        setMiningState(context, MiningState.FIND_TARGET);
+                    }
+                    return planned;
+                },
                 pos -> isValidExcavationTarget(level, villager, context, pos),
-                MAX_PLANNED_MINING_TARGETS);
-        if (planned != null) {
-            setMiningState(context, MiningState.FIND_TARGET);
-            return planned;
-        }
-
-        if (!HiredWorkAreaScan.isInProgress(context, EXCAVATION_SCAN_CURSOR_TAG)
-                && level.getGameTime() < context.state().getLong(NEXT_FULL_SCAN_GAME_TIME_TAG)) {
-            return null;
-        }
-
-        setMiningState(context, MiningState.FIND_TARGET);
-        return findNearestExcavationTarget(level, villager, context);
+                NEXT_FULL_SCAN_GAME_TIME_TAG,
+                EXCAVATION_SCAN_CURSOR_TAG,
+                MAX_EXCAVATION_SCAN_POSITIONS,
+                candidates -> {
+                    setMiningState(context, MiningState.FIND_TARGET);
+                    return rebuildExcavationObjective(level, villager, context, candidates);
+                },
+                EXCAVATION_SEARCH_MESSAGES);
     }
 
     private HiredPathTarget findAdjacentMineable(

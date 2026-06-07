@@ -34,6 +34,14 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final int MAX_TREE_PROGRESS_TICKS = 180;
     private static final int MAX_PLANNED_TREE_TARGETS = 12;
     private static final int GROVE_LINK_RADIUS = 6;
+    private static final HiredTargetSearch.Messages TREE_SEARCH_MESSAGES = new HiredTargetSearch.Messages(
+            "active_tree_target",
+            "planned_tree_target",
+            "tree_scan_cooldown",
+            "tree_scan_full_no_reachable_targets",
+            "tree_scan_partial_",
+            "tree_target_found",
+            NO_TARGET_SCAN_COOLDOWN_TICKS);
 
     @Override
     public HiredVillagerRole role() {
@@ -150,55 +158,24 @@ public final class LoggingWorker extends AbstractBlockWorker {
 
     private HiredPathTarget findTreeLog(ServerLevel level, Villager villager, HiredWorkContext context) {
         String filter = context.state().getString("LoggingFilter");
-        HiredPathTarget active = activeWorkTarget(level, context, villager);
-        if (active != null
-                && context.isInsideWorkArea(active.blockPos())
-                && context.isLoaded(level, active.blockPos())
-                && !isTemporarilyAvoidedTarget(level, villager, active.blockPos())
-                && isTreeLog(level, active.blockPos(), filter)) {
-            HiredWorkerBrain.setLastTargetScanResult(context, "active_tree_target");
-            return active;
-        }
-        HiredPathTarget planned = plannedTarget(
+        return HiredTargetSearch.find(
                 level,
-                villager,
                 context,
+                () -> activeWorkTarget(level, context, villager),
+                target -> context.isInsideWorkArea(target.blockPos())
+                        && context.isLoaded(level, target.blockPos())
+                        && !isTemporarilyAvoidedTarget(level, villager, target.blockPos())
+                        && isTreeLog(level, target.blockPos(), filter),
+                candidateFilter -> plannedTarget(level, villager, context, candidateFilter, MAX_PLANNED_TREE_TARGETS),
                 pos -> context.isInsideWorkArea(pos)
                         && context.isLoaded(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos)
                         && isTreeLog(level, pos, filter),
-                MAX_PLANNED_TREE_TARGETS);
-        if (planned != null) {
-            HiredWorkerBrain.setLastTargetScanResult(context, "planned_tree_target");
-            return planned;
-        }
-        if (level.getGameTime() < context.state().getLong(NEXT_TREE_SCAN_GAME_TIME_TAG)) {
-            HiredWorkerBrain.setLastTargetScanResult(context, "tree_scan_cooldown");
-            return null;
-        }
-
-        HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
-                context,
+                NEXT_TREE_SCAN_GAME_TIME_TAG,
                 TREE_SCAN_CURSOR_TAG,
                 MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK,
-                pos -> context.isInsideWorkArea(pos)
-                        && context.isLoaded(level, pos)
-                        && !isTemporarilyAvoidedTarget(level, villager, pos)
-                        && isTreeLog(level, pos, filter));
-        HiredPathTarget target = rebuildTreeObjective(level, villager, context, scan.candidates(), filter);
-        if (target == null) {
-            if (scan.completedFullPass()) {
-                context.state().putLong(NEXT_TREE_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
-                HiredWorkerBrain.setLastTargetScanResult(context, "tree_scan_full_no_reachable_targets");
-            } else {
-                HiredWorkerBrain.setLastTargetScanResult(context, "tree_scan_partial_" + scan.visitedPositions());
-            }
-        } else {
-            HiredWorkAreaScan.clearCursor(context, TREE_SCAN_CURSOR_TAG);
-            context.state().remove(NEXT_TREE_SCAN_GAME_TIME_TAG);
-            HiredWorkerBrain.setLastTargetScanResult(context, "tree_target_found");
-        }
-        return target;
+                candidates -> rebuildTreeObjective(level, villager, context, candidates, filter),
+                TREE_SEARCH_MESSAGES);
     }
 
     private static boolean isTreeScanInProgress(HiredWorkContext context) {
