@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -22,6 +23,8 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.neoforged.fml.ModList;
 import org.slf4j.Logger;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +34,8 @@ public final class VillagerRetaliationEntityModelLoader {
     private static final String MOD_RESOURCE_PACK_ID = "mod/" + VillagerRetaliation.MOD_ID;
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static String vanillaCemCompatibilityKey = "";
+    private static boolean vanillaCemCompatibility;
 
     private VillagerRetaliationEntityModelLoader() {
     }
@@ -42,10 +47,6 @@ public final class VillagerRetaliationEntityModelLoader {
             LOGGER.info("Loading combat villager model from json:{}", overrideResource.get().sourcePackId());
             return loadCombatVillagerModel(overrideResource.get());
         }
-        if (isEntityModelFeaturesLoaded()) {
-            LOGGER.info("Loading combat villager model through EMF-compatible baked layer");
-            return context.bakeLayer(VillagerRetaliationVillagerModel.LAYER_LOCATION);
-        }
         LOGGER.info("Loading combat villager model from built-in JSON fallback");
         return loadCombatVillagerModel(resourceManager);
     }
@@ -55,7 +56,7 @@ public final class VillagerRetaliationEntityModelLoader {
         if (overrideResource.isPresent()) {
             return "json:" + overrideResource.get().sourcePackId();
         }
-        return isEntityModelFeaturesLoaded() ? "emf:" + EMF_MOD_ID : "json:" + MOD_RESOURCE_PACK_ID;
+        return "json:" + MOD_RESOURCE_PACK_ID;
     }
 
     public static Optional<ModelPart> loadNonCombatVillagerModel(ResourceManager resourceManager) {
@@ -101,6 +102,21 @@ public final class VillagerRetaliationEntityModelLoader {
         return overrideResource
                 .map(resource -> "custom:" + resource.sourcePackId())
                 .orElse("custom:missing");
+    }
+
+    public static boolean hasVanillaVillagerCemModel(ResourceManager resourceManager) {
+        List<Resource> cemStack = resourceManager.getResourceStack(VillagerRetaliationClientAssets.VANILLA_VILLAGER_CEM_MODEL);
+        List<Resource> textureStack = resourceManager.getResourceStack(VillagerRetaliationClientAssets.VANILLA_VILLAGER_SKIN);
+        String compatibilityKey = resourceStackKey(cemStack) + "|" + resourceStackKey(textureStack);
+        if (compatibilityKey.equals(vanillaCemCompatibilityKey)) {
+            return vanillaCemCompatibility;
+        }
+
+        vanillaCemCompatibilityKey = compatibilityKey;
+        vanillaCemCompatibility = isEntityModelFeaturesLoaded()
+                && findResourcePackOverride(cemStack).isPresent()
+                && hasTopTextureSize(textureStack, 64, 64);
+        return vanillaCemCompatibility;
     }
 
     public static ModelPart loadCombatVillagerModel(ResourceManager resourceManager) {
@@ -154,7 +170,10 @@ public final class VillagerRetaliationEntityModelLoader {
     }
 
     private static Optional<Resource> findResourcePackOverride(ResourceManager resourceManager, ResourceLocation location) {
-        List<Resource> resourceStack = resourceManager.getResourceStack(location);
+        return findResourcePackOverride(resourceManager.getResourceStack(location));
+    }
+
+    private static Optional<Resource> findResourcePackOverride(List<Resource> resourceStack) {
         for (int i = resourceStack.size() - 1; i >= 0; i--) {
             Resource resource = resourceStack.get(i);
             if (!MOD_RESOURCE_PACK_ID.equals(resource.sourcePackId())) {
@@ -162,6 +181,31 @@ public final class VillagerRetaliationEntityModelLoader {
             }
         }
         return Optional.empty();
+    }
+
+    private static boolean hasTopTextureSize(List<Resource> resourceStack, int width, int height) {
+        if (resourceStack.isEmpty()) {
+            return false;
+        }
+
+        Resource resource = resourceStack.getLast();
+        try (InputStream inputStream = resource.open(); NativeImage image = NativeImage.read(inputStream)) {
+            return image.getWidth() == width && image.getHeight() == height;
+        } catch (IOException exception) {
+            LOGGER.warn("Failed to read villager texture dimensions from {}.", resource.sourcePackId(), exception);
+            return false;
+        }
+    }
+
+    private static String resourceStackKey(List<Resource> resourceStack) {
+        StringBuilder key = new StringBuilder();
+        for (Resource resource : resourceStack) {
+            if (!key.isEmpty()) {
+                key.append('>');
+            }
+            key.append(resource.sourcePackId());
+        }
+        return key.toString();
     }
 
     private static boolean isEntityModelFeaturesLoaded() {

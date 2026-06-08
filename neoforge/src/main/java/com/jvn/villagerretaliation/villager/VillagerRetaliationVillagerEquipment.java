@@ -161,6 +161,19 @@ public final class VillagerRetaliationVillagerEquipment {
         return mainHandOwner(villager) != MainHandOwner.NONE;
     }
 
+    public static ItemStack visibleMainHand(AbstractVillager villager) {
+        ItemStack mainHand = villager.getMainHandItem();
+        if (!mainHand.isEmpty()) {
+            return mainHand;
+        }
+
+        return switch (mainHandOwner(villager)) {
+            case MANUAL, PICKED_UP -> playerManagedMainHand(villager);
+            case ROLE -> roleMainHand(villager);
+            case NONE -> ItemStack.EMPTY;
+        };
+    }
+
     public static boolean maintainPlayerManagedMainHand(AbstractVillager villager) {
         ItemStack expectedStack = playerManagedMainHand(villager);
         if (expectedStack.isEmpty()) {

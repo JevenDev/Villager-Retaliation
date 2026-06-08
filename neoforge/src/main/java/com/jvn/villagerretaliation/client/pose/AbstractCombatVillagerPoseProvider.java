@@ -50,9 +50,12 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
             return isInCombat(villager) ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
         if (isHoldingRangedWeapon(villager)) {
-            return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.NONE;
+            return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
         if (hasCustomHeldItemPose(villager)) {
+            return heldItemPose(villager, attackTime);
+        }
+        if (shouldRenderHeldItem(villager)) {
             return heldItemPose(villager, attackTime);
         }
         if (villager.swinging || isAggressivelyPostured(villager)) {

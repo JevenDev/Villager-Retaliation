@@ -2,10 +2,10 @@ package com.jvn.villagerretaliation.client.renderer;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.pose.DefaultVillagerPoseProvider;
+import com.jvn.villagerretaliation.client.renderer.layer.VillagerRetaliationProfessionLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer;
 import net.minecraft.world.entity.npc.Villager;
 
 public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetaliationVillagerRenderer<Villager> {
@@ -16,9 +16,10 @@ public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetalia
                 DefaultVillagerPoseProvider.INSTANCE,
                 VillagerRetaliationClientAssets.VANILLA_VILLAGER_SKIN,
                 VillagerRetaliationClientAssets.COMBAT_VILLAGER_SKIN,
+                true,
                 true
         );
-        this.addLayer(new VillagerProfessionLayer<>(this, context.getResourceManager(), "villager"));
+        this.addLayer(new VillagerRetaliationProfessionLayer<>(this, context.getResourceManager(), "villager"));
     }
 
     @Override

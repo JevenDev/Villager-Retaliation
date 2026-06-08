@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
 import com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache;
 import com.jvn.villagerretaliation.client.renderer.layer.CombatItemInHandLayer;
 import com.jvn.villagerretaliation.client.renderer.layer.VillagerCrossedArmsItemLayer;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -28,6 +29,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     private final ResourceLocation vanillaTexture;
     private final ResourceLocation combatTexture;
     private final boolean useCombatModelForAllPoses;
+    private final boolean useVanillaCemModelForDefaultPose;
 
     protected AbstractVillagerRetaliationVillagerRenderer(
             EntityRendererProvider.Context context,
@@ -47,6 +49,18 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
             ResourceLocation combatTexture,
             boolean useCombatModelForAllPoses
     ) {
+        this(context, vanillaLayer, poseProvider, vanillaTexture, combatTexture, useCombatModelForAllPoses, false);
+    }
+
+    protected AbstractVillagerRetaliationVillagerRenderer(
+            EntityRendererProvider.Context context,
+            ModelLayerLocation vanillaLayer,
+            VillagerPoseProvider<T> poseProvider,
+            ResourceLocation vanillaTexture,
+            ResourceLocation combatTexture,
+            boolean useCombatModelForAllPoses,
+            boolean useVanillaCemModelForDefaultPose
+    ) {
         super(context, new VanillaVillagerModelAdapter<>(context.bakeLayer(vanillaLayer)), 0.5F);
         this.context = context;
         this.vanillaModel = (VanillaVillagerModelAdapter<T>) this.model;
@@ -54,6 +68,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
         this.vanillaTexture = vanillaTexture;
         this.combatTexture = combatTexture;
         this.useCombatModelForAllPoses = useCombatModelForAllPoses;
+        this.useVanillaCemModelForDefaultPose = useVanillaCemModelForDefaultPose;
         this.reloadCombatModel();
         this.reloadNonCombatModel();
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
@@ -91,10 +106,19 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     }
 
     private boolean shouldUseCombatTextureAndModel(T villager) {
-        return this.useCombatModelForAllPoses
-                || this.poseProvider.shouldUseCombatModel(villager)
-                || !villager.getMainHandItem().isEmpty()
+        boolean needsSideArmModel = this.poseProvider.shouldUseCombatModel(villager)
+                || !VillagerRetaliationVillagerEquipment.visibleMainHand(villager).isEmpty()
                 || !villager.getOffhandItem().isEmpty();
+        if (needsSideArmModel) {
+            return true;
+        }
+
+        return this.useCombatModelForAllPoses && !this.shouldPreferVanillaCemDefaultPose();
+    }
+
+    private boolean shouldPreferVanillaCemDefaultPose() {
+        return this.useVanillaCemModelForDefaultPose
+                && VillagerRetaliationEntityModelLoader.hasVanillaVillagerCemModel(this.context.getResourceManager());
     }
 
     private void reloadCombatModel() {
