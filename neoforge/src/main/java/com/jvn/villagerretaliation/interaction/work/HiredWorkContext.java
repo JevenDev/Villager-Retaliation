@@ -22,6 +22,8 @@ public record HiredWorkContext(
         int efficiency,
         boolean autoDepositOutputs,
         boolean useAssignedStorageForSupplies) {
+    public static final String OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG = "OutputDepositedThisStorageTrip";
+
     public String status() {
         return this.state.getString("Status");
     }

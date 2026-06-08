@@ -405,7 +405,7 @@ public final class VillagerTaskNavigationUtil {
         BlockState floor = level.getBlockState(pos.below());
         return (feet.isAir() || feet.liquid() || feet.is(Blocks.LADDER))
                 && (head.isAir() || head.liquid() || head.is(Blocks.LADDER))
-                && floor.isSolid();
+                && (floor.isSolid() || feet.is(Blocks.LADDER));
     }
 
     private static boolean isCurrentPathNode(BlockPos pos, Node node) {

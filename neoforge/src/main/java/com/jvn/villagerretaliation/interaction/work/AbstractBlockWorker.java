@@ -431,6 +431,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         if (!context.autoDepositOutputs() || !context.hasOutputToDeposit()) {
             HiredWorkerBrain.clearStorageTarget(context);
             clearStorageFullStatus(context);
+            context.state().remove(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG);
             return DepositResult.NOT_NEEDED;
         }
         BlockPos storage = context.nearestDepositStorage(level, villager);
@@ -443,6 +444,10 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             HiredWorkerBrain.setFailure(context, "storage_unloaded", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE);
             return DepositResult.UNAVAILABLE;
+        }
+        HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
+        if (worker.storageTargetPos() != null && !worker.storageTargetPos().equals(storage)) {
+            context.state().remove(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG);
         }
         HiredWorkerBrain.setStorageTarget(context, storage);
         HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
@@ -464,10 +469,12 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         if (context.depositOutputsAtStorage(villager, storage)) {
             HiredWorkerBrain.clearFailure(context);
             clearStorageFullStatus(context);
+            context.state().putBoolean(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG, true);
             setTaskState(context, HiredWorkerTaskState.DEPOSITING);
             if (!context.hasOutputToDeposit()) {
                 AssignedStorageService.closeStorageFeedback(level, storage);
                 HiredWorkerBrain.clearStorageTarget(context);
+                context.state().remove(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG);
                 setTaskState(context, HiredWorkerTaskState.IDLE);
             }
             swingWorkTool(villager);
@@ -499,6 +506,9 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     protected String storageFullStatus(HiredWorkContext context) {
         if (!context.state().getBoolean(STORAGE_FULL_STATUS_SHOWN_TAG)) {
             context.state().putBoolean(STORAGE_FULL_STATUS_SHOWN_TAG, true);
+            if (context.state().getBoolean(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG)) {
+                return "I deposited what I could, but storage is full now.";
+            }
             return "I have no where left to deposit these collected items.";
         }
         return "I am staying near storage and waiting for room to deposit collected items.";

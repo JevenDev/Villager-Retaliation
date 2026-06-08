@@ -90,6 +90,11 @@ public final class MiningWorker extends AbstractBlockWorker {
         HiredPathTarget target = resolveTarget(level, villager, context, mode);
         if (target == null) {
             clearActiveBreakingTarget(level, context, villager);
+            if (isExcavationScanInProgress(context, mode)) {
+                setMiningState(context, MiningState.FIND_TARGET);
+                setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
+                return WorkResult.progressed("I am still checking the excavation area for reachable blocks.");
+            }
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
             setMiningState(context, depositResult == DepositResult.DEPOSITED || depositResult == DepositResult.MOVING
                     ? MiningState.DEPOSIT_OUTPUT
@@ -107,10 +112,6 @@ public final class MiningWorker extends AbstractBlockWorker {
             }
             if (roamInsideWorkArea(level, villager, context, 0.4D)) {
                 return WorkResult.progressed(searchingStatus(mode));
-            }
-            if (mode.excavatesArea() && HiredWorkAreaScan.isInProgress(context, EXCAVATION_SCAN_CURSOR_TAG)) {
-                setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-                return WorkResult.idle("I am still checking the excavation area for reachable blocks.");
             }
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             ensureNoTargetScanCooldown(level, context);
@@ -241,6 +242,11 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
 
         clearMiningAnchor(context);
+        if (isExcavationScanInProgress(context, mode)) {
+            setMiningState(context, MiningState.FIND_TARGET);
+            setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
+            return WorkResult.skilledProgress("I cleared that block and am checking the assigned area for the next reachable face.");
+        }
         DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
         setMiningState(context, depositResult == DepositResult.DEPOSITED || depositResult == DepositResult.MOVING
                 ? MiningState.DEPOSIT_OUTPUT
@@ -1449,6 +1455,10 @@ public final class MiningWorker extends AbstractBlockWorker {
         return mode.excavatesArea()
                 && !HiredWorkAreaScan.isInProgress(context, EXCAVATION_SCAN_CURSOR_TAG)
                 && level.getGameTime() < context.state().getLong(NEXT_FULL_SCAN_GAME_TIME_TAG);
+    }
+
+    private static boolean isExcavationScanInProgress(HiredWorkContext context, HiredMiningMode mode) {
+        return mode.excavatesArea() && HiredWorkAreaScan.isInProgress(context, EXCAVATION_SCAN_CURSOR_TAG);
     }
 
     private static void ensureNoTargetScanCooldown(ServerLevel level, HiredWorkContext context) {
