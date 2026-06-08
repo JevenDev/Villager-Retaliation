@@ -306,7 +306,7 @@ Compatibility may vary with mods that heavily replace villager AI, trading, comb
 
 Texture-only villager packs should generally work, but hostile/combat villagers use separate Villager Retaliation texture paths so they can animate weapons, shields, bows, potions, and throwing poses cleanly.
 
-Resource packs can also override the combat villager model, opt into a custom non-combat model, and use EMF's normal entity model workflow when Entity Model Features is installed. Full texture paths and model notes are in the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki).
+Resource packs can also override the villager model, which includes both crossed arms and side arms in one layout for easier ETF/EMF support. Full texture paths and model notes are in the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki).
 
 ![roadmap](https://cdn.modrinth.com/data/cached_images/04825ea0e2e5462ffa075e783ca38b0c63a36d34.png)
 

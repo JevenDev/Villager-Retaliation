@@ -23,6 +23,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
 
     private final ModelPart root;
     private final ModelPart body;
+    private final ModelPart crossedArms;
     private final ModelPart head;
     private final ModelPart helmet;
     private final ModelPart brim;
@@ -39,13 +40,14 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     public VillagerRetaliationVillagerModel(ModelPart root, VillagerPoseProvider<T> poseProvider) {
         this.root = root;
         this.body = root.getChild("body");
-        this.head = this.body.getChild("head");
+        this.crossedArms = root.getChild("arms");
+        this.head = root.getChild("head");
         this.helmet = getOptionalChild(this.head, "helmet");
         this.brim = getOptionalChild(this.head, "brim");
-        this.rightArm = this.body.getChild("RightArm");
-        this.leftArm = this.body.getChild("LeftArm");
-        this.rightLeg = this.body.getChild("RightLeg");
-        this.leftLeg = this.body.getChild("LeftLeg");
+        this.rightArm = root.getChild("RightArm");
+        this.leftArm = root.getChild("LeftArm");
+        this.rightLeg = root.getChild("RightLeg");
+        this.leftLeg = root.getChild("LeftLeg");
         this.poseProvider = poseProvider;
     }
 
@@ -53,10 +55,22 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
 
-        PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 20).addBox(-4.0F, -24.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F))
-                .texOffs(0, 38).addBox(-4.0F, -24.0F, -3.0F, 8.0F, 20.0F, 6.0F, new CubeDeformation(0.5F)), PartPose.offset(0.0F, 24.0F, 0.0F));
+        PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 20).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F))
+                .texOffs(0, 38).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 18.0F, 6.0F, new CubeDeformation(0.5F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        PartDefinition head = body.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 0).addBox(-4.0F, -10.0F, -4.0F, 8.0F, 10.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -24.0F, 0.0F));
+        partdefinition.addOrReplaceChild("arms", CubeListBuilder.create().texOffs(44, 22).addBox(-8.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
+                .texOffs(44, 22).addBox(4.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
+                .texOffs(40, 38).addBox(-4.0F, 2.0F, -2.0F, 8.0F, 4.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 2.0F, 0.0F, -0.7854F, 0.0F, 0.0F));
+
+        partdefinition.addOrReplaceChild("RightLeg", CubeListBuilder.create().texOffs(0, 22).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-2.0F, 12.0F, 0.0F));
+
+        partdefinition.addOrReplaceChild("LeftLeg", CubeListBuilder.create().texOffs(0, 22).mirror().addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(2.0F, 12.0F, 0.0F));
+
+        partdefinition.addOrReplaceChild("RightArm", CubeListBuilder.create().texOffs(64, 22).addBox(-3.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-5.0F, 2.0F, 0.0F));
+
+        partdefinition.addOrReplaceChild("LeftArm", CubeListBuilder.create().texOffs(64, 22).mirror().addBox(-1.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(5.0F, 2.0F, 0.0F));
+
+        PartDefinition head = partdefinition.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 0).addBox(-4.0F, -10.0F, -4.0F, 8.0F, 10.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
         head.addOrReplaceChild("helmet", CubeListBuilder.create().texOffs(32, 0).addBox(-4.0F, -10.0F, -4.0F, 8.0F, 10.0F, 8.0F, new CubeDeformation(0.5F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
@@ -64,15 +78,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
 
         head.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(24, 0).addBox(-1.0F, -1.0F, -6.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -2.0F, 0.0F));
 
-        body.addOrReplaceChild("RightArm", CubeListBuilder.create().texOffs(44, 22).addBox(-3.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-5.0F, -22.0F, 0.0F));
-
-        body.addOrReplaceChild("LeftArm", CubeListBuilder.create().texOffs(44, 22).mirror().addBox(-1.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(5.0F, -22.0F, 0.0F));
-
-        body.addOrReplaceChild("RightLeg", CubeListBuilder.create().texOffs(0, 22).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-2.0F, -12.0F, 0.0F));
-
-        body.addOrReplaceChild("LeftLeg", CubeListBuilder.create().texOffs(0, 22).mirror().addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(2.0F, -12.0F, 0.0F));
-
-        return LayerDefinition.create(meshdefinition, 64, 64);
+        return LayerDefinition.create(meshdefinition, 128, 128);
     }
 
     @Override
@@ -82,6 +88,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         this.head.xRot = headPitch * ((float) Math.PI / 180F);
 
         if (this.riding) {
+            this.setArmLayout(true);
             this.rightArm.xRot = (-(float) Math.PI / 5F);
             this.rightArm.yRot = 0.0F;
             this.rightArm.zRot = 0.0F;
@@ -114,6 +121,10 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         VillagerArmPose pose = this.poseProvider == null
                 ? VillagerArmPose.NONE
                 : this.poseProvider.getArmPose(villager, this.attackTime);
+        this.setArmLayout(pose != VillagerArmPose.NONE);
+        if (pose == VillagerArmPose.NONE) {
+            return;
+        }
         VillagerPoseAnimator.applyPose(pose, villager, this.head, this.rightArm, this.leftArm, this.attackTime, ageInTicks);
     }
 
@@ -135,8 +146,13 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     }
 
     public void translateToHand(HumanoidArm arm, PoseStack poseStack) {
-        this.body.translateAndRotate(poseStack);
         this.getArm(arm).translateAndRotate(poseStack);
+    }
+
+    private void setArmLayout(boolean sideArmsVisible) {
+        this.crossedArms.visible = !sideArmsVisible;
+        this.rightArm.visible = sideArmsVisible;
+        this.leftArm.visible = sideArmsVisible;
     }
 
     private ModelPart getArm(HumanoidArm arm) {

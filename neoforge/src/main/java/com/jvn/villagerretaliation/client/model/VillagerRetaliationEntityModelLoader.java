@@ -265,12 +265,13 @@ public final class VillagerRetaliationEntityModelLoader {
 
     private static boolean hasRequiredCombatParts(ModelPart root) {
         try {
-            ModelPart body = root.getChild("body");
-            ModelPart head = body.getChild("head");
-            body.getChild("RightArm");
-            body.getChild("LeftArm");
-            body.getChild("RightLeg");
-            body.getChild("LeftLeg");
+            root.getChild("body");
+            root.getChild("arms");
+            root.getChild("RightArm");
+            root.getChild("LeftArm");
+            root.getChild("RightLeg");
+            root.getChild("LeftLeg");
+            ModelPart head = root.getChild("head");
             return head != null;
         } catch (Exception exception) {
             return false;

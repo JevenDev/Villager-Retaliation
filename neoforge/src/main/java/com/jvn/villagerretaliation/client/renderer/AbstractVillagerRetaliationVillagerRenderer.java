@@ -27,6 +27,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     private final VillagerPoseProvider<T> poseProvider;
     private final ResourceLocation vanillaTexture;
     private final ResourceLocation combatTexture;
+    private final boolean useCombatModelForAllPoses;
 
     protected AbstractVillagerRetaliationVillagerRenderer(
             EntityRendererProvider.Context context,
@@ -35,12 +36,24 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
             ResourceLocation vanillaTexture,
             ResourceLocation combatTexture
     ) {
+        this(context, vanillaLayer, poseProvider, vanillaTexture, combatTexture, false);
+    }
+
+    protected AbstractVillagerRetaliationVillagerRenderer(
+            EntityRendererProvider.Context context,
+            ModelLayerLocation vanillaLayer,
+            VillagerPoseProvider<T> poseProvider,
+            ResourceLocation vanillaTexture,
+            ResourceLocation combatTexture,
+            boolean useCombatModelForAllPoses
+    ) {
         super(context, new VanillaVillagerModelAdapter<>(context.bakeLayer(vanillaLayer)), 0.5F);
         this.context = context;
         this.vanillaModel = (VanillaVillagerModelAdapter<T>) this.model;
         this.poseProvider = poseProvider;
         this.vanillaTexture = vanillaTexture;
         this.combatTexture = combatTexture;
+        this.useCombatModelForAllPoses = useCombatModelForAllPoses;
         this.reloadCombatModel();
         this.reloadNonCombatModel();
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
@@ -51,13 +64,13 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     @Override
     public void render(T villager, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         this.refreshModels();
-        this.model = shouldUseHandItemModel(villager) ? this.combatModel : this.nonCombatModel;
+        this.model = shouldUseCombatTextureAndModel(villager) ? this.combatModel : this.nonCombatModel;
         super.render(villager, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
 
     @Override
     public ResourceLocation getTextureLocation(T villager) {
-        return shouldUseHandItemModel(villager) ? this.combatTexture : this.vanillaTexture;
+        return shouldUseCombatTextureAndModel(villager) ? this.combatTexture : this.vanillaTexture;
     }
 
     @Override
@@ -77,8 +90,9 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
         }
     }
 
-    private boolean shouldUseHandItemModel(T villager) {
-        return this.poseProvider.shouldUseCombatModel(villager)
+    private boolean shouldUseCombatTextureAndModel(T villager) {
+        return this.useCombatModelForAllPoses
+                || this.poseProvider.shouldUseCombatModel(villager)
                 || !villager.getMainHandItem().isEmpty()
                 || !villager.getOffhandItem().isEmpty();
     }

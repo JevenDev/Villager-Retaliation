@@ -37,7 +37,6 @@ Use a resource pack for GUI text, textures, and model JSON:
     villagerretaliation/
       lang/en_us.json
       models/entity/villager/combat_villager.json
-      models/entity/villager/render_options.json
       textures/entity/villager/villager.png
 ```
 
