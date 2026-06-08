@@ -78,36 +78,44 @@ public final class HiredVillagerWorkService {
         if (hirerId == null || !(level.getServer().getPlayerList().getPlayer(hirerId) instanceof ServerPlayer hirer)) {
             CompoundTag waitingState = state(villager);
             initializeDefaults(waitingState, villager);
+            VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(waitingState, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setStatus(waitingState, "I am waiting for the one who hired me to return.");
             return;
         }
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, hirer)) {
+            VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             return;
         }
         if (VillagerRetaliationVillagerBrainUtil.hasThreatMemories(villager.getBrain())) {
+            VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             return;
         }
 
         HiredWorkSession session = HiredWorkSession.active(level, villager);
         if (session.worker() == null) {
+            VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setStatus(session.state(), "I have no proper work routine for " + session.role().label() + " yet.");
             return;
         }
         if (!session.state().getBoolean("Enabled")) {
+            VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setStatus(session.state(), "You have told me to hold for now.");
             return;
         }
         if (VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
+            VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             pauseForRecruitmentCommand(level, villager, session);
             return;
         }
 
+        VillagerTaskNavigationUtil.enableHiredWaterTraversal(villager);
+        VillagerTaskNavigationUtil.moveInWaterTowardNavigationTarget(level, villager, WORK_AREA_RETURN_WALK_SPEED);
         HiredVillagerFocusService.suppressNonWorkAi(level, villager, session.context());
         if (returnVillagerToWorkArea(level, villager, session)) {
             return;

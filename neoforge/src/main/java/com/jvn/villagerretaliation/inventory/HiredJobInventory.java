@@ -60,6 +60,9 @@ public final class HiredJobInventory implements Container {
     }
 
     public static boolean hasJobEquipmentForSlot(Villager villager, EquipmentSlot equipmentSlot) {
+        if (villager == null || equipmentSlot == null) {
+            return false;
+        }
         return !new HiredJobInventory(villager).jobEquipmentItem(equipmentSlot).isEmpty();
     }
 

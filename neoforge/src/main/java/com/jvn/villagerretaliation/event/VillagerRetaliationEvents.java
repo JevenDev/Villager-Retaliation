@@ -230,6 +230,7 @@ public final class VillagerRetaliationEvents {
             VillagerRecruitmentService.onVillagerTickPost(villager);
             HiredVillagerWorkService.onVillagerTickPost(villager);
             if (villager.level() instanceof ServerLevel level) {
+                VillagerTaskNavigationUtil.tickVillagerWaterSafety(level, villager);
                 VillagerTaskNavigationUtil.tickPathDoors(level, villager);
                 VillagerTaskNavigationUtil.tickPathLadders(level, villager);
             }

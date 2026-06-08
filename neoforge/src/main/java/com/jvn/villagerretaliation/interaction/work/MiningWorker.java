@@ -1163,11 +1163,41 @@ public final class MiningWorker extends AbstractBlockWorker {
     private boolean isValidExcavationTarget(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos pos) {
         return isInsideWorkArea(context, pos)
                 && !isTemporarilyAvoidedTarget(level, villager, pos)
-                && isMineableExcavationBlock(level, pos);
+                && isMineableExcavationBlock(level, pos)
+                && isCurrentExcavationLayer(level, context, pos)
+                && !hasAdjacentExcavationFluid(level, context, pos);
     }
 
     private static boolean isInsideWorkArea(HiredWorkContext context, BlockPos pos) {
         return context.isInsideWorkArea(pos);
+    }
+
+    private static boolean isCurrentExcavationLayer(ServerLevel level, HiredWorkContext context, BlockPos pos) {
+        Integer layerY = currentExcavationLayer(level, context);
+        return layerY != null && pos.getY() == layerY;
+    }
+
+    private static Integer currentExcavationLayer(ServerLevel level, HiredWorkContext context) {
+        Integer layerY = null;
+        for (BlockPos rawPos : context.workAreaPositions()) {
+            BlockPos pos = rawPos.immutable();
+            if (isMineableExcavationBlock(level, pos)
+                    && !hasAdjacentExcavationFluid(level, context, pos)
+                    && (layerY == null || pos.getY() > layerY)) {
+                layerY = pos.getY();
+            }
+        }
+        return layerY;
+    }
+
+    private static boolean hasAdjacentExcavationFluid(ServerLevel level, HiredWorkContext context, BlockPos pos) {
+        for (Direction direction : Direction.values()) {
+            BlockPos neighbor = pos.relative(direction);
+            if (level.hasChunkAt(neighbor) && !level.getFluidState(neighbor).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isInsideMiningPocket(HiredWorkContext context, BlockPos pos, BlockPos anchor) {
@@ -1454,7 +1484,8 @@ public final class MiningWorker extends AbstractBlockWorker {
     private static boolean isExcavationComplete(ServerLevel level, HiredWorkContext context, HiredMiningMode mode) {
         return mode.excavatesArea()
                 && !HiredWorkAreaScan.isInProgress(context, EXCAVATION_SCAN_CURSOR_TAG)
-                && level.getGameTime() < context.state().getLong(NEXT_FULL_SCAN_GAME_TIME_TAG);
+                && level.getGameTime() < context.state().getLong(NEXT_FULL_SCAN_GAME_TIME_TAG)
+                && currentExcavationLayer(level, context) == null;
     }
 
     private static boolean isExcavationScanInProgress(HiredWorkContext context, HiredMiningMode mode) {

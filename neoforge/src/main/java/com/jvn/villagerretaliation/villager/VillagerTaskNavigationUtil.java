@@ -16,7 +16,9 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FenceGateBlock;
@@ -40,8 +42,20 @@ public final class VillagerTaskNavigationUtil {
     private static final int LADDER_ESCAPE_VERTICAL_RADIUS = 18;
     private static final int LADDER_SEARCH_CACHE_TICKS = 20;
     private static final double LADDER_SEARCH_ORIGIN_REUSE_DISTANCE_SQR = 16.0D;
+    private static final float HIRED_WATER_PATH_COST = 32.0F;
+    private static final float HIRED_WATER_BORDER_PATH_COST = 16.0F;
+    private static final double WATER_TARGET_REACHED_DISTANCE_SQR = 2.25D;
+    private static final double WATER_VERTICAL_SPEED_LIMIT = 0.08D;
+    private static final double WATER_IDLE_FLOAT_SPEED = 0.04D;
+    private static final int WATER_SURFACE_SCAN_DEPTH = 3;
+    private static final int WATER_STUCK_CHECK_TICKS = 10;
+    private static final int WATER_STUCK_LIMIT = 2;
+    private static final long WATER_ESCAPE_TICKS = 15L;
+    private static final double WATER_STUCK_MIN_PROGRESS_SQR = 0.05D;
     private static final Map<UUID, Set<GlobalPos>> DOORS_TO_CLOSE = new HashMap<>();
     private static final Map<UUID, LadderSearch> LADDER_SEARCHES = new HashMap<>();
+    private static final Map<UUID, WaterPathSettings> WATER_PATH_SETTINGS = new HashMap<>();
+    private static final Map<UUID, WaterMovementProgress> WATER_MOVEMENT_PROGRESS = new HashMap<>();
 
     private VillagerTaskNavigationUtil() {
     }
@@ -76,6 +90,222 @@ public final class VillagerTaskNavigationUtil {
                 || isLadderPathNode(level, previousNode)
                 || isLadderPathNode(level, nextNode))) {
             moveOnLadderToward(level, villager, target, 0.45D);
+        }
+    }
+
+    public static void tickVillagerWaterSafety(ServerLevel level, Villager villager) {
+        restoreVillagerGravity(villager);
+        enableWaterTraversal(villager);
+        if (!villager.isInWater()) {
+            WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
+            return;
+        }
+        keepVillagerBreathing(villager);
+        Path path = villager.getNavigation().getPath();
+        Node nextNode = path != null && !path.isDone() ? path.getNextNode() : null;
+        if (nextNode == null) {
+            floatIdleInWater(level, villager);
+        }
+    }
+
+    public static void enableHiredWaterTraversal(Villager villager) {
+        boolean canFloat = villager.getNavigation() instanceof GroundPathNavigation navigation && navigation.canFloat();
+        WATER_PATH_SETTINGS.computeIfAbsent(villager.getUUID(), ignored -> new WaterPathSettings(
+                villager.getPathfindingMalus(PathType.WATER),
+                villager.getPathfindingMalus(PathType.WATER_BORDER),
+                canFloat));
+        enableWaterTraversal(villager);
+    }
+
+    private static void enableWaterTraversal(Villager villager) {
+        villager.setPathfindingMalus(PathType.WATER, HIRED_WATER_PATH_COST);
+        villager.setPathfindingMalus(PathType.WATER_BORDER, HIRED_WATER_BORDER_PATH_COST);
+        if (villager.getNavigation() instanceof GroundPathNavigation navigation) {
+            navigation.setCanFloat(true);
+        }
+    }
+
+    public static void restoreHiredWaterTraversal(Villager villager) {
+        WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
+        WaterPathSettings settings = WATER_PATH_SETTINGS.remove(villager.getUUID());
+        if (settings == null) {
+            return;
+        }
+        villager.setPathfindingMalus(PathType.WATER, settings.waterMalus());
+        villager.setPathfindingMalus(PathType.WATER_BORDER, settings.waterBorderMalus());
+        if (villager.getNavigation() instanceof GroundPathNavigation navigation) {
+            navigation.setCanFloat(settings.canFloat());
+        }
+    }
+
+    public static boolean moveInWaterTowardNavigationTarget(ServerLevel level, Villager villager, double speed) {
+        if (!villager.isInWater()) {
+            WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
+            return false;
+        }
+        keepVillagerBreathing(villager);
+        Path path = villager.getNavigation().getPath();
+        Node nextNode = path != null && !path.isDone() ? path.getNextNode() : null;
+        if (nextNode == null) {
+            WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
+            floatIdleInWater(level, villager);
+            return false;
+        }
+        BlockPos target = nextNode.asBlockPos();
+        if (target == null || villager.distanceToSqr(target.getCenter()) <= WATER_TARGET_REACHED_DISTANCE_SQR) {
+            WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
+            return false;
+        }
+
+        UUID villagerId = villager.getUUID();
+        long now = level.getGameTime();
+        WaterMovementProgress progress = WATER_MOVEMENT_PROGRESS.get(villagerId);
+        if (progress != null
+                && progress.targetPos() == target.asLong()
+                && progress.escapeTarget() != null
+                && progress.escapeUntilGameTime() > now
+                && isWaterEscapeTarget(level, progress.escapeTarget())) {
+            swimToward(villager, progress.escapeTarget(), speed * 0.85D);
+            return true;
+        }
+
+        if (progress == null
+                || progress.targetPos() != target.asLong()
+                || now - progress.lastCheckGameTime() >= WATER_STUCK_CHECK_TICKS) {
+            WaterMovementProgress nextProgress = waterMovementProgress(level, villager, target, progress, now);
+            WATER_MOVEMENT_PROGRESS.put(villagerId, nextProgress);
+            if (nextProgress.escapeTarget() != null && nextProgress.escapeUntilGameTime() > now) {
+                swimToward(villager, nextProgress.escapeTarget(), speed * 0.85D);
+                return true;
+            }
+        }
+
+        swimToward(villager, target, speed);
+        return true;
+    }
+
+    private static void keepVillagerBreathing(Villager villager) {
+        if (villager.getAirSupply() < villager.getMaxAirSupply()) {
+            villager.setAirSupply(villager.getMaxAirSupply());
+        }
+    }
+
+    private static void floatIdleInWater(ServerLevel level, Villager villager) {
+        BlockPos pos = villager.blockPosition();
+        boolean hasAirAbove = false;
+        for (int dy = 0; dy <= WATER_SURFACE_SCAN_DEPTH; dy++) {
+            BlockPos check = pos.above(dy);
+            if (!level.hasChunkAt(check) || level.getBlockState(check).liquid()) {
+                continue;
+            }
+            hasAirAbove = true;
+            break;
+        }
+        Vec3 motion = villager.getDeltaMovement();
+        double vertical = hasAirAbove ? WATER_IDLE_FLOAT_SPEED : Math.max(motion.y, 0.0D);
+        villager.setDeltaMovement(motion.x * 0.85D, vertical, motion.z * 0.85D);
+        villager.setOnGround(false);
+    }
+
+    private static WaterMovementProgress waterMovementProgress(
+            ServerLevel level,
+            Villager villager,
+            BlockPos target,
+            WaterMovementProgress previous,
+            long now) {
+        int stuckChecks = 0;
+        if (previous != null && previous.targetPos() == target.asLong()) {
+            double dx = villager.getX() - previous.x();
+            double dz = villager.getZ() - previous.z();
+            stuckChecks = dx * dx + dz * dz > WATER_STUCK_MIN_PROGRESS_SQR ? 0 : previous.stuckChecks() + 1;
+        }
+        BlockPos escapeTarget = null;
+        long escapeUntil = 0L;
+        if (stuckChecks >= WATER_STUCK_LIMIT) {
+            escapeTarget = bestWaterEscapeTarget(level, villager, target);
+            if (escapeTarget != null) {
+                stuckChecks = 0;
+                escapeUntil = now + WATER_ESCAPE_TICKS;
+            }
+        }
+        return new WaterMovementProgress(
+                target.asLong(),
+                villager.getX(),
+                villager.getZ(),
+                now,
+                stuckChecks,
+                escapeTarget,
+                escapeUntil);
+    }
+
+    private static BlockPos bestWaterEscapeTarget(ServerLevel level, Villager villager, BlockPos target) {
+        BlockPos origin = villager.blockPosition();
+        Vec3 targetDirection = target.getCenter().subtract(villager.position()).normalize();
+        BlockPos best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (BlockPos rawPos : BlockPos.betweenClosed(origin.offset(-2, -1, -2), origin.offset(2, 1, 2))) {
+            BlockPos candidate = rawPos.immutable();
+            if (candidate.equals(origin) || !isWaterEscapeTarget(level, candidate)) {
+                continue;
+            }
+            Vec3 offset = candidate.getCenter().subtract(villager.position());
+            double distance = offset.lengthSqr();
+            if (distance > 9.0D) {
+                continue;
+            }
+            Vec3 direction = offset.normalize();
+            double forwardAlignment = direction.dot(targetDirection);
+            double score = Math.abs(forwardAlignment) * 2.0D
+                    + candidate.distSqr(target) * 0.02D
+                    + distance * 0.25D
+                    - waterClearance(level, candidate);
+            if (score < bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    private static boolean isWaterEscapeTarget(ServerLevel level, BlockPos pos) {
+        if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
+            return false;
+        }
+        BlockState feet = level.getBlockState(pos);
+        BlockState head = level.getBlockState(pos.above());
+        BlockState floor = level.getBlockState(pos.below());
+        return isWaterPassable(feet)
+                && isWaterPassable(head)
+                && (feet.liquid() || floor.isSolid() || floor.liquid());
+    }
+
+    private static boolean isWaterPassable(BlockState state) {
+        return state.isAir() || state.liquid() || state.is(Blocks.LADDER);
+    }
+
+    private static double waterClearance(ServerLevel level, BlockPos pos) {
+        double clearance = 0.0D;
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            BlockPos side = pos.relative(direction);
+            if (level.hasChunkAt(side) && isWaterPassable(level.getBlockState(side))) {
+                clearance += 1.0D;
+            }
+        }
+        return clearance;
+    }
+
+    private static void swimToward(Villager villager, BlockPos target, double speed) {
+        double targetY = target.getY() + 0.1D;
+        villager.getMoveControl().setWantedPosition(target.getX() + 0.5D, targetY, target.getZ() + 0.5D, speed);
+        Vec3 motion = villager.getDeltaMovement();
+        double vertical = Math.clamp(targetY - villager.getY(), -WATER_VERTICAL_SPEED_LIMIT, WATER_VERTICAL_SPEED_LIMIT);
+        villager.setDeltaMovement(motion.x, vertical, motion.z);
+        villager.setOnGround(false);
+    }
+
+    private static void restoreVillagerGravity(Villager villager) {
+        if (villager.isNoGravity()) {
+            villager.setNoGravity(false);
         }
     }
 
@@ -187,11 +417,15 @@ public final class VillagerTaskNavigationUtil {
     public static void clearRuntimeState() {
         DOORS_TO_CLOSE.clear();
         LADDER_SEARCHES.clear();
+        WATER_PATH_SETTINGS.clear();
+        WATER_MOVEMENT_PROGRESS.clear();
     }
 
     public static void clearRuntimeState(Villager villager) {
         DOORS_TO_CLOSE.remove(villager.getUUID());
         LADDER_SEARCHES.remove(villager.getUUID());
+        WATER_PATH_SETTINGS.remove(villager.getUUID());
+        WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
     }
 
     private static void openDoorAtPathNode(ServerLevel level, Villager villager, Node node) {
@@ -454,5 +688,18 @@ public final class VillagerTaskNavigationUtil {
     }
 
     private record LadderSearch(BlockPos origin, BlockPos ladder, long expiresGameTime) {
+    }
+
+    private record WaterPathSettings(float waterMalus, float waterBorderMalus, boolean canFloat) {
+    }
+
+    private record WaterMovementProgress(
+            long targetPos,
+            double x,
+            double z,
+            long lastCheckGameTime,
+            int stuckChecks,
+            BlockPos escapeTarget,
+            long escapeUntilGameTime) {
     }
 }
