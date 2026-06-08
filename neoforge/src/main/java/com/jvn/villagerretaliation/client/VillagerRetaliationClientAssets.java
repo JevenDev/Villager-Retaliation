@@ -53,6 +53,12 @@ public final class VillagerRetaliationClientAssets {
             VillagerRetaliation.id("models/entity/villager/render_options.json");
     public static final ResourceLocation VANILLA_VILLAGER_CEM_MODEL =
             ResourceLocation.withDefaultNamespace("optifine/cem/villager.jem");
+    public static final ResourceLocation COMBAT_VILLAGER_CEM_MODEL =
+            VillagerRetaliation.id("optifine/cem/villager.jem");
+    public static final ResourceLocation COMBAT_VILLAGER_CEM_MODEL_DEPRECATED =
+            ResourceLocation.withDefaultNamespace("optifine/cem/modded/" + VillagerRetaliation.MOD_ID + "/villager.jem");
+    public static final ResourceLocation COMBAT_VILLAGER_CEM_MODEL_LEGACY_FOLDER =
+            ResourceLocation.withDefaultNamespace("optifine/cem/" + VillagerRetaliation.MOD_ID + "/villager.jem");
 
     public static final ResourceLocation INTERACTION_VEIL_SHADER =
             VillagerRetaliation.id("interaction_veil");

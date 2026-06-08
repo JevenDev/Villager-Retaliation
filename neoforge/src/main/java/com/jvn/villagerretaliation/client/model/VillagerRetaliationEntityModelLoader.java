@@ -32,6 +32,11 @@ import java.util.Optional;
 public final class VillagerRetaliationEntityModelLoader {
     private static final String EMF_MOD_ID = "entity_model_features";
     private static final String MOD_RESOURCE_PACK_ID = "mod/" + VillagerRetaliation.MOD_ID;
+    private static final List<ResourceLocation> COMBAT_VILLAGER_CEM_MODELS = List.of(
+            VillagerRetaliationClientAssets.COMBAT_VILLAGER_CEM_MODEL,
+            VillagerRetaliationClientAssets.COMBAT_VILLAGER_CEM_MODEL_DEPRECATED,
+            VillagerRetaliationClientAssets.COMBAT_VILLAGER_CEM_MODEL_LEGACY_FOLDER
+    );
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LogUtils.getLogger();
     private static String vanillaCemCompatibilityKey = "";
@@ -47,6 +52,18 @@ public final class VillagerRetaliationEntityModelLoader {
             LOGGER.info("Loading combat villager model from json:{}", overrideResource.get().sourcePackId());
             return loadCombatVillagerModel(overrideResource.get());
         }
+        Optional<Resource> cemOverrideResource = findFirstResourcePackOverride(resourceManager, COMBAT_VILLAGER_CEM_MODELS);
+        if (isEntityModelFeaturesLoaded() && cemOverrideResource.isPresent()) {
+            LOGGER.info("Loading combat villager model through EMF-compatible baked layer:{}", cemOverrideResource.get().sourcePackId());
+            ModelPart root = context.bakeLayer(VillagerRetaliationVillagerModel.LAYER_LOCATION);
+            if (hasRequiredCombatParts(root)) {
+                return root;
+            }
+            LOGGER.warn(
+                    "Combat villager CEM model from {} is missing required parts. Falling back to the built-in JSON model.",
+                    cemOverrideResource.get().sourcePackId()
+            );
+        }
         LOGGER.info("Loading combat villager model from built-in JSON fallback");
         return loadCombatVillagerModel(resourceManager);
     }
@@ -55,6 +72,10 @@ public final class VillagerRetaliationEntityModelLoader {
         Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, VillagerRetaliationClientAssets.COMBAT_VILLAGER_MODEL);
         if (overrideResource.isPresent()) {
             return "json:" + overrideResource.get().sourcePackId();
+        }
+        Optional<Resource> cemOverrideResource = findFirstResourcePackOverride(resourceManager, COMBAT_VILLAGER_CEM_MODELS);
+        if (isEntityModelFeaturesLoaded() && cemOverrideResource.isPresent()) {
+            return "emf:" + cemOverrideResource.get().sourcePackId();
         }
         return "json:" + MOD_RESOURCE_PACK_ID;
     }
@@ -171,6 +192,16 @@ public final class VillagerRetaliationEntityModelLoader {
 
     private static Optional<Resource> findResourcePackOverride(ResourceManager resourceManager, ResourceLocation location) {
         return findResourcePackOverride(resourceManager.getResourceStack(location));
+    }
+
+    private static Optional<Resource> findFirstResourcePackOverride(ResourceManager resourceManager, List<ResourceLocation> locations) {
+        for (ResourceLocation location : locations) {
+            Optional<Resource> resource = findResourcePackOverride(resourceManager, location);
+            if (resource.isPresent()) {
+                return resource;
+            }
+        }
+        return Optional.empty();
     }
 
     private static Optional<Resource> findResourcePackOverride(List<Resource> resourceStack) {
