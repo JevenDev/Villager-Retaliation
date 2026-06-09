@@ -239,6 +239,16 @@ public final class VillagerReputationNetworking {
                     )))
         );
         network.playToServer(
+                HiredLoggingFilterPayload.TYPE,
+                HiredLoggingFilterPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleLoggingFilterRequest(
+                            player,
+                            payload.entityId(),
+                            payload.filterId()
+                    )))
+        );
+        network.playToServer(
                 ClipboardStorageActionPayload.TYPE,
                 ClipboardStorageActionPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->

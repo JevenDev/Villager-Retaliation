@@ -496,6 +496,7 @@
   "villagerretaliation.gui.recruit.work_config_combat": "Configure Combat",
   "villagerretaliation.gui.recruit.work_config_mining": "Configure Mining",
   "villagerretaliation.gui.recruit.work_config_logging": "Configure Logging",
+  "villagerretaliation.gui.recruit.logging_no_filters": "No log filters are available.",
   "villagerretaliation.gui.recruit.work_config_farming": "Configure Farming",
   "villagerretaliation.gui.recruit.work_config_brewing": "Configure Brewing",
   "villagerretaliation.gui.recruit.stop_brewing": "Stop Brewing",

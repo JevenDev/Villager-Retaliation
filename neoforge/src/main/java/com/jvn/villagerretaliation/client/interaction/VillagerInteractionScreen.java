@@ -12,9 +12,11 @@ import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.work.HiredBrewingRecipeCatalog;
+import com.jvn.villagerretaliation.interaction.work.HiredLoggingFilters;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.HiredBrewingOrderPayload;
+import com.jvn.villagerretaliation.network.HiredLoggingFilterPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
@@ -35,9 +37,11 @@ import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
@@ -119,6 +123,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final EnumSet<HiredVillagerRole> availableHiredRoles;
     private final HiredVillagerRole activeHiredRole;
     private boolean activeBrewingOrder;
+    private final Set<String> selectedLoggingFilters = new LinkedHashSet<>();
     private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
@@ -189,6 +194,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             List<HiredVillagerRole> availableHiredRoles,
             HiredVillagerRole activeHiredRole,
             boolean activeBrewingOrder,
+            List<String> selectedLoggingFilters,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
@@ -224,6 +230,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 : EnumSet.copyOf(availableHiredRoles);
         this.activeHiredRole = activeHiredRole;
         this.activeBrewingOrder = activeBrewingOrder;
+        if (selectedLoggingFilters != null) {
+            this.selectedLoggingFilters.addAll(selectedLoggingFilters);
+        }
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
@@ -512,6 +521,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addRoleChangeOptions();
         } else if (this.page == DialoguePage.WORK) {
             addWorkOptions();
+        } else if (this.page == DialoguePage.LOGGING_FILTERS) {
+            addLoggingFilterOptions();
         } else if (this.page == DialoguePage.BREWING_POTION) {
             addBrewingPotionOptions();
         } else if (this.page == DialoguePage.BREWING_LEVEL) {
@@ -711,7 +722,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.work_auto_deposit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS));
         addRoleWorkConfigOption(HiredVillagerRole.COMBAT, "recruit.work_config_combat", VillagerRecruitRequestPayload.Action.CONFIGURE_COMBAT);
         addRoleWorkConfigOption(HiredVillagerRole.MINING, "recruit.work_config_mining", VillagerRecruitRequestPayload.Action.CONFIGURE_MINING);
-        addRoleWorkConfigOption(HiredVillagerRole.LOGGING, "recruit.work_config_logging", VillagerRecruitRequestPayload.Action.CONFIGURE_LOGGING);
+        if (isActiveHiredRole(HiredVillagerRole.LOGGING)) {
+            addOption("recruit.work_config_logging", this::openLoggingFiltersPage);
+        }
         addRoleWorkConfigOption(HiredVillagerRole.FARMING, "recruit.work_config_farming", VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING);
         if (isActiveHiredRole(HiredVillagerRole.BREWING)) {
             if (this.activeBrewingOrder) {
@@ -724,6 +737,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addRoleWorkConfigOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.work_config_animal_handling", VillagerRecruitRequestPayload.Action.CONFIGURE_ANIMAL_HANDLING);
         addRoleWorkConfigOption(HiredVillagerRole.NITWIT, "recruit.work_config_nitwit", VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT);
         addOption("recruit.nevermind", this::openRecruitPage);
+    }
+
+    private void addLoggingFilterOptions() {
+        this.options.add(DialogueOption.enabled(loggingFilterRowLabel("Any logs", this.selectedLoggingFilters.isEmpty()), () -> requestLoggingFilter("any")));
+        List<ResourceLocation> filters = HiredLoggingFilters.options();
+        if (filters.isEmpty()) {
+            this.options.add(DialogueOption.enabled(translate("recruit.logging_no_filters"), NO_ACTION));
+        }
+        for (ResourceLocation filter : filters) {
+            String id = filter.toString();
+            this.options.add(DialogueOption.enabled(loggingFilterRowLabel(HiredLoggingFilters.label(filter), this.selectedLoggingFilters.contains(id)), () -> requestLoggingFilter(id)));
+        }
+        addOption("recruit.nevermind", this::openWorkPage);
     }
 
     private void addBrewingPotionOptions() {
@@ -1064,6 +1090,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.WORK);
     }
 
+    private void openLoggingFiltersPage() {
+        openPage(DialoguePage.LOGGING_FILTERS);
+    }
+
     private void openBrewingPotionPage() {
         this.selectedBrewingPotionChoice = null;
         this.selectedBrewingDurationChoice = null;
@@ -1186,6 +1216,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         if (this.page == DialoguePage.BREWING_POTION) {
+            openPage(DialoguePage.WORK);
+            return;
+        }
+        if (this.page == DialoguePage.LOGGING_FILTERS) {
             openPage(DialoguePage.WORK);
             return;
         }
@@ -1357,6 +1391,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
+    private void requestLoggingFilter(String filterId) {
+        sendToServer(new HiredLoggingFilterPayload(this.villagerEntityId, filterId));
+        if (filterId == null || filterId.isBlank() || "any".equals(filterId)) {
+            this.selectedLoggingFilters.clear();
+        } else if (!this.selectedLoggingFilters.remove(filterId)) {
+            this.selectedLoggingFilters.add(filterId);
+        }
+        rebuildOptionsKeepingListPosition();
+    }
+
     private void requestBrewingOrder(HiredBrewingRecipeCatalog.BrewingRoute route, int amount, boolean continuous) {
         if (route == null) {
             return;
@@ -1380,6 +1424,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void sendToServer(CustomPacketPayload payload) {
         PacketDistributor.sendToServer(payload);
+    }
+
+    private static String loggingFilterRowLabel(String label, boolean selected) {
+        return (selected ? "\u2713 " : "  ") + label;
     }
 
     private void openPage(DialoguePage page) {
@@ -2370,6 +2418,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         ROLE,
         ROLE_CHANGE,
         WORK,
+        LOGGING_FILTERS,
         BREWING_POTION,
         BREWING_LEVEL,
         BREWING_DURATION,

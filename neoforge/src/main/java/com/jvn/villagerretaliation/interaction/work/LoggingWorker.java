@@ -10,7 +10,7 @@ import java.util.Queue;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
@@ -158,7 +158,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private HiredPathTarget findTreeLog(ServerLevel level, Villager villager, HiredWorkContext context) {
-        String filter = context.state().getString("LoggingFilter");
+        Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
         return HiredTargetSearch.find(
                 level,
                 context,
@@ -166,16 +166,16 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 target -> context.isInsideWorkArea(target.blockPos())
                         && context.isLoaded(level, target.blockPos())
                         && !isTemporarilyAvoidedTarget(level, villager, target.blockPos())
-                        && isTreeLog(level, target.blockPos(), filter),
+                        && isTreeLog(level, target.blockPos(), filters),
                 candidateFilter -> plannedTarget(level, villager, context, candidateFilter, MAX_PLANNED_TREE_TARGETS),
                 pos -> context.isInsideWorkArea(pos)
                         && context.isLoaded(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos)
-                        && isTreeLog(level, pos, filter),
+                        && isTreeLog(level, pos, filters),
                 NEXT_TREE_SCAN_GAME_TIME_TAG,
                 TREE_SCAN_CURSOR_TAG,
                 MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK,
-                candidates -> rebuildTreeObjective(level, villager, context, candidates, filter),
+                candidates -> rebuildTreeObjective(level, villager, context, candidates, filters),
                 TREE_SEARCH_MESSAGES);
     }
 
@@ -183,21 +183,17 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return HiredWorkAreaScan.isInProgress(context, TREE_SCAN_CURSOR_TAG);
     }
 
-    private static boolean matchesFilter(BlockState state, String filter) {
-        if (filter == null || filter.isBlank() || "any".equals(filter)) {
-            return true;
-        }
-        return BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString().equals(filter);
-    }
-
-    private static boolean isTreeLog(ServerLevel level, BlockPos pos, String filter) {
+    private static boolean isTreeLog(
+            ServerLevel level,
+            BlockPos pos,
+            Set<ResourceLocation> filters) {
         if (!level.hasChunkAt(pos)) {
             return false;
         }
         BlockState state = level.getBlockState(pos);
-        return isMatchingLog(state, filter)
+        return isMatchingLog(state, filters)
                 && hasNearbyNaturalLeaves(level, pos)
-                && isLikelyNaturalTree(level, pos, filter);
+                && isLikelyNaturalTree(level, pos, filters);
     }
 
     private HiredPathTarget rebuildTreeObjective(
@@ -205,8 +201,8 @@ public final class LoggingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             List<BlockPos> candidates,
-            String filter) {
-        List<BlockPos> grove = bestGrovePlan(level, villager, candidates, filter);
+            Set<ResourceLocation> filters) {
+        List<BlockPos> grove = bestGrovePlan(level, villager, candidates, filters);
         if (!grove.isEmpty()) {
             HiredWorkPlan.replaceWithObjective(
                     context,
@@ -221,7 +217,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     pos -> context.isInsideWorkArea(pos)
                             && context.isLoaded(level, pos)
                             && !isTemporarilyAvoidedTarget(level, villager, pos)
-                            && isTreeLog(level, pos, filter),
+                            && isTreeLog(level, pos, filters),
                     MAX_PLANNED_TREE_TARGETS);
             if (target != null) {
                 return target;
@@ -242,7 +238,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 pos -> context.isInsideWorkArea(pos)
                         && context.isLoaded(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos)
-                        && isTreeLog(level, pos, filter),
+                        && isTreeLog(level, pos, filters),
                 MAX_PLANNED_TREE_TARGETS);
     }
 
@@ -250,8 +246,8 @@ public final class LoggingWorker extends AbstractBlockWorker {
             ServerLevel level,
             Villager villager,
             List<BlockPos> candidates,
-            String filter) {
-        List<BlockPos> roots = distinctTreeRoots(level, candidates, filter);
+            Set<ResourceLocation> filters) {
+        List<BlockPos> roots = distinctTreeRoots(level, candidates, filters);
         if (roots.isEmpty()) {
             return List.of();
         }
@@ -276,11 +272,14 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return bestCluster;
     }
 
-    private static List<BlockPos> distinctTreeRoots(ServerLevel level, List<BlockPos> candidates, String filter) {
+    private static List<BlockPos> distinctTreeRoots(
+            ServerLevel level,
+            List<BlockPos> candidates,
+            Set<ResourceLocation> filters) {
         Set<Long> seenRoots = new HashSet<>();
         List<BlockPos> roots = new ArrayList<>();
         for (BlockPos candidate : candidates) {
-            List<BlockPos> logs = connectedTreeLogs(level, candidate, filter);
+            List<BlockPos> logs = connectedTreeLogs(level, candidate, filters);
             if (logs.isEmpty()) {
                 continue;
             }
@@ -314,23 +313,13 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return TreeHarvestResult.TARGET_CHANGED;
         }
 
-        String filter = context.state().getString("LoggingFilter");
-        List<BlockPos> logs = connectedTreeLogs(level, target.blockPos(), filter);
+        Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
+        List<BlockPos> logs = connectedTreeLogs(level, target.blockPos(), filters);
         if (logs.isEmpty()) {
             return TreeHarvestResult.TARGET_CHANGED;
         }
 
-        List<ItemStack> drops = new ArrayList<>();
-        for (BlockPos log : logs) {
-            if (!context.isLoaded(level, log)) {
-                continue;
-            }
-            BlockState state = level.getBlockState(log);
-            if (!state.is(BlockTags.LOGS)) {
-                continue;
-            }
-            drops.addAll(Block.getDrops(state, level, log, level.getBlockEntity(log), villager, axe));
-        }
+        List<ItemStack> drops = treeDrops(level, context, villager, logs, filters, axe);
         if (!context.canStoreOutputs(drops)) {
             context.depositOutputs(villager);
         }
@@ -346,7 +335,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 continue;
             }
             BlockState state = level.getBlockState(log);
-            if (!state.is(BlockTags.LOGS) || !matchesFilter(state, filter)) {
+            if (!isMatchingLog(state, filters)) {
                 continue;
             }
             for (ItemStack drop : Block.getDrops(state, level, log, level.getBlockEntity(log), villager, axe)) {
@@ -359,6 +348,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             level.destroyBlock(log, false, villager);
             level.destroyBlockProgress(villager.getId(), log, -1);
             damageTool(context, villager, axe);
+            HiredPathMemory.rememberRecent(level, log);
             cut++;
             if (axe.isEmpty()) {
                 break;
@@ -367,20 +357,40 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return cut <= 0 ? TreeHarvestResult.TARGET_CHANGED : TreeHarvestResult.completed(cut);
     }
 
+    private static List<ItemStack> treeDrops(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            List<BlockPos> logs,
+            Set<ResourceLocation> filters,
+            ItemStack axe) {
+        List<ItemStack> drops = new ArrayList<>();
+        for (BlockPos log : logs) {
+            if (!context.isInsideWorkArea(log) || !context.isLoaded(level, log)) {
+                continue;
+            }
+            BlockState state = level.getBlockState(log);
+            if (isMatchingLog(state, filters)) {
+                drops.addAll(Block.getDrops(state, level, log, level.getBlockEntity(log), villager, axe));
+            }
+        }
+        return drops;
+    }
+
     private int adjustedTreeHarvestProgressGoal(
             ServerLevel level,
             HiredWorkContext context,
             BlockPos origin,
             ItemStack axe) {
-        String filter = context.state().getString("LoggingFilter");
-        List<BlockPos> logs = connectedTreeLogs(level, origin, filter);
+        Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
+        List<BlockPos> logs = connectedTreeLogs(level, origin, filters);
         int total = 0;
         for (BlockPos log : logs) {
             if (!context.isInsideWorkArea(log) || !context.isLoaded(level, log)) {
                 continue;
             }
             BlockState state = level.getBlockState(log);
-            if (isMatchingLog(state, filter)) {
+            if (isMatchingLog(state, filters)) {
                 total += breakProgressGoal(level, log, axe);
             }
         }
@@ -391,16 +401,22 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return Math.clamp(Math.round(total * multiplier), 1, MAX_TREE_PROGRESS_TICKS);
     }
 
-    private static List<BlockPos> connectedTreeLogs(ServerLevel level, BlockPos origin, String filter) {
-        List<BlockPos> logs = connectedLogs(level, origin, filter);
+    private static List<BlockPos> connectedTreeLogs(
+            ServerLevel level,
+            BlockPos origin,
+            Set<ResourceLocation> filters) {
+        List<BlockPos> logs = connectedLogs(level, origin, filters);
         return isLikelyNaturalTree(level, logs) ? logs : List.of();
     }
 
-    private static List<BlockPos> connectedLogs(ServerLevel level, BlockPos origin, String filter) {
+    private static List<BlockPos> connectedLogs(
+            ServerLevel level,
+            BlockPos origin,
+            Set<ResourceLocation> filters) {
         if (!level.hasChunkAt(origin)) {
             return List.of();
         }
-        if (!isMatchingLog(level.getBlockState(origin), filter)) {
+        if (!isMatchingLog(level.getBlockState(origin), filters)) {
             return List.of();
         }
         List<BlockPos> logs = new ArrayList<>();
@@ -415,7 +431,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 continue;
             }
             BlockState state = level.getBlockState(current);
-            if (!isMatchingLog(state, filter) || !isInsideTreeSearch(origin, current)) {
+            if (!isMatchingLog(state, filters) || !isInsideTreeSearch(origin, current)) {
                 continue;
             }
             logs.add(current);
@@ -437,8 +453,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return logs;
     }
 
-    private static boolean isLikelyNaturalTree(ServerLevel level, BlockPos origin, String filter) {
-        return isLikelyNaturalTree(level, connectedLogs(level, origin, filter));
+    private static boolean isLikelyNaturalTree(
+            ServerLevel level,
+            BlockPos origin,
+            Set<ResourceLocation> filters) {
+        return isLikelyNaturalTree(level, connectedLogs(level, origin, filters));
     }
 
     private static boolean isLikelyNaturalTree(ServerLevel level, List<BlockPos> logs) {
@@ -447,8 +466,8 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 && naturalLeavesNearLogs(level, logs) >= MIN_NATURAL_LEAVES;
     }
 
-    private static boolean isMatchingLog(BlockState state, String filter) {
-        return state.is(BlockTags.LOGS) && matchesFilter(state, filter);
+    private static boolean isMatchingLog(BlockState state, Set<ResourceLocation> filters) {
+        return state.is(BlockTags.LOGS) && HiredLoggingFilters.matches(state, filters);
     }
 
     private static boolean isInsideTreeSearch(BlockPos origin, BlockPos pos) {

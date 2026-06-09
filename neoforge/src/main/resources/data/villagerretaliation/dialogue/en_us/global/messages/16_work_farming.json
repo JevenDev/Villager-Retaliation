@@ -100,6 +100,12 @@
       ]
     },
     {
+      "key": "interaction.work.farming.missing_planting_item",
+      "lines": [
+        "I need the right seed or crop item before I can harvest and replant that."
+      ]
+    },
+    {
       "key": "interaction.work.farming.completed_crop",
       "lines": [
         "I harvested the ripe crop and set the field right again."

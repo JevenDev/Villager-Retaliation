@@ -24,6 +24,8 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.AttachedStemBlock;
 import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.pathfinder.Path;
 
 public final class FarmingWorker extends AbstractBlockWorker {
@@ -141,11 +143,19 @@ public final class FarmingWorker extends AbstractBlockWorker {
         context.setProgressTicks(0);
         setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, targetPos);
         ItemStack tool = context.inventory().findTool(stack -> true);
-        if (!storeFarmOutputDrops(level, context, villager, targetPos, tool)) {
+        FarmHarvestResult harvestResult = storeFarmOutputDrops(level, context, villager, targetPos, tool);
+        if (harvestResult == FarmHarvestResult.OUTPUT_FULL) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
-            if (depositResult == DepositResult.DEPOSITED && storeFarmOutputDrops(level, context, villager, targetPos, tool)) {
+            if (depositResult == DepositResult.DEPOSITED) {
+                harvestResult = storeFarmOutputDrops(level, context, villager, targetPos, tool);
+            }
+            if (harvestResult == FarmHarvestResult.COMPLETED) {
+                HiredWorkPlan.removeTarget(context, targetPos);
                 clearActiveBreakingTarget(level, context, villager);
                 return WorkResult.completed("interaction.work.farming.completed_output");
+            }
+            if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
+                return targetChanged(level, villager, context, targetPos);
             }
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
@@ -157,6 +167,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
             return WorkResult.idle("interaction.work.farming.output_full_blocked");
+        }
+        if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
+            return targetChanged(level, villager, context, targetPos);
         }
         HiredWorkPlan.removeTarget(context, targetPos);
         clearActiveBreakingTarget(level, context, villager);
@@ -173,12 +186,24 @@ public final class FarmingWorker extends AbstractBlockWorker {
         context.setProgressTicks(0);
         setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, target);
         ItemStack tool = context.inventory().findTool(stack -> true);
-        if (!storeCropDrops(level, context, villager, target, tool)) {
+        FarmHarvestResult harvestResult = storeCropDrops(level, context, villager, target, tool);
+        if (harvestResult == FarmHarvestResult.OUTPUT_FULL) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
-            if (depositResult == DepositResult.DEPOSITED && storeCropDrops(level, context, villager, target, tool)) {
+            if (depositResult == DepositResult.DEPOSITED) {
+                harvestResult = storeCropDrops(level, context, villager, target, tool);
+            }
+            if (harvestResult == FarmHarvestResult.COMPLETED) {
                 HiredWorkPlan.removeTarget(context, target);
                 clearActiveBreakingTarget(level, context, villager);
                 return WorkResult.completed("interaction.work.farming.completed_crop");
+            }
+            if (harvestResult == FarmHarvestResult.MISSING_PLANTING_ITEM) {
+                HiredWorkerBrain.setFailure(context, "missing_planting_item", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target);
+                return WorkResult.idle("interaction.work.farming.missing_planting_item");
+            }
+            if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
+                return targetChanged(level, villager, context, target);
             }
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
@@ -191,13 +216,29 @@ public final class FarmingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
             return WorkResult.idle("interaction.work.farming.output_full_blocked");
         }
+        if (harvestResult == FarmHarvestResult.MISSING_PLANTING_ITEM) {
+            HiredWorkerBrain.setFailure(context, "missing_planting_item", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target);
+            return WorkResult.idle("interaction.work.farming.missing_planting_item");
+        }
+        if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
+            return targetChanged(level, villager, context, target);
+        }
         HiredWorkPlan.removeTarget(context, target);
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
         return WorkResult.completed("interaction.work.farming.completed_crop");
     }
 
-    private boolean storeCropDrops(
+    private WorkResult targetChanged(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos target) {
+        HiredWorkPlan.removeTarget(context, target);
+        clearActiveBreakingTarget(level, context, villager);
+        HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
+        setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target);
+        return WorkResult.idle("interaction.work.farming.target_changed");
+    }
+
+    private FarmHarvestResult storeCropDrops(
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
@@ -206,11 +247,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (!context.isInsideWorkArea(target)
                 || !context.isLoaded(level, target)
                 || !canWorkCropFromCurrentPosition(villager, context, target)) {
-            return false;
+            return FarmHarvestResult.TARGET_CHANGED;
         }
         BlockState state = level.getBlockState(target);
         if (!(state.getBlock() instanceof CropBlock crop) || !crop.isMaxAge(state)) {
-            return false;
+            return FarmHarvestResult.TARGET_CHANGED;
         }
         boolean replant = shouldReplantCrops(context);
         ItemStack seed = replant ? seedForCrop(level, target, crop) : ItemStack.EMPTY;
@@ -218,28 +259,28 @@ public final class FarmingWorker extends AbstractBlockWorker {
         List<ItemStack> storedDrops = copyDrops(drops);
         boolean reservedPlantingItem = replant && reservePlantingItemFromDrops(storedDrops, seed);
         if (replant && !reservedPlantingItem && !hasPlantingItemAvailable(villager, context, seed)) {
-            return false;
+            return FarmHarvestResult.MISSING_PLANTING_ITEM;
         }
         if (!context.canStoreOutputs(storedDrops)) {
-            return false;
+            return FarmHarvestResult.OUTPUT_FULL;
+        }
+        if (replant && !reservedPlantingItem && !consumePlantingItem(villager, context, seed)) {
+            return FarmHarvestResult.MISSING_PLANTING_ITEM;
         }
         for (ItemStack drop : storedDrops) {
             if (!context.storeOutputAfterDepositIfFull(villager, drop).isEmpty()) {
-                return false;
+                return FarmHarvestResult.OUTPUT_FULL;
             }
         }
         faceBlock(villager, target);
         swingWorkTool(villager);
         if (replant) {
-            if (!reservedPlantingItem && !consumePlantingItem(villager, context, seed)) {
-                return false;
-            }
             level.setBlock(target, crop.getStateForAge(0), 3);
         } else {
             level.destroyBlock(target, false, villager);
         }
         HiredPathMemory.rememberRecent(level, target);
-        return true;
+        return FarmHarvestResult.COMPLETED;
     }
 
     private boolean canWorkFarmOutputFromCurrentPosition(Villager villager, HiredWorkContext context, BlockPos target) {
@@ -338,7 +379,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         faceBlock(villager, target);
     }
 
-    private boolean storeFarmOutputDrops(
+    private FarmHarvestResult storeFarmOutputDrops(
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
@@ -347,19 +388,19 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (!context.isInsideWorkArea(target)
                 || !context.isLoaded(level, target)
                 || !canWorkFarmOutputFromCurrentPosition(villager, context, target)) {
-            return false;
+            return FarmHarvestResult.TARGET_CHANGED;
         }
         BlockState state = level.getBlockState(target);
         if (farmTargetType(level, target, state) != FarmTargetType.BLOCK_OUTPUT) {
-            return false;
+            return FarmHarvestResult.TARGET_CHANGED;
         }
         List<ItemStack> drops = Block.getDrops(state, level, target, level.getBlockEntity(target), villager, tool);
         if (!context.canStoreOutputs(drops)) {
-            return false;
+            return FarmHarvestResult.OUTPUT_FULL;
         }
         for (ItemStack drop : drops) {
             if (!context.storeOutputAfterDepositIfFull(villager, drop).isEmpty()) {
-                return false;
+                return FarmHarvestResult.OUTPUT_FULL;
             }
         }
         faceBlock(villager, target);
@@ -367,7 +408,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         level.destroyBlock(target, false, villager);
         clearBreakProgress(level, villager, target);
         HiredPathMemory.rememberRecent(level, target);
-        return true;
+        return FarmHarvestResult.COMPLETED;
     }
 
     private boolean canWorkCropFromCurrentPosition(Villager villager, HiredWorkContext context, BlockPos target) {
@@ -502,10 +543,26 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (state.getBlock() instanceof CocoaBlock && state.getValue(CocoaBlock.AGE) >= CocoaBlock.MAX_AGE) {
             return FarmTargetType.BLOCK_OUTPUT;
         }
-        if (state.is(BlockTags.CROPS) || state.is(Blocks.PUMPKIN) || state.is(Blocks.MELON)) {
+        if ((state.is(BlockTags.CROPS) && !hasImmatureAgeProperty(state))
+                || state.is(Blocks.PUMPKIN)
+                || state.is(Blocks.MELON)) {
             return FarmTargetType.BLOCK_OUTPUT;
         }
         return FarmTargetType.NONE;
+    }
+
+    private static boolean hasImmatureAgeProperty(BlockState state) {
+        for (Property<?> property : state.getProperties()) {
+            if (property instanceof IntegerProperty ageProperty && "age".equals(property.getName())) {
+                int currentAge = state.getValue(ageProperty);
+                int maxAge = ageProperty.getPossibleValues().stream()
+                        .mapToInt(Integer::intValue)
+                        .max()
+                        .orElse(currentAge);
+                return currentAge < maxAge;
+            }
+        }
+        return false;
     }
 
     private FarmTarget plannedFarmTarget(
@@ -731,6 +788,13 @@ public final class FarmingWorker extends AbstractBlockWorker {
         NONE,
         CROP,
         BLOCK_OUTPUT
+    }
+
+    private enum FarmHarvestResult {
+        COMPLETED,
+        OUTPUT_FULL,
+        TARGET_CHANGED,
+        MISSING_PLANTING_ITEM
     }
 
     private record FarmTarget(BlockPos pos, FarmTargetType type) {
