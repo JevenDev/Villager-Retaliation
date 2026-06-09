@@ -115,7 +115,7 @@ public record HiredWorkContext(
         int consumed = this.inventory.consumeSupply(predicate, count);
         int remaining = Math.max(0, count - consumed);
         if (remaining > 0 && this.useAssignedStorageForSupplies) {
-            consumed += AssignedStorageService.consumeItems(villager, predicate, remaining, this::isInsideWorkArea);
+            consumed += AssignedStorageService.consumeItems(villager, predicate, remaining);
         }
         return consumed;
     }

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -68,6 +69,25 @@ public final class MiningWorker extends AbstractBlockWorker {
         clearSharedRuntimeState();
     }
 
+    public static BlockPos excavationEntryTarget(ServerLevel level, HiredWorkContext context) {
+        if (level == null || context == null || !context.hasWorkArea()) {
+            return null;
+        }
+        LadderShaft stored = storedLadderShaft(context);
+        BlockPos entry = stored == null ? null : highestExistingLadder(level, context, stored);
+        if (entry != null) {
+            return entry;
+        }
+        for (LadderShaft candidate : ladderShaftCandidates(context)) {
+            entry = highestExistingLadder(level, context, candidate);
+            if (entry != null) {
+                storeLadderShaft(context, candidate);
+                return entry;
+            }
+        }
+        return null;
+    }
+
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         expireWorkPathMemory(level);
@@ -81,6 +101,14 @@ public final class MiningWorker extends AbstractBlockWorker {
             return fullInventoryResult;
         }
         if (mode.excavatesArea()) {
+            WorkResult supplyResult = gatherExcavationSupplies(level, villager, context);
+            if (supplyResult != null) {
+                return supplyResult;
+            }
+            WorkResult ladderRequirement = requireExcavationLadder(level, villager, context);
+            if (ladderRequirement != null) {
+                return ladderRequirement;
+            }
             WorkResult supportResult = maintainExcavationSupports(level, villager, context);
             if (supportResult != null) {
                 return supportResult;
@@ -623,6 +651,90 @@ public final class MiningWorker extends AbstractBlockWorker {
         return WorkResult.progressed(placement.type().placedStatus());
     }
 
+    private WorkResult requireExcavationLadder(ServerLevel level, Villager villager, HiredWorkContext context) {
+        Integer currentLayerY = currentExcavationLayer(level, context);
+        if (currentLayerY == null) {
+            return null;
+        }
+        if (hasAvailableSupportSupply(level, villager, context, SupportType.LADDER)
+                || hasCompleteLadderToLayer(level, context, currentLayerY)) {
+            return null;
+        }
+        setMiningState(context, MiningState.BLOCKED_MISSING_SUPPLIES);
+        HiredWorkerBrain.setFailure(context, "missing_ladders", 0L);
+        setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
+        return WorkResult.idle("I need ladders in my job supplies or assigned storage before I can excavate safely.");
+    }
+
+    private WorkResult gatherExcavationSupplies(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (!context.useAssignedStorageForSupplies()) {
+            return null;
+        }
+        Integer currentLayerY = currentExcavationLayer(level, context);
+        if (currentLayerY == null) {
+            return null;
+        }
+        boolean needsLadders = context.inventory().findSupply(SupportType.LADDER::matchesSupply).isEmpty()
+                && !hasCompleteLadderToLayer(level, context, currentLayerY)
+                && AssignedStorageService.countItems(villager, SupportType.LADDER::matchesSupply) > 0;
+        boolean wantsTorches = context.inventory().findSupply(SupportType.TORCH::matchesSupply).isEmpty()
+                && AssignedStorageService.countItems(villager, SupportType.TORCH::matchesSupply) > 0;
+        if (!needsLadders && !wantsTorches) {
+            return null;
+        }
+
+        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(
+                level,
+                villager,
+                needsLadders ? SupportType.LADDER::matchesSupply : SupportType.TORCH::matchesSupply);
+        if (storage == null) {
+            return null;
+        }
+        HiredWorkerBrain.setStorageTarget(context, storage);
+        HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
+                level,
+                context,
+                villager,
+                storage,
+                0.55D);
+        if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+            setMiningState(context, MiningState.GATHER_SUPPLIES);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+            return WorkResult.progressed("I am heading to assigned storage for excavation supplies.");
+        }
+        if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
+            HiredWorkerBrain.clearStorageTarget(context);
+            HiredStorageNavigationGoal.clearStorageNavigationState(context);
+            return null;
+        }
+
+        int moved = 0;
+        if (needsLadders) {
+            moved += AssignedStorageService.transferItemsAtAssignedStorage(
+                    villager,
+                    storage,
+                    SupportType.LADDER::matchesSupply,
+                    64,
+                    context.inventory()::insertSupply);
+        }
+        if (wantsTorches) {
+            moved += AssignedStorageService.transferItemsAtAssignedStorage(
+                    villager,
+                    storage,
+                    SupportType.TORCH::matchesSupply,
+                    16,
+                    context.inventory()::insertSupply);
+        }
+        HiredWorkerBrain.clearStorageTarget(context);
+        HiredStorageNavigationGoal.clearStorageNavigationState(context);
+        if (moved > 0) {
+            setMiningState(context, MiningState.GATHER_SUPPLIES);
+            setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+            return WorkResult.progressed("I gathered excavation supplies from storage and am returning to the job site.");
+        }
+        return null;
+    }
+
     private static int excavationSupportFloorY(ServerLevel level, HiredWorkContext context) {
         int openY = deepestOpenSupportY(level, context);
         Integer currentLayerY = currentExcavationLayer(level, context);
@@ -795,6 +907,51 @@ public final class MiningWorker extends AbstractBlockWorker {
     private static boolean hasSupportSupply(HiredWorkContext context, SupportType type) {
         return !context.inventory().findSupply(type::matchesSupply).isEmpty()
                 || context.useAssignedStorageForSupplies();
+    }
+
+    private static boolean hasAvailableSupportSupply(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            SupportType type) {
+        if (!context.inventory().findSupply(type::matchesSupply).isEmpty()) {
+            return true;
+        }
+        return context.useAssignedStorageForSupplies()
+                && AssignedStorageService.countItems(villager, type::matchesSupply) > 0;
+    }
+
+    private static boolean hasCompleteLadderToLayer(ServerLevel level, HiredWorkContext context, int layerY) {
+        LadderShaft shaft = storedLadderShaft(context);
+        Iterable<LadderShaft> candidates = shaft == null ? ladderShaftCandidates(context) : List.of(shaft);
+        for (LadderShaft candidate : candidates) {
+            boolean complete = true;
+            for (int y = context.workMax().getY(); y >= layerY; y--) {
+                BlockPos pos = new BlockPos(candidate.x(), y, candidate.z());
+                if (!level.hasChunkAt(pos) || !level.getBlockState(pos).is(Blocks.LADDER)) {
+                    complete = false;
+                    break;
+                }
+            }
+            if (complete) {
+                storeLadderShaft(context, candidate);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static BlockPos highestExistingLadder(ServerLevel level, HiredWorkContext context, LadderShaft shaft) {
+        if (shaft == null) {
+            return null;
+        }
+        for (int y = context.workMax().getY(); y >= context.workMin().getY(); y--) {
+            BlockPos pos = new BlockPos(shaft.x(), y, shaft.z());
+            if (level.hasChunkAt(pos) && level.getBlockState(pos).is(Blocks.LADDER)) {
+                return pos.immutable();
+            }
+        }
+        return null;
     }
 
     private static HiredPathTarget supportPlacementTarget(
@@ -1251,10 +1408,20 @@ public final class MiningWorker extends AbstractBlockWorker {
         return !state.isAir()
                 && !state.liquid()
                 && !isExcavationSupportBlock(state)
+                && isFullExcavationBlock(level, pos, state)
                 && state.getDestroySpeed(level, pos) >= 0.0F
                 && !state.hasBlockEntity()
                 && hasExcavationToolTag(state)
                 && isExposed(level, pos);
+    }
+
+    private static boolean isFullExcavationBlock(ServerLevel level, BlockPos pos, BlockState state) {
+        for (Direction direction : Direction.values()) {
+            if (!state.isFaceSturdy(level, pos, direction)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean isExcavationSupportBlock(BlockState state) {
@@ -1390,10 +1557,11 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (!context.isInsideWorkArea(villager.blockPosition())) {
             return true;
         }
-        if (villager.blockPosition().getY() >= context.workMax().getY() - 1) {
+        int verticalDelta = target.approachPos().getY() - villager.blockPosition().getY();
+        if (villager.blockPosition().getY() >= context.workMax().getY() - 1 && verticalDelta >= 0) {
             return false;
         }
-        return Math.abs(target.approachPos().getY() - villager.blockPosition().getY()) > 2;
+        return Math.abs(verticalDelta) > 2;
     }
 
     private boolean storeMinedDrops(
@@ -1670,12 +1838,14 @@ public final class MiningWorker extends AbstractBlockWorker {
     private enum MiningState {
         IDLE("idle"),
         FIND_TARGET("find_target"),
+        GATHER_SUPPLIES("gather_supplies"),
         PATH_TO_TARGET("path_to_target"),
         MINE_TARGET("mine_target"),
         DEPOSIT_OUTPUT("deposit_output"),
         WAITING_NO_TARGETS("waiting_no_targets"),
         BLOCKED_OUTPUT_FULL("blocked_output_full"),
-        BLOCKED_MISSING_TOOL("blocked_missing_tool");
+        BLOCKED_MISSING_TOOL("blocked_missing_tool"),
+        BLOCKED_MISSING_SUPPLIES("blocked_missing_supplies");
 
         private final String id;
 

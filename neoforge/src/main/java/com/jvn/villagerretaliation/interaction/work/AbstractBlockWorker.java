@@ -474,8 +474,10 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             if (!context.hasOutputToDeposit()) {
                 AssignedStorageService.closeStorageFeedback(level, storage);
                 HiredWorkerBrain.clearStorageTarget(context);
+                HiredStorageNavigationGoal.clearStorageNavigationState(context);
                 context.state().remove(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG);
-                setTaskState(context, HiredWorkerTaskState.IDLE);
+                stopWorkNavigation(villager);
+                setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
             }
             swingWorkTool(villager);
             return DepositResult.DEPOSITED;

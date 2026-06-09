@@ -61,6 +61,8 @@ public final class VillagerTaskNavigationUtil {
     private static final int SURFACE_ESCAPE_CHUNK_RADIUS = 0;
     private static final int SURFACE_ESCAPE_MIN_Y_GAIN = 3;
     private static final int SURFACE_ESCAPE_SURFACE_SCAN_DEPTH = 8;
+    private static final double SURFACE_ESCAPE_TARGET_DISTANCE_MARGIN_SQR = 9.0D;
+    private static final double SURFACE_ESCAPE_MAX_TARGET_DISTANCE_SQR = 64.0D;
     private static final int MAX_SURFACE_ESCAPE_PATH_ATTEMPTS = 4;
     private static final int SURFACE_ESCAPE_SEARCH_CACHE_TICKS = 20;
     private static final float HIRED_WATER_PATH_COST = 32.0F;
@@ -1031,6 +1033,9 @@ public final class VillagerTaskNavigationUtil {
                         for (int y = surfaceY; y >= scanFloor; y--) {
                             BlockPos candidate = new BlockPos(x, y, z);
                             if (isSafeSurfaceEscapeTarget(level, candidate)) {
+                                if (!isUsefulSurfaceEscapeTarget(origin, target, candidate)) {
+                                    break;
+                                }
                                 candidates.add(new SurfaceEscapeTarget(candidate, surfaceEscapeScore(villager, target, candidate)));
                                 break;
                             }
@@ -1059,7 +1064,22 @@ public final class VillagerTaskNavigationUtil {
     private static double surfaceEscapeScore(Villager villager, BlockPos target, BlockPos pos) {
         double targetDistance = pos.distSqr(target);
         double villagerDistance = villager.distanceToSqr(pos.getCenter());
-        return -pos.getY() * 64.0D + targetDistance * 0.08D + villagerDistance * 0.02D;
+        return targetDistance * 4.0D + villagerDistance * 0.1D - pos.getY() * 0.5D;
+    }
+
+    private static boolean isUsefulSurfaceEscapeTarget(BlockPos origin, BlockPos target, BlockPos candidate) {
+        double originTargetDistance = horizontalDistanceSqr(origin, target);
+        double candidateTargetDistance = horizontalDistanceSqr(candidate, target);
+        double maxAllowedDistance = Math.max(
+                SURFACE_ESCAPE_MAX_TARGET_DISTANCE_SQR,
+                originTargetDistance + SURFACE_ESCAPE_TARGET_DISTANCE_MARGIN_SQR);
+        return candidateTargetDistance <= maxAllowedDistance;
+    }
+
+    private static double horizontalDistanceSqr(BlockPos a, BlockPos b) {
+        double dx = a.getX() - b.getX();
+        double dz = a.getZ() - b.getZ();
+        return dx * dx + dz * dz;
     }
 
     private static boolean isWalkable(ServerLevel level, BlockPos pos) {

@@ -38,7 +38,7 @@ final class HiredStorageNavigationGoal {
 
         setStorageWalkTarget(villager, storage, speed);
 
-        if (context.canDepositOutputsAtStorageNow(villager, storage)) {
+        if (AssignedStorageService.canInteractWithAssignedStorage(villager, storage)) {
             clearStorageNavigationState(context);
             if (!villager.getNavigation().isDone()) {
                 villager.getNavigation().stop();
@@ -258,7 +258,7 @@ final class HiredStorageNavigationGoal {
         context.state().putLong(STORAGE_NAV_NEXT_REPATH_GAME_TIME_TAG, level.getGameTime() + STORAGE_REPATH_INTERVAL_TICKS);
     }
 
-    private static void clearStorageNavigationState(HiredWorkContext context) {
+    static void clearStorageNavigationState(HiredWorkContext context) {
         context.state().remove(STORAGE_NAV_TARGET_TAG);
         context.state().remove(STORAGE_NAV_NEXT_REPATH_GAME_TIME_TAG);
     }

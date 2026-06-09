@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.Assignment
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -235,6 +236,21 @@ public final class AssignedStorageService {
                 .orElse(null);
     }
 
+    public static BlockPos nearestAssignedStoragePosContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate) {
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        BlockPos villagerPos = villager.blockPosition();
+        return liveContainerCandidates(level, villager).stream()
+                .filter(candidate -> containerHasItem(candidate.container(), safePredicate))
+                .min((first, second) -> Double.compare(
+                        first.pos().distSqr(villagerPos),
+                        second.pos().distSqr(villagerPos)))
+                .map(candidate -> candidate.pos().immutable())
+                .orElse(null);
+    }
+
     public static BlockPos nearestAssignedPaymentStoragePos(ServerLevel level, Villager villager) {
         BlockPos villagerPos = villager.blockPosition();
         return livePaymentContainerCandidates(level, villager).stream()
@@ -334,6 +350,77 @@ public final class AssignedStorageService {
         return count - remaining;
     }
 
+    public static int countItems(Villager villager, Predicate<ItemStack> predicate) {
+        return countItems(villager, predicate, ignored -> true);
+    }
+
+    public static int countItems(Villager villager, Predicate<ItemStack> predicate, Predicate<BlockPos> positionFilter) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        int count = 0;
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+            if (!safeFilter.test(candidate.pos())) {
+                continue;
+            }
+            Container container = candidate.container();
+            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (!stack.isEmpty() && safePredicate.test(stack)) {
+                    count += stack.getCount();
+                }
+            }
+        }
+        return count;
+    }
+
+    public static int transferItemsAtAssignedStorage(
+            Villager villager,
+            BlockPos storagePos,
+            Predicate<ItemStack> predicate,
+            int maxCount,
+            Function<ItemStack, ItemStack> receiver) {
+        if (storagePos == null
+                || maxCount <= 0
+                || receiver == null
+                || !(villager.level() instanceof ServerLevel level)
+                || !isInOutputDepositRange(villager, storagePos)) {
+            return 0;
+        }
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
+        int movedTotal = 0;
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+            if (!candidate.pos().equals(storagePos)) {
+                continue;
+            }
+            Container container = candidate.container();
+            for (int slot = 0; slot < container.getContainerSize() && movedTotal < maxCount; slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.isEmpty() || !safePredicate.test(stack)) {
+                    continue;
+                }
+                int requested = Math.min(maxCount - movedTotal, stack.getCount());
+                ItemStack offered = stack.copyWithCount(requested);
+                ItemStack remainder = receiver.apply(offered.copy());
+                int moved = offered.getCount() - remainder.getCount();
+                if (moved <= 0) {
+                    continue;
+                }
+                container.removeItem(slot, moved);
+                movedTotal += moved;
+                if (!usedContainers.contains(candidate)) {
+                    usedContainers.add(candidate);
+                }
+            }
+            break;
+        }
+        VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
+        return movedTotal;
+    }
+
     public static int consumePaymentItems(Villager villager, Predicate<ItemStack> predicate, int count) {
         if (count <= 0 || !(villager.level() instanceof ServerLevel level)) {
             return 0;
@@ -431,6 +518,16 @@ public final class AssignedStorageService {
             break;
         }
         return count;
+    }
+
+    private static boolean containerHasItem(Container container, Predicate<ItemStack> predicate) {
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack stack = container.getItem(slot);
+            if (!stack.isEmpty() && predicate.test(stack)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static List<VillagerInventoryOverflowService.ContainerCandidate> liveContainerCandidates(ServerLevel level, Villager villager) {

@@ -365,6 +365,38 @@ public final class HiredJobInventory implements Container {
         return consumed;
     }
 
+    public ItemStack insertSupply(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack remainder = stack.copy();
+        for (int slot : supplySlots()) {
+            if (!canInsertSupplyIntoSlot(slot)) {
+                continue;
+            }
+            ItemStack current = this.items.get(slot);
+            if (current.isEmpty()) {
+                int moved = Math.min(remainder.getCount(), remainder.getMaxStackSize());
+                this.items.set(slot, remainder.copyWithCount(moved));
+                this.slotTypes[slot] = HiredJobInventorySlotType.SUPPLY;
+                remainder.shrink(moved);
+            } else if (ItemStack.isSameItemSameComponents(current, remainder)
+                    && current.getCount() < current.getMaxStackSize()) {
+                int moved = Math.min(remainder.getCount(), current.getMaxStackSize() - current.getCount());
+                current.grow(moved);
+                remainder.shrink(moved);
+            }
+            if (remainder.isEmpty()) {
+                setChanged();
+                return ItemStack.EMPTY;
+            }
+        }
+        if (remainder.getCount() != stack.getCount()) {
+            setChanged();
+        }
+        return remainder;
+    }
+
     public ItemStack insertOutput(ItemStack stack) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
@@ -550,6 +582,12 @@ public final class HiredJobInventory implements Container {
         HiredJobInventorySlotType type = slotType(slot);
         return type == HiredJobInventorySlotType.OUTPUT
                 || type == HiredJobInventorySlotType.SUPPLY && this.items.get(slot).isEmpty();
+    }
+
+    private boolean canInsertSupplyIntoSlot(int slot) {
+        return isValidSlot(slot)
+                && isSupplySlot(slot)
+                && !ProtectedVillagerProperty.isProtected(this.items.get(slot));
     }
 
     private void resetEmptySlotType(int slot) {
