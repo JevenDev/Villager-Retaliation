@@ -11,8 +11,10 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
+import com.jvn.villagerretaliation.interaction.work.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
+import com.jvn.villagerretaliation.network.HiredBrewingOrderPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
@@ -36,6 +38,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -138,6 +141,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private float skillScroll;
     private float targetSkillScroll;
     private VillagerSkill selectedSkillDetails;
+    private HiredBrewingRecipeCatalog.BrewingPotionChoice selectedBrewingPotionChoice;
+    private HiredBrewingRecipeCatalog.BrewingDurationChoice selectedBrewingDurationChoice;
+    private HiredBrewingRecipeCatalog.BrewingLevelChoice selectedBrewingLevelChoice;
+    private HiredBrewingRecipeCatalog.BrewingRoute selectedBrewingRoute;
     private int selectedInventorySlot = -1;
     private int lastMouseX;
     private int lastMouseY;
@@ -502,6 +509,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addRoleChangeOptions();
         } else if (this.page == DialoguePage.WORK) {
             addWorkOptions();
+        } else if (this.page == DialoguePage.BREWING_POTION) {
+            addBrewingPotionOptions();
+        } else if (this.page == DialoguePage.BREWING_LEVEL) {
+            addBrewingLevelOptions();
+        } else if (this.page == DialoguePage.BREWING_DURATION) {
+            addBrewingDurationOptions();
+        } else if (this.page == DialoguePage.BREWING_TYPE) {
+            addBrewingTypeOptions();
+        } else if (this.page == DialoguePage.BREWING_AMOUNT) {
+            addBrewingAmountOptions();
         } else if (this.page == DialoguePage.ROOT) {
             if (this.clipboardMenu) {
                 addClipboardMenuOptions();
@@ -693,11 +710,142 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addRoleWorkConfigOption(HiredVillagerRole.MINING, "recruit.work_config_mining", VillagerRecruitRequestPayload.Action.CONFIGURE_MINING);
         addRoleWorkConfigOption(HiredVillagerRole.LOGGING, "recruit.work_config_logging", VillagerRecruitRequestPayload.Action.CONFIGURE_LOGGING);
         addRoleWorkConfigOption(HiredVillagerRole.FARMING, "recruit.work_config_farming", VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING);
-        addRoleWorkConfigOption(HiredVillagerRole.BREWING, "recruit.work_config_brewing", VillagerRecruitRequestPayload.Action.CONFIGURE_BREWING);
+        if (isActiveHiredRole(HiredVillagerRole.BREWING)) {
+            addOption("recruit.work_config_brewing", this::openBrewingPotionPage);
+        }
         addRoleWorkConfigOption(HiredVillagerRole.NAVIGATION, "recruit.work_config_navigation", VillagerRecruitRequestPayload.Action.CONFIGURE_NAVIGATION);
         addRoleWorkConfigOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.work_config_animal_handling", VillagerRecruitRequestPayload.Action.CONFIGURE_ANIMAL_HANDLING);
         addRoleWorkConfigOption(HiredVillagerRole.NITWIT, "recruit.work_config_nitwit", VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT);
         addOption("recruit.nevermind", this::openRecruitPage);
+    }
+
+    private void addBrewingPotionOptions() {
+        if (this.minecraft == null || this.minecraft.level == null) {
+            this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_recipes"), NO_ACTION));
+        } else {
+            List<HiredBrewingRecipeCatalog.BrewingPotionChoice> choices = HiredBrewingRecipeCatalog.potionChoices(this.minecraft.level);
+            if (choices.isEmpty()) {
+                this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_recipes"), NO_ACTION));
+            }
+            for (HiredBrewingRecipeCatalog.BrewingPotionChoice choice : choices) {
+                this.options.add(DialogueOption.enabled(choice.label(), () -> {
+                    this.selectedBrewingPotionChoice = choice;
+                    this.selectedBrewingDurationChoice = null;
+                    this.selectedBrewingLevelChoice = null;
+                    this.selectedBrewingRoute = null;
+                    openPage(DialoguePage.BREWING_LEVEL);
+                }));
+            }
+        }
+        addOption("recruit.nevermind", this::openWorkPage);
+    }
+
+    private void addBrewingLevelOptions() {
+        if (this.selectedBrewingPotionChoice == null) {
+            openBrewingPotionPage();
+            return;
+        }
+        List<HiredBrewingRecipeCatalog.BrewingLevelChoice> choices = HiredBrewingRecipeCatalog.levelChoices(this.selectedBrewingPotionChoice);
+        if (choices.isEmpty()) {
+            this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_variants"), NO_ACTION));
+        }
+        for (HiredBrewingRecipeCatalog.BrewingLevelChoice choice : choices) {
+            this.options.add(DialogueOption.enabled(levelLabel(choice.level()), () -> {
+                this.selectedBrewingLevelChoice = choice;
+                this.selectedBrewingDurationChoice = null;
+                this.selectedBrewingRoute = null;
+                openPage(DialoguePage.BREWING_DURATION);
+            }));
+        }
+        addOption("recruit.nevermind", this::openBrewingPotionPage);
+    }
+
+    private void addBrewingDurationOptions() {
+        if (this.selectedBrewingLevelChoice == null) {
+            openPage(DialoguePage.BREWING_LEVEL);
+            return;
+        }
+        List<HiredBrewingRecipeCatalog.BrewingDurationChoice> choices = HiredBrewingRecipeCatalog.durationChoices(this.selectedBrewingLevelChoice);
+        if (choices.isEmpty()) {
+            this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_variants"), NO_ACTION));
+        }
+        for (HiredBrewingRecipeCatalog.BrewingDurationChoice choice : choices) {
+            this.options.add(DialogueOption.enabled(durationLabel(choice.durationTicks()), () -> {
+                this.selectedBrewingDurationChoice = choice;
+                this.selectedBrewingRoute = null;
+                openPage(DialoguePage.BREWING_TYPE);
+            }));
+        }
+        addOption("recruit.nevermind", () -> openPage(DialoguePage.BREWING_LEVEL));
+    }
+
+    private void addBrewingTypeOptions() {
+        if (this.selectedBrewingDurationChoice == null) {
+            openPage(DialoguePage.BREWING_DURATION);
+            return;
+        }
+        List<HiredBrewingRecipeCatalog.BrewingTypeChoice> choices = HiredBrewingRecipeCatalog.typeChoices(this.selectedBrewingDurationChoice);
+        if (choices.isEmpty()) {
+            this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_variants"), NO_ACTION));
+        }
+        for (HiredBrewingRecipeCatalog.BrewingTypeChoice choice : choices) {
+            this.options.add(DialogueOption.enabled(typeLabel(choice), () -> {
+                this.selectedBrewingRoute = choice.route();
+                openPage(DialoguePage.BREWING_AMOUNT);
+            }));
+        }
+        addOption("recruit.nevermind", () -> openPage(DialoguePage.BREWING_DURATION));
+    }
+
+    private void addBrewingAmountOptions() {
+        if (this.selectedBrewingRoute == null) {
+            openPage(DialoguePage.BREWING_TYPE);
+            return;
+        }
+        addBrewingAmountOption("recruit.brewing_amount_1", 1, false);
+        addBrewingAmountOption("recruit.brewing_amount_3", 3, false);
+        addBrewingAmountOption("recruit.brewing_amount_6", 6, false);
+        addBrewingAmountOption("recruit.brewing_amount_9", 9, false);
+        addBrewingAmountOption("recruit.brewing_amount_27", 27, false);
+        addBrewingAmountOption("recruit.brewing_amount_continuous", 0, true);
+        addOption("recruit.nevermind", () -> openPage(DialoguePage.BREWING_TYPE));
+    }
+
+    private void addBrewingAmountOption(String labelKey, int amount, boolean continuous) {
+        addOption(labelKey, () -> requestBrewingOrder(this.selectedBrewingRoute, amount, continuous));
+    }
+
+    private String durationLabel(int durationTicks) {
+        if (durationTicks <= 0) {
+            return translate("recruit.brewing_duration_instant");
+        }
+        int totalSeconds = Math.max(1, durationTicks / 20);
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return translate("recruit.brewing_duration", String.format(Locale.ROOT, "%d:%02d", minutes, seconds));
+    }
+
+    private String levelLabel(int level) {
+        return translate("recruit.brewing_level", romanNumeral(Math.max(1, level)));
+    }
+
+    private String typeLabel(HiredBrewingRecipeCatalog.BrewingTypeChoice choice) {
+        String labelKey = choice.type().labelKey();
+        if (!labelKey.isBlank()) {
+            return translate(labelKey);
+        }
+        return choice.route().output().getHoverName().getString();
+    }
+
+    private static String romanNumeral(int number) {
+        return switch (number) {
+            case 1 -> "I";
+            case 2 -> "II";
+            case 3 -> "III";
+            case 4 -> "IV";
+            case 5 -> "V";
+            default -> Integer.toString(number);
+        };
     }
 
     private void addRoleChangeOption(HiredVillagerRole role, String labelKey, VillagerRecruitRequestPayload.Action action) {
@@ -909,6 +1057,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.WORK);
     }
 
+    private void openBrewingPotionPage() {
+        this.selectedBrewingPotionChoice = null;
+        this.selectedBrewingDurationChoice = null;
+        this.selectedBrewingLevelChoice = null;
+        this.selectedBrewingRoute = null;
+        openPage(DialoguePage.BREWING_POTION);
+    }
+
     private void openFamilyPage() {
         openPage(DialoguePage.FAMILY);
     }
@@ -1004,6 +1160,26 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         if (this.page == DialoguePage.ROLE) {
             openPage(DialoguePage.RECRUIT);
+            return;
+        }
+        if (this.page == DialoguePage.BREWING_AMOUNT) {
+            openPage(DialoguePage.BREWING_TYPE);
+            return;
+        }
+        if (this.page == DialoguePage.BREWING_TYPE) {
+            openPage(DialoguePage.BREWING_DURATION);
+            return;
+        }
+        if (this.page == DialoguePage.BREWING_DURATION) {
+            openPage(DialoguePage.BREWING_LEVEL);
+            return;
+        }
+        if (this.page == DialoguePage.BREWING_LEVEL) {
+            openPage(DialoguePage.BREWING_POTION);
+            return;
+        }
+        if (this.page == DialoguePage.BREWING_POTION) {
+            openPage(DialoguePage.WORK);
             return;
         }
         if (this.page == DialoguePage.WORK) {
@@ -1169,6 +1345,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.followingPlayer = false;
             this.stayingHere = false;
         }
+    }
+
+    private void requestBrewingOrder(HiredBrewingRecipeCatalog.BrewingRoute route, int amount, boolean continuous) {
+        if (route == null) {
+            return;
+        }
+        sendToServer(new HiredBrewingOrderPayload(
+                this.villagerEntityId,
+                route.itemId(),
+                route.potionId(),
+                amount,
+                continuous));
+        openWorkPage();
     }
 
     private void requestClipboardStorage(ClipboardStorageActionPayload.Action action) {
@@ -2169,7 +2358,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         CONTRACT_EXTENSION,
         ROLE,
         ROLE_CHANGE,
-        WORK
+        WORK,
+        BREWING_POTION,
+        BREWING_LEVEL,
+        BREWING_DURATION,
+        BREWING_TYPE,
+        BREWING_AMOUNT
     }
 
     private record DialogueOption(String label, Runnable action) {

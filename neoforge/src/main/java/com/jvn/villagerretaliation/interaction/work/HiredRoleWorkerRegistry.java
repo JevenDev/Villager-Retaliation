@@ -14,7 +14,7 @@ public final class HiredRoleWorkerRegistry {
         register(new MiningWorker());
         register(new FarmingWorker());
         register(new NitwitWorker());
-        register(new StatusOnlyWorker(HiredVillagerRole.BREWING, "I am ready to brew once there is a proper stand and the needed supplies."));
+        register(new BrewingWorker());
         register(new StatusOnlyWorker(HiredVillagerRole.NAVIGATION, "I am ready to guide the way once you settle on where I should lead."));
         register(new StatusOnlyWorker(HiredVillagerRole.ANIMAL_HANDLING, "I am ready to tend the animals once there are lures and a safe pen."));
     }

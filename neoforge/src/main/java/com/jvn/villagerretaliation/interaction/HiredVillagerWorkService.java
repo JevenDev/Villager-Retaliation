@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
+import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
@@ -845,7 +846,7 @@ public final class HiredVillagerWorkService {
                 state.putString("CropMode", "harvest_replant".equals(current) ? "harvest_only" : "harvest_replant");
                 setStatus(state, "My farming approach is now " + state.getString("CropMode") + ".");
             }
-            case BREWING -> setStatus(state, "I have adjusted my brewing routine as much as I can for now.");
+            case BREWING -> setStatus(state, BrewingWorker.orderSummary(level, state));
             case NAVIGATION -> setStatus(state, "I have shifted my navigation focus for the next route.");
             case ANIMAL_HANDLING -> setStatus(state, "I have changed what I am watching for with the animals.");
             case NITWIT -> setStatus(state, "I have rearranged my very particular style of helping.");

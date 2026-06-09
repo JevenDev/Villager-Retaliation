@@ -226,6 +226,19 @@ public final class VillagerReputationNetworking {
                     )))
         );
         network.playToServer(
+                HiredBrewingOrderPayload.TYPE,
+                HiredBrewingOrderPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleBrewingOrderRequest(
+                            player,
+                            payload.entityId(),
+                            payload.itemId(),
+                            payload.potionId(),
+                            payload.amount(),
+                            payload.continuous()
+                    )))
+        );
+        network.playToServer(
                 ClipboardStorageActionPayload.TYPE,
                 ClipboardStorageActionPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->

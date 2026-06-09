@@ -20,6 +20,8 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummary;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
+import com.jvn.villagerretaliation.interaction.work.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
@@ -53,11 +55,13 @@ import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -405,6 +409,48 @@ public final class VillagerInteractionService {
             }
             default -> sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
         }
+    }
+
+    public static void handleBrewingOrderRequest(
+            ServerPlayer player,
+            int entityId,
+            ResourceLocation itemId,
+            ResourceLocation potionId,
+            int amount,
+            boolean continuous) {
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager) || !canUseInteractionSystem(player, villager)) {
+            sendNotice(player, entityId, "interaction.inventory_unavailable");
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            sendVillagerNotice(player, villager, "Only the hiring player can manage hired work.");
+            return;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BREWING) {
+            sendVillagerNotice(player, villager, "Assign me to Brewing before choosing a potion.");
+            return;
+        }
+        if (!continuous && amount <= 0) {
+            sendVillagerNotice(player, villager, "Choose how many potions I should brew.");
+            return;
+        }
+        Optional<HiredBrewingRecipeCatalog.BrewingRoute> route = HiredBrewingRecipeCatalog.find(level, itemId, potionId);
+        if (route.isEmpty()) {
+            sendVillagerNotice(player, villager, "I do not know that brewing recipe.");
+            return;
+        }
+        CompoundTag state = HiredVillagerWorkService.state(villager);
+        HiredVillagerWorkService.initializeDefaults(state, villager);
+        BrewingWorker.setOrder(state, itemId, potionId, amount, continuous);
+        String quantity = continuous ? "continuously" : Integer.toString(amount);
+        HiredVillagerWorkService.stopWork(
+                level,
+                villager,
+                HiredVillagerRole.BREWING,
+                "Brewing " + quantity + " x " + route.get().output().getHoverName().getString() + ".");
+        sendVillagerNotice(player, villager, BrewingWorker.orderSummary(level, state));
     }
 
     public static void handleClipboardStorageAction(ServerPlayer player, int entityId, ClipboardStorageActionPayload.Action action) {
