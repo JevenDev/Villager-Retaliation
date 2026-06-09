@@ -10,11 +10,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.CollisionGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 
 final class HiredMoveToBlockFaceJob extends HiredPathJob {
     static final double MAX_REACH = 3.0D;
@@ -70,7 +72,7 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 continue;
             }
             BlockState exposedState = this.level.getBlockState(exposedNeighbor);
-            if (!exposedState.isAir() && !exposedState.liquid()) {
+            if (!isPassableForApproach(this.level, exposedNeighbor, exposedState)) {
                 continue;
             }
             Vec3 hit = faceHitPosition(target, direction);
@@ -191,7 +193,7 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 continue;
             }
             BlockState neighborState = level.getBlockState(neighbor);
-            if (!neighborState.isAir() && !neighborState.liquid()) {
+            if (!isPassableForApproach(level, neighbor, neighborState)) {
                 continue;
             }
             Vec3 hit = faceHitPosition(target, direction);
@@ -211,10 +213,15 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
         if (!isLoaded(level, target)) {
             return false;
         }
+        ClipContext.Block blockMode = level.getBlockState(target)
+                .getCollisionShape(level, target, CollisionContext.empty())
+                .isEmpty()
+                ? ClipContext.Block.OUTLINE
+                : ClipContext.Block.COLLIDER;
         BlockHitResult hit = level.clip(new ClipContext(
                 start,
                 hitPos,
-                ClipContext.Block.COLLIDER,
+                blockMode,
                 ClipContext.Fluid.NONE,
                 villager));
         return hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(target);
@@ -227,9 +234,15 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
         BlockState feet = level.getBlockState(pos);
         BlockState head = level.getBlockState(pos.above());
         BlockState floor = level.getBlockState(pos.below());
-        return (feet.isAir() || feet.liquid())
-                && (head.isAir() || head.liquid())
+        return isPassableForApproach(level, pos, feet)
+                && isPassableForApproach(level, pos.above(), head)
                 && floor.isSolid();
+    }
+
+    private static boolean isPassableForApproach(CollisionGetter level, BlockPos pos, BlockState state) {
+        return state.isAir()
+                || state.liquid()
+                || state.getCollisionShape(level, pos, CollisionContext.empty()).isEmpty();
     }
 
     static double terrainCost(ServerLevel level, BlockPos pos) {
