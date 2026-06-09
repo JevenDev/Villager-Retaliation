@@ -1,0 +1,220 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.hire_contracts"
+  },
+  "messages": [
+    {
+      "key": "interaction.end_hire_confirmation_prompt",
+      "lines": [
+        "Are you sure you want to end our contract early?",
+        "You would end our contract before its time? Are you sure?",
+        "Do you truly want to cut our contract short?",
+        "Are you certain you want to end this contract early?",
+        "You are asking to end our agreement early. Are you sure?",
+        "Would you really end our contract before it is finished?",
+        "You want to stop our contract early. Is that final?",
+        "Are you sure you want to dismiss me before the contract ends?",
+        "Do you mean to end our contract now, before the agreed time?",
+        "If you end our contract early, that will be the end of it. Are you sure?"
+      ]
+    },
+    {
+      "key": "interaction.end_hire_confirmation_declined",
+      "lines": [
+        "All right. We will keep the contract as it is.",
+        "Very well. Our contract stays in place.",
+        "Understood. We continue as agreed.",
+        "No trouble then. I will remain under contract.",
+        "All right. Nothing changes between us.",
+        "Good. We will carry on with the contract.",
+        "Very well. I will stay on until the contract ends.",
+        "Then we keep to the original agreement.",
+        "Understood. The contract remains active.",
+        "All right. We will leave the contract untouched."
+      ]
+    },
+    {
+      "key": "interaction.end_hire_confirmation_accepted",
+      "lines": [
+        "Then our contract is ended.",
+        "Very well. Our agreement ends here.",
+        "Understood. The contract is over.",
+        "All right. We are finished with this contract.",
+        "Then that is the end of our arrangement.",
+        "Very well. I am released from the contract.",
+        "Our contract ends now.",
+        "Understood. That closes our agreement.",
+        "All right. The contract is done.",
+        "Then we part ways here. The contract is ended."
+      ]
+    },
+    {
+      "key": "interaction.end_hire_confirmation_accepted_refund",
+      "lines": [
+        "Then our contract is ended. I have returned {refund_amount}.",
+        "Very well. Our agreement ends here, and you receive {refund_amount} back.",
+        "Understood. The contract is over. Here is {refund_amount} returned to you.",
+        "All right. We are finished with this contract, and {refund_amount} has been refunded.",
+        "Then that is the end of our arrangement. You get {refund_amount} back.",
+        "Very well. I am released from the contract, and {refund_amount} is returned.",
+        "Our contract ends now. I have refunded {refund_amount}.",
+        "Understood. That closes our agreement, with {refund_amount} returned to you.",
+        "All right. The contract is done, and you are refunded {refund_amount}.",
+        "Then we part ways here. The contract is ended, and {refund_amount} comes back to you."
+      ]
+    },
+    {
+      "key": "interaction.hired_contract_days_left",
+      "lines": [
+        "We still have {time_remaining} left on our contract.",
+        "There are {time_remaining} remaining in our agreement.",
+        "Our contract has {time_remaining} left to run.",
+        "You still have me for {time_remaining}.",
+        "This arrangement lasts another {time_remaining}.",
+        "We have {time_remaining} left before the contract ends.",
+        "The contract will hold for {time_remaining} more.",
+        "There is still {time_remaining} left on my hire.",
+        "Our agreement continues for {time_remaining} yet.",
+        "I am under contract with you for {time_remaining} longer."
+      ]
+    },
+    {
+      "key": "interaction.hired_contract_taken",
+      "lines": [
+        "I am already under contract.",
+        "Someone has already hired me.",
+        "My contract is already spoken for.",
+        "I am already bound to another agreement.",
+        "I am not free to take another contract.",
+        "My labor is already promised elsewhere.",
+        "I already serve under contract.",
+        "Another agreement has claimed my time already.",
+        "I cannot take a new contract while this one stands.",
+        "I have a contract already, and it still holds."
+      ]
+    },
+    {
+      "key": "interaction.contract_offer_overview",
+      "lines": [
+        "I can work as {available_roles}. My daily rate is {contract_cost}.",
+        "The roles I can take are {available_roles}, and it costs {contract_cost} per day.",
+        "You may hire me as {available_roles}. The price is {contract_cost} each day.",
+        "I am available for {available_roles}, for {contract_cost} a day.",
+        "If you want my service, I can work as {available_roles}. Daily cost: {contract_cost}.",
+        "I could take the role of {available_roles}. My pay is {contract_cost} per day.",
+        "For {contract_cost} each day, I can serve as {available_roles}.",
+        "My available work is {available_roles}, and the daily rate is {contract_cost}.",
+        "I can be hired for {available_roles}. It will cost {contract_cost} a day.",
+        "These are the roles I can fill: {available_roles}. My daily cost is {contract_cost}."
+      ]
+    },
+    {
+      "key": "interaction.hire_cost",
+      "lines": [
+        "Hiring me for {time_remaining} costs {contract_cost}.",
+        "For {time_remaining} of work, the price is {contract_cost}.",
+        "That contract would cost {contract_cost} for {time_remaining}.",
+        "If you want me for {time_remaining}, it will be {contract_cost}.",
+        "My rate for {time_remaining} comes to {contract_cost}.",
+        "To hire me for {time_remaining}, you would need {contract_cost}.",
+        "That length of contract costs {contract_cost}. You would have me for {time_remaining}.",
+        "For a term of {time_remaining}, I ask {contract_cost}.",
+        "The cost of hiring me for {time_remaining} is {contract_cost}.",
+        "A {time_remaining} contract with me would be {contract_cost}."
+      ]
+    },
+    {
+      "key": "interaction.hire_started",
+      "lines": [
+        "Then I am yours for {time_remaining} as {role}, for {contract_cost}.",
+        "Very well. I will serve as {role} for {time_remaining}. The contract is {contract_cost}.",
+        "Understood. You have hired me as {role} for {time_remaining}, at {contract_cost}.",
+        "All right. I will work as {role} for {time_remaining}. You have paid {contract_cost}.",
+        "Then the contract begins. I will serve as {role} for {time_remaining}.",
+        "Very well. For {contract_cost}, I am hired as {role} for {time_remaining}.",
+        "It is settled. I will take the role of {role} for {time_remaining}.",
+        "Then we have an agreement: {role} work for {time_remaining}, at {contract_cost}.",
+        "Our contract is made. I will serve as {role} for {time_remaining}.",
+        "So be it. I am hired as {role} for {time_remaining}, for {contract_cost}."
+      ]
+    },
+    {
+      "key": "interaction.extend_cost",
+      "lines": [
+        "An extension of {time_remaining} costs {contract_cost}.",
+        "To add {time_remaining} to the contract, you would pay {contract_cost}.",
+        "That extension would cost {contract_cost} for {time_remaining} more.",
+        "If you want {time_remaining} more, the price is {contract_cost}.",
+        "Adding {time_remaining} to our agreement comes to {contract_cost}.",
+        "The cost to extend this contract by {time_remaining} is {contract_cost}.",
+        "For {contract_cost}, I can add {time_remaining} to the contract.",
+        "A further {time_remaining} would require {contract_cost}.",
+        "To continue our arrangement for {time_remaining} longer, it will cost {contract_cost}.",
+        "That much more time costs {contract_cost}: {time_remaining} added to the contract."
+      ]
+    },
+    {
+      "key": "interaction.extend_unavailable",
+      "lines": [
+        "I cannot extend the contract right now.",
+        "That agreement cannot be lengthened at the moment.",
+        "For now, this contract will not extend.",
+        "I am not able to renew the contract right now.",
+        "The contract cannot be adjusted further at the moment.",
+        "That extension is not possible just now.",
+        "I cannot add more time to the contract right now.",
+        "This agreement will not take an extension at the moment.",
+        "No, I cannot extend our contract right now.",
+        "The contract refuses to grow any longer for now."
+      ]
+    },
+    {
+      "key": "interaction.extend_success",
+      "lines": [
+        "Very well. I have added {time_remaining} to our contract. We now have {new_time_remaining} left.",
+        "The contract is extended by {time_remaining} for {contract_cost}. {new_time_remaining} remain.",
+        "Understood. Our agreement now runs {time_remaining} longer, leaving {new_time_remaining} in all.",
+        "All right. For {contract_cost}, I will stay on another {time_remaining}.",
+        "Then the contract continues. I have added {time_remaining}, so {new_time_remaining} remain.",
+        "Very good. Our agreement has been lengthened by {time_remaining}. We have {new_time_remaining} left.",
+        "It is done. The contract is extended by {time_remaining}, with {new_time_remaining} remaining.",
+        "Then I remain in your service for {time_remaining} more. That leaves {new_time_remaining} on the contract.",
+        "So be it. For {contract_cost}, the contract grows by {time_remaining}.",
+        "Our arrangement has been extended. Add {time_remaining}, and we now stand at {new_time_remaining} remaining."
+      ]
+    },
+    {
+      "key": "interaction.hire.end_requires_hirer",
+      "lines": [
+        "Only the hiring player can end this contract."
+      ]
+    },
+    {
+      "key": "interaction.hire.extend_requires_hirer",
+      "lines": [
+        "Only the hiring player can extend this contract."
+      ]
+    },
+    {
+      "key": "interaction.hire_unavailable",
+      "lines": [
+        "I cannot be hired yet.",
+        "I cannot be hired right now.",
+        "Hiring me is not possible yet.",
+        "I am not available for hire.",
+        "That arrangement is not ready.",
+        "No, I cannot take work from you right now.",
+        "You cannot hire me at the moment.",
+        "I am not taking that kind of work yet.",
+        "Come back when hiring is actually possible.",
+        "For now, that offer has nowhere to land."
+      ]
+    }
+  ]
+}

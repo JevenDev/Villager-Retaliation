@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.hired_roles"
+  },
+  "messages": [
+    {
+      "key": "interaction.role_requires_hire",
+      "lines": [
+        "Hire me first, then choose my work.",
+        "Give me a contract first, and then assign my role.",
+        "Set me under hire before you choose what I do.",
+        "I need to be hired before you direct my work.",
+        "Put me under contract first, then we can speak of roles.",
+        "First hire me. After that, choose my work.",
+        "My role comes after the contract, not before it.",
+        "I cannot take an assigned role until you hire me.",
+        "Make the contract first, then tell me what work you want.",
+        "Hire me, and then we can decide my duties."
+      ]
+    },
+    {
+      "key": "interaction.role_not_suitable",
+      "lines": [
+        "{role} does not suit my profession or skills.",
+        "I am not well fitted for {role}.",
+        "{role} is not work I am suited to.",
+        "My training does not lend itself to {role}.",
+        "I would not be a good choice for {role}.",
+        "That role does not match what I know how to do.",
+        "{role} is not a proper fit for me.",
+        "My profession and skills do not favor {role}.",
+        "I am not the right villager for {role}.",
+        "You should choose someone better suited than me for {role}."
+      ]
+    },
+    {
+      "key": "interaction.role_assigned",
+      "lines": [
+        "Very well. I will serve as {role}.",
+        "Understood. My role is now {role}.",
+        "All right. I will take up {role} duties.",
+        "Then {role} is my work now.",
+        "So be it. I will act as {role}.",
+        "I understand. You have assigned me to {role}.",
+        "Very good. I will work in the role of {role}.",
+        "Then I am set to {role}.",
+        "Our arrangement is clear. I will serve as {role}.",
+        "I will take that role: {role}."
+      ]
+    },
+    {
+      "key": "interaction.role_overview",
+      "lines": [
+        "I am serving as {role}. I can also take {available_roles}.",
+        "My current role is {role}. The roles open to me are {available_roles}.",
+        "Right now I work as {role}. Available roles for me are {available_roles}.",
+        "At present I am assigned to {role}. I am able to serve as {available_roles}.",
+        "My duty is {role} for now. I could also take {available_roles}.",
+        "I am currently set as {role}. These are my available roles: {available_roles}.",
+        "For the moment I serve as {role}. Other roles I can take are {available_roles}.",
+        "You have me working as {role}. I am available for {available_roles} as well.",
+        "My present assignment is {role}. I can fill these roles: {available_roles}.",
+        "I stand as {role} right now, though I am capable of {available_roles}."
+      ]
+    },
+    {
+      "key": "interaction.role.manage_requires_hirer",
+      "lines": [
+        "Only the hiring player can manage my role."
+      ]
+    }
+  ]
+}

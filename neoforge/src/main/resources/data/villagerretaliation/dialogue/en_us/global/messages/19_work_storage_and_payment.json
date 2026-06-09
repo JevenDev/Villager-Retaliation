@@ -1,0 +1,193 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_storage_and_payment"
+  },
+  "messages": [
+    {
+      "key": "interaction.clipboard.storage.hold_clipboard",
+      "lines": [
+        "Hold the clipboard to manage assigned storage."
+      ]
+    },
+    {
+      "key": "interaction.clipboard.work_area.hold_clipboard",
+      "lines": [
+        "Hold the clipboard to manage assigned work areas."
+      ]
+    },
+    {
+      "key": "interaction.clipboard.work_area.same_dimension",
+      "lines": [
+        "Stand in the same dimension as this worker to set the job site center."
+      ]
+    },
+    {
+      "key": "interaction.clipboard.selection_cleared",
+      "lines": [
+        "Clipboard selection cleared."
+      ]
+    },
+    {
+      "key": "interaction.job_inventory.requires_hirer",
+      "lines": [
+        "Only the hiring player can open hired job inventory."
+      ]
+    },
+    {
+      "key": "interaction.storage.assign_requires_access",
+      "lines": [
+        "You need trust or an active hire contract to assign my storage."
+      ]
+    },
+    {
+      "key": "interaction.storage.select_with_clipboard",
+      "lines": [
+        "Select storage with the clipboard first."
+      ]
+    },
+    {
+      "key": "interaction.storage.assign_result.assigned",
+      "lines": [
+        "Assigned {count} container{plural}."
+      ]
+    },
+    {
+      "key": "interaction.storage.assign_result.already_assigned",
+      "lines": [
+        "That storage is already assigned to another villager."
+      ]
+    },
+    {
+      "key": "interaction.storage.assign_result.invalid",
+      "lines": [
+        "No valid selected containers were found."
+      ]
+    },
+    {
+      "key": "interaction.storage.assign_result.none",
+      "lines": [
+        "No storage was assigned."
+      ]
+    },
+    {
+      "key": "interaction.storage.inspect_requires_access",
+      "lines": [
+        "You need trust or an active hire contract to inspect my storage."
+      ]
+    },
+    {
+      "key": "interaction.storage.assigned_count",
+      "lines": [
+        "Assigned containers: {count}."
+      ]
+    },
+    {
+      "key": "interaction.storage.remove_requires_access",
+      "lines": [
+        "You need trust or an active hire contract to remove my storage."
+      ]
+    },
+    {
+      "key": "interaction.storage.removed_count",
+      "lines": [
+        "Removed {count} assigned container{plural}."
+      ]
+    },
+    {
+      "key": "interaction.payment_storage.requires_hire",
+      "lines": [
+        "Hire me first, then assign recurring payment storage."
+      ]
+    },
+    {
+      "key": "interaction.payment_storage.assigned_count",
+      "lines": [
+        "Payment containers: {count}. Auto-payment is {auto_payment}."
+      ]
+    },
+    {
+      "key": "interaction.payment_storage.remove_requires_hirer",
+      "lines": [
+        "Only the hiring player can remove payment storage."
+      ]
+    },
+    {
+      "key": "interaction.payment_storage.removed_count",
+      "lines": [
+        "Removed {count} payment container{plural}."
+      ]
+    },
+    {
+      "key": "interaction.earnings.deposit_requires_access",
+      "lines": [
+        "You need trust or an active hire contract to manage my earnings."
+      ]
+    },
+    {
+      "key": "interaction.earnings.no_excess",
+      "lines": [
+        "No excess earnings to deposit."
+      ]
+    },
+    {
+      "key": "interaction.earnings.storage_unavailable",
+      "lines": [
+        "Assigned storage is unavailable."
+      ]
+    },
+    {
+      "key": "interaction.earnings.no_assigned_storage",
+      "lines": [
+        "No assigned storage. I kept the currency in my wallet."
+      ]
+    },
+    {
+      "key": "interaction.earnings.storage_full",
+      "lines": [
+        "Assigned storage is full. I kept the currency in my wallet."
+      ]
+    },
+    {
+      "key": "interaction.earnings.deposited_partial",
+      "lines": [
+        "Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet."
+      ]
+    },
+    {
+      "key": "interaction.earnings.deposited_all",
+      "lines": [
+        "Deposited {deposited} into assigned storage."
+      ]
+    },
+    {
+      "key": "interaction.auto_payment.requires_hire",
+      "lines": [
+        "Hire me first, then set up recurring payment."
+      ]
+    },
+    {
+      "key": "interaction.auto_payment.requires_storage",
+      "lines": [
+        "Assign a payment container first with the clipboard's recurring payment mode."
+      ]
+    },
+    {
+      "key": "interaction.auto_payment.enabled",
+      "lines": [
+        "Recurring payment enabled."
+      ]
+    },
+    {
+      "key": "interaction.auto_payment.disabled",
+      "lines": [
+        "Recurring payment disabled."
+      ]
+    }
+  ]
+}

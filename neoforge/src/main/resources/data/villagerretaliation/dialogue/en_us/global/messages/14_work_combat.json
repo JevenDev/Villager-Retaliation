@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_combat"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.combat.passive.guard",
+      "lines": [
+        "I remain on guard and ready to answer trouble."
+      ]
+    },
+    {
+      "key": "interaction.work.combat.passive.roaming",
+      "lines": [
+        "I am roaming the work area and watching for trouble."
+      ]
+    },
+    {
+      "key": "interaction.work.combat.passive.attack_all",
+      "lines": [
+        "I am sweeping the area and will engage any non-villager creature I find."
+      ]
+    },
+    {
+      "key": "interaction.work.combat.passive.hunting",
+      "lines": [
+        "I am roaming the area and hunting animals."
+      ]
+    },
+    {
+      "key": "interaction.work.combat.active.guard",
+      "lines": [
+        "I am defending the area against {target}."
+      ]
+    },
+    {
+      "key": "interaction.work.combat.active.roaming",
+      "lines": [
+        "I found trouble while roaming and I am engaging {target}."
+      ]
+    },
+    {
+      "key": "interaction.work.combat.active.attack_all",
+      "lines": [
+        "I am pressing the attack against {target}."
+      ]
+    },
+    {
+      "key": "interaction.work.combat.active.hunting",
+      "lines": [
+        "I am hunting down {target}."
+      ]
+    }
+  ]
+}

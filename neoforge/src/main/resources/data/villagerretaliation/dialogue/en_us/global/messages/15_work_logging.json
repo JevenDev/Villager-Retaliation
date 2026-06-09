@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_logging"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.logging.searching_scan",
+      "lines": [
+        "I am searching the work area for a sound tree to cut."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.no_target_depositing",
+      "lines": [
+        "I found no good timber nearby, so I am heading to storage for now."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.roaming",
+      "lines": [
+        "I found no good timber yet, so I am ranging through the work area."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.no_targets",
+      "lines": [
+        "There is no good timber within reach just now."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.missing_axe",
+      "lines": [
+        "I need a proper axe before I can keep logging."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.blocked_target",
+      "lines": [
+        "That trunk will not do. I am looking for another I can reach."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.repositioning",
+      "lines": [
+        "That trunk is awkward from here, so I am changing my approach."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.moving_to_target",
+      "lines": [
+        "I am moving into place to work that tree."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.working_target",
+      "lines": [
+        "I am chopping through the trunk now."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.completed",
+      "lines": [
+        "I finished felling the tree and gathered {logs} logs."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.output_full_depositing",
+      "lines": [
+        "My hands are full of timber, so I am taking it to storage first."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.output_full_blocked",
+      "lines": [
+        "I cannot carry more timber, and there is nowhere to put it."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.target_changed",
+      "lines": [
+        "That tree is no longer fit for the work I had in mind."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,397 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_status"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.status.none",
+      "lines": [
+        "Nothing needs doing just now."
+      ]
+    },
+    {
+      "key": "interaction.work.status.waiting_tick",
+      "lines": [
+        "I am waiting for the next work tick."
+      ]
+    },
+    {
+      "key": "interaction.work.status.waiting_for_hirer",
+      "lines": [
+        "I am waiting for the one who hired me to return."
+      ]
+    },
+    {
+      "key": "interaction.work.status.no_routine",
+      "lines": [
+        "I do not have a proper work routine for that role yet."
+      ]
+    },
+    {
+      "key": "interaction.work.status.paused",
+      "lines": [
+        "You have told me to hold for now."
+      ]
+    },
+    {
+      "key": "interaction.work.status.enabled",
+      "lines": [
+        "I am back to work."
+      ]
+    },
+    {
+      "key": "interaction.work.status.cooldown",
+      "lines": [
+        "I am catching my breath before the next task."
+      ]
+    },
+    {
+      "key": "interaction.work.status.paused_for_command",
+      "lines": [
+        "I am following your command, so I have paused my hired work."
+      ]
+    },
+    {
+      "key": "interaction.work.status.no_work_area",
+      "lines": [
+        "No work area assigned."
+      ]
+    },
+    {
+      "key": "interaction.work.status.storage_full",
+      "lines": [
+        "I have nowhere left to deposit these collected items."
+      ]
+    },
+    {
+      "key": "interaction.work.status.storage_full_after_deposit",
+      "lines": [
+        "I deposited what I could, but storage is full now."
+      ]
+    },
+    {
+      "key": "interaction.work.status.storage_full_waiting",
+      "lines": [
+        "I am staying near storage and waiting for room to deposit collected items."
+      ]
+    },
+    {
+      "key": "interaction.work.status.no_food",
+      "lines": [
+        "No food for hired work. Mood and reputation suffered."
+      ]
+    },
+    {
+      "key": "interaction.work.status.return_path_lost",
+      "lines": [
+        "I lost the path back into the work area, so I am finding a better way down."
+      ]
+    },
+    {
+      "key": "interaction.work.status.returning_bounds",
+      "lines": [
+        "I have drifted beyond the work bounds, so I am heading back."
+      ]
+    },
+    {
+      "key": "interaction.work.status.return_retry_wait",
+      "lines": [
+        "I am outside the work bounds and waiting a moment before trying the path back again."
+      ]
+    },
+    {
+      "key": "interaction.work.status.returning_excavation_ladder",
+      "lines": [
+        "I am returning to the excavation ladder."
+      ]
+    },
+    {
+      "key": "interaction.work.status.moving_excavation_ladder",
+      "lines": [
+        "I am moving to the excavation ladder."
+      ]
+    },
+    {
+      "key": "interaction.work.status.need_excavation_ladder_path",
+      "lines": [
+        "I need a clear path to the excavation ladder."
+      ]
+    },
+    {
+      "key": "interaction.work.status.returning_by_ladder",
+      "lines": [
+        "I am using the ladder to get back into the work area."
+      ]
+    },
+    {
+      "key": "interaction.work.status.returning_to_safe_ground",
+      "lines": [
+        "I am climbing out to safer ground before returning to the work area."
+      ]
+    },
+    {
+      "key": "interaction.work.status.returning_from_far_bounds",
+      "lines": [
+        "I am too far from the work bounds, so I am making my way back."
+      ]
+    },
+    {
+      "key": "interaction.work.status.return_path_missing",
+      "lines": [
+        "I am outside the work bounds, and I have not found a good way back yet."
+      ]
+    },
+    {
+      "key": "interaction.work.status.return_could_not_move",
+      "lines": [
+        "I know I must return to the work bounds, but I could not get moving yet."
+      ]
+    },
+    {
+      "key": "interaction.work.status.horizontal_radius",
+      "lines": [
+        "My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}."
+      ]
+    },
+    {
+      "key": "interaction.work.status.vertical_radius",
+      "lines": [
+        "My job site vertical range is now {radius} blocks. I cannot manage beyond {max}."
+      ]
+    },
+    {
+      "key": "interaction.work.status.bounds",
+      "lines": [
+        "My job site bounds are now {dimensions} ({bounds})."
+      ]
+    },
+    {
+      "key": "interaction.work.status.assigned_supplies_enabled",
+      "lines": [
+        "I may draw supplies from the assigned storage now."
+      ]
+    },
+    {
+      "key": "interaction.work.status.assigned_supplies_disabled",
+      "lines": [
+        "I will stick to what I carry and what is in my work gear."
+      ]
+    },
+    {
+      "key": "interaction.work.status.auto_deposit_enabled",
+      "lines": [
+        "I will put away my finished goods on my own."
+      ]
+    },
+    {
+      "key": "interaction.work.status.auto_deposit_disabled",
+      "lines": [
+        "I will keep what I gather until told otherwise."
+      ]
+    },
+    {
+      "key": "interaction.work.status.combat_orders",
+      "lines": [
+        "My combat orders are now {mode}."
+      ]
+    },
+    {
+      "key": "interaction.work.status.mining_orders",
+      "lines": [
+        "My mining orders are now {mode}."
+      ]
+    },
+    {
+      "key": "interaction.work.status.logging_filter",
+      "lines": [
+        "I will now favor {filter} when I look for timber."
+      ]
+    },
+    {
+      "key": "interaction.work.status.farming_mode",
+      "lines": [
+        "My farming approach is now {mode}."
+      ]
+    },
+    {
+      "key": "interaction.work.status.navigation_focus",
+      "lines": [
+        "I have shifted my navigation focus for the next route."
+      ]
+    },
+    {
+      "key": "interaction.work.status.animal_focus",
+      "lines": [
+        "I have changed what I am watching for with the animals."
+      ]
+    },
+    {
+      "key": "interaction.work.status.nitwit_focus",
+      "lines": [
+        "I have rearranged my very particular style of helping."
+      ]
+    },
+    {
+      "key": "interaction.work.status.no_extra_setup",
+      "lines": [
+        "There is no extra setup for {role} just yet."
+      ]
+    },
+    {
+      "key": "interaction.work.status.custom_box",
+      "lines": [
+        "Custom work box selected: {dimensions} blocks."
+      ]
+    },
+    {
+      "key": "interaction.work.status.custom_box_capped",
+      "lines": [
+        "This area is too large for this worker, so I clamped it to their current skill range. Custom work box selected: {dimensions} blocks."
+      ]
+    },
+    {
+      "key": "interaction.work.status.center_reset_to_villager",
+      "lines": [
+        "My job site is reset to my position: {range}."
+      ]
+    },
+    {
+      "key": "interaction.work.status.center_set_here",
+      "lines": [
+        "My job site center is now here: {range}."
+      ]
+    },
+    {
+      "key": "interaction.work.area.none",
+      "lines": [
+        "No work area assigned"
+      ]
+    },
+    {
+      "key": "interaction.work.target.none",
+      "lines": [
+        "no fixed spot just now"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.paused",
+      "lines": [
+        "resting until you ask me to resume"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.waiting",
+      "lines": [
+        "waiting for the next bit of work"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.selecting_target",
+      "lines": [
+        "looking over the area for the next task"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.moving_to_target",
+      "lines": [
+        "heading toward {target}"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.validating_target",
+      "lines": [
+        "checking the spot at {target}"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.working",
+      "lines": [
+        "working at {target}"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.collecting_output",
+      "lines": [
+        "gathering what I finished at {target}"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.finding_chain_target",
+      "lines": [
+        "looking for the next useful spot near {target}"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.moving_to_storage",
+      "lines": [
+        "carrying goods toward {target}"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.returning_to_work_area",
+      "lines": [
+        "making my way back into the work area"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.depositing",
+      "lines": [
+        "putting supplies away at {target}"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.paused_storage_full",
+      "lines": [
+        "waiting near full storage at {target}"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.no_work_area",
+      "lines": [
+        "waiting for you to assign a job site"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.paused_full_inventory",
+      "lines": [
+        "stopped because my inventory is full"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.paused_no_storage",
+      "lines": [
+        "waiting because there is nowhere proper to store things"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.failed_cooldown",
+      "lines": [
+        "waiting a moment before I try that again"
+      ]
+    },
+    {
+      "key": "interaction.work.activity.paused_missing_tool",
+      "lines": [
+        "waiting because I do not have the right tool"
+      ]
+    },
+    {
+      "key": "interaction.work.manage.requires_hirer",
+      "lines": [
+        "Only the hiring player can manage hired work."
+      ]
+    },
+    {
+      "key": "interaction.work.configure.requires_role",
+      "lines": [
+        "Assign me to {role} before configuring that work."
+      ]
+    }
+  ]
+}

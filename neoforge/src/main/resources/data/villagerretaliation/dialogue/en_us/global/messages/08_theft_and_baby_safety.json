@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.theft_and_baby_safety"
+  },
+  "messages": [
+    {
+      "key": "interaction.confiscated_stolen_item.first_offense",
+      "lines": [
+        "First you take {item_stack} from the chest, now you try and take it from me?",
+        "That was already confiscated once. Taking {item_stack} from my pack does not make it yours.",
+        "I put {item_stack} away because you took it from village stores. Do not make me say this twice.",
+        "You reached into the chest, then into my inventory. That is a pattern, not a mistake.",
+        "The village already had to take {item_stack} back from you. Leave it where I put it."
+      ]
+    },
+    {
+      "key": "interaction.confiscated_stolen_item.second_offense",
+      "lines": [
+        "Again? First the chest, then my inventory, and now this. You are running out of warnings.",
+        "I already warned you about taking confiscated goods. Keep your hands off {item_stack}.",
+        "You are trying to steal the same kind of trouble twice. The next time, we stop talking.",
+        "That item was removed from you for a reason. Touch my inventory again and I will not ask politely.",
+        "You took from the village, then from me, and now you test whether I remember. I do."
+      ]
+    },
+    {
+      "key": "interaction.confiscated_stolen_item.aggro",
+      "lines": [
+        "No more warnings. Chest, villager, chest again; you chose this over {item_stack}.",
+        "Three times is enough. The village is done asking for {item_stack} back.",
+        "You keep stealing what we already took back. Now you answer for {item_stack}.",
+        "First the chest, then my inventory, now {item_stack} again. No more words.",
+        "You had two chances to stop reaching for {item_stack}. You wasted both."
+      ]
+    },
+    {
+      "key": "interaction.ambient.baby_damaged.player",
+      "lines": [
+        "Ow! Why would you do that?",
+        "Stop! That hurts!",
+        "Help! They hit me!"
+      ]
+    },
+    {
+      "key": "interaction.ambient.baby_damaged.other",
+      "lines": [
+        "Ow! Something hit me!",
+        "Help! That hurt!",
+        "I want to go home!"
+      ]
+    },
+    {
+      "key": "interaction.ambient.baby_witnessed_death.player",
+      "lines": [
+        "No no no! I saw what you did!",
+        "Help! They hurt them!",
+        "I want the grownups!"
+      ]
+    },
+    {
+      "key": "interaction.ambient.baby_witnessed_death.other",
+      "lines": [
+        "No no no! Run!",
+        "Where are the grownups?",
+        "Hide! Hide now!"
+      ]
+    }
+  ]
+}

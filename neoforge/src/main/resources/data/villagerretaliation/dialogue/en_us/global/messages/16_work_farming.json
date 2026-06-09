@@ -1,0 +1,109 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_farming"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.farming.searching_scan",
+      "lines": [
+        "I am looking over the fields for crops ready to harvest."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.no_target_depositing",
+      "lines": [
+        "There are no ripe crops nearby, so I am heading to storage for now."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.roaming",
+      "lines": [
+        "I found nothing ripe yet, so I am walking the fields."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.no_targets",
+      "lines": [
+        "There are no ripe crops within reach just now."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.target_changed",
+      "lines": [
+        "That farming target is no longer ready for the harvest I had in mind."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.crop_blocked",
+      "lines": [
+        "That crop is blocked off, so I am looking for another I can reach."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.crop_repositioning",
+      "lines": [
+        "That crop is awkward from here, so I am changing my position."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.moving_to_crop",
+      "lines": [
+        "I am moving toward the ripe crop now."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.output_blocked",
+      "lines": [
+        "That farming target is blocked off, so I am looking for another I can reach."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.output_repositioning",
+      "lines": [
+        "That farming target is awkward from here, so I am changing my position."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.moving_to_output",
+      "lines": [
+        "I am moving toward the harvest target now."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.harvesting_output",
+      "lines": [
+        "I am harvesting the farming output now."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.completed_output",
+      "lines": [
+        "I harvested the farming output and gathered it up."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.output_full_depositing",
+      "lines": [
+        "My hands are full from the harvest, so I am taking it to storage first."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.output_full_blocked",
+      "lines": [
+        "I cannot carry more harvest, and there is nowhere to put it."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.completed_crop",
+      "lines": [
+        "I harvested the ripe crop and set the field right again."
+      ]
+    }
+  ]
+}

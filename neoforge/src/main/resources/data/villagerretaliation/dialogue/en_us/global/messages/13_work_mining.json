@@ -1,0 +1,277 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_mining"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.mining.scan_excavation",
+      "lines": [
+        "I am still checking the excavation area for reachable blocks."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.output_full_depositing",
+      "lines": [
+        "My packs are full, so I am taking the mined output to storage before I continue."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.output_full_blocked",
+      "lines": [
+        "I cannot carry more ore, and I have nowhere to stow it."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.post_clear_scan",
+      "lines": [
+        "I cleared that block and am checking the assigned area for the next reachable face."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.post_clear_depositing",
+      "lines": [
+        "I have gathered the mined output and am taking it to storage."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.deposited_checking_packs",
+      "lines": [
+        "I put away my mined output and am checking my packs before I continue."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.support.moving",
+      "lines": [
+        "I am moving into position to place excavation supports."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.support.placed_ladder",
+      "lines": [
+        "I placed the next ladder support for the excavation."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.support.placed_torch",
+      "lines": [
+        "I placed a torch for the excavation."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.support.missing_ladders",
+      "lines": [
+        "I need ladders in my job supplies or assigned storage before I can excavate safely."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.support.gathering_supplies",
+      "lines": [
+        "I am heading to assigned storage for excavation supplies."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.support.gathered_supplies",
+      "lines": [
+        "I gathered excavation supplies from storage and am returning to the job site."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.no_target_deposit.excavate_area",
+      "lines": [
+        "There are no reachable excavation blocks right now, so I am heading to storage for now."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.no_target_deposit.exposed_ores",
+      "lines": [
+        "There is no exposed ore in this pocket, so I am heading to storage for now."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.searching.excavate_area",
+      "lines": [
+        "I see no reachable block face yet, so I am searching the excavation area."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.searching.exposed_ores",
+      "lines": [
+        "I see no exposed ore nearby, so I am searching the work area."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.deposited_waiting.excavate_area",
+      "lines": [
+        "I am putting away what I mined while I wait for another reachable block face."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.deposited_waiting.exposed_ores",
+      "lines": [
+        "I am putting away what I mined while I wait for fresh ore to show itself."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.no_targets.excavate_area",
+      "lines": [
+        "There are no reachable excavation blocks within the assigned area just now."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.no_targets.exposed_ores",
+      "lines": [
+        "There is no exposed ore within reach just now."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.missing_tool.excavate_area",
+      "lines": [
+        "I need a better pickaxe, shovel, or axe before I can excavate that block."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.missing_tool.exposed_ores",
+      "lines": [
+        "I need a better pickaxe before I can break that ore."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.blocked_target.excavate_area",
+      "lines": [
+        "That block face is blocked off. I am looking for another reachable part of the area."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.blocked_target.exposed_ores",
+      "lines": [
+        "That ore is blocked off. I am looking for another vein I can reach."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.repositioning.excavate_area",
+      "lines": [
+        "That block is awkward from here, so I am changing my position."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.repositioning.exposed_ores",
+      "lines": [
+        "That ore is awkward from here, so I am changing my position."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.blocked_swing.excavate_area",
+      "lines": [
+        "I cannot get a clean swing at that block yet, so I am repositioning."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.blocked_swing.exposed_ores",
+      "lines": [
+        "I cannot get a clean swing at that ore yet, so I am repositioning."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.moving_to_target.excavate_area",
+      "lines": [
+        "I am moving toward the excavation face now."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.moving_to_target.exposed_ores",
+      "lines": [
+        "I am moving toward the ore now."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.working_target.excavate_area",
+      "lines": [
+        "I am cutting into the assigned area now."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.working_target.exposed_ores",
+      "lines": [
+        "I am working the ore face now."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.next_target.excavate_area",
+      "lines": [
+        "That block is cleared, and I am moving on to the next reachable face."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.next_target.exposed_ores",
+      "lines": [
+        "That ore is mined out, and I am moving on to the next exposed vein."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.completed_searching.excavate_area",
+      "lines": [
+        "I have gathered what I could, and I am searching the area for another reachable face."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.completed_searching.exposed_ores",
+      "lines": [
+        "I have gathered what I could, and I am searching the area for more ore."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.completed_deposited.excavate_area",
+      "lines": [
+        "I cleared that block, gathered it, and put it away."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.completed_deposited.exposed_ores",
+      "lines": [
+        "I mined the ore, gathered it, and put it away."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.completed_no_next.excavate_area",
+      "lines": [
+        "I cleared that block and gathered it, but there is no other reachable face nearby."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.completed_no_next.exposed_ores",
+      "lines": [
+        "I mined the ore and gathered it, but there is no other exposed vein nearby."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.continuing_excavation.deposited",
+      "lines": [
+        "I cleared that block, gathered it, put it away, and am checking for the next reachable face."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.continuing_excavation.default",
+      "lines": [
+        "I cleared that block and gathered it. I am checking the assigned area for the next reachable face."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.completed_excavation.deposited",
+      "lines": [
+        "The assigned excavation is finished, and I put the last of the output away."
+      ]
+    },
+    {
+      "key": "interaction.work.mining.completed_excavation.default",
+      "lines": [
+        "The assigned excavation is finished. I do not see another block to clear."
+      ]
+    }
+  ]
+}

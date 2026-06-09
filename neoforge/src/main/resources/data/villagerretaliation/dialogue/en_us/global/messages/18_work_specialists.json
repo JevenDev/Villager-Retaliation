@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_specialists"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.nitwit.cooldown",
+      "lines": [
+        "I am helping in my own hard-to-measure way."
+      ]
+    },
+    {
+      "key": "interaction.work.nitwit.report.sky",
+      "lines": [
+        "Nitwit report: I found the sky. Still up there."
+      ]
+    },
+    {
+      "key": "interaction.work.nitwit.report.supervising",
+      "lines": [
+        "Nitwit report: I am supervising the general direction of things."
+      ]
+    },
+    {
+      "key": "interaction.work.nitwit.report.shadows",
+      "lines": [
+        "Nitwit report: danger check complete. I disliked several shadows."
+      ]
+    },
+    {
+      "key": "interaction.work.nitwit.report.pointing",
+      "lines": [
+        "Nitwit report: I can point at work, if that helps."
+      ]
+    },
+    {
+      "key": "interaction.work.navigation.placeholder",
+      "lines": [
+        "I am ready to guide the way once you settle on where I should lead."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_handling.placeholder",
+      "lines": [
+        "I am ready to tend the animals once there are lures and a safe pen."
+      ]
+    }
+  ]
+}
