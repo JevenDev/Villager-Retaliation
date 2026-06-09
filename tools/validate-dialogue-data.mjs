@@ -1358,7 +1358,12 @@ function dialogueSectionsFor(file, data) {
     closings: [],
     pacify: []
   };
-  if (!data || typeof data !== "object" || Array.isArray(data)) {
+  if (Array.isArray(data)) {
+    errors.push(`${relative(file)}: dialogue root must be an object; wrap entry arrays in a section key such as "lines", "options", or "messages".`);
+    return sections;
+  }
+  if (!data || typeof data !== "object") {
+    errors.push(`${relative(file)}: dialogue root must be an object.`);
     return sections;
   }
 
