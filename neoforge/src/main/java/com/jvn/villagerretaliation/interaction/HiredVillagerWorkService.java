@@ -301,6 +301,9 @@ public final class HiredVillagerWorkService {
             return null;
         }
         HiredWorkContext context = session.context();
+        if (context.isInsideWorkArea(villager.blockPosition())) {
+            return null;
+        }
         int entryY = context.workMax().getY() + 1;
         if (villager.blockPosition().getY() >= entryY - 2) {
             return null;

@@ -1314,6 +1314,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             return true;
         }
         if (shouldEscapeUpBeforeMining(villager, target)
+                && shouldUseExcavationLadderFallback(context, villager, target)
                 && VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, target.approachPos(), speed)) {
             HiredPathMemory.rememberNavigationProgress(
                     level,
@@ -1332,7 +1333,8 @@ public final class MiningWorker extends AbstractBlockWorker {
                     villager.distanceToSqr(target.approachPos().getCenter()))) {
                 villager.getNavigation().stop();
                 HiredPathMemory.clearNavigationProgress(villager);
-                if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target.approachPos(), speed)) {
+                if (shouldUseExcavationLadderFallback(context, villager, target)
+                        && VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target.approachPos(), speed)) {
                     HiredPathMemory.rememberNavigationProgress(
                             level,
                             villager,
@@ -1340,7 +1342,8 @@ public final class MiningWorker extends AbstractBlockWorker {
                             villager.distanceToSqr(target.approachPos().getCenter()));
                     return true;
                 }
-                if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, target.approachPos(), speed)) {
+                if (shouldUseExcavationLadderFallback(context, villager, target)
+                        && VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, target.approachPos(), speed)) {
                     HiredPathMemory.rememberNavigationProgress(
                             level,
                             villager,
@@ -1362,9 +1365,10 @@ public final class MiningWorker extends AbstractBlockWorker {
             return true;
         }
         HiredPathMemory.clearNavigationProgress(villager);
-        if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target.approachPos(), speed)
+        if (shouldUseExcavationLadderFallback(context, villager, target)
+                && (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target.approachPos(), speed)
                 || VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, target.approachPos(), speed)
-                || VillagerTaskNavigationUtil.moveOnLadderToward(level, villager, target.approachPos(), speed)) {
+                || VillagerTaskNavigationUtil.moveOnLadderToward(level, villager, target.approachPos(), speed))) {
             HiredPathMemory.rememberNavigationProgress(
                     level,
                     villager,
@@ -1377,6 +1381,19 @@ public final class MiningWorker extends AbstractBlockWorker {
 
     private static boolean shouldEscapeUpBeforeMining(Villager villager, HiredPathTarget target) {
         return target != null && target.approachPos().getY() - villager.blockPosition().getY() > 2;
+    }
+
+    private static boolean shouldUseExcavationLadderFallback(HiredWorkContext context, Villager villager, HiredPathTarget target) {
+        if (target == null) {
+            return false;
+        }
+        if (!context.isInsideWorkArea(villager.blockPosition())) {
+            return true;
+        }
+        if (villager.blockPosition().getY() >= context.workMax().getY() - 1) {
+            return false;
+        }
+        return Math.abs(target.approachPos().getY() - villager.blockPosition().getY()) > 2;
     }
 
     private boolean storeMinedDrops(
