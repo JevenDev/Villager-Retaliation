@@ -180,6 +180,7 @@ public final class ClipboardWorkforceService {
                 case MINING -> WorkerStatus.MINING;
                 case LOGGING -> WorkerStatus.LOGGING;
                 case FARMING -> WorkerStatus.FARMING;
+                case FISHING -> WorkerStatus.WORKING;
                 case BREWING -> WorkerStatus.BREWING;
                 default -> WorkerStatus.WORKING;
             };

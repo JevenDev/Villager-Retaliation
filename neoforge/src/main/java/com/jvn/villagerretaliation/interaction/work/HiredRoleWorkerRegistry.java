@@ -13,6 +13,7 @@ public final class HiredRoleWorkerRegistry {
         register(new LoggingWorker());
         register(new MiningWorker());
         register(new FarmingWorker());
+        register(new FishingWorker());
         register(new NitwitWorker());
         register(new BrewingWorker());
         register(new AnimalBreedingWorker());

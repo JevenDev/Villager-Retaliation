@@ -70,6 +70,21 @@
       ]
     },
     {
+      "key": "interaction.work_report.fishing",
+      "lines": [
+        "I am fishing in {work_area}, {activity}. {status_detail}",
+        "My fishing work is set around {work_area}. At the moment I am {activity}.",
+        "I am watching the water in {work_area}. My present focus is {target}.",
+        "The fishing work continues in {work_area}. I am {activity}.",
+        "I am working the bank in {work_area}, {activity}. Efficiency is about {efficiency} percent.",
+        "My line belongs to the water at {work_area}. Right now I am {activity}.",
+        "I am keeping to the fishing bounds in {work_area}. My current task is {activity}.",
+        "The water still needs patience in {work_area}, so I am {activity}. {status_detail}",
+        "I am carrying on with the fishing in {work_area}. My attention is on {target}.",
+        "Fishing work is moving along. I am {activity} in {work_area}."
+      ]
+    },
+    {
       "key": "interaction.work_report.brewing",
       "lines": [
         "I am handling brewing matters in {work_area}, {activity}. {status_detail}",

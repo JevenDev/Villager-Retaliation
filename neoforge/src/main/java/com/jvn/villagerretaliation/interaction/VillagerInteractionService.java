@@ -706,6 +706,7 @@ public final class VillagerInteractionService {
             case SET_ROLE_MINING -> HiredVillagerRole.MINING;
             case SET_ROLE_LOGGING -> HiredVillagerRole.LOGGING;
             case SET_ROLE_FARMING -> HiredVillagerRole.FARMING;
+            case SET_ROLE_FISHING -> HiredVillagerRole.FISHING;
             case SET_ROLE_BREWING -> HiredVillagerRole.BREWING;
             case SET_ROLE_NAVIGATION -> HiredVillagerRole.NAVIGATION;
             case SET_ROLE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
@@ -748,6 +749,7 @@ public final class VillagerInteractionService {
             case CONFIGURE_MINING -> HiredVillagerRole.MINING;
             case CONFIGURE_LOGGING -> HiredVillagerRole.LOGGING;
             case CONFIGURE_FARMING -> HiredVillagerRole.FARMING;
+            case CONFIGURE_FISHING -> HiredVillagerRole.FISHING;
             case CONFIGURE_BREWING -> HiredVillagerRole.BREWING;
             case CONFIGURE_NAVIGATION -> HiredVillagerRole.NAVIGATION;
             case CONFIGURE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;

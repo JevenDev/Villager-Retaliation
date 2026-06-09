@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_fishing"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.fishing.depositing_output",
+      "lines": [
+        "My catch needs storage before I cast again."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.output_full_blocked",
+      "lines": [
+        "I cannot carry more fish, and there is nowhere nearby to put them."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.missing_rod",
+      "lines": [
+        "I need a fishing rod before I can work the water."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.collecting_rod",
+      "lines": [
+        "I am fetching a fishing rod from assigned storage."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.waiting_for_bite",
+      "lines": [
+        "The line is in the water. Now I am waiting for a bite."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.roaming",
+      "lines": [
+        "I am looking along the bank for a good place to cast."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.no_open_water",
+      "lines": [
+        "There is no fishable surface water in my work area."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.water_unreachable",
+      "lines": [
+        "I can see fishable water, but I cannot reach a safe place to cast from."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.moving_to_water",
+      "lines": [
+        "I am moving to the water now."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.cast",
+      "lines": [
+        "I cast the line. Now we see what answers."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.completed",
+      "lines": [
+        "I reeled in the catch and stored it."
+      ]
+    },
+    {
+      "key": "interaction.work.fishing.completed_overflow",
+      "lines": [
+        "I reeled in the catch, but some of it had to be dropped because storage was full."
+      ]
+    }
+  ]
+}

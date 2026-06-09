@@ -717,6 +717,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addRoleChangeOption(HiredVillagerRole.MINING, "recruit.role_mining", VillagerRecruitRequestPayload.Action.SET_ROLE_MINING);
         addRoleChangeOption(HiredVillagerRole.LOGGING, "recruit.role_logging", VillagerRecruitRequestPayload.Action.SET_ROLE_LOGGING);
         addRoleChangeOption(HiredVillagerRole.FARMING, "recruit.role_farming", VillagerRecruitRequestPayload.Action.SET_ROLE_FARMING);
+        addRoleChangeOption(HiredVillagerRole.FISHING, "recruit.role_fishing", VillagerRecruitRequestPayload.Action.SET_ROLE_FISHING);
         addRoleChangeOption(HiredVillagerRole.BREWING, "recruit.role_brewing", VillagerRecruitRequestPayload.Action.SET_ROLE_BREWING);
         addRoleChangeOption(HiredVillagerRole.NAVIGATION, "recruit.role_navigation", VillagerRecruitRequestPayload.Action.SET_ROLE_NAVIGATION);
         addRoleChangeOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling", VillagerRecruitRequestPayload.Action.SET_ROLE_ANIMAL_HANDLING);
@@ -735,6 +736,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addOption("recruit.work_config_logging", this::openLoggingFiltersPage);
         }
         addRoleWorkConfigOption(HiredVillagerRole.FARMING, "recruit.work_config_farming", VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING);
+        addRoleWorkConfigOption(HiredVillagerRole.FISHING, "recruit.work_config_fishing", VillagerRecruitRequestPayload.Action.CONFIGURE_FISHING);
         if (isActiveHiredRole(HiredVillagerRole.BREWING)) {
             if (this.activeBrewingOrder) {
                 addOption("recruit.stop_brewing", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_BREWING));

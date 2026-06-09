@@ -1076,6 +1076,7 @@ public final class HiredVillagerWorkService {
             case MINING -> 24;
             case LOGGING -> 32;
             case FARMING -> 24;
+            case FISHING -> 24;
             default -> 24;
         };
         return HiredWorkArea.clampRadius(preferred, MIN_WORK_RADIUS, maxRadius);
@@ -1085,6 +1086,7 @@ public final class HiredVillagerWorkService {
         int preferred = switch (role) {
             case LOGGING -> 16;
             case FARMING -> 6;
+            case FISHING -> 8;
             default -> 8;
         };
         return HiredWorkArea.clampRadius(preferred, 1, maxRadius);
@@ -1142,6 +1144,7 @@ public final class HiredVillagerWorkService {
             case MINING -> "interaction.work_report.mining";
             case LOGGING -> "interaction.work_report.logging";
             case FARMING -> "interaction.work_report.farming";
+            case FISHING -> "interaction.work_report.fishing";
             case BREWING -> "interaction.work_report.brewing";
             case NAVIGATION -> "interaction.work_report.navigation";
             case ANIMAL_HANDLING -> "interaction.work_report.animal_handling";
@@ -1323,6 +1326,7 @@ public final class HiredVillagerWorkService {
             case MINING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_MINING.get();
             case LOGGING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_LOGGING.get();
             case FARMING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_FARMING.get();
+            case FISHING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_FARMING.get();
             case BREWING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_BREWING.get();
             case NAVIGATION -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_NAVIGATION.get();
             case ANIMAL_HANDLING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_ANIMAL_HANDLING.get();
@@ -1353,7 +1357,7 @@ public final class HiredVillagerWorkService {
         if (!tool.isEmpty()) {
             efficiency += toolTierBonus(tool);
         }
-        if ((role == HiredVillagerRole.MINING || role == HiredVillagerRole.LOGGING || role == HiredVillagerRole.FARMING) && tool.isEmpty()) {
+        if ((role == HiredVillagerRole.MINING || role == HiredVillagerRole.LOGGING || role == HiredVillagerRole.FARMING || role == HiredVillagerRole.FISHING) && tool.isEmpty()) {
             efficiency -= 20;
         }
         return Mth.clamp(efficiency, min, max);

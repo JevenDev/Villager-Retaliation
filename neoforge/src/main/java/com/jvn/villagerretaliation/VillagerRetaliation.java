@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.block.VillagerRetaliationBlockEntityTypes;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
+import com.jvn.villagerretaliation.entity.VillagerRetaliationEntityTypes;
 import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
 import com.jvn.villagerretaliation.item.VillagerRetaliationCreativeTabs;
@@ -35,6 +36,7 @@ public class VillagerRetaliation {
         VillagerRetaliationConfig.init();
         VillagerRetaliationBlocks.register(modEventBus);
         VillagerRetaliationBlockEntityTypes.register(modEventBus);
+        VillagerRetaliationEntityTypes.register(modEventBus);
         VillagerRetaliationMenus.register(modEventBus);
         VillagerRetaliationItems.register(modEventBus);
         VillagerRetaliationCreativeTabs.register(modEventBus);
