@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.item;
 
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignmentSummaryMessage;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummary;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
@@ -10,6 +12,7 @@ import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -118,7 +121,7 @@ public final class HiredStorageClipboardItem extends Item {
                     clearSelection(stack);
                     HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
                 }
-                serverPlayer.displayClientMessage(AssignedStorageService.assignmentSummary(summary), true);
+                displayAssignmentSummary(serverPlayer, summary);
                 return InteractionResult.SUCCESS;
             }
             List<AssignedContainerRecord> assigned = AssignedStorageService.assignedPaymentStorage(level, villager);
@@ -137,7 +140,7 @@ public final class HiredStorageClipboardItem extends Item {
             if (summary.assigned() > 0) {
                 clearSelection(stack);
             }
-            serverPlayer.displayClientMessage(AssignedStorageService.assignmentSummary(summary), true);
+            displayAssignmentSummary(serverPlayer, summary);
             return InteractionResult.SUCCESS;
         }
 
@@ -227,6 +230,18 @@ public final class HiredStorageClipboardItem extends Item {
             ));
         }
         return positions;
+    }
+
+    private static void displayAssignmentSummary(ServerPlayer player, AssignSummary summary) {
+        AssignmentSummaryMessage message = AssignedStorageService.assignmentSummaryMessage(summary);
+        String text = VillagerDialogueResources.globalMessage(
+                player.getServer(),
+                player.getRandom(),
+                message.key(),
+                VillagerLocale.locale(player),
+                message.replacements()
+        ).orElse(message.key());
+        player.displayClientMessage(Component.literal(text), true);
     }
 
     private static WorkAreaDraft selectedWorkArea(ItemStack stack) {

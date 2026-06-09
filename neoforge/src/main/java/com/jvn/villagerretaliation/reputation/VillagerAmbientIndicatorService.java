@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
@@ -731,7 +732,7 @@ public final class VillagerAmbientIndicatorService {
         VillagerInteractionService.broadcastForcedVillagerChat(
                 level,
                 villager,
-                babyDamagedChat(villager, attacker),
+                babyDamagedChat(level, villager, attacker),
                 VillagerInteractionService.villagerSpeakerLabel(villager)
         );
     }
@@ -740,23 +741,29 @@ public final class VillagerAmbientIndicatorService {
         VillagerInteractionService.broadcastForcedVillagerChat(
                 level,
                 villager,
-                babyWitnessedDeathChat(villager, attacker),
+                babyWitnessedDeathChat(level, villager, attacker),
                 VillagerInteractionService.villagerSpeakerLabel(villager)
         );
     }
 
-    private static String babyDamagedChat(Villager villager, Entity attacker) {
-        if (attacker instanceof Player) {
-            return random(villager.getRandom(), "Ow! Why would you do that?", "Stop! That hurts!", "Help! They hit me!");
-        }
-        return random(villager.getRandom(), "Ow! Something hit me!", "Help! That hurt!", "I want to go home!");
+    private static String babyDamagedChat(ServerLevel level, Villager villager, Entity attacker) {
+        return VillagerDialogueResources.globalMessage(
+                level.getServer(),
+                villager.getRandom(),
+                attacker instanceof Player
+                        ? "interaction.ambient.baby_damaged.player"
+                        : "interaction.ambient.baby_damaged.other"
+        ).orElse("");
     }
 
-    private static String babyWitnessedDeathChat(Villager villager, Entity attacker) {
-        if (attacker instanceof Player) {
-            return random(villager.getRandom(), "No no no! I saw what you did!", "Help! They hurt them!", "I want the grownups!");
-        }
-        return random(villager.getRandom(), "No no no! Run!", "Where are the grownups?", "Hide! Hide now!");
+    private static String babyWitnessedDeathChat(ServerLevel level, Villager villager, Entity attacker) {
+        return VillagerDialogueResources.globalMessage(
+                level.getServer(),
+                villager.getRandom(),
+                attacker instanceof Player
+                        ? "interaction.ambient.baby_witnessed_death.player"
+                        : "interaction.ambient.baby_witnessed_death.other"
+        ).orElse("");
     }
 
     private static String random(RandomSource random, String first, String second, String third) {

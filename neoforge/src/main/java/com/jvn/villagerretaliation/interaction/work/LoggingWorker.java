@@ -5,6 +5,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
@@ -61,21 +62,21 @@ public final class LoggingWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             if (isTreeScanInProgress(context)) {
                 setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-                return WorkResult.progressed("I am searching the work area for a sound tree to cut.");
+                return WorkResult.progressed("interaction.work.logging.searching_scan");
             }
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("I found no good timber nearby, so I am heading to storage for now.");
+                return WorkResult.progressed("interaction.work.logging.no_target_depositing");
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
             }
             if (roamInsideWorkArea(level, villager, context, 0.4D)) {
-                return WorkResult.progressed("I found no good timber yet, so I am ranging through the work area.");
+                return WorkResult.progressed("interaction.work.logging.roaming");
             }
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("There is no good timber within reach just now.");
+            return WorkResult.idle("interaction.work.logging.no_targets");
         }
 
         BlockState targetState = level.getBlockState(target.blockPos());
@@ -86,7 +87,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "missing_axe", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
-            return WorkResult.idle("I need a proper axe before I can keep logging.");
+            return WorkResult.idle("interaction.work.logging.missing_axe");
         }
 
         prepareBreakingTarget(level, context, villager, target);
@@ -98,11 +99,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     clearActiveBreakingTarget(level, context, villager);
                     HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 20L * 30L);
                     setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
-                    return WorkResult.idle("That trunk will not do. I am looking for another I can reach.");
+                    return WorkResult.idle("interaction.work.logging.blocked_target");
                 }
-                return WorkResult.progressed("That trunk is awkward from here, so I am changing my approach.");
+                return WorkResult.progressed("interaction.work.logging.repositioning");
             }
-            return WorkResult.progressed("I am moving into place to work that tree.");
+            return WorkResult.progressed("interaction.work.logging.moving_to_target");
         }
         clearWorkPathFailure(villager, target.blockPos());
         holdWorkPosition(villager, target);
@@ -115,7 +116,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             context.setProgressTicks(progress);
             swingWorkTool(villager);
             showBreakProgress(level, villager, target.blockPos(), progress, needed);
-            return WorkResult.progressed("I am chopping through the trunk now.");
+            return WorkResult.progressed("interaction.work.logging.working_target");
         }
 
         context.setProgressTicks(0);
@@ -128,12 +129,12 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 if (harvestResult.completed()) {
                     HiredWorkPlan.removeTarget(context, target.blockPos());
                     clearActiveBreakingTarget(level, context, villager);
-                    return WorkResult.completed("I finished felling the tree and gathered " + harvestResult.logsCut() + " logs.");
+                    return WorkResult.completed("interaction.work.logging.completed", Map.of("logs", Integer.toString(harvestResult.logsCut())));
                 }
             }
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("My hands are full of timber, so I am taking it to storage first.");
+                return WorkResult.progressed("interaction.work.logging.output_full_depositing");
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
@@ -141,19 +142,19 @@ public final class LoggingWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("I cannot carry more timber, and there is nowhere to put it.");
+            return WorkResult.idle("interaction.work.logging.output_full_blocked");
         }
         if (harvestResult == TreeHarvestResult.TARGET_CHANGED) {
             HiredWorkPlan.removeTarget(context, target.blockPos());
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN);
-            return WorkResult.idle("That tree is no longer fit for the work I had in mind.");
+            return WorkResult.idle("interaction.work.logging.target_changed");
         }
         HiredWorkPlan.removeTarget(context, target.blockPos());
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
-        return WorkResult.completed("I finished felling the tree and gathered " + harvestResult.logsCut() + " logs.");
+        return WorkResult.completed("interaction.work.logging.completed", Map.of("logs", Integer.toString(harvestResult.logsCut())));
     }
 
     private HiredPathTarget findTreeLog(ServerLevel level, Villager villager, HiredWorkContext context) {

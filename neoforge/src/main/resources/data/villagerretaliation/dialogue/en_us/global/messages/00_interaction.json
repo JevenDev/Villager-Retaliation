@@ -721,6 +721,972 @@
       ]
     },
     {
+      "key": "interaction.work.status.none",
+      "lines": ["Nothing needs doing just now."]
+    },
+    {
+      "key": "interaction.work.status.waiting_tick",
+      "lines": ["I am waiting for the next work tick."]
+    },
+    {
+      "key": "interaction.work.status.waiting_for_hirer",
+      "lines": ["I am waiting for the one who hired me to return."]
+    },
+    {
+      "key": "interaction.work.status.no_routine",
+      "lines": ["I do not have a proper work routine for that role yet."]
+    },
+    {
+      "key": "interaction.work.status.paused",
+      "lines": ["You have told me to hold for now."]
+    },
+    {
+      "key": "interaction.work.status.enabled",
+      "lines": ["I am back to work."]
+    },
+    {
+      "key": "interaction.work.status.cooldown",
+      "lines": ["I am catching my breath before the next task."]
+    },
+    {
+      "key": "interaction.work.status.paused_for_command",
+      "lines": ["I am following your command, so I have paused my hired work."]
+    },
+    {
+      "key": "interaction.work.status.no_work_area",
+      "lines": ["No work area assigned."]
+    },
+    {
+      "key": "interaction.work.status.storage_full",
+      "lines": ["I have nowhere left to deposit these collected items."]
+    },
+    {
+      "key": "interaction.work.status.storage_full_after_deposit",
+      "lines": ["I deposited what I could, but storage is full now."]
+    },
+    {
+      "key": "interaction.work.status.storage_full_waiting",
+      "lines": ["I am staying near storage and waiting for room to deposit collected items."]
+    },
+    {
+      "key": "interaction.work.status.no_food",
+      "lines": ["No food for hired work. Mood and reputation suffered."]
+    },
+    {
+      "key": "interaction.work.status.return_path_lost",
+      "lines": ["I lost the path back into the work area, so I am finding a better way down."]
+    },
+    {
+      "key": "interaction.work.status.returning_bounds",
+      "lines": ["I have drifted beyond the work bounds, so I am heading back."]
+    },
+    {
+      "key": "interaction.work.status.return_retry_wait",
+      "lines": ["I am outside the work bounds and waiting a moment before trying the path back again."]
+    },
+    {
+      "key": "interaction.work.status.returning_excavation_ladder",
+      "lines": ["I am returning to the excavation ladder."]
+    },
+    {
+      "key": "interaction.work.status.moving_excavation_ladder",
+      "lines": ["I am moving to the excavation ladder."]
+    },
+    {
+      "key": "interaction.work.status.need_excavation_ladder_path",
+      "lines": ["I need a clear path to the excavation ladder."]
+    },
+    {
+      "key": "interaction.work.status.returning_by_ladder",
+      "lines": ["I am using the ladder to get back into the work area."]
+    },
+    {
+      "key": "interaction.work.status.returning_to_safe_ground",
+      "lines": ["I am climbing out to safer ground before returning to the work area."]
+    },
+    {
+      "key": "interaction.work.status.returning_from_far_bounds",
+      "lines": ["I am too far from the work bounds, so I am making my way back."]
+    },
+    {
+      "key": "interaction.work.status.return_path_missing",
+      "lines": ["I am outside the work bounds, and I have not found a good way back yet."]
+    },
+    {
+      "key": "interaction.work.status.return_could_not_move",
+      "lines": ["I know I must return to the work bounds, but I could not get moving yet."]
+    },
+    {
+      "key": "interaction.work.status.horizontal_radius",
+      "lines": ["My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}."]
+    },
+    {
+      "key": "interaction.work.status.vertical_radius",
+      "lines": ["My job site vertical range is now {radius} blocks. I cannot manage beyond {max}."]
+    },
+    {
+      "key": "interaction.work.status.bounds",
+      "lines": ["My job site bounds are now {dimensions} ({bounds})."]
+    },
+    {
+      "key": "interaction.work.status.assigned_supplies_enabled",
+      "lines": ["I may draw supplies from the assigned storage now."]
+    },
+    {
+      "key": "interaction.work.status.assigned_supplies_disabled",
+      "lines": ["I will stick to what I carry and what is in my work gear."]
+    },
+    {
+      "key": "interaction.work.status.auto_deposit_enabled",
+      "lines": ["I will put away my finished goods on my own."]
+    },
+    {
+      "key": "interaction.work.status.auto_deposit_disabled",
+      "lines": ["I will keep what I gather until told otherwise."]
+    },
+    {
+      "key": "interaction.work.status.combat_orders",
+      "lines": ["My combat orders are now {mode}."]
+    },
+    {
+      "key": "interaction.work.status.mining_orders",
+      "lines": ["My mining orders are now {mode}."]
+    },
+    {
+      "key": "interaction.work.status.logging_filter",
+      "lines": ["I will now favor {filter} when I look for timber."]
+    },
+    {
+      "key": "interaction.work.status.farming_mode",
+      "lines": ["My farming approach is now {mode}."]
+    },
+    {
+      "key": "interaction.work.status.navigation_focus",
+      "lines": ["I have shifted my navigation focus for the next route."]
+    },
+    {
+      "key": "interaction.work.status.animal_focus",
+      "lines": ["I have changed what I am watching for with the animals."]
+    },
+    {
+      "key": "interaction.work.status.nitwit_focus",
+      "lines": ["I have rearranged my very particular style of helping."]
+    },
+    {
+      "key": "interaction.work.status.no_extra_setup",
+      "lines": ["There is no extra setup for {role} just yet."]
+    },
+    {
+      "key": "interaction.work.status.custom_box",
+      "lines": ["Custom work box selected: {dimensions} blocks."]
+    },
+    {
+      "key": "interaction.work.status.custom_box_capped",
+      "lines": ["This area is too large for this worker, so I clamped it to their current skill range. Custom work box selected: {dimensions} blocks."]
+    },
+    {
+      "key": "interaction.work.status.center_reset_to_villager",
+      "lines": ["My job site is reset to my position: {range}."]
+    },
+    {
+      "key": "interaction.work.status.center_set_here",
+      "lines": ["My job site center is now here: {range}."]
+    },
+    {
+      "key": "interaction.work.area.none",
+      "lines": ["No work area assigned"]
+    },
+    {
+      "key": "interaction.work.target.none",
+      "lines": ["no fixed spot just now"]
+    },
+    {
+      "key": "interaction.work.activity.paused",
+      "lines": ["resting until you ask me to resume"]
+    },
+    {
+      "key": "interaction.work.activity.waiting",
+      "lines": ["waiting for the next bit of work"]
+    },
+    {
+      "key": "interaction.work.activity.selecting_target",
+      "lines": ["looking over the area for the next task"]
+    },
+    {
+      "key": "interaction.work.activity.moving_to_target",
+      "lines": ["heading toward {target}"]
+    },
+    {
+      "key": "interaction.work.activity.validating_target",
+      "lines": ["checking the spot at {target}"]
+    },
+    {
+      "key": "interaction.work.activity.working",
+      "lines": ["working at {target}"]
+    },
+    {
+      "key": "interaction.work.activity.collecting_output",
+      "lines": ["gathering what I finished at {target}"]
+    },
+    {
+      "key": "interaction.work.activity.finding_chain_target",
+      "lines": ["looking for the next useful spot near {target}"]
+    },
+    {
+      "key": "interaction.work.activity.moving_to_storage",
+      "lines": ["carrying goods toward {target}"]
+    },
+    {
+      "key": "interaction.work.activity.returning_to_work_area",
+      "lines": ["making my way back into the work area"]
+    },
+    {
+      "key": "interaction.work.activity.depositing",
+      "lines": ["putting supplies away at {target}"]
+    },
+    {
+      "key": "interaction.work.activity.paused_storage_full",
+      "lines": ["waiting near full storage at {target}"]
+    },
+    {
+      "key": "interaction.work.activity.no_work_area",
+      "lines": ["waiting for you to assign a job site"]
+    },
+    {
+      "key": "interaction.work.activity.paused_full_inventory",
+      "lines": ["stopped because my inventory is full"]
+    },
+    {
+      "key": "interaction.work.activity.paused_no_storage",
+      "lines": ["waiting because there is nowhere proper to store things"]
+    },
+    {
+      "key": "interaction.work.activity.failed_cooldown",
+      "lines": ["waiting a moment before I try that again"]
+    },
+    {
+      "key": "interaction.work.activity.paused_missing_tool",
+      "lines": ["waiting because I do not have the right tool"]
+    },
+    {
+      "key": "interaction.work.mining.scan_excavation",
+      "lines": ["I am still checking the excavation area for reachable blocks."]
+    },
+    {
+      "key": "interaction.work.mining.output_full_depositing",
+      "lines": ["My packs are full, so I am taking the mined output to storage before I continue."]
+    },
+    {
+      "key": "interaction.work.mining.output_full_blocked",
+      "lines": ["I cannot carry more ore, and I have nowhere to stow it."]
+    },
+    {
+      "key": "interaction.work.mining.post_clear_scan",
+      "lines": ["I cleared that block and am checking the assigned area for the next reachable face."]
+    },
+    {
+      "key": "interaction.work.mining.post_clear_depositing",
+      "lines": ["I have gathered the mined output and am taking it to storage."]
+    },
+    {
+      "key": "interaction.work.mining.deposited_checking_packs",
+      "lines": ["I put away my mined output and am checking my packs before I continue."]
+    },
+    {
+      "key": "interaction.work.mining.support.moving",
+      "lines": ["I am moving into position to place excavation supports."]
+    },
+    {
+      "key": "interaction.work.mining.support.placed_ladder",
+      "lines": ["I placed the next ladder support for the excavation."]
+    },
+    {
+      "key": "interaction.work.mining.support.placed_torch",
+      "lines": ["I placed a torch for the excavation."]
+    },
+    {
+      "key": "interaction.work.mining.support.missing_ladders",
+      "lines": ["I need ladders in my job supplies or assigned storage before I can excavate safely."]
+    },
+    {
+      "key": "interaction.work.mining.support.gathering_supplies",
+      "lines": ["I am heading to assigned storage for excavation supplies."]
+    },
+    {
+      "key": "interaction.work.mining.support.gathered_supplies",
+      "lines": ["I gathered excavation supplies from storage and am returning to the job site."]
+    },
+    {
+      "key": "interaction.work.mining.no_target_deposit.excavate_area",
+      "lines": ["There are no reachable excavation blocks right now, so I am heading to storage for now."]
+    },
+    {
+      "key": "interaction.work.mining.no_target_deposit.exposed_ores",
+      "lines": ["There is no exposed ore in this pocket, so I am heading to storage for now."]
+    },
+    {
+      "key": "interaction.work.mining.searching.excavate_area",
+      "lines": ["I see no reachable block face yet, so I am searching the excavation area."]
+    },
+    {
+      "key": "interaction.work.mining.searching.exposed_ores",
+      "lines": ["I see no exposed ore nearby, so I am searching the work area."]
+    },
+    {
+      "key": "interaction.work.mining.deposited_waiting.excavate_area",
+      "lines": ["I am putting away what I mined while I wait for another reachable block face."]
+    },
+    {
+      "key": "interaction.work.mining.deposited_waiting.exposed_ores",
+      "lines": ["I am putting away what I mined while I wait for fresh ore to show itself."]
+    },
+    {
+      "key": "interaction.work.mining.no_targets.excavate_area",
+      "lines": ["There are no reachable excavation blocks within the assigned area just now."]
+    },
+    {
+      "key": "interaction.work.mining.no_targets.exposed_ores",
+      "lines": ["There is no exposed ore within reach just now."]
+    },
+    {
+      "key": "interaction.work.mining.missing_tool.excavate_area",
+      "lines": ["I need a better pickaxe, shovel, or axe before I can excavate that block."]
+    },
+    {
+      "key": "interaction.work.mining.missing_tool.exposed_ores",
+      "lines": ["I need a better pickaxe before I can break that ore."]
+    },
+    {
+      "key": "interaction.work.mining.blocked_target.excavate_area",
+      "lines": ["That block face is blocked off. I am looking for another reachable part of the area."]
+    },
+    {
+      "key": "interaction.work.mining.blocked_target.exposed_ores",
+      "lines": ["That ore is blocked off. I am looking for another vein I can reach."]
+    },
+    {
+      "key": "interaction.work.mining.repositioning.excavate_area",
+      "lines": ["That block is awkward from here, so I am changing my position."]
+    },
+    {
+      "key": "interaction.work.mining.repositioning.exposed_ores",
+      "lines": ["That ore is awkward from here, so I am changing my position."]
+    },
+    {
+      "key": "interaction.work.mining.blocked_swing.excavate_area",
+      "lines": ["I cannot get a clean swing at that block yet, so I am repositioning."]
+    },
+    {
+      "key": "interaction.work.mining.blocked_swing.exposed_ores",
+      "lines": ["I cannot get a clean swing at that ore yet, so I am repositioning."]
+    },
+    {
+      "key": "interaction.work.mining.moving_to_target.excavate_area",
+      "lines": ["I am moving toward the excavation face now."]
+    },
+    {
+      "key": "interaction.work.mining.moving_to_target.exposed_ores",
+      "lines": ["I am moving toward the ore now."]
+    },
+    {
+      "key": "interaction.work.mining.working_target.excavate_area",
+      "lines": ["I am cutting into the assigned area now."]
+    },
+    {
+      "key": "interaction.work.mining.working_target.exposed_ores",
+      "lines": ["I am working the ore face now."]
+    },
+    {
+      "key": "interaction.work.mining.next_target.excavate_area",
+      "lines": ["That block is cleared, and I am moving on to the next reachable face."]
+    },
+    {
+      "key": "interaction.work.mining.next_target.exposed_ores",
+      "lines": ["That ore is mined out, and I am moving on to the next exposed vein."]
+    },
+    {
+      "key": "interaction.work.mining.completed_searching.excavate_area",
+      "lines": ["I have gathered what I could, and I am searching the area for another reachable face."]
+    },
+    {
+      "key": "interaction.work.mining.completed_searching.exposed_ores",
+      "lines": ["I have gathered what I could, and I am searching the area for more ore."]
+    },
+    {
+      "key": "interaction.work.mining.completed_deposited.excavate_area",
+      "lines": ["I cleared that block, gathered it, and put it away."]
+    },
+    {
+      "key": "interaction.work.mining.completed_deposited.exposed_ores",
+      "lines": ["I mined the ore, gathered it, and put it away."]
+    },
+    {
+      "key": "interaction.work.mining.completed_no_next.excavate_area",
+      "lines": ["I cleared that block and gathered it, but there is no other reachable face nearby."]
+    },
+    {
+      "key": "interaction.work.mining.completed_no_next.exposed_ores",
+      "lines": ["I mined the ore and gathered it, but there is no other exposed vein nearby."]
+    },
+    {
+      "key": "interaction.work.mining.continuing_excavation.deposited",
+      "lines": ["I cleared that block, gathered it, put it away, and am checking for the next reachable face."]
+    },
+    {
+      "key": "interaction.work.mining.continuing_excavation.default",
+      "lines": ["I cleared that block and gathered it. I am checking the assigned area for the next reachable face."]
+    },
+    {
+      "key": "interaction.work.mining.completed_excavation.deposited",
+      "lines": ["The assigned excavation is finished, and I put the last of the output away."]
+    },
+    {
+      "key": "interaction.work.mining.completed_excavation.default",
+      "lines": ["The assigned excavation is finished. I do not see another block to clear."]
+    },
+    {
+      "key": "interaction.work.combat.passive.guard",
+      "lines": ["I remain on guard and ready to answer trouble."]
+    },
+    {
+      "key": "interaction.work.combat.passive.roaming",
+      "lines": ["I am roaming the work area and watching for trouble."]
+    },
+    {
+      "key": "interaction.work.combat.passive.attack_all",
+      "lines": ["I am sweeping the area and will engage any non-villager creature I find."]
+    },
+    {
+      "key": "interaction.work.combat.passive.hunting",
+      "lines": ["I am roaming the area and hunting animals."]
+    },
+    {
+      "key": "interaction.work.combat.active.guard",
+      "lines": ["I am defending the area against {target}."]
+    },
+    {
+      "key": "interaction.work.combat.active.roaming",
+      "lines": ["I found trouble while roaming and I am engaging {target}."]
+    },
+    {
+      "key": "interaction.work.combat.active.attack_all",
+      "lines": ["I am pressing the attack against {target}."]
+    },
+    {
+      "key": "interaction.work.combat.active.hunting",
+      "lines": ["I am hunting down {target}."]
+    },
+    {
+      "key": "interaction.work.logging.searching_scan",
+      "lines": ["I am searching the work area for a sound tree to cut."]
+    },
+    {
+      "key": "interaction.work.logging.no_target_depositing",
+      "lines": ["I found no good timber nearby, so I am heading to storage for now."]
+    },
+    {
+      "key": "interaction.work.logging.roaming",
+      "lines": ["I found no good timber yet, so I am ranging through the work area."]
+    },
+    {
+      "key": "interaction.work.logging.no_targets",
+      "lines": ["There is no good timber within reach just now."]
+    },
+    {
+      "key": "interaction.work.logging.missing_axe",
+      "lines": ["I need a proper axe before I can keep logging."]
+    },
+    {
+      "key": "interaction.work.logging.blocked_target",
+      "lines": ["That trunk will not do. I am looking for another I can reach."]
+    },
+    {
+      "key": "interaction.work.logging.repositioning",
+      "lines": ["That trunk is awkward from here, so I am changing my approach."]
+    },
+    {
+      "key": "interaction.work.logging.moving_to_target",
+      "lines": ["I am moving into place to work that tree."]
+    },
+    {
+      "key": "interaction.work.logging.working_target",
+      "lines": ["I am chopping through the trunk now."]
+    },
+    {
+      "key": "interaction.work.logging.completed",
+      "lines": ["I finished felling the tree and gathered {logs} logs."]
+    },
+    {
+      "key": "interaction.work.logging.output_full_depositing",
+      "lines": ["My hands are full of timber, so I am taking it to storage first."]
+    },
+    {
+      "key": "interaction.work.logging.output_full_blocked",
+      "lines": ["I cannot carry more timber, and there is nowhere to put it."]
+    },
+    {
+      "key": "interaction.work.logging.target_changed",
+      "lines": ["That tree is no longer fit for the work I had in mind."]
+    },
+    {
+      "key": "interaction.work.farming.searching_scan",
+      "lines": ["I am looking over the fields for crops ready to harvest."]
+    },
+    {
+      "key": "interaction.work.farming.no_target_depositing",
+      "lines": ["There are no ripe crops nearby, so I am heading to storage for now."]
+    },
+    {
+      "key": "interaction.work.farming.roaming",
+      "lines": ["I found nothing ripe yet, so I am walking the fields."]
+    },
+    {
+      "key": "interaction.work.farming.no_targets",
+      "lines": ["There are no ripe crops within reach just now."]
+    },
+    {
+      "key": "interaction.work.farming.target_changed",
+      "lines": ["That farming target is no longer ready for the harvest I had in mind."]
+    },
+    {
+      "key": "interaction.work.farming.crop_blocked",
+      "lines": ["That crop is blocked off, so I am looking for another I can reach."]
+    },
+    {
+      "key": "interaction.work.farming.crop_repositioning",
+      "lines": ["That crop is awkward from here, so I am changing my position."]
+    },
+    {
+      "key": "interaction.work.farming.moving_to_crop",
+      "lines": ["I am moving toward the ripe crop now."]
+    },
+    {
+      "key": "interaction.work.farming.output_blocked",
+      "lines": ["That farming target is blocked off, so I am looking for another I can reach."]
+    },
+    {
+      "key": "interaction.work.farming.output_repositioning",
+      "lines": ["That farming target is awkward from here, so I am changing my position."]
+    },
+    {
+      "key": "interaction.work.farming.moving_to_output",
+      "lines": ["I am moving toward the harvest target now."]
+    },
+    {
+      "key": "interaction.work.farming.harvesting_output",
+      "lines": ["I am harvesting the farming output now."]
+    },
+    {
+      "key": "interaction.work.farming.completed_output",
+      "lines": ["I harvested the farming output and gathered it up."]
+    },
+    {
+      "key": "interaction.work.farming.output_full_depositing",
+      "lines": ["My hands are full from the harvest, so I am taking it to storage first."]
+    },
+    {
+      "key": "interaction.work.farming.output_full_blocked",
+      "lines": ["I cannot carry more harvest, and there is nowhere to put it."]
+    },
+    {
+      "key": "interaction.work.farming.completed_crop",
+      "lines": ["I harvested the ripe crop and set the field right again."]
+    },
+    {
+      "key": "interaction.work.brewing.no_order",
+      "lines": ["No brewing order selected."]
+    },
+    {
+      "key": "interaction.work.brewing.depositing_outputs",
+      "lines": ["I am putting finished potions away before brewing more."]
+    },
+    {
+      "key": "interaction.work.brewing.choose_order",
+      "lines": ["Choose a potion and amount before I start brewing."]
+    },
+    {
+      "key": "interaction.work.brewing.recipe_unavailable",
+      "lines": ["That potion recipe is no longer available."]
+    },
+    {
+      "key": "interaction.work.brewing.no_stand",
+      "lines": ["I need a brewing stand inside the assigned job site."]
+    },
+    {
+      "key": "interaction.work.brewing.order_complete",
+      "lines": ["The brewing order is complete."]
+    },
+    {
+      "key": "interaction.work.brewing.wrong_bottles",
+      "lines": ["The brewing stand has different bottles in it."]
+    },
+    {
+      "key": "interaction.work.brewing.wrong_ingredient",
+      "lines": ["The brewing stand has the wrong ingredient in it."]
+    },
+    {
+      "key": "interaction.work.brewing.wrong_fuel",
+      "lines": ["The brewing stand has the wrong fuel in it."]
+    },
+    {
+      "key": "interaction.work.brewing.missing_materials",
+      "lines": ["Missing materials."]
+    },
+    {
+      "key": "interaction.work.brewing.stand_unreachable",
+      "lines": ["I cannot reach the assigned brewing stand."]
+    },
+    {
+      "key": "interaction.work.brewing.stand_blocked",
+      "lines": ["The brewing stand is blocked off, so I am waiting for a clear path."]
+    },
+    {
+      "key": "interaction.work.brewing.repositioning_stand",
+      "lines": ["I am moving into position at the brewing stand."]
+    },
+    {
+      "key": "interaction.work.brewing.moving_to_stand",
+      "lines": ["I am heading to the brewing stand."]
+    },
+    {
+      "key": "interaction.work.brewing.water_unreachable",
+      "lines": ["I cannot reach the assigned water source."]
+    },
+    {
+      "key": "interaction.work.brewing.water_blocked",
+      "lines": ["The water source is blocked off, so I am waiting for a clear path."]
+    },
+    {
+      "key": "interaction.work.brewing.repositioning_water",
+      "lines": ["I am moving into position at the water source."]
+    },
+    {
+      "key": "interaction.work.brewing.moving_to_water",
+      "lines": ["I am heading to the water source."]
+    },
+    {
+      "key": "interaction.work.brewing.water_bottle_space",
+      "lines": ["I need room in my job inventory to fill water bottles."]
+    },
+    {
+      "key": "interaction.work.brewing.crafted_ingredients",
+      "lines": ["I crafted brewing ingredients."]
+    },
+    {
+      "key": "interaction.work.brewing.crafted_blaze_powder",
+      "lines": ["I crafted blaze powder for the brewing stand."]
+    },
+    {
+      "key": "interaction.work.brewing.collected_output",
+      "lines": ["I collected {count} brewed {item}."]
+    },
+    {
+      "key": "interaction.work.brewing.clear_bottle_space",
+      "lines": ["I need room in my job inventory before I can clear extra bottles from the stand."]
+    },
+    {
+      "key": "interaction.work.brewing.cleared_extra_bottles",
+      "lines": ["I cleared extra water bottles from the brewing stand before starting this order."]
+    },
+    {
+      "key": "interaction.work.brewing.finishing_larger_batch",
+      "lines": ["I am finishing the larger batch already in the brewing stand."]
+    },
+    {
+      "key": "interaction.work.brewing.waiting_current_batch",
+      "lines": ["I am waiting for the current brewing batch to finish."]
+    },
+    {
+      "key": "interaction.work.brewing.loaded_water_bottles",
+      "lines": ["I loaded water bottles into the brewing stand."]
+    },
+    {
+      "key": "interaction.work.brewing.ready_to_collect",
+      "lines": ["I am ready to collect the finished potions."]
+    },
+    {
+      "key": "interaction.work.brewing.waiting_stand",
+      "lines": ["I am waiting for the brewing stand to finish."]
+    },
+    {
+      "key": "interaction.work.brewing.loaded_ingredient",
+      "lines": ["I loaded the next brewing ingredient."]
+    },
+    {
+      "key": "interaction.work.brewing.loaded_blaze_powder",
+      "lines": ["I loaded blaze powder into the brewing stand."]
+    },
+    {
+      "key": "interaction.work.brewing.collecting_materials",
+      "lines": ["I am collecting brewing materials from storage."]
+    },
+    {
+      "key": "interaction.work.brewing.materials_unreachable",
+      "lines": ["I cannot reach the assigned brewing materials."]
+    },
+    {
+      "key": "interaction.work.brewing.material_inventory_full",
+      "lines": ["I need room in my job inventory to carry brewing materials."]
+    },
+    {
+      "key": "interaction.work.brewing.gathered_materials",
+      "lines": ["I gathered brewing materials from storage."]
+    },
+    {
+      "key": "interaction.work.nitwit.cooldown",
+      "lines": ["I am helping in my own hard-to-measure way."]
+    },
+    {
+      "key": "interaction.work.nitwit.report.sky",
+      "lines": ["Nitwit report: I found the sky. Still up there."]
+    },
+    {
+      "key": "interaction.work.nitwit.report.supervising",
+      "lines": ["Nitwit report: I am supervising the general direction of things."]
+    },
+    {
+      "key": "interaction.work.nitwit.report.shadows",
+      "lines": ["Nitwit report: danger check complete. I disliked several shadows."]
+    },
+    {
+      "key": "interaction.work.nitwit.report.pointing",
+      "lines": ["Nitwit report: I can point at work, if that helps."]
+    },
+    {
+      "key": "interaction.work.navigation.placeholder",
+      "lines": ["I am ready to guide the way once you settle on where I should lead."]
+    },
+    {
+      "key": "interaction.work.animal_handling.placeholder",
+      "lines": ["I am ready to tend the animals once there are lures and a safe pen."]
+    },
+    {
+      "key": "interaction.work.manage.requires_hirer",
+      "lines": ["Only the hiring player can manage hired work."]
+    },
+    {
+      "key": "interaction.work.configure.requires_role",
+      "lines": ["Assign me to {role} before configuring that work."]
+    },
+    {
+      "key": "interaction.work.brewing.requires_role_choose",
+      "lines": ["Assign me to Brewing before choosing a potion."]
+    },
+    {
+      "key": "interaction.work.brewing.requires_role_change",
+      "lines": ["Assign me to Brewing before changing brewing orders."]
+    },
+    {
+      "key": "interaction.work.brewing.choose_amount",
+      "lines": ["Choose how many potions I should brew."]
+    },
+    {
+      "key": "interaction.work.brewing.unknown_recipe",
+      "lines": ["I do not know that brewing recipe."]
+    },
+    {
+      "key": "interaction.work.brewing.order_summary",
+      "lines": ["Brewing {amount} x {item}."]
+    },
+    {
+      "key": "interaction.work.brewing.stopped",
+      "lines": ["Brewing stopped."]
+    },
+    {
+      "key": "interaction.clipboard.storage.hold_clipboard",
+      "lines": ["Hold the clipboard to manage assigned storage."]
+    },
+    {
+      "key": "interaction.clipboard.work_area.hold_clipboard",
+      "lines": ["Hold the clipboard to manage assigned work areas."]
+    },
+    {
+      "key": "interaction.clipboard.work_area.same_dimension",
+      "lines": ["Stand in the same dimension as this worker to set the job site center."]
+    },
+    {
+      "key": "interaction.clipboard.selection_cleared",
+      "lines": ["Clipboard selection cleared."]
+    },
+    {
+      "key": "interaction.job_inventory.requires_hirer",
+      "lines": ["Only the hiring player can open hired job inventory."]
+    },
+    {
+      "key": "interaction.hire.end_requires_hirer",
+      "lines": ["Only the hiring player can end this contract."]
+    },
+    {
+      "key": "interaction.hire.extend_requires_hirer",
+      "lines": ["Only the hiring player can extend this contract."]
+    },
+    {
+      "key": "interaction.role.manage_requires_hirer",
+      "lines": ["Only the hiring player can manage my role."]
+    },
+    {
+      "key": "interaction.storage.assign_requires_access",
+      "lines": ["You need trust or an active hire contract to assign my storage."]
+    },
+    {
+      "key": "interaction.storage.select_with_clipboard",
+      "lines": ["Select storage with the clipboard first."]
+    },
+    {
+      "key": "interaction.storage.assign_result.assigned",
+      "lines": ["Assigned {count} container{plural}."]
+    },
+    {
+      "key": "interaction.storage.assign_result.already_assigned",
+      "lines": ["That storage is already assigned to another villager."]
+    },
+    {
+      "key": "interaction.storage.assign_result.invalid",
+      "lines": ["No valid selected containers were found."]
+    },
+    {
+      "key": "interaction.storage.assign_result.none",
+      "lines": ["No storage was assigned."]
+    },
+    {
+      "key": "interaction.storage.inspect_requires_access",
+      "lines": ["You need trust or an active hire contract to inspect my storage."]
+    },
+    {
+      "key": "interaction.storage.assigned_count",
+      "lines": ["Assigned containers: {count}."]
+    },
+    {
+      "key": "interaction.storage.remove_requires_access",
+      "lines": ["You need trust or an active hire contract to remove my storage."]
+    },
+    {
+      "key": "interaction.storage.removed_count",
+      "lines": ["Removed {count} assigned container{plural}."]
+    },
+    {
+      "key": "interaction.payment_storage.requires_hire",
+      "lines": ["Hire me first, then assign recurring payment storage."]
+    },
+    {
+      "key": "interaction.payment_storage.assigned_count",
+      "lines": ["Payment containers: {count}. Auto-payment is {auto_payment}."]
+    },
+    {
+      "key": "interaction.payment_storage.remove_requires_hirer",
+      "lines": ["Only the hiring player can remove payment storage."]
+    },
+    {
+      "key": "interaction.payment_storage.removed_count",
+      "lines": ["Removed {count} payment container{plural}."]
+    },
+    {
+      "key": "interaction.earnings.deposit_requires_access",
+      "lines": ["You need trust or an active hire contract to manage my earnings."]
+    },
+    {
+      "key": "interaction.earnings.no_excess",
+      "lines": ["No excess earnings to deposit."]
+    },
+    {
+      "key": "interaction.earnings.storage_unavailable",
+      "lines": ["Assigned storage is unavailable."]
+    },
+    {
+      "key": "interaction.earnings.no_assigned_storage",
+      "lines": ["No assigned storage. I kept the currency in my wallet."]
+    },
+    {
+      "key": "interaction.earnings.storage_full",
+      "lines": ["Assigned storage is full. I kept the currency in my wallet."]
+    },
+    {
+      "key": "interaction.earnings.deposited_partial",
+      "lines": ["Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet."]
+    },
+    {
+      "key": "interaction.earnings.deposited_all",
+      "lines": ["Deposited {deposited} into assigned storage."]
+    },
+    {
+      "key": "interaction.auto_payment.requires_hire",
+      "lines": ["Hire me first, then set up recurring payment."]
+    },
+    {
+      "key": "interaction.auto_payment.requires_storage",
+      "lines": ["Assign a payment container first with the clipboard's recurring payment mode."]
+    },
+    {
+      "key": "interaction.auto_payment.enabled",
+      "lines": ["Recurring payment enabled."]
+    },
+    {
+      "key": "interaction.auto_payment.disabled",
+      "lines": ["Recurring payment disabled."]
+    },
+    {
+      "key": "interaction.confiscated_stolen_item.first_offense",
+      "lines": [
+        "First you take {item_stack} from the chest, now you try and take it from me?",
+        "That was already confiscated once. Taking {item_stack} from my pack does not make it yours.",
+        "I put {item_stack} away because you took it from village stores. Do not make me say this twice.",
+        "You reached into the chest, then into my inventory. That is a pattern, not a mistake.",
+        "The village already had to take {item_stack} back from you. Leave it where I put it."
+      ]
+    },
+    {
+      "key": "interaction.confiscated_stolen_item.second_offense",
+      "lines": [
+        "Again? First the chest, then my inventory, and now this. You are running out of warnings.",
+        "I already warned you about taking confiscated goods. Keep your hands off {item_stack}.",
+        "You are trying to steal the same kind of trouble twice. The next time, we stop talking.",
+        "That item was removed from you for a reason. Touch my inventory again and I will not ask politely.",
+        "You took from the village, then from me, and now you test whether I remember. I do."
+      ]
+    },
+    {
+      "key": "interaction.confiscated_stolen_item.aggro",
+      "lines": [
+        "No more warnings. Chest, villager, chest again; you chose this over {item_stack}.",
+        "Three times is enough. The village is done asking for {item_stack} back.",
+        "You keep stealing what we already took back. Now you answer for {item_stack}.",
+        "First the chest, then my inventory, now {item_stack} again. No more words.",
+        "You had two chances to stop reaching for {item_stack}. You wasted both."
+      ]
+    },
+    {
+      "key": "interaction.ambient.baby_damaged.player",
+      "lines": [
+        "Ow! Why would you do that?",
+        "Stop! That hurts!",
+        "Help! They hit me!"
+      ]
+    },
+    {
+      "key": "interaction.ambient.baby_damaged.other",
+      "lines": [
+        "Ow! Something hit me!",
+        "Help! That hurt!",
+        "I want to go home!"
+      ]
+    },
+    {
+      "key": "interaction.ambient.baby_witnessed_death.player",
+      "lines": [
+        "No no no! I saw what you did!",
+        "Help! They hurt them!",
+        "I want the grownups!"
+      ]
+    },
+    {
+      "key": "interaction.ambient.baby_witnessed_death.other",
+      "lines": [
+        "No no no! Run!",
+        "Where are the grownups?",
+        "Hide! Hide now!"
+      ]
+    },
+    {
       "key": "interaction.hire_unavailable",
       "lines": [
         "I cannot be hired yet.",

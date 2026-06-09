@@ -59,21 +59,21 @@ public final class FarmingWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             if (isCropScanInProgress(context)) {
                 setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-                return WorkResult.progressed("I am looking over the fields for crops ready to harvest.");
+                return WorkResult.progressed("interaction.work.farming.searching_scan");
             }
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("There are no ripe crops nearby, so I am heading to storage for now.");
+                return WorkResult.progressed("interaction.work.farming.no_target_depositing");
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
             }
             if (roamInsideWorkArea(level, villager, context, 0.35D)) {
-                return WorkResult.progressed("I found nothing ripe yet, so I am walking the fields.");
+                return WorkResult.progressed("interaction.work.farming.roaming");
             }
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("There are no ripe crops within reach just now.");
+            return WorkResult.idle("interaction.work.farming.no_targets");
         }
 
         BlockPos targetPos = farmTarget.pos();
@@ -84,7 +84,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, targetPos);
-            return WorkResult.idle("That farming target is no longer ready for the harvest I had in mind.");
+            return WorkResult.idle("interaction.work.farming.target_changed");
         }
 
         if (targetType == FarmTargetType.CROP && targetState.getBlock() instanceof CropBlock crop) {
@@ -97,11 +97,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
                         HiredWorkPlan.removeTarget(context, targetPos);
                         HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 20L * 30L);
                         setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, targetPos);
-                        return WorkResult.idle("That crop is blocked off, so I am looking for another I can reach.");
+                        return WorkResult.idle("interaction.work.farming.crop_blocked");
                     }
-                    return WorkResult.progressed("That crop is awkward from here, so I am changing my position.");
+                    return WorkResult.progressed("interaction.work.farming.crop_repositioning");
                 }
-                return WorkResult.progressed("I am moving toward the ripe crop now.");
+                return WorkResult.progressed("interaction.work.farming.moving_to_crop");
             }
             clearWorkPathFailure(villager, targetPos);
             stopAtCropTarget(villager, targetPos);
@@ -118,11 +118,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
                     clearActiveBreakingTarget(level, context, villager);
                     HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 20L * 30L);
                     setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, targetPos);
-                    return WorkResult.idle("That farming target is blocked off, so I am looking for another I can reach.");
+                    return WorkResult.idle("interaction.work.farming.output_blocked");
                 }
-                return WorkResult.progressed("That farming target is awkward from here, so I am changing my position.");
+                return WorkResult.progressed("interaction.work.farming.output_repositioning");
             }
-            return WorkResult.progressed("I am moving toward the harvest target now.");
+            return WorkResult.progressed("interaction.work.farming.moving_to_output");
         }
         clearWorkPathFailure(villager, targetPos);
         stopAtFarmOutputTarget(villager, targetPos);
@@ -135,7 +135,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             context.setProgressTicks(progress);
             swingWorkTool(villager);
             showBreakProgress(level, villager, targetPos, progress, needed);
-            return WorkResult.progressed("I am harvesting the farming output now.");
+            return WorkResult.progressed("interaction.work.farming.harvesting_output");
         }
 
         context.setProgressTicks(0);
@@ -145,23 +145,23 @@ public final class FarmingWorker extends AbstractBlockWorker {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
             if (depositResult == DepositResult.DEPOSITED && storeFarmOutputDrops(level, context, villager, targetPos, tool)) {
                 clearActiveBreakingTarget(level, context, villager);
-                return WorkResult.completed("I harvested the farming output and gathered it up.");
+                return WorkResult.completed("interaction.work.farming.completed_output");
             }
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("My hands are full from the harvest, so I am taking it to storage first.");
+                return WorkResult.progressed("interaction.work.farming.output_full_depositing");
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
             }
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("I cannot carry more harvest, and there is nowhere to put it.");
+            return WorkResult.idle("interaction.work.farming.output_full_blocked");
         }
         HiredWorkPlan.removeTarget(context, targetPos);
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
-        return WorkResult.completed("I harvested the farming output and gathered it up.");
+        return WorkResult.completed("interaction.work.farming.completed_output");
     }
 
     private WorkResult harvestCropNow(
@@ -178,23 +178,23 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (depositResult == DepositResult.DEPOSITED && storeCropDrops(level, context, villager, target, tool)) {
                 HiredWorkPlan.removeTarget(context, target);
                 clearActiveBreakingTarget(level, context, villager);
-                return WorkResult.completed("I harvested the ripe crop and set the field right again.");
+                return WorkResult.completed("interaction.work.farming.completed_crop");
             }
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("My hands are full from the harvest, so I am taking it to storage first.");
+                return WorkResult.progressed("interaction.work.farming.output_full_depositing");
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
             }
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("I cannot carry more harvest, and there is nowhere to put it.");
+            return WorkResult.idle("interaction.work.farming.output_full_blocked");
         }
         HiredWorkPlan.removeTarget(context, target);
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
-        return WorkResult.completed("I harvested the ripe crop and set the field right again.");
+        return WorkResult.completed("interaction.work.farming.completed_crop");
     }
 
     private boolean storeCropDrops(

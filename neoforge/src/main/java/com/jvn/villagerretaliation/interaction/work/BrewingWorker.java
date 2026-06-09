@@ -60,12 +60,21 @@ public final class BrewingWorker extends AbstractBlockWorker {
     }
 
     public static String orderSummary(ServerLevel level, CompoundTag state) {
+        return orderSummaryKey(level, state);
+    }
+
+    public static String orderSummaryKey(ServerLevel level, CompoundTag state) {
+        return targetRoute(level, state).isPresent()
+                ? "interaction.work.brewing.order_summary"
+                : "interaction.work.brewing.no_order";
+    }
+
+    public static Map<String, String> orderSummaryReplacements(ServerLevel level, CompoundTag state) {
         return targetRoute(level, state)
-                .map(route -> {
-                    String amount = state.getBoolean(CONTINUOUS_TAG) ? "continuously" : Integer.toString(state.getInt(REMAINING_TAG));
-                    return "Brewing " + amount + " x " + route.output().getHoverName().getString() + ".";
-                })
-                .orElse("No brewing order selected.");
+                .map(route -> Map.of(
+                        "amount", state.getBoolean(CONTINUOUS_TAG) ? "continuously" : Integer.toString(state.getInt(REMAINING_TAG)),
+                        "item", route.output().getHoverName().getString()))
+                .orElse(Map.of());
     }
 
     @Override
@@ -77,7 +86,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (hasAssignedStorage) {
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
             if (depositResult == DepositResult.MOVING) {
-                return WorkResult.progressed("I am putting finished potions away before brewing more.");
+                return WorkResult.progressed("interaction.work.brewing.depositing_outputs");
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
@@ -86,7 +95,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (!hasOrder(context.state())) {
             context.setProgressTicks(0);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("Choose a potion and amount before I start brewing.");
+            return WorkResult.idle("interaction.work.brewing.choose_order");
         }
 
         HiredBrewingRecipeCatalog.BrewingRoute route = targetRoute(level, context.state()).orElse(null);
@@ -94,7 +103,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "unknown_brewing_target", 0L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("That potion recipe is no longer available.");
+            return WorkResult.idle("interaction.work.brewing.recipe_unavailable");
         }
 
         BlockPos stand = nearestBrewingStand(level, villager, context);
@@ -102,13 +111,13 @@ public final class BrewingWorker extends AbstractBlockWorker {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "no_brewing_stand", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-            return WorkResult.idle("I need a brewing stand inside the assigned job site.");
+            return WorkResult.idle("interaction.work.brewing.no_stand");
         }
 
         int batchSize = nextBatchSize(context.state());
         if (batchSize <= 0) {
             clearOrder(context.state());
-            return WorkResult.completed("The brewing order is complete.");
+            return WorkResult.completed("interaction.work.brewing.order_complete");
         }
         BlockPos water = nearestWaterSource(level, villager, context, stand);
         boolean waterSource = water != null;
@@ -118,19 +127,19 @@ public final class BrewingWorker extends AbstractBlockWorker {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "brewing_stand_blocked", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
-            return WorkResult.idle("The brewing stand has different bottles in it.");
+            return WorkResult.idle("interaction.work.brewing.wrong_bottles");
         }
         if (!standPlan.hasFinishedOutput(route) && standPlan.hasWrongIngredient()) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "brewing_stand_wrong_ingredient", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
-            return WorkResult.idle("The brewing stand has the wrong ingredient in it.");
+            return WorkResult.idle("interaction.work.brewing.wrong_ingredient");
         }
         if (!standPlan.hasFinishedOutput(route) && standPlan.hasWrongFuel()) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "brewing_stand_wrong_fuel", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
-            return WorkResult.idle("The brewing stand has the wrong fuel in it.");
+            return WorkResult.idle("interaction.work.brewing.wrong_fuel");
         }
 
         MaterialPlan materials = MaterialPlan.create(level, villager, context, route, waterSource, standPlan);
@@ -161,13 +170,13 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (materials.missingCarriedWaterBottles(context) > 0 && countJobWaterBottles(context) <= 0) {
             HiredWorkerBrain.setFailure(context, "missing_brewing_water_bottles", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("Missing materials");
+            return WorkResult.idle("interaction.work.brewing.missing_materials");
         }
         HiredPathTarget target = bestWorkTarget(level, villager, context, stand);
         if (target == null) {
             HiredWorkerBrain.setFailure(context, "brewing_stand_unreachable", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, stand);
-            return WorkResult.idle("I cannot reach the assigned brewing stand.");
+            return WorkResult.idle("interaction.work.brewing.stand_unreachable");
         }
         prepareBreakingTarget(level, context, villager, target);
         if (!canWorkFromCurrentPosition(level, villager, context, target)) {
@@ -178,11 +187,11 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 if (recordWorkPathFailure(level, villager, stand)) {
                     HiredWorkerBrain.setFailure(context, "brewing_stand_path_failed", level.getGameTime() + 20L * 30L);
                     setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, stand);
-                    return WorkResult.idle("The brewing stand is blocked off, so I am waiting for a clear path.");
+                    return WorkResult.idle("interaction.work.brewing.stand_blocked");
                 }
-                return WorkResult.progressed("I am moving into position at the brewing stand.");
+                return WorkResult.progressed("interaction.work.brewing.repositioning_stand");
             }
-            return WorkResult.progressed("I am heading to the brewing stand.");
+            return WorkResult.progressed("interaction.work.brewing.moving_to_stand");
         }
         clearWorkPathFailure(villager, stand);
         holdWorkPosition(villager, target);
@@ -208,7 +217,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
 
     @Override
     public String status(ServerLevel level, Villager villager, HiredWorkContext context) {
-        return orderSummary(level, context.state()) + " " + context.status();
+        return context.status();
     }
 
     private static java.util.Optional<HiredBrewingRecipeCatalog.BrewingRoute> targetRoute(ServerLevel level, CompoundTag state) {
@@ -304,7 +313,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (target == null) {
             HiredWorkerBrain.setFailure(context, "brewing_water_source_unreachable", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, water);
-            return WorkResult.idle("I cannot reach the assigned water source.");
+            return WorkResult.idle("interaction.work.brewing.water_unreachable");
         }
         if (!canUseWaterFromCurrentPosition(villager, water)) {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, water);
@@ -312,11 +321,11 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 if (recordWorkPathFailure(level, villager, water)) {
                     HiredWorkerBrain.setFailure(context, "brewing_water_source_path_failed", level.getGameTime() + 20L * 30L);
                     setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, water);
-                    return WorkResult.idle("The water source is blocked off, so I am waiting for a clear path.");
+                    return WorkResult.idle("interaction.work.brewing.water_blocked");
                 }
-                return WorkResult.progressed("I am moving into position at the water source.");
+                return WorkResult.progressed("interaction.work.brewing.repositioning_water");
             }
-            return WorkResult.progressed("I am heading to the water source.");
+            return WorkResult.progressed("interaction.work.brewing.moving_to_water");
         }
         clearWorkPathFailure(villager, water);
         faceBlock(villager, water);
@@ -325,7 +334,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (filled <= 0) {
             HiredWorkerBrain.setFailure(context, "brewing_water_bottle_space", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, water);
-            return WorkResult.idle("I need room in my job inventory to fill water bottles.");
+            return WorkResult.idle("interaction.work.brewing.water_bottle_space");
         }
         swingWorkTool(villager);
         level.playSound(null, water, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -403,17 +412,17 @@ public final class BrewingWorker extends AbstractBlockWorker {
             if (!HiredSupplyCrafting.craftCarriedSupplyItem(level, context, ingredient)) {
                 HiredWorkerBrain.setFailure(context, "missing_brewing_ingredient", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-                return WorkResult.idle("Missing materials");
+                return WorkResult.idle("interaction.work.brewing.missing_materials");
             }
-            return WorkResult.progressed("I crafted brewing ingredients.");
+            return WorkResult.progressed("interaction.work.brewing.crafted_ingredients");
         }
         if (standPlan.needsFuelForBrewing(route) && countJobItem(context, Items.BLAZE_POWDER) <= 0) {
             if (!HiredSupplyCrafting.craftCarriedSupplyItem(level, context, Items.BLAZE_POWDER)) {
                 HiredWorkerBrain.setFailure(context, "missing_brewing_fuel", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-                return WorkResult.idle("Missing materials");
+                return WorkResult.idle("interaction.work.brewing.missing_materials");
             }
-            return WorkResult.progressed("I crafted blaze powder for the brewing stand.");
+            return WorkResult.progressed("interaction.work.brewing.crafted_blaze_powder");
         }
         return null;
     }
@@ -429,7 +438,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (!(level.getBlockEntity(stand) instanceof BrewingStandBlockEntity blockEntity)) {
             HiredWorkerBrain.setFailure(context, "no_brewing_stand", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-            return WorkResult.idle("I need a brewing stand inside the assigned job site.");
+            return WorkResult.idle("interaction.work.brewing.no_stand");
         }
 
         int collected = collectFinishedPotions(level, villager, context, route, blockEntity, stand, collectLimit);
@@ -438,15 +447,19 @@ public final class BrewingWorker extends AbstractBlockWorker {
             decrementOrder(context.state(), collected);
             level.playSound(null, stand, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1.0F, 1.0F);
             setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, stand);
-            String status = "I collected " + collected + " brewed " + route.output().getHoverName().getString() + ".";
-            return completesOrder ? WorkResult.completed(status) : WorkResult.skilledProgress(status);
+            Map<String, String> replacements = Map.of(
+                    "count", Integer.toString(collected),
+                    "item", route.output().getHoverName().getString());
+            return completesOrder
+                    ? WorkResult.completed("interaction.work.brewing.collected_output", replacements)
+                    : WorkResult.skilledProgress("interaction.work.brewing.collected_output", replacements);
         }
 
         int currentStep = currentBrewingStep(level, blockEntity, route);
         if (currentStep < 0) {
             HiredWorkerBrain.setFailure(context, "brewing_stand_blocked", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
-            return WorkResult.idle("The brewing stand has different bottles in it.");
+            return WorkResult.idle("interaction.work.brewing.wrong_bottles");
         }
         int loadedBottles = loadedBottleCount(blockEntity);
         if (loadedBottles > batchSize) {
@@ -455,40 +468,40 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 if (unloaded <= 0) {
                     HiredWorkerBrain.setFailure(context, "brewing_water_bottle_space", level.getGameTime() + 100L);
                     setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, stand);
-                    return WorkResult.idle("I need room in my job inventory before I can clear extra bottles from the stand.");
+                    return WorkResult.idle("interaction.work.brewing.clear_bottle_space");
                 }
                 swingWorkTool(villager);
-                return WorkResult.progressed("I cleared extra water bottles from the brewing stand before starting this order.");
+                return WorkResult.progressed("interaction.work.brewing.cleared_extra_bottles");
             }
-            return WorkResult.progressed("I am finishing the larger batch already in the brewing stand.");
+            return WorkResult.progressed("interaction.work.brewing.finishing_larger_batch");
         }
         if (loadedBottles < batchSize) {
             if (loadedBottles > 0 && (currentStep > 0 || !blockEntity.getItem(INGREDIENT_SLOT).isEmpty())) {
-                return WorkResult.progressed("I am waiting for the current brewing batch to finish.");
+                return WorkResult.progressed("interaction.work.brewing.waiting_current_batch");
             }
             int loaded = loadWaterBottlesIntoStand(level, context, blockEntity, stand, batchSize - loadedBottles);
             if (loaded <= 0) {
                 HiredWorkerBrain.setFailure(context, "missing_brewing_water_bottles", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
-                return WorkResult.idle("Missing materials");
+                return WorkResult.idle("interaction.work.brewing.missing_materials");
             }
             swingWorkTool(villager);
-            return WorkResult.progressed("I loaded water bottles into the brewing stand.");
+            return WorkResult.progressed("interaction.work.brewing.loaded_water_bottles");
         }
 
         if (currentStep >= route.ingredients().size()) {
-            return WorkResult.progressed("I am ready to collect the finished potions.");
+            return WorkResult.progressed("interaction.work.brewing.ready_to_collect");
         }
 
         Item nextIngredient = route.ingredients().get(currentStep);
         ItemStack ingredientSlot = blockEntity.getItem(INGREDIENT_SLOT);
         if (!ingredientSlot.isEmpty()) {
             if (ingredientSlot.is(nextIngredient)) {
-                return WorkResult.progressed("I am waiting for the brewing stand to finish.");
+                return WorkResult.progressed("interaction.work.brewing.waiting_stand");
             }
             HiredWorkerBrain.setFailure(context, "brewing_stand_wrong_ingredient", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
-            return WorkResult.idle("The brewing stand has the wrong ingredient in it.");
+            return WorkResult.idle("interaction.work.brewing.wrong_ingredient");
         }
 
         WorkResult fuelResult = ensureStandFuel(level, villager, context, blockEntity, stand);
@@ -500,12 +513,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (consumed <= 0) {
             HiredWorkerBrain.setFailure(context, "missing_brewing_ingredient", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
-            return WorkResult.idle("Missing materials");
+            return WorkResult.idle("interaction.work.brewing.missing_materials");
         }
         blockEntity.setItem(INGREDIENT_SLOT, new ItemStack(nextIngredient));
         updateBrewingStand(level, blockEntity, stand);
         swingWorkTool(villager);
-        return WorkResult.progressed("I loaded the next brewing ingredient.");
+        return WorkResult.progressed("interaction.work.brewing.loaded_ingredient");
     }
 
     private static boolean completesOrder(CompoundTag state, int brewed) {
@@ -529,18 +542,18 @@ public final class BrewingWorker extends AbstractBlockWorker {
             }
             HiredWorkerBrain.setFailure(context, "brewing_stand_wrong_fuel", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
-            return WorkResult.idle("The brewing stand has the wrong fuel in it.");
+            return WorkResult.idle("interaction.work.brewing.wrong_fuel");
         }
         int consumed = context.inventory().consumeSupply(stack -> stack.is(Items.BLAZE_POWDER), 1);
         if (consumed <= 0) {
             HiredWorkerBrain.setFailure(context, "missing_brewing_fuel", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
-            return WorkResult.idle("Missing materials");
+            return WorkResult.idle("interaction.work.brewing.missing_materials");
         }
         blockEntity.setItem(FUEL_SLOT, new ItemStack(Items.BLAZE_POWDER));
         updateBrewingStand(level, blockEntity, stand);
         swingWorkTool(villager);
-        return WorkResult.progressed("I loaded blaze powder into the brewing stand.");
+        return WorkResult.progressed("interaction.work.brewing.loaded_blaze_powder");
     }
 
     private static int loadWaterBottlesIntoStand(
@@ -725,13 +738,13 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
             HiredWorkerBrain.setFailure(context, "missing_brewing_materials", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("Missing materials");
+            return WorkResult.idle("interaction.work.brewing.missing_materials");
         }
         BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, need.predicate());
         if (storage == null) {
             HiredWorkerBrain.setFailure(context, "missing_brewing_materials", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("Missing materials");
+            return WorkResult.idle("interaction.work.brewing.missing_materials");
         }
         HiredWorkerBrain.setStorageTarget(context, storage);
         HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
@@ -742,12 +755,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 0.45D);
         if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-            return WorkResult.progressed("I am collecting brewing materials from storage.");
+            return WorkResult.progressed("interaction.work.brewing.collecting_materials");
         }
         if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
             HiredWorkerBrain.setFailure(context, "brewing_storage_path_failed", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
-            return WorkResult.idle("I cannot reach the assigned brewing materials.");
+            return WorkResult.idle("interaction.work.brewing.materials_unreachable");
         }
         int moved = AssignedStorageService.transferItemsAtAssignedStorage(
                 villager,
@@ -758,12 +771,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (moved <= 0) {
             HiredWorkerBrain.setFailure(context, "brewing_material_inventory_full", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
-            return WorkResult.idle("I need room in my job inventory to carry brewing materials.");
+            return WorkResult.idle("interaction.work.brewing.material_inventory_full");
         }
         HiredWorkerBrain.clearStorageTarget(context);
         HiredStorageNavigationGoal.clearStorageNavigationState(context);
         setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
-        return WorkResult.progressed("I gathered brewing materials from storage.");
+        return WorkResult.progressed("interaction.work.brewing.gathered_materials");
     }
 
     private record BrewingStandPlan(
@@ -897,7 +910,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 int waterBottleCount,
                 boolean waterSource,
                 boolean useWaterBottles) {
-            return new MaterialPlan(items, waterBottleCount, waterSource, useWaterBottles, false, "Missing materials");
+            return new MaterialPlan(items, waterBottleCount, waterSource, useWaterBottles, false, "interaction.work.brewing.missing_materials");
         }
 
         private static int planFuel(HiredSupplyCrafting.MaterialPlanner planner, Map<Item, Integer> items) {
@@ -925,7 +938,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         }
 
         public String missingStatus() {
-            return this.missingStatus.isBlank() ? "Missing materials" : this.missingStatus;
+            return this.missingStatus.isBlank() ? "interaction.work.brewing.missing_materials" : this.missingStatus;
         }
 
         private StorageNeed firstStorageNeed(HiredWorkContext context) {

@@ -15,8 +15,8 @@ public final class HiredRoleWorkerRegistry {
         register(new FarmingWorker());
         register(new NitwitWorker());
         register(new BrewingWorker());
-        register(new StatusOnlyWorker(HiredVillagerRole.NAVIGATION, "I am ready to guide the way once you settle on where I should lead."));
-        register(new StatusOnlyWorker(HiredVillagerRole.ANIMAL_HANDLING, "I am ready to tend the animals once there are lures and a safe pen."));
+        register(new StatusOnlyWorker(HiredVillagerRole.NAVIGATION, "interaction.work.navigation.placeholder"));
+        register(new StatusOnlyWorker(HiredVillagerRole.ANIMAL_HANDLING, "interaction.work.animal_handling.placeholder"));
     }
 
     private HiredRoleWorkerRegistry() {

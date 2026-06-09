@@ -4,10 +4,12 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
@@ -31,27 +33,6 @@ public final class VillagerConfiscatedStolenItemTracker {
     private static final List<DialogueOptionDefinition> WARNING_OPTIONS = List.of(
             DialogueOptionDefinition.simple("leave", "Leave", DialogueRequestType.QUESTION, 0)
     );
-    private static final String[] FIRST_OFFENSE_LINES = {
-            "First you take {item_stack} from the chest, now you try and take it from me?",
-            "That was already confiscated once. Taking {item_stack} from my pack does not make it yours.",
-            "I put {item_stack} away because you took it from village stores. Do not make me say this twice.",
-            "You reached into the chest, then into my inventory. That is a pattern, not a mistake.",
-            "The village already had to take {item_stack} back from you. Leave it where I put it."
-    };
-    private static final String[] SECOND_OFFENSE_LINES = {
-            "Again? First the chest, then my inventory, and now this. You are running out of warnings.",
-            "I already warned you about taking confiscated goods. Keep your hands off {item_stack}.",
-            "You are trying to steal the same kind of trouble twice. The next time, we stop talking.",
-            "That item was removed from you for a reason. Touch my inventory again and I will not ask politely.",
-            "You took from the village, then from me, and now you test whether I remember. I do."
-    };
-    private static final String[] AGGRO_LINES = {
-            "No more warnings. Chest, villager, chest again; you chose this over {item_stack}.",
-            "Three times is enough. The village is done asking for {item_stack} back.",
-            "You keep stealing what we already took back. Now you answer for {item_stack}.",
-            "First the chest, then my inventory, now {item_stack} again. No more words.",
-            "You had two chances to stop reaching for {item_stack}. You wasted both."
-    };
 
     private VillagerConfiscatedStolenItemTracker() {
     }
@@ -227,8 +208,7 @@ public final class VillagerConfiscatedStolenItemTracker {
             VillagerReputationManager.addDialogueReputation(level, villager, player, -reputationLoss);
         }
 
-        String line = selectLine(level, offenseCount)
-                .replace("{item_stack}", itemName(stack.copyWithCount(Math.max(1, count))));
+        String line = warningLine(level, player, villager, offenseCount, stack.copyWithCount(Math.max(1, count)));
         if (offenseCount >= 3) {
             VillagerInteractionService.broadcastForcedVillagerChat(
                     level,
@@ -255,11 +235,22 @@ public final class VillagerConfiscatedStolenItemTracker {
         }
     }
 
-    private static String selectLine(ServerLevel level, int offenseCount) {
-        String[] lines = offenseCount >= 3
-                ? AGGRO_LINES
-                : offenseCount == 2 ? SECOND_OFFENSE_LINES : FIRST_OFFENSE_LINES;
-        return lines[level.getRandom().nextInt(lines.length)];
+    private static String warningLine(ServerLevel level, ServerPlayer player, Villager villager, int offenseCount, ItemStack stack) {
+        return VillagerDialogueResources.message(
+                VillagerInteractionService.createDialogueContext(level, player, villager),
+                warningMessageKey(offenseCount),
+                Map.of("item_stack", itemName(stack))
+        ).orElse("");
+    }
+
+    private static String warningMessageKey(int offenseCount) {
+        if (offenseCount >= 3) {
+            return "interaction.confiscated_stolen_item.aggro";
+        }
+        if (offenseCount == 2) {
+            return "interaction.confiscated_stolen_item.second_offense";
+        }
+        return "interaction.confiscated_stolen_item.first_offense";
     }
 
     private static int incrementOffenseCount(Villager villager, UUID playerId) {

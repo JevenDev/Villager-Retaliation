@@ -5,11 +5,11 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedCo
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignmentResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -596,17 +596,23 @@ public final class AssignedStorageService {
         return containers;
     }
 
-    public static Component assignmentSummary(AssignSummary summary) {
+    public static AssignmentSummaryMessage assignmentSummaryMessage(AssignSummary summary) {
         if (summary.assigned() > 0) {
-            return Component.literal("Assigned " + summary.assigned() + " container" + (summary.assigned() == 1 ? "" : "s") + ".");
+            return new AssignmentSummaryMessage(
+                    "interaction.storage.assign_result.assigned",
+                    Map.of(
+                            "count", Integer.toString(summary.assigned()),
+                            "plural", summary.assigned() == 1 ? "" : "s"
+                    )
+            );
         }
         if (summary.alreadyAssigned() > 0) {
-            return Component.literal("That storage is already assigned to another villager.");
+            return new AssignmentSummaryMessage("interaction.storage.assign_result.already_assigned", Map.of());
         }
         if (summary.invalid() > 0) {
-            return Component.literal("No valid selected containers were found.");
+            return new AssignmentSummaryMessage("interaction.storage.assign_result.invalid", Map.of());
         }
-        return Component.literal("No storage was assigned.");
+        return new AssignmentSummaryMessage("interaction.storage.assign_result.none", Map.of());
     }
 
     private static String normalizePurpose(String purpose) {
@@ -617,5 +623,12 @@ public final class AssignedStorageService {
     }
 
     public record AssignSummary(int assigned, int alreadyAssigned, int invalid) {
+    }
+
+    public record AssignmentSummaryMessage(String key, Map<String, String> replacements) {
+        public AssignmentSummaryMessage {
+            key = key == null ? "" : key;
+            replacements = replacements == null ? Map.of() : Map.copyOf(replacements);
+        }
     }
 }

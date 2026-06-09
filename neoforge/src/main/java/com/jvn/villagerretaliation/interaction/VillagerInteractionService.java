@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignmentSummaryMessage;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummary;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
@@ -283,7 +284,7 @@ public final class VillagerInteractionService {
         boolean canAccessPersonalInventory = VillagerInventoryAccess.canAccess(level, villager, player);
         boolean canAccessJobInventory = HiredVillagerContractService.canAccessJobInventory(level, villager, player);
         if (jobInventory && !canAccessJobInventory && !canAccessPersonalInventory) {
-            sendVillagerNotice(player, villager, "Only the hiring player can open hired job inventory.");
+            sendVillagerNotice(player, villager, "interaction.job_inventory.requires_hirer");
             return;
         }
         if (!jobInventory && !canAccessPersonalInventory) {
@@ -373,7 +374,7 @@ public final class VillagerInteractionService {
             case DECLINE_END_HIRE_CONFIRMATION -> sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_declined");
             case OPEN_JOB_INVENTORY -> {
                 if (!HiredVillagerContractService.canAccessJobInventory(level, villager, player)) {
-                    sendVillagerNotice(player, villager, "Only the hiring player can open hired job inventory.");
+                    sendVillagerNotice(player, villager, "interaction.job_inventory.requires_hirer");
                     return;
                 }
                 VillagerConversationService.endForPlayer(player, true);
@@ -387,7 +388,7 @@ public final class VillagerInteractionService {
             case TOGGLE_AUTO_PAYMENT -> toggleAutoPayment(player, level, villager);
             case END_HIRE -> {
                 if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-                    sendVillagerNotice(player, villager, "Only the hiring player can end this contract.");
+                    sendVillagerNotice(player, villager, "interaction.hire.end_requires_hirer");
                     return;
                 }
                 int refund = HiredVillagerContractService.endHireContract(level, villager, player);
@@ -425,20 +426,20 @@ public final class VillagerInteractionService {
         }
         ServerLevel level = player.serverLevel();
         if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
-            sendVillagerNotice(player, villager, "Only the hiring player can manage hired work.");
+            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
             return;
         }
         if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BREWING) {
-            sendVillagerNotice(player, villager, "Assign me to Brewing before choosing a potion.");
+            sendVillagerNotice(player, villager, "interaction.work.brewing.requires_role_choose");
             return;
         }
         if (!continuous && amount <= 0) {
-            sendVillagerNotice(player, villager, "Choose how many potions I should brew.");
+            sendVillagerNotice(player, villager, "interaction.work.brewing.choose_amount");
             return;
         }
         Optional<HiredBrewingRecipeCatalog.BrewingRoute> route = HiredBrewingRecipeCatalog.find(level, itemId, potionId);
         if (route.isEmpty()) {
-            sendVillagerNotice(player, villager, "I do not know that brewing recipe.");
+            sendVillagerNotice(player, villager, "interaction.work.brewing.unknown_recipe");
             return;
         }
         CompoundTag state = HiredVillagerWorkService.state(villager);
@@ -449,8 +450,13 @@ public final class VillagerInteractionService {
                 level,
                 villager,
                 HiredVillagerRole.BREWING,
-                "Brewing " + quantity + " x " + route.get().output().getHoverName().getString() + ".");
-        sendVillagerNotice(player, villager, BrewingWorker.orderSummary(level, state));
+                "interaction.work.brewing.order_summary",
+                Map.of(
+                        "amount", quantity,
+                        "item", route.get().output().getHoverName().getString()));
+        sendVillagerNotice(player, villager, "interaction.work.brewing.order_summary", Map.of(
+                "amount", quantity,
+                "item", route.get().output().getHoverName().getString()));
     }
 
     public static void handleClipboardStorageAction(ServerPlayer player, int entityId, ClipboardStorageActionPayload.Action action) {
@@ -464,7 +470,7 @@ public final class VillagerInteractionService {
         ServerLevel level = contextTarget.level();
         ItemStack clipboard = findClipboard(player);
         if (clipboard.isEmpty()) {
-            sendVillagerNotice(player, villager, "Hold the clipboard to manage assigned storage.");
+            sendVillagerNotice(player, villager, "interaction.clipboard.storage.hold_clipboard");
             return;
         }
 
@@ -475,7 +481,7 @@ public final class VillagerInteractionService {
             case REMOVE -> removeAssignedStorage(player, level, villager);
             case CLEAR_SELECTION -> {
                 HiredStorageClipboardItem.clearSelection(clipboard);
-                sendVillagerNotice(player, villager, "Clipboard selection cleared.");
+                sendVillagerNotice(player, villager, "interaction.clipboard.selection_cleared");
             }
         }
     }
@@ -495,17 +501,17 @@ public final class VillagerInteractionService {
         ServerLevel level = contextTarget.level();
         Villager villager = contextTarget.villager();
         if (findClipboard(player).isEmpty()) {
-            sendVillagerNotice(player, villager, "Hold the clipboard to manage assigned work areas.");
+            sendVillagerNotice(player, villager, "interaction.clipboard.work_area.hold_clipboard");
             return;
         }
         if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
-            sendVillagerNotice(player, villager, "Only the hiring player can manage hired work.");
+            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
             return;
         }
 
         if (action == ClipboardWorkAreaActionPayload.Action.SET_CENTER_HERE
                 && !level.dimension().equals(player.serverLevel().dimension())) {
-            sendVillagerNotice(player, villager, "Stand in the same dimension as this worker to set the job site center.");
+            sendVillagerNotice(player, villager, "interaction.clipboard.work_area.same_dimension");
             return;
         }
 
@@ -653,7 +659,7 @@ public final class VillagerInteractionService {
             return false;
         }
         if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "Only the hiring player can extend this contract.");
+            sendVillagerNotice(player, villager, "interaction.hire.extend_requires_hirer");
             return true;
         }
         int cost = HiredVillagerContractService.getHireCost(level, villager, player, days);
@@ -758,11 +764,11 @@ public final class VillagerInteractionService {
             return false;
         }
         if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
-            sendVillagerNotice(player, villager, "Only the hiring player can manage hired work.");
+            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
             return true;
         }
         if (configureRole != null && HiredVillagerContractService.activeRole(level, villager) != configureRole) {
-            sendVillagerNotice(player, villager, "Assign me to " + configureRole.label() + " before configuring that work.");
+            sendVillagerNotice(player, villager, "interaction.work.configure.requires_role", Map.of("role", configureRole.label()));
             return true;
         }
         switch (action) {
@@ -778,14 +784,14 @@ public final class VillagerInteractionService {
 
     private static void stopBrewingOrder(ServerPlayer player, ServerLevel level, Villager villager) {
         if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BREWING) {
-            sendVillagerNotice(player, villager, "Assign me to Brewing before changing brewing orders.");
+            sendVillagerNotice(player, villager, "interaction.work.brewing.requires_role_change");
             return;
         }
         CompoundTag state = HiredVillagerWorkService.state(villager);
         HiredVillagerWorkService.initializeDefaults(state, villager);
         BrewingWorker.clearOrder(state);
-        HiredVillagerWorkService.stopWork(level, villager, HiredVillagerRole.BREWING, "Brewing stopped.");
-        sendVillagerNotice(player, villager, "Brewing stopped.");
+        HiredVillagerWorkService.stopWork(level, villager, HiredVillagerRole.BREWING, "interaction.work.brewing.stopped");
+        sendVillagerNotice(player, villager, "interaction.work.brewing.stopped");
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
     }
 
@@ -795,7 +801,7 @@ public final class VillagerInteractionService {
             return;
         }
         if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "Only the hiring player can manage my role.");
+            sendVillagerNotice(player, villager, "interaction.role.manage_requires_hirer");
             return;
         }
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
@@ -839,12 +845,12 @@ public final class VillagerInteractionService {
 
     private static void assignClipboardStorage(ServerPlayer player, ServerLevel level, Villager villager, ItemStack clipboard) {
         if (!canManageAssignedStorage(level, villager, player)) {
-            sendVillagerNotice(player, villager, "You need trust or an active hire contract to assign my storage.");
+            sendVillagerNotice(player, villager, "interaction.storage.assign_requires_access");
             return;
         }
         List<StoragePosition> selected = HiredStorageClipboardItem.selectedContainers(clipboard);
         if (selected.isEmpty()) {
-            sendVillagerNotice(player, villager, "Select storage with the clipboard first.");
+            sendVillagerNotice(player, villager, "interaction.storage.select_with_clipboard");
             return;
         }
         String purpose = HiredVillagerContractService.isHiredBy(level, villager, player)
@@ -854,92 +860,104 @@ public final class VillagerInteractionService {
         if (summary.assigned() > 0) {
             HiredStorageClipboardItem.clearSelection(clipboard);
         }
-        sendVillagerNotice(player, villager, AssignedStorageService.assignmentSummary(summary).getString());
+        sendStorageAssignmentSummary(player, villager, summary);
+    }
+
+    private static void sendStorageAssignmentSummary(ServerPlayer player, Villager villager, AssignSummary summary) {
+        AssignmentSummaryMessage message = AssignedStorageService.assignmentSummaryMessage(summary);
+        sendVillagerNotice(player, villager, message.key(), message.replacements());
     }
 
     private static void showAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!canManageAssignedStorage(level, villager, player)) {
-            sendVillagerNotice(player, villager, "You need trust or an active hire contract to inspect my storage.");
+            sendVillagerNotice(player, villager, "interaction.storage.inspect_requires_access");
             return;
         }
         List<AssignedContainerRecord> assigned = AssignedStorageService.assignedStorage(level, villager);
         HiredStorageClipboardItem.sendAssignedStorageOutlines(player, assigned);
         int count = assigned.size();
-        sendVillagerNotice(player, villager, "Assigned containers: " + count + ".");
+        sendVillagerNotice(player, villager, "interaction.storage.assigned_count", Map.of("count", Integer.toString(count)));
     }
 
     private static void showAssignedPaymentStorage(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "Hire me first, then assign recurring payment storage.");
+            sendVillagerNotice(player, villager, "interaction.payment_storage.requires_hire");
             return;
         }
         List<AssignedContainerRecord> assigned = AssignedStorageService.assignedPaymentStorage(level, villager);
         HiredStorageClipboardItem.sendAssignedStorageOutlines(player, assigned);
         int count = assigned.size();
-        sendVillagerNotice(player, villager, "Payment containers: " + count
-                + ". Auto-payment is " + (HiredVillagerContractService.isAutoPaymentEnabled(level, villager) ? "on" : "off") + ".");
+        sendVillagerNotice(player, villager, "interaction.payment_storage.assigned_count", Map.of(
+                "count", Integer.toString(count),
+                "auto_payment", HiredVillagerContractService.isAutoPaymentEnabled(level, villager) ? "on" : "off"));
     }
 
     private static void depositEarnings(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!canManageAssignedStorage(level, villager, player)) {
-            sendVillagerNotice(player, villager, "You need trust or an active hire contract to manage my earnings.");
+            sendVillagerNotice(player, villager, "interaction.earnings.deposit_requires_access");
             return;
         }
         int excess = VillagerWalletService.getDepositAmount(villager);
         if (excess <= 0) {
-            sendVillagerNotice(player, villager, "No excess earnings to deposit.");
+            sendVillagerNotice(player, villager, "interaction.earnings.no_excess");
             return;
         }
         VillagerWalletService.DepositResult result = VillagerWalletService.tryDepositExcessCurrency(villager);
         if (result.storageUnavailable()) {
-            sendVillagerNotice(player, villager, "Assigned storage is unavailable.");
+            sendVillagerNotice(player, villager, "interaction.earnings.storage_unavailable");
         } else if (!result.assignedStorageAvailable()) {
-            sendVillagerNotice(player, villager, "No assigned storage. I kept the currency in my wallet.");
+            sendVillagerNotice(player, villager, "interaction.earnings.no_assigned_storage");
         } else if (result.deposited() <= 0) {
-            sendVillagerNotice(player, villager, "Assigned storage is full. I kept the currency in my wallet.");
+            sendVillagerNotice(player, villager, "interaction.earnings.storage_full");
         } else if (result.remaining() > 0) {
-            sendVillagerNotice(player, villager, "Deposited " + formatCurrency(level, result.deposited())
-                    + ". Storage is full, so I kept "
-                    + formatCurrency(level, result.remaining()) + " in my wallet.");
+            sendVillagerNotice(player, villager, "interaction.earnings.deposited_partial", Map.of(
+                    "deposited", formatCurrency(level, result.deposited()),
+                    "remaining", formatCurrency(level, result.remaining())));
         } else {
-            sendVillagerNotice(player, villager, "Deposited " + formatCurrency(level, result.deposited())
-                    + " into assigned storage.");
+            sendVillagerNotice(player, villager, "interaction.earnings.deposited_all", Map.of(
+                    "deposited", formatCurrency(level, result.deposited())));
         }
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
     }
 
     private static void removeAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!canManageAssignedStorage(level, villager, player)) {
-            sendVillagerNotice(player, villager, "You need trust or an active hire contract to remove my storage.");
+            sendVillagerNotice(player, villager, "interaction.storage.remove_requires_access");
             return;
         }
         int removed = AssignedStorageService.removeAssignedStorage(level, villager);
-        sendVillagerNotice(player, villager, "Removed " + removed + " assigned container" + plural(removed) + ".");
+        sendVillagerNotice(player, villager, "interaction.storage.removed_count", Map.of(
+                "count", Integer.toString(removed),
+                "plural", plural(removed)));
     }
 
     private static void removeAssignedPaymentStorage(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "Only the hiring player can remove payment storage.");
+            sendVillagerNotice(player, villager, "interaction.payment_storage.remove_requires_hirer");
             return;
         }
         int removed = AssignedStorageService.removeAssignedPaymentStorage(level, villager);
         if (removed > 0) {
             HiredVillagerContractService.setAutoPaymentEnabled(villager, false);
         }
-        sendVillagerNotice(player, villager, "Removed " + removed + " payment container" + plural(removed) + ".");
+        sendVillagerNotice(player, villager, "interaction.payment_storage.removed_count", Map.of(
+                "count", Integer.toString(removed),
+                "plural", plural(removed)));
     }
 
     private static void toggleAutoPayment(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "Hire me first, then set up recurring payment.");
+            sendVillagerNotice(player, villager, "interaction.auto_payment.requires_hire");
             return;
         }
         if (!AssignedStorageService.hasAssignedPaymentStorage(level, villager)) {
-            sendVillagerNotice(player, villager, "Assign a payment container first with the clipboard's recurring payment mode.");
+            sendVillagerNotice(player, villager, "interaction.auto_payment.requires_storage");
             return;
         }
         boolean enabled = HiredVillagerContractService.toggleAutoPayment(level, villager);
-        sendVillagerNotice(player, villager, "Recurring payment " + (enabled ? "enabled" : "disabled") + ".");
+        sendVillagerNotice(player, villager, enabled
+                ? "interaction.auto_payment.enabled"
+                : "interaction.auto_payment.disabled");
     }
 
     private static boolean canManageAssignedStorage(ServerLevel level, Villager villager, ServerPlayer player) {

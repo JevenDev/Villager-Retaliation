@@ -262,7 +262,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         HiredWorkerBrain.setFailure(context, "no_work_area", 0L);
         HiredWorkerBrain.setLastTargetScanResult(context, "no_work_area");
         setTaskState(context, HiredWorkerTaskState.NO_WORK_AREA);
-        return WorkResult.idle("No work area assigned.");
+        return WorkResult.idle("interaction.work.status.no_work_area");
     }
 
     protected HiredPathTarget plannedTarget(
@@ -538,11 +538,11 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         if (!context.state().getBoolean(STORAGE_FULL_STATUS_SHOWN_TAG)) {
             context.state().putBoolean(STORAGE_FULL_STATUS_SHOWN_TAG, true);
             if (context.state().getBoolean(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG)) {
-                return "I deposited what I could, but storage is full now.";
+                return "interaction.work.status.storage_full_after_deposit";
             }
-            return "I have no where left to deposit these collected items.";
+            return "interaction.work.status.storage_full";
         }
-        return "I am staying near storage and waiting for room to deposit collected items.";
+        return "interaction.work.status.storage_full_waiting";
     }
 
     protected void clearStorageFullStatus(HiredWorkContext context) {

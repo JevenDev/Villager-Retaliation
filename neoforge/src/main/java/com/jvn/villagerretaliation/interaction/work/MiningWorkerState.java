@@ -1,0 +1,102 @@
+package com.jvn.villagerretaliation.interaction.work;
+
+import com.jvn.villagerretaliation.interaction.HiredMiningMode;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+
+final class MiningWorkerState {
+    static final String NEXT_FULL_SCAN_GAME_TIME_TAG = "NextMiningFullScanGameTime";
+    static final String EXCAVATION_SCAN_CURSOR_TAG = "MiningExcavationScanCursor";
+
+    private static final String MINING_STATE_TAG = "MiningState";
+    private static final String LAST_MINED_BLOCK_POS_TAG = "LastMinedBlockPos";
+    private static final String MINING_ANCHOR_POS_TAG = "MiningAnchorPos";
+    private static final String MINING_ANCHOR_EXPIRES_GAME_TIME_TAG = "MiningAnchorExpiresGameTime";
+    private static final String LAST_BREAK_PROGRESS_GAME_TIME_TAG = "LastMiningBreakProgressGameTime";
+    private static final int MINING_POCKET_RADIUS = 6;
+    private static final long MINING_ANCHOR_TICKS = 20L * 90L;
+    private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
+
+    private MiningWorkerState() {
+    }
+
+    static int noTargetScanCooldownTicks() {
+        return NO_TARGET_SCAN_COOLDOWN_TICKS;
+    }
+
+    static void set(HiredWorkContext context, Phase phase) {
+        context.state().putString(MINING_STATE_TAG, phase.id);
+    }
+
+    static void rememberLastMined(HiredWorkContext context, BlockPos pos) {
+        context.state().putLong(LAST_MINED_BLOCK_POS_TAG, pos.asLong());
+    }
+
+    static BlockPos lastMinedBlock(HiredWorkContext context) {
+        return context.state().contains(LAST_MINED_BLOCK_POS_TAG)
+                ? BlockPos.of(context.state().getLong(LAST_MINED_BLOCK_POS_TAG))
+                : null;
+    }
+
+    static void rememberMiningAnchor(ServerLevel level, HiredWorkContext context, BlockPos pos) {
+        context.state().putLong(MINING_ANCHOR_POS_TAG, pos.asLong());
+        context.state().putLong(MINING_ANCHOR_EXPIRES_GAME_TIME_TAG, level.getGameTime() + MINING_ANCHOR_TICKS);
+    }
+
+    static BlockPos miningAnchor(ServerLevel level, HiredWorkContext context) {
+        if (!context.state().contains(MINING_ANCHOR_POS_TAG)) {
+            return null;
+        }
+        if (context.state().getLong(MINING_ANCHOR_EXPIRES_GAME_TIME_TAG) <= level.getGameTime()) {
+            clearMiningAnchor(context);
+            return null;
+        }
+        return BlockPos.of(context.state().getLong(MINING_ANCHOR_POS_TAG));
+    }
+
+    static void clearMiningAnchor(HiredWorkContext context) {
+        context.state().remove(MINING_ANCHOR_POS_TAG);
+        context.state().remove(MINING_ANCHOR_EXPIRES_GAME_TIME_TAG);
+    }
+
+    static int pocketRadius(HiredWorkContext context) {
+        return Math.min(Math.max(1, context.radius()), MINING_POCKET_RADIUS);
+    }
+
+    static int elapsedBreakProgressTicks(ServerLevel level, HiredWorkContext context) {
+        long now = level.getGameTime();
+        long previous = context.progressTicks() <= 0 || !context.state().contains(LAST_BREAK_PROGRESS_GAME_TIME_TAG)
+                ? now - 1L
+                : context.state().getLong(LAST_BREAK_PROGRESS_GAME_TIME_TAG);
+        context.state().putLong(LAST_BREAK_PROGRESS_GAME_TIME_TAG, now);
+        return (int) Math.clamp(now - previous, 1L, 200L);
+    }
+
+    static boolean isExcavationScanInProgress(HiredWorkContext context, HiredMiningMode mode) {
+        return mode.excavatesArea() && HiredWorkAreaScan.isInProgress(context, EXCAVATION_SCAN_CURSOR_TAG);
+    }
+
+    static void ensureNoTargetScanCooldown(ServerLevel level, HiredWorkContext context) {
+        if (context.state().getLong(NEXT_FULL_SCAN_GAME_TIME_TAG) <= level.getGameTime()) {
+            context.state().putLong(NEXT_FULL_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
+        }
+    }
+
+    enum Phase {
+        FIND_TARGET("find_target"),
+        GATHER_SUPPLIES("gather_supplies"),
+        PATH_TO_TARGET("path_to_target"),
+        MINE_TARGET("mine_target"),
+        DEPOSIT_OUTPUT("deposit_output"),
+        WAITING_NO_TARGETS("waiting_no_targets"),
+        BLOCKED_OUTPUT_FULL("blocked_output_full"),
+        BLOCKED_MISSING_TOOL("blocked_missing_tool"),
+        BLOCKED_MISSING_SUPPLIES("blocked_missing_supplies");
+
+        private final String id;
+
+        Phase(String id) {
+            this.id = id;
+        }
+    }
+}

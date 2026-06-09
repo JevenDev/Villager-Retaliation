@@ -6,11 +6,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 
 public final class NitwitWorker implements HiredRoleWorker {
-    private static final String[] LINES = {
-            "Nitwit report: I found the sky. Still up there.",
-            "Nitwit report: I am supervising the general direction of things.",
-            "Nitwit report: danger check complete. I disliked several shadows.",
-            "Nitwit report: I can point at work, if that helps."
+    private static final String[] REPORT_KEYS = {
+            "interaction.work.nitwit.report.sky",
+            "interaction.work.nitwit.report.supervising",
+            "interaction.work.nitwit.report.shadows",
+            "interaction.work.nitwit.report.pointing"
     };
 
     @Override
@@ -24,10 +24,10 @@ public final class NitwitWorker implements HiredRoleWorker {
         if (level.getGameTime() - lastNotice < 20L * 60L) {
             HiredWorkerBrain.setLastTargetScanResult(context, "nitwit_cooldown");
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.IDLE);
-            return WorkResult.idle("I am helping in my own hard-to-measure way.");
+            return WorkResult.idle("interaction.work.nitwit.cooldown");
         }
         context.state().putLong("NitwitNoticeTick", level.getGameTime());
-        String line = LINES[Math.floorMod((int) (level.getGameTime() / 1200L + villager.getId()), LINES.length)];
+        String line = REPORT_KEYS[Math.floorMod((int) (level.getGameTime() / 1200L + villager.getId()), REPORT_KEYS.length)];
         HiredWorkerBrain.setLastTargetScanResult(context, "nitwit_report_ready");
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING);
         return WorkResult.completed(line);

@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.interaction.HiredCombatMode;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -65,17 +66,17 @@ public final class CombatWorker implements HiredRoleWorker {
         if (villager.getTarget() != null && villager.getTarget().isAlive()) {
             HiredWorkerBrain.setLastTargetScanResult(context, "engaged_target");
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING, villager.getTarget().blockPosition());
-            return WorkResult.idle(activeStatus(villager, mode));
+            return WorkResult.idle(activeStatusKey(mode), activeStatusReplacements(villager));
         }
 
         if (tryAcquireTarget(level, villager, context, mode)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "found_target");
-            return WorkResult.progressed(activeStatus(villager, mode));
+            return WorkResult.progressed(activeStatusKey(mode), activeStatusReplacements(villager));
         }
 
         HiredWorkerBrain.setLastTargetScanResult(context, mode.roams() ? "patrolling" : "guarding");
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, context.workCenter());
-        return WorkResult.idle(passiveStatus(mode));
+        return WorkResult.idle(passiveStatusKey(mode));
     }
 
     @Override
@@ -187,23 +188,26 @@ public final class CombatWorker implements HiredRoleWorker {
         return min + villager.getRandom().nextInt(max - min + 1);
     }
 
-    private static String passiveStatus(HiredCombatMode mode) {
+    private static String passiveStatusKey(HiredCombatMode mode) {
         return switch (mode) {
-            case GUARD -> "I remain on guard and ready to answer trouble.";
-            case ROAMING -> "I am roaming the work area and watching for trouble.";
-            case ATTACK_ALL -> "I am sweeping the area and will engage any non-villager creature I find.";
-            case HUNTING -> "I am roaming the area and hunting animals.";
+            case GUARD -> "interaction.work.combat.passive.guard";
+            case ROAMING -> "interaction.work.combat.passive.roaming";
+            case ATTACK_ALL -> "interaction.work.combat.passive.attack_all";
+            case HUNTING -> "interaction.work.combat.passive.hunting";
         };
     }
 
-    private static String activeStatus(Villager villager, HiredCombatMode mode) {
-        LivingEntity target = villager.getTarget();
-        String targetName = target == null ? "a target" : target.getName().getString();
+    private static String activeStatusKey(HiredCombatMode mode) {
         return switch (mode) {
-            case GUARD -> "I am defending the area against " + targetName + ".";
-            case ROAMING -> "I found trouble while roaming and I am engaging " + targetName + ".";
-            case ATTACK_ALL -> "I am pressing the attack against " + targetName + ".";
-            case HUNTING -> "I am hunting down " + targetName + ".";
+            case GUARD -> "interaction.work.combat.active.guard";
+            case ROAMING -> "interaction.work.combat.active.roaming";
+            case ATTACK_ALL -> "interaction.work.combat.active.attack_all";
+            case HUNTING -> "interaction.work.combat.active.hunting";
         };
+    }
+
+    private static Map<String, String> activeStatusReplacements(Villager villager) {
+        LivingEntity target = villager.getTarget();
+        return Map.of("target", target == null ? "a target" : target.getName().getString());
     }
 }
