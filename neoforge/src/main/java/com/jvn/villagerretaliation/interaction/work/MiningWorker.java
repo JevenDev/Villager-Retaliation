@@ -187,7 +187,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
 
         clearWorkPathFailure(villager, target.blockPos());
-        holdMiningPosition(villager, target);
+        holdWorkPosition(villager, target);
         setMiningState(context, MiningState.MINE_TARGET);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.WORKING, target.blockPos());
@@ -429,7 +429,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             return null;
         }
         setMiningState(context, MiningState.FIND_TARGET);
-        HiredPathTarget target = findNearestMineableInRadius(level, villager, context, false);
+        HiredPathTarget target = findNearestMineableInRadius(level, villager, context);
         if (target != null) {
             rememberMiningAnchor(level, context, target.blockPos());
         }
@@ -887,7 +887,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredPathTarget target,
             double speed) {
         if (canReachSupportPlacement(level, villager, target.blockPos())) {
-            holdMiningPosition(villager, target);
+            holdWorkPosition(villager, target);
             return true;
         }
 
@@ -1191,9 +1191,8 @@ public final class MiningWorker extends AbstractBlockWorker {
     private HiredPathTarget findNearestMineableInRadius(
             ServerLevel level,
             Villager villager,
-            HiredWorkContext context,
-            boolean ignoreScanCooldown) {
-        if (!ignoreScanCooldown && level.getGameTime() < context.state().getLong(NEXT_FULL_SCAN_GAME_TIME_TAG)) {
+            HiredWorkContext context) {
+        if (level.getGameTime() < context.state().getLong(NEXT_FULL_SCAN_GAME_TIME_TAG)) {
             return null;
         }
         List<BlockPos> candidates = new ArrayList<>();
@@ -1330,22 +1329,18 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             BlockPos pos,
             BlockPos anchor) {
-        return isInsideWorkArea(context, pos)
+        return context.isInsideWorkArea(pos)
                 && isInsideMiningPocket(context, pos, anchor)
                 && !isTemporarilyAvoidedTarget(level, villager, pos)
                 && isMineableOre(level, pos);
     }
 
     private boolean isValidExcavationTarget(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos pos) {
-        return isInsideWorkArea(context, pos)
+        return context.isInsideWorkArea(pos)
                 && !isTemporarilyAvoidedTarget(level, villager, pos)
                 && isMineableExcavationBlock(level, pos)
                 && isCurrentExcavationLayer(level, context, pos)
                 && !hasAdjacentExcavationFluid(level, context, pos);
-    }
-
-    private static boolean isInsideWorkArea(HiredWorkContext context, BlockPos pos) {
-        return context.isInsideWorkArea(pos);
     }
 
     private static boolean isCurrentExcavationLayer(ServerLevel level, HiredWorkContext context, BlockPos pos) {
@@ -1477,7 +1472,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             return false;
         }
         if (canStartMining(level, villager, context, target, mode)) {
-            holdMiningPosition(villager, target);
+            holdWorkPosition(villager, target);
             return true;
         }
         if (shouldEscapeUpBeforeMining(villager, target)
@@ -1836,7 +1831,6 @@ public final class MiningWorker extends AbstractBlockWorker {
     }
 
     private enum MiningState {
-        IDLE("idle"),
         FIND_TARGET("find_target"),
         GATHER_SUPPLIES("gather_supplies"),
         PATH_TO_TARGET("path_to_target"),

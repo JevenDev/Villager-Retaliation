@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -448,51 +449,35 @@ public final class FarmingWorker extends AbstractBlockWorker {
     }
 
     private FarmTarget findFarmTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
-        HiredPathTarget active = activeWorkTarget(level, context, villager);
-        if (active != null
-                && context.isInsideWorkArea(active.blockPos())
-                && context.isLoaded(level, active.blockPos())
-                && farmTargetType(level, active.blockPos(), level.getBlockState(active.blockPos())) == FarmTargetType.BLOCK_OUTPUT) {
-            HiredWorkerBrain.setLastTargetScanResult(context, CROP_SEARCH_MESSAGES.activeTarget());
-            return new FarmTarget(active.blockPos(), FarmTargetType.BLOCK_OUTPUT, null);
-        }
-
-        FarmTarget planned = plannedFarmTarget(level, villager, context, MAX_PLANNED_CROP_TARGETS);
-        if (planned != null) {
-            HiredWorkerBrain.setLastTargetScanResult(context, CROP_SEARCH_MESSAGES.plannedTarget());
-            return planned;
-        }
-
-        if (!HiredWorkAreaScan.isInProgress(context, CROP_SCAN_CURSOR_TAG)
-                && level.getGameTime() < context.state().getLong(NEXT_CROP_SCAN_GAME_TIME_TAG)) {
-            HiredWorkerBrain.setLastTargetScanResult(context, CROP_SEARCH_MESSAGES.scanCooldown());
-            return null;
-        }
-
-        HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
+        Predicate<BlockPos> validator = farmTargetValidator(level, villager, context);
+        return HiredTargetSearch.find(
+                level,
                 context,
+                () -> activeFarmTarget(level, villager, context),
+                target -> validator.test(target.pos()),
+                filter -> plannedFarmTarget(level, villager, context, filter, MAX_PLANNED_CROP_TARGETS),
+                validator,
+                NEXT_CROP_SCAN_GAME_TIME_TAG,
                 CROP_SCAN_CURSOR_TAG,
                 MAX_CROP_SCAN_POSITIONS_PER_WORK_TICK,
-                pos -> context.isInsideWorkArea(pos)
-                        && context.isLoaded(level, pos)
-                        && isHarvestableFarmTarget(level, pos)
-                        && !isTemporarilyAvoidedTarget(level, villager, pos));
-        FarmTarget target = rebuildFarmObjective(level, villager, context, scan.candidates());
-        if (target == null) {
-            if (scan.completedFullPass()) {
-                context.state().putLong(NEXT_CROP_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
-                HiredWorkerBrain.setLastTargetScanResult(context, CROP_SEARCH_MESSAGES.fullScanNoReachableTargets());
-            } else {
-                HiredWorkerBrain.setLastTargetScanResult(
-                        context,
-                        CROP_SEARCH_MESSAGES.partialScanPrefix() + scan.visitedPositions());
-            }
-        } else {
-            HiredWorkAreaScan.clearCursor(context, CROP_SCAN_CURSOR_TAG);
-            context.state().remove(NEXT_CROP_SCAN_GAME_TIME_TAG);
-            HiredWorkerBrain.setLastTargetScanResult(context, CROP_SEARCH_MESSAGES.targetFound());
+                candidates -> rebuildFarmObjective(level, villager, context, candidates),
+                CROP_SEARCH_MESSAGES);
+    }
+
+    private FarmTarget activeFarmTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
+        HiredPathTarget active = activeWorkTarget(level, context, villager);
+        if (active == null) {
+            return null;
         }
-        return target;
+        FarmTargetType type = farmTargetType(level, active.blockPos(), level.getBlockState(active.blockPos()));
+        return type == FarmTargetType.BLOCK_OUTPUT ? new FarmTarget(active.blockPos(), type) : null;
+    }
+
+    private Predicate<BlockPos> farmTargetValidator(ServerLevel level, Villager villager, HiredWorkContext context) {
+        return pos -> context.isInsideWorkArea(pos)
+                && context.isLoaded(level, pos)
+                && isHarvestableFarmTarget(level, pos)
+                && !isTemporarilyAvoidedTarget(level, villager, pos);
     }
 
     private static boolean isCropScanInProgress(HiredWorkContext context) {
@@ -527,21 +512,23 @@ public final class FarmingWorker extends AbstractBlockWorker {
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
+            Predicate<BlockPos> validator,
             int maxPlanTargets) {
+        Predicate<BlockPos> safeValidator = validator == null ? ignored -> true : validator;
         HiredWorkPlan.retainMatching(
                 context,
-                pos -> context.isInsideWorkArea(pos)
-                        && context.isLoaded(level, pos)
-                        && isHarvestableFarmTarget(level, pos)
-                        && !isTemporarilyAvoidedTarget(level, villager, pos),
+                safeValidator,
                 maxPlanTargets);
         for (BlockPos planned : HiredWorkPlan.targets(context)) {
+            if (!safeValidator.test(planned)) {
+                continue;
+            }
             FarmTargetType type = farmTargetType(level, planned, level.getBlockState(planned));
             if (type == FarmTargetType.CROP) {
-                return new FarmTarget(planned, type, null);
+                return new FarmTarget(planned, type);
             }
             if (type == FarmTargetType.BLOCK_OUTPUT) {
-                return new FarmTarget(planned, type, null);
+                return new FarmTarget(planned, type);
             }
         }
         HiredWorkPlan.clear(context);
@@ -556,7 +543,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
         List<BlockPos> row = bestCropRow(level, villager, candidates);
         if (row.size() >= 2) {
             HiredWorkPlan.replaceWithObjective(context, "row", row.getFirst(), row, MAX_PLANNED_CROP_TARGETS);
-            FarmTarget target = plannedFarmTarget(level, villager, context, MAX_PLANNED_CROP_TARGETS);
+            FarmTarget target = plannedFarmTarget(
+                    level,
+                    villager,
+                    context,
+                    farmTargetValidator(level, villager, context),
+                    MAX_PLANNED_CROP_TARGETS);
             if (target != null) {
                 return target;
             }
@@ -569,7 +561,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 ordered.isEmpty() ? null : ordered.getFirst(),
                 ordered,
                 MAX_PLANNED_CROP_TARGETS);
-        return plannedFarmTarget(level, villager, context, MAX_PLANNED_CROP_TARGETS);
+        return plannedFarmTarget(
+                level,
+                villager,
+                context,
+                farmTargetValidator(level, villager, context),
+                MAX_PLANNED_CROP_TARGETS);
     }
 
     private static List<BlockPos> bestCropRow(ServerLevel level, Villager villager, List<BlockPos> candidates) {
@@ -736,6 +733,6 @@ public final class FarmingWorker extends AbstractBlockWorker {
         BLOCK_OUTPUT
     }
 
-    private record FarmTarget(BlockPos pos, FarmTargetType type, HiredPathTarget blockTarget) {
+    private record FarmTarget(BlockPos pos, FarmTargetType type) {
     }
 }

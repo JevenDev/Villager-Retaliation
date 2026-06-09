@@ -59,7 +59,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             return;
         }
         if (canWorkFromCurrentPosition(level, villager, context, target)) {
-            holdMiningPosition(villager, target);
+            holdWorkPosition(villager, target);
             return;
         }
         if (!ensureNavigationRemainsInsideWorkArea(context, villager)) {
@@ -371,7 +371,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             return false;
         }
         if (canWorkFromCurrentPosition(level, villager, context, currentTarget)) {
-            holdMiningPosition(villager, currentTarget);
+            holdWorkPosition(villager, currentTarget);
             return true;
         }
         if (!ensureNavigationRemainsInsideWorkArea(context, villager)) {
@@ -549,7 +549,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         context.state().remove(STORAGE_FULL_STATUS_SHOWN_TAG);
     }
 
-    protected void holdMiningPosition(Villager villager, HiredPathTarget target) {
+    protected void holdWorkPosition(Villager villager, HiredPathTarget target) {
         stopWorkNavigation(villager);
         faceBlock(villager, target);
         villager.setDeltaMovement(villager.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));
@@ -634,10 +634,6 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             return null;
         }
         return chooseReachableTarget(level, villager, context, List.of(target));
-    }
-
-    private boolean isInsideWorkArea(HiredWorkContext context, BlockPos pos) {
-        return context.isInsideWorkArea(pos);
     }
 
     protected boolean hasLineOfSightToBlock(ServerLevel level, Villager villager, Vec3 start, BlockPos target, Vec3 hitPos) {

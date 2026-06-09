@@ -105,7 +105,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return WorkResult.progressed("I am moving into place to work that tree.");
         }
         clearWorkPathFailure(villager, target.blockPos());
-        holdMiningPosition(villager, target);
+        holdWorkPosition(villager, target);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.WORKING, target.blockPos());
 

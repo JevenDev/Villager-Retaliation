@@ -11,26 +11,26 @@ final class HiredTargetSearch {
     private HiredTargetSearch() {
     }
 
-    static HiredPathTarget find(
+    static <T> T find(
             ServerLevel level,
             HiredWorkContext context,
-            Supplier<HiredPathTarget> activeTarget,
-            Predicate<HiredPathTarget> activeValidator,
-            Function<Predicate<BlockPos>, HiredPathTarget> plannedTarget,
+            Supplier<T> activeTarget,
+            Predicate<T> activeValidator,
+            Function<Predicate<BlockPos>, T> plannedTarget,
             Predicate<BlockPos> candidateFilter,
             String nextScanGameTimeTag,
             String scanCursorTag,
             int maxScanPositions,
-            Function<List<BlockPos>, HiredPathTarget> objectiveRebuilder,
+            Function<List<BlockPos>, T> objectiveRebuilder,
             Messages messages) {
-        HiredPathTarget active = activeTarget == null ? null : activeTarget.get();
+        T active = activeTarget == null ? null : activeTarget.get();
         if (active != null && (activeValidator == null || activeValidator.test(active))) {
             HiredWorkerBrain.setLastTargetScanResult(context, messages.activeTarget());
             return active;
         }
 
         Predicate<BlockPos> safeFilter = candidateFilter == null ? ignored -> true : candidateFilter;
-        HiredPathTarget planned = plannedTarget == null ? null : plannedTarget.apply(safeFilter);
+        T planned = plannedTarget == null ? null : plannedTarget.apply(safeFilter);
         if (planned != null) {
             HiredWorkerBrain.setLastTargetScanResult(context, messages.plannedTarget());
             return planned;
@@ -47,7 +47,7 @@ final class HiredTargetSearch {
                 scanCursorTag,
                 maxScanPositions,
                 safeFilter);
-        HiredPathTarget target = objectiveRebuilder.apply(scan.candidates());
+        T target = objectiveRebuilder.apply(scan.candidates());
         if (target == null) {
             if (scan.completedFullPass()) {
                 context.state().putLong(nextScanGameTimeTag, level.getGameTime() + messages.noTargetCooldownTicks());
