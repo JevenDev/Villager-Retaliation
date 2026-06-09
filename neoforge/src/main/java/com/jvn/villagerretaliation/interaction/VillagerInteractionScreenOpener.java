@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
+import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredLoggingFilters;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
@@ -161,6 +162,7 @@ public final class VillagerInteractionScreenOpener {
                 HiredVillagerContractService.activeRole(level, villager),
                 BrewingWorker.hasOrder(HiredVillagerWorkService.state(villager)),
                 HiredLoggingFilters.selectedFilterStrings(HiredVillagerWorkService.state(villager)),
+                HiredAnimalBreedingTargets.selectedTargetStrings(HiredVillagerWorkService.state(villager)),
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),

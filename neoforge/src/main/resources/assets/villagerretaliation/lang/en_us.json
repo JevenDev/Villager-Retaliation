@@ -502,6 +502,8 @@
   "villagerretaliation.gui.recruit.stop_brewing": "Stop Brewing",
   "villagerretaliation.gui.recruit.work_config_navigation": "Configure Navigation",
   "villagerretaliation.gui.recruit.work_config_animal_handling": "Configure Animal Handling",
+  "villagerretaliation.gui.recruit.animal_breeding_all": "Breed all",
+  "villagerretaliation.gui.recruit.animal_breeding_no_targets": "No breedable animals are available.",
   "villagerretaliation.gui.recruit.work_config_nitwit": "Configure Nitwit",
   "villagerretaliation.gui.recruit.brewing_no_recipes": "No Brewable Potions Found",
   "villagerretaliation.gui.recruit.brewing_no_variants": "No Available Variants",

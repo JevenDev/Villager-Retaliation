@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_animal_breeding"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.animal_breeding.roaming",
+      "lines": [
+        "I found no ready pairs yet, so I am checking the pen."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.no_targets",
+      "lines": [
+        "There are no ready animal pairs in my work area."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.missing_food",
+      "lines": [
+        "I found animals to breed, but I need the right food in my supplies."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.collecting_food",
+      "lines": [
+        "I am heading to assigned storage for breeding food."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.food_unreachable",
+      "lines": [
+        "I found breeding food in storage, but I cannot reach it."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.food_inventory_full",
+      "lines": [
+        "I found breeding food, but my supply slots are full."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.gathered_food",
+      "lines": [
+        "I gathered breeding food from assigned storage."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.pair_unreachable",
+      "lines": [
+        "I cannot reach that animal pair safely."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.moving_to_pair",
+      "lines": [
+        "I am moving to a ready animal pair."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.feeding",
+      "lines": [
+        "I am feeding the animals."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.pair_changed",
+      "lines": [
+        "That animal pair is no longer ready."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.completed",
+      "lines": [
+        "I fed {target} for breeding."
+      ]
+    }
+  ]
+}

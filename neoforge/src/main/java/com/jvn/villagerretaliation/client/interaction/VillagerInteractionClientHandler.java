@@ -114,6 +114,7 @@ public final class VillagerInteractionClientHandler {
                 payload.activeHiredRole(),
                 payload.activeBrewingOrder(),
                 payload.selectedLoggingFilters(),
+                payload.selectedAnimalBreedingTargets(),
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames(),

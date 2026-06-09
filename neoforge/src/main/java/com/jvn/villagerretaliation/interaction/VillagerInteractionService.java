@@ -811,6 +811,22 @@ public final class VillagerInteractionService {
         HiredVillagerWorkService.toggleLoggingFilter(player, level, villager, filterId);
     }
 
+    public static void handleAnimalBreedingTargetRequest(ServerPlayer player, int entityId, String targetId) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
+            return;
+        }
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.toggleAnimalBreedingTarget(player, level, villager, targetId);
+    }
+
     private static void sendHiredRoleNotice(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!HiredVillagerContractService.isHired(level, villager)) {
             sendVillagerNotice(player, villager, "interaction.role_requires_hire");

@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
+import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
@@ -871,7 +872,7 @@ public final class HiredVillagerWorkService {
                     BrewingWorker.orderSummaryKey(level, state),
                     BrewingWorker.orderSummaryReplacements(level, state));
             case NAVIGATION -> setStatus(state, "interaction.work.status.navigation_focus");
-            case ANIMAL_HANDLING -> setStatus(state, "interaction.work.status.animal_focus");
+            case ANIMAL_HANDLING -> setStatus(state, "interaction.work.status.animal_breeding_target", Map.of("target", HiredAnimalBreedingTargets.selectionLabel(state)));
             case NITWIT -> setStatus(state, "interaction.work.status.nitwit_focus");
             default -> setStatus(state, "interaction.work.status.no_extra_setup", Map.of("role", role.label()));
         }
@@ -899,6 +900,30 @@ public final class HiredVillagerWorkService {
         HiredWorkPlan.clear(session.context());
         session.context().setProgressTicks(0);
         setStatus(state, "interaction.work.status.logging_filter", Map.of("filter", HiredLoggingFilters.selectionLabel(state)));
+        sendStatusNotice(player, villager, state);
+    }
+
+    public static void toggleAnimalBreedingTarget(ServerPlayer player, ServerLevel level, Villager villager, String targetId) {
+        if (!canManageWork(level, villager, player)) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.ANIMAL_HANDLING) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.work.configure.requires_role",
+                    Map.of("role", HiredVillagerRole.ANIMAL_HANDLING.label()));
+            return;
+        }
+
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredAnimalBreedingTargets.toggleTarget(state, targetId);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredWorkPlan.clear(session.context());
+        session.context().setProgressTicks(0);
+        setStatus(state, "interaction.work.status.animal_breeding_target", Map.of("target", HiredAnimalBreedingTargets.selectionLabel(state)));
         sendStatusNotice(player, villager, state);
     }
 

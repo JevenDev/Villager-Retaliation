@@ -53,6 +53,7 @@ public record OpenVillagerInteractionPayload(
         HiredVillagerRole activeHiredRole,
         boolean activeBrewingOrder,
         List<String> selectedLoggingFilters,
+        List<String> selectedAnimalBreedingTargets,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames,
@@ -93,6 +94,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeEnum(payload.activeHiredRole());
         buffer.writeBoolean(payload.activeBrewingOrder());
         writeStringList(buffer, payload.selectedLoggingFilters());
+        writeStringList(buffer, payload.selectedAnimalBreedingTargets());
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
         writeStringList(buffer, payload.knownDislikedGiftNames());
@@ -130,6 +132,7 @@ public record OpenVillagerInteractionPayload(
                 readHiredRoles(buffer),
                 buffer.readEnum(HiredVillagerRole.class),
                 buffer.readBoolean(),
+                readStringList(buffer),
                 readStringList(buffer),
                 readDialogueOptions(buffer),
                 readStringList(buffer),

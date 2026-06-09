@@ -232,6 +232,12 @@
       ]
     },
     {
+      "key": "interaction.work.status.animal_breeding_target",
+      "lines": [
+        "I will now breed {target} when the right food is available."
+      ]
+    },
+    {
       "key": "interaction.work.status.nitwit_focus",
       "lines": [
         "I have rearranged my very particular style of helping."
