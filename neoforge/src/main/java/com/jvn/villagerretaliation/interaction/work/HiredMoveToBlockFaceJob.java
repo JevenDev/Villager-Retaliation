@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.villager.VillagerContainerClimbGuard;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -64,6 +65,7 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
         if (current != null) {
             return new HiredPathResult(current, null, true, 0.0D);
         }
+        BlockPos currentPos = this.villager.blockPosition().immutable();
 
         List<ApproachCandidate> approaches = new ArrayList<>();
         for (Direction direction : Direction.values()) {
@@ -80,7 +82,9 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
                     exposedNeighbor.offset(-FACE_APPROACH_RADIUS, -1, -FACE_APPROACH_RADIUS),
                     exposedNeighbor.offset(FACE_APPROACH_RADIUS, 1, FACE_APPROACH_RADIUS))) {
                 BlockPos approach = rawCandidate.immutable();
-                if (!this.approachFilter.test(approach) || !isValidApproachPosition(this.level, approach)) {
+                if (approach.equals(currentPos)
+                        || !this.approachFilter.test(approach)
+                        || !isValidApproachPosition(this.level, approach)) {
                     continue;
                 }
                 Vec3 eye = new Vec3(
@@ -106,7 +110,7 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
             }
             evaluated++;
             Path path = this.villager.getNavigation().createPath(approach.pos(), 0);
-            if (path != null && path.canReach() && pathStaysInsideFilter(path, this.approachFilter)) {
+            if (path != null && path.canReach() && pathStaysInsideFilter(this.level, path, this.approachFilter)) {
                 double score = approach.score() + path.getNodeCount() * 1.5D;
                 HiredPathResult result = new HiredPathResult(
                         new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()),
@@ -181,6 +185,20 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
         return true;
     }
 
+    static boolean pathStaysInsideFilter(ServerLevel level, Path path, Predicate<BlockPos> positionFilter) {
+        if (path == null) {
+            return false;
+        }
+        Predicate<BlockPos> filter = positionFilter == null ? ignored -> true : positionFilter;
+        for (int i = 0; i < path.getNodeCount(); i++) {
+            BlockPos pos = path.getNode(i).asBlockPos();
+            if (!filter.test(pos) || VillagerContainerClimbGuard.isForbiddenStandingFloor(level, pos.below())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     static Vec3 visibleHitPosition(ServerLevel level, Villager villager, Vec3 start, BlockPos target) {
         if (!isLoaded(level, target)) {
             return null;
@@ -236,7 +254,8 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
         BlockState floor = level.getBlockState(pos.below());
         return isPassableForApproach(level, pos, feet)
                 && isPassableForApproach(level, pos.above(), head)
-                && floor.isSolid();
+                && floor.isSolid()
+                && !VillagerContainerClimbGuard.isForbiddenStandingFloor(level, pos.below());
     }
 
     private static boolean isPassableForApproach(CollisionGetter level, BlockPos pos, BlockState state) {

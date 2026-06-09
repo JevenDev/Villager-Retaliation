@@ -27,7 +27,7 @@ public final class HiredVillagerFocusService {
 
         CompoundTag state = HiredVillagerWorkService.state(villager);
         HiredVillagerWorkService.initializeDefaults(state, villager);
-        if (state.getBoolean("Enabled")) {
+        if (shouldSuppressForActiveHiredJob(level, villager, state)) {
             suppressIdleAttentionBehavior(villager);
         }
     }
@@ -39,8 +39,7 @@ public final class HiredVillagerFocusService {
 
         CompoundTag state = HiredVillagerWorkService.state(villager);
         HiredVillagerWorkService.initializeDefaults(state, villager);
-        return state.getBoolean("Enabled")
-                && !VillagerRetaliationVillagerBrainUtil.hasThreatMemories(villager.getBrain());
+        return shouldSuppressForActiveHiredJob(level, villager, state);
     }
 
     public static boolean shouldSkipHiredFocus(ServerLevel level, Villager villager) {
@@ -55,8 +54,25 @@ public final class HiredVillagerFocusService {
     }
 
     public static void suppressNonWorkAi(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (!shouldSuppressForActiveHiredJob(level, villager, context.state())) {
+            return;
+        }
         suppressIdleAttentionBehavior(villager);
         suppressProfessionJobSiteBehavior(level, villager, context);
+    }
+
+    private static boolean shouldSuppressForActiveHiredJob(ServerLevel level, Villager villager, CompoundTag state) {
+        if (!state.getBoolean("Enabled")
+                || VillagerRetaliationVillagerBrainUtil.hasThreatMemories(villager.getBrain())) {
+            return false;
+        }
+        HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        return switch (worker.taskState()) {
+            case MOVING_TO_TARGET, VALIDATING_TARGET, WORKING, FINDING_CHAIN_TARGET -> worker.targetPos() != null;
+            case MOVING_TO_STORAGE -> worker.storageTargetPos() != null;
+            case RETURNING_TO_WORK_AREA -> true;
+            default -> false;
+        };
     }
 
     private static void suppressIdleAttentionBehavior(Villager villager) {
@@ -92,8 +108,8 @@ public final class HiredVillagerFocusService {
                 && worker.taskState() != HiredWorkerTaskState.FAILED_COOLDOWN;
         boolean hiredNavigation = storageNavigation || workAreaReturnNavigation || blockTargetNavigation;
         boolean stopNavigation = navigationTarget != null
-                && ((!hiredNavigation && !context.isInsideWorkArea(navigationTarget))
-                || !workAreaReturnNavigation && navigationTarget.equals(jobSite));
+                && !hiredNavigation
+                && (!context.isInsideWorkArea(navigationTarget) || navigationTarget.equals(jobSite));
         if (stopNavigation) {
             villager.getNavigation().stop();
         }

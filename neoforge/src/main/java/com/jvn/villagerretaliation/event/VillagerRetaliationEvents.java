@@ -46,6 +46,7 @@ import com.jvn.villagerretaliation.util.VillagerDataWarmup;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
+import com.jvn.villagerretaliation.villager.VillagerContainerClimbGuard;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
@@ -233,6 +234,7 @@ public final class VillagerRetaliationEvents {
                 VillagerTaskNavigationUtil.tickVillagerWaterSafety(level, villager);
                 VillagerTaskNavigationUtil.tickPathDoors(level, villager);
                 VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+                VillagerContainerClimbGuard.tick(villager);
             }
             rememberWeatherEventNearVillager(villager);
             if (villager.level() instanceof ServerLevel level) {

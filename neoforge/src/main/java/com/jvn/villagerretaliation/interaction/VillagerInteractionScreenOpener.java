@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -157,6 +158,7 @@ public final class VillagerInteractionScreenOpener {
                 forceCameraTowardsVillager,
                 HiredVillagerRoles.availableRoles(level, villager),
                 HiredVillagerContractService.activeRole(level, villager),
+                BrewingWorker.hasOrder(HiredVillagerWorkService.state(villager)),
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),

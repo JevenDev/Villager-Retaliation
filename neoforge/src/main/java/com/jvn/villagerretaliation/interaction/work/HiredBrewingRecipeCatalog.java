@@ -14,6 +14,7 @@ import java.util.Set;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -107,7 +108,7 @@ public final class HiredBrewingRecipeCatalog {
         List<BrewingPotionChoice> choices = new ArrayList<>();
         for (Map.Entry<BrewingEffectKey, List<BrewingRoute>> entry : grouped.entrySet()) {
             List<BrewingRoute> groupedRoutes = sortedRoutes(entry.getValue());
-            choices.add(new BrewingPotionChoice(entry.getKey(), effectLabel(groupedRoutes.getFirst()), groupedRoutes));
+            choices.add(new BrewingPotionChoice(entry.getKey(), potionLabel(groupedRoutes.getFirst()), groupedRoutes));
         }
         choices.sort(Comparator.comparing(BrewingPotionChoice::label));
         return choices;
@@ -223,15 +224,16 @@ public final class HiredBrewingRecipeCatalog {
                 .orElseGet(() -> BuiltInRegistries.MOB_EFFECT.getKey(effect.value()));
     }
 
-    private static String effectLabel(BrewingRoute route) {
-        List<String> labels = effects(route).stream()
-                .sorted(Comparator.comparing(effect -> effectId(effect.getEffect())))
-                .map(effect -> effect.getEffect().value().getDisplayName().getString())
-                .toList();
-        if (labels.isEmpty()) {
+    private static String potionLabel(BrewingRoute route) {
+        Optional<Holder<Potion>> potion = route.output()
+                .getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY)
+                .potion();
+        String key = Potion.getName(potion, "item.minecraft.potion.effect.");
+        String label = Component.translatable(key).getString();
+        if (label.isBlank() || label.equals(key)) {
             return route.output().getHoverName().getString();
         }
-        return String.join(" + ", labels);
+        return label;
     }
 
     private static int durationTicks(BrewingRoute route) {

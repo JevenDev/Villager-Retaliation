@@ -498,6 +498,7 @@
   "villagerretaliation.gui.recruit.work_config_logging": "Configure Logging",
   "villagerretaliation.gui.recruit.work_config_farming": "Configure Farming",
   "villagerretaliation.gui.recruit.work_config_brewing": "Configure Brewing",
+  "villagerretaliation.gui.recruit.stop_brewing": "Stop Brewing",
   "villagerretaliation.gui.recruit.work_config_navigation": "Configure Navigation",
   "villagerretaliation.gui.recruit.work_config_animal_handling": "Configure Animal Handling",
   "villagerretaliation.gui.recruit.work_config_nitwit": "Configure Nitwit",

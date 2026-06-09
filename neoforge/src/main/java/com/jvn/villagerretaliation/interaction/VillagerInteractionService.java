@@ -752,7 +752,8 @@ public final class VillagerInteractionService {
                 || action == VillagerRecruitRequestPayload.Action.VIEW_WORK_STATUS
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES
-                || action == VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS;
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS
+                || action == VillagerRecruitRequestPayload.Action.STOP_BREWING;
         if (!workAction) {
             return false;
         }
@@ -769,9 +770,23 @@ public final class VillagerInteractionService {
             case TOGGLE_WORK_ENABLED -> HiredVillagerWorkService.toggleEnabled(player, level, villager);
             case TOGGLE_USE_ASSIGNED_SUPPLIES -> HiredVillagerWorkService.toggleAssignedSupplies(player, level, villager);
             case TOGGLE_AUTO_DEPOSIT_OUTPUTS -> HiredVillagerWorkService.toggleAutoDeposit(player, level, villager);
+            case STOP_BREWING -> stopBrewingOrder(player, level, villager);
             default -> HiredVillagerWorkService.configureRole(player, level, villager, configureRole);
         }
         return true;
+    }
+
+    private static void stopBrewingOrder(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BREWING) {
+            sendVillagerNotice(player, villager, "Assign me to Brewing before changing brewing orders.");
+            return;
+        }
+        CompoundTag state = HiredVillagerWorkService.state(villager);
+        HiredVillagerWorkService.initializeDefaults(state, villager);
+        BrewingWorker.clearOrder(state);
+        HiredVillagerWorkService.stopWork(level, villager, HiredVillagerRole.BREWING, "Brewing stopped.");
+        sendVillagerNotice(player, villager, "Brewing stopped.");
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
     }
 
     private static void sendHiredRoleNotice(ServerPlayer player, ServerLevel level, Villager villager) {

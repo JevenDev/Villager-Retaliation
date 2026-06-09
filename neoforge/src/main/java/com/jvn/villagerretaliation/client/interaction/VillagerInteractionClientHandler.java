@@ -112,6 +112,7 @@ public final class VillagerInteractionClientHandler {
                 payload.forceCameraTowardsVillager(),
                 payload.availableHiredRoles(),
                 payload.activeHiredRole(),
+                payload.activeBrewingOrder(),
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames(),

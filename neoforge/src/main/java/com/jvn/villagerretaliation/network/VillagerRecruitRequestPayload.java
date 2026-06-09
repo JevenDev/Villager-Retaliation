@@ -68,6 +68,7 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
         CONFIGURE_NAVIGATION,
         CONFIGURE_ANIMAL_HANDLING,
         CONFIGURE_NITWIT,
+        STOP_BREWING,
         FOLLOW,
         STAY_HERE,
         STOP_FOLLOWING

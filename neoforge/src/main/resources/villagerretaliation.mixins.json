@@ -4,8 +4,10 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AbstractContainerMenuAccessor",
+    "BrewingStandBlockEntityAccessor",
     "VillagerBrainTickMixin",
-    "VillagerTradeLevelingMixin"
+    "VillagerTradeLevelingMixin",
+    "WalkNodeEvaluatorMixin"
   ],
   "client": [
     "client.ChatComponentMixin",

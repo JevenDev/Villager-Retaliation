@@ -33,6 +33,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     private static final long LOOK_TARGET_MEMORY_TICKS = 24L;
     private static final int MAX_TARGETS_TO_PATHFIND = 64;
     private static final int ROAM_CANDIDATE_ATTEMPTS = 16;
+    private static final double APPROACH_CENTER_SETTLE_SQR = 0.04D;
 
     static void clearSharedRuntimeState() {
         HiredPathMemory.clear();
@@ -385,6 +386,13 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
                     || !repickedTarget.hitPos().equals(currentTarget.hitPos()))) {
                 prepareBreakingTarget(level, context, villager, repickedTarget);
                 currentTarget = repickedTarget;
+            } else if (settleIntoApproach(villager, currentTarget, speed)) {
+                HiredPathMemory.rememberNavigationProgress(
+                        level,
+                        villager,
+                        currentTarget.approachPos(),
+                        villager.distanceToSqr(currentTarget.approachPos().getCenter()));
+                return true;
             } else {
                 villager.getNavigation().stop();
                 HiredPathMemory.clearNavigationProgress(villager);
@@ -419,8 +427,29 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             }
             return moved;
         }
+        if (villager.distanceToSqr(currentTarget.approachPos().getCenter()) <= 2.25D
+                && settleIntoApproach(villager, currentTarget, speed)) {
+            HiredPathMemory.rememberNavigationProgress(
+                    level,
+                    villager,
+                    currentTarget.approachPos(),
+                    villager.distanceToSqr(currentTarget.approachPos().getCenter()));
+            return true;
+        }
         HiredPathMemory.clearNavigationProgress(villager);
         return false;
+    }
+
+    private boolean settleIntoApproach(Villager villager, HiredPathTarget target, double speed) {
+        Vec3 center = target.approachPos().getCenter();
+        double horizontalDistanceSqr = Mth.square(villager.getX() - center.x)
+                + Mth.square(villager.getZ() - center.z);
+        if (horizontalDistanceSqr <= APPROACH_CENTER_SETTLE_SQR
+                && Math.abs(villager.getY() - target.approachPos().getY()) <= 0.125D) {
+            return false;
+        }
+        villager.getMoveControl().setWantedPosition(center.x, target.approachPos().getY(), center.z, speed);
+        return true;
     }
 
     protected DepositResult depositOutputsOrMoveToStorage(
@@ -543,7 +572,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         return HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea);
     }
 
-    private void stopWorkNavigation(Villager villager) {
+    protected void stopWorkNavigation(Villager villager) {
         if (!villager.getNavigation().isDone()) {
             villager.getNavigation().stop();
         }

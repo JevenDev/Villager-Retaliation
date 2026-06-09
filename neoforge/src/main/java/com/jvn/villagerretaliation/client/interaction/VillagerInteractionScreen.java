@@ -118,6 +118,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final String walletCurrencyLabel;
     private final EnumSet<HiredVillagerRole> availableHiredRoles;
     private final HiredVillagerRole activeHiredRole;
+    private boolean activeBrewingOrder;
     private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
@@ -187,6 +188,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean forceCameraTowardsVillager,
             List<HiredVillagerRole> availableHiredRoles,
             HiredVillagerRole activeHiredRole,
+            boolean activeBrewingOrder,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
@@ -221,6 +223,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 ? EnumSet.noneOf(HiredVillagerRole.class)
                 : EnumSet.copyOf(availableHiredRoles);
         this.activeHiredRole = activeHiredRole;
+        this.activeBrewingOrder = activeBrewingOrder;
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
@@ -711,7 +714,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addRoleWorkConfigOption(HiredVillagerRole.LOGGING, "recruit.work_config_logging", VillagerRecruitRequestPayload.Action.CONFIGURE_LOGGING);
         addRoleWorkConfigOption(HiredVillagerRole.FARMING, "recruit.work_config_farming", VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING);
         if (isActiveHiredRole(HiredVillagerRole.BREWING)) {
-            addOption("recruit.work_config_brewing", this::openBrewingPotionPage);
+            if (this.activeBrewingOrder) {
+                addOption("recruit.stop_brewing", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_BREWING));
+            } else {
+                addOption("recruit.work_config_brewing", this::openBrewingPotionPage);
+            }
         }
         addRoleWorkConfigOption(HiredVillagerRole.NAVIGATION, "recruit.work_config_navigation", VillagerRecruitRequestPayload.Action.CONFIGURE_NAVIGATION);
         addRoleWorkConfigOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.work_config_animal_handling", VillagerRecruitRequestPayload.Action.CONFIGURE_ANIMAL_HANDLING);
@@ -1344,6 +1351,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING) {
             this.followingPlayer = false;
             this.stayingHere = false;
+        } else if (action == VillagerRecruitRequestPayload.Action.STOP_BREWING) {
+            this.activeBrewingOrder = false;
+            openWorkPage();
         }
     }
 
@@ -1357,6 +1367,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 route.potionId(),
                 amount,
                 continuous));
+        this.activeBrewingOrder = true;
         openWorkPage();
     }
 

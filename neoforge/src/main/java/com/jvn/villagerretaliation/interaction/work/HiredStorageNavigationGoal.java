@@ -36,8 +36,6 @@ final class HiredStorageNavigationGoal {
             return Result.FAILED;
         }
 
-        setStorageWalkTarget(villager, storage, speed);
-
         if (AssignedStorageService.canInteractWithAssignedStorage(villager, storage)) {
             clearStorageNavigationState(context);
             if (!villager.getNavigation().isDone()) {
@@ -68,10 +66,10 @@ final class HiredStorageNavigationGoal {
                 villager.getBrain().eraseMemory(MemoryModuleType.PATH);
                 villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
                 clearStorageNavigationState(context);
-                if (moveToStorageBlock(level, context, villager, storage, speed, distanceSqr)) {
+                if (moveToStorageApproach(level, context, villager, storage, speed, null)) {
                     return Result.MOVING;
                 }
-                if (moveToStorageApproach(level, context, villager, storage, speed, null)) {
+                if (moveToStorageBlock(level, context, villager, storage, speed, distanceSqr)) {
                     return Result.MOVING;
                 }
                 if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, storage, speed)) {
@@ -91,10 +89,10 @@ final class HiredStorageNavigationGoal {
             return Result.MOVING;
         }
 
-        if (moveToStorageBlock(level, context, villager, storage, speed, distanceSqr)) {
+        if (moveToStorageApproach(level, context, villager, storage, speed, null)) {
             return Result.MOVING;
         }
-        if (moveToStorageApproach(level, context, villager, storage, speed, null)) {
+        if (moveToStorageBlock(level, context, villager, storage, speed, distanceSqr)) {
             return Result.MOVING;
         }
         if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, storage, speed)) {
