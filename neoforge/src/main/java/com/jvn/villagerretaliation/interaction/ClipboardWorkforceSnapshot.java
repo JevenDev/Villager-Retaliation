@@ -49,7 +49,8 @@ public record ClipboardWorkforceSnapshot(
             boolean noStorage,
             boolean noWorkArea,
             boolean noTargets,
-            boolean tooFar) {
+            boolean tooFar,
+            boolean missingTools) {
     }
 
     public record WarningSummary(WarningType type, HiredVillagerRole role, int count) {
@@ -68,6 +69,7 @@ public record ClipboardWorkforceSnapshot(
         NO_TARGETS,
         NO_STORAGE,
         INVENTORY_FULL,
+        MISSING_TOOLS,
         UNPAID,
         TOO_FAR,
         UNKNOWN
@@ -77,6 +79,7 @@ public record ClipboardWorkforceSnapshot(
         NO_WORK_AREA,
         NO_STORAGE,
         INVENTORY_FULL,
+        MISSING_TOOLS,
         UNPAID,
         NO_TARGETS,
         TOO_FAR

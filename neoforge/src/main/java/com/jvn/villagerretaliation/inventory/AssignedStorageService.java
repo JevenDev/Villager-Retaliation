@@ -40,6 +40,10 @@ public final class AssignedStorageService {
         return !assignedPaymentStorage(level, villager).isEmpty();
     }
 
+    public static boolean hasLoadedAssignedPaymentStorage(ServerLevel level, Villager villager) {
+        return !livePaymentContainerCandidates(level, villager).isEmpty();
+    }
+
     public static List<AssignedContainerRecord> assignedStorage(ServerLevel level, Villager villager) {
         return AssignedStorageSavedData.get(level).assignedTo(villager.getUUID()).stream()
                 .filter(record -> !PAYMENT_PURPOSE.equals(normalizePurpose(record.purpose())))
@@ -231,6 +235,43 @@ public final class AssignedStorageService {
                 .orElse(null);
     }
 
+    public static BlockPos nearestAssignedPaymentStoragePos(ServerLevel level, Villager villager) {
+        BlockPos villagerPos = villager.blockPosition();
+        return livePaymentContainerCandidates(level, villager).stream()
+                .min((first, second) -> Double.compare(
+                        first.pos().distSqr(villagerPos),
+                        second.pos().distSqr(villagerPos)))
+                .map(candidate -> candidate.pos().immutable())
+                .orElse(null);
+    }
+
+    public static boolean canInteractWithAssignedPaymentStorage(Villager villager, BlockPos paymentPos) {
+        if (paymentPos == null || !(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        if (!isInInteractionRange(villager, paymentPos)) {
+            return false;
+        }
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
+            if (candidate.pos().equals(paymentPos)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isAssignedPaymentStorageAvailable(ServerLevel level, Villager villager, BlockPos paymentPos) {
+        if (paymentPos == null) {
+            return false;
+        }
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
+            if (candidate.pos().equals(paymentPos)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean isInInteractionRange(Villager villager, BlockPos pos) {
         return villager.getEyePosition().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR
                 && villager.position().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR;
@@ -323,6 +364,37 @@ public final class AssignedStorageService {
         return count - remaining;
     }
 
+    public static int consumePaymentItemsAt(Villager villager, BlockPos paymentPos, Predicate<ItemStack> predicate, int count) {
+        if (paymentPos == null || count <= 0 || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
+        int remaining = count;
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
+            if (!candidate.pos().equals(paymentPos)) {
+                continue;
+            }
+            Container container = candidate.container();
+            boolean used = false;
+            for (int slot = 0; slot < container.getContainerSize() && remaining > 0; slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.isEmpty() || !predicate.test(stack)) {
+                    continue;
+                }
+                int removed = Math.min(remaining, stack.getCount());
+                container.removeItem(slot, removed);
+                remaining -= removed;
+                used = true;
+            }
+            if (used) {
+                usedContainers.add(candidate);
+            }
+            break;
+        }
+        VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
+        return count - remaining;
+    }
+
     public static int countPaymentItems(Villager villager, Predicate<ItemStack> predicate) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return 0;
@@ -336,6 +408,27 @@ public final class AssignedStorageService {
                     count += stack.getCount();
                 }
             }
+        }
+        return count;
+    }
+
+    public static int countPaymentItemsAt(Villager villager, BlockPos paymentPos, Predicate<ItemStack> predicate) {
+        if (paymentPos == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        int count = 0;
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
+            if (!candidate.pos().equals(paymentPos)) {
+                continue;
+            }
+            Container container = candidate.container();
+            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (!stack.isEmpty() && predicate.test(stack)) {
+                    count += stack.getCount();
+                }
+            }
+            break;
         }
         return count;
     }

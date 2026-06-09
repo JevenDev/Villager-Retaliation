@@ -81,7 +81,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             return fullInventoryResult;
         }
         if (mode.excavatesArea()) {
-            WorkResult supportResult = maintainExcavationSupports(level, villager, context, deepestOpenSupportY(level, context));
+            WorkResult supportResult = maintainExcavationSupports(level, villager, context);
             if (supportResult != null) {
                 return supportResult;
             }
@@ -602,9 +602,9 @@ public final class MiningWorker extends AbstractBlockWorker {
         return 0;
     }
 
-    private WorkResult maintainExcavationSupports(ServerLevel level, Villager villager, HiredWorkContext context, int currentY) {
-        int lowestOpenY = Math.clamp(currentY, context.workMin().getY(), context.workMax().getY());
-        SupportPlacement placement = nextSupportPlacement(level, villager, context, lowestOpenY);
+    private WorkResult maintainExcavationSupports(ServerLevel level, Villager villager, HiredWorkContext context) {
+        int supportFloorY = excavationSupportFloorY(level, context);
+        SupportPlacement placement = nextSupportPlacement(level, villager, context, supportFloorY);
         if (placement == null) {
             return null;
         }
@@ -621,6 +621,15 @@ public final class MiningWorker extends AbstractBlockWorker {
             return null;
         }
         return WorkResult.progressed(placement.type().placedStatus());
+    }
+
+    private static int excavationSupportFloorY(ServerLevel level, HiredWorkContext context) {
+        int openY = deepestOpenSupportY(level, context);
+        Integer currentLayerY = currentExcavationLayer(level, context);
+        if (currentLayerY != null) {
+            openY = Math.max(openY, currentLayerY);
+        }
+        return Math.clamp(openY, context.workMin().getY(), context.workMax().getY());
     }
 
     private static int deepestOpenSupportY(ServerLevel level, HiredWorkContext context) {
@@ -703,7 +712,17 @@ public final class MiningWorker extends AbstractBlockWorker {
             return null;
         }
         BlockPos pos = new BlockPos(x, context.workMax().getY(), z);
-        return context.isInsideWorkArea(pos) ? new LadderShaft(x, z, facing) : null;
+        LadderShaft shaft = new LadderShaft(x, z, facing);
+        return context.isInsideWorkArea(pos) && isLadderShaftCandidate(context, shaft) ? shaft : null;
+    }
+
+    private static boolean isLadderShaftCandidate(HiredWorkContext context, LadderShaft shaft) {
+        for (LadderShaft candidate : ladderShaftCandidates(context)) {
+            if (candidate.equals(shaft)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void storeLadderShaft(HiredWorkContext context, LadderShaft shaft) {
@@ -835,8 +854,7 @@ public final class MiningWorker extends AbstractBlockWorker {
     }
 
     private static boolean isTorchLayer(HiredWorkContext context, int y) {
-        return y == context.workMin().getY()
-                || Math.floorMod(context.workMax().getY() - y, EXCAVATION_TORCH_LAYER_INTERVAL) == 0;
+        return Math.floorMod(context.workMax().getY() - y, EXCAVATION_TORCH_LAYER_INTERVAL) == 0;
     }
 
     private static List<TorchPlacement> torchPlacements(HiredWorkContext context, int y) {
@@ -886,7 +904,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         Direction supportFace = supportFace(state);
         return backingPos != null
                 && supportFace != null
-                && isInsideOrAdjacentToWorkArea(context, backingPos)
+                && isAdjacentOutsideWorkArea(context, backingPos)
                 && level.hasChunkAt(backingPos)
                 && level.getBlockState(backingPos).isAir()
                 && context.inventory().hasOutput(stack -> canUseOutputAsSupportBacking(level, backingPos, supportFace, stack));
@@ -915,8 +933,9 @@ public final class MiningWorker extends AbstractBlockWorker {
         return state.hasProperty(LadderBlock.FACING) ? state.getValue(LadderBlock.FACING) : null;
     }
 
-    private static boolean isInsideOrAdjacentToWorkArea(HiredWorkContext context, BlockPos pos) {
-        return pos.getX() >= context.workMin().getX() - 1
+    private static boolean isAdjacentOutsideWorkArea(HiredWorkContext context, BlockPos pos) {
+        return !context.isInsideWorkArea(pos)
+                && pos.getX() >= context.workMin().getX() - 1
                 && pos.getX() <= context.workMax().getX() + 1
                 && pos.getY() >= context.workMin().getY()
                 && pos.getY() <= context.workMax().getY()
@@ -1294,14 +1313,70 @@ public final class MiningWorker extends AbstractBlockWorker {
             holdMiningPosition(villager, target);
             return true;
         }
+        if (shouldEscapeUpBeforeMining(villager, target)
+                && VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, target.approachPos(), speed)) {
+            HiredPathMemory.rememberNavigationProgress(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()));
+            return true;
+        }
 
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         if (!villager.getNavigation().isDone() && target.approachPos().equals(navigationTarget)) {
+            if (HiredPathMemory.isNavigationBlocked(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()))) {
+                villager.getNavigation().stop();
+                HiredPathMemory.clearNavigationProgress(villager);
+                if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target.approachPos(), speed)) {
+                    HiredPathMemory.rememberNavigationProgress(
+                            level,
+                            villager,
+                            target.approachPos(),
+                            villager.distanceToSqr(target.approachPos().getCenter()));
+                    return true;
+                }
+                if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, target.approachPos(), speed)) {
+                    HiredPathMemory.rememberNavigationProgress(
+                            level,
+                            villager,
+                            target.approachPos(),
+                            villager.distanceToSqr(target.approachPos().getCenter()));
+                    return true;
+                }
+                return false;
+            }
             return true;
         }
         Path path = villager.getNavigation().createPath(target.approachPos(), 0);
-        return path != null && path.canReach() && villager.getNavigation().moveTo(path, speed)
-                || VillagerTaskNavigationUtil.moveOnLadderToward(level, villager, target.approachPos(), speed);
+        if (path != null && path.canReach() && villager.getNavigation().moveTo(path, speed)) {
+            HiredPathMemory.rememberNavigationProgress(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()));
+            return true;
+        }
+        HiredPathMemory.clearNavigationProgress(villager);
+        if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target.approachPos(), speed)
+                || VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, target.approachPos(), speed)
+                || VillagerTaskNavigationUtil.moveOnLadderToward(level, villager, target.approachPos(), speed)) {
+            HiredPathMemory.rememberNavigationProgress(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()));
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean shouldEscapeUpBeforeMining(Villager villager, HiredPathTarget target) {
+        return target != null && target.approachPos().getY() - villager.blockPosition().getY() > 2;
     }
 
     private boolean storeMinedDrops(

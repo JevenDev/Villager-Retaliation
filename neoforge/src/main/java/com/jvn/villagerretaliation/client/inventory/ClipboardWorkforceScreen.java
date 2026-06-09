@@ -890,7 +890,13 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private boolean hasWarning(WorkerRow worker) {
-        return worker.inventoryFull() || worker.unpaid() || worker.noStorage() || worker.noWorkArea() || worker.noTargets() || worker.tooFar();
+        return worker.inventoryFull()
+                || worker.unpaid()
+                || worker.noStorage()
+                || worker.noWorkArea()
+                || worker.noTargets()
+                || worker.tooFar()
+                || worker.missingTools();
     }
 
     private int warningTextRight() {

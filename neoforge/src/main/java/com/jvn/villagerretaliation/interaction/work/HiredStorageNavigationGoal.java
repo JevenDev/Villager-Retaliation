@@ -48,6 +48,20 @@ final class HiredStorageNavigationGoal {
 
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         double distanceSqr = villager.distanceToSqr(storage.getCenter());
+        if (shouldPreferLadderNavigation(villager, storage)) {
+            if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, storage, speed)) {
+                setStorageWalkTarget(villager, storage, speed);
+                rememberStorageNavigationTarget(context, level, storage);
+                HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+                return Result.MOVING;
+            }
+            if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, storage, speed)) {
+                setStorageWalkTarget(villager, storage, speed);
+                rememberStorageNavigationTarget(context, level, storage);
+                HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+                return Result.MOVING;
+            }
+        }
         if (!villager.getNavigation().isDone() && isStorageNavigationTarget(storage, navigationTarget)) {
             if (HiredPathMemory.isNavigationBlocked(level, villager, storage, distanceSqr)) {
                 villager.getNavigation().stop();
@@ -61,6 +75,10 @@ final class HiredStorageNavigationGoal {
                     return Result.MOVING;
                 }
                 if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, storage, speed)) {
+                    HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+                    return Result.MOVING;
+                }
+                if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, storage, speed)) {
                     HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
                     return Result.MOVING;
                 }
@@ -80,6 +98,12 @@ final class HiredStorageNavigationGoal {
             return Result.MOVING;
         }
         if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, storage, speed)) {
+            setStorageWalkTarget(villager, storage, speed);
+            rememberStorageNavigationTarget(context, level, storage);
+            HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+            return Result.MOVING;
+        }
+        if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, storage, speed)) {
             setStorageWalkTarget(villager, storage, speed);
             rememberStorageNavigationTarget(context, level, storage);
             HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
@@ -121,6 +145,10 @@ final class HiredStorageNavigationGoal {
             }
         }
         return false;
+    }
+
+    private static boolean shouldPreferLadderNavigation(Villager villager, BlockPos target) {
+        return target != null && Math.abs(villager.blockPosition().getY() - target.getY()) > 2;
     }
 
     private static boolean moveToStorageBlock(

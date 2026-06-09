@@ -1,8 +1,11 @@
 package com.jvn.villagerretaliation.villager;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -25,6 +28,7 @@ import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
@@ -35,13 +39,22 @@ public final class VillagerTaskNavigationUtil {
     private static final double DOOR_REACH_DISTANCE_SQR = DOOR_REACH_DISTANCE * DOOR_REACH_DISTANCE;
     private static final double LADDER_CENTERING_DISTANCE_SQR = 0.36D;
     private static final double LADDER_ENTRY_DISTANCE_SQR = 2.25D;
+    private static final double LADDER_FORCED_ENTRY_HORIZONTAL_SQR = 0.64D;
+    private static final int LADDER_VERTICAL_TARGET_DEADZONE = 1;
     private static final double LADDER_HORIZONTAL_SPEED_LIMIT = 0.15D;
     private static final double LADDER_CLIMB_SPEED = 0.20D;
     private static final double LADDER_DESCEND_SPEED = -0.15D;
-    private static final int LADDER_ESCAPE_SEARCH_RADIUS = 8;
-    private static final int LADDER_ESCAPE_VERTICAL_RADIUS = 18;
+    private static final long ACTIVE_LADDER_CLIMB_TICKS = 80L;
+    private static final double ACTIVE_LADDER_COLUMN_DISTANCE_SQR = 2.25D;
+    private static final int LADDER_ESCAPE_SEARCH_RADIUS = 12;
+    private static final int LADDER_ESCAPE_VERTICAL_RADIUS = 24;
     private static final int LADDER_SEARCH_CACHE_TICKS = 20;
     private static final double LADDER_SEARCH_ORIGIN_REUSE_DISTANCE_SQR = 16.0D;
+    private static final int SURFACE_ESCAPE_CHUNK_RADIUS = 0;
+    private static final int SURFACE_ESCAPE_MIN_Y_GAIN = 3;
+    private static final int SURFACE_ESCAPE_SURFACE_SCAN_DEPTH = 8;
+    private static final int MAX_SURFACE_ESCAPE_PATH_ATTEMPTS = 4;
+    private static final int SURFACE_ESCAPE_SEARCH_CACHE_TICKS = 20;
     private static final float HIRED_WATER_PATH_COST = 32.0F;
     private static final float HIRED_WATER_BORDER_PATH_COST = 16.0F;
     private static final double WATER_TARGET_REACHED_DISTANCE_SQR = 2.25D;
@@ -53,7 +66,9 @@ public final class VillagerTaskNavigationUtil {
     private static final long WATER_ESCAPE_TICKS = 15L;
     private static final double WATER_STUCK_MIN_PROGRESS_SQR = 0.05D;
     private static final Map<UUID, Set<GlobalPos>> DOORS_TO_CLOSE = new HashMap<>();
+    private static final Map<UUID, ActiveLadderClimb> ACTIVE_LADDER_CLIMBS = new HashMap<>();
     private static final Map<UUID, LadderSearch> LADDER_SEARCHES = new HashMap<>();
+    private static final Map<UUID, SurfaceEscapeSearch> SURFACE_ESCAPE_SEARCHES = new HashMap<>();
     private static final Map<UUID, WaterPathSettings> WATER_PATH_SETTINGS = new HashMap<>();
     private static final Map<UUID, WaterMovementProgress> WATER_MOVEMENT_PROGRESS = new HashMap<>();
 
@@ -82,6 +97,9 @@ public final class VillagerTaskNavigationUtil {
     }
 
     public static void tickPathLadders(ServerLevel level, Villager villager) {
+        if (continueActiveLadderClimb(level, villager, null, 0.45D)) {
+            return;
+        }
         BlockPos target = villager.getNavigation().getTargetPos();
         Path path = villager.getNavigation().getPath();
         Node previousNode = path != null && !path.isDone() ? path.getPreviousNode() : null;
@@ -89,7 +107,12 @@ public final class VillagerTaskNavigationUtil {
         if (target != null && (isStandingInLadder(level, villager.blockPosition())
                 || isLadderPathNode(level, previousNode)
                 || isLadderPathNode(level, nextNode))) {
-            moveOnLadderToward(level, villager, target, 0.45D);
+            BlockPos ladder = ladderTouching(level, villager.blockPosition(), target);
+            if (ladder == null) {
+                ladder = isLadderPathNode(level, nextNode) ? nextNode.asBlockPos() : previousNode.asBlockPos();
+            }
+            beginActiveLadderClimb(level, villager, ladder, target);
+            continueActiveLadderClimb(level, villager, target, 0.45D);
         }
     }
 
@@ -317,6 +340,16 @@ public final class VillagerTaskNavigationUtil {
         if (ladder == null) {
             return false;
         }
+        beginActiveLadderClimb(level, villager, ladder, target);
+        return moveOnSpecificLadderToward(level, villager, ladder, target, speed);
+    }
+
+    private static boolean moveOnSpecificLadderToward(
+            ServerLevel level,
+            Villager villager,
+            BlockPos ladder,
+            BlockPos target,
+            double speed) {
         double centerX = ladder.getX() + 0.5D;
         double centerZ = ladder.getZ() + 0.5D;
         double dx = centerX - villager.getX();
@@ -326,11 +359,15 @@ public final class VillagerTaskNavigationUtil {
             return true;
         }
 
-        BlockPos columnEnd = target.getY() >= ladder.getY() ? topOfLadderColumn(level, ladder) : bottomOfLadderColumn(level, ladder);
-        boolean climbingUp = target.getY() >= ladder.getY();
+        int verticalDelta = target.getY() - villager.blockPosition().getY();
+        boolean climbingUp = verticalDelta >= 0;
+        BlockPos columnEnd = Math.abs(verticalDelta) <= LADDER_VERTICAL_TARGET_DEADZONE
+                ? ladder
+                : (climbingUp ? topOfLadderColumn(level, ladder) : bottomOfLadderColumn(level, ladder));
         if (reachedLadderColumnEnd(villager, columnEnd, climbingUp)) {
             BlockPos dismount = safeLadderDismount(level, villager, columnEnd, target, climbingUp);
             if (dismount != null) {
+                clearActiveLadderClimb(villager);
                 villager.getMoveControl().setWantedPosition(dismount.getX() + 0.5D, dismount.getY(), dismount.getZ() + 0.5D, speed);
                 return true;
             }
@@ -342,6 +379,7 @@ public final class VillagerTaskNavigationUtil {
         Vec3 motion = villager.getDeltaMovement();
         double yDelta = target.getY() + 0.1D - villager.getY();
         double climb = yDelta >= 0.0D ? LADDER_CLIMB_SPEED : LADDER_DESCEND_SPEED;
+        villager.setNoGravity(true);
         villager.setDeltaMovement(
                 Math.clamp(motion.x, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT),
                 climb,
@@ -354,6 +392,9 @@ public final class VillagerTaskNavigationUtil {
         if (target == null) {
             return false;
         }
+        if (continueActiveLadderClimb(level, villager, target, speed)) {
+            return true;
+        }
         BlockPos touchingLadder = ladderTouching(level, villager.blockPosition(), target);
         if (touchingLadder != null) {
             return forceMoveOnLadderToward(level, villager, target, speed);
@@ -361,7 +402,7 @@ public final class VillagerTaskNavigationUtil {
         if (Math.abs(target.getY() - villager.blockPosition().getY()) <= 2) {
             return false;
         }
-        BlockPos ladder = nearestLadder(level, villager);
+        BlockPos ladder = nearestLadder(level, villager, target);
         if (ladder == null) {
             return false;
         }
@@ -383,47 +424,207 @@ public final class VillagerTaskNavigationUtil {
         return false;
     }
 
+    public static boolean moveTowardHighestSafePositionInLoadedChunk(ServerLevel level, Villager villager, BlockPos target, double speed) {
+        if (target == null) {
+            return false;
+        }
+        if (continueActiveLadderClimb(level, villager, target, speed)) {
+            return true;
+        }
+        UUID villagerId = villager.getUUID();
+        BlockPos origin = villager.blockPosition();
+        SurfaceEscapeSearch cached = SURFACE_ESCAPE_SEARCHES.get(villagerId);
+        if (cached != null
+                && cached.expiresGameTime() > level.getGameTime()
+                && cached.targetPos() == target.asLong()
+                && cached.origin().distSqr(origin) <= LADDER_SEARCH_ORIGIN_REUSE_DISTANCE_SQR) {
+            BlockPos escapeTarget = cached.escapeTarget();
+            return escapeTarget != null
+                    && isSafeSurfaceEscapeTarget(level, escapeTarget)
+                    && moveToSurfaceEscapeTarget(level, villager, escapeTarget, speed);
+        }
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (!villager.getNavigation().isDone()
+                && navigationTarget != null
+                && navigationTarget.getY() >= villager.blockPosition().getY() + SURFACE_ESCAPE_MIN_Y_GAIN
+                && isSafeSurfaceEscapeTarget(level, navigationTarget)) {
+            return true;
+        }
+        List<SurfaceEscapeTarget> candidates = highestSafeSurfaceTargets(level, villager, target);
+        int attempts = 0;
+        for (SurfaceEscapeTarget candidate : candidates) {
+            if (attempts++ >= MAX_SURFACE_ESCAPE_PATH_ATTEMPTS) {
+                break;
+            }
+            if (moveToSurfaceEscapeTarget(level, villager, candidate.pos(), speed)) {
+                rememberSurfaceEscapeSearch(level, villager, target, candidate.pos());
+                return true;
+            }
+        }
+        rememberSurfaceEscapeSearch(level, villager, target, null);
+        return false;
+    }
+
+    private static boolean moveToSurfaceEscapeTarget(ServerLevel level, Villager villager, BlockPos target, double speed) {
+        if (moveOnLadderToward(level, villager, target, speed)) {
+            return true;
+        }
+        Path path = villager.getNavigation().createPath(target, 0);
+        if (path != null && path.canReach() && villager.getNavigation().moveTo(path, speed)) {
+            return true;
+        }
+        if (moveTowardNearbyLadderThenClimb(level, villager, target, speed)) {
+            return true;
+        }
+        if (villager.distanceToSqr(target.getCenter()) <= 16.0D) {
+            villager.getMoveControl().setWantedPosition(target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D, speed);
+            return true;
+        }
+        return false;
+    }
+
+    private static void rememberSurfaceEscapeSearch(ServerLevel level, Villager villager, BlockPos target, BlockPos escapeTarget) {
+        SURFACE_ESCAPE_SEARCHES.put(villager.getUUID(), new SurfaceEscapeSearch(
+                villager.blockPosition().immutable(),
+                target.asLong(),
+                escapeTarget == null ? null : escapeTarget.immutable(),
+                level.getGameTime() + SURFACE_ESCAPE_SEARCH_CACHE_TICKS));
+    }
+
     private static boolean forceMoveOnLadderToward(ServerLevel level, Villager villager, BlockPos target, double speed) {
         BlockPos ladder = ladderTouching(level, villager.blockPosition(), target);
         if (ladder == null) {
             return false;
         }
-        if (!villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
-        }
-        Brain<Villager> brain = villager.getBrain();
-        brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        return moveOnLadderToward(level, villager, target, speed);
+        stopNavigationPath(villager);
+        beginActiveLadderClimb(level, villager, ladder, target);
+        return moveOnSpecificLadderToward(level, villager, ladder, target, speed);
     }
 
     private static boolean tryEnterLadderBlock(ServerLevel level, Villager villager, BlockPos ladder, BlockPos target, double speed) {
         if (isStandingInLadder(level, villager.blockPosition())
-                || Math.abs(villager.getY() - ladder.getY()) > 1.0D
+                || Math.abs(villager.getY() - ladder.getY()) > 2.0D
                 || villager.distanceToSqr(ladder.getCenter()) > LADDER_ENTRY_DISTANCE_SQR
-                || !isWalkable(level, ladder)) {
+                || !isWalkable(level, ladder)
+                || !isUsefulLadderRoute(level, villager, ladder, target)) {
             return false;
         }
+        stopNavigationPath(villager);
+        beginActiveLadderClimb(level, villager, ladder, target);
+        forceEnterAndClimbLadder(villager, ladder, target, speed);
+        return true;
+    }
+
+    private static void forceEnterAndClimbLadder(Villager villager, BlockPos ladder, BlockPos target, double speed) {
+        double centerX = ladder.getX() + 0.5D;
+        double centerZ = ladder.getZ() + 0.5D;
+        double dx = centerX - villager.getX();
+        double dz = centerZ - villager.getZ();
+        int verticalDelta = target.getY() - villager.blockPosition().getY();
+        double climb = verticalDelta >= 0 ? LADDER_CLIMB_SPEED : LADDER_DESCEND_SPEED;
+        double targetY = verticalDelta >= 0 ? Math.max(villager.getY() + 0.25D, ladder.getY() + 0.05D) : ladder.getY();
+        villager.getMoveControl().setWantedPosition(centerX, targetY, centerZ, speed);
+
+        if (dx * dx + dz * dz <= LADDER_FORCED_ENTRY_HORIZONTAL_SQR) {
+            Vec3 motion = villager.getDeltaMovement();
+            villager.setDeltaMovement(
+                    Math.clamp(dx * 0.35D + motion.x * 0.25D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT),
+                    climb,
+                    Math.clamp(dz * 0.35D + motion.z * 0.25D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT));
+            villager.setNoGravity(true);
+            villager.setOnGround(false);
+        }
+    }
+
+    private static boolean continueActiveLadderClimb(ServerLevel level, Villager villager, BlockPos target, double speed) {
+        ActiveLadderClimb climb = ACTIVE_LADDER_CLIMBS.get(villager.getUUID());
+        if (climb == null) {
+            return false;
+        }
+        if (climb.expiresGameTime() <= level.getGameTime()
+                || (target != null && climb.targetPos() != target.asLong())) {
+            clearActiveLadderClimb(villager);
+            return false;
+        }
+        BlockPos routeTarget = target == null ? BlockPos.of(climb.targetPos()) : target;
+        BlockPos ladder = activeLadderBlock(level, villager, climb);
+        if (ladder == null) {
+            clearActiveLadderClimb(villager);
+            return false;
+        }
+        stopNavigationPath(villager);
+        ACTIVE_LADDER_CLIMBS.put(villager.getUUID(), climb.refreshed(level.getGameTime() + ACTIVE_LADDER_CLIMB_TICKS));
+        return moveOnSpecificLadderToward(level, villager, ladder, routeTarget, speed);
+    }
+
+    private static void beginActiveLadderClimb(ServerLevel level, Villager villager, BlockPos ladder, BlockPos target) {
+        if (ladder == null || target == null || !isLoadedLadder(level, ladder)) {
+            return;
+        }
+        BlockPos bottom = bottomOfLadderColumn(level, ladder);
+        BlockPos top = topOfLadderColumn(level, ladder);
+        ACTIVE_LADDER_CLIMBS.put(villager.getUUID(), new ActiveLadderClimb(
+                bottom.immutable(),
+                top.immutable(),
+                target.asLong(),
+                level.getGameTime() + ACTIVE_LADDER_CLIMB_TICKS));
+    }
+
+    private static BlockPos activeLadderBlock(ServerLevel level, Villager villager, ActiveLadderClimb climb) {
+        BlockPos origin = villager.blockPosition();
+        double centerX = climb.bottom().getX() + 0.5D;
+        double centerZ = climb.bottom().getZ() + 0.5D;
+        double dx = centerX - villager.getX();
+        double dz = centerZ - villager.getZ();
+        if (dx * dx + dz * dz > ACTIVE_LADDER_COLUMN_DISTANCE_SQR) {
+            return null;
+        }
+        int minY = Math.min(climb.bottom().getY(), climb.top().getY());
+        int maxY = Math.max(climb.bottom().getY(), climb.top().getY());
+        int y = Math.clamp(origin.getY(), minY, maxY);
+        for (int offset = 0; offset <= 2; offset++) {
+            BlockPos above = new BlockPos(climb.bottom().getX(), Math.min(maxY, y + offset), climb.bottom().getZ());
+            if (isLoadedLadder(level, above)) {
+                return above;
+            }
+            BlockPos below = new BlockPos(climb.bottom().getX(), Math.max(minY, y - offset), climb.bottom().getZ());
+            if (isLoadedLadder(level, below)) {
+                return below;
+            }
+        }
+        return null;
+    }
+
+    private static void clearActiveLadderClimb(Villager villager) {
+        ACTIVE_LADDER_CLIMBS.remove(villager.getUUID());
+        if (villager.isNoGravity()) {
+            villager.setNoGravity(false);
+        }
+    }
+
+    private static void stopNavigationPath(Villager villager) {
         if (!villager.getNavigation().isDone()) {
             villager.getNavigation().stop();
         }
         Brain<Villager> brain = villager.getBrain();
         brain.eraseMemory(MemoryModuleType.PATH);
         brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        villager.setPos(ladder.getX() + 0.5D, villager.getY(), ladder.getZ() + 0.5D);
-        return moveOnLadderToward(level, villager, target, speed);
     }
 
     public static void clearRuntimeState() {
         DOORS_TO_CLOSE.clear();
+        ACTIVE_LADDER_CLIMBS.clear();
         LADDER_SEARCHES.clear();
+        SURFACE_ESCAPE_SEARCHES.clear();
         WATER_PATH_SETTINGS.clear();
         WATER_MOVEMENT_PROGRESS.clear();
     }
 
     public static void clearRuntimeState(Villager villager) {
         DOORS_TO_CLOSE.remove(villager.getUUID());
+        clearActiveLadderClimb(villager);
         LADDER_SEARCHES.remove(villager.getUUID());
+        SURFACE_ESCAPE_SEARCHES.remove(villager.getUUID());
         WATER_PATH_SETTINGS.remove(villager.getUUID());
         WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
     }
@@ -509,18 +710,19 @@ public final class VillagerTaskNavigationUtil {
         return null;
     }
 
-    private static BlockPos nearestLadder(ServerLevel level, Villager villager) {
+    private static BlockPos nearestLadder(ServerLevel level, Villager villager, BlockPos target) {
         UUID villagerId = villager.getUUID();
         BlockPos origin = villager.blockPosition();
         LadderSearch cached = LADDER_SEARCHES.get(villagerId);
         if (cached != null
                 && cached.expiresGameTime() > level.getGameTime()
+                && cached.targetPos() == target.asLong()
                 && cached.origin().distSqr(origin) <= LADDER_SEARCH_ORIGIN_REUSE_DISTANCE_SQR
                 && (cached.ladder() == null || isLoadedLadder(level, cached.ladder()))) {
             return cached.ladder();
         }
         BlockPos best = null;
-        double bestDistance = Double.MAX_VALUE;
+        double bestScore = Double.MAX_VALUE;
         for (BlockPos rawPos : BlockPos.betweenClosed(
                 origin.offset(-LADDER_ESCAPE_SEARCH_RADIUS, -LADDER_ESCAPE_VERTICAL_RADIUS, -LADDER_ESCAPE_SEARCH_RADIUS),
                 origin.offset(LADDER_ESCAPE_SEARCH_RADIUS, LADDER_ESCAPE_VERTICAL_RADIUS, LADDER_ESCAPE_SEARCH_RADIUS))) {
@@ -528,15 +730,16 @@ public final class VillagerTaskNavigationUtil {
             if (!isLoadedLadder(level, pos)) {
                 continue;
             }
-            double distance = origin.distSqr(pos);
-            if (distance < bestDistance) {
-                bestDistance = distance;
+            double score = ladderRouteScore(level, villager, pos, target);
+            if (score < bestScore) {
+                bestScore = score;
                 best = pos;
             }
         }
         LADDER_SEARCHES.put(villagerId, new LadderSearch(
                 origin.immutable(),
                 best == null ? null : best.immutable(),
+                target.asLong(),
                 level.getGameTime() + LADDER_SEARCH_CACHE_TICKS));
         return best;
     }
@@ -549,6 +752,38 @@ public final class VillagerTaskNavigationUtil {
         return climbingUp
                 ? villager.getY() >= columnEnd.getY() - 0.05D
                 : villager.getY() <= columnEnd.getY() + 0.15D;
+    }
+
+    private static boolean isUsefulLadderRoute(ServerLevel level, Villager villager, BlockPos ladder, BlockPos target) {
+        return ladderRouteScore(level, villager, ladder, target) < Double.MAX_VALUE;
+    }
+
+    private static double ladderRouteScore(ServerLevel level, Villager villager, BlockPos ladder, BlockPos target) {
+        if (target == null || !isLoadedLadder(level, ladder)) {
+            return Double.MAX_VALUE;
+        }
+        BlockPos origin = villager.blockPosition();
+        int verticalDelta = target.getY() - origin.getY();
+        if (Math.abs(verticalDelta) <= LADDER_VERTICAL_TARGET_DEADZONE) {
+            return Double.MAX_VALUE;
+        }
+        boolean climbingUp = verticalDelta > 0;
+        BlockPos columnEnd = climbingUp ? topOfLadderColumn(level, ladder) : bottomOfLadderColumn(level, ladder);
+        if (climbingUp ? columnEnd.getY() <= origin.getY() : columnEnd.getY() >= origin.getY()) {
+            return Double.MAX_VALUE;
+        }
+        int currentVerticalMiss = Math.abs(target.getY() - origin.getY());
+        int ladderVerticalMiss = Math.abs(target.getY() - columnEnd.getY());
+        if (ladderVerticalMiss >= currentVerticalMiss) {
+            return Double.MAX_VALUE;
+        }
+        BlockPos dismount = safeLadderDismount(level, villager, columnEnd, target, climbingUp);
+        if (dismount == null) {
+            return Double.MAX_VALUE;
+        }
+        return villager.distanceToSqr(ladder.getCenter())
+                + ladderVerticalMiss * ladderVerticalMiss * 4.0D
+                + dismount.distSqr(target) * 0.5D;
     }
 
     private static BlockPos safeLadderDismount(
@@ -630,6 +865,59 @@ public final class VillagerTaskNavigationUtil {
         return best;
     }
 
+    private static List<SurfaceEscapeTarget> highestSafeSurfaceTargets(ServerLevel level, Villager villager, BlockPos target) {
+        BlockPos origin = villager.blockPosition();
+        int minimumY = Math.min(level.getMaxBuildHeight() - 2, origin.getY() + SURFACE_ESCAPE_MIN_Y_GAIN);
+        List<SurfaceEscapeTarget> candidates = new ArrayList<>();
+        int originChunkX = origin.getX() >> 4;
+        int originChunkZ = origin.getZ() >> 4;
+        for (int chunkX = originChunkX - SURFACE_ESCAPE_CHUNK_RADIUS; chunkX <= originChunkX + SURFACE_ESCAPE_CHUNK_RADIUS; chunkX++) {
+            for (int chunkZ = originChunkZ - SURFACE_ESCAPE_CHUNK_RADIUS; chunkZ <= originChunkZ + SURFACE_ESCAPE_CHUNK_RADIUS; chunkZ++) {
+                for (int localX = 0; localX < 16; localX++) {
+                    int x = (chunkX << 4) + localX;
+                    for (int localZ = 0; localZ < 16; localZ++) {
+                        int z = (chunkZ << 4) + localZ;
+                        if (!level.hasChunkAt(new BlockPos(x, origin.getY(), z))) {
+                            continue;
+                        }
+                        int surfaceY = Math.min(
+                                level.getMaxBuildHeight() - 2,
+                                level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z));
+                        int scanFloor = Math.max(minimumY, surfaceY - SURFACE_ESCAPE_SURFACE_SCAN_DEPTH);
+                        for (int y = surfaceY; y >= scanFloor; y--) {
+                            BlockPos candidate = new BlockPos(x, y, z);
+                            if (isSafeSurfaceEscapeTarget(level, candidate)) {
+                                candidates.add(new SurfaceEscapeTarget(candidate, surfaceEscapeScore(villager, target, candidate)));
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        candidates.sort(Comparator.comparingDouble(SurfaceEscapeTarget::score));
+        return candidates;
+    }
+
+    private static boolean isSafeSurfaceEscapeTarget(ServerLevel level, BlockPos pos) {
+        if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
+            return false;
+        }
+        BlockState feet = level.getBlockState(pos);
+        BlockState head = level.getBlockState(pos.above());
+        BlockState floor = level.getBlockState(pos.below());
+        return feet.isAir()
+                && head.isAir()
+                && floor.isSolid()
+                && !floor.liquid();
+    }
+
+    private static double surfaceEscapeScore(Villager villager, BlockPos target, BlockPos pos) {
+        double targetDistance = pos.distSqr(target);
+        double villagerDistance = villager.distanceToSqr(pos.getCenter());
+        return -pos.getY() * 64.0D + targetDistance * 0.08D + villagerDistance * 0.02D;
+    }
+
     private static boolean isWalkable(ServerLevel level, BlockPos pos) {
         if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
             return false;
@@ -687,7 +975,19 @@ public final class VillagerTaskNavigationUtil {
         return open ? SoundEvents.WOODEN_DOOR_OPEN : SoundEvents.WOODEN_DOOR_CLOSE;
     }
 
-    private record LadderSearch(BlockPos origin, BlockPos ladder, long expiresGameTime) {
+    private record ActiveLadderClimb(BlockPos bottom, BlockPos top, long targetPos, long expiresGameTime) {
+        private ActiveLadderClimb refreshed(long expiresGameTime) {
+            return new ActiveLadderClimb(this.bottom, this.top, this.targetPos, expiresGameTime);
+        }
+    }
+
+    private record LadderSearch(BlockPos origin, BlockPos ladder, long targetPos, long expiresGameTime) {
+    }
+
+    private record SurfaceEscapeTarget(BlockPos pos, double score) {
+    }
+
+    private record SurfaceEscapeSearch(BlockPos origin, long targetPos, BlockPos escapeTarget, long expiresGameTime) {
     }
 
     private record WaterPathSettings(float waterMalus, float waterBorderMalus, boolean canFloat) {

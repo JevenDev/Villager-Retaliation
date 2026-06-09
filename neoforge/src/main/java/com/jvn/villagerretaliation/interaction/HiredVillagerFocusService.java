@@ -86,9 +86,14 @@ public final class HiredVillagerFocusService {
                 && (worker.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
                 || worker.taskState() == HiredWorkerTaskState.DEPOSITING
                 || worker.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL);
+        boolean workAreaReturnNavigation = worker.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA;
+        boolean blockTargetNavigation = worker.taskState().keepsBlockTarget()
+                && worker.targetPos() != null
+                && worker.taskState() != HiredWorkerTaskState.FAILED_COOLDOWN;
+        boolean hiredNavigation = storageNavigation || workAreaReturnNavigation || blockTargetNavigation;
         boolean stopNavigation = navigationTarget != null
-                && ((!storageNavigation && !context.isInsideWorkArea(navigationTarget))
-                || navigationTarget.equals(jobSite));
+                && ((!hiredNavigation && !context.isInsideWorkArea(navigationTarget))
+                || !workAreaReturnNavigation && navigationTarget.equals(jobSite));
         if (stopNavigation) {
             villager.getNavigation().stop();
         }
@@ -103,10 +108,10 @@ public final class HiredVillagerFocusService {
                 NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG,
                 gameTime + PROFESSION_SUPPRESSION_INTERVAL_TICKS);
 
-        if (!storageNavigation && brain.getMemory(MemoryModuleType.WALK_TARGET).isPresent()) {
+        if (!hiredNavigation && brain.getMemory(MemoryModuleType.WALK_TARGET).isPresent()) {
             brain.eraseMemory(MemoryModuleType.WALK_TARGET);
         }
-        if (!storageNavigation && brain.getMemory(MemoryModuleType.PATH).isPresent()) {
+        if (!hiredNavigation && brain.getMemory(MemoryModuleType.PATH).isPresent()) {
             brain.eraseMemory(MemoryModuleType.PATH);
         }
         if (brain.isActive(Activity.WORK)) {

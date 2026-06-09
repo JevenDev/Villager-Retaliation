@@ -15,6 +15,7 @@ public final class VillagerPoseAnimator {
     public static <T extends AbstractVillager> void applyPose(
             VillagerArmPose pose,
             T villager,
+            ModelPart body,
             ModelPart head,
             ModelPart rightArm,
             ModelPart leftArm,
@@ -22,13 +23,13 @@ public final class VillagerPoseAnimator {
             float ageInTicks
     ) {
         switch (pose) {
-            case MELEE_WEAPON -> applyMeleePose(villager, rightArm, leftArm, attackTime, ageInTicks);
+            case MELEE_WEAPON -> applyMeleePose(villager, body, rightArm, leftArm, attackTime, ageInTicks);
             case BOW_AND_ARROW -> applyBowPose(villager, head, rightArm, leftArm);
             case CROSSBOW_HOLD -> applyCrossbowPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
             case CROSSBOW_CHARGE -> applyCrossbowCharge(villager, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
             case SHIELD_BLOCK -> applyShieldBlockPose(villager, head, rightArm, leftArm);
             case SHIELD_LOWERED -> applyShieldLoweredPose(villager, head, rightArm, leftArm);
-            case THROWING_ITEM -> applyThrowingPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
+            case THROWING_ITEM -> applyThrowingPose(villager, body, head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT, attackTime);
             case CASTING_OR_POTION -> applyPotionPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
             case NONE, HOLDING_ITEM -> {
             }
@@ -37,6 +38,7 @@ public final class VillagerPoseAnimator {
 
     public static <T extends AbstractVillager> void applyMeleePose(
             T villager,
+            ModelPart body,
             ModelPart rightArm,
             ModelPart leftArm,
             float attackTime,
@@ -44,12 +46,12 @@ public final class VillagerPoseAnimator {
     ) {
         if (isUnarmed(villager)) {
             if (villager.swinging || attackTime > 0.0F) {
-                animateUnarmedPunch(villager, rightArm, leftArm, attackTime);
+                animateUnarmedPunch(villager, body, rightArm, leftArm, attackTime);
             }
             return;
         }
 
-        applyPlayerLikeSwing(villager, rightArm, leftArm, attackTime);
+        applyPlayerLikeSwing(villager, body, rightArm, leftArm, attackTime);
     }
 
     public static void applyBowPose(
@@ -146,7 +148,20 @@ public final class VillagerPoseAnimator {
         supportArm.yRot = head.yRot + direction * 0.2F;
     }
 
-    public static void applyThrowingPose(ModelPart head, ModelPart rightArm, ModelPart leftArm, boolean rightHanded) {
+    public static void applyThrowingPose(
+            AbstractVillager villager,
+            ModelPart body,
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            boolean rightHanded,
+            float attackTime
+    ) {
+        if (villager.swinging || attackTime > 0.0F) {
+            applyPlayerLikeSwing(villager, body, rightArm, leftArm, attackTime);
+            return;
+        }
+
         // Inspired by witch-style overhead lob posture for splash potion throws.
         ModelPart throwArm = rightHanded ? rightArm : leftArm;
         ModelPart supportArm = rightHanded ? leftArm : rightArm;
@@ -167,7 +182,15 @@ public final class VillagerPoseAnimator {
         return villager.getMainHandItem().isEmpty() && villager.getOffhandItem().isEmpty();
     }
 
-    private static void animateUnarmedPunch(AbstractVillager villager, ModelPart rightArm, ModelPart leftArm, float attackProgress) {
+    private static void animateUnarmedPunch(
+            AbstractVillager villager,
+            ModelPart body,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            float attackProgress
+    ) {
+        applyBodySwing(villager, body, rightArm, leftArm, attackProgress);
+
         ModelPart punchArm = isAttackingWithMainHand(villager)
                 ? (villager.getMainArm() == HumanoidArm.RIGHT ? rightArm : leftArm)
                 : (villager.getMainArm() == HumanoidArm.RIGHT ? leftArm : rightArm);
@@ -183,32 +206,55 @@ public final class VillagerPoseAnimator {
         supportArm.xRot *= 0.5F;
     }
 
-    private static void applyPlayerLikeSwing(AbstractVillager villager, ModelPart rightArm, ModelPart leftArm, float attackProgress) {
+    private static void applyPlayerLikeSwing(
+            AbstractVillager villager,
+            ModelPart body,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            float attackProgress
+    ) {
+        applyBodySwing(villager, body, rightArm, leftArm, attackProgress);
+
         ModelPart swingArm = isAttackingWithMainHand(villager)
                 ? (villager.getMainArm() == HumanoidArm.RIGHT ? rightArm : leftArm)
                 : (villager.getMainArm() == HumanoidArm.RIGHT ? leftArm : rightArm);
-        ModelPart supportArm = swingArm == rightArm ? leftArm : rightArm;
         float direction = swingArm == rightArm ? 1.0F : -1.0F;
 
-        float tailFade = 1.0F - smoothStep(0.72F, 1.0F, attackProgress);
-        float bodySwing = Mth.sin(Mth.sqrt(attackProgress) * ((float) Math.PI * 2.0F)) * 0.2F * direction * tailFade;
         float eased = 1.0F - attackProgress;
         eased *= eased;
         eased *= eased;
         eased = 1.0F - eased;
-        float forwardSwing = Mth.sin(eased * (float) Math.PI) * tailFade;
-        float recovery = Mth.sin(attackProgress * (float) Math.PI) * -(swingArm.xRot - 0.7F) * 0.55F * tailFade;
+        float forwardSwing = Mth.sin(eased * (float) Math.PI);
+        float recovery = Mth.sin(attackProgress * (float) Math.PI) * -(swingArm.xRot - 0.7F) * 0.75F;
 
-        swingArm.yRot += bodySwing * 2.0F + direction * (0.08F - forwardSwing * 0.25F);
+        swingArm.yRot += body.yRot * 2.0F + direction * (0.08F - forwardSwing * 0.25F);
         swingArm.xRot -= forwardSwing * 1.2F + recovery;
         swingArm.zRot += Mth.sin(attackProgress * (float) Math.PI) * -0.4F * direction;
-
-        supportArm.yRot -= bodySwing * 0.5F;
-        supportArm.xRot *= 0.65F;
     }
 
-    private static float smoothStep(float edge0, float edge1, float value) {
-        float t = Mth.clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
-        return t * t * (3.0F - 2.0F * t);
+    private static void applyBodySwing(
+            AbstractVillager villager,
+            ModelPart body,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            float attackProgress
+    ) {
+        if (attackProgress <= 0.0F) {
+            return;
+        }
+
+        boolean swingingRightArm = isAttackingWithMainHand(villager)
+                ? villager.getMainArm() == HumanoidArm.RIGHT
+                : villager.getMainArm() != HumanoidArm.RIGHT;
+        float bodySwing = Mth.sin(Mth.sqrt(attackProgress) * ((float) Math.PI * 2.0F)) * 0.2F;
+        body.yRot = swingingRightArm ? bodySwing : -bodySwing;
+
+        rightArm.z = Mth.sin(body.yRot) * 5.0F;
+        rightArm.x = -Mth.cos(body.yRot) * 5.0F;
+        leftArm.z = -Mth.sin(body.yRot) * 5.0F;
+        leftArm.x = Mth.cos(body.yRot) * 5.0F;
+        rightArm.yRot += body.yRot;
+        leftArm.yRot += body.yRot;
+        leftArm.xRot += body.yRot;
     }
 }

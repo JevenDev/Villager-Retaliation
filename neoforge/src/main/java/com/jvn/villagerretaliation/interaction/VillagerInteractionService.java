@@ -276,7 +276,13 @@ public final class VillagerInteractionService {
             return;
         }
         ServerLevel level = player.serverLevel();
-        if (!VillagerInventoryAccess.canAccess(level, villager, player)) {
+        boolean canAccessPersonalInventory = VillagerInventoryAccess.canAccess(level, villager, player);
+        boolean canAccessJobInventory = HiredVillagerContractService.canAccessJobInventory(level, villager, player);
+        if (jobInventory && !canAccessJobInventory && !canAccessPersonalInventory) {
+            sendVillagerNotice(player, villager, "Only the hiring player can open hired job inventory.");
+            return;
+        }
+        if (!jobInventory && !canAccessPersonalInventory) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
@@ -309,7 +315,9 @@ public final class VillagerInteractionService {
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
-        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
+        if (!VillagerRecruitmentService.canRecruit(level, villager, player)
+                && (action != VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
+                || !HiredVillagerContractService.canAccessJobInventory(level, villager, player))) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
@@ -360,7 +368,7 @@ public final class VillagerInteractionService {
             case PROMPT_END_HIRE_CONFIRMATION -> sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_prompt");
             case DECLINE_END_HIRE_CONFIRMATION -> sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_declined");
             case OPEN_JOB_INVENTORY -> {
-                if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
+                if (!HiredVillagerContractService.canAccessJobInventory(level, villager, player)) {
                     sendVillagerNotice(player, villager, "Only the hiring player can open hired job inventory.");
                     return;
                 }

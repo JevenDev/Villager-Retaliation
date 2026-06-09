@@ -14,7 +14,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot) implements CustomPacketPayload {
-    private static final int PROTOCOL_VERSION = 3;
+    private static final int PROTOCOL_VERSION = 4;
     public static final Type<ClipboardWorkforceSyncPayload> TYPE = VillagerPayloads.type("clipboard_workforce_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, ClipboardWorkforceSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(ClipboardWorkforceSyncPayload::encode, ClipboardWorkforceSyncPayload::decode);
@@ -93,6 +93,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
             buffer.writeBoolean(worker.noWorkArea());
             buffer.writeBoolean(worker.noTargets());
             buffer.writeBoolean(worker.tooFar());
+            buffer.writeBoolean(worker.missingTools());
         }
     }
 
@@ -116,6 +117,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
                     buffer.readUtf(32),
                     buffer.readUtf(64),
                     buffer.readVarInt(),
+                    buffer.readBoolean(),
                     buffer.readBoolean(),
                     buffer.readBoolean(),
                     buffer.readBoolean(),

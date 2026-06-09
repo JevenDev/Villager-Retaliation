@@ -59,6 +59,9 @@ public final class HiredVillagerWorkService {
     private static final int MAX_SKILLED_WORK_RADIUS = 32;
     private static final int WORK_AREA_RETURN_PATH_RETRY_TICKS = 20;
     private static final int MAX_RETURN_TARGETS_TO_PATHFIND = 32;
+    private static final int RETURN_INTERMEDIATE_SEARCH_RADIUS = 10;
+    private static final int RETURN_INTERMEDIATE_VERTICAL_RADIUS = 3;
+    private static final int MAX_RETURN_INTERMEDIATE_PATH_ATTEMPTS = 24;
     private static final float WORK_AREA_RETURN_WALK_SPEED = 0.5F;
     private static final int WORK_AREA_RETURN_CLOSE_ENOUGH = 2;
     private static final int WORK_AREA_RETURN_STUCK_CHECK_TICKS = 20;
@@ -71,6 +74,11 @@ public final class HiredVillagerWorkService {
     public static void onVillagerTickPost(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level)
                 || HiredVillagerFocusService.shouldSkipHiredFocus(level, villager)) {
+            return;
+        }
+        if (HiredVillagerContractService.isAwaitingAutoPayment(level, villager)) {
+            VillagerTaskNavigationUtil.enableHiredWaterTraversal(villager);
+            VillagerTaskNavigationUtil.moveInWaterTowardNavigationTarget(level, villager, WORK_AREA_RETURN_WALK_SPEED);
             return;
         }
 
@@ -162,8 +170,9 @@ public final class HiredVillagerWorkService {
             state.remove(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG);
             return false;
         }
+        BlockPos excavationEntry = excavationSurfaceEntryTarget(session, villager);
         HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(state, level.getGameTime());
-        if (isReturnedToWorkArea(level, villager, session)) {
+        if (excavationEntry == null && isReturnedToWorkArea(villager, session.context())) {
             if (brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA) {
                 VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.IDLE, null);
@@ -178,25 +187,30 @@ public final class HiredVillagerWorkService {
             clearWorkAreaReturnState(state);
             return false;
         }
-        if (canWorkFromOutsideArea(session, brain, villager.blockPosition())) {
-            clearWorkAreaReturnState(state);
-            return false;
-        }
-
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
-        if (!villager.getNavigation().isDone() && navigationTarget != null && context.isInsideWorkArea(navigationTarget)) {
-            if (isWorkAreaReturnNavigationStuck(level, villager, state, navigationTarget)) {
+        if (!villager.getNavigation().isDone()
+                && navigationTarget != null
+                && (context.isInsideWorkArea(navigationTarget)
+                || brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA)) {
+            if (excavationEntry != null && navigationTarget.getY() < excavationEntry.getY() - 2) {
                 villager.getNavigation().stop();
                 villager.getBrain().eraseMemory(MemoryModuleType.PATH);
                 villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-                state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level));
-                setStatus(state, "I lost the path back into the work area, so I am finding a better way down.");
+            } else {
+                BlockPos progressTarget = context.isInsideWorkArea(navigationTarget) ? navigationTarget : context.workCenter();
+                if (isWorkAreaReturnNavigationStuck(level, villager, state, progressTarget)) {
+                    villager.getNavigation().stop();
+                    villager.getBrain().eraseMemory(MemoryModuleType.PATH);
+                    villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+                    state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level));
+                    setStatus(state, "I lost the path back into the work area, so I am finding a better way down.");
+                    return true;
+                }
+                setWorkAreaReturnWalkTarget(villager, navigationTarget);
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, navigationTarget);
+                setStatus(state, "I have drifted beyond the work bounds, so I am heading back.");
                 return true;
             }
-            setWorkAreaReturnWalkTarget(villager, navigationTarget);
-            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, navigationTarget);
-            setStatus(state, "I have drifted beyond the work bounds, so I am heading back.");
-            return true;
         }
 
         long gameTime = level.getGameTime();
@@ -206,11 +220,30 @@ public final class HiredVillagerWorkService {
             return true;
         }
 
+        if (excavationEntry != null) {
+            if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, excavationEntry, WORK_AREA_RETURN_WALK_SPEED)
+                    || VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, excavationEntry, WORK_AREA_RETURN_WALK_SPEED)) {
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, excavationEntry);
+                setStatus(state, "I am climbing out so I can start the excavation from the top.");
+                return true;
+            }
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, excavationEntry);
+            state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
+            setStatus(state, "I need a safe way up before I can start this excavation from the top.");
+            return true;
+        }
+
         ReturnPath returnPath = findWorkAreaReturnPath(level, villager, context);
         if (returnPath == null) {
             if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, context.workCenter(), WORK_AREA_RETURN_WALK_SPEED)) {
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
                 setStatus(state, "I am using the ladder to get back into the work area.");
+            } else if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, context.workCenter(), WORK_AREA_RETURN_WALK_SPEED)) {
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+                setStatus(state, "I am climbing out to safer ground before returning to the work area.");
+            } else if (moveTowardWorkAreaIntermediate(level, villager, context, WORK_AREA_RETURN_WALK_SPEED)) {
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+                setStatus(state, "I am too far from the work bounds, so I am making my way back.");
             } else {
                 villager.getNavigation().stop();
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
@@ -220,10 +253,16 @@ public final class HiredVillagerWorkService {
             return true;
         }
 
-        if (Math.abs(villager.blockPosition().getY() - returnPath.target().getY()) > 2
+        if (shouldPreferLadderReturn(villager, returnPath.target())
                 && VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, returnPath.target(), WORK_AREA_RETURN_WALK_SPEED)) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnPath.target());
             setStatus(state, "I am using the ladder to get back into the work area.");
+            return true;
+        }
+        if (shouldPreferLadderReturn(villager, returnPath.target())
+                && VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, returnPath.target(), WORK_AREA_RETURN_WALK_SPEED)) {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnPath.target());
+            setStatus(state, "I am climbing out to safer ground before returning to the work area.");
             return true;
         }
 
@@ -237,6 +276,12 @@ public final class HiredVillagerWorkService {
             if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, returnPath.target(), WORK_AREA_RETURN_WALK_SPEED)) {
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnPath.target());
                 setStatus(state, "I am using the ladder to get back into the work area.");
+            } else if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, returnPath.target(), WORK_AREA_RETURN_WALK_SPEED)) {
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, returnPath.target());
+                setStatus(state, "I am climbing out to safer ground before returning to the work area.");
+            } else if (moveTowardWorkAreaIntermediate(level, villager, context, WORK_AREA_RETURN_WALK_SPEED)) {
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+                setStatus(state, "I am too far from the work bounds, so I am making my way back.");
             } else {
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
                 state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
@@ -246,6 +291,72 @@ public final class HiredVillagerWorkService {
         return true;
     }
 
+    private static boolean shouldPreferLadderReturn(Villager villager, BlockPos target) {
+        return target != null && Math.abs(villager.blockPosition().getY() - target.getY()) > 2;
+    }
+
+    private static BlockPos excavationSurfaceEntryTarget(HiredWorkSession session, Villager villager) {
+        if (session.role() != HiredVillagerRole.MINING
+                || !HiredMiningMode.fromState(session.state()).excavatesArea()) {
+            return null;
+        }
+        HiredWorkContext context = session.context();
+        int entryY = context.workMax().getY() + 1;
+        if (villager.blockPosition().getY() >= entryY - 2) {
+            return null;
+        }
+        return new BlockPos(context.workCenter().getX(), entryY, context.workCenter().getZ());
+    }
+
+    private static boolean moveTowardWorkAreaIntermediate(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            double speed) {
+        BlockPos target = bestIntermediateReturnTarget(level, villager, context);
+        if (target == null) {
+            return false;
+        }
+        Path path = villager.getNavigation().createPath(target, 0);
+        if (path == null || !path.canReach() || !villager.getNavigation().moveTo(path, speed)) {
+            return false;
+        }
+        setWorkAreaReturnWalkTarget(villager, target);
+        rememberWorkAreaReturnProgress(level, villager, context.state(), context.workCenter());
+        return true;
+    }
+
+    private static BlockPos bestIntermediateReturnTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
+        BlockPos origin = villager.blockPosition();
+        double currentCenterDistance = origin.distSqr(context.workCenter());
+        List<ReturnIntermediate> candidates = new ArrayList<>();
+        for (BlockPos raw : BlockPos.betweenClosed(
+                origin.offset(-RETURN_INTERMEDIATE_SEARCH_RADIUS, -RETURN_INTERMEDIATE_VERTICAL_RADIUS, -RETURN_INTERMEDIATE_SEARCH_RADIUS),
+                origin.offset(RETURN_INTERMEDIATE_SEARCH_RADIUS, RETURN_INTERMEDIATE_VERTICAL_RADIUS, RETURN_INTERMEDIATE_SEARCH_RADIUS))) {
+            BlockPos candidate = raw.immutable();
+            if (candidate.equals(origin) || !isValidWorkAreaReturnTarget(level, candidate)) {
+                continue;
+            }
+            double centerDistance = candidate.distSqr(context.workCenter());
+            if (centerDistance >= currentCenterDistance - 1.0D) {
+                continue;
+            }
+            candidates.add(new ReturnIntermediate(candidate, intermediateReturnScore(level, villager, context, candidate)));
+        }
+        candidates.sort(Comparator.comparingDouble(ReturnIntermediate::score));
+        int attempts = 0;
+        for (ReturnIntermediate candidate : candidates) {
+            if (attempts++ >= MAX_RETURN_INTERMEDIATE_PATH_ATTEMPTS) {
+                break;
+            }
+            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            if (path != null && path.canReach()) {
+                return candidate.pos();
+            }
+        }
+        return null;
+    }
+
     private static void setWorkAreaReturnWalkTarget(Villager villager, BlockPos target) {
         villager.getBrain().eraseMemory(MemoryModuleType.PATH);
         villager.getBrain().setMemory(
@@ -253,50 +364,9 @@ public final class HiredVillagerWorkService {
                 new WalkTarget(new BlockPosTracker(target), WORK_AREA_RETURN_WALK_SPEED, WORK_AREA_RETURN_CLOSE_ENOUGH));
     }
 
-    private static boolean canWorkFromOutsideArea(HiredWorkSession session, HiredWorkerBrain.Snapshot brain, BlockPos pos) {
-        return session.role() == HiredVillagerRole.MINING
-                && HiredMiningMode.fromState(session.state()).excavatesArea()
-                && brain.targetPos() != null
-                && isNearWorkArea(session.context(), pos);
-    }
-
-    private static boolean isReturnedToWorkArea(ServerLevel level, Villager villager, HiredWorkSession session) {
-        HiredWorkContext context = session.context();
+    private static boolean isReturnedToWorkArea(Villager villager, HiredWorkContext context) {
         BlockPos pos = villager.blockPosition();
-        if (!context.isInsideWorkArea(pos)) {
-            return false;
-        }
-        if (session.role() == HiredVillagerRole.MINING
-                && HiredMiningMode.fromState(session.state()).excavatesArea()
-                && needsExcavationDescent(level, context, pos)) {
-            return false;
-        }
-        return true;
-    }
-
-    private static boolean needsExcavationDescent(ServerLevel level, HiredWorkContext context, BlockPos pos) {
-        if (pos.getY() <= context.workMin().getY() + 1) {
-            return false;
-        }
-        for (BlockPos raw : BlockPos.betweenClosed(
-                new BlockPos(context.workMin().getX(), context.workMin().getY(), context.workMin().getZ()),
-                new BlockPos(context.workMax().getX(), Math.min(pos.getY() - 1, context.workMax().getY()), context.workMax().getZ()))) {
-            BlockPos candidate = raw.immutable();
-            if (isValidWorkAreaReturnTarget(level, candidate)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean isNearWorkArea(HiredWorkContext context, BlockPos pos) {
-        if (pos == null) {
-            return false;
-        }
-        int dx = distanceOutside(pos.getX(), context.workMin().getX(), context.workMax().getX());
-        int dy = distanceOutside(pos.getY(), context.workMin().getY(), context.workMax().getY());
-        int dz = distanceOutside(pos.getZ(), context.workMin().getZ(), context.workMax().getZ());
-        return dx <= 4 && dy <= 2 && dz <= 4;
+        return context.isInsideWorkArea(pos);
     }
 
     private static boolean isWorkAreaReturnNavigationStuck(
@@ -351,16 +421,6 @@ public final class HiredVillagerWorkService {
         return level.getGameTime() + WORK_AREA_RETURN_PATH_RETRY_TICKS;
     }
 
-    private static int distanceOutside(int value, int min, int max) {
-        if (value < min) {
-            return min - value;
-        }
-        if (value > max) {
-            return value - max;
-        }
-        return 0;
-    }
-
     private static ReturnPath findWorkAreaReturnPath(ServerLevel level, Villager villager, HiredWorkContext context) {
         BlockPos clamped = new BlockPos(
                 Mth.clamp(villager.blockPosition().getX(), context.workMin().getX(), context.workMax().getX()),
@@ -368,17 +428,17 @@ public final class HiredVillagerWorkService {
                 Mth.clamp(villager.blockPosition().getZ(), context.workMin().getZ(), context.workMax().getZ()));
 
         List<BlockPos> candidates = new ArrayList<>();
-        if (isValidReturnCandidateForCurrentDescent(level, villager, context, clamped)) {
+        if (isValidWorkAreaReturnCandidate(level, context, clamped)) {
             candidates.add(clamped);
         }
-        if (isValidReturnCandidateForCurrentDescent(level, villager, context, context.workCenter())) {
+        if (isValidWorkAreaReturnCandidate(level, context, context.workCenter())) {
             candidates.add(context.workCenter());
         }
         for (BlockPos raw : BlockPos.betweenClosed(
                 clamped.offset(-3, -2, -3),
                 clamped.offset(3, 2, 3))) {
             BlockPos candidate = raw.immutable();
-            if (isValidReturnCandidateForCurrentDescent(level, villager, context, candidate)) {
+            if (isValidWorkAreaReturnCandidate(level, context, candidate)) {
                 candidates.add(candidate);
             }
         }
@@ -389,7 +449,7 @@ public final class HiredVillagerWorkService {
             if (evaluated >= MAX_RETURN_TARGETS_TO_PATHFIND) {
                 break;
             }
-            if (!isValidReturnCandidateForCurrentDescent(level, villager, context, candidate)) {
+            if (!isValidWorkAreaReturnCandidate(level, context, candidate)) {
                 continue;
             }
             evaluated++;
@@ -413,16 +473,11 @@ public final class HiredVillagerWorkService {
                 && (floor.isSolid() || feet.is(Blocks.LADDER));
     }
 
-    private static boolean isValidReturnCandidateForCurrentDescent(
+    private static boolean isValidWorkAreaReturnCandidate(
             ServerLevel level,
-            Villager villager,
             HiredWorkContext context,
             BlockPos candidate) {
-        if (!context.isInsideWorkArea(candidate) || !isValidWorkAreaReturnTarget(level, candidate)) {
-            return false;
-        }
-        BlockPos villagerPos = villager.blockPosition();
-        return !needsExcavationDescent(level, context, villagerPos) || candidate.getY() < villagerPos.getY();
+        return context.isInsideWorkArea(candidate) && isValidWorkAreaReturnTarget(level, candidate);
     }
 
     private static boolean isReturnPassable(BlockState state) {
@@ -435,7 +490,34 @@ public final class HiredVillagerWorkService {
         return villagerDistance + centerDistance * 0.25D;
     }
 
+    private static double intermediateReturnScore(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos pos) {
+        double centerDistance = pos.distSqr(context.workCenter());
+        double stepDistance = villager.distanceToSqr(pos.getCenter());
+        int vertical = Math.abs(pos.getY() - villager.blockPosition().getY());
+        return centerDistance + stepDistance * 0.15D + vertical * vertical * 4.0D + returnTerrainCost(level, pos);
+    }
+
+    private static double returnTerrainCost(ServerLevel level, BlockPos pos) {
+        if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
+            return 256.0D;
+        }
+        double cost = 0.0D;
+        if (level.getBlockState(pos).liquid()) {
+            cost += 24.0D;
+        }
+        if (level.getBlockState(pos.above()).liquid()) {
+            cost += 16.0D;
+        }
+        if (level.getBlockState(pos.below()).liquid()) {
+            cost += 8.0D;
+        }
+        return cost;
+    }
+
     private record ReturnPath(BlockPos target, Path path) {
+    }
+
+    private record ReturnIntermediate(BlockPos pos, double score) {
     }
 
     public static void clearRuntimeState() {
@@ -583,9 +665,7 @@ public final class HiredVillagerWorkService {
             case DOWN -> min = new BlockPos(min.getX(), Mth.clamp(min.getY() - delta, center.getY() - max, center.getY()), min.getZ());
             case UP -> maxPos = new BlockPos(maxPos.getX(), Mth.clamp(maxPos.getY() + delta, center.getY(), center.getY() + max), maxPos.getZ());
         }
-        new HiredWorkArea(center, min, maxPos, area.horizontalRadius(), area.verticalRadius(), true, true)
-                .clampedTo(max)
-                .save(state);
+        HiredWorkArea.fromBounds(min, maxPos, true).clampedTo(max).save(state);
         HiredWorkArea updated = workArea(state, villager);
         setStatus(state, "My job site bounds are now " + dimensions(updated) + " (" + updated.boundsDescription() + ").");
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"));

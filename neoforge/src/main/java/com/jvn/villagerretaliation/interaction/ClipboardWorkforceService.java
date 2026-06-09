@@ -62,9 +62,10 @@ public final class ClipboardWorkforceService {
                 boolean noWorkArea = !session.context().hasWorkArea() || brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA;
                 boolean noTargets = !noWorkArea && isNoTargetState(brain);
                 boolean tooFar = !noWorkArea && !session.context().isInsideWorkArea(villager.blockPosition());
+                boolean missingTools = brain.taskState() == HiredWorkerTaskState.PAUSED_MISSING_TOOL;
                 int dailyWage = HiredVillagerContractService.getContractDailyCost(level, villager, player);
-                boolean unpaid = false;
-                WorkerStatus status = status(role, brain.taskState(), inventoryFull, noStorage, noWorkArea, noTargets, unpaid, tooFar);
+                boolean unpaid = HiredVillagerContractService.isAwaitingAutoPayment(level, villager);
+                WorkerStatus status = status(role, brain.taskState(), inventoryFull, noStorage, noWorkArea, noTargets, unpaid, tooFar, missingTools);
 
                 jobCounts.merge(role, 1, Integer::sum);
                 assignedStorage += storageCount;
@@ -80,6 +81,8 @@ public final class ClipboardWorkforceService {
                 addWarning(warningCounts, WarningType.NO_WORK_AREA, role, noWorkArea);
                 addWarning(warningCounts, WarningType.NO_TARGETS, role, noTargets);
                 addWarning(warningCounts, WarningType.TOO_FAR, role, tooFar);
+                addWarning(warningCounts, WarningType.MISSING_TOOLS, role, missingTools);
+                addWarning(warningCounts, WarningType.UNPAID, role, unpaid);
                 workers.add(new WorkerRow(
                         villager.getUUID(),
                         VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
@@ -101,7 +104,8 @@ public final class ClipboardWorkforceService {
                         noStorage,
                         noWorkArea,
                         noTargets,
-                        tooFar
+                        tooFar,
+                        missingTools
                 ));
             }
         }
@@ -146,7 +150,8 @@ public final class ClipboardWorkforceService {
             boolean noWorkArea,
             boolean noTargets,
             boolean unpaid,
-            boolean tooFar) {
+            boolean tooFar,
+            boolean missingTools) {
         if (unpaid) {
             return WorkerStatus.UNPAID;
         }
@@ -158,6 +163,9 @@ public final class ClipboardWorkforceService {
         }
         if (inventoryFull) {
             return WorkerStatus.INVENTORY_FULL;
+        }
+        if (missingTools) {
+            return WorkerStatus.MISSING_TOOLS;
         }
         if (noStorage) {
             return WorkerStatus.NO_STORAGE;

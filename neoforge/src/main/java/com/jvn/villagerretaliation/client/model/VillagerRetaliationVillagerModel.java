@@ -125,7 +125,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         if (pose == VillagerArmPose.NONE) {
             return;
         }
-        VillagerPoseAnimator.applyPose(pose, villager, this.head, this.rightArm, this.leftArm, this.attackTime, ageInTicks);
+        VillagerPoseAnimator.applyPose(pose, villager, this.body, this.head, this.rightArm, this.leftArm, this.attackTime, ageInTicks);
     }
 
     @Override

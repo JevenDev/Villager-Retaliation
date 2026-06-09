@@ -466,6 +466,37 @@ public final class HiredJobInventory implements Container {
                 output.stack()));
     }
 
+    public int depositRemovableItemsToAssignedStorage() {
+        int movedTotal = 0;
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            ItemStack stack = this.items.get(slot);
+            if (stack.isEmpty() || !canHirerRemoveFromJobInventory(stack)) {
+                continue;
+            }
+            ItemStack previousStack = stack.copy();
+            ItemStack remainder = AssignedStorageService.depositStack(this.villager, stack.copy());
+            int moved = stack.getCount() - remainder.getCount();
+            if (moved <= 0) {
+                continue;
+            }
+
+            stack.shrink(moved);
+            if (stack.isEmpty()) {
+                this.items.set(slot, ItemStack.EMPTY);
+                resetEmptySlotType(slot);
+            }
+            EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
+            if (equipmentSlot != null) {
+                updateLiveEquipmentAfterJobSlotChange(equipmentSlot, previousStack);
+            }
+            movedTotal += moved;
+        }
+        if (movedTotal > 0) {
+            setChanged();
+        }
+        return movedTotal;
+    }
+
     private boolean depositOneOutputStack(Function<OutputStack, ItemStack> depositor) {
         for (OutputStack output : collectOutputItems()) {
             ItemStack remainder = depositor.apply(output);
