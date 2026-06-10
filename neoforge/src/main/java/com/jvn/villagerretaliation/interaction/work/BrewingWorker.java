@@ -34,6 +34,11 @@ public final class BrewingWorker extends AbstractBlockWorker {
     private static final String TARGET_POTION_TAG = "BrewingTargetPotion";
     private static final String REMAINING_TAG = "BrewingRemaining";
     private static final String CONTINUOUS_TAG = "BrewingContinuous";
+    private static final String CACHED_STAND_POS_TAG = "BrewingCachedStandPos";
+    private static final String CACHED_WATER_POS_TAG = "BrewingCachedWaterPos";
+    private static final String NEXT_STAND_SCAN_GAME_TIME_TAG = "NextBrewingStandScanGameTime";
+    private static final String NEXT_WATER_SCAN_GAME_TIME_TAG = "NextBrewingWaterScanGameTime";
+    private static final long FACILITY_SCAN_COOLDOWN_TICKS = 100L;
     private static final int FUEL_USES_PER_BLAZE_POWDER = 20;
     private static final int FIRST_BOTTLE_SLOT = 0;
     private static final int BOTTLE_SLOT_COUNT = 3;
@@ -227,11 +232,21 @@ public final class BrewingWorker extends AbstractBlockWorker {
     }
 
     private static BlockPos nearestBrewingStand(ServerLevel level, Villager villager, HiredWorkContext context) {
+        CompoundTag state = context.state();
+        BlockPos cached = cachedPos(state, CACHED_STAND_POS_TAG);
+        if (isValidBrewingStand(level, context, cached)) {
+            return cached;
+        }
+        state.remove(CACHED_STAND_POS_TAG);
+        if (level.getGameTime() < state.getLong(NEXT_STAND_SCAN_GAME_TIME_TAG)) {
+            return null;
+        }
+
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
         for (BlockPos raw : context.workAreaPositions()) {
             BlockPos pos = raw.immutable();
-            if (!context.isLoaded(level, pos) || !level.getBlockState(pos).is(Blocks.BREWING_STAND)) {
+            if (!isValidBrewingStand(level, context, pos)) {
                 continue;
             }
             double distance = villager.distanceToSqr(pos.getCenter());
@@ -239,6 +254,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 bestDistance = distance;
                 best = pos;
             }
+        }
+        if (best == null) {
+            state.putLong(NEXT_STAND_SCAN_GAME_TIME_TAG, level.getGameTime() + FACILITY_SCAN_COOLDOWN_TICKS);
+        } else {
+            state.putLong(CACHED_STAND_POS_TAG, best.asLong());
+            state.remove(NEXT_STAND_SCAN_GAME_TIME_TAG);
         }
         return best;
     }
@@ -248,15 +269,21 @@ public final class BrewingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             BlockPos stand) {
+        CompoundTag state = context.state();
+        BlockPos cached = cachedPos(state, CACHED_WATER_POS_TAG);
+        if (isValidWaterSource(level, context, cached)) {
+            return cached;
+        }
+        state.remove(CACHED_WATER_POS_TAG);
+        if (level.getGameTime() < state.getLong(NEXT_WATER_SCAN_GAME_TIME_TAG)) {
+            return null;
+        }
+
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
         for (BlockPos raw : context.workAreaPositions()) {
             BlockPos pos = raw.immutable();
-            if (!context.isLoaded(level, pos)) {
-                continue;
-            }
-            FluidState fluid = level.getFluidState(pos);
-            if (fluid.is(FluidTags.WATER) && fluid.isSource()) {
+            if (isValidWaterSource(level, context, pos)) {
                 double distance = stand.distSqr(pos) + villager.distanceToSqr(pos.getCenter()) * 0.25D;
                 if (distance < bestDistance) {
                     bestDistance = distance;
@@ -264,7 +291,32 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 }
             }
         }
+        if (best == null) {
+            state.putLong(NEXT_WATER_SCAN_GAME_TIME_TAG, level.getGameTime() + FACILITY_SCAN_COOLDOWN_TICKS);
+        } else {
+            state.putLong(CACHED_WATER_POS_TAG, best.asLong());
+            state.remove(NEXT_WATER_SCAN_GAME_TIME_TAG);
+        }
         return best;
+    }
+
+    private static BlockPos cachedPos(CompoundTag state, String tagName) {
+        return state.contains(tagName, Tag.TAG_LONG) ? BlockPos.of(state.getLong(tagName)) : null;
+    }
+
+    private static boolean isValidBrewingStand(ServerLevel level, HiredWorkContext context, BlockPos pos) {
+        return pos != null
+                && context.isInsideWorkArea(pos)
+                && context.isLoaded(level, pos)
+                && level.getBlockState(pos).is(Blocks.BREWING_STAND);
+    }
+
+    private static boolean isValidWaterSource(ServerLevel level, HiredWorkContext context, BlockPos pos) {
+        if (pos == null || !context.isInsideWorkArea(pos) || !context.isLoaded(level, pos)) {
+            return false;
+        }
+        FluidState fluid = level.getFluidState(pos);
+        return fluid.is(FluidTags.WATER) && fluid.isSource();
     }
 
     private static int standFuelUses(ServerLevel level, BlockPos stand) {

@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.combat;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import java.util.HashMap;
 import java.util.Map;
@@ -225,27 +226,7 @@ final class VillagerClericPotionHelper {
             Map<UUID, Long> nextScanTicks,
             long intervalTicks
     ) {
-        UUID villagerId = villager.getUUID();
-        Long nextScan = nextScanTicks.get(villagerId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(villagerId, intervalTicks);
-            if (firstScan > gameTime) {
-                nextScanTicks.put(villagerId, firstScan);
-                return false;
-            }
-        } else if (gameTime < nextScan) {
-            return false;
-        }
-
-        nextScanTicks.put(villagerId, gameTime + intervalTicks);
-        return true;
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
+        return TickThrottle.consume(villager.getUUID(), nextScanTicks, gameTime, intervalTicks);
     }
 
     static void setPostDrinkMainHand(Villager villager, ItemStack stack) {

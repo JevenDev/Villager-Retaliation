@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.villager;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,7 +89,7 @@ public final class VillagerRetaliationVillagerRules {
             return cached.visible();
         }
         if (cached == null) {
-            long firstScan = gameTime + scanStagger(villagerId, CREEPER_THREAT_CACHE_TICKS);
+            long firstScan = gameTime + TickThrottle.stagger(villagerId, CREEPER_THREAT_CACHE_TICKS);
             if (firstScan > gameTime) {
                 CREEPER_THREAT_CACHE.put(villagerId, new CachedCreeperThreat(true, firstScan));
                 return true;
@@ -98,13 +99,6 @@ public final class VillagerRetaliationVillagerRules {
         boolean visible = VillagerRetaliationVillagerCombatUtil.hasVisibleCreeperThreat(villager, radius);
         CREEPER_THREAT_CACHE.put(villagerId, new CachedCreeperThreat(visible, gameTime + CREEPER_THREAT_CACHE_TICKS));
         return visible;
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 
     private record CachedCreeperThreat(boolean visible, long expiresGameTime) {

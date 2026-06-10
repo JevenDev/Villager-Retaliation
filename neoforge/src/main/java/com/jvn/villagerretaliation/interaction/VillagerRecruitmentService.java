@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -501,26 +502,7 @@ public final class VillagerRecruitmentService {
             long gameTime,
             Map<UUID, Long> nextScanTicks,
             long intervalTicks) {
-        Long nextScan = nextScanTicks.get(playerId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(playerId, intervalTicks);
-            if (firstScan > gameTime) {
-                nextScanTicks.put(playerId, firstScan);
-                return false;
-            }
-        } else if (gameTime < nextScan) {
-            return false;
-        }
-
-        nextScanTicks.put(playerId, gameTime + Math.max(1L, intervalTicks));
-        return true;
-    }
-
-    private static long scanStagger(UUID playerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(playerId.getMostSignificantBits() ^ playerId.getLeastSignificantBits(), intervalTicks);
+        return TickThrottle.consume(playerId, nextScanTicks, gameTime, intervalTicks);
     }
 
     private static boolean isValidFollowTarget(ServerLevel level, Villager villager, ServerPlayer player) {

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.Map;
@@ -202,25 +203,6 @@ public final class VillagerCombatSurvivalService {
     }
 
     private static boolean consumeScanSlot(UUID villagerId, Map<UUID, Long> nextScanTicks, long gameTime, long intervalTicks) {
-        Long nextScan = nextScanTicks.get(villagerId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(villagerId, intervalTicks);
-            if (firstScan > gameTime) {
-                nextScanTicks.put(villagerId, firstScan);
-                return false;
-            }
-        } else if (nextScan > gameTime) {
-            return false;
-        }
-
-        nextScanTicks.put(villagerId, gameTime + intervalTicks);
-        return true;
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
+        return TickThrottle.consume(villagerId, nextScanTicks, gameTime, intervalTicks);
     }
 }

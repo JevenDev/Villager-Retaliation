@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.villager;
 
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +48,7 @@ public final class VillagerRetaliationVillagerBrainUtil {
         removeTradePreviewBehaviorNow(level, villager);
         NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.put(
                 villager.getUUID(),
-                level.getGameTime() + TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS + scanStagger(villager.getUUID(), TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS)
+                level.getGameTime() + TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS + TickThrottle.stagger(villager.getUUID(), TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS)
         );
     }
 
@@ -56,7 +57,7 @@ public final class VillagerRetaliationVillagerBrainUtil {
         long gameTime = level.getGameTime();
         long nextCheck = NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.getOrDefault(villagerId, Long.MIN_VALUE);
         if (nextCheck == Long.MIN_VALUE) {
-            nextCheck = gameTime + scanStagger(villagerId, TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS);
+            nextCheck = gameTime + TickThrottle.stagger(villagerId, TRADE_PREVIEW_BEHAVIOR_RECHECK_TICKS);
             if (nextCheck > gameTime) {
                 NEXT_TRADE_PREVIEW_BEHAVIOR_CHECK_TICKS.put(villagerId, nextCheck);
                 return;
@@ -93,13 +94,6 @@ public final class VillagerRetaliationVillagerBrainUtil {
                 }
             }
         }
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 
     public static void enterFleeState(Villager villager, @Nullable LivingEntity hostile, long gameTime) {

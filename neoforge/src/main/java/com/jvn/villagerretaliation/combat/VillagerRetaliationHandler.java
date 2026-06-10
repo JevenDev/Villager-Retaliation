@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -681,7 +682,7 @@ public final class VillagerRetaliationHandler {
         }
 
         long gameTime = villager.level().getGameTime();
-        if (!consumeScanSlot(villager, NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.consume(villager.getUUID(), NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
             return;
         }
         if (!VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
@@ -724,7 +725,7 @@ public final class VillagerRetaliationHandler {
         }
 
         long gameTime = villager.level().getGameTime();
-        if (!consumeScanSlot(villager, NEXT_CREEPER_AVOIDANCE_SCAN_TICKS, gameTime, CREEPER_AVOIDANCE_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.consume(villager.getUUID(), NEXT_CREEPER_AVOIDANCE_SCAN_TICKS, gameTime, CREEPER_AVOIDANCE_SCAN_INTERVAL_TICKS)) {
             return false;
         }
 
@@ -1453,7 +1454,7 @@ public final class VillagerRetaliationHandler {
 
     private static boolean tryRepairNearbyIronGolem(Villager villager, ServerLevel level, long gameTime) {
         if (!canProfessionRepairIronGolems(villager)
-                || !consumeScanSlot(villager, NEXT_IRON_GOLEM_REPAIR_TICKS, gameTime, SMITH_IRON_GOLEM_REPAIR_SCAN_INTERVAL_TICKS)) {
+                || !TickThrottle.consume(villager.getUUID(), NEXT_IRON_GOLEM_REPAIR_TICKS, gameTime, SMITH_IRON_GOLEM_REPAIR_SCAN_INTERVAL_TICKS)) {
             return false;
         }
 
@@ -1532,6 +1533,7 @@ public final class VillagerRetaliationHandler {
         NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.remove(villager.getUUID());
         NEXT_HOSTILE_HARASS_THROW_TICKS.remove(villager.getUUID());
         NEXT_IRON_GOLEM_REPAIR_TICKS.remove(villager.getUUID());
+        NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS.keySet().removeIf(key -> key.villagerId().equals(villager.getUUID()));
         WAVERING_UNARMED_COUNTERS.keySet().removeIf(key -> key.villagerId().equals(villager.getUUID()));
         LOW_GUTS_RALLY_USED_UNTIL_TICKS.keySet().removeIf(key -> key.villagerId().equals(villager.getUUID()));
         if (villager.isAlive()) {
@@ -1609,45 +1611,12 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    private static boolean consumeScanSlot(Villager villager, Map<UUID, Long> nextScanTicks, long gameTime, long intervalTicks) {
-        UUID villagerId = villager.getUUID();
-        Long nextScan = nextScanTicks.get(villagerId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(villagerId, intervalTicks);
-            if (firstScan > gameTime) {
-                nextScanTicks.put(villagerId, firstScan);
-                return false;
-            }
-        } else if (gameTime < nextScan) {
-            return false;
-        }
-
-        nextScanTicks.put(villagerId, gameTime + Math.max(1L, intervalTicks));
-        return true;
-    }
-
     private static boolean shouldMaintainProfessionMainHand(Villager villager, long gameTime) {
-        UUID villagerId = villager.getUUID();
-        Long nextCheck = NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.get(villagerId);
-        if (nextCheck == null) {
-            long firstCheck = gameTime + scanStagger(villagerId, ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS);
-            if (firstCheck > gameTime) {
-                NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.put(villagerId, firstCheck);
-                return false;
-            }
-        } else if (gameTime < nextCheck) {
-            return false;
-        }
-
-        NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.put(villagerId, gameTime + ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS);
-        return true;
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
+        return TickThrottle.consume(
+                villager.getUUID(),
+                NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS,
+                gameTime,
+                ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS);
     }
 
     private record PlayerVillagerKey(UUID playerId, UUID villagerId) {

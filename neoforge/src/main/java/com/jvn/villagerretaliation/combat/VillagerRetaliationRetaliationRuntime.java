@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.TemporaryWeaponState;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,18 +57,14 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         }
 
         long gameTime = level.getGameTime();
-        Long nextRestore = this.nextPersistedAngerRestoreTicks.get(villagerId);
-        if (nextRestore == null) {
-            long firstRestore = gameTime + scanStagger(villagerId, PERSISTED_ANGER_RESTORE_SCAN_INTERVAL_TICKS);
-            if (firstRestore > gameTime) {
-                this.nextPersistedAngerRestoreTicks.put(villagerId, firstRestore);
-                return;
-            }
-        } else if (gameTime < nextRestore) {
+        if (!TickThrottle.consume(
+                villagerId,
+                this.nextPersistedAngerRestoreTicks,
+                gameTime,
+                PERSISTED_ANGER_RESTORE_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
-        this.nextPersistedAngerRestoreTicks.put(villagerId, gameTime + PERSISTED_ANGER_RESTORE_SCAN_INTERVAL_TICKS);
         VillagerRetaliationRetaliationUtil.restorePersistedAngerIfNeeded(villager, this.angerTargets, this.persistentTagRoot);
     }
 
@@ -207,12 +204,5 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
 
         var entity = level.getEntity(weaponId);
         return entity instanceof ItemEntity itemEntity ? itemEntity : null;
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 }

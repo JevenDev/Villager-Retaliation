@@ -1335,7 +1335,7 @@ public final class HiredVillagerWorkService {
             case MINING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_MINING.get();
             case LOGGING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_LOGGING.get();
             case FARMING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_FARMING.get();
-            case FISHING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_FARMING.get();
+            case FISHING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_NAVIGATION.get();
             case BREWING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_BREWING.get();
             case BUILDER -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_BUILDER.get();
             case ANIMAL_HANDLING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_ANIMAL_HANDLING.get();

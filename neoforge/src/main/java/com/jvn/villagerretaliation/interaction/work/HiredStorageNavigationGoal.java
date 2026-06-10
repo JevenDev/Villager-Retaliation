@@ -83,10 +83,13 @@ final class HiredStorageNavigationGoal {
                 HiredPathMemory.clearNavigationProgress(villager);
                 return Result.FAILED;
             }
-            if (!shouldRepathStorage(context, level, storage)) {
+            if (!shouldRepathStorage(context, level, navigationTarget)) {
                 return Result.MOVING;
             }
-            return Result.MOVING;
+            villager.getNavigation().stop();
+            villager.getBrain().eraseMemory(MemoryModuleType.PATH);
+            villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+            clearStorageNavigationState(context);
         }
 
         if (moveToStorageApproach(level, context, villager, storage, speed, null)) {

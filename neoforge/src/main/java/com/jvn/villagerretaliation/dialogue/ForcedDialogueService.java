@@ -23,6 +23,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager.ReputationSnapshot;
 import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
 import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
@@ -1959,26 +1960,7 @@ public final class ForcedDialogueService {
             Map<UUID, Long> nextScanTicks,
             long gameTime,
             long intervalTicks) {
-        Long nextScan = nextScanTicks.get(villagerId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(villagerId, intervalTicks);
-            if (firstScan > gameTime) {
-                nextScanTicks.put(villagerId, firstScan);
-                return false;
-            }
-        } else if (gameTime < nextScan) {
-            return false;
-        }
-
-        nextScanTicks.put(villagerId, gameTime + Math.max(1L, intervalTicks));
-        return true;
-    }
-
-    private static long scanStagger(UUID id, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(id.getMostSignificantBits() ^ id.getLeastSignificantBits(), intervalTicks);
+        return TickThrottle.consume(villagerId, nextScanTicks, gameTime, intervalTicks);
     }
 
     private static boolean tryAdvanceDynamicForcedDialogueGroup(

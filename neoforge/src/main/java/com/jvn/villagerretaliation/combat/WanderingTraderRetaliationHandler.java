@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.Act
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -277,7 +278,7 @@ public final class WanderingTraderRetaliationHandler {
         }
 
         long gameTime = trader.level().getGameTime();
-        if (!consumeScanSlot(trader.getUUID(), gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.consume(trader.getUUID(), NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
@@ -449,28 +450,5 @@ public final class WanderingTraderRetaliationHandler {
             VillagerRetaliationVillagerWeapons.clearTrackedPickup(trader);
         }
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(trader.getUUID());
-    }
-
-    private static boolean consumeScanSlot(UUID traderId, long gameTime, long intervalTicks) {
-        Long nextScan = NEXT_NATURAL_TARGET_SCAN_TICKS.get(traderId);
-        if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(traderId, intervalTicks);
-            if (firstScan > gameTime) {
-                NEXT_NATURAL_TARGET_SCAN_TICKS.put(traderId, firstScan);
-                return false;
-            }
-        } else if (gameTime < nextScan) {
-            return false;
-        }
-
-        NEXT_NATURAL_TARGET_SCAN_TICKS.put(traderId, gameTime + Math.max(1L, intervalTicks));
-        return true;
-    }
-
-    private static long scanStagger(UUID entityId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(entityId.getMostSignificantBits() ^ entityId.getLeastSignificantBits(), intervalTicks);
     }
 }
