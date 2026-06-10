@@ -181,12 +181,7 @@ public final class VillagerRetaliationEvents {
             VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
             VillagerQuestService.onVillagerDeath(villager);
             if (villager.level() instanceof ServerLevel level) {
-                HiredVillagerWorkService.stopWork(
-                        level,
-                        villager,
-                        HiredVillagerContractService.activeRole(level, villager),
-                        "Work stopped. Villager died.");
-                AssignedStorageService.removeAllAssignedStorage(level, villager);
+                HiredVillagerContractService.onVillagerDeath(level, villager);
             }
         }
         VillagerRetaliationHandler.onLivingDeath(event);
@@ -300,6 +295,14 @@ public final class VillagerRetaliationEvents {
                 && player instanceof ServerPlayer serverPlayer
                 && VillagerInteractionService.shouldHandleClipboardInteraction(villager, serverPlayer, event.getHand())) {
             event.setCancellationResult(VillagerInteractionService.handleClipboardVillagerRightClick(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleConstructionBlueprintInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleConstructionBlueprintVillagerRightClick(villager, serverPlayer));
             event.setCanceled(true);
             return;
         }

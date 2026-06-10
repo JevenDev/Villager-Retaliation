@@ -100,6 +100,7 @@ public final class HiredVillagerFocusService {
         boolean storageNavigation = worker.storageTargetPos() != null
                 && (worker.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
                 || worker.taskState() == HiredWorkerTaskState.DEPOSITING
+                || worker.taskState() == HiredWorkerTaskState.WAITING_FOR_MATERIALS
                 || worker.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL);
         boolean workAreaReturnNavigation = worker.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA;
         boolean blockTargetNavigation = worker.taskState().keepsBlockTarget()

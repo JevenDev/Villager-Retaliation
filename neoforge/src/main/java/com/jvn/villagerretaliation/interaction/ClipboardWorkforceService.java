@@ -137,7 +137,7 @@ public final class ClipboardWorkforceService {
             return false;
         }
         return switch (state) {
-            case IDLE, AWAITING_INSTRUCTION, NO_WORK_AREA, FAILED_COOLDOWN, PAUSED_FULL_INVENTORY, PAUSED_STORAGE_FULL, PAUSED_NO_STORAGE, PAUSED_MISSING_TOOL -> false;
+            case IDLE, AWAITING_INSTRUCTION, NO_WORK_AREA, FAILED_COOLDOWN, WAITING_FOR_MATERIALS, PAUSED_FULL_INVENTORY, PAUSED_STORAGE_FULL, PAUSED_NO_STORAGE, PAUSED_MISSING_TOOL -> false;
             default -> true;
         };
     }
@@ -176,6 +176,7 @@ public final class ClipboardWorkforceService {
         return switch (taskState) {
             case MOVING_TO_TARGET, RETURNING_TO_WORK_AREA, SELECTING_TARGET, FINDING_CHAIN_TARGET, VALIDATING_TARGET -> WorkerStatus.PATHING;
             case MOVING_TO_STORAGE, DEPOSITING, PAUSED_STORAGE_FULL -> WorkerStatus.DEPOSITING;
+            case WAITING_FOR_MATERIALS -> WorkerStatus.WAITING;
             case WORKING, COLLECTING_OUTPUT -> switch (role) {
                 case MINING -> WorkerStatus.MINING;
                 case LOGGING -> WorkerStatus.LOGGING;

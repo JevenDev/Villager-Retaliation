@@ -30,11 +30,13 @@ import com.jvn.villagerretaliation.interaction.work.BuilderWorker;
 import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
+import com.jvn.villagerretaliation.network.ConstructionBlueprintPlacementPayload;
 import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
@@ -82,12 +84,16 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerInteractionService {
     private static final UUID LOUD_LITTEN_PLAYER_ID = UUID.fromString("38492a05-b711-40d4-a39f-a3f783aa541f");
     private static final String EDMUNDO_EASTER_EGG_DEFINITION_ID = "villagerretaliation:easter_egg/edmundo_warning";
+    private static final String BLUEPRINT_START_OPTION_ID = "construction_blueprint_start";
+    private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
+    private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
     private static final String EDMUNDO_OMINOUS_FORCED_LINE =
             "Loud, I am aware of what you have done. Do not think the village has forgotten. Do not mistake this calm for mercy. Even when the roads fall silent, your name still travels in whispers after dark. Jvn has tried to silence me, it will only be a matter of time before all is revealed.";
 
@@ -113,6 +119,13 @@ public final class VillagerInteractionService {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && VillagerRetaliationItems.isClipboard(player.getItemInHand(hand))
+                && shouldStayConversable(player, villager);
+    }
+
+    public static boolean shouldHandleConstructionBlueprintInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
+        return hand == InteractionHand.MAIN_HAND
+                && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && ConstructionBlueprintItem.isBlueprint(player.getItemInHand(hand))
                 && shouldStayConversable(player, villager);
     }
 
@@ -190,6 +203,62 @@ public final class VillagerInteractionService {
         return InteractionResult.SUCCESS;
     }
 
+    public static InteractionResult handleConstructionBlueprintVillagerRightClick(Villager villager, ServerPlayer player) {
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "interaction.refuse_despised");
+            return InteractionResult.FAIL;
+        }
+        if (VillagerRetaliationHandler.isHostileTowards(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "interaction.refuse_angry");
+            return InteractionResult.FAIL;
+        }
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return InteractionResult.FAIL;
+        }
+        ItemStack blueprint = player.getMainHandItem();
+        Optional<ConstructionBlueprintItem.PreviewData> preview = ConstructionBlueprintItem.previewData(blueprint);
+        if (preview.isEmpty()) {
+            return InteractionResult.FAIL;
+        }
+        if (preview.get().expired()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.blueprint_expired");
+            return InteractionResult.FAIL;
+        }
+        if (preview.get().completed()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.blueprint_completed");
+            return InteractionResult.SUCCESS;
+        }
+        if (preview.get().started()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.blueprint_started");
+            return InteractionResult.SUCCESS;
+        }
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return InteractionResult.FAIL;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BUILDER) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.requires_role_choose");
+            return InteractionResult.FAIL;
+        }
+        if (!VillagerConversationService.startForced(player, villager)) {
+            sendVillagerNotice(player, villager, "interaction.busy");
+            return InteractionResult.FAIL;
+        }
+        closeActiveContainer(player);
+        VillagerInteractionScreenOpener.openForced(player, villager, constructionBlueprintOptions(), true);
+        focusVillagerOnPlayer(villager, player);
+        return InteractionResult.SUCCESS;
+    }
+
+    private static List<DialogueOptionDefinition> constructionBlueprintOptions() {
+        return List.of(
+                DialogueOptionDefinition.simple(BLUEPRINT_START_OPTION_ID, "Start job", DialogueRequestType.QUESTION, 0),
+                DialogueOptionDefinition.simple(BLUEPRINT_CHANGE_OPTION_ID, "Change blueprint", DialogueRequestType.QUESTION, 1),
+                DialogueOptionDefinition.simple(BLUEPRINT_NEVERMIND_OPTION_ID, "Nevermind", DialogueRequestType.QUESTION, 2));
+    }
+
     public static void openInteractionScreen(ServerPlayer player, Villager villager) {
         openInteractionScreen(player, villager, false);
     }
@@ -243,7 +312,33 @@ public final class VillagerInteractionService {
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
+        if (handleConstructionBlueprintDialogueRequest(player, entityId, optionId)) {
+            return;
+        }
         VillagerDialogueRequestHandler.handle(player, entityId, optionId);
+    }
+
+    private static boolean handleConstructionBlueprintDialogueRequest(ServerPlayer player, int entityId, String optionId) {
+        if (!BLUEPRINT_START_OPTION_ID.equals(optionId)
+                && !BLUEPRINT_CHANGE_OPTION_ID.equals(optionId)
+                && !BLUEPRINT_NEVERMIND_OPTION_ID.equals(optionId)) {
+            return false;
+        }
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager) || !canUseForcedInteractionSystem(player, villager)) {
+            VillagerConversationService.endForPlayer(player, true);
+            return true;
+        }
+        if (BLUEPRINT_NEVERMIND_OPTION_ID.equals(optionId)) {
+            VillagerConversationService.endForPlayer(player, true);
+            return true;
+        }
+        if (BLUEPRINT_CHANGE_OPTION_ID.equals(optionId)) {
+            sendForcedDialogueReputation(player, villager, constructionBlueprintOptions(), true);
+            return true;
+        }
+        startConstructionBlueprintJob(player, player.serverLevel(), villager);
+        return true;
     }
 
     public static void handleTradeRequest(ServerPlayer player, int entityId) {
@@ -497,6 +592,75 @@ public final class VillagerInteractionService {
         }
     }
 
+    public static void handleConstructionBlueprintDeploy(ServerPlayer player, ItemStack blueprint, BlockPos targetPos) {
+        Optional<ConstructionBlueprintItem.PreviewData> preview = ConstructionBlueprintItem.previewData(blueprint);
+        if (preview.isEmpty()) {
+            return;
+        }
+        handleConstructionBlueprintPlacement(player, blueprint, preview.get(), ConstructionBlueprintPlacementPayload.Action.DEPLOY_AT, 1, targetPos);
+    }
+
+    public static void handleConstructionBlueprintPlacement(
+            ServerPlayer player,
+            UUID jobId,
+            ConstructionBlueprintPlacementPayload.Action action,
+            int steps,
+            BlockPos targetPos) {
+        if (player == null || jobId == null || action == null) {
+            return;
+        }
+        ItemStack blueprint = findConstructionBlueprint(player, jobId);
+        Optional<ConstructionBlueprintItem.PreviewData> preview = ConstructionBlueprintItem.previewData(blueprint);
+        if (preview.isEmpty()) {
+            return;
+        }
+        if (action == ConstructionBlueprintPlacementPayload.Action.TOGGLE_LOCK) {
+            ConstructionBlueprintItem.togglePlacementLocked(blueprint).ifPresent(locked ->
+                    player.displayClientMessage(Component.literal(locked
+                            ? "Blueprint placement locked."
+                            : "Blueprint placement unlocked."), true));
+            return;
+        }
+        if (preview.get().locked() || preview.get().placementLocked()) {
+            return;
+        }
+        handleConstructionBlueprintPlacement(player, blueprint, preview.get(), action, steps, targetPos);
+    }
+
+    private static void handleConstructionBlueprintPlacement(
+            ServerPlayer player,
+            ItemStack blueprint,
+            ConstructionBlueprintItem.PreviewData preview,
+            ConstructionBlueprintPlacementPayload.Action action,
+            int steps,
+            BlockPos targetPos) {
+        if (preview.locked() || preview.placementLocked()) {
+            player.displayClientMessage(Component.literal("This blueprint can no longer move the site."), true);
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        if (!level.dimension().equals(preview.dimension())) {
+            player.displayClientMessage(Component.literal("Blueprint placement must be changed in its saved dimension."), true);
+            return;
+        }
+
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(preview.structureId());
+        if (entry.isEmpty()) {
+            player.displayClientMessage(Component.literal("That blueprint structure is not available."), true);
+            return;
+        }
+
+        PlacementUpdate update = placementUpdate(level, entry.get(), preview, action, Math.max(1, Math.min(8, steps)), targetPos);
+        if (update == null || update.plan().isEmpty()) {
+            player.displayClientMessage(Component.literal("That blueprint structure is not available."), true);
+            return;
+        }
+
+        ConstructionBlueprintItem.updatePlacement(blueprint, level, update.plan().get(), update.origin(), update.rotation());
+        player.displayClientMessage(Component.literal("Blueprint site: ")
+                .append(Component.literal(HiredWorkerBrain.formatPos(update.origin()))), true);
+    }
+
     public static void handleClipboardStorageAction(ServerPlayer player, int entityId, ClipboardStorageActionPayload.Action action) {
         Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
         if (target.isEmpty()) {
@@ -614,6 +778,26 @@ public final class VillagerInteractionService {
                     continue;
                 }
                 if (HiredVillagerContractService.isHiredBy(level, villager, player)) {
+                    return Optional.of(new HiredVillagerTarget(level, villager));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<HiredVillagerTarget> findBuilderJobByJobId(ServerPlayer player, UUID jobId) {
+        if (jobId == null) {
+            return Optional.empty();
+        }
+        for (ServerLevel level : player.server.getAllLevels()) {
+            for (Entity entity : level.getAllEntities()) {
+                if (!(entity instanceof Villager villager)
+                        || !villager.isAlive()
+                        || !HiredVillagerContractService.isHiredBy(level, villager, player)) {
+                    continue;
+                }
+                CompoundTag state = HiredVillagerWorkService.state(villager);
+                if (BuilderTaskState.jobId(state).filter(jobId::equals).isPresent()) {
                     return Optional.of(new HiredVillagerTarget(level, villager));
                 }
             }
@@ -842,35 +1026,26 @@ public final class VillagerInteractionService {
         }
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
-        BuilderSitePlanner.SiteResult site = BuilderSitePlanner.chooseSite(
-                level,
-                player,
-                villager,
-                HiredVillagerWorkService.workArea(level, villager),
-                plan.get());
+        int jobCost = plan.get().price();
+        int blueprintCost = builderBlueprintCost(jobCost);
+        BlockPos initialSite = defaultBlueprintOrigin(level, player, plan.get());
         BuilderTaskState.setPendingStructure(state, entry.get().id());
-        sendVillagerNotice(player, villager, missing.ready() && site.valid()
-                ? "interaction.work.builder.preview"
-                : "interaction.work.builder.preview_blocked", Map.of(
+        sendVillagerNotice(player, villager, "interaction.work.builder.preview", Map.of(
                         "structure", entry.get().menuLabel(),
-                        "cost", formatCurrency(level, plan.get().price()),
+                        "blueprint_cost", formatCurrency(level, blueprintCost),
+                        "cost", formatCurrency(level, jobCost),
                         "blocks", Integer.toString(plan.get().blocks().size()),
                         "materials", plan.get().materialSummary(5),
                         "missing", missing.summary(),
-                        "site", site.valid() ? HiredWorkerBrain.formatPos(site.origin()) : site.statusKey(),
-                        "reason", builderPreviewBlockReason(player, level, villager, missing, site)));
+                        "site", HiredWorkerBrain.formatPos(initialSite)));
     }
 
     private static String builderPreviewBlockReason(
             ServerPlayer player,
             ServerLevel level,
             Villager villager,
-            BuilderWorker.MissingMaterials missing,
             BuilderSitePlanner.SiteResult site) {
         List<String> reasons = new ArrayList<>();
-        if (!missing.ready()) {
-            reasons.add("missing materials: " + missing.summary());
-        }
         if (!site.valid()) {
             String siteReason = VillagerDialogueResources
                     .message(createDialogueContext(level, player, villager), site.statusKey(), site.replacements())
@@ -907,42 +1082,187 @@ public final class VillagerInteractionService {
         }
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
-        if (!missing.ready()) {
-            sendVillagerNotice(player, villager, "interaction.work.builder.waiting_materials", Map.of(
+        int cost = plan.get().price();
+        int blueprintCost = builderBlueprintCost(cost);
+        if (countCurrency(player) < blueprintCost) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.need_blueprint_payment", Map.of(
                     "structure", entry.get().menuLabel(),
-                    "materials", missing.summary()));
+                    "blueprint_cost", formatCurrency(level, blueprintCost)));
             return;
         }
-        int cost = plan.get().price();
-        if (countCurrency(player) < cost) {
-            sendVillagerNotice(player, villager, "interaction.work.builder.need_payment", Map.of(
+
+        removeCurrency(player, blueprintCost);
+        VillagerWalletService.addCurrency(villager, blueprintCost, VillagerWalletService.WalletSource.TASK_REWARD);
+        BuilderTaskState.clearPendingStructure(state);
+        BlockPos origin = defaultBlueprintOrigin(level, player, plan.get());
+        giveConstructionBlueprint(
+                player,
+                level,
+                null,
+                plan.get(),
+                origin,
+                UUID.randomUUID(),
+                blueprintCost,
+                cost,
+                missing.summary(),
+                0L);
+        sendVillagerNotice(player, villager, "interaction.work.builder.blueprint_ready", Map.of(
+                "structure", entry.get().menuLabel(),
+                "blueprint_cost", formatCurrency(level, blueprintCost),
+                "cost", formatCurrency(level, cost),
+                "blocks", Integer.toString(plan.get().blocks().size()),
+                "materials", missing.summary(),
+                "site", HiredWorkerBrain.formatPos(origin)));
+        VillagerConversationService.start(player, villager);
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+    }
+
+    private static void startConstructionBlueprintJob(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.manage.requires_hirer");
+            return;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BUILDER) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.requires_role_choose");
+            return;
+        }
+        ItemStack blueprint = findHeldConstructionBlueprint(player);
+        Optional<ConstructionBlueprintItem.PreviewData> optionalPreview = ConstructionBlueprintItem.previewData(blueprint);
+        if (optionalPreview.isEmpty()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_missing");
+            return;
+        }
+        ConstructionBlueprintItem.PreviewData preview = optionalPreview.get();
+        if (preview.expired()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_expired");
+            return;
+        }
+        if (preview.completed()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_completed");
+            return;
+        }
+        if (preview.started()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_started");
+            return;
+        }
+        if (!level.dimension().equals(preview.dimension())) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.clipboard.work_area.same_dimension");
+            return;
+        }
+
+        CompoundTag state = HiredVillagerWorkService.state(villager);
+        HiredVillagerWorkService.initializeDefaults(state, villager);
+        if (BuilderTaskState.hasTask(state)) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
+            return;
+        }
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(preview.structureId());
+        if (entry.isEmpty()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.unknown_structure");
+            return;
+        }
+        Optional<BuilderStructureScanner.StructurePlan> plan =
+                BuilderStructureScanner.scan(level, entry.get(), preview.rotation());
+        if (plan.isEmpty()) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.structure_unavailable", Map.of("structure", entry.get().menuLabel()));
+            return;
+        }
+        BuilderSitePlanner.SiteResult site = BuilderSitePlanner.validateSite(
+                level,
+                player,
+                villager,
+                null,
+                plan.get(),
+                preview.origin());
+        if (!site.valid()) {
+            rejectConstructionBlueprintStart(player, villager, site.statusKey(), site.replacements());
+            return;
+        }
+
+        int cost = preview.jobCost() > 0 ? preview.jobCost() : plan.get().price();
+        BuilderPaymentSource paymentSource = builderPaymentSource(player, level, villager, cost);
+        if (paymentSource == BuilderPaymentSource.NONE) {
+            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.need_payment", Map.of(
                     "structure", entry.get().menuLabel(),
                     "cost", formatCurrency(level, cost)));
             return;
         }
-        BuilderSitePlanner.SiteResult site = BuilderSitePlanner.chooseSite(
-                level,
-                player,
-                villager,
-                HiredVillagerWorkService.workArea(level, villager),
-                plan.get());
-        if (!site.valid()) {
-            sendVillagerNotice(player, villager, site.statusKey(), site.replacements());
-            return;
+        if (paymentSource == BuilderPaymentSource.PLAYER_INVENTORY) {
+            removeCurrency(player, cost);
+        } else {
+            int consumed = consumePaymentStorageCurrency(level, villager, cost);
+            if (consumed < cost) {
+                rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.need_payment", Map.of(
+                        "structure", entry.get().menuLabel(),
+                        "cost", formatCurrency(level, cost)));
+                return;
+            }
         }
 
-        removeCurrency(player, cost);
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
         VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.TASK_REWARD);
         state.remove("NextWorkGameTime");
         state.remove("ProgressTicks");
-        BuilderTaskState.start(state, entry.get(), plan.get(), site.origin(), Rotation.NONE, cost, level.getGameTime());
+        long startedGameTime = level.getGameTime();
+        BuilderTaskState.start(state, entry.get(), plan.get(), preview.origin(), preview.rotation(), cost, startedGameTime, preview.jobId());
+        ConstructionBlueprintItem.updatePlacement(blueprint, level, plan.get(), preview.origin(), preview.rotation());
+        ConstructionBlueprintItem.markStarted(blueprint, villager, cost, startedGameTime);
         state.putString("Status", "interaction.work.builder.started");
-        sendVillagerNotice(player, villager, "interaction.work.builder.started", Map.of(
+        sendVillagerNotice(player, villager, missing.ready()
+                ? "interaction.work.builder.started"
+                : "interaction.work.builder.started_waiting_materials", Map.of(
                 "structure", entry.get().menuLabel(),
                 "cost", formatCurrency(level, cost),
                 "blocks", Integer.toString(plan.get().blocks().size()),
-                "site", HiredWorkerBrain.formatPos(site.origin())));
+                "materials", missing.summary(),
+                "site", HiredWorkerBrain.formatPos(preview.origin())));
+        VillagerConversationService.start(player, villager);
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
+    }
+
+    private static void rejectConstructionBlueprintStart(ServerPlayer player, Villager villager, String messageKey) {
+        rejectConstructionBlueprintStart(player, villager, messageKey, Map.of());
+    }
+
+    private static void rejectConstructionBlueprintStart(
+            ServerPlayer player,
+            Villager villager,
+            String messageKey,
+            Map<String, String> replacements) {
+        sendVillagerNotice(player, villager, messageKey, replacements);
+        sendForcedDialogueReputation(player, villager, constructionBlueprintOptions(), true);
+    }
+
+    private static BuilderPaymentSource builderPaymentSource(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            int cost) {
+        if (cost <= 0 || countCurrency(player) >= cost) {
+            return BuilderPaymentSource.PLAYER_INVENTORY;
+        }
+        if (countPaymentStorageCurrency(level, villager) >= cost) {
+            return BuilderPaymentSource.PAYMENT_STORAGE;
+        }
+        return BuilderPaymentSource.NONE;
+    }
+
+    private static int countPaymentStorageCurrency(ServerLevel level, Villager villager) {
+        return AssignedStorageService.countPaymentItems(
+                villager,
+                stack -> VillagerCurrencyResources.isCurrency(level.getServer(), stack));
+    }
+
+    private static int consumePaymentStorageCurrency(ServerLevel level, Villager villager, int cost) {
+        return AssignedStorageService.consumePaymentItems(
+                villager,
+                stack -> VillagerCurrencyResources.isCurrency(level.getServer(), stack),
+                cost);
+    }
+
+    private static int builderBlueprintCost(int jobCost) {
+        return Math.max(1, Math.min(5, Math.max(1, jobCost) / 10));
     }
 
     private static void cancelBuilderOrder(ServerPlayer player, ServerLevel level, Villager villager, CompoundTag state) {
@@ -951,9 +1271,11 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.builder.cancelled");
             return;
         }
+        Optional<UUID> jobId = BuilderTaskState.jobId(state);
         int paid = BuilderTaskState.paidCurrency(state);
         int placed = BuilderTaskState.placedIndex(state);
         BuilderTaskState.clearTask(state);
+        jobId.ifPresent(id -> ConstructionBlueprintItem.expireMatchingBlueprints(player, id));
         HiredVillagerWorkService.stopWork(level, villager, HiredVillagerRole.BUILDER, "interaction.work.builder.cancelled");
         if (placed == 0 && paid > 0 && VillagerWalletService.spendCurrency(villager, paid, VillagerWalletService.WalletSource.DEPOSIT_ADJUSTMENT)) {
             giveCurrency(player, paid);
@@ -962,6 +1284,32 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.builder.cancelled");
         }
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
+    }
+
+    private static void giveConstructionBlueprint(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            UUID jobId,
+            int paidCurrency,
+            int jobCost,
+            String missingMaterials,
+            long startedGameTime) {
+        ItemStack blueprint = ConstructionBlueprintItem.create(
+                level,
+                villager,
+                plan,
+                origin,
+                jobId,
+                paidCurrency,
+                jobCost,
+                missingMaterials,
+                startedGameTime);
+        if (!player.getInventory().add(blueprint)) {
+            player.drop(blueprint, false);
+        }
     }
 
     private static void stopBrewingOrder(ServerPlayer player, ServerLevel level, Villager villager) {
@@ -1186,6 +1534,91 @@ public final class VillagerInteractionService {
         }
         ItemStack offhand = player.getOffhandItem();
         return VillagerRetaliationItems.isClipboard(offhand) ? offhand : ItemStack.EMPTY;
+    }
+
+    private static ItemStack findHeldConstructionBlueprint(ServerPlayer player) {
+        ItemStack mainHand = player.getMainHandItem();
+        if (ConstructionBlueprintItem.isBlueprint(mainHand)) {
+            return mainHand;
+        }
+        ItemStack offhand = player.getOffhandItem();
+        return ConstructionBlueprintItem.isBlueprint(offhand) ? offhand : ItemStack.EMPTY;
+    }
+
+    private static ItemStack findConstructionBlueprint(ServerPlayer player, UUID jobId) {
+        ItemStack mainHand = player.getMainHandItem();
+        if (ConstructionBlueprintItem.previewData(mainHand).filter(data -> data.jobId().equals(jobId)).isPresent()) {
+            return mainHand;
+        }
+        ItemStack offhand = player.getOffhandItem();
+        if (ConstructionBlueprintItem.previewData(offhand).filter(data -> data.jobId().equals(jobId)).isPresent()) {
+            return offhand;
+        }
+        for (ItemStack stack : player.getInventory().items) {
+            if (ConstructionBlueprintItem.previewData(stack).filter(data -> data.jobId().equals(jobId)).isPresent()) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private static PlacementUpdate placementUpdate(
+            ServerLevel level,
+            BuilderStructureCatalog.Entry entry,
+            ConstructionBlueprintItem.PreviewData preview,
+            ConstructionBlueprintPlacementPayload.Action action,
+            int steps,
+            BlockPos targetPos) {
+        Rotation rotation = preview.rotation();
+        BlockPos origin = preview.origin();
+        Optional<BuilderStructureScanner.StructurePlan> plan = BuilderStructureScanner.scan(level, entry, rotation);
+        if (plan.isEmpty()) {
+            return new PlacementUpdate(Optional.empty(), origin, rotation);
+        }
+
+        switch (action) {
+            case DEPLOY_AT -> origin = originForDeployTarget(plan.get(), targetPos);
+            case MOVE_NORTH -> origin = origin.relative(Direction.NORTH, steps);
+            case MOVE_EAST -> origin = origin.relative(Direction.EAST, steps);
+            case MOVE_SOUTH -> origin = origin.relative(Direction.SOUTH, steps);
+            case MOVE_WEST -> origin = origin.relative(Direction.WEST, steps);
+            case MOVE_UP -> origin = origin.above(steps);
+            case MOVE_DOWN -> origin = origin.below(steps);
+            case TOGGLE_LOCK -> {
+            }
+            case ROTATE_CLOCKWISE, ROTATE_COUNTERCLOCKWISE -> {
+                Rotation nextRotation = rotation.getRotated(action == ConstructionBlueprintPlacementPayload.Action.ROTATE_CLOCKWISE
+                        ? Rotation.CLOCKWISE_90
+                        : Rotation.COUNTERCLOCKWISE_90);
+                Optional<BuilderStructureScanner.StructurePlan> rotatedPlan = BuilderStructureScanner.scan(level, entry, nextRotation);
+                if (rotatedPlan.isEmpty()) {
+                    return new PlacementUpdate(Optional.empty(), origin, rotation);
+                }
+                BlockPos center = preview.worldCenter();
+                origin = center.subtract(rotatedPlan.get().localCenter());
+                rotation = nextRotation;
+                plan = rotatedPlan;
+            }
+        }
+        return new PlacementUpdate(plan, origin.immutable(), rotation);
+    }
+
+    private static BlockPos originForDeployTarget(BuilderStructureScanner.StructurePlan plan, BlockPos targetPos) {
+        BlockPos center = plan.localCenter();
+        return new BlockPos(targetPos.getX() - center.getX(), targetPos.getY(), targetPos.getZ() - center.getZ());
+    }
+
+    private static BlockPos defaultBlueprintOrigin(
+            ServerLevel level,
+            ServerPlayer player,
+            BuilderStructureScanner.StructurePlan plan) {
+        BlockPos center = player.blockPosition().relative(player.getDirection(), 5);
+        int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, center.getX(), center.getZ());
+        BlockPos localCenter = plan.localCenter();
+        return new BlockPos(
+                center.getX() - localCenter.getX(),
+                groundY - plan.localMin().getY(),
+                center.getZ() - localCenter.getZ());
     }
 
     private static int countCurrency(ServerPlayer player) {
@@ -1938,6 +2371,18 @@ public final class VillagerInteractionService {
     }
 
     private record HiredVillagerTarget(ServerLevel level, Villager villager) {
+    }
+
+    private enum BuilderPaymentSource {
+        PLAYER_INVENTORY,
+        PAYMENT_STORAGE,
+        NONE
+    }
+
+    private record PlacementUpdate(
+            Optional<BuilderStructureScanner.StructurePlan> plan,
+            BlockPos origin,
+            Rotation rotation) {
     }
 
     private record DialogueContextSnapshots(

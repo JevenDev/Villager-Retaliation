@@ -18,6 +18,7 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerRenderers);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerLayerDefinitions);
         modEventBus.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings::register);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintKeyMappings::register);
         com.jvn.villagerretaliation.client.item.VillagerFishingRodItemProperties.register();
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onClientTick);
@@ -50,7 +51,12 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onKeyPressed);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPlacementClient::onMouseScroll);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPlacementClient::onMouseButtonPressed);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPlacementClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardModeClient::onMouseScroll);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardModeClient::onMouseButtonPressed);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onComputeFov);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onComputeCameraAngles);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onClientTick);

@@ -346,6 +346,12 @@
       ]
     },
     {
+      "key": "interaction.work.activity.waiting_for_materials",
+      "lines": [
+        "waiting by assigned storage for construction materials"
+      ]
+    },
+    {
       "key": "interaction.work.activity.paused_storage_full",
       "lines": [
         "waiting near full storage at {target}"

@@ -14,7 +14,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "23";
+    private static final String PROTOCOL_VERSION = "24";
 
     private VillagerReputationNetworking() {
     }
@@ -250,6 +250,28 @@ public final class VillagerReputationNetworking {
                     )))
         );
         network.playToServer(
+                ConstructionBlueprintPlacementPayload.TYPE,
+                ConstructionBlueprintPlacementPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleConstructionBlueprintPlacement(
+                            player,
+                            payload.jobId(),
+                            payload.action(),
+                            payload.steps(),
+                            payload.targetPos()
+                    )))
+        );
+        network.playToServer(
+                ClipboardWorkAreaDraftPayload.TYPE,
+                ClipboardWorkAreaDraftPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> com.jvn.villagerretaliation.item.HiredStorageClipboardItem.handleWorkAreaDraftAction(
+                            player,
+                            payload.action(),
+                            payload.steps()
+                    )))
+        );
+        network.playToServer(
                 HiredLoggingFilterPayload.TYPE,
                 HiredLoggingFilterPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
@@ -294,9 +316,10 @@ public final class VillagerReputationNetworking {
                 ClipboardModeChangePayload.TYPE,
                 ClipboardModeChangePayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
-                        ToucanNetwork.withServerPlayer(context, player -> com.jvn.villagerretaliation.item.HiredStorageClipboardItem.changeHeldClipboardMode(
+                        ToucanNetwork.withServerPlayer(context, player -> com.jvn.villagerretaliation.item.HiredStorageClipboardItem.changeClipboardMode(
                             player,
-                            payload.delta()
+                            payload.delta(),
+                            payload.menuSlotIndex()
                     )))
         );
         network.playToServer(

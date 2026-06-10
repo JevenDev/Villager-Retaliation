@@ -18,6 +18,8 @@ final class HiredStorageNavigationGoal {
     private static final String STORAGE_NAV_NEXT_REPATH_GAME_TIME_TAG = "StorageNavigationNextRepathGameTime";
     private static final int STORAGE_APPROACH_SEARCH_RADIUS = 4;
     private static final int STORAGE_WALK_TARGET_CLOSE_ENOUGH = 2;
+    private static final int STORAGE_APPROACH_CLOSE_ENOUGH = 0;
+    private static final double STORAGE_TRANSFER_REACH_SQR = 4.0D;
     private static final int MAX_APPROACH_PATH_ATTEMPTS = 4;
     private static final int STORAGE_REPATH_INTERVAL_TICKS = 30;
     private static final int STORAGE_WANDER_RADIUS = 4;
@@ -193,7 +195,7 @@ final class HiredStorageNavigationGoal {
         if (!context.isLoaded(level, storage)) {
             return null;
         }
-        if (AssignedStorageService.isInInteractionRange(villager, storage)) {
+        if (AssignedStorageService.canInteractWithAssignedStorage(villager, storage)) {
             return villager.blockPosition().immutable();
         }
 
@@ -206,7 +208,7 @@ final class HiredStorageNavigationGoal {
                     || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)
                     || candidate.equals(excludedApproach)
                     || HiredPathMemory.isAvoided(level, villager, candidate)
-                    || candidate.getCenter().distanceToSqr(storage.getCenter()) > 25.0D) {
+                    || candidate.distSqr(storage) > STORAGE_TRANSFER_REACH_SQR) {
                 continue;
             }
             candidates.add(new StorageApproach(candidate, storageApproachScore(level, villager, candidate, storage)));
@@ -232,7 +234,7 @@ final class HiredStorageNavigationGoal {
             BlockPos approach,
             double speed,
             double distanceSqr) {
-        Path path = villager.getNavigation().createPath(approach, STORAGE_WALK_TARGET_CLOSE_ENOUGH);
+        Path path = villager.getNavigation().createPath(approach, STORAGE_APPROACH_CLOSE_ENOUGH);
         if (path == null || !path.canReach()) {
             return false;
         }

@@ -20,6 +20,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class BuilderSitePlanner {
     private static final int MAX_CANDIDATE_RING = 8;
+    private static final int MAX_AREA_CANDIDATES = 512;
 
     private BuilderSitePlanner() {
     }
@@ -33,19 +34,11 @@ public final class BuilderSitePlanner {
         if (level == null || player == null || villager == null || plan == null) {
             return SiteResult.failed("interaction.work.builder.site_missing");
         }
-        List<BlockPos> anchors = new ArrayList<>();
-        anchors.add(player.blockPosition().relative(player.getDirection(), 5));
-        anchors.add(villager.blockPosition().relative(player.getDirection(), 4));
-        if (area != null && area.usable()) {
-            anchors.add(area.center());
-        }
-        for (BlockPos anchor : anchors) {
-            for (BlockPos candidateCenter : candidateCenters(anchor)) {
-                BlockPos origin = originFor(level, candidateCenter, plan);
-                SiteResult validation = validateSite(level, player, villager, area, plan, origin);
-                if (validation.valid()) {
-                    return validation;
-                }
+        for (BlockPos candidateCenter : candidateCenters(player, villager, area, plan)) {
+            BlockPos origin = originFor(level, candidateCenter, plan);
+            SiteResult validation = validateSite(level, player, villager, area, plan, origin);
+            if (validation.valid()) {
+                return validation;
             }
         }
         return SiteResult.failed("interaction.work.builder.no_safe_site");
@@ -118,13 +111,41 @@ public final class BuilderSitePlanner {
             return false;
         }
         if (area != null && area.usable()) {
-            return area.contains(pos);
+            return areaContainsHorizontal(area, pos);
         }
         int maxDistance = Math.max(8, VillagerRetaliationConfig.HIRED_BUILDER_MAX_SITE_DISTANCE.get()) + 8;
-        return buildCenter == null || pos.distSqr(buildCenter) <= maxDistance * maxDistance;
+        return buildCenter == null || horizontalDistanceSqr(pos, buildCenter) <= maxDistance * maxDistance;
     }
 
-    private static List<BlockPos> candidateCenters(BlockPos anchor) {
+    private static boolean areaContainsHorizontal(HiredWorkArea area, BlockPos pos) {
+        return pos.getX() >= area.min().getX()
+                && pos.getX() <= area.max().getX()
+                && pos.getZ() >= area.min().getZ()
+                && pos.getZ() <= area.max().getZ();
+    }
+
+    private static List<BlockPos> candidateCenters(
+            Player player,
+            Villager villager,
+            HiredWorkArea area,
+            BuilderStructureScanner.StructurePlan plan) {
+        List<BlockPos> candidates = new ArrayList<>();
+        addCandidateCenters(candidates, player.blockPosition().relative(player.getDirection(), 5));
+        addCandidateCenters(candidates, villager.blockPosition().relative(player.getDirection(), 4));
+        if (area != null && area.usable()) {
+            addCandidateCenters(candidates, area.center());
+            addAreaCandidateCenters(candidates, player, villager, area, plan);
+        }
+        return candidates;
+    }
+
+    private static void addCandidateCenters(List<BlockPos> candidates, BlockPos anchor) {
+        for (BlockPos candidate : candidateRing(anchor)) {
+            addUnique(candidates, candidate);
+        }
+    }
+
+    private static List<BlockPos> candidateRing(BlockPos anchor) {
         List<BlockPos> candidates = new ArrayList<>();
         candidates.add(anchor);
         for (int radius = 2; radius <= MAX_CANDIDATE_RING; radius += 2) {
@@ -140,6 +161,64 @@ public final class BuilderSitePlanner {
             }
         }
         return candidates;
+    }
+
+    private static void addAreaCandidateCenters(
+            List<BlockPos> candidates,
+            Player player,
+            Villager villager,
+            HiredWorkArea area,
+            BuilderStructureScanner.StructurePlan plan) {
+        List<BlockPos> areaCandidates = new ArrayList<>();
+        int step = areaCandidateStep(plan);
+        int minX = area.min().getX();
+        int maxX = area.max().getX();
+        int minZ = area.min().getZ();
+        int maxZ = area.max().getZ();
+        int y = area.center().getY();
+        for (int x = minX; x <= maxX; x += step) {
+            for (int z = minZ; z <= maxZ; z += step) {
+                addUnique(areaCandidates, new BlockPos(x, y, z));
+            }
+            addUnique(areaCandidates, new BlockPos(x, y, maxZ));
+        }
+        for (int z = minZ; z <= maxZ; z += step) {
+            addUnique(areaCandidates, new BlockPos(maxX, y, z));
+        }
+        addUnique(areaCandidates, new BlockPos(maxX, y, maxZ));
+        addUnique(areaCandidates, area.center());
+        areaCandidates.sort((left, right) -> Double.compare(
+                candidateScore(left, player, villager),
+                candidateScore(right, player, villager)));
+        int added = 0;
+        for (BlockPos candidate : areaCandidates) {
+            if (added >= MAX_AREA_CANDIDATES) {
+                break;
+            }
+            if (addUnique(candidates, candidate)) {
+                added++;
+            }
+        }
+    }
+
+    private static int areaCandidateStep(BuilderStructureScanner.StructurePlan plan) {
+        int width = plan.localMax().getX() - plan.localMin().getX() + 1;
+        int depth = plan.localMax().getZ() - plan.localMin().getZ() + 1;
+        int footprint = Math.max(width, depth);
+        return Math.max(2, Math.min(6, Math.max(2, footprint / 2)));
+    }
+
+    private static double candidateScore(BlockPos candidate, Player player, Villager villager) {
+        return candidate.distSqr(player.blockPosition()) + candidate.distSqr(villager.blockPosition()) * 0.5D;
+    }
+
+    private static boolean addUnique(List<BlockPos> candidates, BlockPos candidate) {
+        BlockPos immutable = candidate.immutable();
+        if (candidates.contains(immutable)) {
+            return false;
+        }
+        candidates.add(immutable);
+        return true;
     }
 
     private static BlockPos originFor(ServerLevel level, BlockPos center, BuilderStructureScanner.StructurePlan plan) {
@@ -160,15 +239,21 @@ public final class BuilderSitePlanner {
         BlockPos min = plan.worldMin(origin);
         BlockPos max = plan.worldMax(origin);
         if (area != null && area.usable()) {
-            return area.contains(min) && area.contains(max);
+            return areaContainsHorizontal(area, min) && areaContainsHorizontal(area, max);
         }
         int maxDistance = Math.max(8, VillagerRetaliationConfig.HIRED_BUILDER_MAX_SITE_DISTANCE.get());
         BlockPos center = new BlockPos(
                 Math.floorDiv(min.getX() + max.getX(), 2),
                 Math.floorDiv(min.getY() + max.getY(), 2),
                 Math.floorDiv(min.getZ() + max.getZ(), 2));
-        return center.distSqr(player.blockPosition()) <= maxDistance * maxDistance
-                || center.distSqr(villager.blockPosition()) <= maxDistance * maxDistance;
+        return horizontalDistanceSqr(center, player.blockPosition()) <= maxDistance * maxDistance
+                || horizontalDistanceSqr(center, villager.blockPosition()) <= maxDistance * maxDistance;
+    }
+
+    private static double horizontalDistanceSqr(BlockPos left, BlockPos right) {
+        double dx = left.getX() - right.getX();
+        double dz = left.getZ() - right.getZ();
+        return dx * dx + dz * dz;
     }
 
     private static boolean safeReplaceable(LevelReader level, BlockPos pos, BlockState current) {
@@ -178,9 +263,14 @@ public final class BuilderSitePlanner {
         if (current.hasBlockEntity() || current.liquid() || current.is(Blocks.BEDROCK)) {
             return false;
         }
-        if (!VillagerRetaliationConfig.HIRED_BUILDER_CAN_REPLACE_SOFT_BLOCKS.get()) {
-            return false;
+        if (isIncidentalSoftBlock(level, pos, current)) {
+            return true;
         }
+        return VillagerRetaliationConfig.HIRED_BUILDER_CAN_REPLACE_SOFT_BLOCKS.get()
+                && current.is(BlockTags.REPLACEABLE);
+    }
+
+    private static boolean isIncidentalSoftBlock(LevelReader level, BlockPos pos, BlockState current) {
         return current.is(BlockTags.REPLACEABLE)
                 || current.is(BlockTags.SMALL_FLOWERS)
                 || current.is(BlockTags.TALL_FLOWERS)

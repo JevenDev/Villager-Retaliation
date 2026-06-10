@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
+import com.jvn.villagerretaliation.network.ClipboardWorkAreaDraftPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.item.ItemStack;
@@ -54,6 +56,9 @@ public final class HiredStorageClipboardItem extends Item {
     private static final String SECOND_POS_TAG = "SecondPos";
     private static final String MODE_TAG = "Mode";
     private static final int MAX_SELECTIONS = 8;
+    private static final int DEFAULT_WORK_AREA_HORIZONTAL_RADIUS = 4;
+    private static final int DEFAULT_WORK_AREA_VERTICAL_RADIUS = 2;
+    private static final int MAX_WORK_AREA_DRAFT_RADIUS = 64;
 
     public HiredStorageClipboardItem(Properties properties) {
         super(properties);
@@ -169,13 +174,19 @@ public final class HiredStorageClipboardItem extends Item {
         }
         WorkAreaDraft draft = selectedWorkArea(stack);
         if (draft.first() != null || draft.second() != null) {
-            tooltip.add(Component.literal("Work area corners: "
-                    + (draft.first() == null ? "0" : draft.second() == null ? "1" : "2")
-                    + "/2"));
+            tooltip.add(Component.literal(draft.complete()
+                    ? "Job site draft: " + dimensions(draft.min(), draft.max())
+                    : "Work area corners: " + (draft.first() == null ? "0" : draft.second() == null ? "1" : "2") + "/2"));
         }
         ClipboardMode currentMode = mode(stack);
         tooltip.add(Component.literal("Mode: ").withStyle(ChatFormatting.GRAY)
                 .append(currentMode.labelComponent()));
+        tooltip.add(Component.literal("Right-click this item in an inventory to change mode.").withStyle(ChatFormatting.DARK_GRAY));
+        if (currentMode == ClipboardMode.SET_WORK_AREA) {
+            tooltip.add(Component.literal("Right-click a block to place the job site draft.").withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("Scroll moves it; Shift moves height; Ctrl resizes.").withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("Alt strafes; Ctrl+Alt resizes height.").withStyle(ChatFormatting.GRAY));
+        }
     }
 
     public static ClipboardMode mode(ItemStack stack) {
@@ -200,11 +211,23 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public static void changeHeldClipboardMode(ServerPlayer player, int delta) {
-        ItemStack clipboard = heldClipboard(player);
+        changeClipboardMode(player, delta, -1);
+    }
+
+    public static void changeClipboardMode(ServerPlayer player, int delta, int menuSlotIndex) {
+        Slot slot = menuSlot(player, menuSlotIndex);
+        if (menuSlotIndex >= 0 && slot == null) {
+            return;
+        }
+        ItemStack clipboard = slot == null ? heldClipboard(player) : slot.getItem();
         if (clipboard.isEmpty()) {
             return;
         }
         ClipboardMode next = cycleMode(clipboard, delta);
+        if (slot != null) {
+            slot.setChanged();
+            player.containerMenu.broadcastChanges();
+        }
         player.displayClientMessage(Component.literal("Clipboard mode: ")
                 .append(next.labelComponent()), true);
     }
@@ -244,7 +267,7 @@ public final class HiredStorageClipboardItem extends Item {
         player.displayClientMessage(Component.literal(text), true);
     }
 
-    private static WorkAreaDraft selectedWorkArea(ItemStack stack) {
+    public static WorkAreaDraft selectedWorkArea(ItemStack stack) {
         CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         if (customData.isEmpty() || !customData.contains(TAG)) {
             return WorkAreaDraft.empty();
@@ -310,7 +333,13 @@ public final class HiredStorageClipboardItem extends Item {
                 player.displayClientMessage(Component.literal("Preview Job Site mode: use the clipboard on a hired villager."), true);
                 yield InteractionResult.SUCCESS;
             }
-            case SET_WORK_AREA -> selectWorkAreaPosition(level, player, stack, pos, WorkAreaPosition.SECOND);
+            case SET_WORK_AREA -> {
+                WorkAreaDraft draft = selectedWorkArea(stack);
+                if (draft.first() != null && draft.second() == null && level.dimension().equals(draft.dimension())) {
+                    yield selectWorkAreaPosition(level, player, stack, pos, WorkAreaPosition.SECOND);
+                }
+                yield centerWorkAreaDraft(level, player, stack, pos);
+            }
         };
     }
 
@@ -358,6 +387,117 @@ public final class HiredStorageClipboardItem extends Item {
         return first == null
                 ? "Corner 2 set. Left-click the opposite corner, then use the clipboard on the hired villager."
                 : "Corner 2 set. Use the clipboard on the hired villager to apply this custom work box.";
+    }
+
+    private static InteractionResult centerWorkAreaDraft(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos center) {
+        WorkAreaDraft draft = selectedWorkArea(stack);
+        BlockPos first;
+        BlockPos second;
+        if (draft.complete() && level.dimension().equals(draft.dimension())) {
+            BlockPos min = draft.min();
+            BlockPos max = draft.max();
+            BlockPos oldCenter = draft.center();
+            first = new BlockPos(
+                    center.getX() - (oldCenter.getX() - min.getX()),
+                    center.getY() - (oldCenter.getY() - min.getY()),
+                    center.getZ() - (oldCenter.getZ() - min.getZ()));
+            second = new BlockPos(
+                    center.getX() + (max.getX() - oldCenter.getX()),
+                    center.getY() + (max.getY() - oldCenter.getY()),
+                    center.getZ() + (max.getZ() - oldCenter.getZ()));
+        } else {
+            HiredWorkArea area = HiredWorkArea.fromCenter(center, DEFAULT_WORK_AREA_HORIZONTAL_RADIUS, DEFAULT_WORK_AREA_VERTICAL_RADIUS, true);
+            first = area.min();
+            second = area.max();
+        }
+        saveWorkAreaSelection(stack, level.dimension(), first, second);
+        sendSelectedWorkAreaOutline(player, level, first, second);
+        player.displayClientMessage(Component.literal("Job site draft: " + dimensions(first, second)
+                + " centered at " + positionDescription(center) + "."), true);
+        return InteractionResult.SUCCESS;
+    }
+
+    public static void handleWorkAreaDraftAction(ServerPlayer player, ClipboardWorkAreaDraftPayload.Action action, int steps) {
+        if (action == null) {
+            return;
+        }
+        ItemStack stack = heldClipboard(player);
+        if (stack.isEmpty() || mode(stack) != ClipboardMode.SET_WORK_AREA) {
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        WorkAreaDraft draft = selectedWorkArea(stack);
+        if (!draft.complete() || !level.dimension().equals(draft.dimension())) {
+            centerWorkAreaDraft(level, player, stack, player.blockPosition());
+            return;
+        }
+
+        BlockPos min = draft.min();
+        BlockPos max = draft.max();
+        BlockPos center = draft.center();
+        int safeSteps = Math.max(1, Math.min(8, steps));
+        switch (action) {
+            case MOVE_NORTH -> {
+                min = min.offset(0, 0, -safeSteps);
+                max = max.offset(0, 0, -safeSteps);
+            }
+            case MOVE_EAST -> {
+                min = min.offset(safeSteps, 0, 0);
+                max = max.offset(safeSteps, 0, 0);
+            }
+            case MOVE_SOUTH -> {
+                min = min.offset(0, 0, safeSteps);
+                max = max.offset(0, 0, safeSteps);
+            }
+            case MOVE_WEST -> {
+                min = min.offset(-safeSteps, 0, 0);
+                max = max.offset(-safeSteps, 0, 0);
+            }
+            case MOVE_UP -> {
+                min = min.offset(0, safeSteps, 0);
+                max = max.offset(0, safeSteps, 0);
+            }
+            case MOVE_DOWN -> {
+                min = min.offset(0, -safeSteps, 0);
+                max = max.offset(0, -safeSteps, 0);
+            }
+            case EXPAND_HORIZONTAL -> {
+                min = new BlockPos(
+                        Math.max(min.getX() - safeSteps, center.getX() - MAX_WORK_AREA_DRAFT_RADIUS),
+                        min.getY(),
+                        Math.max(min.getZ() - safeSteps, center.getZ() - MAX_WORK_AREA_DRAFT_RADIUS));
+                max = new BlockPos(
+                        Math.min(max.getX() + safeSteps, center.getX() + MAX_WORK_AREA_DRAFT_RADIUS),
+                        max.getY(),
+                        Math.min(max.getZ() + safeSteps, center.getZ() + MAX_WORK_AREA_DRAFT_RADIUS));
+            }
+            case CONTRACT_HORIZONTAL -> {
+                if (max.getX() - min.getX() > 2) {
+                    min = new BlockPos(Math.min(min.getX() + safeSteps, center.getX() - 1), min.getY(), min.getZ());
+                    max = new BlockPos(Math.max(max.getX() - safeSteps, center.getX() + 1), max.getY(), max.getZ());
+                }
+                if (max.getZ() - min.getZ() > 2) {
+                    min = new BlockPos(min.getX(), min.getY(), Math.min(min.getZ() + safeSteps, center.getZ() - 1));
+                    max = new BlockPos(max.getX(), max.getY(), Math.max(max.getZ() - safeSteps, center.getZ() + 1));
+                }
+            }
+            case EXPAND_VERTICAL -> {
+                min = new BlockPos(min.getX(), Math.max(min.getY() - safeSteps, center.getY() - MAX_WORK_AREA_DRAFT_RADIUS), min.getZ());
+                max = new BlockPos(max.getX(), Math.min(max.getY() + safeSteps, center.getY() + MAX_WORK_AREA_DRAFT_RADIUS), max.getZ());
+            }
+            case CONTRACT_VERTICAL -> {
+                if (max.getY() - min.getY() > 0) {
+                    min = new BlockPos(min.getX(), Math.min(min.getY() + safeSteps, center.getY()), min.getZ());
+                    max = new BlockPos(max.getX(), Math.max(max.getY() - safeSteps, center.getY()), max.getZ());
+                }
+            }
+        }
+
+        saveWorkAreaSelection(stack, level.dimension(), min, max);
+        sendSelectedWorkAreaOutline(player, level, min, max);
+        WorkAreaDraft updated = selectedWorkArea(stack);
+        player.displayClientMessage(Component.literal("Job site draft: " + dimensions(updated.min(), updated.max())
+                + " centered at " + positionDescription(updated.center()) + "."), true);
     }
 
     public static void sendAssignedStorageOutlines(ServerPlayer player, List<AssignedContainerRecord> records) {
@@ -417,6 +557,26 @@ public final class HiredStorageClipboardItem extends Item {
         }
         ItemStack offhand = player.getOffhandItem();
         return VillagerRetaliationItems.isClipboard(offhand) ? offhand : ItemStack.EMPTY;
+    }
+
+    private static Slot menuSlot(ServerPlayer player, int menuSlotIndex) {
+        if (menuSlotIndex < 0 || menuSlotIndex >= player.containerMenu.slots.size()) {
+            return null;
+        }
+        Slot slot = player.containerMenu.slots.get(menuSlotIndex);
+        return VillagerRetaliationItems.isClipboard(slot.getItem()) ? slot : null;
+    }
+
+    private static String dimensions(BlockPos first, BlockPos second) {
+        BlockPos min = HiredWorkArea.minPos(first, second);
+        BlockPos max = HiredWorkArea.maxPos(first, second);
+        return (max.getX() - min.getX() + 1)
+                + "x" + (max.getY() - min.getY() + 1)
+                + "x" + (max.getZ() - min.getZ() + 1);
+    }
+
+    private static String positionDescription(BlockPos pos) {
+        return pos.getX() + " " + pos.getY() + " " + pos.getZ();
     }
 
     private static SelectionAddResult addSelection(ItemStack stack, ResourceKey<Level> dimension, BlockPos pos) {
@@ -580,9 +740,25 @@ public final class HiredStorageClipboardItem extends Item {
         }
     }
 
-    private record WorkAreaDraft(ResourceKey<Level> dimension, BlockPos first, BlockPos second) {
+    public record WorkAreaDraft(ResourceKey<Level> dimension, BlockPos first, BlockPos second) {
         private static WorkAreaDraft empty() {
             return new WorkAreaDraft(null, null, null);
+        }
+
+        public boolean complete() {
+            return this.dimension != null && this.first != null && this.second != null;
+        }
+
+        public BlockPos min() {
+            return complete() ? HiredWorkArea.minPos(this.first, this.second) : null;
+        }
+
+        public BlockPos max() {
+            return complete() ? HiredWorkArea.maxPos(this.first, this.second) : null;
+        }
+
+        public BlockPos center() {
+            return complete() ? HiredWorkArea.centerPos(min(), max()) : null;
         }
     }
 }

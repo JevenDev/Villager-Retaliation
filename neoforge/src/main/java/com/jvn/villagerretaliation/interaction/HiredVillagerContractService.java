@@ -150,6 +150,20 @@ public final class HiredVillagerContractService {
                 });
     }
 
+    public static void onVillagerDeath(ServerLevel level, Villager villager) {
+        contract(villager)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .ifPresent(tag -> {
+                    HiredVillagerRole role = roleFromContract(level, villager, tag);
+                    HiredVillagerWorkService.stopWork(level, villager, role, "Work stopped. Villager died.");
+                    tag.putString(STATUS_TAG, STATUS_ENDED);
+                    unlockProfessionAfterHire(villager, tag);
+                    AssignedStorageService.removeAllAssignedStorage(level, villager);
+                    villager.getNavigation().stop();
+                    villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+                });
+    }
+
     public static void startHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
         int safeDays = Mth.clamp(days, 1, 30);
         long startGameTime = level.getGameTime();

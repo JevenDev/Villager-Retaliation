@@ -20,10 +20,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
@@ -62,7 +66,7 @@ public final class BuilderStructureScanner {
     public static boolean sameMaterial(ItemStack candidate, ItemStack required) {
         return !candidate.isEmpty()
                 && !required.isEmpty()
-                && ItemStack.isSameItemSameComponents(candidate, required);
+                && ItemStack.isSameItem(candidate, required);
     }
 
     public static String materialSummary(List<MaterialRequirement> materials, int limit) {
@@ -118,7 +122,7 @@ public final class BuilderStructureScanner {
             BlockPos local = new BlockPos(posTag.getInt(0), posTag.getInt(1), posTag.getInt(2));
             BlockPos rotatedPos = StructureTemplate.transform(local, Mirror.NONE, rotation, BlockPos.ZERO);
             BlockState rotatedState = state.rotate(rotation);
-            ItemStack required = requiredItem(rotatedState);
+            ItemStack required = consumesRequiredItem(rotatedState) ? requiredItem(rotatedState) : ItemStack.EMPTY;
             if (!required.isEmpty()) {
                 materials.merge(required.getItem(), 1, Integer::sum);
             }
@@ -182,6 +186,16 @@ public final class BuilderStructureScanner {
         return item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
     }
 
+    private static boolean consumesRequiredItem(BlockState state) {
+        if (state.getBlock() instanceof DoorBlock) {
+            return state.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
+        }
+        if (state.getBlock() instanceof BedBlock) {
+            return state.getValue(BedBlock.PART) == BedPart.FOOT;
+        }
+        return true;
+    }
+
     private static int price(BuilderStructureCatalog.Entry entry, int blockCount) {
         int base = Math.max(0, VillagerRetaliationConfig.HIRED_BUILDER_BASE_EMERALD_COST.get()) + Math.max(0, entry.baseCost());
         int per64 = Math.max(0, VillagerRetaliationConfig.HIRED_BUILDER_EMERALDS_PER_64_BLOCKS.get());
@@ -193,12 +207,23 @@ public final class BuilderStructureScanner {
         return Comparator
                 .comparingInt((BuildBlock block) -> block.localPos().getY())
                 .thenComparingInt(block -> placementPriority(level, block))
+                .thenComparingInt(block -> secondaryPartPriority(block.state()))
                 .thenComparingInt(block -> block.localPos().getZ())
                 .thenComparingInt(block -> block.localPos().getX());
     }
 
     private static int placementPriority(ServerLevel level, BuildBlock block) {
         return block.state().getCollisionShape(level, BlockPos.ZERO, CollisionContext.empty()).isEmpty() ? 1 : 0;
+    }
+
+    private static int secondaryPartPriority(BlockState state) {
+        if (state.getBlock() instanceof DoorBlock && state.getValue(DoorBlock.HALF) == DoubleBlockHalf.UPPER) {
+            return 1;
+        }
+        if (state.getBlock() instanceof BedBlock && state.getValue(BedBlock.PART) == BedPart.HEAD) {
+            return 1;
+        }
+        return 0;
     }
 
     private record CacheKey(ResourceLocation structureId, Rotation rotation) {

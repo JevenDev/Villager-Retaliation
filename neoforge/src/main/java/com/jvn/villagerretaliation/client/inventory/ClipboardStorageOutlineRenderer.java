@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.client.inventory;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
+import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem.ClipboardMode;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem.WorkAreaDraft;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaEntry;
@@ -181,7 +183,8 @@ public final class ClipboardStorageOutlineRenderer {
         }
 
         if (mode == ClipboardMode.WORK_AREA || mode == ClipboardMode.SET_WORK_AREA) {
-            if (minecraft.level.getGameTime() <= workAreasVisibleUntilGameTime) {
+            boolean renderedHeldDraft = mode == ClipboardMode.SET_WORK_AREA && renderHeldWorkAreaDraft(event, clipboard);
+            if (!renderedHeldDraft && minecraft.level.getGameTime() <= workAreasVisibleUntilGameTime) {
                 renderWorkAreas(event, WORK_AREAS, WORK_AREA_COLOR);
             } else {
                 WORK_AREAS.clear();
@@ -192,6 +195,31 @@ public final class ClipboardStorageOutlineRenderer {
                 ASSIGNED_POSITIONS.clear();
             }
         }
+    }
+
+    private static boolean renderHeldWorkAreaDraft(RenderLevelStageEvent event, ItemStack clipboard) {
+        WorkAreaDraft draft = HiredStorageClipboardItem.selectedWorkArea(clipboard);
+        if (draft.dimension() == null || draft.first() == null && draft.second() == null) {
+            return false;
+        }
+        BlockPos first = draft.first() == null ? draft.second() : draft.first();
+        BlockPos second = draft.second() == null ? first : draft.second();
+        BlockPos min = HiredWorkArea.minPos(first, second);
+        BlockPos max = HiredWorkArea.maxPos(first, second);
+        BlockPos center = HiredWorkArea.centerPos(min, max);
+        renderWorkAreas(event, List.of(new WorkAreaPosition(
+                draft.dimension(),
+                min,
+                max,
+                center,
+                draft.complete(),
+                draft.first() == null ? first : draft.first(),
+                draft.first() != null,
+                draft.second() == null ? second : draft.second(),
+                draft.second() != null,
+                "",
+                "")), WORK_AREA_COLOR);
+        return true;
     }
 
     private static void renderDebugPreview(RenderLevelStageEvent event, Minecraft minecraft) {

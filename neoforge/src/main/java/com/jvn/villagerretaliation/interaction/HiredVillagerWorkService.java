@@ -138,7 +138,7 @@ public final class HiredVillagerWorkService {
         }
         VillagerTaskNavigationUtil.moveInWaterTowardNavigationTarget(level, villager, WORK_AREA_RETURN_WALK_SPEED);
         HiredVillagerFocusService.suppressNonWorkAi(level, villager, session.context());
-        if (returnVillagerToWorkArea(level, villager, session)) {
+        if (shouldReturnToWorkArea(session) && returnVillagerToWorkArea(level, villager, session)) {
             return;
         }
         session.worker().maintain(level, villager, session.context());
@@ -174,6 +174,10 @@ public final class HiredVillagerWorkService {
         HiredWorkerBrain.clearFailure(session.context());
         HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
         setStatus(session.state(), "interaction.work.status.paused_for_command");
+    }
+
+    private static boolean shouldReturnToWorkArea(HiredWorkSession session) {
+        return session.role() != HiredVillagerRole.BUILDER || !BuilderTaskState.hasTask(session.state());
     }
 
     private static boolean returnVillagerToWorkArea(ServerLevel level, Villager villager, HiredWorkSession session) {
@@ -1147,6 +1151,7 @@ public final class HiredVillagerWorkService {
             case MOVING_TO_STORAGE -> "interaction.work.activity.moving_to_storage";
             case RETURNING_TO_WORK_AREA -> "interaction.work.activity.returning_to_work_area";
             case DEPOSITING -> "interaction.work.activity.depositing";
+            case WAITING_FOR_MATERIALS -> "interaction.work.activity.waiting_for_materials";
             case PAUSED_STORAGE_FULL -> "interaction.work.activity.paused_storage_full";
             case NO_WORK_AREA -> "interaction.work.activity.no_work_area";
             case PAUSED_FULL_INVENTORY -> "interaction.work.activity.paused_full_inventory";

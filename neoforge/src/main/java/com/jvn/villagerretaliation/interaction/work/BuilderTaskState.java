@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -22,6 +23,7 @@ public final class BuilderTaskState {
     private static final String STARTED_GAME_TIME_TAG = "StartedGameTime";
     private static final String BLOCKED_REASON_TAG = "BlockedReason";
     private static final String MATERIAL_SUMMARY_TAG = "MaterialSummary";
+    private static final String JOB_ID_TAG = "JobId";
 
     private BuilderTaskState() {
     }
@@ -46,7 +48,20 @@ public final class BuilderTaskState {
             Rotation rotation,
             int paidCurrency,
             long gameTime) {
+        start(state, entry, plan, origin, rotation, paidCurrency, gameTime, UUID.randomUUID());
+    }
+
+    public static void start(
+            CompoundTag state,
+            BuilderStructureCatalog.Entry entry,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            Rotation rotation,
+            int paidCurrency,
+            long gameTime,
+            UUID jobId) {
         CompoundTag task = new CompoundTag();
+        task.putString(JOB_ID_TAG, (jobId == null ? UUID.randomUUID() : jobId).toString());
         task.putString(STRUCTURE_ID_TAG, entry.id().toString());
         task.putString(STRUCTURE_LABEL_TAG, entry.menuLabel());
         task.putLong(ORIGIN_TAG, origin.asLong());
@@ -136,6 +151,33 @@ public final class BuilderTaskState {
 
     public static String materialSummary(CompoundTag state) {
         return task(state).getString(MATERIAL_SUMMARY_TAG);
+    }
+
+    public static void setPlacement(
+            CompoundTag state,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            Rotation rotation) {
+        CompoundTag task = task(state);
+        task.putLong(ORIGIN_TAG, origin.asLong());
+        task.putString(ROTATION_TAG, (rotation == null ? Rotation.NONE : rotation).name());
+        if (plan != null) {
+            task.putInt(TOTAL_BLOCKS_TAG, plan.blocks().size());
+            task.putString(MATERIAL_SUMMARY_TAG, plan.materialSummary(5));
+        }
+        task.remove(BLOCKED_REASON_TAG);
+    }
+
+    public static Optional<UUID> jobId(CompoundTag state) {
+        CompoundTag task = task(state);
+        if (!task.contains(JOB_ID_TAG, Tag.TAG_STRING)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(UUID.fromString(task.getString(JOB_ID_TAG)));
+        } catch (IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
     }
 
     public static void setBlocked(CompoundTag state, String reason) {

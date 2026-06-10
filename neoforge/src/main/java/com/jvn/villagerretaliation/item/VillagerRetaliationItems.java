@@ -17,6 +17,8 @@ public final class VillagerRetaliationItems {
 
     public static final DeferredHolder<Item, Item> CLIPBOARD =
             ITEMS.register("clipboard", () -> new HiredStorageClipboardItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredHolder<Item, Item> CONSTRUCTION_BLUEPRINT =
+            ITEMS.register("construction_blueprint", () -> new ConstructionBlueprintItem(new Item.Properties().stacksTo(1)));
     public static final DeferredHolder<Item, BlockItem> OAK_PAYMENT_BOX =
             registerBlockItem("oak_payment_box", VillagerRetaliationBlocks.OAK_PAYMENT_BOX);
     public static final DeferredHolder<Item, BlockItem> SPRUCE_PAYMENT_BOX =
@@ -49,6 +51,10 @@ public final class VillagerRetaliationItems {
 
     public static boolean isClipboard(ItemStack stack) {
         return stack != null && stack.is(CLIPBOARD.get());
+    }
+
+    public static boolean isConstructionBlueprint(ItemStack stack) {
+        return ConstructionBlueprintItem.isBlueprint(stack);
     }
 
     private static DeferredHolder<Item, BlockItem> registerBlockItem(String id, DeferredHolder<Block, ? extends Block> block) {

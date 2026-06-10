@@ -36,7 +36,7 @@
     {
       "key": "interaction.work.builder.preview",
       "lines": [
-        "{structure} needs {blocks} blocks, costs {cost}, and starts near {site}. I will need {materials}."
+        "{structure} needs {blocks} blocks. The blueprint is {blueprint_cost}; construction will cost {cost}. I will need {materials}."
       ]
     },
     {
@@ -48,7 +48,7 @@
     {
       "key": "interaction.work.builder.preview_first",
       "lines": [
-        "Choose and preview a structure before confirming construction."
+        "Choose and preview a structure before buying a blueprint."
       ]
     },
     {
@@ -60,13 +60,55 @@
     {
       "key": "interaction.work.builder.need_payment",
       "lines": [
-        "I need {cost} before I can start building {structure}."
+        "I need {cost} in your inventory or my assigned payment box before I can start building {structure}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.need_blueprint_payment",
+      "lines": [
+        "I need {blueprint_cost} from you before I can draw up a blueprint for {structure}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.blueprint_ready",
+      "lines": [
+        "Here is the blueprint for {structure}. Place and rotate it where you want; construction will cost {cost} when you hand it to a builder."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.blueprint_missing",
+      "lines": [
+        "Hold the construction blueprint when you ask me to start."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.blueprint_expired",
+      "lines": [
+        "That blueprint is expired."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.blueprint_started",
+      "lines": [
+        "That blueprint has already started a construction job."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.blueprint_completed",
+      "lines": [
+        "That blueprint is already completed."
       ]
     },
     {
       "key": "interaction.work.builder.started",
       "lines": [
         "I will build {structure} at {site}. I have marked the materials and payment."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.started_waiting_materials",
+      "lines": [
+        "I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage."
       ]
     },
     {
@@ -91,6 +133,18 @@
       "key": "interaction.work.builder.waiting_materials",
       "lines": [
         "I need more construction materials for {structure}: {materials}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.moving_to_material_storage",
+      "lines": [
+        "I need {materials} for {structure}, so I am heading to assigned storage."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.waiting_materials_at_storage",
+      "lines": [
+        "I am waiting by assigned storage for {materials} to build {structure}."
       ]
     },
     {

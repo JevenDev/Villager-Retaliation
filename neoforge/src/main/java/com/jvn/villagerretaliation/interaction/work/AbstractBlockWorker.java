@@ -440,7 +440,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         return false;
     }
 
-    private boolean settleIntoApproach(Villager villager, HiredPathTarget target, double speed) {
+    protected boolean settleIntoApproach(Villager villager, HiredPathTarget target, double speed) {
         Vec3 center = target.approachPos().getCenter();
         double horizontalDistanceSqr = Mth.square(villager.getX() - center.x)
                 + Mth.square(villager.getZ() - center.z);

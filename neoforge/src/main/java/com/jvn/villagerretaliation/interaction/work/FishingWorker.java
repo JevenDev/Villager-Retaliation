@@ -200,13 +200,23 @@ public final class FishingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
             return ItemStack.EMPTY;
         }
-        context.state().remove(COLLECTING_ROD_TAG);
-        AssignedStorageService.transferFirstMatchingStackAtAssignedStorage(
+        int moved = AssignedStorageService.transferFirstMatchingStackAtAssignedStorage(
                 villager,
                 storage,
                 this::isFishingRod,
                 offered -> context.inventory().insertSupply(offered));
-        return context.inventory().equipBestTool(this::isFishingRod, stack -> rodScore(level, villager, stack));
+        rod = context.inventory().equipBestTool(this::isFishingRod, stack -> rodScore(level, villager, stack));
+        if (moved <= 0 || rod.isEmpty()) {
+            context.state().remove(COLLECTING_ROD_TAG);
+            HiredWorkerBrain.setFailure(context, "fishing_rod_inventory_full", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
+            return ItemStack.EMPTY;
+        }
+        context.state().remove(COLLECTING_ROD_TAG);
+        HiredWorkerBrain.clearStorageTarget(context);
+        HiredStorageNavigationGoal.clearStorageNavigationState(context);
+        setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+        return rod;
     }
 
     private boolean isFishingRod(ItemStack stack) {

@@ -70,6 +70,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final String BACK_LABEL_KEY = GUI_KEY_PREFIX + "back";
     private static final String FORCED_LEAVE_OPTION_ID = "leave";
     private static final String DIALOGUE_TREE_LEAVE_OPTION_ID = DialogueTreeService.LEAVE_OPTION_ID;
+    private static final String BLUEPRINT_START_OPTION_ID = "construction_blueprint_start";
+    private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
+    private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
     private static final int OPTION_HEIGHT = 18;
     private static final int INFO_PANEL_CHAT_PADDING = 20;
     private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
@@ -156,6 +159,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private HiredBrewingRecipeCatalog.BrewingDurationChoice selectedBrewingDurationChoice;
     private HiredBrewingRecipeCatalog.BrewingLevelChoice selectedBrewingLevelChoice;
     private HiredBrewingRecipeCatalog.BrewingRoute selectedBrewingRoute;
+    private String selectedBuilderCategory;
     private BuilderStructureCatalog.Entry selectedBuilderStructure;
     private int selectedInventorySlot = -1;
     private int lastMouseX;
@@ -536,6 +540,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (this.page == DialoguePage.ANIMAL_BREEDING_TARGETS) {
             addAnimalBreedingTargetOptions();
         } else if (this.page == DialoguePage.BUILDER_STRUCTURES) {
+            addBuilderCategoryOptions();
+        } else if (this.page == DialoguePage.BUILDER_STRUCTURE_CATEGORY) {
             addBuilderStructureOptions();
         } else if (this.page == DialoguePage.BUILDER_CONFIRM) {
             addBuilderConfirmOptions();
@@ -881,12 +887,27 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption(labelKey, () -> requestBrewingOrder(this.selectedBrewingRoute, amount, continuous));
     }
 
-    private void addBuilderStructureOptions() {
-        String category = "";
+    private void addBuilderCategoryOptions() {
+        Set<String> categories = new LinkedHashSet<>();
         for (BuilderStructureCatalog.Entry entry : BuilderStructureCatalog.entries()) {
-            if (!entry.category().equals(category)) {
-                category = entry.category();
-                this.options.add(DialogueOption.enabled(translate("recruit.builder_category", category), NO_ACTION));
+            categories.add(entry.category());
+        }
+        for (String category : categories) {
+            this.options.add(DialogueOption.enabled(
+                    translate("recruit.builder_category", category),
+                    () -> openBuilderStructureCategoryPage(category)));
+        }
+        addOption("recruit.nevermind", this::openWorkPage);
+    }
+
+    private void addBuilderStructureOptions() {
+        if (this.selectedBuilderCategory == null || this.selectedBuilderCategory.isBlank()) {
+            openBuilderStructuresPage();
+            return;
+        }
+        for (BuilderStructureCatalog.Entry entry : BuilderStructureCatalog.entries()) {
+            if (!entry.category().equals(this.selectedBuilderCategory)) {
+                continue;
             }
             this.options.add(DialogueOption.enabled(entry.label(), () -> {
                 this.selectedBuilderStructure = entry;
@@ -894,7 +915,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 openPage(DialoguePage.BUILDER_CONFIRM);
             }));
         }
-        addOption("recruit.nevermind", this::openWorkPage);
+        addOption("recruit.nevermind", this::openBuilderStructuresPage);
     }
 
     private void addBuilderConfirmOptions() {
@@ -1076,6 +1097,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addDialogueOption(String label, String optionId) {
+        if (BLUEPRINT_CHANGE_OPTION_ID.equals(optionId)) {
+            this.options.add(DialogueOption.enabled(label, this::openBuilderStructuresPage));
+            return;
+        }
+        if (BLUEPRINT_NEVERMIND_OPTION_ID.equals(optionId)) {
+            this.options.add(DialogueOption.enabled(label, this::leaveConversation));
+            return;
+        }
         this.options.add(DialogueOption.enabled(label, () -> requestDialogue(optionId)));
     }
 
@@ -1167,8 +1196,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void openBuilderStructuresPage() {
+        this.selectedBuilderCategory = null;
         this.selectedBuilderStructure = null;
         openPage(DialoguePage.BUILDER_STRUCTURES);
+    }
+
+    private void openBuilderStructureCategoryPage(String category) {
+        this.selectedBuilderCategory = category;
+        this.selectedBuilderStructure = null;
+        openPage(DialoguePage.BUILDER_STRUCTURE_CATEGORY);
     }
 
     private void openFamilyPage() {
@@ -1289,6 +1325,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         if (this.page == DialoguePage.BUILDER_CONFIRM) {
+            if (this.selectedBuilderCategory != null && !this.selectedBuilderCategory.isBlank()) {
+                openPage(DialoguePage.BUILDER_STRUCTURE_CATEGORY);
+            } else {
+                openPage(DialoguePage.BUILDER_STRUCTURES);
+            }
+            return;
+        }
+        if (this.page == DialoguePage.BUILDER_STRUCTURE_CATEGORY) {
             openPage(DialoguePage.BUILDER_STRUCTURES);
             return;
         }
@@ -2522,6 +2566,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         LOGGING_FILTERS,
         ANIMAL_BREEDING_TARGETS,
         BUILDER_STRUCTURES,
+        BUILDER_STRUCTURE_CATEGORY,
         BUILDER_CONFIRM,
         BREWING_POTION,
         BREWING_LEVEL,
