@@ -655,7 +655,7 @@ public final class HiredVillagerWorkService {
         VillagerInteractionService.sendVillagerNotice(
                 player,
                 villager,
-                workReportMessageKey(session.role()),
+                HiredVillagerRoleSettings.workReportMessageKey(session.role()),
                 Map.of(
                         "activity", describeWorkActivity(player, level, villager, session, snapshot, targetDescription),
                         "status_detail", describeStatusDetail(player, level, villager, session, targetDescription),
@@ -669,8 +669,9 @@ public final class HiredVillagerWorkService {
     public static List<String> debugLines(ServerLevel level, Villager villager) {
         HiredWorkSession session = HiredWorkSession.active(level, villager);
         HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
-        int outputStacks = session.inventory().collectOutputItems().size();
-        int outputItems = session.inventory().collectOutputItems().stream().mapToInt(output -> output.stack().getCount()).sum();
+        List<HiredJobInventory.OutputStack> outputs = session.inventory().collectOutputItems();
+        int outputStacks = outputs.size();
+        int outputItems = outputs.stream().mapToInt(output -> output.stack().getCount()).sum();
         boolean hasAssignedStorage = AssignedStorageService.hasAssignedStorage(level, villager);
         boolean canDepositNow = AssignedStorageService.canInteractWithAssignedStorage(villager, pos -> session.area().contains(pos));
 
@@ -711,8 +712,8 @@ public final class HiredVillagerWorkService {
         state.remove("NextWorkGameTime");
         state.remove("ProgressTicks");
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        int radius = roleDefaultHorizontalRadius(role, maxWorkRadius(level, villager, role));
-        int verticalRadius = roleDefaultVerticalRadius(role, maxWorkRadius(level, villager, role));
+        int radius = HiredVillagerRoleSettings.defaultHorizontalRadius(role, MIN_WORK_RADIUS, maxWorkRadius(level, villager, role));
+        int verticalRadius = HiredVillagerRoleSettings.defaultVerticalRadius(role, maxWorkRadius(level, villager, role));
         BlockPos center = villager.blockPosition();
         HiredWorkArea.fromCenter(center, radius, verticalRadius, false).save(state);
         stopWork(level, villager, role, "interaction.work.status.no_work_area");
@@ -977,10 +978,10 @@ public final class HiredVillagerWorkService {
         HiredWorkArea current = workAreaWithinMax(state, villager, maxRadius);
         int horizontalRadius = current.explicitlyAssigned()
                 ? current.horizontalRadius()
-                : roleDefaultHorizontalRadius(role, maxRadius);
+                : HiredVillagerRoleSettings.defaultHorizontalRadius(role, MIN_WORK_RADIUS, maxRadius);
         int verticalRadius = current.explicitlyAssigned()
                 ? current.verticalRadius()
-                : roleDefaultVerticalRadius(role, maxRadius);
+                : HiredVillagerRoleSettings.defaultVerticalRadius(role, maxRadius);
         HiredWorkArea.fromCenter(center, horizontalRadius, verticalRadius, true).clampedTo(maxRadius).save(state);
         setStatus(state, villagerCenter
                 ? "interaction.work.status.center_reset_to_villager"
@@ -1078,29 +1079,6 @@ public final class HiredVillagerWorkService {
         return Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_DEFAULT_RADIUS.get(), MIN_WORK_RADIUS, MAX_SKILLED_WORK_RADIUS);
     }
 
-    private static int roleDefaultHorizontalRadius(HiredVillagerRole role, int maxRadius) {
-        int preferred = switch (role) {
-            case MINING -> 24;
-            case LOGGING -> 32;
-            case FARMING -> 24;
-            case FISHING -> 24;
-            case BUILDER -> 32;
-            default -> 24;
-        };
-        return HiredWorkArea.clampRadius(preferred, MIN_WORK_RADIUS, maxRadius);
-    }
-
-    private static int roleDefaultVerticalRadius(HiredVillagerRole role, int maxRadius) {
-        int preferred = switch (role) {
-            case LOGGING -> 16;
-            case FARMING -> 6;
-            case FISHING -> 8;
-            case BUILDER -> 12;
-            default -> 8;
-        };
-        return HiredWorkArea.clampRadius(preferred, 1, maxRadius);
-    }
-
     private static String dimensions(HiredWorkArea area) {
         return (area.max().getX() - area.min().getX() + 1)
                 + "x" + (area.max().getY() - area.min().getY() + 1)
@@ -1145,20 +1123,6 @@ public final class HiredVillagerWorkService {
 
     private static String valueOrNone(String value) {
         return value == null || value.isBlank() ? "none" : value;
-    }
-
-    private static String workReportMessageKey(HiredVillagerRole role) {
-        return switch (role) {
-            case COMBAT -> "interaction.work_report.combat";
-            case MINING -> "interaction.work_report.mining";
-            case LOGGING -> "interaction.work_report.logging";
-            case FARMING -> "interaction.work_report.farming";
-            case FISHING -> "interaction.work_report.fishing";
-            case BREWING -> "interaction.work_report.brewing";
-            case BUILDER -> "interaction.work_report.builder";
-            case ANIMAL_HANDLING -> "interaction.work_report.animal_handling";
-            case NITWIT -> "interaction.work_report.nitwit";
-        };
     }
 
     private static String describeWorkActivity(
@@ -1261,7 +1225,7 @@ public final class HiredVillagerWorkService {
             return;
         }
         session.state().putLong("LastFoodCheckDay", day);
-        int needed = Math.max(0, roleFoodCost(session.role()));
+        int needed = HiredVillagerRoleSettings.foodCost(session.role());
         if (needed <= 0 || consumeFood(
                 villager,
                 session.inventory(),
@@ -1326,22 +1290,6 @@ public final class HiredVillagerWorkService {
                     area::contains);
         }
         return nutrition;
-    }
-
-    private static int roleFoodCost(HiredVillagerRole role) {
-        int base = Math.max(0, VillagerRetaliationConfig.HIRED_WORK_BASE_FOOD_PER_DAY.get());
-        int roleCost = switch (role) {
-            case COMBAT -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_COMBAT.get();
-            case MINING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_MINING.get();
-            case LOGGING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_LOGGING.get();
-            case FARMING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_FARMING.get();
-            case FISHING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_NAVIGATION.get();
-            case BREWING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_BREWING.get();
-            case BUILDER -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_BUILDER.get();
-            case ANIMAL_HANDLING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_ANIMAL_HANDLING.get();
-            case NITWIT -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_NITWIT.get();
-        };
-        return Math.max(0, Math.max(base, roleCost));
     }
 
     static int efficiencyPercent(ServerLevel level, Villager villager, HiredVillagerRole role, CompoundTag state, HiredJobInventory inventory) {

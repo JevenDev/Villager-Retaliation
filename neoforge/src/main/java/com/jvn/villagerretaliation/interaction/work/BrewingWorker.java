@@ -220,11 +220,6 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 && villager.getNavigation().moveTo(path, speed);
     }
 
-    @Override
-    public String status(ServerLevel level, Villager villager, HiredWorkContext context) {
-        return context.status();
-    }
-
     private static java.util.Optional<HiredBrewingRecipeCatalog.BrewingRoute> targetRoute(ServerLevel level, CompoundTag state) {
         ResourceLocation itemId = ResourceLocation.tryParse(state.getString(TARGET_ITEM_TAG));
         ResourceLocation potionId = ResourceLocation.tryParse(state.getString(TARGET_POTION_TAG));

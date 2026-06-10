@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.skill;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoleSettings;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
@@ -37,7 +38,7 @@ public final class HiredWorkSkillGrowthService {
             return;
         }
 
-        double amount = roleGrowthAmount(role);
+        double amount = HiredVillagerRoleSettings.skillGrowthAmount(role);
         if (amount <= 0.0D) {
             return;
         }
@@ -113,21 +114,6 @@ public final class HiredWorkSkillGrowthService {
             workState.put(PROGRESS_TAG, new CompoundTag());
         }
         return workState.getCompound(PROGRESS_TAG);
-    }
-
-    private static double roleGrowthAmount(HiredVillagerRole role) {
-        double amount = switch (role) {
-            case COMBAT -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_COMBAT.get();
-            case MINING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.get();
-            case LOGGING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_LOGGING.get();
-            case FARMING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_FARMING.get();
-            case FISHING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NAVIGATION.get();
-            case BREWING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_BREWING.get();
-            case BUILDER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_BUILDER.get();
-            case ANIMAL_HANDLING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_ANIMAL_HANDLING.get();
-            case NITWIT -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NITWIT.get();
-        };
-        return Math.max(0.0D, amount);
     }
 
     private static void sendFeedback(ServerPlayer player, Villager villager, VillagerSkill skill) {

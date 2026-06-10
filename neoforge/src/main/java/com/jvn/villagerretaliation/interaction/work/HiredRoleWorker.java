@@ -17,10 +17,6 @@ public interface HiredRoleWorker {
         context.setProgressTicks(0);
     }
 
-    default String status(ServerLevel level, Villager villager, HiredWorkContext context) {
-        return context.status();
-    }
-
     default boolean requiresFood() {
         return true;
     }

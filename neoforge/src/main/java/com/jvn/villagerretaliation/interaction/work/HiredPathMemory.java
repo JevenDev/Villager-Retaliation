@@ -24,6 +24,7 @@ final class HiredPathMemory {
     private static final Map<Long, RecentTarget> RECENT_TARGETS = new HashMap<>();
     private static final Map<UUID, NavigationProgress> NAVIGATION_PROGRESS = new HashMap<>();
     private static final Map<ResourceKey<Level>, Map<Long, TargetReservation>> TARGET_RESERVATIONS = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Long> LAST_EXPIRE_GAME_TIME = new HashMap<>();
 
     private HiredPathMemory() {
     }
@@ -34,10 +35,18 @@ final class HiredPathMemory {
         RECENT_TARGETS.clear();
         NAVIGATION_PROGRESS.clear();
         TARGET_RESERVATIONS.clear();
+        LAST_EXPIRE_GAME_TIME.clear();
     }
 
     static void expire(ServerLevel level) {
         long now = level.getGameTime();
+        ResourceKey<Level> dimension = level.dimension();
+        Long lastExpireGameTime = LAST_EXPIRE_GAME_TIME.get(dimension);
+        if (lastExpireGameTime != null && lastExpireGameTime.longValue() == now) {
+            return;
+        }
+        LAST_EXPIRE_GAME_TIME.put(dimension, now);
+
         AVOIDED_TARGETS.values().forEach(targets -> targets.entrySet().removeIf(entry -> entry.getValue() <= now));
         AVOIDED_TARGETS.entrySet().removeIf(entry -> entry.getValue().isEmpty());
         PATH_FAILURES.entrySet().removeIf(entry -> entry.getValue().isEmpty());
