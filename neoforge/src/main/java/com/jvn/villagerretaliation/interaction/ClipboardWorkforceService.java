@@ -182,6 +182,7 @@ public final class ClipboardWorkforceService {
                 case FARMING -> WorkerStatus.FARMING;
                 case FISHING -> WorkerStatus.WORKING;
                 case BREWING -> WorkerStatus.BREWING;
+                case BUILDER -> WorkerStatus.BUILDING;
                 default -> WorkerStatus.WORKING;
             };
             case IDLE, AWAITING_INSTRUCTION, FAILED_COOLDOWN, PAUSED_MISSING_TOOL -> WorkerStatus.WAITING;

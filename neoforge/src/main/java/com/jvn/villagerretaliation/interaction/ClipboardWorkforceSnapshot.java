@@ -63,6 +63,7 @@ public record ClipboardWorkforceSnapshot(
         LOGGING,
         FARMING,
         BREWING,
+        BUILDING,
         DEPOSITING,
         WAITING,
         NO_WORK_AREA,

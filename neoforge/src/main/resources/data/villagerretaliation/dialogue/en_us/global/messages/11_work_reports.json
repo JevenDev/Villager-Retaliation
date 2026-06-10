@@ -100,6 +100,21 @@
       ]
     },
     {
+      "key": "interaction.work_report.builder",
+      "lines": [
+        "I am building in {work_area}, {activity}. {status_detail}",
+        "My construction work is centered on {work_area}. Right now I am {activity}.",
+        "I am keeping the build moving in {work_area}. My focus is {target}.",
+        "The construction job continues in {work_area}. I am {activity}.",
+        "I am working through the structure in {work_area}, {activity}. {status_detail}",
+        "Builder duty has me at {work_area}. Efficiency is about {efficiency} percent.",
+        "I am still on construction duty around {work_area}. My current business is {activity}.",
+        "The build is not finished yet, so I am {activity} in {work_area}.",
+        "I am handling the next part of the structure in {work_area}. My attention is on {target}.",
+        "For construction, this is my report: I am {activity} in {work_area}. {status_detail}"
+      ]
+    },
+    {
       "key": "interaction.work_report.navigation",
       "lines": [
         "I am serving as a guide in {work_area}, {activity}. {status_detail}",

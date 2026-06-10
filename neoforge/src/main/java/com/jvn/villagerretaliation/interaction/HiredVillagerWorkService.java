@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.interaction.work.BuilderTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
@@ -871,6 +872,13 @@ public final class HiredVillagerWorkService {
                     state,
                     BrewingWorker.orderSummaryKey(level, state),
                     BrewingWorker.orderSummaryReplacements(level, state));
+            case BUILDER -> {
+                if (BuilderTaskState.hasTask(state)) {
+                    setStatus(state, "interaction.work.builder.status_summary", BuilderTaskState.replacements(state));
+                } else {
+                    setStatus(state, "interaction.work.builder.choose_structure");
+                }
+            }
             case ANIMAL_HANDLING -> setStatus(state, "interaction.work.status.animal_breeding_target", Map.of("target", HiredAnimalBreedingTargets.selectionLabel(state)));
             case NITWIT -> setStatus(state, "interaction.work.status.nitwit_focus");
             default -> setStatus(state, "interaction.work.status.no_extra_setup", Map.of("role", role.label()));
@@ -1076,6 +1084,7 @@ public final class HiredVillagerWorkService {
             case LOGGING -> 32;
             case FARMING -> 24;
             case FISHING -> 24;
+            case BUILDER -> 32;
             default -> 24;
         };
         return HiredWorkArea.clampRadius(preferred, MIN_WORK_RADIUS, maxRadius);
@@ -1086,6 +1095,7 @@ public final class HiredVillagerWorkService {
             case LOGGING -> 16;
             case FARMING -> 6;
             case FISHING -> 8;
+            case BUILDER -> 12;
             default -> 8;
         };
         return HiredWorkArea.clampRadius(preferred, 1, maxRadius);
@@ -1145,6 +1155,7 @@ public final class HiredVillagerWorkService {
             case FARMING -> "interaction.work_report.farming";
             case FISHING -> "interaction.work_report.fishing";
             case BREWING -> "interaction.work_report.brewing";
+            case BUILDER -> "interaction.work_report.builder";
             case ANIMAL_HANDLING -> "interaction.work_report.animal_handling";
             case NITWIT -> "interaction.work_report.nitwit";
         };
@@ -1326,6 +1337,7 @@ public final class HiredVillagerWorkService {
             case FARMING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_FARMING.get();
             case FISHING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_FARMING.get();
             case BREWING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_BREWING.get();
+            case BUILDER -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_BUILDER.get();
             case ANIMAL_HANDLING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_ANIMAL_HANDLING.get();
             case NITWIT -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_NITWIT.get();
         };

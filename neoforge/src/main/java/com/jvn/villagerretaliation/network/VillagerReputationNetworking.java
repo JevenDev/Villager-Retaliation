@@ -239,6 +239,17 @@ public final class VillagerReputationNetworking {
                     )))
         );
         network.playToServer(
+                HiredBuilderOrderPayload.TYPE,
+                HiredBuilderOrderPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleBuilderOrderRequest(
+                            player,
+                            payload.entityId(),
+                            payload.action(),
+                            payload.structureId()
+                    )))
+        );
+        network.playToServer(
                 HiredLoggingFilterPayload.TYPE,
                 HiredLoggingFilterPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->

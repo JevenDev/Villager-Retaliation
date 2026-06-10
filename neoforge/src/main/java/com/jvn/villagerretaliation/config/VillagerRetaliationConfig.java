@@ -120,11 +120,17 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> HIRED_WORK_MINIMUM_EFFICIENCY_PERCENT = bind("balance.hiredWorkMinimumEfficiencyPercent", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT = bind("balance.hiredWorkMaximumEfficiencyPercent", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_HIRED_WORK_SKILL_GROWTH = bind("balance.enableHiredWorkSkillGrowth", Boolean.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_MAX_BLOCKS = bind("balance.hiredBuilderMaxBlocks", Integer.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_MAX_SITE_DISTANCE = bind("balance.hiredBuilderMaxSiteDistance", Integer.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_BASE_EMERALD_COST = bind("balance.hiredBuilderBaseEmeraldCost", Integer.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_EMERALDS_PER_64_BLOCKS = bind("balance.hiredBuilderEmeraldsPer64Blocks", Integer.class);
+    public static final ConfigValue<Boolean> HIRED_BUILDER_CAN_REPLACE_SOFT_BLOCKS = bind("balance.hiredBuilderCanReplaceSoftBlocks", Boolean.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_COMBAT = bind("balance.hiredWorkSkillGrowth.combat", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_MINING = bind("balance.hiredWorkSkillGrowth.mining", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_LOGGING = bind("balance.hiredWorkSkillGrowth.logging", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_FARMING = bind("balance.hiredWorkSkillGrowth.farming", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_BREWING = bind("balance.hiredWorkSkillGrowth.brewing", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_BUILDER = bind("balance.hiredWorkSkillGrowth.builder", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_NAVIGATION = bind("balance.hiredWorkSkillGrowth.navigation", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_ANIMAL_HANDLING = bind("balance.hiredWorkSkillGrowth.animalHandling", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_NITWIT = bind("balance.hiredWorkSkillGrowth.nitwit", Double.class);
@@ -133,6 +139,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_LOGGING = bind("balance.hiredWorkFoodCostLogging", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_FARMING = bind("balance.hiredWorkFoodCostFarming", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_BREWING = bind("balance.hiredWorkFoodCostBrewing", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_BUILDER = bind("balance.hiredWorkFoodCostBuilder", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_NAVIGATION = bind("balance.hiredWorkFoodCostNavigation", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_ANIMAL_HANDLING = bind("balance.hiredWorkFoodCostAnimalHandling", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_FOOD_COST_NITWIT = bind("balance.hiredWorkFoodCostNitwit", Integer.class);

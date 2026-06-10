@@ -1,0 +1,199 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_builder"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.builder.choose_structure",
+      "lines": [
+        "Choose a structure for me to build."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.requires_role_choose",
+      "lines": [
+        "Assign me to Builder before choosing a construction job."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.unknown_structure",
+      "lines": [
+        "I do not know that structure."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.structure_unavailable",
+      "lines": [
+        "That structure is not available right now."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.preview",
+      "lines": [
+        "{structure} needs {blocks} blocks, costs {cost}, and starts near {site}. I will need {materials}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.preview_blocked",
+      "lines": [
+        "I cannot start {structure}: {reason}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.preview_first",
+      "lines": [
+        "Choose and preview a structure before confirming construction."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.already_building",
+      "lines": [
+        "I am already working on {structure}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.need_payment",
+      "lines": [
+        "I need {cost} before I can start building {structure}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.started",
+      "lines": [
+        "I will build {structure} at {site}. I have marked the materials and payment."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.status_summary",
+      "lines": [
+        "I am building {structure}: {placed} of {blocks} blocks placed."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.cancelled",
+      "lines": [
+        "Construction cancelled."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.cancelled_refund",
+      "lines": [
+        "Construction cancelled. I returned {cost} because no blocks were placed."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.waiting_materials",
+      "lines": [
+        "I need more construction materials for {structure}: {materials}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.collecting_materials",
+      "lines": [
+        "I am collecting construction materials from assigned storage."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.material_inventory_full",
+      "lines": [
+        "I need room in my job inventory to carry construction materials."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.materials_unreachable",
+      "lines": [
+        "I cannot reach the assigned construction materials."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.site_missing",
+      "lines": [
+        "I do not have a build site for this structure."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.no_safe_site",
+      "lines": [
+        "I cannot find a safe place nearby for that structure."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.too_large",
+      "lines": [
+        "{structure} is too large for the current builder limit."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.site_outside_area",
+      "lines": [
+        "The planned build site is outside my assigned work area."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.site_too_far",
+      "lines": [
+        "The planned build site is too far from us."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.site_unloaded",
+      "lines": [
+        "Part of the planned build site is not loaded."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.blocked_existing",
+      "lines": [
+        "Something important is already at {target}, so I will not replace it."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.blocked_support",
+      "lines": [
+        "The next block at {target} needs support before I can place it."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.blocked_entity",
+      "lines": [
+        "Someone or something is standing where I need to build at {target}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.path_blocked",
+      "lines": [
+        "I cannot reach the next construction spot at {target}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.moving_to_site",
+      "lines": [
+        "I am moving to the next construction spot at {target}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.placement_failed",
+      "lines": [
+        "I could not place the next block at {target}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.placed_block",
+      "lines": [
+        "I placed the next block for {structure}: {placed} of {blocks}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.complete",
+      "lines": [
+        "{structure} is complete."
+      ]
+    }
+  ]
+}

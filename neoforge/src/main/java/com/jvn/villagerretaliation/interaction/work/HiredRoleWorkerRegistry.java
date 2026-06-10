@@ -16,6 +16,7 @@ public final class HiredRoleWorkerRegistry {
         register(new FishingWorker());
         register(new NitwitWorker());
         register(new BrewingWorker());
+        register(new BuilderWorker());
         register(new AnimalBreedingWorker());
     }
 

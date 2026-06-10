@@ -11,12 +11,14 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
+import com.jvn.villagerretaliation.interaction.work.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredLoggingFilters;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.HiredAnimalBreedingTargetPayload;
+import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.HiredBrewingOrderPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingFilterPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
@@ -154,6 +156,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private HiredBrewingRecipeCatalog.BrewingDurationChoice selectedBrewingDurationChoice;
     private HiredBrewingRecipeCatalog.BrewingLevelChoice selectedBrewingLevelChoice;
     private HiredBrewingRecipeCatalog.BrewingRoute selectedBrewingRoute;
+    private BuilderStructureCatalog.Entry selectedBuilderStructure;
     private int selectedInventorySlot = -1;
     private int lastMouseX;
     private int lastMouseY;
@@ -532,6 +535,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addLoggingFilterOptions();
         } else if (this.page == DialoguePage.ANIMAL_BREEDING_TARGETS) {
             addAnimalBreedingTargetOptions();
+        } else if (this.page == DialoguePage.BUILDER_STRUCTURES) {
+            addBuilderStructureOptions();
+        } else if (this.page == DialoguePage.BUILDER_CONFIRM) {
+            addBuilderConfirmOptions();
         } else if (this.page == DialoguePage.BREWING_POTION) {
             addBrewingPotionOptions();
         } else if (this.page == DialoguePage.BREWING_LEVEL) {
@@ -719,6 +726,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addRoleChangeOption(HiredVillagerRole.FARMING, "recruit.role_farming", VillagerRecruitRequestPayload.Action.SET_ROLE_FARMING);
         addRoleChangeOption(HiredVillagerRole.FISHING, "recruit.role_fishing", VillagerRecruitRequestPayload.Action.SET_ROLE_FISHING);
         addRoleChangeOption(HiredVillagerRole.BREWING, "recruit.role_brewing", VillagerRecruitRequestPayload.Action.SET_ROLE_BREWING);
+        addRoleChangeOption(HiredVillagerRole.BUILDER, "recruit.role_builder", VillagerRecruitRequestPayload.Action.SET_ROLE_BUILDER);
         addRoleChangeOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling", VillagerRecruitRequestPayload.Action.SET_ROLE_ANIMAL_HANDLING);
         addRoleChangeOption(HiredVillagerRole.NITWIT, "recruit.role_nitwit", VillagerRecruitRequestPayload.Action.SET_ROLE_NITWIT);
         addOption("recruit.nevermind", this::openRolePage);
@@ -742,6 +750,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             } else {
                 addOption("recruit.work_config_brewing", this::openBrewingPotionPage);
             }
+        }
+        if (isActiveHiredRole(HiredVillagerRole.BUILDER)) {
+            addOption("recruit.work_config_builder", this::openBuilderStructuresPage);
+            addOption("recruit.stop_builder_build", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD));
         }
         addRoleWorkConfigOption(HiredVillagerRole.NITWIT, "recruit.work_config_nitwit", VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT);
         addOption("recruit.nevermind", this::openRecruitPage);
@@ -867,6 +879,33 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addBrewingAmountOption(String labelKey, int amount, boolean continuous) {
         addOption(labelKey, () -> requestBrewingOrder(this.selectedBrewingRoute, amount, continuous));
+    }
+
+    private void addBuilderStructureOptions() {
+        String category = "";
+        for (BuilderStructureCatalog.Entry entry : BuilderStructureCatalog.entries()) {
+            if (!entry.category().equals(category)) {
+                category = entry.category();
+                this.options.add(DialogueOption.enabled(translate("recruit.builder_category", category), NO_ACTION));
+            }
+            this.options.add(DialogueOption.enabled(entry.label(), () -> {
+                this.selectedBuilderStructure = entry;
+                requestBuilderOrder(HiredBuilderOrderPayload.Action.PREVIEW, entry);
+                openPage(DialoguePage.BUILDER_CONFIRM);
+            }));
+        }
+        addOption("recruit.nevermind", this::openWorkPage);
+    }
+
+    private void addBuilderConfirmOptions() {
+        if (this.selectedBuilderStructure == null) {
+            openBuilderStructuresPage();
+            return;
+        }
+        this.options.add(DialogueOption.enabled(translate("recruit.builder_selected", this.selectedBuilderStructure.menuLabel()), NO_ACTION));
+        addOption("recruit.builder_confirm", () -> requestBuilderOrder(HiredBuilderOrderPayload.Action.CONFIRM, this.selectedBuilderStructure));
+        addOption("recruit.builder_pick_another", this::openBuilderStructuresPage);
+        addOption("recruit.nevermind", this::openWorkPage);
     }
 
     private String durationLabel(int durationTicks) {
@@ -1127,6 +1166,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.BREWING_POTION);
     }
 
+    private void openBuilderStructuresPage() {
+        this.selectedBuilderStructure = null;
+        openPage(DialoguePage.BUILDER_STRUCTURES);
+    }
+
     private void openFamilyPage() {
         openPage(DialoguePage.FAMILY);
     }
@@ -1241,6 +1285,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         if (this.page == DialoguePage.BREWING_POTION) {
+            openPage(DialoguePage.WORK);
+            return;
+        }
+        if (this.page == DialoguePage.BUILDER_CONFIRM) {
+            openPage(DialoguePage.BUILDER_STRUCTURES);
+            return;
+        }
+        if (this.page == DialoguePage.BUILDER_STRUCTURES) {
             openPage(DialoguePage.WORK);
             return;
         }
@@ -1417,6 +1469,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (action == VillagerRecruitRequestPayload.Action.STOP_BREWING) {
             this.activeBrewingOrder = false;
             openWorkPage();
+        } else if (action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD) {
+            openWorkPage();
         }
     }
 
@@ -1452,6 +1506,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 continuous));
         this.activeBrewingOrder = true;
         openWorkPage();
+    }
+
+    private void requestBuilderOrder(HiredBuilderOrderPayload.Action action, BuilderStructureCatalog.Entry entry) {
+        ResourceLocation structureId = entry == null ? ResourceLocation.withDefaultNamespace("empty") : entry.id();
+        sendToServer(new HiredBuilderOrderPayload(this.villagerEntityId, action, structureId));
+        if (action == HiredBuilderOrderPayload.Action.CONFIRM || action == HiredBuilderOrderPayload.Action.CANCEL) {
+            openWorkPage();
+        }
     }
 
     private void requestClipboardStorage(ClipboardStorageActionPayload.Action action) {
@@ -2459,6 +2521,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         WORK,
         LOGGING_FILTERS,
         ANIMAL_BREEDING_TARGETS,
+        BUILDER_STRUCTURES,
+        BUILDER_CONFIRM,
         BREWING_POTION,
         BREWING_LEVEL,
         BREWING_DURATION,

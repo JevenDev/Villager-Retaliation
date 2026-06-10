@@ -20,14 +20,22 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignmentSummaryMessage;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummary;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.interaction.work.BuilderSitePlanner;
+import com.jvn.villagerretaliation.interaction.work.BuilderStructureCatalog;
+import com.jvn.villagerretaliation.interaction.work.BuilderStructureScanner;
+import com.jvn.villagerretaliation.interaction.work.BuilderTaskState;
+import com.jvn.villagerretaliation.interaction.work.BuilderWorker;
 import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredBrewingRecipeCatalog;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
+import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
@@ -50,6 +58,7 @@ import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,6 +81,7 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -459,6 +469,34 @@ public final class VillagerInteractionService {
                 "item", route.get().output().getHoverName().getString()));
     }
 
+    public static void handleBuilderOrderRequest(
+            ServerPlayer player,
+            int entityId,
+            HiredBuilderOrderPayload.Action action,
+            ResourceLocation structureId) {
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager) || !canUseInteractionSystem(player, villager)) {
+            sendNotice(player, entityId, "interaction.inventory_unavailable");
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BUILDER) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.requires_role_choose");
+            return;
+        }
+        CompoundTag state = HiredVillagerWorkService.state(villager);
+        HiredVillagerWorkService.initializeDefaults(state, villager);
+        switch (action) {
+            case PREVIEW -> previewBuilderOrder(player, level, villager, state, structureId);
+            case CONFIRM -> confirmBuilderOrder(player, level, villager, state, structureId);
+            case CANCEL -> cancelBuilderOrder(player, level, villager, state);
+        }
+    }
+
     public static void handleClipboardStorageAction(ServerPlayer player, int entityId, ClipboardStorageActionPayload.Action action) {
         Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
         if (target.isEmpty()) {
@@ -708,6 +746,7 @@ public final class VillagerInteractionService {
             case SET_ROLE_FARMING -> HiredVillagerRole.FARMING;
             case SET_ROLE_FISHING -> HiredVillagerRole.FISHING;
             case SET_ROLE_BREWING -> HiredVillagerRole.BREWING;
+            case SET_ROLE_BUILDER -> HiredVillagerRole.BUILDER;
             case SET_ROLE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
             case SET_ROLE_NITWIT -> HiredVillagerRole.NITWIT;
             default -> null;
@@ -750,6 +789,7 @@ public final class VillagerInteractionService {
             case CONFIGURE_FARMING -> HiredVillagerRole.FARMING;
             case CONFIGURE_FISHING -> HiredVillagerRole.FISHING;
             case CONFIGURE_BREWING -> HiredVillagerRole.BREWING;
+            case CONFIGURE_BUILDER -> HiredVillagerRole.BUILDER;
             case CONFIGURE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
             case CONFIGURE_NITWIT -> HiredVillagerRole.NITWIT;
             default -> null;
@@ -759,7 +799,8 @@ public final class VillagerInteractionService {
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS
-                || action == VillagerRecruitRequestPayload.Action.STOP_BREWING;
+                || action == VillagerRecruitRequestPayload.Action.STOP_BREWING
+                || action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD;
         if (!workAction) {
             return false;
         }
@@ -777,9 +818,150 @@ public final class VillagerInteractionService {
             case TOGGLE_USE_ASSIGNED_SUPPLIES -> HiredVillagerWorkService.toggleAssignedSupplies(player, level, villager);
             case TOGGLE_AUTO_DEPOSIT_OUTPUTS -> HiredVillagerWorkService.toggleAutoDeposit(player, level, villager);
             case STOP_BREWING -> stopBrewingOrder(player, level, villager);
+            case STOP_BUILDER_BUILD -> cancelBuilderOrder(player, level, villager, HiredVillagerWorkService.state(villager));
             default -> HiredVillagerWorkService.configureRole(player, level, villager, configureRole);
         }
         return true;
+    }
+
+    private static void previewBuilderOrder(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            CompoundTag state,
+            ResourceLocation structureId) {
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(structureId);
+        if (entry.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.unknown_structure");
+            return;
+        }
+        Optional<BuilderStructureScanner.StructurePlan> plan = BuilderStructureScanner.scan(level, entry.get(), Rotation.NONE);
+        if (plan.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.structure_unavailable", Map.of("structure", entry.get().menuLabel()));
+            return;
+        }
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
+        BuilderSitePlanner.SiteResult site = BuilderSitePlanner.chooseSite(
+                level,
+                player,
+                villager,
+                HiredVillagerWorkService.workArea(level, villager),
+                plan.get());
+        BuilderTaskState.setPendingStructure(state, entry.get().id());
+        sendVillagerNotice(player, villager, missing.ready() && site.valid()
+                ? "interaction.work.builder.preview"
+                : "interaction.work.builder.preview_blocked", Map.of(
+                        "structure", entry.get().menuLabel(),
+                        "cost", formatCurrency(level, plan.get().price()),
+                        "blocks", Integer.toString(plan.get().blocks().size()),
+                        "materials", plan.get().materialSummary(5),
+                        "missing", missing.summary(),
+                        "site", site.valid() ? HiredWorkerBrain.formatPos(site.origin()) : site.statusKey(),
+                        "reason", builderPreviewBlockReason(player, level, villager, missing, site)));
+    }
+
+    private static String builderPreviewBlockReason(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            BuilderWorker.MissingMaterials missing,
+            BuilderSitePlanner.SiteResult site) {
+        List<String> reasons = new ArrayList<>();
+        if (!missing.ready()) {
+            reasons.add("missing materials: " + missing.summary());
+        }
+        if (!site.valid()) {
+            String siteReason = VillagerDialogueResources
+                    .message(createDialogueContext(level, player, villager), site.statusKey(), site.replacements())
+                    .orElse(site.statusKey());
+            reasons.add(siteReason);
+        }
+        return reasons.isEmpty() ? "not ready yet" : String.join("; ", reasons);
+    }
+
+    private static void confirmBuilderOrder(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            CompoundTag state,
+            ResourceLocation structureId) {
+        Optional<ResourceLocation> pending = BuilderTaskState.pendingStructure(state);
+        if (pending.isEmpty() || !pending.get().equals(structureId)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.preview_first");
+            return;
+        }
+        if (BuilderTaskState.hasTask(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
+            return;
+        }
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(structureId);
+        if (entry.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.unknown_structure");
+            return;
+        }
+        Optional<BuilderStructureScanner.StructurePlan> plan = BuilderStructureScanner.scan(level, entry.get(), Rotation.NONE);
+        if (plan.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.structure_unavailable", Map.of("structure", entry.get().menuLabel()));
+            return;
+        }
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
+        if (!missing.ready()) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.waiting_materials", Map.of(
+                    "structure", entry.get().menuLabel(),
+                    "materials", missing.summary()));
+            return;
+        }
+        int cost = plan.get().price();
+        if (countCurrency(player) < cost) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.need_payment", Map.of(
+                    "structure", entry.get().menuLabel(),
+                    "cost", formatCurrency(level, cost)));
+            return;
+        }
+        BuilderSitePlanner.SiteResult site = BuilderSitePlanner.chooseSite(
+                level,
+                player,
+                villager,
+                HiredVillagerWorkService.workArea(level, villager),
+                plan.get());
+        if (!site.valid()) {
+            sendVillagerNotice(player, villager, site.statusKey(), site.replacements());
+            return;
+        }
+
+        removeCurrency(player, cost);
+        VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.TASK_REWARD);
+        state.remove("NextWorkGameTime");
+        state.remove("ProgressTicks");
+        BuilderTaskState.start(state, entry.get(), plan.get(), site.origin(), Rotation.NONE, cost, level.getGameTime());
+        state.putString("Status", "interaction.work.builder.started");
+        sendVillagerNotice(player, villager, "interaction.work.builder.started", Map.of(
+                "structure", entry.get().menuLabel(),
+                "cost", formatCurrency(level, cost),
+                "blocks", Integer.toString(plan.get().blocks().size()),
+                "site", HiredWorkerBrain.formatPos(site.origin())));
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+    }
+
+    private static void cancelBuilderOrder(ServerPlayer player, ServerLevel level, Villager villager, CompoundTag state) {
+        BuilderTaskState.clearPendingStructure(state);
+        if (!BuilderTaskState.hasTask(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.cancelled");
+            return;
+        }
+        int paid = BuilderTaskState.paidCurrency(state);
+        int placed = BuilderTaskState.placedIndex(state);
+        BuilderTaskState.clearTask(state);
+        HiredVillagerWorkService.stopWork(level, villager, HiredVillagerRole.BUILDER, "interaction.work.builder.cancelled");
+        if (placed == 0 && paid > 0 && VillagerWalletService.spendCurrency(villager, paid, VillagerWalletService.WalletSource.DEPOSIT_ADJUSTMENT)) {
+            giveCurrency(player, paid);
+            sendVillagerNotice(player, villager, "interaction.work.builder.cancelled_refund", Map.of("cost", formatCurrency(level, paid)));
+        } else {
+            sendVillagerNotice(player, villager, "interaction.work.builder.cancelled");
+        }
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
     }
 
     private static void stopBrewingOrder(ServerPlayer player, ServerLevel level, Villager villager) {

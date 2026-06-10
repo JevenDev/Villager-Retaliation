@@ -345,6 +345,20 @@ public final class VillagerRetaliationConfigModel {
         @Nest
         public HiredWorkSkillGrowth hiredWorkSkillGrowth = new HiredWorkSkillGrowth();
 
+        @RangeConstraint(min = 128, max = 16384)
+        public int hiredBuilderMaxBlocks = 4096;
+
+        @RangeConstraint(min = 8, max = 64)
+        public int hiredBuilderMaxSiteDistance = 28;
+
+        @RangeConstraint(min = 0, max = 512)
+        public int hiredBuilderBaseEmeraldCost = 8;
+
+        @RangeConstraint(min = 0, max = 128)
+        public int hiredBuilderEmeraldsPer64Blocks = 3;
+
+        public boolean hiredBuilderCanReplaceSoftBlocks = true;
+
         @RangeConstraint(min = 0, max = 16)
         public int hiredWorkFoodCostCombat = 2;
 
@@ -359,6 +373,9 @@ public final class VillagerRetaliationConfigModel {
 
         @RangeConstraint(min = 0, max = 16)
         public int hiredWorkFoodCostBrewing = 1;
+
+        @RangeConstraint(min = 0, max = 16)
+        public int hiredWorkFoodCostBuilder = 3;
 
         @RangeConstraint(min = 0, max = 16)
         public int hiredWorkFoodCostNavigation = 2;
@@ -385,6 +402,9 @@ public final class VillagerRetaliationConfigModel {
 
         @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
         public double brewing = 0.2D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double builder = 0.15D;
 
         @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
         public double navigation = 0.2D;
