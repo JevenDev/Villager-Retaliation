@@ -76,7 +76,7 @@ public class VillagerFishingHookRenderer extends EntityRenderer<VillagerFishingH
         double forwardOffset = 0.8D * scale;
         float crouchOffset = owner.isCrouching() ? -0.1875F : 0.0F;
         return owner.getEyePosition(partialTick)
-                .add(-cos * sideOffset - sin * forwardOffset, crouchOffset - 0.45D * scale, -sin * sideOffset + cos * forwardOffset)
+                .add(-cos * sideOffset - sin * forwardOffset, crouchOffset - 0.75D * scale, -sin * sideOffset + cos * forwardOffset)
                 .add(0.0D, -swing * 0.1D, 0.0D);
     }
 

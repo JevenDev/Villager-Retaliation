@@ -34,6 +34,42 @@
       ]
     },
     {
+      "key": "interaction.work.farming.waiting_for_growth",
+      "lines": [
+        "The crops are planted. I am waiting for them to grow."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.missing_hoe",
+      "lines": [
+        "I need a hoe before I can work the fields."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.collecting_hoe",
+      "lines": [
+        "I am heading to storage for a hoe before I work the fields."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.collected_hoe",
+      "lines": [
+        "I found a hoe in storage and am returning to the fields."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.hoe_unreachable",
+      "lines": [
+        "I found a hoe in storage, but I cannot reach it."
+      ]
+    },
+    {
+      "key": "interaction.work.farming.hoe_inventory_full",
+      "lines": [
+        "I found a hoe in storage, but my job inventory has no room for it."
+      ]
+    },
+    {
       "key": "interaction.work.farming.target_changed",
       "lines": [
         "That farming target is no longer ready for the harvest I had in mind."

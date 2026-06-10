@@ -291,7 +291,6 @@ public final class FishingWorker extends AbstractBlockWorker {
             context.inventory().syncMainHandEquipment();
             context.inventory().setChanged();
         }
-        result.spawnExperience(level, villager);
         level.playSound(null, villager.getX(), villager.getY(), villager.getZ(), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.NEUTRAL, 1.0F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));
         villager.swing(InteractionHand.MAIN_HAND, true);
         villager.gameEvent(GameEvent.ITEM_INTERACT_FINISH);

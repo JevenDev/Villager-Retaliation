@@ -31,6 +31,9 @@ import net.minecraft.world.level.pathfinder.Path;
 public final class FarmingWorker extends AbstractBlockWorker {
     private static final String NEXT_CROP_SCAN_GAME_TIME_TAG = "NextFarmingCropScanGameTime";
     private static final String CROP_SCAN_CURSOR_TAG = "FarmingCropScanCursor";
+    private static final String NEXT_CROP_PRESENCE_SCAN_GAME_TIME_TAG = "NextFarmingCropPresenceScanGameTime";
+    private static final String CROP_PRESENCE_SCAN_CURSOR_TAG = "FarmingCropPresenceScanCursor";
+    private static final String CROP_PRESENT_TAG = "FarmingCropPresent";
     private static final int MAX_CROP_SCAN_POSITIONS_PER_WORK_TICK = 1536;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
     private static final int MAX_PLANNED_CROP_TARGETS = 24;
@@ -55,6 +58,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return waitForWorkAreaAssignment(level, villager, context);
         }
 
+        WorkResult hoeResult = ensureFarmingHoe(level, villager, context);
+        if (hoeResult != null) {
+            return hoeResult;
+        }
+
         setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
         FarmTarget farmTarget = findFarmTarget(level, villager, context);
         if (farmTarget == null) {
@@ -70,6 +78,21 @@ public final class FarmingWorker extends AbstractBlockWorker {
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
+            }
+            CropPresence cropPresence = farmCropPresence(level, context);
+            if (cropPresence != CropPresence.ABSENT) {
+                HiredWorkerBrain.clearFailure(context);
+                if (cropPresence == CropPresence.SCANNING) {
+                    HiredWorkerBrain.setLastTargetScanResult(context, "crop_presence_scan_partial");
+                    setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
+                    return WorkResult.progressed("interaction.work.farming.searching_scan");
+                }
+                HiredWorkerBrain.setLastTargetScanResult(context, "waiting_for_growth");
+                if (roamInsideWorkArea(level, villager, context, 0.35D)) {
+                    return WorkResult.progressed("interaction.work.farming.roaming");
+                }
+                setTaskState(context, HiredWorkerTaskState.IDLE);
+                return WorkResult.idle("interaction.work.farming.waiting_for_growth");
             }
             if (roamInsideWorkArea(level, villager, context, 0.35D)) {
                 return WorkResult.progressed("interaction.work.farming.roaming");
@@ -142,7 +165,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
         context.setProgressTicks(0);
         setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, targetPos);
-        ItemStack tool = context.inventory().findTool(stack -> true);
+        ItemStack tool = context.inventory().findTool(FarmerHoeRequirement::isHoe);
         FarmHarvestResult harvestResult = storeFarmOutputDrops(level, context, villager, targetPos, tool);
         if (harvestResult == FarmHarvestResult.OUTPUT_FULL) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
@@ -185,7 +208,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             CropBlock crop) {
         context.setProgressTicks(0);
         setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, target);
-        ItemStack tool = context.inventory().findTool(stack -> true);
+        ItemStack tool = context.inventory().findTool(FarmerHoeRequirement::isHoe);
         FarmHarvestResult harvestResult = storeCropDrops(level, context, villager, target, tool);
         if (harvestResult == FarmHarvestResult.OUTPUT_FULL) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
@@ -236,6 +259,52 @@ public final class FarmingWorker extends AbstractBlockWorker {
         HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
         setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target);
         return WorkResult.idle("interaction.work.farming.target_changed");
+    }
+
+    private WorkResult ensureFarmingHoe(ServerLevel level, Villager villager, HiredWorkContext context) {
+        ItemStack hoe = context.inventory().equipBestTool(FarmerHoeRequirement::isHoe, FarmerHoeRequirement::hoeScore);
+        if (!hoe.isEmpty()) {
+            HiredWorkerBrain.clearStorageTarget(context);
+            HiredStorageNavigationGoal.clearStorageNavigationState(context);
+            return null;
+        }
+        if (!context.useAssignedStorageForSupplies()) {
+            HiredWorkerBrain.setFailure(context, "missing_hoe", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
+            return WorkResult.idle("interaction.work.farming.missing_hoe");
+        }
+        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, FarmerHoeRequirement::isHoe);
+        if (storage == null) {
+            HiredWorkerBrain.setFailure(context, "missing_hoe", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
+            return WorkResult.idle("interaction.work.farming.missing_hoe");
+        }
+        HiredWorkerBrain.setStorageTarget(context, storage);
+        HiredStorageNavigationGoal.Result result = HiredStorageNavigationGoal.moveToStorageTarget(level, context, villager, storage, 0.45D);
+        if (result == HiredStorageNavigationGoal.Result.MOVING) {
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+            return WorkResult.progressed("interaction.work.farming.collecting_hoe");
+        }
+        if (result == HiredStorageNavigationGoal.Result.FAILED) {
+            HiredWorkerBrain.setFailure(context, "farming_hoe_storage_unreachable", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
+            return WorkResult.idle("interaction.work.farming.hoe_unreachable");
+        }
+        int moved = AssignedStorageService.transferFirstMatchingStackAtAssignedStorage(
+                villager,
+                storage,
+                FarmerHoeRequirement::isHoe,
+                context.inventory()::insertSupply);
+        hoe = context.inventory().equipBestTool(FarmerHoeRequirement::isHoe, FarmerHoeRequirement::hoeScore);
+        if (moved <= 0 || hoe.isEmpty()) {
+            HiredWorkerBrain.setFailure(context, "farming_hoe_inventory_full", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
+            return WorkResult.idle("interaction.work.farming.hoe_inventory_full");
+        }
+        HiredWorkerBrain.clearStorageTarget(context);
+        HiredStorageNavigationGoal.clearStorageNavigationState(context);
+        setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+        return WorkResult.progressed("interaction.work.farming.collected_hoe");
     }
 
     private FarmHarvestResult storeCropDrops(
@@ -533,6 +602,39 @@ public final class FarmingWorker extends AbstractBlockWorker {
         return farmTargetType(level, pos, state) != FarmTargetType.NONE;
     }
 
+    private static CropPresence farmCropPresence(ServerLevel level, HiredWorkContext context) {
+        if (!HiredWorkAreaScan.isInProgress(context, CROP_PRESENCE_SCAN_CURSOR_TAG)
+                && level.getGameTime() < context.state().getLong(NEXT_CROP_PRESENCE_SCAN_GAME_TIME_TAG)) {
+            return context.state().getBoolean(CROP_PRESENT_TAG) ? CropPresence.PRESENT : CropPresence.ABSENT;
+        }
+
+        HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
+                context,
+                CROP_PRESENCE_SCAN_CURSOR_TAG,
+                MAX_CROP_SCAN_POSITIONS_PER_WORK_TICK,
+                pos -> context.isLoaded(level, pos) && isFarmCropBlock(level.getBlockState(pos)));
+        if (!scan.candidates().isEmpty()) {
+            HiredWorkAreaScan.clearCursor(context, CROP_PRESENCE_SCAN_CURSOR_TAG);
+            context.state().putBoolean(CROP_PRESENT_TAG, true);
+            context.state().putLong(NEXT_CROP_PRESENCE_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
+            return CropPresence.PRESENT;
+        }
+        if (scan.completedFullPass()) {
+            context.state().putBoolean(CROP_PRESENT_TAG, false);
+            context.state().putLong(NEXT_CROP_PRESENCE_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_TARGET_SCAN_COOLDOWN_TICKS);
+            return CropPresence.ABSENT;
+        }
+        return CropPresence.SCANNING;
+    }
+
+    private static boolean isFarmCropBlock(BlockState state) {
+        return state.getBlock() instanceof CropBlock
+                || state.getBlock() instanceof CocoaBlock
+                || state.getBlock() instanceof StemBlock
+                || state.getBlock() instanceof AttachedStemBlock
+                || state.is(BlockTags.CROPS);
+    }
+
     private static FarmTargetType farmTargetType(ServerLevel level, BlockPos pos, BlockState state) {
         if (state.getBlock() instanceof CropBlock crop) {
             return crop.isMaxAge(state) ? FarmTargetType.CROP : FarmTargetType.NONE;
@@ -795,6 +897,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
         OUTPUT_FULL,
         TARGET_CHANGED,
         MISSING_PLANTING_ITEM
+    }
+
+    private enum CropPresence {
+        PRESENT,
+        ABSENT,
+        SCANNING
     }
 
     private record FarmTarget(BlockPos pos, FarmTargetType type) {

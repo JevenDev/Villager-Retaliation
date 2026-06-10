@@ -18,6 +18,7 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerRenderers);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerLayerDefinitions);
         modEventBus.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings::register);
+        com.jvn.villagerretaliation.client.item.VillagerFishingRodItemProperties.register();
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onLoggingOut);

@@ -131,7 +131,11 @@ public final class HiredVillagerWorkService {
             return;
         }
 
-        VillagerTaskNavigationUtil.enableHiredWaterTraversal(villager);
+        if (session.role() == HiredVillagerRole.FARMING) {
+            VillagerTaskNavigationUtil.enableHiredFarmingWaterTraversal(villager);
+        } else {
+            VillagerTaskNavigationUtil.enableHiredWaterTraversal(villager);
+        }
         VillagerTaskNavigationUtil.moveInWaterTowardNavigationTarget(level, villager, WORK_AREA_RETURN_WALK_SPEED);
         HiredVillagerFocusService.suppressNonWorkAi(level, villager, session.context());
         if (returnVillagerToWorkArea(level, villager, session)) {
@@ -189,10 +193,7 @@ public final class HiredVillagerWorkService {
             clearWorkAreaReturnState(state);
             return false;
         }
-        if ((brain.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
-                || brain.taskState() == HiredWorkerTaskState.DEPOSITING
-                || brain.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL)
-                && brain.storageTargetPos() != null) {
+        if (brain.taskState().keepsStorageTarget() && brain.storageTargetPos() != null) {
             clearWorkAreaReturnState(state);
             return false;
         }
@@ -1014,7 +1015,7 @@ public final class HiredVillagerWorkService {
             state.putBoolean(HiredWorkArea.WORK_AREA_ASSIGNED_TAG, false);
         }
         if (!state.contains("UseAssignedStorageForSupplies", Tag.TAG_BYTE)) {
-            state.putBoolean("UseAssignedStorageForSupplies", false);
+            state.putBoolean("UseAssignedStorageForSupplies", true);
         }
         if (!state.contains("AutoDepositOutputs", Tag.TAG_BYTE)) {
             state.putBoolean("AutoDepositOutputs", true);

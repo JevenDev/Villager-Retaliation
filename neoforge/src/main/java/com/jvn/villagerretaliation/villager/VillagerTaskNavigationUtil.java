@@ -67,6 +67,8 @@ public final class VillagerTaskNavigationUtil {
     private static final int SURFACE_ESCAPE_SEARCH_CACHE_TICKS = 20;
     private static final float HIRED_WATER_PATH_COST = 32.0F;
     private static final float HIRED_WATER_BORDER_PATH_COST = 16.0F;
+    private static final float HIRED_FARMING_WATER_PATH_COST = 1.0F;
+    private static final float HIRED_FARMING_WATER_BORDER_PATH_COST = 1.0F;
     private static final double WATER_TARGET_REACHED_DISTANCE_SQR = 2.25D;
     private static final double WATER_VERTICAL_SPEED_LIMIT = 0.08D;
     private static final double WATER_IDLE_FLOAT_SPEED = 0.04D;
@@ -149,17 +151,29 @@ public final class VillagerTaskNavigationUtil {
     }
 
     public static void enableHiredWaterTraversal(Villager villager) {
+        enableHiredWaterTraversal(villager, HIRED_WATER_PATH_COST, HIRED_WATER_BORDER_PATH_COST);
+    }
+
+    public static void enableHiredFarmingWaterTraversal(Villager villager) {
+        enableHiredWaterTraversal(villager, HIRED_FARMING_WATER_PATH_COST, HIRED_FARMING_WATER_BORDER_PATH_COST);
+    }
+
+    private static void enableHiredWaterTraversal(Villager villager, float waterPathCost, float waterBorderPathCost) {
         boolean canFloat = villager.getNavigation() instanceof GroundPathNavigation navigation && navigation.canFloat();
         WATER_PATH_SETTINGS.computeIfAbsent(villager.getUUID(), ignored -> new WaterPathSettings(
                 villager.getPathfindingMalus(PathType.WATER),
                 villager.getPathfindingMalus(PathType.WATER_BORDER),
                 canFloat));
-        enableWaterTraversal(villager);
+        enableWaterTraversal(villager, waterPathCost, waterBorderPathCost);
     }
 
     private static void enableWaterTraversal(Villager villager) {
-        villager.setPathfindingMalus(PathType.WATER, HIRED_WATER_PATH_COST);
-        villager.setPathfindingMalus(PathType.WATER_BORDER, HIRED_WATER_BORDER_PATH_COST);
+        enableWaterTraversal(villager, HIRED_WATER_PATH_COST, HIRED_WATER_BORDER_PATH_COST);
+    }
+
+    private static void enableWaterTraversal(Villager villager, float waterPathCost, float waterBorderPathCost) {
+        villager.setPathfindingMalus(PathType.WATER, waterPathCost);
+        villager.setPathfindingMalus(PathType.WATER_BORDER, waterBorderPathCost);
         if (villager.getNavigation() instanceof GroundPathNavigation navigation) {
             navigation.setCanFloat(true);
         }
