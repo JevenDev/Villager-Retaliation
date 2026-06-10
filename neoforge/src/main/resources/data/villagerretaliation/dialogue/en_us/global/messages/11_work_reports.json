@@ -115,21 +115,6 @@
       ]
     },
     {
-      "key": "interaction.work_report.navigation",
-      "lines": [
-        "I am serving as a guide in {work_area}, {activity}. {status_detail}",
-        "My navigation work centers on {work_area}. At the moment I am {activity}.",
-        "I am keeping track of routes in {work_area}. My present focus is {target}.",
-        "The navigation duty continues around {work_area}. I am {activity}.",
-        "I am working the paths in {work_area}, {activity}. {status_detail}",
-        "Guiding work remains my charge in {work_area}. Right now I am {activity}. Efficiency is near {efficiency} percent.",
-        "I am still occupied with navigation in {work_area}. My current business is {activity}.",
-        "My route work is tied to {work_area}, and I am {activity}.",
-        "I am minding the way through {work_area}. My attention is on {target}.",
-        "For navigation, this is my report: I am {activity} in {work_area}. {status_detail}"
-      ]
-    },
-    {
       "key": "interaction.work_report.animal_handling",
       "lines": [
         "I am tending the animals in {work_area}, {activity}. {status_detail}",

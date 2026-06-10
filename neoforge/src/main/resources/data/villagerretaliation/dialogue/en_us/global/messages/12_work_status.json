@@ -220,12 +220,6 @@
       ]
     },
     {
-      "key": "interaction.work.status.navigation_focus",
-      "lines": [
-        "I have shifted my navigation focus for the next route."
-      ]
-    },
-    {
       "key": "interaction.work.status.animal_focus",
       "lines": [
         "I have changed what I am watching for with the animals."

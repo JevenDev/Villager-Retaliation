@@ -40,12 +40,6 @@
       ]
     },
     {
-      "key": "interaction.work.navigation.placeholder",
-      "lines": [
-        "I am ready to guide the way once you settle on where I should lead."
-      ]
-    },
-    {
       "key": "interaction.work.animal_handling.placeholder",
       "lines": [
         "I am ready to tend the animals once there are lures and a safe pen."
