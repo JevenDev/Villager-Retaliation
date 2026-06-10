@@ -17,7 +17,6 @@ public final class HiredRoleWorkerRegistry {
         register(new NitwitWorker());
         register(new BrewingWorker());
         register(new AnimalBreedingWorker());
-        register(new StatusOnlyWorker(HiredVillagerRole.NAVIGATION, "interaction.work.navigation.placeholder"));
     }
 
     private HiredRoleWorkerRegistry() {

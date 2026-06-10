@@ -45,7 +45,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int PAGE_BUTTON_HEIGHT = 13;
     private static final int PAGE_BUTTON_LEFT = CONTENT_RIGHT - PAGE_BUTTON_WIDTH + 1;
     private static final int PAGE_BUTTON_TOP = CONTENT_BOTTOM - PAGE_BUTTON_HEIGHT;
-    private static final int FIRST_OVERVIEW_PAGE_LAST_ROLE = HiredVillagerRole.NAVIGATION.ordinal();
+    private static final int FIRST_OVERVIEW_PAGE_LAST_ROLE = HiredVillagerRole.ANIMAL_HANDLING.ordinal();
     private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
     private static final ResourceLocation PAGE_FORWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");
     private static final ResourceLocation PAGE_BACKWARD = ResourceLocation.withDefaultNamespace("widget/page_backward");

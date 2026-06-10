@@ -20,7 +20,6 @@ public final class HiredVillagerRoles {
             HiredVillagerRole.FARMING, List.of(VillagerSkill.FARMING),
             HiredVillagerRole.FISHING, List.of(VillagerSkill.FISHING, VillagerSkill.SURVIVAL),
             HiredVillagerRole.BREWING, List.of(VillagerSkill.MEDICINE),
-            HiredVillagerRole.NAVIGATION, List.of(VillagerSkill.CARTOGRAPHY, VillagerSkill.SURVIVAL),
             HiredVillagerRole.ANIMAL_HANDLING, List.of(VillagerSkill.ANIMAL_HANDLING),
             HiredVillagerRole.NITWIT, List.of(VillagerSkill.SURVIVAL, VillagerSkill.GATHERING, VillagerSkill.DIPLOMACY)
     );
@@ -110,8 +109,7 @@ public final class HiredVillagerRoles {
             case "armorer", "weaponsmith" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.MINING);
             case "toolsmith", "mason" -> EnumSet.of(HiredVillagerRole.MINING, HiredVillagerRole.LOGGING);
             case "farmer" -> EnumSet.of(HiredVillagerRole.FARMING, HiredVillagerRole.ANIMAL_HANDLING);
-            case "fisherman" -> EnumSet.of(HiredVillagerRole.FISHING, HiredVillagerRole.NAVIGATION);
-            case "cartographer" -> EnumSet.of(HiredVillagerRole.NAVIGATION);
+            case "fisherman", "cartographer" -> EnumSet.of(HiredVillagerRole.FISHING);
             case "cleric" -> EnumSet.of(HiredVillagerRole.BREWING);
             case "shepherd", "leatherworker", "butcher" -> EnumSet.of(HiredVillagerRole.ANIMAL_HANDLING);
             case "fletcher" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.LOGGING);

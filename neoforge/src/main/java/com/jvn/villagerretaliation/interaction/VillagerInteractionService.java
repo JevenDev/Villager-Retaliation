@@ -708,7 +708,6 @@ public final class VillagerInteractionService {
             case SET_ROLE_FARMING -> HiredVillagerRole.FARMING;
             case SET_ROLE_FISHING -> HiredVillagerRole.FISHING;
             case SET_ROLE_BREWING -> HiredVillagerRole.BREWING;
-            case SET_ROLE_NAVIGATION -> HiredVillagerRole.NAVIGATION;
             case SET_ROLE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
             case SET_ROLE_NITWIT -> HiredVillagerRole.NITWIT;
             default -> null;
@@ -751,7 +750,6 @@ public final class VillagerInteractionService {
             case CONFIGURE_FARMING -> HiredVillagerRole.FARMING;
             case CONFIGURE_FISHING -> HiredVillagerRole.FISHING;
             case CONFIGURE_BREWING -> HiredVillagerRole.BREWING;
-            case CONFIGURE_NAVIGATION -> HiredVillagerRole.NAVIGATION;
             case CONFIGURE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
             case CONFIGURE_NITWIT -> HiredVillagerRole.NITWIT;
             default -> null;

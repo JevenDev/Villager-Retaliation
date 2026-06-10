@@ -871,7 +871,6 @@ public final class HiredVillagerWorkService {
                     state,
                     BrewingWorker.orderSummaryKey(level, state),
                     BrewingWorker.orderSummaryReplacements(level, state));
-            case NAVIGATION -> setStatus(state, "interaction.work.status.navigation_focus");
             case ANIMAL_HANDLING -> setStatus(state, "interaction.work.status.animal_breeding_target", Map.of("target", HiredAnimalBreedingTargets.selectionLabel(state)));
             case NITWIT -> setStatus(state, "interaction.work.status.nitwit_focus");
             default -> setStatus(state, "interaction.work.status.no_extra_setup", Map.of("role", role.label()));
@@ -1146,7 +1145,6 @@ public final class HiredVillagerWorkService {
             case FARMING -> "interaction.work_report.farming";
             case FISHING -> "interaction.work_report.fishing";
             case BREWING -> "interaction.work_report.brewing";
-            case NAVIGATION -> "interaction.work_report.navigation";
             case ANIMAL_HANDLING -> "interaction.work_report.animal_handling";
             case NITWIT -> "interaction.work_report.nitwit";
         };
@@ -1328,7 +1326,6 @@ public final class HiredVillagerWorkService {
             case FARMING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_FARMING.get();
             case FISHING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_FARMING.get();
             case BREWING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_BREWING.get();
-            case NAVIGATION -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_NAVIGATION.get();
             case ANIMAL_HANDLING -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_ANIMAL_HANDLING.get();
             case NITWIT -> VillagerRetaliationConfig.HIRED_WORK_FOOD_COST_NITWIT.get();
         };

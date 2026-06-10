@@ -719,7 +719,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addRoleChangeOption(HiredVillagerRole.FARMING, "recruit.role_farming", VillagerRecruitRequestPayload.Action.SET_ROLE_FARMING);
         addRoleChangeOption(HiredVillagerRole.FISHING, "recruit.role_fishing", VillagerRecruitRequestPayload.Action.SET_ROLE_FISHING);
         addRoleChangeOption(HiredVillagerRole.BREWING, "recruit.role_brewing", VillagerRecruitRequestPayload.Action.SET_ROLE_BREWING);
-        addRoleChangeOption(HiredVillagerRole.NAVIGATION, "recruit.role_navigation", VillagerRecruitRequestPayload.Action.SET_ROLE_NAVIGATION);
         addRoleChangeOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling", VillagerRecruitRequestPayload.Action.SET_ROLE_ANIMAL_HANDLING);
         addRoleChangeOption(HiredVillagerRole.NITWIT, "recruit.role_nitwit", VillagerRecruitRequestPayload.Action.SET_ROLE_NITWIT);
         addOption("recruit.nevermind", this::openRolePage);
@@ -743,10 +742,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             } else {
                 addOption("recruit.work_config_brewing", this::openBrewingPotionPage);
             }
-        }
-        addRoleWorkConfigOption(HiredVillagerRole.NAVIGATION, "recruit.work_config_navigation", VillagerRecruitRequestPayload.Action.CONFIGURE_NAVIGATION);
-        if (isActiveHiredRole(HiredVillagerRole.ANIMAL_HANDLING)) {
-            addOption("recruit.work_config_animal_handling", this::openAnimalBreedingTargetsPage);
         }
         addRoleWorkConfigOption(HiredVillagerRole.NITWIT, "recruit.work_config_nitwit", VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT);
         addOption("recruit.nevermind", this::openRecruitPage);
