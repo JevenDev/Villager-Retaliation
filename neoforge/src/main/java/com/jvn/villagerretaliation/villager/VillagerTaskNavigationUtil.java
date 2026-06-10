@@ -67,8 +67,8 @@ public final class VillagerTaskNavigationUtil {
     private static final int SURFACE_ESCAPE_SEARCH_CACHE_TICKS = 20;
     private static final float HIRED_WATER_PATH_COST = 32.0F;
     private static final float HIRED_WATER_BORDER_PATH_COST = 16.0F;
-    private static final float HIRED_FARMING_WATER_PATH_COST = 1.0F;
-    private static final float HIRED_FARMING_WATER_BORDER_PATH_COST = 1.0F;
+    private static final float HIRED_FARMING_WATER_PATH_COST = HIRED_WATER_PATH_COST;
+    private static final float HIRED_FARMING_WATER_BORDER_PATH_COST = HIRED_WATER_BORDER_PATH_COST;
     private static final double WATER_TARGET_REACHED_DISTANCE_SQR = 2.25D;
     private static final double WATER_VERTICAL_SPEED_LIMIT = 0.08D;
     private static final double WATER_IDLE_FLOAT_SPEED = 0.04D;
