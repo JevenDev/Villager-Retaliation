@@ -48,7 +48,7 @@
     {
       "key": "interaction.work.fishing.no_open_water",
       "lines": [
-        "There is no fishable surface water in my work area."
+        "There is no fishable surface water within casting range of my work area."
       ]
     },
     {

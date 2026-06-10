@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -13,6 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
@@ -21,7 +23,6 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.pathfinder.Path;
@@ -40,6 +41,10 @@ public final class FishingWorker extends AbstractBlockWorker {
     private static final String COLLECTING_ROD_TAG = "FishingCollectingRod";
     private static final int MAX_WATER_PATH_ATTEMPTS = 32;
     private static final int APPROACH_RADIUS = 6;
+    private static final int WATER_SEARCH_MARGIN = 8;
+    private static final double MAX_CAST_DISTANCE_SQR = 64.0D;
+    private static final double IDEAL_CAST_HORIZONTAL_DISTANCE = 5.0D;
+    private static final double CLOSE_CAST_HORIZONTAL_DISTANCE = 3.0D;
     private static final double CAST_SPEED = 0.45D;
 
     @Override
@@ -51,6 +56,11 @@ public final class FishingWorker extends AbstractBlockWorker {
     public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
         VillagerFishingHook hook = activeHook(level, context);
         if (hook == null) {
+            return;
+        }
+        if (!hasEquippedFishingRod(context)) {
+            hook.discard();
+            clearHookState(context);
             return;
         }
         faceBlock(villager, hook.position());
@@ -76,18 +86,29 @@ public final class FishingWorker extends AbstractBlockWorker {
             return waitForWorkAreaAssignment(level, villager, context);
         }
 
-        DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, CAST_SPEED);
-        if (depositResult == DepositResult.MOVING) {
-            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-            return WorkResult.progressed("interaction.work.fishing.depositing_output");
-        }
-        if (depositResult == DepositResult.STORAGE_FULL) {
-            return WorkResult.idle(storageFullStatus(context));
+        if (!context.hasOutputSpace()) {
+            if (context.hasOutputToDeposit()) {
+                DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, CAST_SPEED);
+                if (depositResult == DepositResult.MOVING) {
+                    setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+                    return WorkResult.progressed("interaction.work.fishing.depositing_output");
+                }
+                if (depositResult == DepositResult.STORAGE_FULL) {
+                    return WorkResult.idle(storageFullStatus(context));
+                }
+            }
         }
         if (!context.hasOutputSpace()) {
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
             return WorkResult.idle("interaction.work.fishing.output_full_blocked");
+        }
+
+        VillagerFishingHook hook = activeHook(level, context);
+        if (hook != null && !hasEquippedFishingRod(context)) {
+            hook.discard();
+            clearHookState(context);
+            hook = null;
         }
 
         ItemStack rod = ensureFishingRod(level, villager, context);
@@ -99,7 +120,6 @@ public final class FishingWorker extends AbstractBlockWorker {
         }
         context.state().remove(COLLECTING_ROD_TAG);
 
-        VillagerFishingHook hook = activeHook(level, context);
         if (hook != null) {
             if (hook.isBiting()) {
                 retrieveCatch(level, villager, context, hook);
@@ -193,6 +213,10 @@ public final class FishingWorker extends AbstractBlockWorker {
         return !stack.isEmpty() && stack.canPerformAction(ItemAbilities.FISHING_ROD_CAST);
     }
 
+    private boolean hasEquippedFishingRod(HiredWorkContext context) {
+        return isFishingRod(context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT));
+    }
+
     private double rodScore(ServerLevel level, Villager villager, ItemStack stack) {
         int luck = EnchantmentHelper.getFishingLuckBonus(level, stack, villager);
         float lure = EnchantmentHelper.getFishingTimeReduction(level, stack, villager);
@@ -202,10 +226,11 @@ public final class FishingWorker extends AbstractBlockWorker {
 
     private void castRod(ServerLevel level, Villager villager, HiredWorkContext context, ItemStack rod, FishingSpot spot) {
         stopWorkNavigation(villager);
-        faceBlock(villager, spot.water().getCenter());
-        Vec3 target = spot.water().getCenter().add(0.0D, 0.25D, 0.0D);
+        Vec3 target = castTarget(villager, spot.water());
+        faceCastTarget(villager, target);
         int lure = (int)(EnchantmentHelper.getFishingTimeReduction(level, rod, villager) * 20.0F);
         int luck = EnchantmentHelper.getFishingLuckBonus(level, rod, villager);
+        discardExistingOwnedHooks(level, villager);
         VillagerFishingHook hook = new VillagerFishingHook(villager, level, target, luck, lure);
         level.addFreshEntity(hook);
         context.state().putInt(ACTIVE_HOOK_ID_TAG, hook.getId());
@@ -214,8 +239,44 @@ public final class FishingWorker extends AbstractBlockWorker {
         villager.gameEvent(GameEvent.ITEM_INTERACT_START);
     }
 
+    private void faceCastTarget(Villager villager, Vec3 target) {
+        double dx = target.x - villager.getX();
+        double dz = target.z - villager.getZ();
+        double horizontal = Math.sqrt(dx * dx + dz * dz);
+        if (horizontal > 0.0001D) {
+            float yaw = (float)(Mth.atan2(dz, dx) * 180.0D / Math.PI) - 90.0F;
+            villager.setYRot(yaw);
+            villager.yRotO = yaw;
+            villager.yBodyRot = yaw;
+            villager.yBodyRotO = yaw;
+            villager.yHeadRot = yaw;
+            villager.yHeadRotO = yaw;
+        }
+        double dy = target.y - villager.getEyeY();
+        float pitch = (float)(-(Mth.atan2(dy, horizontal) * 180.0D / Math.PI));
+        villager.setXRot(pitch);
+        villager.xRotO = pitch;
+        faceBlock(villager, target);
+    }
+
+    private Vec3 castTarget(Villager villager, BlockPos water) {
+        Vec3 waterCenter = water.getCenter();
+        Vec3 horizontal = new Vec3(waterCenter.x - villager.getX(), 0.0D, waterCenter.z - villager.getZ());
+        Vec3 outward = horizontal.lengthSqr() > 0.0001D ? horizontal.normalize().scale(0.35D) : Vec3.ZERO;
+        return waterCenter.add(outward.x, 0.45D, outward.z);
+    }
+
+    private void discardExistingOwnedHooks(ServerLevel level, Villager villager) {
+        for (VillagerFishingHook hook : level.getEntitiesOfClass(
+                VillagerFishingHook.class,
+                villager.getBoundingBox().inflate(40.0D),
+                hook -> hook.getOwner() == villager)) {
+            hook.discard();
+        }
+    }
+
     private void retrieveCatch(ServerLevel level, Villager villager, HiredWorkContext context, VillagerFishingHook hook) {
-        ItemStack rod = context.inventory().getItem(com.jvn.villagerretaliation.inventory.HiredJobInventory.MAINHAND_SLOT);
+        ItemStack rod = context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT);
         VillagerFishingHook.CatchResult result = hook.retrieve(rod);
         boolean overflow = false;
         for (ItemStack item : result.items()) {
@@ -255,13 +316,19 @@ public final class FishingWorker extends AbstractBlockWorker {
             return remembered;
         }
         List<BlockPos> water = new ArrayList<>();
-        for (BlockPos raw : context.workAreaPositions()) {
+        for (BlockPos raw : waterSearchPositions(context)) {
             BlockPos pos = raw.immutable();
             if (isUsableFishingWater(level, context, pos)) {
                 water.add(pos);
             }
         }
-        water.sort(Comparator.comparingDouble(pos -> villager.distanceToSqr(pos.getCenter())));
+        BlockPos currentPos = villager.blockPosition().immutable();
+        water.sort(Comparator.comparingDouble(pos -> waterCastScore(currentPos, pos)));
+        for (BlockPos waterPos : water) {
+            if (canCastFromPosition(level, villager, context, currentPos, waterPos)) {
+                return new FishingSpot(waterPos, currentPos);
+            }
+        }
         int attempts = 0;
         for (BlockPos waterPos : water) {
             if (attempts++ >= MAX_WATER_PATH_ATTEMPTS) {
@@ -283,7 +350,7 @@ public final class FishingWorker extends AbstractBlockWorker {
         BlockPos approach = BlockPos.of(context.state().getLong(ACTIVE_APPROACH_POS_TAG));
         if (isUsableFishingWater(level, context, water)
                 && context.isInsideWorkArea(approach)
-                && HiredMoveToBlockFaceJob.isValidApproachPosition(level, approach)
+                && isDryApproachPosition(level, approach)
                 && hasCastLine(level, approach, water)) {
             return new FishingSpot(water, approach);
         }
@@ -292,10 +359,15 @@ public final class FishingWorker extends AbstractBlockWorker {
     }
 
     private boolean isUsableFishingWater(ServerLevel level, HiredWorkContext context, BlockPos pos) {
-        return context.isInsideWorkArea(pos)
-                && context.isLoaded(level, pos)
+        return context.isLoaded(level, pos)
                 && level.getFluidState(pos).is(Fluids.WATER)
                 && !level.getFluidState(pos.above()).is(FluidTags.WATER);
+    }
+
+    private Iterable<BlockPos> waterSearchPositions(HiredWorkContext context) {
+        BlockPos min = context.workMin().offset(-WATER_SEARCH_MARGIN, -WATER_SEARCH_MARGIN, -WATER_SEARCH_MARGIN);
+        BlockPos max = context.workMax().offset(WATER_SEARCH_MARGIN, WATER_SEARCH_MARGIN, WATER_SEARCH_MARGIN);
+        return BlockPos.betweenClosed(min, max);
     }
 
     private BlockPos bestApproach(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos water) {
@@ -306,17 +378,21 @@ public final class FishingWorker extends AbstractBlockWorker {
                 water.offset(APPROACH_RADIUS, 2, APPROACH_RADIUS))) {
             BlockPos candidate = raw.immutable();
             if (!context.isInsideWorkArea(candidate)
-                    || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)
-                    || candidate.getCenter().distanceToSqr(water.getCenter()) < 4.0D
-                    || candidate.getCenter().distanceToSqr(water.getCenter()) > 49.0D
+                    || !isDryApproachPosition(level, candidate)
+                    || candidate.getCenter().distanceToSqr(water.getCenter()) > MAX_CAST_DISTANCE_SQR
                     || !hasCastLine(level, candidate, water)) {
                 continue;
             }
             Path path = villager.getNavigation().createPath(candidate, 0);
-            if (path == null || !path.canReach() || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
+            if (path == null || !path.canReach() || !pathStaysDryAndInside(level, path, context)) {
                 continue;
             }
-            double score = villager.distanceToSqr(candidate.getCenter()) + HiredMoveToBlockFaceJob.terrainCost(level, candidate);
+            int vertical = Math.abs(candidate.getY() - villager.blockPosition().getY());
+            double score = villager.distanceToSqr(candidate.getCenter())
+                    + path.getNodeCount() * 1.5D
+                    + vertical * vertical * 12.0D
+                    + waterCastScore(candidate, water) * 0.5D
+                    + HiredMoveToBlockFaceJob.terrainCost(level, candidate);
             if (score < bestScore) {
                 best = candidate;
                 bestScore = score;
@@ -332,10 +408,28 @@ public final class FishingWorker extends AbstractBlockWorker {
         return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(water) || hit.getBlockPos().relative(Direction.UP).equals(water);
     }
 
+    private boolean canCastFromPosition(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos approach, BlockPos water) {
+        return context.isInsideWorkArea(approach)
+                && isDryApproachPosition(level, approach)
+                && approach.getCenter().distanceToSqr(water.getCenter()) <= MAX_CAST_DISTANCE_SQR
+                && hasCastLine(level, approach, water);
+    }
+
     private boolean canCastFromCurrentPosition(Villager villager, HiredWorkContext context, FishingSpot spot) {
         return context.isInsideWorkArea(villager.blockPosition())
                 && villager.distanceToSqr(spot.approach().getCenter()) <= 2.25D
-                && villager.distanceToSqr(spot.water().getCenter()) <= 64.0D;
+                && villager.distanceToSqr(spot.water().getCenter()) <= MAX_CAST_DISTANCE_SQR;
+    }
+
+    private double waterCastScore(BlockPos approach, BlockPos water) {
+        double dx = water.getX() + 0.5D - (approach.getX() + 0.5D);
+        double dz = water.getZ() + 0.5D - (approach.getZ() + 0.5D);
+        double horizontalDistance = Math.sqrt(dx * dx + dz * dz);
+        double idealPenalty = Math.abs(horizontalDistance - IDEAL_CAST_HORIZONTAL_DISTANCE);
+        double closePenalty = horizontalDistance < CLOSE_CAST_HORIZONTAL_DISTANCE
+                ? Math.pow(CLOSE_CAST_HORIZONTAL_DISTANCE - horizontalDistance, 2.0D) * 8.0D
+                : 0.0D;
+        return idealPenalty * idealPenalty + closePenalty + approach.getCenter().distanceToSqr(water.getCenter()) * 0.02D;
     }
 
     private boolean moveToApproach(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos approach, double speed) {
@@ -347,7 +441,7 @@ public final class FishingWorker extends AbstractBlockWorker {
             return true;
         }
         Path path = villager.getNavigation().createPath(approach, 0);
-        if (path == null || !path.canReach() || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
+        if (path == null || !path.canReach() || !pathStaysDryAndInside(level, path, context)) {
             HiredPathMemory.clearNavigationProgress(villager);
             return false;
         }
@@ -357,6 +451,28 @@ public final class FishingWorker extends AbstractBlockWorker {
             HiredPathMemory.rememberNavigationProgress(level, villager, approach, villager.distanceToSqr(approach.getCenter()));
         }
         return moved;
+    }
+
+    private boolean isDryApproachPosition(ServerLevel level, BlockPos pos) {
+        return HiredMoveToBlockFaceJob.isValidApproachPosition(level, pos)
+                && level.getFluidState(pos).isEmpty()
+                && level.getFluidState(pos.above()).isEmpty();
+    }
+
+    private boolean pathStaysDryAndInside(ServerLevel level, Path path, HiredWorkContext context) {
+        if (path == null) {
+            return false;
+        }
+        for (int i = 0; i < path.getNodeCount(); i++) {
+            BlockPos pos = path.getNode(i).asBlockPos();
+            if (!context.isInsideWorkArea(pos)
+                    || !context.isLoaded(level, pos)
+                    || !level.getFluidState(pos).isEmpty()
+                    || !level.getFluidState(pos.above()).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void rememberFishingTarget(HiredWorkContext context, FishingSpot spot) {

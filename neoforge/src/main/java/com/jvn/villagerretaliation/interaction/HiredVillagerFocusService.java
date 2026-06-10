@@ -70,8 +70,7 @@ public final class HiredVillagerFocusService {
         return switch (worker.taskState()) {
             case MOVING_TO_TARGET, VALIDATING_TARGET, WORKING, FINDING_CHAIN_TARGET -> worker.targetPos() != null;
             case MOVING_TO_STORAGE -> worker.storageTargetPos() != null;
-            case RETURNING_TO_WORK_AREA -> true;
-            default -> false;
+            default -> true;
         };
     }
 

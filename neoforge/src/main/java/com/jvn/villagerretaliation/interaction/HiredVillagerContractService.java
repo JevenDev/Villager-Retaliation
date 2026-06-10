@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class HiredVillagerContractService {
     private static final String CONTRACT_TAG = "VillagerRetaliationHireContract";
@@ -29,11 +30,15 @@ public final class HiredVillagerContractService {
     private static final String AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG = "AwaitingAutoPaymentStartGameTime";
     private static final String ROLE_TAG = "Role";
     private static final String STATUS_TAG = "Status";
+    private static final String PROFESSION_LOCK_ARTIFICIAL_TAG = "ProfessionLockArtificial";
+    private static final String PROFESSION_LOCK_ORIGINAL_XP_TAG = "ProfessionLockOriginalXp";
+    private static final String PROFESSION_LOCK_APPLIED_XP_TAG = "ProfessionLockAppliedXp";
     private static final String STATUS_ACTIVE = "active";
     private static final String STATUS_ENDED = "ended";
     private static final String STATUS_EXPIRED = "expired";
     private static final String STATUS_AWAITING_AUTO_PAYMENT = "awaiting_auto_payment";
     private static final long DAY_TICKS = 24000L;
+    private static final int HIRED_PROFESSION_LOCK_XP = 1;
 
     private HiredVillagerContractService() {
     }
@@ -158,6 +163,7 @@ public final class HiredVillagerContractService {
         tag.putBoolean(AUTO_PAYMENT_TAG, false);
         tag.putString(ROLE_TAG, HiredVillagerRoles.defaultRole(level, villager).serializedName());
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
+        lockProfessionForHire(villager, tag);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
         villager.setPersistenceRequired();
     }
@@ -194,6 +200,7 @@ public final class HiredVillagerContractService {
         HiredVillagerWorkService.stopWork(level, villager, role, "Work stopped. Contract ended.");
         int refund = earlyEndRefund(level, tag);
         tag.putString(STATUS_TAG, STATUS_ENDED);
+        unlockProfessionAfterHire(villager, tag);
         depositJobInventoryToAssignedStorage(villager);
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         return refund;
@@ -359,6 +366,7 @@ public final class HiredVillagerContractService {
         HiredVillagerRole role = roleFromContract(level, villager, tag);
         HiredVillagerWorkService.stopWork(level, villager, role, status);
         tag.putString(STATUS_TAG, STATUS_EXPIRED);
+        unlockProfessionAfterHire(villager, tag);
         depositJobInventoryToAssignedStorage(villager);
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.getNavigation().stop();
@@ -390,6 +398,48 @@ public final class HiredVillagerContractService {
         tag.putInt(DURATION_DAYS_TAG, tag.getInt(DURATION_DAYS_TAG) + safeDays);
         tag.putInt(EMERALDS_PAID_TAG, tag.getInt(EMERALDS_PAID_TAG) + emeraldsPaid);
         tag.putInt(DAILY_COST_TAG, Math.max(1, emeraldsPaid / safeDays));
+    }
+
+    private static void lockProfessionForHire(Villager villager, CompoundTag tag) {
+        clearProfessionLockTags(tag);
+        if (villager.isBaby()) {
+            return;
+        }
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        if (profession == VillagerProfession.NONE || profession == VillagerProfession.NITWIT) {
+            return;
+        }
+        int originalXp = villager.getVillagerXp();
+        if (originalXp > 0) {
+            return;
+        }
+        villager.setVillagerXp(HIRED_PROFESSION_LOCK_XP);
+        tag.putBoolean(PROFESSION_LOCK_ARTIFICIAL_TAG, true);
+        tag.putInt(PROFESSION_LOCK_ORIGINAL_XP_TAG, originalXp);
+        tag.putInt(PROFESSION_LOCK_APPLIED_XP_TAG, HIRED_PROFESSION_LOCK_XP);
+    }
+
+    private static void unlockProfessionAfterHire(Villager villager, CompoundTag tag) {
+        if (!tag.getBoolean(PROFESSION_LOCK_ARTIFICIAL_TAG)) {
+            clearProfessionLockTags(tag);
+            return;
+        }
+        int originalXp = tag.getInt(PROFESSION_LOCK_ORIGINAL_XP_TAG);
+        int appliedXp = tag.getInt(PROFESSION_LOCK_APPLIED_XP_TAG);
+        if (appliedXp <= 0) {
+            appliedXp = HIRED_PROFESSION_LOCK_XP;
+        }
+        if (villager.getVillagerXp() == appliedXp) {
+            villager.setVillagerXp(originalXp);
+        }
+        clearProfessionLockTags(tag);
+        villager.setPersistenceRequired();
+    }
+
+    private static void clearProfessionLockTags(CompoundTag tag) {
+        tag.remove(PROFESSION_LOCK_ARTIFICIAL_TAG);
+        tag.remove(PROFESSION_LOCK_ORIGINAL_XP_TAG);
+        tag.remove(PROFESSION_LOCK_APPLIED_XP_TAG);
     }
 
     private static int earlyEndRefund(ServerLevel level, CompoundTag contract) {

@@ -18,6 +18,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -38,6 +39,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.ItemAbilities;
 import org.slf4j.Logger;
 
 public class VillagerFishingHook extends Projectile {
@@ -73,7 +75,7 @@ public class VillagerFishingHook extends Projectile {
         this.setOwner(owner);
         this.luck = Math.max(0, luck);
         this.lureSpeed = Math.max(0, lureSpeed);
-        Vec3 start = owner.getEyePosition().subtract(0.0D, 0.1D, 0.0D);
+        Vec3 start = castStart(owner);
         Vec3 delta = target.subtract(start);
         double distance = Math.max(0.001D, delta.length());
         Vec3 motion = delta.normalize()
@@ -88,6 +90,25 @@ public class VillagerFishingHook extends Projectile {
         this.setXRot((float)(Mth.atan2(motion.y, motion.horizontalDistance()) * 180.0F / (float)Math.PI));
         this.yRotO = this.getYRot();
         this.xRotO = this.getXRot();
+    }
+
+    private static Vec3 castStart(LivingEntity owner) {
+        int side = owner.getMainArm() == HumanoidArm.RIGHT ? 1 : -1;
+        ItemStack mainHand = owner.getMainHandItem();
+        if (!mainHand.canPerformAction(ItemAbilities.FISHING_ROD_CAST)) {
+            side = -side;
+        }
+        float bodyYaw = owner.yBodyRot * (float)(Math.PI / 180.0D);
+        double sin = Mth.sin(bodyYaw);
+        double cos = Mth.cos(bodyYaw);
+        float scale = owner.getScale();
+        double sideOffset = side * 0.35D * scale;
+        double forwardOffset = 0.8D * scale;
+        double crouchOffset = owner.isCrouching() ? -0.1875D : 0.0D;
+        return owner.getEyePosition()
+                .add(-cos * sideOffset - sin * forwardOffset,
+                        crouchOffset - 0.45D * scale,
+                        -sin * sideOffset + cos * forwardOffset);
     }
 
     @Override
@@ -117,6 +138,11 @@ public class VillagerFishingHook extends Projectile {
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance < 4096.0D;
+    }
+
+    @Override
+    public boolean shouldBeSaved() {
+        return false;
     }
 
     @Override
