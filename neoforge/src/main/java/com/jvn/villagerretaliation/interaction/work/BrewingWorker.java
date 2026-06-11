@@ -778,8 +778,8 @@ public final class BrewingWorker extends AbstractBlockWorker {
             MaterialPlan materials) {
         StorageNeed need = materials.firstStorageNeed(context);
         if (need == null) {
-            HiredWorkerBrain.clearStorageTarget(context);
-            HiredStorageNavigationGoal.clearStorageNavigationState(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
             return null;
         }
         if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
@@ -801,6 +801,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 storage,
                 0.45D);
         if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             return WorkResult.progressed("interaction.work.brewing.collecting_materials");
         }
@@ -820,8 +821,8 @@ public final class BrewingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
             return WorkResult.idle("interaction.work.brewing.material_inventory_full");
         }
-        HiredWorkerBrain.clearStorageTarget(context);
-        HiredStorageNavigationGoal.clearStorageNavigationState(context);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
+        HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
         return WorkResult.progressed("interaction.work.brewing.gathered_materials");
     }

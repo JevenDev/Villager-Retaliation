@@ -259,6 +259,7 @@ public final class ConstructionBlueprintItem extends Item {
             return;
         }
         PreviewData preview = data.get();
+        boolean showDetails = TooltipKeyState.hasShiftDown();
         if (preview.expired()) {
             tooltip.add(Component.translatable("item.villagerretaliation.construction_blueprint.expired").withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
         } else if (preview.completed()) {
@@ -269,15 +270,12 @@ public final class ConstructionBlueprintItem extends Item {
             tooltip.add(Component.translatable("item.villagerretaliation.construction_blueprint.pending").withStyle(ChatFormatting.AQUA));
         }
         tooltip.add(label("item.villagerretaliation.construction_blueprint.structure", preview.structureLabel(), ChatFormatting.AQUA));
-        if (!preview.builderName().isBlank()) {
+        if (preview.started() && !preview.builderName().isBlank()) {
             tooltip.add(label("item.villagerretaliation.construction_blueprint.builder", preview.builderName(), ChatFormatting.YELLOW));
         }
-        tooltip.add(label("item.villagerretaliation.construction_blueprint.site", formatPos(preview.origin()), ChatFormatting.GOLD));
-        tooltip.add(label("item.villagerretaliation.construction_blueprint.rotation", preview.rotation().name(), ChatFormatting.LIGHT_PURPLE));
-        tooltip.add(label("item.villagerretaliation.construction_blueprint.size", preview.sizeText(), ChatFormatting.GRAY));
-        tooltip.add(label("item.villagerretaliation.construction_blueprint.blocks", Integer.toString(preview.totalBlocks()), ChatFormatting.GRAY));
-        tooltip.add(label("item.villagerretaliation.construction_blueprint.payment", Integer.toString(preview.paidCurrency()), ChatFormatting.GREEN));
-        tooltip.add(label("item.villagerretaliation.construction_blueprint.job_cost", Integer.toString(preview.jobCost()), ChatFormatting.GREEN));
+        if (!preview.locked()) {
+            tooltip.add(label("item.villagerretaliation.construction_blueprint.job_cost", Integer.toString(preview.jobCost()), ChatFormatting.GREEN));
+        }
         if (!preview.locked()) {
             tooltip.add(Component.translatable(preview.placementLocked()
                     ? "item.villagerretaliation.construction_blueprint.placement_locked"
@@ -285,11 +283,24 @@ public final class ConstructionBlueprintItem extends Item {
                     ? ChatFormatting.YELLOW
                     : ChatFormatting.AQUA));
         }
+        if (!preview.completed() && !preview.expired() && !preview.missingMaterials().isBlank()) {
+            tooltip.add(label("item.villagerretaliation.construction_blueprint.missing", preview.missingMaterials(), ChatFormatting.RED));
+        }
+        if (!showDetails) {
+            tooltip.add(Component.translatable("item.villagerretaliation.tooltip.hold_shift").withStyle(ChatFormatting.DARK_GRAY));
+            return;
+        }
+
+        tooltip.add(label("item.villagerretaliation.construction_blueprint.site", formatPos(preview.origin()), ChatFormatting.GOLD));
+        tooltip.add(label("item.villagerretaliation.construction_blueprint.rotation", preview.rotation().name(), ChatFormatting.LIGHT_PURPLE));
+        tooltip.add(label("item.villagerretaliation.construction_blueprint.size", preview.sizeText(), ChatFormatting.GRAY));
+        tooltip.add(label("item.villagerretaliation.construction_blueprint.blocks", Integer.toString(preview.totalBlocks()), ChatFormatting.GRAY));
+        tooltip.add(label("item.villagerretaliation.construction_blueprint.payment", Integer.toString(preview.paidCurrency()), ChatFormatting.GREEN));
+        if (preview.locked()) {
+            tooltip.add(label("item.villagerretaliation.construction_blueprint.job_cost", Integer.toString(preview.jobCost()), ChatFormatting.GREEN));
+        }
         if (!preview.materialSummary().isBlank()) {
             tooltip.add(label("item.villagerretaliation.construction_blueprint.materials", preview.materialSummary(), ChatFormatting.WHITE));
-        }
-        if (!preview.missingMaterials().isBlank()) {
-            tooltip.add(label("item.villagerretaliation.construction_blueprint.missing", preview.missingMaterials(), ChatFormatting.RED));
         }
         if (!preview.locked()) {
             tooltip.add(Component.translatable("item.villagerretaliation.construction_blueprint.controls.deploy").withStyle(ChatFormatting.DARK_GRAY));

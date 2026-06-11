@@ -34,17 +34,12 @@ public final class MiningWorker extends AbstractBlockWorker {
         return HiredVillagerRole.MINING;
     }
 
-    public static void clearRuntimeState() {
-        clearSharedRuntimeState();
-    }
-
     public static BlockPos excavationEntryTarget(ServerLevel level, HiredWorkContext context) {
         return MiningExcavationSupport.entryTarget(level, context);
     }
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
-        expireWorkPathMemory(level);
         if (!context.hasWorkArea()) {
             return waitForWorkAreaAssignment(level, villager, context);
         }
@@ -169,6 +164,10 @@ public final class MiningWorker extends AbstractBlockWorker {
                 MiningWorkerState.set(context, MiningWorkerState.Phase.DEPOSIT_OUTPUT);
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("interaction.work.mining.output_full_depositing");
+            }
+            if (depositResult == DepositResult.DEPOSITED && !context.canStoreOutputs(drops)) {
+                MiningWorkerState.set(context, MiningWorkerState.Phase.DEPOSIT_OUTPUT);
+                return WorkResult.progressed("interaction.work.mining.deposited_checking_packs");
             }
         }
         if (!context.canStoreOutputs(drops)) {

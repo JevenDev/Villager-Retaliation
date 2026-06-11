@@ -41,7 +41,6 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
-        expireWorkPathMemory(level);
         if (!context.hasWorkArea()) {
             return waitForWorkAreaAssignment(level, villager, context);
         }
@@ -176,8 +175,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             BreedingPair pair) {
         int missing = Math.max(0, 2 - HiredSupplyCrafting.countCarried(context, pair.foodPredicate()));
         if (missing <= 0) {
-            HiredWorkerBrain.clearStorageTarget(context);
-            HiredStorageNavigationGoal.clearStorageNavigationState(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
             return null;
         }
         if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
@@ -200,6 +199,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 storage,
                 0.45D);
         if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             return WorkResult.progressed("interaction.work.animal_breeding.collecting_food");
         }
@@ -219,8 +219,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
             return WorkResult.idle("interaction.work.animal_breeding.food_inventory_full");
         }
-        HiredWorkerBrain.clearStorageTarget(context);
-        HiredStorageNavigationGoal.clearStorageNavigationState(context);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
+        HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
         return WorkResult.progressed("interaction.work.animal_breeding.gathered_food");
     }

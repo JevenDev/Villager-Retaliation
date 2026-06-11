@@ -28,12 +28,11 @@ public final class HiredRoleWorkerRegistry {
     }
 
     public static void clearRuntimeState() {
-        MiningWorker.clearRuntimeState();
+        AbstractBlockWorker.clearSharedRuntimeState();
     }
 
     public static void clearRuntimeState(Villager villager) {
-        HiredPathMemory.releaseAll(villager);
-        HiredPathMemory.clearNavigationProgress(villager);
+        HiredPathMemory.clear(villager);
     }
 
     private static void register(HiredRoleWorker worker) {

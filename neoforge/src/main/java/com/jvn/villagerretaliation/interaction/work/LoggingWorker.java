@@ -51,7 +51,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
-        expireWorkPathMemory(level);
         if (!context.hasWorkArea()) {
             return waitForWorkAreaAssignment(level, villager, context);
         }
@@ -131,6 +130,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     clearActiveBreakingTarget(level, context, villager);
                     return WorkResult.completed("interaction.work.logging.completed", Map.of("logs", Integer.toString(harvestResult.logsCut())));
                 }
+            }
+            if (depositResult == DepositResult.DEPOSITED && harvestResult == TreeHarvestResult.OUTPUT_FULL) {
+                return WorkResult.progressed("interaction.work.logging.output_full_depositing");
             }
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);

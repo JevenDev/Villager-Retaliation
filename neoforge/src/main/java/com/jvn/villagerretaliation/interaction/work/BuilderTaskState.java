@@ -47,17 +47,6 @@ public final class BuilderTaskState {
             BlockPos origin,
             Rotation rotation,
             int paidCurrency,
-            long gameTime) {
-        start(state, entry, plan, origin, rotation, paidCurrency, gameTime, UUID.randomUUID());
-    }
-
-    public static void start(
-            CompoundTag state,
-            BuilderStructureCatalog.Entry entry,
-            BuilderStructureScanner.StructurePlan plan,
-            BlockPos origin,
-            Rotation rotation,
-            int paidCurrency,
             long gameTime,
             UUID jobId) {
         CompoundTag task = new CompoundTag();
@@ -123,10 +112,6 @@ public final class BuilderTaskState {
         } catch (IllegalArgumentException ignored) {
             return Rotation.NONE;
         }
-    }
-
-    public static BuilderBuildPhase phase(CompoundTag state) {
-        return BuilderBuildPhase.byId(task(state).getString(PHASE_TAG));
     }
 
     public static void setPhase(CompoundTag state, BuilderBuildPhase phase) {

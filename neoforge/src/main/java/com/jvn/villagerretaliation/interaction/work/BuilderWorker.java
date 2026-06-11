@@ -56,6 +56,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (!BuilderTaskState.hasTask(context.state())) {
+            HiredWorkerBrain.clearFailure(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             return WorkResult.idle("interaction.work.builder.choose_structure");
         }
@@ -69,7 +71,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
 
         BlockPos origin = BuilderTaskState.origin(context.state());
-        HiredWorkArea area = null;
+        HiredWorkArea area = context.hasWorkArea() ? context.workArea() : null;
         BuilderSitePlanner.SiteResult siteResult = BuilderSitePlanner.validateSite(
                 level,
                 hirer,
@@ -113,7 +115,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.builder.waiting_materials", BuilderTaskState.replacements(context.state()));
         }
         if (materialResult == MaterialResult.UNREACHABLE) {
-            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.BLOCKED);
+            BuilderTaskState.setBlocked(context.state(), "builder_material_storage_unreachable");
             return WorkResult.idle("interaction.work.builder.materials_unreachable", BuilderTaskState.replacements(context.state()));
         }
 
@@ -129,6 +131,9 @@ public final class BuilderWorker extends AbstractBlockWorker {
                         "target", HiredWorkerBrain.formatPos(worldPos),
                         "structure", BuilderTaskState.structureLabel(context.state())));
             }
+            BuilderTaskState.setBlocked(context.state(), "blocked_entity");
+            HiredWorkerBrain.setFailure(context, "blocked_entity", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, part.worldPos());
             return WorkResult.idle("interaction.work.builder.blocked_entity", Map.of(
                     "target", HiredWorkerBrain.formatPos(part.worldPos()),
                     "structure", BuilderTaskState.structureLabel(context.state())));
@@ -140,6 +145,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
                     : BuilderSitePlanner.canReserveAt(level, villager, part.worldPos(), part.block().state());
             if (!placementCheck.valid()) {
                 BuilderTaskState.setBlocked(context.state(), placementCheck.statusKey());
+                HiredWorkerBrain.setFailure(context, placementCheck.statusKey(), level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, part.worldPos());
                 return WorkResult.idle(placementCheck.statusKey(), Map.of(
                         "target", HiredWorkerBrain.formatPos(part.worldPos()),
                         "structure", BuilderTaskState.structureLabel(context.state())));
@@ -152,6 +159,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 if (recordWorkPathFailure(level, villager, worldPos)) {
                     BuilderTaskState.setBlocked(context.state(), "path_blocked");
                 }
+                HiredWorkerBrain.setFailure(context, "path_blocked", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, worldPos);
                 return WorkResult.idle("interaction.work.builder.path_blocked", Map.of(
                         "target", HiredWorkerBrain.formatPos(worldPos),
@@ -164,6 +172,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 if (recordWorkPathFailure(level, villager, worldPos)) {
                     BuilderTaskState.setBlocked(context.state(), "path_blocked");
                 }
+                HiredWorkerBrain.setFailure(context, "path_blocked", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, worldPos);
                 return WorkResult.idle("interaction.work.builder.path_blocked", Map.of(
                         "target", HiredWorkerBrain.formatPos(worldPos),
@@ -180,6 +189,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
 
         if (!placeBlock(level, villager, context, placementGroup)) {
             BuilderTaskState.setBlocked(context.state(), "placement_failed");
+            HiredWorkerBrain.setFailure(context, "placement_failed", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, worldPos);
             return WorkResult.idle("interaction.work.builder.placement_failed", Map.of(
                     "target", HiredWorkerBrain.formatPos(worldPos),
@@ -187,6 +197,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
 
         clearWorkPathFailure(villager, worldPos);
+        HiredWorkerBrain.clearFailure(context);
         HiredPathMemory.rememberRecent(level, worldPos);
         BuilderTaskState.setPlacedIndex(context.state(), index + 1);
         BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.BUILDING);
@@ -199,7 +210,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         clearActiveBreakingTarget(level, context, villager);
         BuilderTaskState.clearPendingStructure(context.state());
         BuilderTaskState.clearTask(context.state());
-        setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+        super.stop(level, villager, context);
     }
 
     public static int countAvailableMaterial(Villager villager, HiredJobInventory inventory, ItemStack required) {
@@ -249,8 +260,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 "materials", missing.summary(),
                 "structure", BuilderTaskState.structureLabel(context.state()));
         if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
-            HiredWorkerBrain.clearStorageTarget(context);
-            HiredStorageNavigationGoal.clearStorageNavigationState(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.setFailure(context, "missing_builder_materials", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE);
             return WorkResult.idle("interaction.work.builder.waiting_materials", replacements);
@@ -258,8 +268,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
 
         BlockPos storage = AssignedStorageService.nearestAssignedStoragePos(level, villager);
         if (storage == null) {
-            HiredWorkerBrain.clearStorageTarget(context);
-            HiredStorageNavigationGoal.clearStorageNavigationState(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.setFailure(context, "missing_builder_materials", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE);
             return WorkResult.idle("interaction.work.builder.waiting_materials", replacements);
@@ -353,10 +362,15 @@ public final class BuilderWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             BuilderStructureScanner.BuildBlock block) {
         if (!block.requiresMaterial() || !context.inventory().findSupply(block::materialMatches).isEmpty()) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
             return MaterialResult.READY;
         }
         BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, block::materialMatches);
         if (storage == null) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.setFailure(context, "missing_builder_materials", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
             return MaterialResult.MISSING;
         }
         HiredWorkerBrain.setStorageTarget(context, storage);
@@ -367,10 +381,13 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 storage,
                 BUILD_WALK_SPEED);
         if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             return MaterialResult.MOVING;
         }
         if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
+            HiredWorkerBrain.setFailure(context, "builder_material_storage_unreachable", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
             return MaterialResult.UNREACHABLE;
         }
         faceBlock(villager, storage);
@@ -381,14 +398,18 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 block.requiredItem().getMaxStackSize(),
                 stack -> context.inventory().insertSupply(stack));
         if (moved <= 0) {
+            HiredWorkerBrain.setFailure(context, "builder_material_inventory_full", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
             return MaterialResult.INVENTORY_FULL;
         }
         swingWorkTool(villager);
         if (!context.inventory().findSupply(block::materialMatches).isEmpty()) {
-            HiredWorkerBrain.clearStorageTarget(context);
-            HiredStorageNavigationGoal.clearStorageNavigationState(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
             return MaterialResult.READY;
         }
+        HiredWorkerBrain.setFailure(context, "missing_builder_materials", level.getGameTime() + 100L);
+        setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
         return MaterialResult.MISSING;
     }
 
@@ -833,6 +854,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
         BuilderTaskState.jobId(context.state()).ifPresent(jobId ->
                 ConstructionBlueprintItem.completeMatchingBlueprints(level, jobId));
         BuilderTaskState.clearTask(context.state());
+        HiredWorkerBrain.clearFailure(context);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
         setTaskState(context, HiredWorkerTaskState.IDLE);
         return WorkResult.completed("interaction.work.builder.complete", replacements);
     }

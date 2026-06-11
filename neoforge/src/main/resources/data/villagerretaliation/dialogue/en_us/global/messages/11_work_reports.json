@@ -12,135 +12,135 @@
     {
       "key": "interaction.work_report.combat",
       "lines": [
-        "I am on guard in {work_area}, {activity}. {status_detail}",
-        "My combat duty holds in {work_area}. I am {activity}. {status_detail}",
-        "I am keeping watch over {work_area}. At the moment I am {activity}.",
-        "Guard work is underway around {work_area}. I am {activity}. {status_detail}",
-        "I am standing to in {work_area}, with my attention on {target}. {status_detail}",
-        "My patrol remains centered on {work_area}. I am {activity}. Efficiency sits near {efficiency} percent.",
-        "I am holding this ground in {work_area}. Right now I am {activity}.",
-        "Combat duty has me working through {work_area}. I am {activity}. {status_detail}",
-        "I am keeping the area safe in {work_area}. My present business is {activity}.",
-        "My guard assignment remains in {work_area}, and I am {activity}. {status_detail}"
+        "I am guarding {work_area} and currently {activity}. {status_detail}",
+        "My watch is set around {work_area}. Right now I am {activity}.",
+        "I am keeping trouble away from {work_area}; my focus is {target}. {status_detail}",
+        "Guard duty is steady in {work_area}. I am {activity}.",
+        "I am holding the line at {work_area}, watching {target}.",
+        "My patrol stays centered on {work_area}. Efficiency is near {efficiency} percent.",
+        "I am still on combat duty in {work_area}, {activity}. {status_detail}",
+        "The area is under watch. I am {activity} in {work_area}.",
+        "I have {work_area} covered for now. My task is {activity}.",
+        "Nothing gets ignored on my watch in {work_area}. I am {activity}. {status_detail}"
       ]
     },
     {
       "key": "interaction.work_report.mining",
       "lines": [
-        "I am working the ground in {work_area}, {activity}. {status_detail}",
-        "My mining is focused on {work_area}. At the moment I am {activity}.",
-        "I am tending to the mine in {work_area}. My current target is {target}.",
-        "The mining work continues in {work_area}. I am {activity}. {status_detail}",
-        "I am searching the stone in {work_area}, {activity}. Efficiency is about {efficiency} percent.",
-        "My pick is busy in {work_area}. Right now I am {activity}.",
-        "I am keeping to the mining bounds in {work_area}. My present task is {activity}.",
-        "Work in the mine is moving along. I am {activity} around {target}.",
-        "I am still at the mining job in {work_area}, {activity}. {status_detail}",
-        "The excavation is under way in {work_area}. I am {activity} for now."
+        "I am working the ground in {work_area}, currently {activity}. {status_detail}",
+        "My mining job is focused on {work_area}. Right now I am {activity}.",
+        "I am reading the stone around {target} and keeping to {work_area}.",
+        "Mining continues in {work_area}; I am {activity}. {status_detail}",
+        "I am checking the rock in {work_area}. Efficiency is about {efficiency} percent.",
+        "My pick is busy in {work_area}, and the current step is {activity}.",
+        "I am staying inside the mining bounds at {work_area}.",
+        "Work below ground is moving along near {target}. I am {activity}.",
+        "I am still on the mining job in {work_area}. {status_detail}",
+        "The excavation is under way in {work_area}; for now I am {activity}."
       ]
     },
     {
       "key": "interaction.work_report.logging",
       "lines": [
-        "I am working the trees in {work_area}, {activity}. {status_detail}",
-        "My logging duty runs through {work_area}. Right now I am {activity}.",
-        "I am minding the timber in {work_area}. My attention is on {target}.",
-        "The logging work continues in {work_area}. I am {activity}.",
-        "I am moving through {work_area} for wood, {activity}. {status_detail}",
-        "My axe work remains in {work_area}. At present I am {activity}. Efficiency is near {efficiency} percent.",
+        "I am logging in {work_area}, currently {activity}. {status_detail}",
+        "My logging route runs through {work_area}. Right now I am {activity}.",
+        "I am working the timber near {target}.",
+        "The logging job continues in {work_area}. I am {activity}.",
+        "I am moving through {work_area} for wood. {status_detail}",
+        "Axe work keeps me in {work_area}; efficiency is near {efficiency} percent.",
         "I am still on logging duty in {work_area}, {activity}.",
-        "The tree work is going on in {work_area}. My current business is {activity}.",
-        "I am handling the logging in {work_area}. I am {activity} around {target}.",
-        "Timber work holds my day in {work_area}. I am {activity}. {status_detail}"
+        "The timber work is moving along. My current task is {activity}.",
+        "I am handling the next tree near {target} in {work_area}.",
+        "Woodcutting keeps me busy in {work_area}. I am {activity}. {status_detail}"
       ]
     },
     {
       "key": "interaction.work_report.farming",
       "lines": [
-        "I am tending the fields in {work_area}, {activity}. {status_detail}",
-        "My farming work is in {work_area}. At the moment I am {activity}.",
-        "I am looking after the crops in {work_area}. My present focus is {target}.",
-        "The field work continues in {work_area}. I am {activity}.",
-        "I am busy with the farm in {work_area}, {activity}. Efficiency is about {efficiency} percent.",
-        "My hands are in the soil at {work_area}. Right now I am {activity}.",
-        "I am keeping to the farm bounds in {work_area}. My current task is {activity}.",
-        "The crops still need me in {work_area}, so I am {activity}. {status_detail}",
-        "I am carrying on with the farming in {work_area}. My attention is on {target}.",
-        "Work in the fields is moving along. I am {activity} in {work_area}."
+        "I am tending the fields in {work_area}, currently {activity}. {status_detail}",
+        "My farming work is set in {work_area}. Right now I am {activity}.",
+        "I am looking after the crops near {target}.",
+        "Field work continues in {work_area}. I am {activity}.",
+        "The farm is moving along; efficiency is about {efficiency} percent.",
+        "My hands are in the soil at {work_area}.",
+        "I am keeping to the farm bounds and working on {activity}.",
+        "The crops still need me in {work_area}. {status_detail}",
+        "I am carrying on with the farming, with my attention on {target}.",
+        "Work in the fields is steady. I am {activity} in {work_area}."
       ]
     },
     {
       "key": "interaction.work_report.fishing",
       "lines": [
-        "I am fishing in {work_area}, {activity}. {status_detail}",
-        "My fishing work is set around {work_area}. At the moment I am {activity}.",
-        "I am watching the water in {work_area}. My present focus is {target}.",
-        "The fishing work continues in {work_area}. I am {activity}.",
-        "I am working the bank in {work_area}, {activity}. Efficiency is about {efficiency} percent.",
-        "My line belongs to the water at {work_area}. Right now I am {activity}.",
-        "I am keeping to the fishing bounds in {work_area}. My current task is {activity}.",
-        "The water still needs patience in {work_area}, so I am {activity}. {status_detail}",
-        "I am carrying on with the fishing in {work_area}. My attention is on {target}.",
-        "Fishing work is moving along. I am {activity} in {work_area}."
+        "I am fishing in {work_area}, currently {activity}. {status_detail}",
+        "My fishing spot is set around {work_area}. Right now I am {activity}.",
+        "I am watching the water near {target}.",
+        "The fishing work continues in {work_area}.",
+        "I am working the bank at {work_area}; efficiency is about {efficiency} percent.",
+        "My line is out in {work_area}. The current task is {activity}.",
+        "I am keeping to the fishing bounds and watching the water.",
+        "The water still needs patience in {work_area}. {status_detail}",
+        "I am carrying on with the fishing, focused on {target}.",
+        "Fishing is moving along. I am {activity} in {work_area}."
       ]
     },
     {
       "key": "interaction.work_report.brewing",
       "lines": [
-        "I am handling brewing matters in {work_area}, {activity}. {status_detail}",
+        "I am handling brewing work in {work_area}, currently {activity}. {status_detail}",
         "My brewing assignment is tied to {work_area}. Right now I am {activity}.",
-        "I am keeping watch over the brewing work in {work_area}. My focus is {target}.",
-        "The brewing duty continues in {work_area}. I am {activity}.",
-        "I am set to brewing work in {work_area}, {activity}. {status_detail}",
-        "Brewing is my charge in {work_area}. At present I am {activity}. Efficiency stands near {efficiency} percent.",
-        "I am still on brewing duty around {work_area}. My current business is {activity}.",
-        "The potion work is not forgotten in {work_area}; I am {activity}.",
-        "I am tending brewing concerns in {work_area}. My attention is on {target}.",
+        "I am watching the brew near {target}.",
+        "The brewing duty continues in {work_area}.",
+        "I am set to potion work in {work_area}. {status_detail}",
+        "Brewing is my charge in {work_area}; efficiency is near {efficiency} percent.",
+        "I am still on brewing duty. My current task is {activity}.",
+        "The potion work is not forgotten in {work_area}.",
+        "I am tending the brewing setup with my attention on {target}.",
         "My brewing report is simple: in {work_area}, I am {activity}. {status_detail}"
       ]
     },
     {
       "key": "interaction.work_report.builder",
       "lines": [
-        "I am building in {work_area}, {activity}. {status_detail}",
+        "I am building in {work_area}, currently {activity}. {status_detail}",
         "My construction work is centered on {work_area}. Right now I am {activity}.",
-        "I am keeping the build moving in {work_area}. My focus is {target}.",
-        "The construction job continues in {work_area}. I am {activity}.",
-        "I am working through the structure in {work_area}, {activity}. {status_detail}",
-        "Builder duty has me at {work_area}. Efficiency is about {efficiency} percent.",
-        "I am still on construction duty around {work_area}. My current business is {activity}.",
-        "The build is not finished yet, so I am {activity} in {work_area}.",
-        "I am handling the next part of the structure in {work_area}. My attention is on {target}.",
-        "For construction, this is my report: I am {activity} in {work_area}. {status_detail}"
+        "I am keeping the build moving, with my focus on {target}.",
+        "The construction job continues in {work_area}.",
+        "I am working through the structure step by step. {status_detail}",
+        "Builder duty has me at {work_area}; efficiency is about {efficiency} percent.",
+        "I am still on construction duty. My current task is {activity}.",
+        "The build is not finished yet, so I am {activity}.",
+        "I am handling the next part of the structure near {target}.",
+        "Construction report: I am {activity} in {work_area}. {status_detail}"
       ]
     },
     {
       "key": "interaction.work_report.animal_handling",
       "lines": [
-        "I am tending the animals in {work_area}, {activity}. {status_detail}",
-        "My animal work belongs to {work_area}. Right now I am {activity}.",
-        "I am looking after stock in {work_area}. My present concern is {target}.",
-        "The animal-handling duty continues in {work_area}. I am {activity}.",
-        "I am at work with the animals in {work_area}, {activity}.",
-        "My handling duties remain in {work_area}. At present I am {activity}. Efficiency is about {efficiency} percent.",
-        "I am still busy with the creatures in {work_area}. My current business is {activity}.",
-        "Animal work keeps me in {work_area}, and I am {activity}. {status_detail}",
-        "I am managing the pen and herd in {work_area}. My attention is on {target}.",
-        "My report on the animals is this: in {work_area}, I am {activity}. {status_detail}"
+        "I am tending the stock in {work_area}, currently {activity}. {status_detail}",
+        "My handling work belongs to {work_area}. Right now I am {activity}.",
+        "I am looking after the pen near {target}.",
+        "The animal-handling duty continues in {work_area}.",
+        "I am keeping the herd settled while I work on {activity}.",
+        "My handling duties remain in {work_area}; efficiency is about {efficiency} percent.",
+        "I am still busy with the stock. My current task is {activity}.",
+        "Animal work keeps me in {work_area}. {status_detail}",
+        "I am managing the pen and keeping attention on {target}.",
+        "My handling report is this: in {work_area}, I am {activity}. {status_detail}"
       ]
     },
     {
       "key": "interaction.work_report.nitwit",
       "lines": [
-        "I am doing my best in {work_area}, {activity}. {status_detail}",
-        "My nitwit duties keep me in {work_area}. Right now I am {activity}.",
-        "I am occupied in {work_area}, and my present focus is {target}.",
-        "The important work of being me continues in {work_area}. I am {activity}.",
-        "I am still busy in {work_area}, {activity}. Efficiency is somehow {efficiency} percent.",
-        "My current report is that I am {activity} in {work_area}. {status_detail}",
-        "I am handling matters in my own fashion around {work_area}. At present I am {activity}.",
-        "Work, of a sort, continues in {work_area}. I am {activity}.",
-        "I am keeping to my assignment in {work_area}. My attention is on {target}.",
+        "I am doing my best in {work_area}, currently {activity}. {status_detail}",
+        "My odd-job duties keep me in {work_area}. Right now I am {activity}.",
+        "I am occupied near {target}, which feels official enough.",
+        "The important work of being useful continues in {work_area}.",
+        "I am still busy in {work_area}; efficiency is somehow {efficiency} percent.",
+        "My report is that I am {activity}. {status_detail}",
+        "I am handling matters in my own fashion around {work_area}.",
+        "Work, of a sort, continues. I am {activity}.",
+        "I am keeping to my assignment, with attention on {target}.",
         "If you must know, I am {activity} in {work_area}. {status_detail}"
       ]
     }

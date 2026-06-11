@@ -38,6 +38,15 @@ final class HiredPathMemory {
         LAST_EXPIRE_GAME_TIME.clear();
     }
 
+    static void clear(Villager villager) {
+        UUID villagerId = villager.getUUID();
+        AVOIDED_TARGETS.remove(villagerId);
+        PATH_FAILURES.remove(villagerId);
+        NAVIGATION_PROGRESS.remove(villagerId);
+        TARGET_RESERVATIONS.values().forEach(targets -> targets.entrySet().removeIf(entry -> entry.getValue().villagerId().equals(villagerId)));
+        TARGET_RESERVATIONS.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+    }
+
     static void expire(ServerLevel level) {
         long now = level.getGameTime();
         ResourceKey<Level> dimension = level.dimension();

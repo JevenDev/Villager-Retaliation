@@ -168,25 +168,40 @@ public final class HiredStorageClipboardItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        ClipboardMode currentMode = mode(stack);
+        tooltip.add(Component.translatable("item.villagerretaliation.clipboard.mode").withStyle(ChatFormatting.GRAY)
+                .append(currentMode.labelComponent()));
+
         int count = selectedContainers(stack).size();
         if (count > 0) {
-            tooltip.add(Component.literal(count + " selected container" + (count == 1 ? "" : "s")));
+            tooltip.add(Component.literal(count + " selected container" + (count == 1 ? "" : "s")).withStyle(ChatFormatting.AQUA));
         }
         WorkAreaDraft draft = selectedWorkArea(stack);
         if (draft.first() != null || draft.second() != null) {
             tooltip.add(Component.literal(draft.complete()
                     ? "Job site draft: " + dimensions(draft.min(), draft.max())
-                    : "Work area corners: " + (draft.first() == null ? "0" : draft.second() == null ? "1" : "2") + "/2"));
+                    : "Job site corners: " + (draft.first() == null ? "0" : draft.second() == null ? "1" : "2") + "/2")
+                    .withStyle(ChatFormatting.GOLD));
         }
-        ClipboardMode currentMode = mode(stack);
-        tooltip.add(Component.literal("Mode: ").withStyle(ChatFormatting.GRAY)
-                .append(currentMode.labelComponent()));
-        tooltip.add(Component.literal("Right-click this item in an inventory to change mode.").withStyle(ChatFormatting.DARK_GRAY));
-        if (currentMode == ClipboardMode.SET_WORK_AREA) {
-            tooltip.add(Component.literal("Right-click a block to place the job site draft.").withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal("Scroll moves it; Shift moves height; Ctrl resizes.").withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal("Alt strafes; Ctrl+Alt resizes height.").withStyle(ChatFormatting.GRAY));
+        if (!TooltipKeyState.hasShiftDown()) {
+            tooltip.add(Component.translatable("item.villagerretaliation.tooltip.hold_shift").withStyle(ChatFormatting.DARK_GRAY));
+            return;
         }
+
+        tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.change_mode").withStyle(ChatFormatting.DARK_GRAY));
+        switch (currentMode) {
+            case ASSIGN_STORAGE -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_storage").withStyle(ChatFormatting.GRAY));
+            case ASSIGN_PAYMENT -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_payment").withStyle(ChatFormatting.GRAY));
+            case WORK_AREA -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.preview_work_area").withStyle(ChatFormatting.GRAY));
+            case SET_WORK_AREA -> {
+                tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.set_work_area").withStyle(ChatFormatting.GRAY));
+                tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.work_area_move").withStyle(ChatFormatting.GRAY));
+                tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.work_area_resize").withStyle(ChatFormatting.GRAY));
+            }
+        }
+        tooltip.add(Component.translatable(currentMode == ClipboardMode.SET_WORK_AREA
+                ? "item.villagerretaliation.clipboard.controls.clear_work_area"
+                : "item.villagerretaliation.clipboard.controls.clear").withStyle(ChatFormatting.DARK_GRAY));
     }
 
     public static ClipboardMode mode(ItemStack stack) {

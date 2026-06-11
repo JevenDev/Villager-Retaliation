@@ -34,7 +34,7 @@ public final class HiredWorkerBrain {
         state.putString(WORKER_TASK_STATE_TAG, safeState.id());
         if (targetPos != null && safeState.keepsBlockTarget()) {
             state.putLong(WORKER_TASK_TARGET_POS_TAG, targetPos.asLong());
-        } else if (!safeState.keepsBlockTarget()) {
+        } else {
             state.remove(WORKER_TASK_TARGET_POS_TAG);
         }
         if (!safeState.keepsStorageTarget()) {
@@ -54,7 +54,7 @@ public final class HiredWorkerBrain {
         context.state().remove(WORKER_TASK_TARGET_POS_TAG);
     }
 
-    public static void clearStorageTarget(HiredWorkContext context) {
+    static void clearStorageTarget(HiredWorkContext context) {
         context.state().remove(WORKER_STORAGE_TARGET_POS_TAG);
     }
 

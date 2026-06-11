@@ -15,6 +15,12 @@ public interface HiredRoleWorker {
 
     default void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
         context.setProgressTicks(0);
+        HiredWorkPlan.clear(context);
+        HiredWorkerBrain.clearFailure(context);
+        HiredWorkerBrain.setLastTargetScanResult(context, "");
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
+        HiredPathMemory.clear(villager);
     }
 
     default boolean requiresFood() {

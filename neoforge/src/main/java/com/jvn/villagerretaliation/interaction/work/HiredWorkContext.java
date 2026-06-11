@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
@@ -24,10 +25,6 @@ public record HiredWorkContext(
         boolean useAssignedStorageForSupplies) {
     public static final String OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG = "OutputDepositedThisStorageTrip";
 
-    public String status() {
-        return this.state.getString("Status");
-    }
-
     public int progressTicks() {
         return this.state.getInt("ProgressTicks");
     }
@@ -48,6 +45,17 @@ public record HiredWorkContext(
         return BlockPos.betweenClosed(this.workMin, this.workMax);
     }
 
+    public HiredWorkArea workArea() {
+        return new HiredWorkArea(
+                this.workCenter,
+                this.workMin,
+                this.workMax,
+                this.radius,
+                this.verticalRadius,
+                this.hasWorkArea,
+                this.hasWorkArea);
+    }
+
     public boolean isLoaded(ServerLevel level, BlockPos pos) {
         return level.hasChunkAt(pos);
     }
@@ -60,10 +68,6 @@ public record HiredWorkContext(
                 && pos.getY() <= this.workMax.getY()
                 && pos.getZ() >= this.workMin.getZ()
                 && pos.getZ() <= this.workMax.getZ();
-    }
-
-    public ItemStack storeOutput(Villager villager, ItemStack stack) {
-        return this.inventory.insertOutput(stack);
     }
 
     public boolean depositOutputs(Villager villager) {
@@ -87,12 +91,6 @@ public record HiredWorkContext(
         return this.autoDepositOutputs
                 && this.inventory.hasOutputItems()
                 && AssignedStorageService.canInteractWithAssignedStorage(villager);
-    }
-
-    public boolean canDepositOutputsAtStorageNow(Villager villager, BlockPos storagePos) {
-        return this.autoDepositOutputs
-                && this.inventory.hasOutputItems()
-                && AssignedStorageService.canInteractWithAssignedStorage(villager, storagePos);
     }
 
     public BlockPos nearestDepositStorage(ServerLevel level, Villager villager) {

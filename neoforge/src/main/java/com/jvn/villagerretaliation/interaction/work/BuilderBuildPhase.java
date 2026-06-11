@@ -1,7 +1,5 @@
 package com.jvn.villagerretaliation.interaction.work;
 
-import java.util.Locale;
-
 public enum BuilderBuildPhase {
     IDLE("idle"),
     WAITING_FOR_SELECTION("waiting_for_selection"),
@@ -23,18 +21,5 @@ public enum BuilderBuildPhase {
 
     public String id() {
         return this.id;
-    }
-
-    public static BuilderBuildPhase byId(String value) {
-        if (value == null || value.isBlank()) {
-            return IDLE;
-        }
-        String normalized = value.trim().toLowerCase(Locale.ROOT);
-        for (BuilderBuildPhase phase : values()) {
-            if (phase.id.equals(normalized) || phase.name().equalsIgnoreCase(normalized)) {
-                return phase;
-            }
-        }
-        return IDLE;
     }
 }

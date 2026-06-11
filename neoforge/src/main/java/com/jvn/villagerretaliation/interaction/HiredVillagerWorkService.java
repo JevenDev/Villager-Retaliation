@@ -170,9 +170,6 @@ public final class HiredVillagerWorkService {
     private static void pauseForRecruitmentCommand(ServerLevel level, Villager villager, HiredWorkSession session) {
         session.worker().stop(level, villager, session.context());
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
-        HiredWorkPlan.clear(session.context());
-        HiredWorkerBrain.clearFailure(session.context());
-        HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
         setStatus(session.state(), "interaction.work.status.paused_for_command");
     }
 

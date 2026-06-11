@@ -54,6 +54,7 @@ public final class FishingWorker extends AbstractBlockWorker {
 
     @Override
     public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
+        expireWorkPathMemory(level);
         VillagerFishingHook hook = activeHook(level, context);
         if (hook == null) {
             return;
@@ -72,6 +73,10 @@ public final class FishingWorker extends AbstractBlockWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (context.state().getBoolean(CATCH_COMPLETED_TAG)) {
+            WorkResult depositResult = depositFullOutputIfNeeded(level, villager, context);
+            if (depositResult != null) {
+                return depositResult;
+            }
             context.state().remove(CATCH_COMPLETED_TAG);
             clearFishingTarget(context);
             setTaskState(context, HiredWorkerTaskState.IDLE);
@@ -86,22 +91,9 @@ public final class FishingWorker extends AbstractBlockWorker {
             return waitForWorkAreaAssignment(level, villager, context);
         }
 
-        if (!context.hasOutputSpace()) {
-            if (context.hasOutputToDeposit()) {
-                DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, CAST_SPEED);
-                if (depositResult == DepositResult.MOVING) {
-                    setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                    return WorkResult.progressed("interaction.work.fishing.depositing_output");
-                }
-                if (depositResult == DepositResult.STORAGE_FULL) {
-                    return WorkResult.idle(storageFullStatus(context));
-                }
-            }
-        }
-        if (!context.hasOutputSpace()) {
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("interaction.work.fishing.output_full_blocked");
+        WorkResult depositResult = depositFullOutputIfNeeded(level, villager, context);
+        if (depositResult != null) {
+            return depositResult;
         }
 
         VillagerFishingHook hook = activeHook(level, context);
@@ -158,6 +150,31 @@ public final class FishingWorker extends AbstractBlockWorker {
         return WorkResult.progressed("interaction.work.fishing.cast");
     }
 
+    private WorkResult depositFullOutputIfNeeded(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (context.hasOutputSpace()) {
+            return null;
+        }
+        if (context.hasOutputToDeposit()) {
+            DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, CAST_SPEED);
+            if (depositResult == DepositResult.MOVING) {
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+                return WorkResult.progressed("interaction.work.fishing.depositing_output");
+            }
+            if (depositResult == DepositResult.DEPOSITED && !context.hasOutputSpace()) {
+                return WorkResult.progressed("interaction.work.fishing.depositing_output");
+            }
+            if (depositResult == DepositResult.STORAGE_FULL) {
+                return WorkResult.idle(storageFullStatus(context));
+            }
+        }
+        if (!context.hasOutputSpace()) {
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
+            return WorkResult.idle("interaction.work.fishing.output_full_blocked");
+        }
+        return null;
+    }
+
     @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
         VillagerFishingHook hook = activeHook(level, context);
@@ -166,12 +183,14 @@ public final class FishingWorker extends AbstractBlockWorker {
         }
         clearFishingTarget(context);
         stopWorkNavigation(villager);
-        setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+        super.stop(level, villager, context);
     }
 
     private ItemStack ensureFishingRod(ServerLevel level, Villager villager, HiredWorkContext context) {
         ItemStack rod = context.inventory().equipBestTool(this::isFishingRod, stack -> rodScore(level, villager, stack));
         if (!rod.isEmpty()) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
             return rod;
         }
         if (!context.useAssignedStorageForSupplies()) {
@@ -191,6 +210,7 @@ public final class FishingWorker extends AbstractBlockWorker {
         if (result == HiredStorageNavigationGoal.Result.MOVING) {
             context.state().putBoolean(COLLECTING_ROD_TAG, true);
             HiredWorkerBrain.setStorageTarget(context, storage);
+            HiredWorkerBrain.clearFailure(context);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             return ItemStack.EMPTY;
         }
@@ -213,8 +233,8 @@ public final class FishingWorker extends AbstractBlockWorker {
             return ItemStack.EMPTY;
         }
         context.state().remove(COLLECTING_ROD_TAG);
-        HiredWorkerBrain.clearStorageTarget(context);
-        HiredStorageNavigationGoal.clearStorageNavigationState(context);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
+        HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
         return rod;
     }

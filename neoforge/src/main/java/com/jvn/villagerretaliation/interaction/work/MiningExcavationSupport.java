@@ -126,8 +126,7 @@ final class MiningExcavationSupport {
             return WorkResult.progressed("interaction.work.mining.support.gathering_supplies");
         }
         if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
-            HiredWorkerBrain.clearStorageTarget(context);
-            HiredStorageNavigationGoal.clearStorageNavigationState(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
             return null;
         }
 
@@ -148,8 +147,7 @@ final class MiningExcavationSupport {
                     16,
                     context.inventory()::insertSupply);
         }
-        HiredWorkerBrain.clearStorageTarget(context);
-        HiredStorageNavigationGoal.clearStorageNavigationState(context);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
         if (moved > 0) {
             MiningWorkerState.set(context, MiningWorkerState.Phase.GATHER_SUPPLIES);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());

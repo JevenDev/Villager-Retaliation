@@ -53,7 +53,6 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
-        expireWorkPathMemory(level);
         if (!context.hasWorkArea()) {
             return waitForWorkAreaAssignment(level, villager, context);
         }
@@ -180,6 +179,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
                 return targetChanged(level, villager, context, targetPos);
             }
+            if (depositResult == DepositResult.DEPOSITED && harvestResult == FarmHarvestResult.OUTPUT_FULL) {
+                return WorkResult.progressed("interaction.work.farming.output_full_depositing");
+            }
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("interaction.work.farming.output_full_depositing");
@@ -228,6 +230,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
                 return targetChanged(level, villager, context, target);
             }
+            if (depositResult == DepositResult.DEPOSITED && harvestResult == FarmHarvestResult.OUTPUT_FULL) {
+                return WorkResult.progressed("interaction.work.farming.output_full_depositing");
+            }
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("interaction.work.farming.output_full_depositing");
@@ -264,8 +269,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
     private WorkResult ensureFarmingHoe(ServerLevel level, Villager villager, HiredWorkContext context) {
         ItemStack hoe = context.inventory().equipBestTool(FarmerHoeRequirement::isHoe, FarmerHoeRequirement::hoeScore);
         if (!hoe.isEmpty()) {
-            HiredWorkerBrain.clearStorageTarget(context);
-            HiredStorageNavigationGoal.clearStorageNavigationState(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
             return null;
         }
         if (!context.useAssignedStorageForSupplies()) {
@@ -282,6 +287,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         HiredWorkerBrain.setStorageTarget(context, storage);
         HiredStorageNavigationGoal.Result result = HiredStorageNavigationGoal.moveToStorageTarget(level, context, villager, storage, 0.45D);
         if (result == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             return WorkResult.progressed("interaction.work.farming.collecting_hoe");
         }
@@ -301,8 +307,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
             return WorkResult.idle("interaction.work.farming.hoe_inventory_full");
         }
-        HiredWorkerBrain.clearStorageTarget(context);
-        HiredStorageNavigationGoal.clearStorageNavigationState(context);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
+        HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
         return WorkResult.progressed("interaction.work.farming.collected_hoe");
     }

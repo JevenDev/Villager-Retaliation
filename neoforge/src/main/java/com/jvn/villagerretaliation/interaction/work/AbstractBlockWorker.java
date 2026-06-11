@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
@@ -41,6 +40,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
 
     @Override
     public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
+        expireWorkPathMemory(level);
         if (!context.hasWorkArea()) {
             return;
         }
@@ -67,12 +67,6 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         }
     }
 
-    protected static Iterable<BlockPos> positionsNear(BlockPos center, int radius) {
-        return BlockPos.betweenClosed(
-                center.offset(-radius, -Math.min(radius, 8), -radius),
-                center.offset(radius, Math.min(radius, 8), radius));
-    }
-
     protected boolean storeDrops(ServerLevel level, HiredWorkContext context, Villager villager, BlockPos pos, ItemStack tool) {
         HiredPathTarget target = bestWorkTarget(level, villager, context, pos);
         return target != null && storeDrops(level, context, villager, target, tool);
@@ -80,9 +74,8 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
 
     @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
-        HiredWorkPlan.clear(context);
         clearActiveBreakingTarget(level, context, villager);
-        setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+        HiredRoleWorker.super.stop(level, villager, context);
     }
 
     protected boolean storeDrops(ServerLevel level, HiredWorkContext context, Villager villager, HiredPathTarget target, ItemStack tool) {
@@ -283,22 +276,6 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         return null;
     }
 
-    protected HiredPathTarget rebuildPlannedTarget(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context,
-            Iterable<BlockPos> candidates,
-            Predicate<BlockPos> validator,
-            BlockPos planOrigin,
-            int maxPlanTargets) {
-        List<BlockPos> ordered = HiredWorkPlan.routeOrder(
-                planOrigin == null ? villager.blockPosition() : planOrigin,
-                candidates,
-                maxPlanTargets);
-        HiredWorkPlan.replace(context, ordered, maxPlanTargets);
-        return plannedTarget(level, villager, context, validator, maxPlanTargets);
-    }
-
     protected boolean recordWorkPathFailure(ServerLevel level, Villager villager, BlockPos pos) {
         return HiredPathMemory.recordFailure(level, villager, pos);
     }
@@ -458,7 +435,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             Villager villager,
             double speed) {
         if (!context.autoDepositOutputs() || !context.hasOutputToDeposit()) {
-            HiredWorkerBrain.clearStorageTarget(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
             clearStorageFullStatus(context);
             context.state().remove(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG);
             return DepositResult.NOT_NEEDED;
@@ -486,6 +463,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
                 storage,
                 speed);
         if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             return DepositResult.MOVING;
         }
@@ -502,8 +480,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             setTaskState(context, HiredWorkerTaskState.DEPOSITING);
             if (!context.hasOutputToDeposit()) {
                 AssignedStorageService.closeStorageFeedback(level, storage);
-                HiredWorkerBrain.clearStorageTarget(context);
-                HiredStorageNavigationGoal.clearStorageNavigationState(context);
+                HiredStorageNavigationGoal.clearStorageTarget(context);
                 context.state().remove(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG);
                 stopWorkNavigation(villager);
                 setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());

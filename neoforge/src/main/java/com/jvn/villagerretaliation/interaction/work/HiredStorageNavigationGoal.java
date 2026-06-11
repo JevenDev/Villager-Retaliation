@@ -261,9 +261,14 @@ final class HiredStorageNavigationGoal {
         context.state().putLong(STORAGE_NAV_NEXT_REPATH_GAME_TIME_TAG, level.getGameTime() + STORAGE_REPATH_INTERVAL_TICKS);
     }
 
-    static void clearStorageNavigationState(HiredWorkContext context) {
+    private static void clearStorageNavigationState(HiredWorkContext context) {
         context.state().remove(STORAGE_NAV_TARGET_TAG);
         context.state().remove(STORAGE_NAV_NEXT_REPATH_GAME_TIME_TAG);
+    }
+
+    static void clearStorageTarget(HiredWorkContext context) {
+        HiredWorkerBrain.clearStorageTarget(context);
+        clearStorageNavigationState(context);
     }
 
     private static boolean isStorageNavigationTarget(BlockPos storage, BlockPos navigationTarget) {
