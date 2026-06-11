@@ -18,11 +18,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
@@ -151,6 +153,19 @@ public final class BuilderWorker extends AbstractBlockWorker {
                         "target", HiredWorkerBrain.formatPos(part.worldPos()),
                         "structure", BuilderTaskState.structureLabel(context.state())));
             }
+        }
+
+        WorkResult clearingResult = clearPlacementObstruction(
+                level,
+                villager,
+                context,
+                placementGroup,
+                area,
+                buildCenter,
+                plan.get(),
+                origin);
+        if (clearingResult != null) {
+            return clearingResult;
         }
 
         if (!canBuildFromCurrentPosition(villager, worldPos, plan.get(), origin)) {
@@ -601,6 +616,143 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
         HiredPathMemory.clearNavigationProgress(villager);
         return MovementResult.BLOCKED;
+    }
+
+    private WorkResult clearPlacementObstruction(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            PlacementGroup group,
+            HiredWorkArea area,
+            BlockPos buildCenter,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin) {
+        PlacementPart obstruction = firstPlacementObstruction(level, group);
+        if (obstruction == null) {
+            return null;
+        }
+
+        BlockPos pos = obstruction.worldPos();
+        BlockState state = level.getBlockState(pos);
+        ItemStack tool = context.inventory().equipBestTool(
+                stack -> MiningBlockRules.isUsableBuilderClearingTool(stack, state),
+                stack -> effectiveDestroySpeed(stack, state));
+        if (tool.isEmpty()) {
+            clearActiveBreakingTarget(level, context, villager);
+            BuilderTaskState.setBlocked(context.state(), "missing_clear_tool");
+            HiredWorkerBrain.setFailure(context, "missing_clear_tool", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL, pos);
+            return WorkResult.idle("interaction.work.builder.missing_clear_tool", Map.of(
+                    "target", HiredWorkerBrain.formatPos(pos),
+                    "structure", BuilderTaskState.structureLabel(context.state())));
+        }
+
+        HiredPathTarget target = bestBuildTarget(level, villager, pos, area, buildCenter, plan, origin);
+        if (target == null) {
+            if (recordWorkPathFailure(level, villager, pos)) {
+                BuilderTaskState.setBlocked(context.state(), "path_blocked");
+            }
+            HiredWorkerBrain.setFailure(context, "path_blocked", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, pos);
+            return WorkResult.idle("interaction.work.builder.path_blocked", Map.of(
+                    "target", HiredWorkerBrain.formatPos(pos),
+                    "structure", BuilderTaskState.structureLabel(context.state())));
+        }
+
+        prepareBreakingTarget(level, context, villager, target);
+        if (!canBuildFromCurrentPosition(villager, pos, plan, origin)
+                || !hasLineOfSightToBlock(level, villager, villager.getEyePosition(), pos, target.hitPos())) {
+            context.setProgressTicks(0);
+            MovementResult movementResult = moveToBuildTarget(level, villager, context, target, area, buildCenter, plan, origin);
+            if (movementResult == MovementResult.BLOCKED) {
+                if (recordWorkPathFailure(level, villager, pos)) {
+                    BuilderTaskState.setBlocked(context.state(), "path_blocked");
+                }
+                HiredWorkerBrain.setFailure(context, "path_blocked", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, pos);
+                return WorkResult.idle("interaction.work.builder.path_blocked", Map.of(
+                        "target", HiredWorkerBrain.formatPos(pos),
+                        "structure", BuilderTaskState.structureLabel(context.state())));
+            }
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, pos);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.TRAVELING_TO_SITE);
+            return WorkResult.progressed("interaction.work.builder.moving_to_site", Map.of(
+                    "target", HiredWorkerBrain.formatPos(pos),
+                    "structure", BuilderTaskState.structureLabel(context.state())));
+        }
+
+        List<ItemStack> drops = Block.getDrops(state, level, pos, level.getBlockEntity(pos), villager, tool);
+        if (!context.canStoreOutputs(drops)) {
+            DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, BUILD_WALK_SPEED);
+            if (depositResult == DepositResult.MOVING) {
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+                return WorkResult.progressed("interaction.work.builder.output_full_depositing", BuilderTaskState.replacements(context.state()));
+            }
+            if (!context.canStoreOutputs(drops)) {
+                BuilderTaskState.setBlocked(context.state(), "output_inventory_full");
+                HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+                setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, pos);
+                return WorkResult.idle("interaction.work.builder.output_full_blocked", BuilderTaskState.replacements(context.state()));
+            }
+        }
+
+        holdWorkPosition(villager, target);
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.WORKING, pos);
+        BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.BUILDING);
+
+        int needed = actualBreakProgressGoal(level, pos, tool);
+        int progress = context.progressTicks() + 1;
+        if (progress < needed) {
+            context.setProgressTicks(progress);
+            swingWorkTool(villager);
+            showBreakProgress(level, villager, pos, progress, needed);
+            return WorkResult.progressed("interaction.work.builder.clearing_obstruction", Map.of(
+                    "target", HiredWorkerBrain.formatPos(pos),
+                    "structure", BuilderTaskState.structureLabel(context.state())));
+        }
+
+        context.setProgressTicks(0);
+        for (ItemStack drop : drops) {
+            if (!context.storeOutputAfterDepositIfFull(villager, drop).isEmpty()) {
+                BuilderTaskState.setBlocked(context.state(), "output_inventory_full");
+                HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+                setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, pos);
+                return WorkResult.idle("interaction.work.builder.output_full_blocked", BuilderTaskState.replacements(context.state()));
+            }
+        }
+        faceBlock(villager, target);
+        swingWorkTool(villager);
+        EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, target.hitPos(), state, ignored -> {
+        });
+        level.destroyBlock(pos, false, villager);
+        level.destroyBlockProgress(villager.getId(), pos, -1);
+        damageTool(context, villager, tool);
+        HiredPathMemory.rememberRecent(level, pos);
+        clearWorkPathFailure(villager, pos);
+        clearActiveBreakingTarget(level, context, villager);
+        return WorkResult.progressed("interaction.work.builder.cleared_obstruction", Map.of(
+                "target", HiredWorkerBrain.formatPos(pos),
+                "structure", BuilderTaskState.structureLabel(context.state())));
+    }
+
+    private PlacementPart firstPlacementObstruction(ServerLevel level, PlacementGroup group) {
+        for (PlacementPart part : group.parts()) {
+            if (BuilderSitePlanner.requiresClearingBeforePlacement(level, part.worldPos(), part.block().state())) {
+                return part;
+            }
+        }
+        return null;
+    }
+
+    private int actualBreakProgressGoal(ServerLevel level, BlockPos pos, ItemStack tool) {
+        BlockState state = level.getBlockState(pos);
+        float hardness = state.getDestroySpeed(level, pos);
+        if (hardness <= 0.0F) {
+            return 1;
+        }
+        float speed = Math.max(0.001F, effectiveDestroySpeed(tool, state));
+        return Math.max(1, (int) Math.ceil(hardness * 30.0F / speed));
     }
 
     private PlacementGroup placementGroup(

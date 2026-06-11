@@ -93,7 +93,8 @@ public final class BuilderSitePlanner {
         if (current.equals(targetState)) {
             return PlacementCheck.success();
         }
-        if (!safeReplaceable(level, pos, current)) {
+        if (!safeReplaceable(level, pos, current)
+                && !MiningBlockRules.isBuilderClearableObstruction(level, pos, current)) {
             return PlacementCheck.failed("interaction.work.builder.blocked_existing");
         }
         if (checkSupport && !targetState.canSurvive(level, pos)) {
@@ -268,6 +269,16 @@ public final class BuilderSitePlanner {
         }
         return VillagerRetaliationConfig.HIRED_BUILDER_CAN_REPLACE_SOFT_BLOCKS.get()
                 && current.is(BlockTags.REPLACEABLE);
+    }
+
+    public static boolean requiresClearingBeforePlacement(ServerLevel level, BlockPos pos, BlockState targetState) {
+        if (!level.hasChunkAt(pos)) {
+            return false;
+        }
+        BlockState current = level.getBlockState(pos);
+        return !current.equals(targetState)
+                && !safeReplaceable(level, pos, current)
+                && MiningBlockRules.isBuilderClearableObstruction(level, pos, current);
     }
 
     private static boolean isIncidentalSoftBlock(LevelReader level, BlockPos pos, BlockState current) {

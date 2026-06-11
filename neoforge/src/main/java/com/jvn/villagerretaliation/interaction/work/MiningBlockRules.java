@@ -77,7 +77,20 @@ final class MiningBlockRules {
         return stack.is(ItemTags.PICKAXES) && stack.isCorrectToolForDrops(targetState);
     }
 
-    private static boolean hasExcavationToolTag(BlockState state) {
+    static boolean isBuilderClearableObstruction(ServerLevel level, BlockPos pos, BlockState state) {
+        return !state.isAir()
+                && !state.liquid()
+                && state.getDestroySpeed(level, pos) >= 0.0F
+                && !state.hasBlockEntity()
+                && hasExcavationToolTag(state);
+    }
+
+    static boolean isUsableBuilderClearingTool(ItemStack stack, BlockState targetState) {
+        return stack.isCorrectToolForDrops(targetState)
+                && matchesExcavationToolTag(stack, targetState);
+    }
+
+    static boolean hasExcavationToolTag(BlockState state) {
         return state.is(BlockTags.MINEABLE_WITH_PICKAXE)
                 || state.is(BlockTags.MINEABLE_WITH_SHOVEL)
                 || state.is(BlockTags.MINEABLE_WITH_AXE);

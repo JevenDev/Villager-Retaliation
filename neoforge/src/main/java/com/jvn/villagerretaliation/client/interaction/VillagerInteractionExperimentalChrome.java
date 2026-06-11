@@ -212,7 +212,7 @@ final class VillagerInteractionExperimentalChrome {
         List<Component> tooltip = new ArrayList<>();
         tooltip.add(Component.literal(context.walletTooltipTitle()).withStyle(ChatFormatting.GREEN));
         tooltip.add(Component.literal(context.walletTooltipBody()).withStyle(ChatFormatting.GRAY));
-        graphics.renderComponentTooltip(context.font(), tooltip, mouseX, mouseY);
+        VillagerInteractionUiUtil.renderScaledComponentTooltip(graphics, context.font(), tooltip, mouseX, mouseY, context.experimentalTextScale());
     }
 
     private static boolean isPointInsideName(Context context, double mouseX, double mouseY) {
