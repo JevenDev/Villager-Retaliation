@@ -565,6 +565,15 @@ public final class HiredJobInventory implements Container {
         return false;
     }
 
+    public boolean hasEmptyOutputSpace() {
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (canInsertOutputIntoSlot(this.items, slot) && this.items.get(slot).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean canStoreOutputs(List<ItemStack> stacks) {
         NonNullList<ItemStack> simulated = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
         for (int slot = 0; slot < SLOT_COUNT; slot++) {

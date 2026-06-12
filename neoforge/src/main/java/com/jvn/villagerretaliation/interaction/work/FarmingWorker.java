@@ -381,12 +381,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         Path currentPath = villager.getNavigation().getPath();
-        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, context::isInsideWorkArea)) {
+        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, pos -> canUseFarmMovementPosition(context, pos))) {
             stopCropNavigation(villager);
             return false;
         }
 
-        BlockPos approach = nearestFarmOutputApproach(level, villager, context, target);
+        BlockPos approach = nearestFarmApproach(level, villager, context, target);
         if (approach == null) {
             HiredPathMemory.clearNavigationProgress(villager);
             return false;
@@ -409,7 +409,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         Path path = villager.getNavigation().createPath(approach, 0);
         if (path != null
                 && path.canReach()
-                && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
+                && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, pos -> canUseFarmMovementPosition(context, pos))) {
             boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, approach, speed, 1);
             if (moved) {
                 HiredPathMemory.rememberNavigationProgress(level, villager, approach, villager.distanceToSqr(approach.getCenter()));
@@ -422,7 +422,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         return false;
     }
 
-    private BlockPos nearestFarmOutputApproach(
+    private BlockPos nearestFarmApproach(
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
@@ -437,7 +437,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 continue;
             }
             Path path = villager.getNavigation().createPath(candidate, 0);
-            if (path == null || !path.canReach() || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
+            if (path == null || !path.canReach() || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, pos -> canUseFarmMovementPosition(context, pos))) {
                 continue;
             }
             double score = villager.distanceToSqr(candidate.getCenter())
@@ -492,7 +492,18 @@ public final class FarmingWorker extends AbstractBlockWorker {
     private boolean canWorkCropFromCurrentPosition(Villager villager, HiredWorkContext context, BlockPos target) {
         return context.isInsideWorkArea(villager.blockPosition())
                 && context.isInsideWorkArea(target)
-                && target.closerToCenterThan(villager.position(), 1.0D);
+                && villager.position().distanceToSqr(target.getCenter()) <= HiredMoveToBlockFaceJob.MAX_REACH_SQR;
+    }
+
+    private boolean canUseFarmMovementPosition(HiredWorkContext context, BlockPos pos) {
+        return context.hasWorkArea()
+                && pos != null
+                && pos.getX() >= context.workMin().getX() - 1
+                && pos.getX() <= context.workMax().getX() + 1
+                && pos.getY() >= context.workMin().getY()
+                && pos.getY() <= context.workMax().getY() + 1
+                && pos.getZ() >= context.workMin().getZ() - 1
+                && pos.getZ() <= context.workMax().getZ() + 1;
     }
 
     private boolean moveToCropTarget(
@@ -512,32 +523,38 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         Path currentPath = villager.getNavigation().getPath();
-        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, context::isInsideWorkArea)) {
+        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, pos -> canUseFarmMovementPosition(context, pos))) {
             stopCropNavigation(villager);
             return false;
         }
 
-        setCropWalkTarget(villager, target, speed);
+        BlockPos approach = nearestFarmApproach(level, villager, context, target);
+        if (approach == null) {
+            HiredPathMemory.clearNavigationProgress(villager);
+            return false;
+        }
+
+        setCropWalkTarget(villager, approach, speed);
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
-        if (!villager.getNavigation().isDone() && target.equals(navigationTarget)) {
+        if (!villager.getNavigation().isDone() && approach.equals(navigationTarget)) {
             if (HiredPathMemory.isNavigationBlocked(
                     level,
                     villager,
-                    target,
-                    villager.distanceToSqr(target.getCenter()))) {
+                    approach,
+                    villager.distanceToSqr(approach.getCenter()))) {
                 stopCropNavigation(villager);
                 return false;
             }
             return true;
         }
 
-        Path path = villager.getNavigation().createPath(target, 0);
+        Path path = villager.getNavigation().createPath(approach, 0);
         if (path != null
                 && path.canReach()
-                && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
-            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target, speed, 1);
+                && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, pos -> canUseFarmMovementPosition(context, pos))) {
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, approach, speed, 1);
             if (moved) {
-                HiredPathMemory.rememberNavigationProgress(level, villager, target, villager.distanceToSqr(target.getCenter()));
+                HiredPathMemory.rememberNavigationProgress(level, villager, approach, villager.distanceToSqr(approach.getCenter()));
             } else {
                 HiredPathMemory.clearNavigationProgress(villager);
             }

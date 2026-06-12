@@ -40,6 +40,7 @@ public final class FishingWorker extends AbstractBlockWorker {
     private static final String CATCH_COMPLETED_TAG = "FishingCatchCompleted";
     private static final String CATCH_OVERFLOW_TAG = "FishingCatchOverflow";
     private static final String COLLECTING_ROD_TAG = "FishingCollectingRod";
+    private static final String DEPOSITING_OUTPUTS_TAG = "FishingDepositingOutputs";
     private static final int MAX_WATER_PATH_ATTEMPTS = 32;
     private static final int APPROACH_RADIUS = 6;
     private static final int WATER_SEARCH_MARGIN = 8;
@@ -152,27 +153,35 @@ public final class FishingWorker extends AbstractBlockWorker {
     }
 
     private WorkResult depositFullOutputIfNeeded(ServerLevel level, Villager villager, HiredWorkContext context) {
-        if (context.hasOutputSpace()) {
+        boolean hasStackSpace = context.hasOutputSpace();
+        boolean hasEmptyOutputSpace = context.inventory().hasEmptyOutputSpace();
+        boolean depositingOutputs = context.state().getBoolean(DEPOSITING_OUTPUTS_TAG);
+        if (!depositingOutputs && hasStackSpace && hasEmptyOutputSpace) {
             return null;
         }
         if (context.hasOutputToDeposit()) {
+            context.state().putBoolean(DEPOSITING_OUTPUTS_TAG, true);
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, CAST_SPEED);
             if (depositResult == DepositResult.MOVING) {
                 setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
                 return WorkResult.progressed("interaction.work.fishing.depositing_output");
             }
-            if (depositResult == DepositResult.DEPOSITED && !context.hasOutputSpace()) {
+            if (depositResult == DepositResult.DEPOSITED && context.hasOutputToDeposit()) {
                 return WorkResult.progressed("interaction.work.fishing.depositing_output");
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
                 return WorkResult.idle(storageFullStatus(context));
             }
+            if (!context.hasOutputToDeposit()) {
+                context.state().remove(DEPOSITING_OUTPUTS_TAG);
+            }
         }
-        if (!context.hasOutputSpace()) {
+        if (!context.hasOutputSpace() || !context.inventory().hasEmptyOutputSpace()) {
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
             return WorkResult.idle("interaction.work.fishing.output_full_blocked");
         }
+        context.state().remove(DEPOSITING_OUTPUTS_TAG);
         return null;
     }
 
@@ -519,6 +528,7 @@ public final class FishingWorker extends AbstractBlockWorker {
         context.state().remove(ACTIVE_WATER_POS_TAG);
         context.state().remove(ACTIVE_APPROACH_POS_TAG);
         context.state().remove(COLLECTING_ROD_TAG);
+        context.state().remove(DEPOSITING_OUTPUTS_TAG);
         context.setProgressTicks(0);
     }
 
