@@ -15,12 +15,14 @@ import com.jvn.villagerretaliation.interaction.work.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredLoggingFilters;
+import com.jvn.villagerretaliation.interaction.work.HiredLoggingOptions;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.HiredAnimalBreedingTargetPayload;
 import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.HiredBrewingOrderPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingFilterPayload;
+import com.jvn.villagerretaliation.network.HiredLoggingOptionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
@@ -132,6 +134,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean activeBrewingOrder;
     private boolean activeBuilderTask;
     private final Set<String> selectedLoggingFilters = new LinkedHashSet<>();
+    private boolean loggingStripLogs;
+    private boolean loggingHarvestLeaves;
+    private boolean loggingBonemealSaplings;
+    private boolean loggingPlantSaplings;
+    private boolean loggingPickUpDecayDrops;
     private final Set<String> selectedAnimalBreedingTargets = new LinkedHashSet<>();
     private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
@@ -207,6 +214,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean activeBrewingOrder,
             boolean activeBuilderTask,
             List<String> selectedLoggingFilters,
+            boolean loggingStripLogs,
+            boolean loggingHarvestLeaves,
+            boolean loggingBonemealSaplings,
+            boolean loggingPlantSaplings,
+            boolean loggingPickUpDecayDrops,
             List<String> selectedAnimalBreedingTargets,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
@@ -244,6 +256,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.activeHiredRole = activeHiredRole;
         this.activeBrewingOrder = activeBrewingOrder;
         this.activeBuilderTask = activeBuilderTask;
+        this.loggingStripLogs = loggingStripLogs;
+        this.loggingHarvestLeaves = loggingHarvestLeaves;
+        this.loggingBonemealSaplings = loggingBonemealSaplings;
+        this.loggingPlantSaplings = loggingPlantSaplings;
+        this.loggingPickUpDecayDrops = loggingPickUpDecayDrops;
         if (selectedLoggingFilters != null) {
             this.selectedLoggingFilters.addAll(selectedLoggingFilters);
         }
@@ -772,6 +789,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addLoggingFilterOptions() {
+        addLoggingOption(HiredLoggingOptions.STRIP_LOGS, "recruit.logging_strip_logs", this.loggingStripLogs);
+        addLoggingOption(HiredLoggingOptions.HARVEST_LEAVES, "recruit.logging_harvest_leaves", this.loggingHarvestLeaves);
+        addLoggingOption(HiredLoggingOptions.BONEMEAL_SAPLINGS, "recruit.logging_bonemeal_saplings", this.loggingBonemealSaplings);
+        addLoggingOption(HiredLoggingOptions.PLANT_SAPLINGS, "recruit.logging_plant_saplings", this.loggingPlantSaplings);
+        addLoggingOption(HiredLoggingOptions.PICK_UP_DECAY_DROPS, "recruit.logging_pick_up_decay_drops", this.loggingPickUpDecayDrops);
         this.options.add(DialogueOption.enabled(checkmarkRowLabel("Any logs", this.selectedLoggingFilters.isEmpty()), () -> requestLoggingFilter("any")));
         List<ResourceLocation> filters = HiredLoggingFilters.options();
         if (filters.isEmpty()) {
@@ -907,6 +929,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     () -> openBuilderStructureCategoryPage(category)));
         }
         addOption("recruit.nevermind", this::openWorkPage);
+    }
+
+    private void addLoggingOption(String optionId, String translationKey, boolean enabled) {
+        this.options.add(DialogueOption.enabled(
+                checkmarkRowLabel(translate(translationKey), enabled),
+                () -> requestLoggingOption(optionId)));
     }
 
     private void addBuilderStructureOptions() {
@@ -1539,6 +1567,21 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.selectedLoggingFilters.clear();
         } else if (!this.selectedLoggingFilters.remove(filterId)) {
             this.selectedLoggingFilters.add(filterId);
+        }
+        rebuildOptionsKeepingListPosition();
+    }
+
+    private void requestLoggingOption(String optionId) {
+        sendToServer(new HiredLoggingOptionPayload(this.villagerEntityId, optionId));
+        switch (optionId) {
+            case HiredLoggingOptions.STRIP_LOGS -> this.loggingStripLogs = !this.loggingStripLogs;
+            case HiredLoggingOptions.HARVEST_LEAVES -> this.loggingHarvestLeaves = !this.loggingHarvestLeaves;
+            case HiredLoggingOptions.BONEMEAL_SAPLINGS -> this.loggingBonemealSaplings = !this.loggingBonemealSaplings;
+            case HiredLoggingOptions.PLANT_SAPLINGS -> this.loggingPlantSaplings = !this.loggingPlantSaplings;
+            case HiredLoggingOptions.PICK_UP_DECAY_DROPS -> this.loggingPickUpDecayDrops = !this.loggingPickUpDecayDrops;
+            default -> {
+                return;
+            }
         }
         rebuildOptionsKeepingListPosition();
     }

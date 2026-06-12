@@ -40,6 +40,78 @@
       ]
     },
     {
+      "key": "interaction.work.logging.collecting_leaf_tool",
+      "lines": [
+        "I am getting shears or a hoe before I clear leaves."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.collected_leaf_tool",
+      "lines": [
+        "I found a tool for the leaves and am heading back to the stand."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.searching_saplings",
+      "lines": [
+        "I am checking the work area for saplings that could use bonemeal."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.sapling_blocked",
+      "lines": [
+        "I cannot reach that sapling well enough to tend it."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.sapling_repositioning",
+      "lines": [
+        "I am changing position to tend that sapling."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.moving_to_sapling",
+      "lines": [
+        "I am moving to bonemeal that sapling."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.bonemealing_sapling",
+      "lines": [
+        "I bonemealed a sapling in the work area."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.sapling_changed",
+      "lines": [
+        "That sapling is no longer ready for the work I had in mind."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.moving_to_decay_drop",
+      "lines": [
+        "I am picking up what the tree left behind."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.decay_drop_repositioning",
+      "lines": [
+        "I am changing position to reach that tree drop."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.decay_drop_unreachable",
+      "lines": [
+        "I cannot reach that tree drop safely."
+      ]
+    },
+    {
+      "key": "interaction.work.logging.collected_decay_drops",
+      "lines": [
+        "I picked up {count} tree drops from the ground."
+      ]
+    },
+    {
       "key": "interaction.work.logging.blocked_target",
       "lines": [
         "That trunk will not do. I am looking for another I can reach."

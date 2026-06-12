@@ -54,6 +54,11 @@ public record OpenVillagerInteractionPayload(
         boolean activeBrewingOrder,
         boolean activeBuilderTask,
         List<String> selectedLoggingFilters,
+        boolean loggingStripLogs,
+        boolean loggingHarvestLeaves,
+        boolean loggingBonemealSaplings,
+        boolean loggingPlantSaplings,
+        boolean loggingPickUpDecayDrops,
         List<String> selectedAnimalBreedingTargets,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
@@ -96,6 +101,11 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.activeBrewingOrder());
         buffer.writeBoolean(payload.activeBuilderTask());
         writeStringList(buffer, payload.selectedLoggingFilters());
+        buffer.writeBoolean(payload.loggingStripLogs());
+        buffer.writeBoolean(payload.loggingHarvestLeaves());
+        buffer.writeBoolean(payload.loggingBonemealSaplings());
+        buffer.writeBoolean(payload.loggingPlantSaplings());
+        buffer.writeBoolean(payload.loggingPickUpDecayDrops());
         writeStringList(buffer, payload.selectedAnimalBreedingTargets());
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
@@ -136,6 +146,11 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 readStringList(buffer),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
                 readStringList(buffer),
                 readDialogueOptions(buffer),
                 readStringList(buffer),

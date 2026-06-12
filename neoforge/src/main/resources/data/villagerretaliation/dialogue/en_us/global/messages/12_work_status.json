@@ -232,6 +232,12 @@
       ]
     },
     {
+      "key": "interaction.work.status.logging_option",
+      "lines": [
+        "{option} is now {state}."
+      ]
+    },
+    {
       "key": "interaction.work.status.farming_mode",
       "lines": [
         "My farming approach is now {mode}."

@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredLoggingFilters;
+import com.jvn.villagerretaliation.interaction.work.HiredLoggingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
@@ -964,6 +965,35 @@ public final class HiredVillagerWorkService {
         sendStatusNotice(player, villager, state);
     }
 
+    public static void toggleLoggingOption(ServerPlayer player, ServerLevel level, Villager villager, String optionId) {
+        if (!canManageWork(level, villager, player)) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.LOGGING) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.work.configure.requires_role",
+                    Map.of("role", HiredVillagerRole.LOGGING.label()));
+            return;
+        }
+
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredLoggingOptions.ToggleResult result = HiredLoggingOptions.toggle(state, optionId);
+        if (result.invalid()) {
+            return;
+        }
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredWorkPlan.clear(session.context());
+        session.context().setProgressTicks(0);
+        setStatus(state, "interaction.work.status.logging_option", Map.of(
+                "option", HiredLoggingOptions.label(result.optionId()),
+                "state", result.enabled() ? "enabled" : "disabled"));
+        sendStatusNotice(player, villager, state);
+    }
+
     public static void toggleAnimalBreedingTarget(ServerPlayer player, ServerLevel level, Villager villager, String targetId) {
         if (!canManageWork(level, villager, player)) {
             com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
@@ -1089,6 +1119,7 @@ public final class HiredVillagerWorkService {
         if (!state.contains("LoggingFilter", Tag.TAG_STRING)) {
             state.putString("LoggingFilter", "any");
         }
+        HiredLoggingOptions.initializeDefaults(state);
         if (!state.contains("CropMode", Tag.TAG_STRING)) {
             state.putString("CropMode", "harvest_replant");
         }

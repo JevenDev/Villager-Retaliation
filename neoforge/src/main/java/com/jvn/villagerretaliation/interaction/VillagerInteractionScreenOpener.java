@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.interaction.work.BuilderTaskState;
 import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredLoggingFilters;
+import com.jvn.villagerretaliation.interaction.work.HiredLoggingOptions;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -133,6 +134,8 @@ public final class VillagerInteractionScreenOpener {
         VillagerWalletService.WalletSnapshot wallet = VillagerWalletService.getWallet(villager);
         VillagerCurrencyResources.Text currencyText = VillagerCurrencyResources.text(level.getServer());
         VillagerReputationNetworking.sendProfile(player, villager, profile);
+        net.minecraft.nbt.CompoundTag workState = HiredVillagerWorkService.state(villager);
+        HiredVillagerWorkService.initializeDefaults(workState, villager);
         return new OpenVillagerInteractionPayload(
                 villager.getId(),
                 "",
@@ -161,10 +164,15 @@ public final class VillagerInteractionScreenOpener {
                 forceCameraTowardsVillager,
                 HiredVillagerRoles.availableRoles(level, villager),
                 HiredVillagerContractService.activeRole(level, villager),
-                BrewingWorker.hasOrder(HiredVillagerWorkService.state(villager)),
-                BuilderTaskState.hasTask(HiredVillagerWorkService.state(villager)),
-                HiredLoggingFilters.selectedFilterStrings(HiredVillagerWorkService.state(villager)),
-                HiredAnimalBreedingTargets.selectedTargetStrings(HiredVillagerWorkService.state(villager)),
+                BrewingWorker.hasOrder(workState),
+                BuilderTaskState.hasTask(workState),
+                HiredLoggingFilters.selectedFilterStrings(workState),
+                HiredLoggingOptions.stripLogs(workState),
+                HiredLoggingOptions.harvestLeaves(workState),
+                HiredLoggingOptions.bonemealSaplings(workState),
+                HiredLoggingOptions.plantSaplings(workState),
+                HiredLoggingOptions.pickUpDecayDrops(workState),
+                HiredAnimalBreedingTargets.selectedTargetStrings(workState),
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),

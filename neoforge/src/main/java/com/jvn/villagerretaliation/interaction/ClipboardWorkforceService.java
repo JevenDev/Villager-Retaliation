@@ -231,20 +231,25 @@ public final class ClipboardWorkforceService {
             return WorkerStatus.NO_TARGETS;
         }
         return switch (taskState) {
-            case MOVING_TO_TARGET, RETURNING_TO_WORK_AREA, SELECTING_TARGET, FINDING_CHAIN_TARGET, VALIDATING_TARGET -> WorkerStatus.PATHING;
+            case MOVING_TO_TARGET, RETURNING_TO_WORK_AREA -> WorkerStatus.PATHING;
+            case SELECTING_TARGET, FINDING_CHAIN_TARGET, VALIDATING_TARGET -> activeWorkStatus(role);
             case MOVING_TO_STORAGE, DEPOSITING, PAUSED_STORAGE_FULL -> WorkerStatus.DEPOSITING;
             case WAITING_FOR_MATERIALS -> WorkerStatus.WAITING;
-            case WORKING, COLLECTING_OUTPUT -> switch (role) {
-                case MINING -> WorkerStatus.MINING;
-                case LOGGING -> WorkerStatus.LOGGING;
-                case FARMING -> WorkerStatus.FARMING;
-                case FISHING -> WorkerStatus.WORKING;
-                case BREWING -> WorkerStatus.BREWING;
-                case BUILDER -> WorkerStatus.BUILDING;
-                default -> WorkerStatus.WORKING;
-            };
+            case WORKING, COLLECTING_OUTPUT -> activeWorkStatus(role);
             case IDLE, AWAITING_INSTRUCTION, FAILED_COOLDOWN, PAUSED_MISSING_TOOL -> WorkerStatus.WAITING;
             default -> WorkerStatus.UNKNOWN;
+        };
+    }
+
+    private static WorkerStatus activeWorkStatus(HiredVillagerRole role) {
+        return switch (role) {
+            case MINING -> WorkerStatus.MINING;
+            case LOGGING -> WorkerStatus.LOGGING;
+            case FARMING -> WorkerStatus.FARMING;
+            case FISHING -> WorkerStatus.WORKING;
+            case BREWING -> WorkerStatus.BREWING;
+            case BUILDER -> WorkerStatus.BUILDING;
+            default -> WorkerStatus.WORKING;
         };
     }
 
