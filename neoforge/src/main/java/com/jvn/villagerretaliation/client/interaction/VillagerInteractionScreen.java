@@ -130,6 +130,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final EnumSet<HiredVillagerRole> availableHiredRoles;
     private final HiredVillagerRole activeHiredRole;
     private boolean activeBrewingOrder;
+    private boolean activeBuilderTask;
     private final Set<String> selectedLoggingFilters = new LinkedHashSet<>();
     private final Set<String> selectedAnimalBreedingTargets = new LinkedHashSet<>();
     private boolean forceCameraTowardsVillager;
@@ -204,6 +205,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             List<HiredVillagerRole> availableHiredRoles,
             HiredVillagerRole activeHiredRole,
             boolean activeBrewingOrder,
+            boolean activeBuilderTask,
             List<String> selectedLoggingFilters,
             List<String> selectedAnimalBreedingTargets,
             List<DialogueOptionDefinition> dialogueOptions,
@@ -241,6 +243,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 : EnumSet.copyOf(availableHiredRoles);
         this.activeHiredRole = activeHiredRole;
         this.activeBrewingOrder = activeBrewingOrder;
+        this.activeBuilderTask = activeBuilderTask;
         if (selectedLoggingFilters != null) {
             this.selectedLoggingFilters.addAll(selectedLoggingFilters);
         }
@@ -758,8 +761,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
         }
         if (isActiveHiredRole(HiredVillagerRole.BUILDER)) {
-            addOption("recruit.work_config_builder", this::openBuilderStructuresPage);
-            addOption("recruit.stop_builder_build", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD));
+            if (this.activeBuilderTask) {
+                addOption("recruit.stop_builder_build", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD));
+            } else {
+                addOption("recruit.work_config_builder", this::openBuilderStructuresPage);
+            }
         }
         addRoleWorkConfigOption(HiredVillagerRole.NITWIT, "recruit.work_config_nitwit", VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT);
         addOption("recruit.nevermind", this::openRecruitPage);
@@ -1514,6 +1520,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.activeBrewingOrder = false;
             openWorkPage();
         } else if (action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD) {
+            this.activeBuilderTask = false;
             openWorkPage();
         }
     }

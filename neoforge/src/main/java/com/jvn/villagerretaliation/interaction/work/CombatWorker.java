@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.interaction.HiredCombatMode;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -156,7 +157,9 @@ public final class CombatWorker implements HiredRoleWorker {
         }
 
         Path path = villager.getNavigation().createPath(patrolTarget, 0);
-        if (path != null && path.canReach() && villager.getNavigation().moveTo(path, PATROL_SPEED)) {
+        if (path != null
+                && path.canReach()
+                && VillagerTaskNavigationUtil.moveToHiredPath(villager, path, patrolTarget, PATROL_SPEED, 0)) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, patrolTarget);
         } else {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, context.workCenter());

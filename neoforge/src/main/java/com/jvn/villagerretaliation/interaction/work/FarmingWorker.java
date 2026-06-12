@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,7 +13,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -278,7 +278,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
             return WorkResult.idle("interaction.work.farming.missing_hoe");
         }
-        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, FarmerHoeRequirement::isHoe);
+        BlockPos storage = AssignedStorageService.nearestAssignedToolStoragePosContaining(level, villager, FarmerHoeRequirement::isHoe);
         if (storage == null) {
             HiredWorkerBrain.setFailure(context, "missing_hoe", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
@@ -296,11 +296,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
             return WorkResult.idle("interaction.work.farming.hoe_unreachable");
         }
-        int moved = AssignedStorageService.transferFirstMatchingStackAtAssignedStorage(
+        int moved = AssignedStorageService.transferToolAtAssignedStorage(
                 villager,
                 storage,
                 FarmerHoeRequirement::isHoe,
-                context.inventory()::insertSupply);
+                context.inventory()::insertTool);
         hoe = context.inventory().equipBestTool(FarmerHoeRequirement::isHoe, FarmerHoeRequirement::hoeScore);
         if (moved <= 0 || hoe.isEmpty()) {
             HiredWorkerBrain.setFailure(context, "farming_hoe_inventory_full", level.getGameTime() + 100L);
@@ -392,7 +392,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return false;
         }
 
-        setVanillaCropWalkTarget(villager, approach, speed);
+        setCropWalkTarget(villager, approach, speed);
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         if (!villager.getNavigation().isDone() && approach.equals(navigationTarget)) {
             if (HiredPathMemory.isNavigationBlocked(
@@ -410,7 +410,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (path != null
                 && path.canReach()
                 && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
-            boolean moved = villager.getNavigation().moveTo(path, speed);
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, approach, speed, 1);
             if (moved) {
                 HiredPathMemory.rememberNavigationProgress(level, villager, approach, villager.distanceToSqr(approach.getCenter()));
             } else {
@@ -440,7 +440,10 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (path == null || !path.canReach() || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
                 continue;
             }
-            double score = villager.distanceToSqr(candidate.getCenter()) + path.getNodeCount() * 1.5D;
+            double score = villager.distanceToSqr(candidate.getCenter())
+                    + HiredMoveToBlockFaceJob.pathTraversalCost(level, path)
+                    + HiredMoveToBlockFaceJob.terrainCost(level, candidate)
+                    + HiredPathMemory.recentCost(villager, target);
             if (score < bestScore) {
                 best = candidate;
                 bestScore = score;
@@ -514,7 +517,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return false;
         }
 
-        setVanillaCropWalkTarget(villager, target, speed);
+        setCropWalkTarget(villager, target, speed);
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         if (!villager.getNavigation().isDone() && target.equals(navigationTarget)) {
             if (HiredPathMemory.isNavigationBlocked(
@@ -532,7 +535,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (path != null
                 && path.canReach()
                 && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
-            boolean moved = villager.getNavigation().moveTo(path, speed);
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target, speed, 1);
             if (moved) {
                 HiredPathMemory.rememberNavigationProgress(level, villager, target, villager.distanceToSqr(target.getCenter()));
             } else {
@@ -550,18 +553,14 @@ public final class FarmingWorker extends AbstractBlockWorker {
     }
 
     private void stopCropNavigation(Villager villager) {
-        if (!villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
-        }
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         HiredPathMemory.clearNavigationProgress(villager);
-        villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-        villager.getBrain().eraseMemory(MemoryModuleType.PATH);
     }
 
-    private static void setVanillaCropWalkTarget(Villager villager, BlockPos target, double speed) {
+    private static void setCropWalkTarget(Villager villager, BlockPos target, double speed) {
         BlockPosTracker tracker = new BlockPosTracker(target);
         villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, tracker);
-        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(tracker, (float) speed, 1));
+        VillagerTaskNavigationUtil.setHiredWalkTarget(villager, target, speed, 1);
     }
 
     private FarmTarget findFarmTarget(ServerLevel level, Villager villager, HiredWorkContext context) {

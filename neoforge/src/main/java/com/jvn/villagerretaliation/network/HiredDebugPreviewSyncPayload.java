@@ -49,6 +49,7 @@ public record HiredDebugPreviewSyncPayload(
             buffer.writeBlockPos(entry.pos());
             buffer.writeBoolean(entry.payment());
             buffer.writeUtf(entry.ownerName());
+            buffer.writeUtf(entry.storageType());
         }
         buffer.writeVarInt(payload.ticks());
     }
@@ -79,6 +80,7 @@ public record HiredDebugPreviewSyncPayload(
                     buffer.readResourceLocation(),
                     buffer.readBlockPos(),
                     buffer.readBoolean(),
+                    buffer.readUtf(),
                     buffer.readUtf()
             ));
         }
@@ -128,9 +130,11 @@ public record HiredDebugPreviewSyncPayload(
             net.minecraft.resources.ResourceLocation dimension,
             net.minecraft.core.BlockPos pos,
             boolean payment,
-            String ownerName) {
+            String ownerName,
+            String storageType) {
         public StorageEntry {
             ownerName = sanitizeLabel(ownerName);
+            storageType = sanitizeLabel(storageType);
         }
     }
 

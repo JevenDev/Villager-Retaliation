@@ -319,7 +319,8 @@ public final class VillagerReputationNetworking {
                         ToucanNetwork.withServerPlayer(context, player -> com.jvn.villagerretaliation.item.HiredStorageClipboardItem.changeClipboardMode(
                             player,
                             payload.delta(),
-                            payload.menuSlotIndex()
+                            payload.menuSlotIndex(),
+                            payload.storageVariantOnly()
                     )))
         );
         network.playToServer(

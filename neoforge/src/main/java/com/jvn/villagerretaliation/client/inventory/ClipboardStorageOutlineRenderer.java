@@ -67,6 +67,7 @@ public final class ClipboardStorageOutlineRenderer {
                         ResourceKey.create(Registries.DIMENSION, entry.dimension()),
                         entry.pos(),
                         entry.payment(),
+                        "",
                         ""
                 ));
             }
@@ -139,7 +140,8 @@ public final class ClipboardStorageOutlineRenderer {
                         ResourceKey.create(Registries.DIMENSION, entry.dimension()),
                         entry.pos(),
                         entry.payment(),
-                        entry.ownerName()
+                        entry.ownerName(),
+                        entry.storageType()
                 ));
             }
             debugPreviewVisibleUntilGameTime = minecraft.level.getGameTime() + payload.ticks();
@@ -171,7 +173,7 @@ public final class ClipboardStorageOutlineRenderer {
 
         ItemStack clipboard = clipboardStack(minecraft);
         ClipboardMode mode = HiredStorageClipboardItem.mode(clipboard);
-        if (mode == ClipboardMode.ASSIGN_STORAGE || mode == ClipboardMode.ASSIGN_PAYMENT) {
+        if (mode.isStorageAssignmentMode() || mode == ClipboardMode.ASSIGN_PAYMENT) {
             List<StoragePosition> selected = HiredStorageClipboardItem.selectedContainers(clipboard);
             renderPositions(event, selected, mode == ClipboardMode.ASSIGN_PAYMENT ? PAYMENT_COLOR : SELECTED_COLOR);
             if (minecraft.level.getGameTime() <= assignedVisibleUntilGameTime) {
@@ -314,7 +316,7 @@ public final class ClipboardStorageOutlineRenderer {
             labels.add(new DebugLabelPosition(
                     new Vec3(position.pos().getX() + 0.5D, position.pos().getY() + 1.25D, position.pos().getZ() + 0.5D),
                     position.ownerName(),
-                    "",
+                    position.storageType(),
                     position.payment() ? PAYMENT_COLOR : ASSIGNED_COLOR
             ));
         }
@@ -511,7 +513,7 @@ public final class ClipboardStorageOutlineRenderer {
             String jobName) {
     }
 
-    private record OutlinedStoragePosition(ResourceKey<Level> dimension, BlockPos pos, boolean payment, String ownerName) {
+    private record OutlinedStoragePosition(ResourceKey<Level> dimension, BlockPos pos, boolean payment, String ownerName, String storageType) {
     }
 
     private record DebugLabelPosition(Vec3 pos, String ownerName, String jobName, int color) {

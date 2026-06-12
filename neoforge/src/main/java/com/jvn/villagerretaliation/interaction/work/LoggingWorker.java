@@ -79,15 +79,33 @@ public final class LoggingWorker extends AbstractBlockWorker {
         }
 
         BlockState targetState = level.getBlockState(target.blockPos());
-        ItemStack axe = context.inventory().equipBestTool(
+        ToolStorageResult toolResult = equipBestToolOrCollectFromStorage(
+                level,
+                villager,
+                context,
                 stack -> stack.is(ItemTags.AXES),
-                stack -> effectiveDestroySpeed(stack, targetState));
-        if (axe.isEmpty()) {
+                stack -> effectiveDestroySpeed(stack, targetState),
+                0.55D);
+        if (toolResult.status() != ToolStorageStatus.READY && toolResult.status() != ToolStorageStatus.COLLECTED) {
+            if (toolResult.status() == ToolStorageStatus.MOVING) {
+                return WorkResult.progressed("interaction.work.status.collecting_tool");
+            }
             clearActiveBreakingTarget(level, context, villager);
+            if (toolResult.status() == ToolStorageStatus.UNREACHABLE) {
+                HiredWorkerBrain.setFailure(context, "tool_storage_unreachable", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, toolResult.storagePos());
+                return WorkResult.idle("interaction.work.status.tool_storage_unreachable");
+            }
+            if (toolResult.status() == ToolStorageStatus.INVENTORY_FULL) {
+                HiredWorkerBrain.setFailure(context, "tool_inventory_full", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, toolResult.storagePos());
+                return WorkResult.idle("interaction.work.status.tool_inventory_full");
+            }
             HiredWorkerBrain.setFailure(context, "missing_axe", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
             return WorkResult.idle("interaction.work.logging.missing_axe");
         }
+        ItemStack axe = toolResult.tool();
 
         prepareBreakingTarget(level, context, villager, target);
         if (!canWorkFromCurrentPosition(level, villager, context, target)) {

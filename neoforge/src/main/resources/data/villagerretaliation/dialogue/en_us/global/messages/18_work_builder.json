@@ -22,6 +22,12 @@
       ]
     },
     {
+      "key": "interaction.work.builder.no_job_site",
+      "lines": [
+        "Builders do not use assigned job sites. I will travel between storage and the construction site."
+      ]
+    },
+    {
       "key": "interaction.work.builder.unknown_structure",
       "lines": [
         "I do not know that structure."
@@ -132,19 +138,19 @@
     {
       "key": "interaction.work.builder.waiting_materials",
       "lines": [
-        "I need more construction materials for {structure}: {materials}."
+        "I need more construction materials for {structure}: {materials}. Put them in assigned storage or my job inventory."
       ]
     },
     {
       "key": "interaction.work.builder.moving_to_material_storage",
       "lines": [
-        "I need {materials} for {structure}, so I am heading to assigned storage."
+        "I need {materials} for {structure}, so I am heading to assigned storage to restock."
       ]
     },
     {
       "key": "interaction.work.builder.waiting_materials_at_storage",
       "lines": [
-        "I am waiting by assigned storage for {materials} to build {structure}."
+        "I am at assigned storage waiting for {materials} to build {structure}."
       ]
     },
     {
@@ -156,13 +162,19 @@
     {
       "key": "interaction.work.builder.material_inventory_full",
       "lines": [
-        "I need room in my job inventory to carry construction materials."
+        "I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space."
       ]
     },
     {
       "key": "interaction.work.builder.materials_unreachable",
       "lines": [
-        "I cannot reach the assigned construction materials."
+        "I found the needed construction materials in assigned storage, but I cannot reach that container."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.waiting_material_storage_unreachable",
+      "lines": [
+        "I still need {materials} for {structure}. I cannot reach assigned storage to wait for them."
       ]
     },
     {
@@ -223,6 +235,18 @@
       "key": "interaction.work.builder.path_blocked",
       "lines": [
         "I cannot reach the next construction spot at {target}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.missing_clear_tool",
+      "lines": [
+        "I need the right tool to clear the block at {target} before I can keep building {structure}."
+      ]
+    },
+    {
+      "key": "interaction.work.builder.missing_placement_tool",
+      "lines": [
+        "I need a {tool} to prepare the next construction block at {target} for {structure}."
       ]
     },
     {

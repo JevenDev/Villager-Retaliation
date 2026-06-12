@@ -29,6 +29,9 @@ public record HiredWorkSession(
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         int maxRadius = HiredVillagerWorkService.maxWorkRadius(level, villager, safeRole);
         HiredWorkArea area = HiredVillagerWorkService.workAreaWithinMax(state, villager, maxRadius);
+        if (safeRole == HiredVillagerRole.BUILDER) {
+            area = area.asUsable(false);
+        }
         int efficiency = HiredVillagerWorkService.efficiencyPercent(level, villager, safeRole, state, inventory);
         HiredWorkContext context = new HiredWorkContext(
                 inventory,

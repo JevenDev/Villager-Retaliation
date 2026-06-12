@@ -137,10 +137,28 @@ public final class HiredDebugPreviewService {
                         record.dimension().location(),
                         record.pos(),
                         payment,
-                        ownerName
+                        ownerName,
+                        storagePurposeLabel(record.purpose())
                 ));
             }
         }
+    }
+
+    private static String storagePurposeLabel(String purpose) {
+        String normalized = AssignedStorageService.normalizePurpose(purpose);
+        if (AssignedStorageService.PAYMENT_PURPOSE.equals(normalized)) {
+            return "Payment";
+        }
+        if (AssignedStorageService.TOOL_PURPOSE.equals(normalized)) {
+            return "Tool";
+        }
+        if (AssignedStorageService.INPUT_PURPOSE.equals(normalized)) {
+            return "Input";
+        }
+        if (AssignedStorageService.OUTPUT_PURPOSE.equals(normalized)) {
+            return "Output";
+        }
+        return "Global";
     }
 
     private static double sanitizeRadius(double radius) {

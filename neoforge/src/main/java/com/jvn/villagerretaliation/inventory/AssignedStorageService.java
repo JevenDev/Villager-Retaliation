@@ -25,6 +25,9 @@ import net.minecraft.world.phys.Vec3;
 
 public final class AssignedStorageService {
     public static final String GENERAL_PURPOSE = "general";
+    public static final String INPUT_PURPOSE = "input";
+    public static final String OUTPUT_PURPOSE = "output";
+    public static final String TOOL_PURPOSE = "tool";
     public static final String PAYMENT_PURPOSE = "payment";
     private static final double STORAGE_INTERACTION_REACH_SQR = 25.0D;
     private static final double OUTPUT_DEPOSIT_REACH_BLOCKS = 2.0D;
@@ -139,7 +142,7 @@ public final class AssignedStorageService {
         if (stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
             return stack;
         }
-        List<VillagerInventoryOverflowService.ContainerCandidate> containers = liveContainerCandidates(level, villager);
+        List<VillagerInventoryOverflowService.ContainerCandidate> containers = liveOutputContainerCandidates(level, villager);
         if (containers.isEmpty()) {
             return stack;
         }
@@ -158,7 +161,7 @@ public final class AssignedStorageService {
             return stack;
         }
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
-        List<VillagerInventoryOverflowService.ContainerCandidate> containers = nearbyLiveContainerCandidates(level, villager, safeFilter);
+        List<VillagerInventoryOverflowService.ContainerCandidate> containers = nearbyLiveOutputContainerCandidates(level, villager, safeFilter);
         if (containers.isEmpty()) {
             return stack;
         }
@@ -205,6 +208,13 @@ public final class AssignedStorageService {
         return !nearbyLiveContainerCandidates(level, villager, positionFilter == null ? ignored -> true : positionFilter).isEmpty();
     }
 
+    public static boolean canInteractWithAssignedOutputStorage(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        return !nearbyLiveOutputContainerCandidates(level, villager, ignored -> true).isEmpty();
+    }
+
     public static boolean canInteractWithAssignedStorage(Villager villager, BlockPos storagePos) {
         if (storagePos == null || !(villager.level() instanceof ServerLevel level)) {
             return false;
@@ -225,9 +235,39 @@ public final class AssignedStorageService {
     }
 
     public static BlockPos nearestAssignedStoragePos(ServerLevel level, Villager villager, Predicate<BlockPos> positionFilter) {
+        return nearestAssignedStoragePos(level, villager, positionFilter, StorageUse.INPUT);
+    }
+
+    public static BlockPos nearestAssignedNonPaymentStoragePos(ServerLevel level, Villager villager) {
+        return nearestAssignedStoragePos(level, villager, ignored -> true, StorageUse.ANY_NON_PAYMENT);
+    }
+
+    public static List<BlockPos> assignedNonPaymentStoragePositions(
+            ServerLevel level,
+            Villager villager,
+            Predicate<BlockPos> positionFilter) {
+        return assignedStoragePositions(level, villager, positionFilter, StorageUse.ANY_NON_PAYMENT);
+    }
+
+    public static BlockPos nearestAssignedOutputStoragePos(ServerLevel level, Villager villager) {
+        return nearestAssignedStoragePos(level, villager, ignored -> true, StorageUse.OUTPUT);
+    }
+
+    public static BlockPos nearestAssignedOutputStoragePos(
+            ServerLevel level,
+            Villager villager,
+            Predicate<BlockPos> positionFilter) {
+        return nearestAssignedStoragePos(level, villager, positionFilter, StorageUse.OUTPUT);
+    }
+
+    private static BlockPos nearestAssignedStoragePos(
+            ServerLevel level,
+            Villager villager,
+            Predicate<BlockPos> positionFilter,
+            StorageUse use) {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         BlockPos villagerPos = villager.blockPosition();
-        return liveContainerCandidates(level, villager).stream()
+        return liveContainerCandidates(level, villager, use).stream()
                 .filter(candidate -> safeFilter.test(candidate.pos()))
                 .min((first, second) -> Double.compare(
                         first.pos().distSqr(villagerPos),
@@ -236,19 +276,113 @@ public final class AssignedStorageService {
                 .orElse(null);
     }
 
+    private static List<BlockPos> assignedStoragePositions(
+            ServerLevel level,
+            Villager villager,
+            Predicate<BlockPos> positionFilter,
+            StorageUse use) {
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        BlockPos villagerPos = villager.blockPosition();
+        return liveContainerCandidates(level, villager, use).stream()
+                .filter(candidate -> safeFilter.test(candidate.pos()))
+                .sorted((first, second) -> Double.compare(
+                        first.pos().distSqr(villagerPos),
+                        second.pos().distSqr(villagerPos)))
+                .map(candidate -> candidate.pos().immutable())
+                .toList();
+    }
+
     public static BlockPos nearestAssignedStoragePosContaining(
             ServerLevel level,
             Villager villager,
             Predicate<ItemStack> predicate) {
+        return nearestAssignedStoragePosContaining(level, villager, predicate, StorageUse.INPUT);
+    }
+
+    public static BlockPos nearestAssignedNonPaymentStoragePosContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate) {
+        return nearestAssignedNonPaymentStoragePosContaining(level, villager, predicate, ignored -> true);
+    }
+
+    public static BlockPos nearestAssignedNonPaymentStoragePosContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate,
+            Predicate<BlockPos> positionFilter) {
+        return nearestAssignedStoragePosContaining(
+                level,
+                villager,
+                predicate,
+                positionFilter,
+                StorageUse.ANY_NON_PAYMENT);
+    }
+
+    public static List<BlockPos> assignedNonPaymentStoragePositionsContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate,
+            Predicate<BlockPos> positionFilter) {
+        return assignedStoragePositionsContaining(
+                level,
+                villager,
+                predicate,
+                positionFilter,
+                StorageUse.ANY_NON_PAYMENT);
+    }
+
+    public static BlockPos nearestAssignedToolStoragePosContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate) {
+        return nearestAssignedStoragePosContaining(level, villager, predicate, StorageUse.TOOL);
+    }
+
+    private static BlockPos nearestAssignedStoragePosContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate,
+            StorageUse use) {
+        return nearestAssignedStoragePosContaining(level, villager, predicate, ignored -> true, use);
+    }
+
+    private static BlockPos nearestAssignedStoragePosContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate,
+            Predicate<BlockPos> positionFilter,
+            StorageUse use) {
         Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         BlockPos villagerPos = villager.blockPosition();
-        return liveContainerCandidates(level, villager).stream()
+        return liveContainerCandidates(level, villager, use).stream()
+                .filter(candidate -> safeFilter.test(candidate.pos()))
                 .filter(candidate -> containerHasItem(candidate.container(), safePredicate))
                 .min((first, second) -> Double.compare(
                         first.pos().distSqr(villagerPos),
                         second.pos().distSqr(villagerPos)))
                 .map(candidate -> candidate.pos().immutable())
                 .orElse(null);
+    }
+
+    private static List<BlockPos> assignedStoragePositionsContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate,
+            Predicate<BlockPos> positionFilter,
+            StorageUse use) {
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        BlockPos villagerPos = villager.blockPosition();
+        return liveContainerCandidates(level, villager, use).stream()
+                .filter(candidate -> safeFilter.test(candidate.pos()))
+                .filter(candidate -> containerHasItem(candidate.container(), safePredicate))
+                .sorted((first, second) -> Double.compare(
+                        first.pos().distSqr(villagerPos),
+                        second.pos().distSqr(villagerPos)))
+                .map(candidate -> candidate.pos().immutable())
+                .toList();
     }
 
     public static BlockPos nearestAssignedPaymentStoragePos(ServerLevel level, Villager villager) {
@@ -323,7 +457,7 @@ public final class AssignedStorageService {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int remaining = count;
-        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveInputContainerCandidates(level, villager)) {
             if (!safeFilter.test(candidate.pos())) {
                 continue;
             }
@@ -355,13 +489,25 @@ public final class AssignedStorageService {
     }
 
     public static int countItems(Villager villager, Predicate<ItemStack> predicate, Predicate<BlockPos> positionFilter) {
+        return countItems(villager, predicate, positionFilter, StorageUse.INPUT);
+    }
+
+    public static int countItemsInNonPaymentStorage(Villager villager, Predicate<ItemStack> predicate) {
+        return countItems(villager, predicate, ignored -> true, StorageUse.ANY_NON_PAYMENT);
+    }
+
+    private static int countItems(
+            Villager villager,
+            Predicate<ItemStack> predicate,
+            Predicate<BlockPos> positionFilter,
+            StorageUse use) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
         Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         int count = 0;
-        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager, use)) {
             if (!safeFilter.test(candidate.pos())) {
                 continue;
             }
@@ -382,6 +528,39 @@ public final class AssignedStorageService {
             Predicate<ItemStack> predicate,
             int maxCount,
             Function<ItemStack, ItemStack> receiver) {
+        return transferItemsAtAssignedStorage(villager, storagePos, predicate, maxCount, receiver, StorageUse.INPUT);
+    }
+
+    public static int transferItemsAtAssignedNonPaymentStorage(
+            Villager villager,
+            BlockPos storagePos,
+            Predicate<ItemStack> predicate,
+            int maxCount,
+            Function<ItemStack, ItemStack> receiver) {
+        return transferItemsAtAssignedStorage(
+                villager,
+                storagePos,
+                predicate,
+                maxCount,
+                receiver,
+                StorageUse.ANY_NON_PAYMENT);
+    }
+
+    public static int transferToolAtAssignedStorage(
+            Villager villager,
+            BlockPos storagePos,
+            Predicate<ItemStack> predicate,
+            Function<ItemStack, ItemStack> receiver) {
+        return transferItemsAtAssignedStorage(villager, storagePos, predicate, 1, receiver, StorageUse.TOOL);
+    }
+
+    private static int transferItemsAtAssignedStorage(
+            Villager villager,
+            BlockPos storagePos,
+            Predicate<ItemStack> predicate,
+            int maxCount,
+            Function<ItemStack, ItemStack> receiver,
+            StorageUse use) {
         if (storagePos == null
                 || maxCount <= 0
                 || receiver == null
@@ -392,7 +571,7 @@ public final class AssignedStorageService {
         Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int movedTotal = 0;
-        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager, use)) {
             if (!candidate.pos().equals(storagePos)) {
                 continue;
             }
@@ -568,7 +747,22 @@ public final class AssignedStorageService {
     }
 
     static List<VillagerInventoryOverflowService.ContainerCandidate> liveContainerCandidates(ServerLevel level, Villager villager) {
-        return liveContainerCandidates(level, villager, record -> !PAYMENT_PURPOSE.equals(normalizePurpose(record.purpose())));
+        return liveContainerCandidates(level, villager, StorageUse.ANY_NON_PAYMENT);
+    }
+
+    private static List<VillagerInventoryOverflowService.ContainerCandidate> liveInputContainerCandidates(ServerLevel level, Villager villager) {
+        return liveContainerCandidates(level, villager, StorageUse.INPUT);
+    }
+
+    private static List<VillagerInventoryOverflowService.ContainerCandidate> liveOutputContainerCandidates(ServerLevel level, Villager villager) {
+        return liveContainerCandidates(level, villager, StorageUse.OUTPUT);
+    }
+
+    private static List<VillagerInventoryOverflowService.ContainerCandidate> liveContainerCandidates(
+            ServerLevel level,
+            Villager villager,
+            StorageUse use) {
+        return liveContainerCandidates(level, villager, record -> purposeMatchesUse(record.purpose(), use));
     }
 
     private static List<VillagerInventoryOverflowService.ContainerCandidate> livePaymentContainerCandidates(ServerLevel level, Villager villager) {
@@ -633,6 +827,20 @@ public final class AssignedStorageService {
         return containers;
     }
 
+    private static List<VillagerInventoryOverflowService.ContainerCandidate> nearbyLiveOutputContainerCandidates(
+            ServerLevel level,
+            Villager villager,
+            Predicate<BlockPos> positionFilter) {
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        List<VillagerInventoryOverflowService.ContainerCandidate> containers = new ArrayList<>();
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveOutputContainerCandidates(level, villager)) {
+            if (safeFilter.test(candidate.pos()) && isInInteractionRange(villager, candidate.pos())) {
+                containers.add(candidate);
+            }
+        }
+        return containers;
+    }
+
     public static AssignmentSummaryMessage assignmentSummaryMessage(AssignSummary summary) {
         if (summary.assigned() > 0) {
             return new AssignmentSummaryMessage(
@@ -652,8 +860,38 @@ public final class AssignedStorageService {
         return new AssignmentSummaryMessage("interaction.storage.assign_result.none", Map.of());
     }
 
-    private static String normalizePurpose(String purpose) {
+    public static String normalizePurpose(String purpose) {
         return purpose == null || purpose.isBlank() ? GENERAL_PURPOSE : purpose;
+    }
+
+    private static boolean isGlobalPurpose(String purpose) {
+        String normalized = normalizePurpose(purpose);
+        return GENERAL_PURPOSE.equals(normalized) || "global".equals(normalized);
+    }
+
+    private static boolean purposeMatchesUse(String purpose, StorageUse use) {
+        String normalized = normalizePurpose(purpose);
+        if (PAYMENT_PURPOSE.equals(normalized)) {
+            return use == StorageUse.PAYMENT;
+        }
+        if (isGlobalPurpose(normalized)) {
+            return use != StorageUse.PAYMENT;
+        }
+        return switch (use) {
+            case INPUT -> INPUT_PURPOSE.equals(normalized);
+            case OUTPUT -> OUTPUT_PURPOSE.equals(normalized);
+            case TOOL -> TOOL_PURPOSE.equals(normalized);
+            case ANY_NON_PAYMENT -> true;
+            case PAYMENT -> false;
+        };
+    }
+
+    private enum StorageUse {
+        INPUT,
+        OUTPUT,
+        TOOL,
+        ANY_NON_PAYMENT,
+        PAYMENT
     }
 
     public record StoragePosition(ResourceKey<Level> dimension, BlockPos pos) {

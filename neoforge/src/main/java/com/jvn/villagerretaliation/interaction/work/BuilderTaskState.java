@@ -18,11 +18,13 @@ public final class BuilderTaskState {
     private static final String ROTATION_TAG = "Rotation";
     private static final String PHASE_TAG = "Phase";
     private static final String PLACED_INDEX_TAG = "PlacedIndex";
+    private static final String MATERIAL_BATCH_END_INDEX_TAG = "MaterialBatchEndIndex";
     private static final String TOTAL_BLOCKS_TAG = "TotalBlocks";
     private static final String PAID_CURRENCY_TAG = "PaidCurrency";
     private static final String STARTED_GAME_TIME_TAG = "StartedGameTime";
     private static final String BLOCKED_REASON_TAG = "BlockedReason";
     private static final String MATERIAL_SUMMARY_TAG = "MaterialSummary";
+    private static final String MISSING_MATERIALS_TAG = "MissingMaterials";
     private static final String JOB_ID_TAG = "JobId";
 
     private BuilderTaskState() {
@@ -38,6 +40,10 @@ public final class BuilderTaskState {
             state.put(TASK_TAG, new CompoundTag());
         }
         return state.getCompound(TASK_TAG);
+    }
+
+    private static CompoundTag existingTask(CompoundTag state) {
+        return state.contains(TASK_TAG, Tag.TAG_COMPOUND) ? state.getCompound(TASK_TAG) : null;
     }
 
     public static void start(
@@ -115,7 +121,26 @@ public final class BuilderTaskState {
     }
 
     public static void setPhase(CompoundTag state, BuilderBuildPhase phase) {
-        task(state).putString(PHASE_TAG, (phase == null ? BuilderBuildPhase.IDLE : phase).id());
+        BuilderBuildPhase safePhase = phase == null ? BuilderBuildPhase.IDLE : phase;
+        CompoundTag task = task(state);
+        task.putString(PHASE_TAG, safePhase.id());
+        if (safePhase != BuilderBuildPhase.BLOCKED) {
+            task.remove(BLOCKED_REASON_TAG);
+        }
+    }
+
+    public static BuilderBuildPhase phase(CompoundTag state) {
+        CompoundTag task = existingTask(state);
+        if (task == null) {
+            return BuilderBuildPhase.IDLE;
+        }
+        String value = task.getString(PHASE_TAG);
+        for (BuilderBuildPhase phase : BuilderBuildPhase.values()) {
+            if (phase.id().equals(value) || phase.name().equalsIgnoreCase(value)) {
+                return phase;
+            }
+        }
+        return BuilderBuildPhase.IDLE;
     }
 
     public static int placedIndex(CompoundTag state) {
@@ -124,6 +149,18 @@ public final class BuilderTaskState {
 
     public static void setPlacedIndex(CompoundTag state, int index) {
         task(state).putInt(PLACED_INDEX_TAG, Math.max(0, index));
+    }
+
+    public static int materialBatchEndIndex(CompoundTag state) {
+        return Math.max(0, task(state).getInt(MATERIAL_BATCH_END_INDEX_TAG));
+    }
+
+    public static void setMaterialBatchEndIndex(CompoundTag state, int index) {
+        task(state).putInt(MATERIAL_BATCH_END_INDEX_TAG, Math.max(0, index));
+    }
+
+    public static void clearMaterialBatch(CompoundTag state) {
+        task(state).remove(MATERIAL_BATCH_END_INDEX_TAG);
     }
 
     public static int totalBlocks(CompoundTag state) {
@@ -135,7 +172,26 @@ public final class BuilderTaskState {
     }
 
     public static String materialSummary(CompoundTag state) {
-        return task(state).getString(MATERIAL_SUMMARY_TAG);
+        CompoundTag task = existingTask(state);
+        return task == null ? "" : task.getString(MATERIAL_SUMMARY_TAG);
+    }
+
+    public static void setMissingMaterials(CompoundTag state, String materials) {
+        CompoundTag task = task(state);
+        if (materials == null || materials.isBlank() || "none".equalsIgnoreCase(materials.trim())) {
+            task.remove(MISSING_MATERIALS_TAG);
+            return;
+        }
+        task.putString(MISSING_MATERIALS_TAG, materials);
+    }
+
+    public static void clearMissingMaterials(CompoundTag state) {
+        task(state).remove(MISSING_MATERIALS_TAG);
+    }
+
+    public static String missingMaterials(CompoundTag state) {
+        CompoundTag task = existingTask(state);
+        return task == null ? "" : task.getString(MISSING_MATERIALS_TAG);
     }
 
     public static void setPlacement(
@@ -171,7 +227,8 @@ public final class BuilderTaskState {
     }
 
     public static String blockedReason(CompoundTag state) {
-        return task(state).getString(BLOCKED_REASON_TAG);
+        CompoundTag task = existingTask(state);
+        return task == null ? "" : task.getString(BLOCKED_REASON_TAG);
     }
 
     public static Map<String, String> replacements(CompoundTag state) {

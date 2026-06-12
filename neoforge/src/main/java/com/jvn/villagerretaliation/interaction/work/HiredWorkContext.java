@@ -90,11 +90,11 @@ public record HiredWorkContext(
     public boolean canDepositOutputsNow(Villager villager) {
         return this.autoDepositOutputs
                 && this.inventory.hasOutputItems()
-                && AssignedStorageService.canInteractWithAssignedStorage(villager);
+                && AssignedStorageService.canInteractWithAssignedOutputStorage(villager);
     }
 
     public BlockPos nearestDepositStorage(ServerLevel level, Villager villager) {
-        return AssignedStorageService.nearestAssignedStoragePos(level, villager);
+        return AssignedStorageService.nearestAssignedOutputStoragePos(level, villager);
     }
 
     public boolean canStoreOutputs(List<ItemStack> stacks) {

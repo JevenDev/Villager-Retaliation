@@ -64,7 +64,28 @@ public final class BuilderSitePlanner {
             if (!level.hasChunkAt(worldPos)) {
                 return SiteResult.failed("interaction.work.builder.site_unloaded", worldPos);
             }
-            PlacementCheck check = canReserveAt(level, villager, worldPos, block.state());
+            PlacementCheck check = canReserveStartedAt(level, worldPos, block.state());
+            if (!check.valid()) {
+                return SiteResult.failed(check.statusKey(), worldPos);
+            }
+        }
+        return SiteResult.valid(origin);
+    }
+
+    public static SiteResult validateStartedSite(
+            ServerLevel level,
+            Villager villager,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin) {
+        if (plan.blocks().size() > Math.max(128, VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get())) {
+            return SiteResult.failed("interaction.work.builder.too_large");
+        }
+        for (BuilderStructureScanner.BuildBlock block : plan.blocks()) {
+            BlockPos worldPos = plan.worldPos(origin, block);
+            if (!level.hasChunkAt(worldPos)) {
+                return SiteResult.failed("interaction.work.builder.site_unloaded", worldPos);
+            }
+            PlacementCheck check = canReserveStartedAt(level, worldPos, block.state());
             if (!check.valid()) {
                 return SiteResult.failed(check.statusKey(), worldPos);
             }
@@ -74,6 +95,10 @@ public final class BuilderSitePlanner {
 
     public static PlacementCheck canReserveAt(ServerLevel level, Villager villager, BlockPos pos, BlockState targetState) {
         return placementCheck(level, villager, pos, targetState, false);
+    }
+
+    private static PlacementCheck canReserveStartedAt(ServerLevel level, BlockPos pos, BlockState targetState) {
+        return placementCheck(level, null, pos, targetState, false);
     }
 
     public static PlacementCheck canPlaceAt(ServerLevel level, Villager villager, BlockPos pos, BlockState targetState) {
@@ -90,7 +115,10 @@ public final class BuilderSitePlanner {
             return PlacementCheck.failed("interaction.work.builder.site_unloaded");
         }
         BlockState current = level.getBlockState(pos);
-        if (current.equals(targetState)) {
+        if (BuilderStructureScanner.sameSchematicState(current, targetState)) {
+            return PlacementCheck.success();
+        }
+        if (BuilderStructureScanner.canTransformExisting(current, targetState)) {
             return PlacementCheck.success();
         }
         if (!safeReplaceable(level, pos, current)
@@ -100,7 +128,8 @@ public final class BuilderSitePlanner {
         if (checkSupport && !targetState.canSurvive(level, pos)) {
             return PlacementCheck.failed("interaction.work.builder.blocked_support");
         }
-        if (!targetState.getCollisionShape(level, pos, CollisionContext.empty()).isEmpty()
+        if (villager != null
+                && !targetState.getCollisionShape(level, pos, CollisionContext.empty()).isEmpty()
                 && hasBlockingEntity(level, villager, pos)) {
             return PlacementCheck.failed("interaction.work.builder.blocked_entity");
         }
@@ -114,8 +143,7 @@ public final class BuilderSitePlanner {
         if (area != null && area.usable()) {
             return areaContainsHorizontal(area, pos);
         }
-        int maxDistance = Math.max(8, VillagerRetaliationConfig.HIRED_BUILDER_MAX_SITE_DISTANCE.get()) + 8;
-        return buildCenter == null || horizontalDistanceSqr(pos, buildCenter) <= maxDistance * maxDistance;
+        return true;
     }
 
     private static boolean areaContainsHorizontal(HiredWorkArea area, BlockPos pos) {
@@ -276,7 +304,8 @@ public final class BuilderSitePlanner {
             return false;
         }
         BlockState current = level.getBlockState(pos);
-        return !current.equals(targetState)
+        return !BuilderStructureScanner.sameSchematicState(current, targetState)
+                && !BuilderStructureScanner.canTransformExisting(current, targetState)
                 && !safeReplaceable(level, pos, current)
                 && MiningBlockRules.isBuilderClearableObstruction(level, pos, current);
     }

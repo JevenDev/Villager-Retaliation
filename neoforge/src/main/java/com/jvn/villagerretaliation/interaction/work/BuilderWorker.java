@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -19,9 +20,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -36,18 +34,25 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class BuilderWorker extends AbstractBlockWorker {
+    private static final String BUILD_SITE_NAV_TARGET_TAG = "BuilderSiteNavigationTarget";
     private static final double BUILD_WALK_SPEED = 0.52D;
     private static final int BUILD_WALK_CLOSE_ENOUGH = 1;
     private static final int MAX_BUILD_TARGETS_TO_PATHFIND = 128;
     private static final double BUILD_REACH = 12.0D;
     private static final double BUILD_REACH_SQR = BUILD_REACH * BUILD_REACH;
-    private static final double BUILD_SITE_REACH_ACTIVATION_RADIUS = 6.0D;
-    private static final double BUILD_SITE_REACH_ACTIVATION_RADIUS_SQR = BUILD_SITE_REACH_ACTIVATION_RADIUS * BUILD_SITE_REACH_ACTIVATION_RADIUS;
+    private static final double BUILD_SITE_BORDER_SAFE_DISTANCE = 3.0D;
+    private static final double BUILD_SITE_BORDER_SAFE_DISTANCE_SQR =
+            BUILD_SITE_BORDER_SAFE_DISTANCE * BUILD_SITE_BORDER_SAFE_DISTANCE;
     private static final int BUILD_APPROACH_RADIUS = 12;
     private static final int BUILD_APPROACH_VERTICAL_SEARCH = 4;
+    private static final int BUILD_SITE_INTERMEDIATE_SEARCH_RADIUS = 10;
+    private static final int BUILD_SITE_INTERMEDIATE_VERTICAL_RADIUS = 3;
+    private static final int MAX_BUILD_SITE_INTERMEDIATE_PATH_ATTEMPTS = 24;
+    private static final int BUILD_SITE_INTERMEDIATE_CLOSE_ENOUGH = 2;
     private static final int SELF_PLACEMENT_CLEAR_RADIUS = 4;
 
     @Override
@@ -60,6 +65,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         if (!BuilderTaskState.hasTask(context.state())) {
             HiredWorkerBrain.clearFailure(context);
             HiredStorageNavigationGoal.clearStorageTarget(context);
+            clearBuildSiteIntermediateNavigation(context);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             return WorkResult.idle("interaction.work.builder.choose_structure");
         }
@@ -73,12 +79,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
 
         BlockPos origin = BuilderTaskState.origin(context.state());
-        HiredWorkArea area = context.hasWorkArea() ? context.workArea() : null;
-        BuilderSitePlanner.SiteResult siteResult = BuilderSitePlanner.validateSite(
+        HiredWorkArea area = null;
+        BuilderSitePlanner.SiteResult siteResult = BuilderSitePlanner.validateStartedSite(
                 level,
-                hirer,
                 villager,
-                area,
                 plan.get(),
                 origin);
         if (!siteResult.valid()) {
@@ -93,35 +97,88 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return finishBuild(level, villager, context, plan.get());
         }
 
-        MissingMaterials missing = missingMaterials(villager, context.inventory(), plan.get(), index);
-        if (!missing.ready()) {
-            return waitForMaterialsAtAssignedStorage(level, villager, context, missing);
-        }
-
         BuilderStructureScanner.BuildBlock block = plan.get().blocks().get(index);
         BlockPos worldPos = plan.get().worldPos(origin, block);
         PlacementGroup placementGroup = placementGroup(plan.get(), origin, block);
-        MaterialResult materialResult = placementGroupNeedsMaterial(level, placementGroup)
-                ? ensureMaterial(level, villager, context, placementGroup.materialBlock())
-                : MaterialResult.READY;
-        if (materialResult == MaterialResult.MOVING) {
-            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
-            return WorkResult.idle("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
-        }
-        if (materialResult == MaterialResult.INVENTORY_FULL) {
-            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
-            return WorkResult.idle("interaction.work.builder.material_inventory_full", BuilderTaskState.replacements(context.state()));
-        }
-        if (materialResult == MaterialResult.MISSING) {
-            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
-            return WorkResult.idle("interaction.work.builder.waiting_materials", BuilderTaskState.replacements(context.state()));
-        }
-        if (materialResult == MaterialResult.UNREACHABLE) {
-            BuilderTaskState.setBlocked(context.state(), "builder_material_storage_unreachable");
-            return WorkResult.idle("interaction.work.builder.materials_unreachable", BuilderTaskState.replacements(context.state()));
-        }
 
         BlockPos buildCenter = origin.offset(plan.get().localCenter());
+        WorkResult interiorEvacuationResult = moveOutOfBuildInteriorIfNeeded(
+                level,
+                villager,
+                context,
+                area,
+                buildCenter,
+                plan.get(),
+                origin,
+                block);
+        if (interiorEvacuationResult != null) {
+            return interiorEvacuationResult;
+        }
+
+        PlacementGroup reachableObstruction = reachablePlacementObstructionGroup(
+                level,
+                villager,
+                plan.get(),
+                origin,
+                index,
+                area,
+                buildCenter);
+        WorkResult clearingResult = reachableObstruction == null ? null : clearPlacementObstruction(
+                level,
+                villager,
+                context,
+                reachableObstruction,
+                area,
+                buildCenter,
+                plan.get(),
+                origin);
+        if (clearingResult != null) {
+            return clearingResult;
+        }
+
+        PlacementGroup remainingObstruction = firstRemainingPlacementObstructionGroup(level, plan.get(), origin, index);
+        if (remainingObstruction != null) {
+            PlacementPart obstruction = firstPlacementObstruction(level, remainingObstruction);
+            BlockPos obstructionPos = obstruction == null ? worldPos : obstruction.worldPos();
+            BuilderTaskState.setBlocked(context.state(), "path_blocked");
+            HiredWorkerBrain.setFailure(context, "path_blocked", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, obstructionPos);
+            return WorkResult.idle("interaction.work.builder.path_blocked", Map.of(
+                    "target", HiredWorkerBrain.formatPos(obstructionPos),
+                    "structure", BuilderTaskState.structureLabel(context.state())));
+        }
+
+        WorkResult evacuationResult = moveOutOfSchematicIfNeeded(level, villager, context, area, buildCenter, plan.get(), origin);
+        if (evacuationResult != null) {
+            return evacuationResult;
+        }
+
+        WorkResult materialBatchResult = ensureConstructionMaterialBatch(
+                level,
+                villager,
+                context,
+                plan.get(),
+                origin,
+                index);
+        if (materialBatchResult != null) {
+            return materialBatchResult;
+        }
+
+        if (firstPlacementObstruction(level, placementGroup) != null) {
+            clearingResult = clearPlacementObstruction(
+                    level,
+                    villager,
+                    context,
+                    placementGroup,
+                    area,
+                    buildCenter,
+                    plan.get(),
+                    origin);
+            if (clearingResult != null) {
+                return clearingResult;
+            }
+        }
+
         for (PlacementPart part : placementGroup.parts()) {
             if (!builderIntersectsPlacement(level, villager, part.worldPos(), part.block().state())) {
                 continue;
@@ -155,22 +212,29 @@ public final class BuilderWorker extends AbstractBlockWorker {
             }
         }
 
-        WorkResult clearingResult = clearPlacementObstruction(
-                level,
-                villager,
-                context,
-                placementGroup,
-                area,
-                buildCenter,
-                plan.get(),
-                origin);
-        if (clearingResult != null) {
-            return clearingResult;
+        WorkResult toolActionResult = ensurePlacementToolAction(level, villager, context, placementGroup);
+        if (toolActionResult != null) {
+            return toolActionResult;
         }
 
         if (!canBuildFromCurrentPosition(villager, worldPos, plan.get(), origin)) {
+            if (continueBuildSiteIntermediateNavigation(level, context, villager)) {
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, buildCenter);
+                BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.TRAVELING_TO_SITE);
+                return WorkResult.idle("interaction.work.builder.moving_to_site", Map.of(
+                        "target", HiredWorkerBrain.formatPos(worldPos),
+                        "structure", BuilderTaskState.structureLabel(context.state())));
+            }
+
             HiredPathTarget target = bestBuildTarget(level, villager, worldPos, area, buildCenter, plan.get(), origin);
             if (target == null) {
+                if (moveTowardBuildSiteIntermediate(level, context, villager, plan.get(), origin, buildCenter)) {
+                    setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, buildCenter);
+                    BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.TRAVELING_TO_SITE);
+                    return WorkResult.idle("interaction.work.builder.moving_to_site", Map.of(
+                            "target", HiredWorkerBrain.formatPos(worldPos),
+                            "structure", BuilderTaskState.structureLabel(context.state())));
+                }
                 if (recordWorkPathFailure(level, villager, worldPos)) {
                     BuilderTaskState.setBlocked(context.state(), "path_blocked");
                 }
@@ -184,6 +248,13 @@ public final class BuilderWorker extends AbstractBlockWorker {
             prepareBreakingTarget(level, context, villager, target);
             MovementResult movementResult = moveToBuildTarget(level, villager, context, target, area, buildCenter, plan.get(), origin);
             if (movementResult == MovementResult.BLOCKED) {
+                if (moveTowardBuildSiteIntermediate(level, context, villager, plan.get(), origin, buildCenter)) {
+                    setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, buildCenter);
+                    BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.TRAVELING_TO_SITE);
+                    return WorkResult.idle("interaction.work.builder.moving_to_site", Map.of(
+                            "target", HiredWorkerBrain.formatPos(worldPos),
+                            "structure", BuilderTaskState.structureLabel(context.state())));
+                }
                 if (recordWorkPathFailure(level, villager, worldPos)) {
                     BuilderTaskState.setBlocked(context.state(), "path_blocked");
                 }
@@ -200,6 +271,9 @@ public final class BuilderWorker extends AbstractBlockWorker {
                         "target", HiredWorkerBrain.formatPos(worldPos),
                         "structure", BuilderTaskState.structureLabel(context.state())));
             }
+        } else {
+            clearBuildSiteIntermediateNavigation(context);
+            stopWorkNavigation(villager);
         }
 
         if (!placeBlock(level, villager, context, placementGroup)) {
@@ -223,6 +297,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
     @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
         clearActiveBreakingTarget(level, context, villager);
+        clearBuildSiteIntermediateNavigation(context);
         BuilderTaskState.clearPendingStructure(context.state());
         BuilderTaskState.clearTask(context.state());
         super.stop(level, villager, context);
@@ -239,7 +314,9 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 count += stack.getCount();
             }
         }
-        count += AssignedStorageService.countItems(villager, stack -> BuilderStructureScanner.sameMaterial(stack, required));
+        count += AssignedStorageService.countItemsInNonPaymentStorage(
+                villager,
+                stack -> BuilderStructureScanner.sameMaterial(stack, required));
         return count;
     }
 
@@ -255,11 +332,39 @@ public final class BuilderWorker extends AbstractBlockWorker {
             HiredJobInventory inventory,
             BuilderStructureScanner.StructurePlan plan,
             int startIndex) {
+        return missingMaterials(villager, inventory, remainingMaterials(plan, startIndex));
+    }
+
+    private static MissingMaterials missingMaterials(
+            ServerLevel level,
+            Villager villager,
+            HiredJobInventory inventory,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex) {
+        return missingMaterials(villager, inventory, remainingMaterials(level, plan, origin, startIndex));
+    }
+
+    private static MissingMaterials missingMaterials(
+            Villager villager,
+            HiredJobInventory inventory,
+            List<BuilderStructureScanner.MaterialRequirement> materials) {
         List<String> missing = new ArrayList<>();
-        for (BuilderStructureScanner.MaterialRequirement material : remainingMaterials(plan, startIndex)) {
+        for (BuilderStructureScanner.MaterialRequirement material : materials) {
             int available = countAvailableMaterial(villager, inventory, material.item());
             if (available < material.count()) {
                 missing.add((material.count() - available) + "x " + material.itemName());
+            }
+        }
+        return new MissingMaterials(missing);
+    }
+
+    private static MissingMaterials missingMaterialDeficits(
+            List<BuilderStructureScanner.MaterialRequirement> deficits) {
+        List<String> missing = new ArrayList<>();
+        for (BuilderStructureScanner.MaterialRequirement material : deficits) {
+            if (material.count() > 0) {
+                missing.add(material.count() + "x " + material.itemName());
             }
         }
         return new MissingMaterials(missing);
@@ -271,6 +376,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             MissingMaterials missing) {
         BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
+        BuilderTaskState.setMissingMaterials(context.state(), missing.summary());
         Map<String, String> replacements = Map.of(
                 "materials", missing.summary(),
                 "structure", BuilderTaskState.structureLabel(context.state()));
@@ -281,12 +387,203 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.builder.waiting_materials", replacements);
         }
 
-        BlockPos storage = AssignedStorageService.nearestAssignedStoragePos(level, villager);
-        if (storage == null) {
+        List<BlockPos> storages = AssignedStorageService.assignedNonPaymentStoragePositions(level, villager, ignored -> true);
+        if (storages.isEmpty()) {
             HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.setFailure(context, "missing_builder_materials", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE);
             return WorkResult.idle("interaction.work.builder.waiting_materials", replacements);
+        }
+
+        BlockPos failedStorage = storages.getFirst();
+        for (BlockPos storage : storages) {
+            HiredWorkerBrain.setStorageTarget(context, storage);
+            HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
+                    level,
+                    context,
+                    villager,
+                    storage,
+                    BUILD_WALK_SPEED);
+            if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+                HiredWorkerBrain.clearFailure(context);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+                clearBuildSiteIntermediateNavigation(context);
+                return WorkResult.progressed("interaction.work.builder.moving_to_material_storage", replacements);
+            }
+            if (moveResult == HiredStorageNavigationGoal.Result.ARRIVED) {
+                HiredWorkerBrain.clearFailure(context);
+                setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
+                return WorkResult.idle("interaction.work.builder.waiting_materials_at_storage", replacements);
+            }
+            failedStorage = storage;
+        }
+
+        HiredWorkerBrain.setFailure(context, "missing_builder_materials_storage_unreachable", level.getGameTime() + 100L);
+        setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, failedStorage);
+        HiredWorkerBrain.setStorageTarget(context, failedStorage);
+        return WorkResult.idle("interaction.work.builder.waiting_material_storage_unreachable", replacements);
+    }
+
+    private WorkResult ensureConstructionMaterialBatch(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex) {
+        MaterialBatch batch = currentMaterialBatch(level, context, plan, origin, startIndex);
+        if (batch.materials().isEmpty()) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
+            BuilderTaskState.clearMissingMaterials(context.state());
+            return null;
+        }
+
+        promoteOutputMaterialsToSupply(context.inventory(), batch.materials());
+        List<BuilderStructureScanner.MaterialRequirement> missing = carriedMissingMaterials(
+                context.inventory(),
+                plan,
+                origin,
+                level,
+                startIndex,
+                batch.endIndex());
+        if (missing.isEmpty()) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
+            BuilderTaskState.clearMissingMaterials(context.state());
+            return null;
+        }
+
+        return collectMaterialBatch(level, villager, context, plan, origin, startIndex, batch, missing);
+    }
+
+    private MaterialBatch currentMaterialBatch(
+            ServerLevel level,
+            HiredWorkContext context,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex) {
+        int storedEnd = BuilderTaskState.materialBatchEndIndex(context.state());
+        if (storedEnd > startIndex && storedEnd <= plan.blocks().size()) {
+            List<BuilderStructureScanner.MaterialRequirement> materials =
+                    remainingMaterials(level, plan, origin, startIndex, storedEnd);
+            if (context.inventory().canStoreSuppliesAfterDepositingOutputs(
+                    missingMaterialStacks(context.inventory(), materials))) {
+                return new MaterialBatch(storedEnd, materials);
+            }
+        }
+
+        MaterialBatch batch = nextMaterialBatch(level, context.inventory(), plan, origin, startIndex);
+        BuilderTaskState.setMaterialBatchEndIndex(context.state(), batch.endIndex());
+        return batch;
+    }
+
+    private MaterialBatch nextMaterialBatch(
+            ServerLevel level,
+            HiredJobInventory inventory,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex) {
+        int start = Math.clamp(startIndex, 0, plan.blocks().size());
+        int end = start;
+        List<BuilderStructureScanner.MaterialRequirement> materials = new ArrayList<>();
+        for (int i = start; i < plan.blocks().size(); i++) {
+            BuilderStructureScanner.BuildBlock block = plan.blocks().get(i);
+            if (!blockNeedsMaterial(level, plan, origin, block)) {
+                end = i + 1;
+                continue;
+            }
+
+            List<BuilderStructureScanner.MaterialRequirement> candidate = copyMaterialRequirements(materials);
+            addMaterialRequirement(candidate, block.requiredItem(), 1);
+            if (!inventory.canStoreSuppliesAfterDepositingOutputs(missingMaterialStacks(inventory, candidate))) {
+                if (end == start && materials.isEmpty()) {
+                    materials = candidate;
+                    end = i + 1;
+                }
+                break;
+            }
+            materials = candidate;
+            end = i + 1;
+        }
+        return new MaterialBatch(end, List.copyOf(materials));
+    }
+
+    private WorkResult collectMaterialBatch(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex,
+            MaterialBatch batch,
+            List<BuilderStructureScanner.MaterialRequirement> missing) {
+        promoteOutputMaterialDeficitsToSupply(context.inventory(), missing);
+        missing = carriedMissingMaterials(
+                context.inventory(),
+                plan,
+                origin,
+                level,
+                startIndex,
+                batch.endIndex());
+        if (missing.isEmpty()) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
+            BuilderTaskState.clearMissingMaterials(context.state());
+            return null;
+        }
+
+        MissingMaterials missingSummary = missingMaterialDeficits(missing);
+        BuilderTaskState.setMissingMaterials(context.state(), missingSummary.summary());
+        List<BuilderStructureScanner.MaterialRequirement> storageMissing = missing;
+        Predicate<ItemStack> storageMaterialFilter = stack -> matchesAnyMaterial(storageMissing, stack);
+        BlockPos storage = AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
+                level,
+                villager,
+                storageMaterialFilter);
+        if (storage == null && context.inventory().hasOutput(stack -> matchesAnyMaterial(storageMissing, stack))) {
+            WorkResult outputMaterialResult = makeRoomForCarriedOutputMaterials(
+                    level,
+                    villager,
+                    context,
+                    null,
+                    plan,
+                    origin,
+                    startIndex,
+                    batch,
+                    missing);
+            if (outputMaterialResult != null) {
+                return outputMaterialResult;
+            }
+            missing = carriedMissingMaterials(
+                    context.inventory(),
+                    plan,
+                    origin,
+                    level,
+                    startIndex,
+                    batch.endIndex());
+            if (missing.isEmpty()) {
+                HiredStorageNavigationGoal.clearStorageTarget(context);
+                HiredWorkerBrain.clearFailure(context);
+                BuilderTaskState.clearMissingMaterials(context.state());
+                return null;
+            }
+            missingSummary = missingMaterialDeficits(missing);
+            BuilderTaskState.setMissingMaterials(context.state(), missingSummary.summary());
+            List<BuilderStructureScanner.MaterialRequirement> updatedStorageMissing = missing;
+            storageMaterialFilter = stack -> matchesAnyMaterial(updatedStorageMissing, stack);
+            storage = AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
+                    level,
+                    villager,
+                    storageMaterialFilter);
+        }
+        List<BuilderStructureScanner.MaterialRequirement> currentStorageMissing = missing;
+        if (storage == null && context.inventory().hasOutput(stack -> matchesAnyMaterial(currentStorageMissing, stack))) {
+            return pauseForOutputMaterialSlotFull(level, context, null);
+        }
+        if (storage == null) {
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
+            return waitForMaterialsAtAssignedStorage(level, villager, context, missingSummary);
         }
 
         HiredWorkerBrain.setStorageTarget(context, storage);
@@ -299,38 +596,576 @@ public final class BuilderWorker extends AbstractBlockWorker {
         if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
             HiredWorkerBrain.clearFailure(context);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-            return WorkResult.progressed("interaction.work.builder.moving_to_material_storage", replacements);
+            clearBuildSiteIntermediateNavigation(context);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+            return WorkResult.idle("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
         }
         if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
+            BlockPos failedStorage = storage;
+            for (BlockPos alternateStorage : AssignedStorageService.assignedNonPaymentStoragePositionsContaining(
+                    level,
+                    villager,
+                    storageMaterialFilter,
+                    pos -> !failedStorage.equals(pos))) {
+                HiredWorkerBrain.setStorageTarget(context, alternateStorage);
+                HiredStorageNavigationGoal.Result alternateMoveResult = HiredStorageNavigationGoal.moveToStorageTarget(
+                        level,
+                        context,
+                        villager,
+                        alternateStorage,
+                        BUILD_WALK_SPEED);
+                if (alternateMoveResult == HiredStorageNavigationGoal.Result.MOVING) {
+                    HiredWorkerBrain.clearFailure(context);
+                    setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+                    clearBuildSiteIntermediateNavigation(context);
+                    BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+                    return WorkResult.idle("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
+                }
+                if (alternateMoveResult == HiredStorageNavigationGoal.Result.ARRIVED) {
+                    storage = alternateStorage;
+                    HiredWorkerBrain.setStorageTarget(context, storage);
+                    moveResult = HiredStorageNavigationGoal.Result.ARRIVED;
+                    break;
+                }
+            }
+            if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
+                HiredWorkerBrain.setStorageTarget(context, failedStorage);
+            }
+        }
+        if (moveResult == HiredStorageNavigationGoal.Result.FAILED && !AssignedStorageService.canInteractWithAssignedStorage(villager, storage)) {
+            BuilderTaskState.setBlocked(context.state(), "builder_material_storage_unreachable");
             HiredWorkerBrain.setFailure(context, "builder_material_storage_unreachable", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
-            return WorkResult.idle("interaction.work.builder.materials_unreachable", replacements);
+            HiredWorkerBrain.setStorageTarget(context, storage);
+            return WorkResult.idle("interaction.work.builder.materials_unreachable", materialReplacements(context.state(), missing));
         }
 
+        faceBlock(villager, storage);
+        List<BuilderStructureScanner.MaterialRequirement> expectedMissing = copyMaterialRequirements(missing);
+        int depositedOutputs = depositOutputItemsAtStorage(
+                villager,
+                context.inventory(),
+                storage,
+                stack -> !matchesAnyMaterial(expectedMissing, stack));
+        int promotedOutputs = promoteOutputMaterialDeficitsToSupply(context.inventory(), expectedMissing);
+        List<BuilderStructureScanner.MaterialRequirement> transferMissing = carriedMissingMaterials(
+                context.inventory(),
+                plan,
+                origin,
+                level,
+                startIndex,
+                batch.endIndex());
+        int movedMaterials = transferMissingBatchMaterials(villager, context, storage, transferMissing);
+        if (depositedOutputs > 0 || promotedOutputs > 0 || movedMaterials > 0) {
+            swingWorkTool(villager);
+        }
+
+        List<BuilderStructureScanner.MaterialRequirement> stillMissing = carriedMissingMaterials(
+                context.inventory(),
+                plan,
+                origin,
+                level,
+                startIndex,
+                batch.endIndex());
+        if (stillMissing.isEmpty()) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
+            BuilderTaskState.clearMissingMaterials(context.state());
+            return null;
+        }
+        BuilderTaskState.setMissingMaterials(
+                context.state(),
+                missingMaterialDeficits(stillMissing).summary());
+        if (movedMaterials > 0 || promotedOutputs > 0 || depositedOutputs > 0) {
+            HiredWorkerBrain.clearFailure(context);
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, storage);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+            return WorkResult.progressed("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
+        }
+
+        WorkResult outputRoomResult = makeRoomForNonMaterialOutputs(
+                level,
+                villager,
+                context,
+                storage,
+                stillMissing);
+        if (outputRoomResult != null) {
+            return outputRoomResult;
+        }
+
+        List<BuilderStructureScanner.MaterialRequirement> outputMissing = stillMissing;
+        if (context.inventory().hasOutput(stack -> matchesAnyMaterial(outputMissing, stack))) {
+            WorkResult outputMaterialResult = makeRoomForCarriedOutputMaterials(
+                    level,
+                    villager,
+                    context,
+                    storage,
+                    plan,
+                    origin,
+                    startIndex,
+                    batch,
+                    stillMissing);
+            if (outputMaterialResult != null) {
+                return outputMaterialResult;
+            }
+            stillMissing = carriedMissingMaterials(
+                    context.inventory(),
+                    plan,
+                    origin,
+                    level,
+                    startIndex,
+                    batch.endIndex());
+            if (stillMissing.isEmpty()) {
+                HiredStorageNavigationGoal.clearStorageTarget(context);
+                HiredWorkerBrain.clearFailure(context);
+                BuilderTaskState.clearMissingMaterials(context.state());
+                return null;
+            }
+            BuilderTaskState.setMissingMaterials(
+                    context.state(),
+                    missingMaterialDeficits(stillMissing).summary());
+        }
+
+        List<BuilderStructureScanner.MaterialRequirement> remainingStorageMissing = stillMissing;
+        if (AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
+                level,
+                villager,
+                stack -> matchesAnyMaterial(remainingStorageMissing, stack)) == null) {
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
+            return waitForMaterialsAtAssignedStorage(level, villager, context, missingMaterialDeficits(stillMissing));
+        }
+
+        HiredWorkerBrain.setFailure(context, "builder_material_inventory_full", level.getGameTime() + 100L);
+        setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
+        HiredWorkerBrain.setStorageTarget(context, storage);
+        BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
+        return WorkResult.idle("interaction.work.builder.material_inventory_full", BuilderTaskState.replacements(context.state()));
+    }
+
+    private WorkResult makeRoomForCarriedOutputMaterials(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos preferredStorage,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex,
+            MaterialBatch batch,
+            List<BuilderStructureScanner.MaterialRequirement> missing) {
+        BlockPos storage = preferredStorage == null ? nearestBuilderOutputStorage(level, villager) : preferredStorage;
+        if (storage == null) {
+            return null;
+        }
+
+        HiredWorkerBrain.setStorageTarget(context, storage);
+        HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
+                level,
+                context,
+                villager,
+                storage,
+                BUILD_WALK_SPEED);
+        if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+            clearBuildSiteIntermediateNavigation(context);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+            return WorkResult.idle("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
+        }
+        if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
+            HiredWorkerBrain.setFailure(context, "builder_material_inventory_full", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
+            HiredWorkerBrain.setStorageTarget(context, storage);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
+            return WorkResult.idle("interaction.work.builder.material_inventory_full", BuilderTaskState.replacements(context.state()));
+        }
+
+        faceBlock(villager, storage);
+        List<BuilderStructureScanner.MaterialRequirement> expectedMissing = copyMaterialRequirements(missing);
+        int depositedOutputs = depositOutputItemsAtStorage(
+                villager,
+                context.inventory(),
+                storage,
+                stack -> !matchesAnyMaterial(expectedMissing, stack));
+        int promotedOutputs = promoteOutputMaterialDeficitsToSupply(context.inventory(), expectedMissing);
+        if (depositedOutputs > 0 || promotedOutputs > 0) {
+            swingWorkTool(villager);
+        }
+
+        List<BuilderStructureScanner.MaterialRequirement> stillMissing = carriedMissingMaterials(
+                context.inventory(),
+                plan,
+                origin,
+                level,
+                startIndex,
+                batch.endIndex());
+        if (stillMissing.isEmpty()) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
+            BuilderTaskState.clearMissingMaterials(context.state());
+            return null;
+        }
+        BuilderTaskState.setMissingMaterials(
+                context.state(),
+                missingMaterialDeficits(stillMissing).summary());
+        if (depositedOutputs > 0 || promotedOutputs > 0) {
+            HiredWorkerBrain.clearFailure(context);
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, storage);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+            return WorkResult.progressed("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
+        }
+        if (context.inventory().hasOutput(stack -> matchesAnyMaterial(stillMissing, stack))) {
+            return pauseForOutputMaterialSlotFull(level, context, storage);
+        }
+        return null;
+    }
+
+    private WorkResult pauseForOutputMaterialSlotFull(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos storage) {
+        HiredWorkerBrain.setFailure(context, "builder_material_output_slot_full", level.getGameTime() + 100L);
+        setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
+        if (storage == null) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+        } else {
+            HiredWorkerBrain.setStorageTarget(context, storage);
+        }
+        BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
+        return WorkResult.idle("interaction.work.builder.material_inventory_full", BuilderTaskState.replacements(context.state()));
+    }
+
+    private WorkResult makeRoomForNonMaterialOutputs(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos materialStorage,
+            List<BuilderStructureScanner.MaterialRequirement> missing) {
+        List<BuilderStructureScanner.MaterialRequirement> expectedMissing = copyMaterialRequirements(missing);
+        Predicate<ItemStack> nonMaterialOutput = stack -> !matchesAnyMaterial(expectedMissing, stack);
+        if (!context.inventory().hasOutput(nonMaterialOutput)) {
+            return null;
+        }
+
+        BlockPos storage = nearestBuilderOutputStorage(level, villager, materialStorage);
+        if (storage == null) {
+            return null;
+        }
+
+        HiredWorkerBrain.setStorageTarget(context, storage);
+        HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
+                level,
+                context,
+                villager,
+                storage,
+                BUILD_WALK_SPEED);
+        if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+            clearBuildSiteIntermediateNavigation(context);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+            return WorkResult.idle("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
+        }
+        if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
+            HiredWorkerBrain.setFailure(context, "builder_material_output_storage_unreachable", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
+            HiredWorkerBrain.setStorageTarget(context, storage);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
+            return WorkResult.idle("interaction.work.builder.material_inventory_full", BuilderTaskState.replacements(context.state()));
+        }
+
+        faceBlock(villager, storage);
+        int depositedOutputs = depositOutputItemsAtStorage(villager, context.inventory(), storage, nonMaterialOutput);
+        if (depositedOutputs <= 0) {
+            return null;
+        }
+
+        swingWorkTool(villager);
         HiredWorkerBrain.clearFailure(context);
-        setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
-        return WorkResult.idle("interaction.work.builder.waiting_materials_at_storage", replacements);
+        setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, storage);
+        BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+        return WorkResult.progressed("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
+    }
+
+    private static BlockPos nearestBuilderOutputStorage(ServerLevel level, Villager villager) {
+        return nearestBuilderOutputStorage(level, villager, null);
+    }
+
+    private static BlockPos nearestBuilderOutputStorage(ServerLevel level, Villager villager, BlockPos excludedStorage) {
+        Predicate<BlockPos> filter = pos -> excludedStorage == null || !excludedStorage.equals(pos);
+        BlockPos storage = AssignedStorageService.nearestAssignedOutputStoragePos(level, villager, filter);
+        return storage == null ? AssignedStorageService.nearestAssignedStoragePos(level, villager, filter) : storage;
+    }
+
+    private WorkResult makeRoomForToolStorage(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        if (!context.inventory().hasOutputItems()) {
+            return null;
+        }
+        BlockPos storage = nearestBuilderOutputStorage(level, villager);
+        if (storage == null) {
+            return null;
+        }
+
+        HiredWorkerBrain.setStorageTarget(context, storage);
+        HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
+                level,
+                context,
+                villager,
+                storage,
+                BUILD_WALK_SPEED);
+        if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+            clearBuildSiteIntermediateNavigation(context);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+            return WorkResult.progressed("interaction.work.builder.output_full_depositing", BuilderTaskState.replacements(context.state()));
+        }
+        if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
+            return null;
+        }
+
+        faceBlock(villager, storage);
+        int depositedOutputs = depositOutputItemsAtStorage(villager, context.inventory(), storage);
+        if (depositedOutputs <= 0) {
+            return null;
+        }
+
+        swingWorkTool(villager);
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, storage);
+        BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+        return WorkResult.progressed("interaction.work.builder.output_full_depositing", BuilderTaskState.replacements(context.state()));
+    }
+
+    private int transferMissingBatchMaterials(
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos storage,
+            List<BuilderStructureScanner.MaterialRequirement> missing) {
+        int moved = 0;
+        for (BuilderStructureScanner.MaterialRequirement material : missing) {
+            int needed = material.count();
+            if (needed <= 0) {
+                continue;
+            }
+            moved += AssignedStorageService.transferItemsAtAssignedNonPaymentStorage(
+                    villager,
+                    storage,
+                    stack -> BuilderStructureScanner.sameMaterial(stack, material.item()),
+                    needed,
+                    stack -> context.inventory().insertSupply(stack));
+        }
+        return moved;
+    }
+
+    private int depositOutputItemsAtStorage(Villager villager, HiredJobInventory inventory, BlockPos storage) {
+        return depositOutputItemsAtStorage(villager, inventory, storage, ignored -> true);
+    }
+
+    private int depositOutputItemsAtStorage(
+            Villager villager,
+            HiredJobInventory inventory,
+            BlockPos storage,
+            Predicate<ItemStack> outputFilter) {
+        int movedStacks = 0;
+        int attempts = 0;
+        Predicate<ItemStack> safeFilter = outputFilter == null ? ignored -> true : outputFilter;
+        while (inventory.hasOutputItems() && attempts++ < HiredJobInventory.SLOT_COUNT) {
+            if (!inventory.depositOutputToAssignedStorageAt(storage, safeFilter)) {
+                break;
+            }
+            movedStacks++;
+        }
+        return movedStacks;
+    }
+
+    private static int promoteOutputMaterialsToSupply(
+            HiredJobInventory inventory,
+            List<BuilderStructureScanner.MaterialRequirement> materials) {
+        int promoted = 0;
+        for (BuilderStructureScanner.MaterialRequirement material : materials) {
+            int needed = material.count() - countCarriedMaterial(inventory, material.item());
+            if (needed <= 0) {
+                continue;
+            }
+            promoted += inventory.promoteOutputToSupply(
+                    stack -> BuilderStructureScanner.sameMaterial(stack, material.item()),
+                    needed);
+        }
+        return promoted;
+    }
+
+    private static int promoteOutputMaterialDeficitsToSupply(
+            HiredJobInventory inventory,
+            List<BuilderStructureScanner.MaterialRequirement> deficits) {
+        int promoted = 0;
+        for (BuilderStructureScanner.MaterialRequirement material : deficits) {
+            if (material.count() <= 0) {
+                continue;
+            }
+            promoted += inventory.promoteOutputToSupply(
+                    stack -> BuilderStructureScanner.sameMaterial(stack, material.item()),
+                    material.count());
+        }
+        return promoted;
+    }
+
+    private static List<ItemStack> missingMaterialStacks(
+            HiredJobInventory inventory,
+            List<BuilderStructureScanner.MaterialRequirement> materials) {
+        List<ItemStack> stacks = new ArrayList<>(materials.size());
+        for (BuilderStructureScanner.MaterialRequirement material : materials) {
+            int missing = material.count() - countCarriedMaterial(inventory, material.item());
+            if (missing > 0) {
+                stacks.add(material.item().copyWithCount(missing));
+            }
+        }
+        return stacks;
+    }
+
+    private static List<BuilderStructureScanner.MaterialRequirement> copyMaterialRequirements(
+            List<BuilderStructureScanner.MaterialRequirement> materials) {
+        List<BuilderStructureScanner.MaterialRequirement> copy = new ArrayList<>(materials.size());
+        for (BuilderStructureScanner.MaterialRequirement material : materials) {
+            copy.add(new BuilderStructureScanner.MaterialRequirement(material.item().copyWithCount(1), material.count()));
+        }
+        return copy;
+    }
+
+    private static void addMaterialRequirement(
+            List<BuilderStructureScanner.MaterialRequirement> materials,
+            ItemStack required,
+            int count) {
+        int existing = indexOfMaterial(materials, required);
+        if (existing >= 0) {
+            BuilderStructureScanner.MaterialRequirement material = materials.get(existing);
+            materials.set(existing, new BuilderStructureScanner.MaterialRequirement(material.item(), material.count() + count));
+        } else {
+            materials.add(new BuilderStructureScanner.MaterialRequirement(required.copyWithCount(1), count));
+        }
+    }
+
+    private static Map<String, String> materialReplacements(
+            CompoundTag state,
+            BuilderStructureScanner.BuildBlock block) {
+        if (block == null || !block.requiresMaterial()) {
+            return BuilderTaskState.replacements(state);
+        }
+        return Map.of(
+                "materials", "1x " + block.requiredItem().getHoverName().getString(),
+                "structure", BuilderTaskState.structureLabel(state));
+    }
+
+    private static Map<String, String> materialReplacements(
+            CompoundTag state,
+            List<BuilderStructureScanner.MaterialRequirement> materials) {
+        return Map.of(
+                "materials", BuilderStructureScanner.materialSummary(materials, 5),
+                "structure", BuilderTaskState.structureLabel(state));
     }
 
     private static List<BuilderStructureScanner.MaterialRequirement> remainingMaterials(
             BuilderStructureScanner.StructurePlan plan,
             int startIndex) {
+        return remainingMaterials(null, plan, null, startIndex, plan.blocks().size());
+    }
+
+    private static List<BuilderStructureScanner.MaterialRequirement> remainingMaterials(
+            ServerLevel level,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex) {
+        return remainingMaterials(level, plan, origin, startIndex, plan.blocks().size());
+    }
+
+    private static List<BuilderStructureScanner.MaterialRequirement> remainingMaterials(
+            ServerLevel level,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex,
+            int endIndex) {
         List<BuilderStructureScanner.MaterialRequirement> materials = new ArrayList<>();
         int start = Math.clamp(startIndex, 0, plan.blocks().size());
-        for (int i = start; i < plan.blocks().size(); i++) {
+        int end = Math.clamp(endIndex, start, plan.blocks().size());
+        for (int i = start; i < end; i++) {
             BuilderStructureScanner.BuildBlock block = plan.blocks().get(i);
-            if (!block.requiresMaterial()) {
+            if (!blockNeedsMaterial(level, plan, origin, block)) {
                 continue;
             }
-            int existing = indexOfMaterial(materials, block.requiredItem());
-            if (existing >= 0) {
-                BuilderStructureScanner.MaterialRequirement material = materials.get(existing);
-                materials.set(existing, new BuilderStructureScanner.MaterialRequirement(material.item(), material.count() + 1));
-            } else {
-                materials.add(new BuilderStructureScanner.MaterialRequirement(block.requiredItem().copyWithCount(1), 1));
-            }
+            addMaterialRequirement(materials, block.requiredItem(), 1);
         }
         return materials;
+    }
+
+    private static List<BuilderStructureScanner.MaterialRequirement> carriedMissingMaterials(
+            HiredJobInventory inventory,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            ServerLevel level,
+            int startIndex) {
+        return carriedMissingMaterials(inventory, plan, origin, level, startIndex, plan.blocks().size());
+    }
+
+    private static List<BuilderStructureScanner.MaterialRequirement> carriedMissingMaterials(
+            HiredJobInventory inventory,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            ServerLevel level,
+            int startIndex,
+            int endIndex) {
+        List<BuilderStructureScanner.MaterialRequirement> missing = new ArrayList<>();
+        for (BuilderStructureScanner.MaterialRequirement material : remainingMaterials(level, plan, origin, startIndex, endIndex)) {
+            int carried = countCarriedMaterial(inventory, material.item());
+            if (carried < material.count()) {
+                missing.add(new BuilderStructureScanner.MaterialRequirement(
+                        material.item().copyWithCount(1),
+                        material.count() - carried));
+            }
+        }
+        return missing;
+    }
+
+    private static boolean blockNeedsMaterial(
+            ServerLevel level,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            BuilderStructureScanner.BuildBlock block) {
+        if (!block.requiresMaterial()) {
+            return false;
+        }
+        if (level == null || origin == null) {
+            return true;
+        }
+        BlockState current = level.getBlockState(plan.worldPos(origin, block));
+        return !BuilderStructureScanner.sameSchematicState(current, block.state())
+                && !BuilderStructureScanner.canTransformExisting(current, block.state());
+    }
+
+    private static int countCarriedMaterial(HiredJobInventory inventory, ItemStack required) {
+        if (required.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+        int count = 0;
+        for (int slot : inventory.supplySlots()) {
+            ItemStack stack = inventory.getItem(slot);
+            if (BuilderStructureScanner.sameMaterial(stack, required)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static boolean matchesAnyMaterial(
+            List<BuilderStructureScanner.MaterialRequirement> materials,
+            ItemStack stack) {
+        for (BuilderStructureScanner.MaterialRequirement material : materials) {
+            if (BuilderStructureScanner.sameMaterial(stack, material.item())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static int indexOfMaterial(List<BuilderStructureScanner.MaterialRequirement> materials, ItemStack required) {
@@ -362,7 +1197,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
         int index = Math.min(BuilderTaskState.placedIndex(state), plan.blocks().size());
         while (index < plan.blocks().size()) {
             BuilderStructureScanner.BuildBlock block = plan.blocks().get(index);
-            if (!level.getBlockState(plan.worldPos(origin, block)).equals(block.state())) {
+            BlockState current = level.getBlockState(plan.worldPos(origin, block));
+            if (!BuilderStructureScanner.sameSchematicState(current, block.state())) {
                 break;
             }
             index++;
@@ -371,61 +1207,131 @@ public final class BuilderWorker extends AbstractBlockWorker {
         return index;
     }
 
-    private MaterialResult ensureMaterial(
+    private boolean continueBuildSiteIntermediateNavigation(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager) {
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (villager.getNavigation().isDone()
+                || navigationTarget == null
+                || !isRememberedBuildSiteNavigationTarget(context, navigationTarget)) {
+            return false;
+        }
+        if (HiredPathMemory.isNavigationBlocked(
+                level,
+                villager,
+                navigationTarget,
+                villager.distanceToSqr(navigationTarget.getCenter()))) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            clearBuildSiteIntermediateNavigation(context);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean moveTowardBuildSiteIntermediate(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            BlockPos buildCenter) {
+        BlockPos target = bestBuildSiteIntermediateTarget(level, context, villager, plan, origin, buildCenter);
+        if (target == null) {
+            return false;
+        }
+        Path path = villager.getNavigation().createPath(target, 0);
+        if (path == null
+                || !path.canReach()
+                || !VillagerTaskNavigationUtil.moveToHiredPath(
+                        villager,
+                        path,
+                        target,
+                        BUILD_WALK_SPEED,
+                        BUILD_SITE_INTERMEDIATE_CLOSE_ENOUGH)) {
+            return false;
+        }
+        rememberBuildSiteIntermediateTarget(context, target);
+        HiredPathMemory.rememberNavigationProgress(level, villager, target, villager.distanceToSqr(target.getCenter()));
+        return true;
+    }
+
+    private BlockPos bestBuildSiteIntermediateTarget(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            BlockPos buildCenter) {
+        BlockPos villagerPos = villager.blockPosition();
+        double currentDistance = villagerPos.distSqr(buildCenter);
+        List<BuildSiteIntermediate> candidates = new ArrayList<>();
+        for (BlockPos raw : BlockPos.betweenClosed(
+                villagerPos.offset(-BUILD_SITE_INTERMEDIATE_SEARCH_RADIUS, -BUILD_SITE_INTERMEDIATE_VERTICAL_RADIUS, -BUILD_SITE_INTERMEDIATE_SEARCH_RADIUS),
+                villagerPos.offset(BUILD_SITE_INTERMEDIATE_SEARCH_RADIUS, BUILD_SITE_INTERMEDIATE_VERTICAL_RADIUS, BUILD_SITE_INTERMEDIATE_SEARCH_RADIUS))) {
+            BlockPos candidate = raw.immutable();
+            if (candidate.equals(villagerPos)
+                    || !context.isLoaded(level, candidate)
+                    || HiredPathMemory.isAvoided(level, villager, candidate)
+                    || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)) {
+                continue;
+            }
+            double centerDistance = candidate.distSqr(buildCenter);
+            if (centerDistance >= currentDistance - 1.0D) {
+                continue;
+            }
+            candidates.add(new BuildSiteIntermediate(
+                    candidate,
+                    buildSiteIntermediateScore(level, villager, plan, origin, candidate, centerDistance)));
+        }
+        candidates.sort(Comparator.comparingDouble(BuildSiteIntermediate::score));
+
+        int attempts = 0;
+        BlockPos best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (BuildSiteIntermediate candidate : candidates) {
+            if (attempts++ >= MAX_BUILD_SITE_INTERMEDIATE_PATH_ATTEMPTS) {
+                break;
+            }
+            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            if (path != null && path.canReach()) {
+                double score = candidate.score() + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
+                if (score < bestScore) {
+                    bestScore = score;
+                    best = candidate.pos();
+                }
+            }
+        }
+        return best;
+    }
+
+    private double buildSiteIntermediateScore(
             ServerLevel level,
             Villager villager,
-            HiredWorkContext context,
-            BuilderStructureScanner.BuildBlock block) {
-        if (!block.requiresMaterial() || !context.inventory().findSupply(block::materialMatches).isEmpty()) {
-            HiredStorageNavigationGoal.clearStorageTarget(context);
-            HiredWorkerBrain.clearFailure(context);
-            return MaterialResult.READY;
-        }
-        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, block::materialMatches);
-        if (storage == null) {
-            HiredStorageNavigationGoal.clearStorageTarget(context);
-            HiredWorkerBrain.setFailure(context, "missing_builder_materials", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
-            return MaterialResult.MISSING;
-        }
-        HiredWorkerBrain.setStorageTarget(context, storage);
-        HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
-                level,
-                context,
-                villager,
-                storage,
-                BUILD_WALK_SPEED);
-        if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
-            HiredWorkerBrain.clearFailure(context);
-            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-            return MaterialResult.MOVING;
-        }
-        if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
-            HiredWorkerBrain.setFailure(context, "builder_material_storage_unreachable", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
-            return MaterialResult.UNREACHABLE;
-        }
-        faceBlock(villager, storage);
-        int moved = AssignedStorageService.transferItemsAtAssignedStorage(
-                villager,
-                storage,
-                block::materialMatches,
-                block.requiredItem().getMaxStackSize(),
-                stack -> context.inventory().insertSupply(stack));
-        if (moved <= 0) {
-            HiredWorkerBrain.setFailure(context, "builder_material_inventory_full", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
-            return MaterialResult.INVENTORY_FULL;
-        }
-        swingWorkTool(villager);
-        if (!context.inventory().findSupply(block::materialMatches).isEmpty()) {
-            HiredStorageNavigationGoal.clearStorageTarget(context);
-            HiredWorkerBrain.clearFailure(context);
-            return MaterialResult.READY;
-        }
-        HiredWorkerBrain.setFailure(context, "missing_builder_materials", level.getGameTime() + 100L);
-        setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
-        return MaterialResult.MISSING;
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            BlockPos candidate,
+            double centerDistance) {
+        int vertical = Math.abs(candidate.getY() - villager.blockPosition().getY());
+        return centerDistance * 0.35D
+                + villager.distanceToSqr(candidate.getCenter()) * 0.15D
+                + horizontalDistanceToBuildBorderSqr(candidate.getX() + 0.5D, candidate.getZ() + 0.5D, plan, origin) * 0.2D
+                + vertical * vertical * 3.0D
+                + HiredMoveToBlockFaceJob.terrainCost(level, candidate);
+    }
+
+    private static void rememberBuildSiteIntermediateTarget(HiredWorkContext context, BlockPos target) {
+        context.state().putLong(BUILD_SITE_NAV_TARGET_TAG, target.asLong());
+    }
+
+    private static boolean isRememberedBuildSiteNavigationTarget(HiredWorkContext context, BlockPos target) {
+        return target != null
+                && context.state().contains(BUILD_SITE_NAV_TARGET_TAG)
+                && context.state().getLong(BUILD_SITE_NAV_TARGET_TAG) == target.asLong();
+    }
+
+    private static void clearBuildSiteIntermediateNavigation(HiredWorkContext context) {
+        context.state().remove(BUILD_SITE_NAV_TARGET_TAG);
     }
 
     private HiredPathTarget bestBuildTarget(
@@ -437,7 +1343,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
         Predicate<BlockPos> movementFilter = pos -> BuilderSitePlanner.movementAllowed(area, buildCenter, pos);
-        Predicate<BlockPos> approachFilter = pos -> movementFilter.test(pos) && isNearBuildSite(pos, plan, origin);
+        Predicate<BlockPos> approachFilter = pos -> movementFilter.test(pos) && isInsideOrNearBuildSite(pos, plan, origin);
         List<BuilderApproachCandidate> candidates = buildApproachCandidates(level, villager, target, buildCenter, approachFilter);
         candidates.sort(Comparator.comparingDouble(BuilderApproachCandidate::score));
 
@@ -456,7 +1362,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                     || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, movementFilter)) {
                 continue;
             }
-            double score = candidate.score() + path.getNodeCount() * 1.5D;
+            double score = candidate.score() + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
             if (score < bestScore) {
                 bestScore = score;
                 bestTarget = new HiredPathTarget(target.immutable(), candidate.pos(), target.getCenter());
@@ -467,6 +1373,97 @@ public final class BuilderWorker extends AbstractBlockWorker {
             }
         }
         return bestTarget;
+    }
+
+    private PlacementGroup reachablePlacementObstructionGroup(
+            ServerLevel level,
+            Villager villager,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex,
+            HiredWorkArea area,
+            BlockPos buildCenter) {
+        List<ReachableObstruction> candidates = new ArrayList<>();
+        Set<Long> seenGroups = new HashSet<>();
+        int reachable = 0;
+        for (int i = Math.max(0, startIndex); i < plan.blocks().size(); i++) {
+            PlacementGroup group = placementGroup(plan, origin, plan.blocks().get(i));
+            if (!seenGroups.add(group.materialPart().worldPos().asLong())) {
+                continue;
+            }
+            ReachableObstruction reachableObstruction = reachablePlacementObstruction(
+                    level,
+                    villager,
+                    group,
+                    area,
+                    buildCenter,
+                    i - startIndex);
+            if (reachableObstruction == null) {
+                continue;
+            }
+            candidates.add(reachableObstruction);
+            reachable++;
+            if (reachable >= 5) {
+                break;
+            }
+        }
+        candidates.sort(Comparator.comparingDouble(ReachableObstruction::score));
+        return candidates.isEmpty() ? null : candidates.getFirst().group();
+    }
+
+    private ReachableObstruction reachablePlacementObstruction(
+            ServerLevel level,
+            Villager villager,
+            PlacementGroup group,
+            HiredWorkArea area,
+            BlockPos buildCenter,
+            int blockOffset) {
+        ReachableObstruction best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (PlacementPart obstruction : placementObstructions(level, group)) {
+            HiredPathResult result = clearingPathResult(level, villager, obstruction.worldPos(), area, buildCenter);
+            if (!result.reachesDestination()) {
+                continue;
+            }
+            double score = result.score() + Math.max(0, blockOffset) * 0.05D;
+            if (score < bestScore) {
+                bestScore = score;
+                best = new ReachableObstruction(group, obstruction, score);
+            }
+        }
+        return best;
+    }
+
+    private PlacementGroup firstRemainingPlacementObstructionGroup(
+            ServerLevel level,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            int startIndex) {
+        Set<Long> seenGroups = new HashSet<>();
+        for (int i = Math.max(0, startIndex); i < plan.blocks().size(); i++) {
+            PlacementGroup group = placementGroup(plan, origin, plan.blocks().get(i));
+            if (!seenGroups.add(group.materialPart().worldPos().asLong())) {
+                continue;
+            }
+            if (firstPlacementObstruction(level, group) != null) {
+                return group;
+            }
+        }
+        return null;
+    }
+
+    private HiredPathResult clearingPathResult(
+            ServerLevel level,
+            Villager villager,
+            BlockPos pos,
+            HiredWorkArea area,
+            BlockPos buildCenter) {
+        return new HiredMoveToBlockFaceJob(
+                level,
+                villager,
+                List.of(pos),
+                8,
+                approach -> BuilderSitePlanner.movementAllowed(area, buildCenter, approach)).search();
     }
 
     private List<BuilderApproachCandidate> buildApproachCandidates(
@@ -536,20 +1533,34 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BlockPos buildCenter,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
+        return moveToBuildTarget(level, villager, context, target, area, buildCenter, plan, origin, false);
+    }
+
+    private MovementResult moveToBuildTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredPathTarget target,
+            HiredWorkArea area,
+            BlockPos buildCenter,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            boolean requireReach) {
         HiredPathTarget currentTarget = target;
         Predicate<BlockPos> movementFilter = pos -> BuilderSitePlanner.movementAllowed(area, buildCenter, pos);
-        Predicate<BlockPos> approachFilter = pos -> movementFilter.test(pos) && isNearBuildSite(pos, plan, origin);
+        Predicate<BlockPos> approachFilter = pos -> movementFilter.test(pos) && isInsideOrNearBuildSite(pos, plan, origin);
         if (!movementFilter.test(currentTarget.blockPos()) || !approachFilter.test(currentTarget.approachPos())) {
             return MovementResult.BLOCKED;
         }
 
-        if (canBuildFromCurrentPosition(villager, currentTarget.blockPos(), plan, origin)) {
+        if (canUseBuildTargetFromCurrentPosition(level, villager, currentTarget, plan, origin, requireReach)) {
+            clearBuildSiteIntermediateNavigation(context);
             holdWorkPosition(villager, currentTarget);
             return MovementResult.READY;
         }
 
         if (villager.distanceToSqr(currentTarget.approachPos().getCenter()) <= 2.25D
-                && !canBuildFromCurrentPosition(villager, currentTarget.blockPos(), plan, origin)) {
+                && !canUseBuildTargetFromCurrentPosition(level, villager, currentTarget, plan, origin, requireReach)) {
             HiredPathTarget repickedTarget = bestBuildTarget(level, villager, currentTarget.blockPos(), area, buildCenter, plan, origin);
             if (repickedTarget != null
                     && (!repickedTarget.approachPos().equals(currentTarget.approachPos())
@@ -568,7 +1579,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 return MovementResult.BLOCKED;
             }
         }
-        if (canBuildFromCurrentPosition(villager, currentTarget.blockPos(), plan, origin)) {
+        if (canUseBuildTargetFromCurrentPosition(level, villager, currentTarget, plan, origin, requireReach)) {
+            clearBuildSiteIntermediateNavigation(context);
             holdWorkPosition(villager, currentTarget);
             return MovementResult.READY;
         }
@@ -602,11 +1614,14 @@ public final class BuilderWorker extends AbstractBlockWorker {
             HiredPathMemory.clearNavigationProgress(villager);
             return MovementResult.BLOCKED;
         }
-        boolean moved = villager.getNavigation().moveTo(path, BUILD_WALK_SPEED);
+        boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(
+                villager,
+                path,
+                currentTarget.approachPos(),
+                BUILD_WALK_SPEED,
+                BUILD_WALK_CLOSE_ENOUGH);
         if (moved) {
-            villager.getBrain().setMemory(
-                    MemoryModuleType.WALK_TARGET,
-                    new WalkTarget(new BlockPosTracker(currentTarget.approachPos()), (float) BUILD_WALK_SPEED, BUILD_WALK_CLOSE_ENOUGH));
+            clearBuildSiteIntermediateNavigation(context);
             HiredPathMemory.rememberNavigationProgress(
                     level,
                     villager,
@@ -632,13 +1647,41 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return null;
         }
 
+        PlacementPart reachableObstruction = bestReachablePlacementObstruction(level, villager, group, area, buildCenter);
+        if (reachableObstruction != null) {
+            obstruction = reachableObstruction;
+        }
         BlockPos pos = obstruction.worldPos();
         BlockState state = level.getBlockState(pos);
-        ItemStack tool = context.inventory().equipBestTool(
+        ToolStorageResult toolResult = equipBestToolOrCollectFromStorage(
+                level,
+                villager,
+                context,
                 stack -> MiningBlockRules.isUsableBuilderClearingTool(stack, state),
-                stack -> effectiveDestroySpeed(stack, state));
-        if (tool.isEmpty()) {
+                stack -> effectiveDestroySpeed(stack, state),
+                0.55D);
+        if (toolResult.status() != ToolStorageStatus.READY && toolResult.status() != ToolStorageStatus.COLLECTED) {
+            if (toolResult.status() == ToolStorageStatus.MOVING) {
+                BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+                return WorkResult.progressed("interaction.work.status.collecting_tool");
+            }
             clearActiveBreakingTarget(level, context, villager);
+            if (toolResult.status() == ToolStorageStatus.UNREACHABLE) {
+                BuilderTaskState.setBlocked(context.state(), "tool_storage_unreachable");
+                HiredWorkerBrain.setFailure(context, "tool_storage_unreachable", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, toolResult.storagePos());
+                return WorkResult.idle("interaction.work.status.tool_storage_unreachable");
+            }
+            if (toolResult.status() == ToolStorageStatus.INVENTORY_FULL) {
+                WorkResult outputDumpResult = makeRoomForToolStorage(level, villager, context);
+                if (outputDumpResult != null) {
+                    return outputDumpResult;
+                }
+                BuilderTaskState.setBlocked(context.state(), "tool_inventory_full");
+                HiredWorkerBrain.setFailure(context, "tool_inventory_full", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, toolResult.storagePos());
+                return WorkResult.idle("interaction.work.status.tool_inventory_full");
+            }
             BuilderTaskState.setBlocked(context.state(), "missing_clear_tool");
             HiredWorkerBrain.setFailure(context, "missing_clear_tool", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL, pos);
@@ -646,8 +1689,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
                     "target", HiredWorkerBrain.formatPos(pos),
                     "structure", BuilderTaskState.structureLabel(context.state())));
         }
+        ItemStack tool = toolResult.tool();
+        HiredStorageNavigationGoal.clearStorageTarget(context);
 
-        HiredPathTarget target = bestBuildTarget(level, villager, pos, area, buildCenter, plan, origin);
+        HiredPathTarget target = bestClearingTarget(level, villager, pos, area, buildCenter);
         if (target == null) {
             if (recordWorkPathFailure(level, villager, pos)) {
                 BuilderTaskState.setBlocked(context.state(), "path_blocked");
@@ -660,10 +1705,9 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
 
         prepareBreakingTarget(level, context, villager, target);
-        if (!canBuildFromCurrentPosition(villager, pos, plan, origin)
-                || !hasLineOfSightToBlock(level, villager, villager.getEyePosition(), pos, target.hitPos())) {
+        if (!canMineFromCurrentPosition(level, villager, target)) {
             context.setProgressTicks(0);
-            MovementResult movementResult = moveToBuildTarget(level, villager, context, target, area, buildCenter, plan, origin);
+            MovementResult movementResult = moveToClearingTarget(level, villager, target, area, buildCenter);
             if (movementResult == MovementResult.BLOCKED) {
                 if (recordWorkPathFailure(level, villager, pos)) {
                     BuilderTaskState.setBlocked(context.state(), "path_blocked");
@@ -731,18 +1775,174 @@ public final class BuilderWorker extends AbstractBlockWorker {
         HiredPathMemory.rememberRecent(level, pos);
         clearWorkPathFailure(villager, pos);
         clearActiveBreakingTarget(level, context, villager);
+        BuilderTaskState.clearMaterialBatch(context.state());
         return WorkResult.progressed("interaction.work.builder.cleared_obstruction", Map.of(
                 "target", HiredWorkerBrain.formatPos(pos),
                 "structure", BuilderTaskState.structureLabel(context.state())));
     }
 
-    private PlacementPart firstPlacementObstruction(ServerLevel level, PlacementGroup group) {
+    private HiredPathTarget bestClearingTarget(
+            ServerLevel level,
+            Villager villager,
+            BlockPos pos,
+            HiredWorkArea area,
+            BlockPos buildCenter) {
+        HiredPathResult result = clearingPathResult(level, villager, pos, area, buildCenter);
+        return result.reachesDestination() ? result.target() : null;
+    }
+
+    private MovementResult moveToClearingTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredPathTarget target,
+            HiredWorkArea area,
+            BlockPos buildCenter) {
+        Predicate<BlockPos> movementFilter = pos -> BuilderSitePlanner.movementAllowed(area, buildCenter, pos);
+        if (!movementFilter.test(target.approachPos())) {
+            return MovementResult.BLOCKED;
+        }
+        if (canMineFromCurrentPosition(level, villager, target)) {
+            holdWorkPosition(villager, target);
+            return MovementResult.READY;
+        }
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (!villager.getNavigation().isDone() && target.approachPos().equals(navigationTarget)) {
+            if (HiredPathMemory.isNavigationBlocked(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()))) {
+                stopWorkNavigation(villager);
+                return MovementResult.BLOCKED;
+            }
+            return MovementResult.MOVING;
+        }
+        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        if (path != null
+                && path.canReach()
+                && HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, movementFilter)
+                && VillagerTaskNavigationUtil.moveToHiredPath(
+                        villager,
+                        path,
+                        target.approachPos(),
+                        BUILD_WALK_SPEED,
+                        BUILD_WALK_CLOSE_ENOUGH)) {
+            HiredPathMemory.rememberNavigationProgress(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()));
+            return MovementResult.MOVING;
+        }
+        if (villager.distanceToSqr(target.approachPos().getCenter()) <= 2.25D
+                && settleIntoApproach(villager, target, BUILD_WALK_SPEED)) {
+            HiredPathMemory.rememberNavigationProgress(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()));
+            return MovementResult.MOVING;
+        }
+        HiredPathMemory.clearNavigationProgress(villager);
+        return MovementResult.BLOCKED;
+    }
+
+    private WorkResult ensurePlacementToolAction(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            PlacementGroup group) {
+        BuilderStructureScanner.BuilderToolAction action = requiredToolAction(level, group);
+        if (action == BuilderStructureScanner.BuilderToolAction.NONE) {
+            return null;
+        }
+        ToolStorageResult toolResult = equipBestToolOrCollectFromStorage(
+                level,
+                villager,
+                context,
+                stack -> BuilderStructureScanner.matchesToolAction(stack, action),
+                stack -> 1.0D,
+                BUILD_WALK_SPEED);
+        if (toolResult.status() == ToolStorageStatus.READY || toolResult.status() == ToolStorageStatus.COLLECTED) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            return null;
+        }
+        if (toolResult.status() == ToolStorageStatus.MOVING) {
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+            return WorkResult.progressed("interaction.work.status.collecting_tool");
+        }
+        clearActiveBreakingTarget(level, context, villager);
+        if (toolResult.status() == ToolStorageStatus.UNREACHABLE) {
+            BuilderTaskState.setBlocked(context.state(), "tool_storage_unreachable");
+            HiredWorkerBrain.setFailure(context, "tool_storage_unreachable", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, toolResult.storagePos());
+            return WorkResult.idle("interaction.work.status.tool_storage_unreachable");
+        }
+        if (toolResult.status() == ToolStorageStatus.INVENTORY_FULL) {
+            WorkResult outputDumpResult = makeRoomForToolStorage(level, villager, context);
+            if (outputDumpResult != null) {
+                return outputDumpResult;
+            }
+            BuilderTaskState.setBlocked(context.state(), "tool_inventory_full");
+            HiredWorkerBrain.setFailure(context, "tool_inventory_full", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, toolResult.storagePos());
+            return WorkResult.idle("interaction.work.status.tool_inventory_full");
+        }
+        BuilderTaskState.setBlocked(context.state(), "missing_placement_tool");
+        HiredWorkerBrain.setFailure(context, "missing_placement_tool", 0L);
+        setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL, group.materialPart().worldPos());
+        return WorkResult.idle("interaction.work.builder.missing_placement_tool", Map.of(
+                "target", HiredWorkerBrain.formatPos(group.materialPart().worldPos()),
+                "structure", BuilderTaskState.structureLabel(context.state()),
+                "tool", toolActionLabel(action)));
+    }
+
+    private static String toolActionLabel(BuilderStructureScanner.BuilderToolAction action) {
+        return switch (action) {
+            case AXE_STRIP -> "axe";
+            case SHOVEL_FLATTEN -> "shovel";
+            case HOE_TILL -> "hoe";
+            case NONE -> "tool";
+        };
+    }
+
+    private BuilderStructureScanner.BuilderToolAction requiredToolAction(ServerLevel level, PlacementGroup group) {
         for (PlacementPart part : group.parts()) {
-            if (BuilderSitePlanner.requiresClearingBeforePlacement(level, part.worldPos(), part.block().state())) {
-                return part;
+            BuilderStructureScanner.BuildBlock block = part.block();
+            if (!block.requiresToolAction()) {
+                continue;
+            }
+            BlockState current = level.getBlockState(part.worldPos());
+            if (!BuilderStructureScanner.sameSchematicState(current, block.state())) {
+                return block.toolAction();
             }
         }
-        return null;
+        return BuilderStructureScanner.BuilderToolAction.NONE;
+    }
+
+    private PlacementPart firstPlacementObstruction(ServerLevel level, PlacementGroup group) {
+        List<PlacementPart> obstructions = placementObstructions(level, group);
+        return obstructions.isEmpty() ? null : obstructions.getFirst();
+    }
+
+    private List<PlacementPart> placementObstructions(ServerLevel level, PlacementGroup group) {
+        List<PlacementPart> obstructions = new ArrayList<>();
+        for (PlacementPart part : group.parts()) {
+            if (BuilderSitePlanner.requiresClearingBeforePlacement(level, part.worldPos(), part.block().state())) {
+                obstructions.add(part);
+            }
+        }
+        return obstructions;
+    }
+
+    private PlacementPart bestReachablePlacementObstruction(
+            ServerLevel level,
+            Villager villager,
+            PlacementGroup group,
+            HiredWorkArea area,
+            BlockPos buildCenter) {
+        ReachableObstruction reachable = reachablePlacementObstruction(level, villager, group, area, buildCenter, 0);
+        return reachable == null ? null : reachable.obstruction();
     }
 
     private int actualBreakProgressGoal(ServerLevel level, BlockPos pos, ItemStack tool) {
@@ -813,8 +2013,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
     }
 
     private boolean placementGroupNeedsMaterial(ServerLevel level, PlacementGroup group) {
+        BlockState current = level.getBlockState(group.materialPart().worldPos());
         return group.materialBlock().requiresMaterial()
-                && !level.getBlockState(group.materialPart().worldPos()).equals(group.materialBlock().state());
+                && !BuilderStructureScanner.sameSchematicState(current, group.materialBlock().state())
+                && !BuilderStructureScanner.canTransformExisting(current, group.materialBlock().state());
     }
 
     private boolean canBuildFromCurrentPosition(
@@ -822,24 +2024,53 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BlockPos worldPos,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
-        return isNearBuildSite(villager, plan, origin)
+        return isInsideOrNearBuildSite(villager, plan, origin)
                 && horizontalDistanceSqr(villager.getX(), villager.getZ(), worldPos) <= BUILD_REACH_SQR;
+    }
+
+    private boolean canUseBuildTargetFromCurrentPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredPathTarget target,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            boolean requireReach) {
+        if (!canBuildFromCurrentPosition(villager, target.blockPos(), plan, origin)) {
+            return false;
+        }
+        return !requireReach || canMineFromCurrentPosition(level, villager, target);
     }
 
     private static boolean isNearBuildSite(
             Villager villager,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
-        return horizontalDistanceToBuildFootprintSqr(villager.getX(), villager.getZ(), plan, origin)
-                <= BUILD_SITE_REACH_ACTIVATION_RADIUS_SQR;
+        return horizontalDistanceToBuildBorderSqr(villager.getX(), villager.getZ(), plan, origin)
+                <= BUILD_SITE_BORDER_SAFE_DISTANCE_SQR;
     }
 
     private static boolean isNearBuildSite(
             BlockPos pos,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
+        return horizontalDistanceToBuildBorderSqr(pos.getX() + 0.5D, pos.getZ() + 0.5D, plan, origin)
+                <= BUILD_SITE_BORDER_SAFE_DISTANCE_SQR;
+    }
+
+    private static boolean isInsideOrNearBuildSite(
+            Villager villager,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin) {
+        return horizontalDistanceToBuildFootprintSqr(villager.getX(), villager.getZ(), plan, origin)
+                <= BUILD_SITE_BORDER_SAFE_DISTANCE_SQR;
+    }
+
+    private static boolean isInsideOrNearBuildSite(
+            BlockPos pos,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin) {
         return horizontalDistanceToBuildFootprintSqr(pos.getX() + 0.5D, pos.getZ() + 0.5D, plan, origin)
-                <= BUILD_SITE_REACH_ACTIVATION_RADIUS_SQR;
+                <= BUILD_SITE_BORDER_SAFE_DISTANCE_SQR;
     }
 
     private static double horizontalDistanceToBuildFootprintSqr(
@@ -860,6 +2091,30 @@ public final class BuilderWorker extends AbstractBlockWorker {
         return dx * dx + dz * dz;
     }
 
+    private static double horizontalDistanceToBuildBorderSqr(
+            double x,
+            double z,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin) {
+        BlockPos min = plan.worldMin(origin);
+        BlockPos max = plan.worldMax(origin);
+        double minX = Math.min(min.getX(), max.getX());
+        double maxX = Math.max(min.getX(), max.getX()) + 1.0D;
+        double minZ = Math.min(min.getZ(), max.getZ());
+        double maxZ = Math.max(min.getZ(), max.getZ()) + 1.0D;
+        boolean insideX = x >= minX && x <= maxX;
+        boolean insideZ = z >= minZ && z <= maxZ;
+        if (insideX && insideZ) {
+            double distanceToBorder = Math.min(
+                    Math.min(x - minX, maxX - x),
+                    Math.min(z - minZ, maxZ - z));
+            return distanceToBorder * distanceToBorder;
+        }
+        double dx = insideX ? 0.0D : x < minX ? minX - x : x - maxX;
+        double dz = insideZ ? 0.0D : z < minZ ? minZ - z : z - maxZ;
+        return dx * dx + dz * dz;
+    }
+
     private static double horizontalDistanceSqr(BlockPos pos, BlockPos target) {
         return horizontalDistanceSqr(pos.getX() + 0.5D, pos.getZ() + 0.5D, target);
     }
@@ -874,7 +2129,100 @@ public final class BuilderWorker extends AbstractBlockWorker {
         if (state.getCollisionShape(level, worldPos, CollisionContext.of(villager)).isEmpty()) {
             return false;
         }
-        return new AABB(worldPos).intersects(villager.getBoundingBox().inflate(0.05D));
+        return new AABB(worldPos).intersects(villager.getBoundingBox().inflate(-0.02D));
+    }
+
+    private WorkResult moveOutOfSchematicIfNeeded(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredWorkArea area,
+            BlockPos buildCenter,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin) {
+        if (isNearBuildSite(villager, plan, origin)) {
+            return null;
+        }
+        List<BlockPos> placementCollisionPositions = placementCollisionPositions(level, plan, origin);
+        if (placementCollisionPositions.isEmpty()
+                || !bodyIntersectsAnyPlacement(villager, villager.getBoundingBox().inflate(-0.02D), placementCollisionPositions)) {
+            return null;
+        }
+
+        if (moveAwayFromPlacements(
+                level,
+                villager,
+                area,
+                buildCenter,
+                villager.blockPosition(),
+                placementCollisionPositions,
+                BUILD_APPROACH_RADIUS)) {
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, buildCenter);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.TRAVELING_TO_SITE);
+            return WorkResult.progressed("interaction.work.builder.moving_to_site", Map.of(
+                    "target", HiredWorkerBrain.formatPos(buildCenter),
+                    "structure", BuilderTaskState.structureLabel(context.state())));
+        }
+
+        BuilderTaskState.setBlocked(context.state(), "blocked_entity");
+        HiredWorkerBrain.setFailure(context, "blocked_entity", level.getGameTime() + 100L);
+        setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, villager.blockPosition());
+        return WorkResult.idle("interaction.work.builder.blocked_entity", Map.of(
+                "target", HiredWorkerBrain.formatPos(villager.blockPosition()),
+                "structure", BuilderTaskState.structureLabel(context.state())));
+    }
+
+    private WorkResult moveOutOfBuildInteriorIfNeeded(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredWorkArea area,
+            BlockPos buildCenter,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin,
+            BuilderStructureScanner.BuildBlock nextBlock) {
+        if (nextBlock.localPos().getY() <= plan.localMin().getY()
+                || isNearBuildSite(villager, plan, origin)) {
+            return null;
+        }
+
+        List<BlockPos> placementCollisionPositions = placementCollisionPositions(level, plan, origin);
+        if (moveAwayFromPlacements(
+                level,
+                villager,
+                area,
+                buildCenter,
+                villager.blockPosition(),
+                placementCollisionPositions,
+                BUILD_APPROACH_RADIUS,
+                candidate -> isNearBuildSite(candidate, plan, origin))) {
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, buildCenter);
+            BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.TRAVELING_TO_SITE);
+            return WorkResult.progressed("interaction.work.builder.moving_to_site", Map.of(
+                    "target", HiredWorkerBrain.formatPos(buildCenter),
+                    "structure", BuilderTaskState.structureLabel(context.state())));
+        }
+
+        BuilderTaskState.setBlocked(context.state(), "path_blocked");
+        HiredWorkerBrain.setFailure(context, "path_blocked", level.getGameTime() + 100L);
+        setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, villager.blockPosition());
+        return WorkResult.idle("interaction.work.builder.path_blocked", Map.of(
+                "target", HiredWorkerBrain.formatPos(villager.blockPosition()),
+                "structure", BuilderTaskState.structureLabel(context.state())));
+    }
+
+    private List<BlockPos> placementCollisionPositions(
+            ServerLevel level,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin) {
+        List<BlockPos> positions = new ArrayList<>();
+        for (BuilderStructureScanner.BuildBlock block : plan.blocks()) {
+            BlockPos worldPos = plan.worldPos(origin, block);
+            if (!block.state().getCollisionShape(level, worldPos, CollisionContext.empty()).isEmpty()) {
+                positions.add(worldPos);
+            }
+        }
+        return positions;
     }
 
     private boolean moveAwayFromPlacement(
@@ -883,62 +2231,163 @@ public final class BuilderWorker extends AbstractBlockWorker {
             HiredWorkArea area,
             BlockPos buildCenter,
             BlockPos placementPos) {
+        return moveAwayFromPlacements(
+                level,
+                villager,
+                area,
+                buildCenter,
+                placementPos,
+                List.of(placementPos),
+                SELF_PLACEMENT_CLEAR_RADIUS,
+                ignored -> true);
+    }
+
+    private boolean moveAwayFromPlacements(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkArea area,
+            BlockPos buildCenter,
+            BlockPos anchor,
+            List<BlockPos> placementPositions,
+            int searchRadius) {
+        return moveAwayFromPlacements(
+                level,
+                villager,
+                area,
+                buildCenter,
+                anchor,
+                placementPositions,
+                searchRadius,
+                ignored -> true);
+    }
+
+    private boolean moveAwayFromPlacements(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkArea area,
+            BlockPos buildCenter,
+            BlockPos anchor,
+            List<BlockPos> placementPositions,
+            int searchRadius,
+            Predicate<BlockPos> candidateFilter) {
         Predicate<BlockPos> movementFilter = pos -> BuilderSitePlanner.movementAllowed(area, buildCenter, pos);
-        BlockPos best = null;
-        double bestDistance = Double.MAX_VALUE;
+        Predicate<BlockPos> safeCandidateFilter = candidateFilter == null ? ignored -> true : candidateFilter;
+        List<ClearSpotCandidate> candidates = new ArrayList<>();
         for (BlockPos candidate : BlockPos.betweenClosed(
-                placementPos.offset(-SELF_PLACEMENT_CLEAR_RADIUS, -1, -SELF_PLACEMENT_CLEAR_RADIUS),
-                placementPos.offset(SELF_PLACEMENT_CLEAR_RADIUS, 1, SELF_PLACEMENT_CLEAR_RADIUS))) {
+                anchor.offset(-searchRadius, -1, -searchRadius),
+                anchor.offset(searchRadius, 1, searchRadius))) {
             BlockPos safeCandidate = candidate.immutable();
+            AABB candidateBody = bodyAt(villager, safeCandidate);
             if (!movementFilter.test(safeCandidate)
-                    || horizontalDistanceSqr(safeCandidate, placementPos) > BUILD_REACH_SQR
+                    || !safeCandidateFilter.test(safeCandidate)
                     || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, safeCandidate)
-                    || bodyAt(villager, safeCandidate).intersects(new AABB(placementPos))
-                    || !level.noCollision(villager, bodyAt(villager, safeCandidate))) {
+                    || bodyIntersectsAnyPlacement(villager, candidateBody, placementPositions)
+                    || !level.noCollision(villager, candidateBody)) {
                 continue;
             }
-            double distance = villager.distanceToSqr(safeCandidate.getCenter());
-            if (distance < bestDistance) {
-                best = safeCandidate;
-                bestDistance = distance;
-            }
+            candidates.add(new ClearSpotCandidate(safeCandidate, villager.distanceToSqr(safeCandidate.getCenter())));
         }
-        if (best == null) {
+        if (candidates.isEmpty()) {
             return false;
         }
+        candidates.sort(Comparator.comparingDouble(ClearSpotCandidate::distanceSqr));
 
-        Path path = villager.getNavigation().createPath(best, 0);
-        if (path == null
-                || !path.canReach()
-                || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, movementFilter)) {
-            return moveDirectlyToClearSpot(level, villager, best);
-        }
-        boolean moved = villager.getNavigation().moveTo(path, BUILD_WALK_SPEED);
-        if (!moved) {
+        for (ClearSpotCandidate candidate : candidates) {
+            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            if (path == null
+                    || !path.canReach()
+                    || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, movementFilter)) {
+                continue;
+            }
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(
+                    villager,
+                    path,
+                    candidate.pos(),
+                    BUILD_WALK_SPEED,
+                    BUILD_WALK_CLOSE_ENOUGH);
+            if (moved) {
+                HiredPathMemory.rememberNavigationProgress(
+                        level,
+                        villager,
+                        candidate.pos(),
+                        villager.distanceToSqr(candidate.pos().getCenter()));
+                return true;
+            }
             HiredPathMemory.clearNavigationProgress(villager);
-            return moveDirectlyToClearSpot(level, villager, best);
         }
-        villager.getBrain().setMemory(
-                MemoryModuleType.WALK_TARGET,
-                new WalkTarget(new BlockPosTracker(best), (float) BUILD_WALK_SPEED, BUILD_WALK_CLOSE_ENOUGH));
-        HiredPathMemory.rememberNavigationProgress(level, villager, best, villager.distanceToSqr(best.getCenter()));
-        return true;
+
+        for (ClearSpotCandidate candidate : candidates) {
+            if (canMoveDirectlyToClearSpot(level, villager, candidate.pos(), placementPositions, movementFilter)
+                    && moveDirectlyToClearSpot(level, villager, candidate.pos())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean bodyIntersectsAnyPlacement(Villager villager, AABB body, List<BlockPos> placementPositions) {
+        for (BlockPos placementPos : placementPositions) {
+            if (body.intersects(new AABB(placementPos))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean moveDirectlyToClearSpot(ServerLevel level, Villager villager, BlockPos target) {
         if (villager.distanceToSqr(target.getCenter()) > 16.0D) {
             return false;
         }
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         villager.getMoveControl().setWantedPosition(
                 target.getX() + 0.5D,
                 target.getY(),
                 target.getZ() + 0.5D,
                 BUILD_WALK_SPEED);
-        villager.getBrain().setMemory(
-                MemoryModuleType.WALK_TARGET,
-                new WalkTarget(new BlockPosTracker(target), (float) BUILD_WALK_SPEED, BUILD_WALK_CLOSE_ENOUGH));
+        VillagerTaskNavigationUtil.setHiredWalkTarget(villager, target, BUILD_WALK_SPEED, BUILD_WALK_CLOSE_ENOUGH);
         HiredPathMemory.rememberNavigationProgress(level, villager, target, villager.distanceToSqr(target.getCenter()));
         return true;
+    }
+
+    private boolean canMoveDirectlyToClearSpot(
+            ServerLevel level,
+            Villager villager,
+            BlockPos target,
+            List<BlockPos> placementPositions,
+            Predicate<BlockPos> movementFilter) {
+        if (villager.distanceToSqr(target.getCenter()) > 16.0D) {
+            return false;
+        }
+        Vec3 start = villager.position();
+        Vec3 end = target.getCenter();
+        int steps = Math.max(1, (int) Math.ceil(start.distanceTo(end) * 2.0D));
+        for (int step = 1; step <= steps; step++) {
+            double progress = step / (double) steps;
+            double x = start.x + (end.x - start.x) * progress;
+            double y = start.y + (target.getY() - start.y) * progress;
+            double z = start.z + (end.z - start.z) * progress;
+            BlockPos pos = BlockPos.containing(x, y, z);
+            if (!movementFilter.test(pos)) {
+                return false;
+            }
+            AABB body = bodyAtPosition(villager, x, y, z);
+            if (bodyIntersectsAnyPlacement(villager, body, placementPositions) || !level.noCollision(villager, body)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private AABB bodyAtPosition(Villager villager, double centerX, double y, double centerZ) {
+        AABB current = villager.getBoundingBox();
+        double halfWidth = current.getXsize() * 0.5D;
+        return new AABB(
+                centerX - halfWidth,
+                y,
+                centerZ - halfWidth,
+                centerX + halfWidth,
+                y + current.getYsize(),
+                centerZ + halfWidth);
     }
 
     private AABB bodyAt(Villager villager, BlockPos pos) {
@@ -965,6 +2414,15 @@ public final class BuilderWorker extends AbstractBlockWorker {
         if (consumesMaterial && context.inventory().findSupply(materialBlock::materialMatches).isEmpty()) {
             return false;
         }
+        BuilderStructureScanner.BuilderToolAction toolAction = requiredToolAction(level, group);
+        ItemStack actionTool = toolAction == BuilderStructureScanner.BuilderToolAction.NONE
+                ? ItemStack.EMPTY
+                : context.inventory().equipBestTool(
+                        stack -> BuilderStructureScanner.matchesToolAction(stack, toolAction),
+                        stack -> 1.0D);
+        if (toolAction != BuilderStructureScanner.BuilderToolAction.NONE && actionTool.isEmpty()) {
+            return false;
+        }
         faceBlock(villager, group.materialPart().worldPos());
         swingWorkTool(villager);
 
@@ -972,12 +2430,24 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BlockPos worldPos = part.worldPos();
             BuilderStructureScanner.BuildBlock block = part.block();
             BlockState current = level.getBlockState(worldPos);
-            if (current.equals(block.state())) {
+            if (BuilderStructureScanner.sameSchematicState(current, block.state())) {
                 continue;
+            }
+            BlockState sourceState = BuilderStructureScanner.toolSourceState(block.state());
+            if (block.requiresToolAction()
+                    && sourceState != null
+                    && !BuilderStructureScanner.canTransformExisting(current, block.state())) {
+                boolean placedSource = level.setBlock(worldPos, sourceState, Block.UPDATE_ALL);
+                if (!placedSource) {
+                    return false;
+                }
             }
             boolean placed = level.setBlock(worldPos, block.state(), Block.UPDATE_ALL);
             if (!placed) {
                 return false;
+            }
+            if (block.requiresToolAction()) {
+                damageTool(context, villager, actionTool);
             }
             if (block.blockEntityTag() != null && level.getBlockEntity(worldPos) instanceof BlockEntity blockEntity) {
                 CompoundTag tag = block.blockEntityTag().copy();
@@ -1003,6 +2473,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.DEPOSITING_LEFTOVERS);
         depositLeftoverMaterials(villager, context.inventory(), plan);
         clearActiveBreakingTarget(level, context, villager);
+        clearBuildSiteIntermediateNavigation(context);
         BuilderTaskState.jobId(context.state()).ifPresent(jobId ->
                 ConstructionBlueprintItem.completeMatchingBlueprints(level, jobId));
         BuilderTaskState.clearTask(context.state());
@@ -1044,14 +2515,6 @@ public final class BuilderWorker extends AbstractBlockWorker {
         return false;
     }
 
-    private enum MaterialResult {
-        READY,
-        MOVING,
-        MISSING,
-        UNREACHABLE,
-        INVENTORY_FULL
-    }
-
     private enum MovementResult {
         READY,
         MOVING,
@@ -1070,7 +2533,26 @@ public final class BuilderWorker extends AbstractBlockWorker {
     private record BuilderApproachCandidate(BlockPos pos, double score) {
     }
 
+    private record ClearSpotCandidate(BlockPos pos, double distanceSqr) {
+    }
+
+    private record ReachableObstruction(PlacementGroup group, PlacementPart obstruction, double score) {
+    }
+
+    private record BuildSiteIntermediate(BlockPos pos, double score) {
+    }
+
+    private record MaterialBatch(int endIndex, List<BuilderStructureScanner.MaterialRequirement> materials) {
+    }
+
     public record MissingMaterials(List<String> missing) {
+        public static MissingMaterials of(BuilderStructureScanner.BuildBlock block) {
+            if (block == null || !block.requiresMaterial()) {
+                return new MissingMaterials(List.of());
+            }
+            return new MissingMaterials(List.of("1x " + block.requiredItem().getHoverName().getString()));
+        }
+
         public boolean ready() {
             return this.missing.isEmpty();
         }

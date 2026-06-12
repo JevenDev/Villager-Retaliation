@@ -34,6 +34,7 @@ public record ClipboardWorkforceSnapshot(
             HiredVillagerRole role,
             WorkerStatus status,
             String target,
+            String diagnostic,
             boolean storageAssigned,
             int storageCount,
             int workRadius,
@@ -73,6 +74,10 @@ public record ClipboardWorkforceSnapshot(
         MISSING_TOOLS,
         UNPAID,
         TOO_FAR,
+        MISSING_MATERIALS,
+        MATERIAL_STORAGE_UNREACHABLE,
+        MATERIAL_INVENTORY_FULL,
+        BUILD_SITE_UNREACHABLE,
         UNKNOWN
     }
 
@@ -83,6 +88,10 @@ public record ClipboardWorkforceSnapshot(
         MISSING_TOOLS,
         UNPAID,
         NO_TARGETS,
-        TOO_FAR
+        TOO_FAR,
+        MISSING_MATERIALS,
+        MATERIAL_STORAGE_UNREACHABLE,
+        MATERIAL_INVENTORY_FULL,
+        BUILD_SITE_UNREACHABLE
     }
 }

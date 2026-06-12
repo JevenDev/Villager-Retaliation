@@ -141,7 +141,7 @@ public final class HiredStorageClipboardItem extends Item {
 
         List<StoragePosition> selected = selectedContainers(stack);
         if (!selected.isEmpty()) {
-            AssignSummary summary = AssignedStorageService.assign(serverPlayer, villager, selected, AssignedStorageService.GENERAL_PURPOSE);
+            AssignSummary summary = AssignedStorageService.assign(serverPlayer, villager, selected, clipboardMode.storagePurpose());
             if (summary.assigned() > 0) {
                 clearSelection(stack);
             }
@@ -190,7 +190,10 @@ public final class HiredStorageClipboardItem extends Item {
 
         tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.change_mode").withStyle(ChatFormatting.DARK_GRAY));
         switch (currentMode) {
-            case ASSIGN_STORAGE -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_storage").withStyle(ChatFormatting.GRAY));
+            case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> {
+                tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_storage").withStyle(ChatFormatting.GRAY));
+                tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_storage_variant").withStyle(ChatFormatting.GRAY));
+            }
             case ASSIGN_PAYMENT -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_payment").withStyle(ChatFormatting.GRAY));
             case WORK_AREA -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.preview_work_area").withStyle(ChatFormatting.GRAY));
             case SET_WORK_AREA -> {
@@ -214,7 +217,12 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public static ClipboardMode cycleMode(ItemStack stack, int delta) {
-        ClipboardMode next = mode(stack).cycle(delta);
+        return cycleMode(stack, delta, false);
+    }
+
+    public static ClipboardMode cycleMode(ItemStack stack, int delta, boolean storageVariantOnly) {
+        ClipboardMode current = mode(stack);
+        ClipboardMode next = storageVariantOnly ? current.cycleStorageVariant(delta) : current.cycle(delta);
         CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
             CompoundTag clipboardTag = tag.contains(TAG, Tag.TAG_COMPOUND)
                     ? tag.getCompound(TAG)
@@ -226,10 +234,14 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public static void changeHeldClipboardMode(ServerPlayer player, int delta) {
-        changeClipboardMode(player, delta, -1);
+        changeClipboardMode(player, delta, -1, false);
     }
 
     public static void changeClipboardMode(ServerPlayer player, int delta, int menuSlotIndex) {
+        changeClipboardMode(player, delta, menuSlotIndex, false);
+    }
+
+    public static void changeClipboardMode(ServerPlayer player, int delta, int menuSlotIndex, boolean storageVariantOnly) {
         Slot slot = menuSlot(player, menuSlotIndex);
         if (menuSlotIndex >= 0 && slot == null) {
             return;
@@ -238,7 +250,7 @@ public final class HiredStorageClipboardItem extends Item {
         if (clipboard.isEmpty()) {
             return;
         }
-        ClipboardMode next = cycleMode(clipboard, delta);
+        ClipboardMode next = cycleMode(clipboard, delta, storageVariantOnly);
         if (slot != null) {
             slot.setChanged();
             player.containerMenu.broadcastChanges();
@@ -321,9 +333,7 @@ public final class HiredStorageClipboardItem extends Item {
         if (!AssignedStorageService.isValidContainerForPurpose(
                 level,
                 pos,
-                clipboardMode == ClipboardMode.ASSIGN_PAYMENT
-                        ? AssignedStorageService.PAYMENT_PURPOSE
-                        : AssignedStorageService.GENERAL_PURPOSE)) {
+                clipboardMode.assignmentPurpose())) {
             player.displayClientMessage(Component.literal(clipboardMode == ClipboardMode.ASSIGN_PAYMENT
                     ? "Select a payment box."
                     : "Payment boxes can only be assigned in payment mode."), true);
@@ -343,7 +353,7 @@ public final class HiredStorageClipboardItem extends Item {
 
     public static InteractionResult handleRightClickBlock(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
         return switch (mode(stack)) {
-            case ASSIGN_STORAGE, ASSIGN_PAYMENT -> selectContainer(level, player, stack, pos);
+            case ASSIGN_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_PAYMENT -> selectContainer(level, player, stack, pos);
             case WORK_AREA -> {
                 player.displayClientMessage(Component.literal("Preview Job Site mode: use the clipboard on a hired villager."), true);
                 yield InteractionResult.SUCCESS;
@@ -706,12 +716,21 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public enum ClipboardMode {
-        ASSIGN_STORAGE("assign_storage", "Assign Output Storage"),
+        ASSIGN_STORAGE("assign_storage", "Assign Global Storage"),
+        ASSIGN_TOOL_STORAGE("assign_tool_storage", "Assign Tool Storage"),
+        ASSIGN_INPUT_STORAGE("assign_input_storage", "Assign Input Storage"),
+        ASSIGN_OUTPUT_STORAGE("assign_output_storage", "Assign Output Storage"),
         ASSIGN_PAYMENT("assign_payment", "Assign Payment Box"),
         WORK_AREA("work_area", "Preview Job Site"),
         SET_WORK_AREA("set_work_area", "Edit Job Site");
 
         private static final ClipboardMode[] VALUES = values();
+        private static final ClipboardMode[] STORAGE_VALUES = {
+                ASSIGN_STORAGE,
+                ASSIGN_TOOL_STORAGE,
+                ASSIGN_INPUT_STORAGE,
+                ASSIGN_OUTPUT_STORAGE
+        };
         private final String id;
         private final String label;
 
@@ -730,10 +749,30 @@ public final class HiredStorageClipboardItem extends Item {
 
         public ChatFormatting color() {
             return switch (this) {
-                case ASSIGN_PAYMENT -> ChatFormatting.GREEN;
-                case ASSIGN_STORAGE -> ChatFormatting.BLUE;
-                case WORK_AREA -> ChatFormatting.YELLOW;
-                case SET_WORK_AREA -> ChatFormatting.GOLD;
+            case ASSIGN_PAYMENT -> ChatFormatting.GREEN;
+            case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> ChatFormatting.BLUE;
+            case WORK_AREA -> ChatFormatting.YELLOW;
+            case SET_WORK_AREA -> ChatFormatting.GOLD;
+            };
+        }
+
+        public boolean isStorageAssignmentMode() {
+            return switch (this) {
+                case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> true;
+                default -> false;
+            };
+        }
+
+        public String assignmentPurpose() {
+            return this == ASSIGN_PAYMENT ? AssignedStorageService.PAYMENT_PURPOSE : storagePurpose();
+        }
+
+        public String storagePurpose() {
+            return switch (this) {
+                case ASSIGN_TOOL_STORAGE -> AssignedStorageService.TOOL_PURPOSE;
+                case ASSIGN_INPUT_STORAGE -> AssignedStorageService.INPUT_PURPOSE;
+                case ASSIGN_OUTPUT_STORAGE -> AssignedStorageService.OUTPUT_PURPOSE;
+                default -> AssignedStorageService.GENERAL_PURPOSE;
             };
         }
 
@@ -743,6 +782,19 @@ public final class HiredStorageClipboardItem extends Item {
             }
             int index = Math.floorMod(this.ordinal() + Integer.compare(delta, 0), VALUES.length);
             return VALUES[index];
+        }
+
+        private ClipboardMode cycleStorageVariant(int delta) {
+            if (delta == 0 || !isStorageAssignmentMode()) {
+                return this;
+            }
+            for (int i = 0; i < STORAGE_VALUES.length; i++) {
+                if (STORAGE_VALUES[i] == this) {
+                    int index = Math.floorMod(i + Integer.compare(delta, 0), STORAGE_VALUES.length);
+                    return STORAGE_VALUES[index];
+                }
+            }
+            return ASSIGN_STORAGE;
         }
 
         private static ClipboardMode byId(String id) {

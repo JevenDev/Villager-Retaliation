@@ -242,6 +242,12 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.builder.requires_role_choose");
             return InteractionResult.FAIL;
         }
+        CompoundTag state = HiredVillagerWorkService.state(villager);
+        HiredVillagerWorkService.initializeDefaults(state, villager);
+        if (BuilderTaskState.hasTask(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
+            return InteractionResult.SUCCESS;
+        }
         if (!VillagerConversationService.startForced(player, villager)) {
             sendVillagerNotice(player, villager, "interaction.busy");
             return InteractionResult.FAIL;
@@ -585,6 +591,10 @@ public final class VillagerInteractionService {
         }
         CompoundTag state = HiredVillagerWorkService.state(villager);
         HiredVillagerWorkService.initializeDefaults(state, villager);
+        if (action != HiredBuilderOrderPayload.Action.CANCEL && BuilderTaskState.hasTask(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
+            return;
+        }
         switch (action) {
             case PREVIEW -> previewBuilderOrder(player, level, villager, state, structureId);
             case CONFIRM -> confirmBuilderOrder(player, level, villager, state, structureId);
@@ -1415,9 +1425,7 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.storage.select_with_clipboard");
             return;
         }
-        String purpose = HiredVillagerContractService.isHiredBy(level, villager, player)
-                ? HiredVillagerContractService.activeRole(level, villager).serializedName()
-                : "general";
+        String purpose = HiredStorageClipboardItem.mode(clipboard).storagePurpose();
         AssignSummary summary = AssignedStorageService.assign(player, villager, selected, purpose);
         if (summary.assigned() > 0) {
             HiredStorageClipboardItem.clearSelection(clipboard);

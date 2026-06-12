@@ -405,6 +405,16 @@ public final class ClipboardWorkforceScreen extends Screen {
         int lineY = y + 10;
         drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_status", statusName(worker.status())), CONTENT_LEFT, lineY, mutedForWarning(worker));
         lineY += 10;
+        if (!worker.diagnostic().isBlank()) {
+            lineY = drawWrappedLines(
+                    graphics,
+                    Component.translatable(
+                            "villagerretaliation.gui.clipboard_workforce.worker_issue",
+                            Component.literal(worker.diagnostic())),
+                    CONTENT_LEFT,
+                    lineY,
+                    WARNING);
+        }
         Component area = workerAreaText(worker);
         lineY = drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area", area), CONTENT_LEFT, lineY, worker.noWorkArea() ? WARNING : MUTED);
         if (!worker.target().isBlank()) {
@@ -418,6 +428,11 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private int workerSummaryBottom(WorkerRow worker, int y) {
         int lineY = y + 20;
+        if (!worker.diagnostic().isBlank()) {
+            lineY += wrappedLineCount(Component.translatable(
+                    "villagerretaliation.gui.clipboard_workforce.worker_issue",
+                    Component.literal(worker.diagnostic()))) * WRAPPED_LINE_STEP;
+        }
         lineY += wrappedLineCount(Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area", workerAreaText(worker))) * WRAPPED_LINE_STEP;
         if (!worker.target().isBlank()) {
             lineY += wrappedLineCount(Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_target", Component.literal(worker.target()))) * WRAPPED_LINE_STEP;
@@ -896,7 +911,11 @@ public final class ClipboardWorkforceScreen extends Screen {
                 || worker.noWorkArea()
                 || worker.noTargets()
                 || worker.tooFar()
-                || worker.missingTools();
+                || worker.missingTools()
+                || worker.status() == ClipboardWorkforceSnapshot.WorkerStatus.MISSING_MATERIALS
+                || worker.status() == ClipboardWorkforceSnapshot.WorkerStatus.MATERIAL_STORAGE_UNREACHABLE
+                || worker.status() == ClipboardWorkforceSnapshot.WorkerStatus.MATERIAL_INVENTORY_FULL
+                || worker.status() == ClipboardWorkforceSnapshot.WorkerStatus.BUILD_SITE_UNREACHABLE;
     }
 
     private int warningTextRight() {

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.item;
 
+import com.jvn.villagerretaliation.interaction.work.BuilderStructureScanner;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewBlock;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewData;
@@ -46,7 +47,8 @@ public final class ConstructionBlueprintPreviewRenderer {
             return;
         }
         PreviewData preview = optionalPreview.get();
-        if (preview.locked()
+        if (preview.expired()
+                || preview.completed()
                 || preview.blocks().isEmpty()
                 || !preview.dimension().equals(minecraft.level.dimension())) {
             return;
@@ -108,7 +110,8 @@ public final class ConstructionBlueprintPreviewRenderer {
 
     private static BlockPos renderableWorldPos(Level level, PreviewData preview, PreviewBlock block) {
         BlockPos worldPos = block.worldPos(preview.origin());
-        if (!level.hasChunkAt(worldPos) || level.getBlockState(worldPos).equals(block.state())) {
+        if (!level.hasChunkAt(worldPos)
+                || BuilderStructureScanner.sameSchematicState(level.getBlockState(worldPos), block.state())) {
             return null;
         }
         return worldPos;

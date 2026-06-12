@@ -17,13 +17,16 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
@@ -64,9 +67,62 @@ public final class BuilderStructureScanner {
     }
 
     public static boolean sameMaterial(ItemStack candidate, ItemStack required) {
-        return !candidate.isEmpty()
-                && !required.isEmpty()
-                && ItemStack.isSameItem(candidate, required);
+        if (candidate.isEmpty() || required.isEmpty()) {
+            return false;
+        }
+        return ItemStack.isSameItem(candidate, required)
+                || isDirtOrGrassItem(candidate) && isDirtOrGrassItem(required);
+    }
+
+    public static boolean sameSchematicState(BlockState current, BlockState target) {
+        if (current == null || target == null) {
+            return false;
+        }
+        return current.equals(target)
+                || isDirtOrGrassBlock(current) && isDirtOrGrassBlock(target);
+    }
+
+    public static boolean canTransformExisting(BlockState current, BlockState target) {
+        if (current == null || target == null || sameSchematicState(current, target)) {
+            return false;
+        }
+        BlockState source = toolSourceState(target);
+        if (source == null) {
+            return false;
+        }
+        if (sameSchematicState(current, source) || current.equals(source)) {
+            return true;
+        }
+        return (target.is(Blocks.DIRT_PATH) || target.is(Blocks.FARMLAND))
+                && isDirtOrGrassBlock(current);
+    }
+
+    public static BuilderToolAction toolAction(BlockState target) {
+        if (target == null) {
+            return BuilderToolAction.NONE;
+        }
+        if (sourceStrippedBlock(target.getBlock()) != null) {
+            return BuilderToolAction.AXE_STRIP;
+        }
+        if (target.is(Blocks.DIRT_PATH)) {
+            return BuilderToolAction.SHOVEL_FLATTEN;
+        }
+        if (target.is(Blocks.FARMLAND)) {
+            return BuilderToolAction.HOE_TILL;
+        }
+        return BuilderToolAction.NONE;
+    }
+
+    public static boolean matchesToolAction(ItemStack stack, BuilderToolAction action) {
+        if (stack.isEmpty() || action == null || action == BuilderToolAction.NONE) {
+            return false;
+        }
+        return switch (action) {
+            case AXE_STRIP -> stack.is(ItemTags.AXES);
+            case SHOVEL_FLATTEN -> stack.is(ItemTags.SHOVELS);
+            case HOE_TILL -> stack.is(ItemTags.HOES);
+            case NONE -> false;
+        };
     }
 
     public static String materialSummary(List<MaterialRequirement> materials, int limit) {
@@ -122,11 +178,12 @@ public final class BuilderStructureScanner {
             BlockPos local = new BlockPos(posTag.getInt(0), posTag.getInt(1), posTag.getInt(2));
             BlockPos rotatedPos = StructureTemplate.transform(local, Mirror.NONE, rotation, BlockPos.ZERO);
             BlockState rotatedState = state.rotate(rotation);
-            ItemStack required = consumesRequiredItem(rotatedState) ? requiredItem(rotatedState) : ItemStack.EMPTY;
+            BuilderToolAction toolAction = toolAction(rotatedState);
+            ItemStack required = consumesRequiredItem(rotatedState) ? requiredItem(rotatedState, toolAction) : ItemStack.EMPTY;
             if (!required.isEmpty()) {
                 materials.merge(required.getItem(), 1, Integer::sum);
             }
-            blocks.add(new BuildBlock(rotatedPos.immutable(), rotatedState, blockEntityTag, required));
+            blocks.add(new BuildBlock(rotatedPos.immutable(), rotatedState, blockEntityTag, required, toolAction));
         }
 
         blocks.sort(placementComparator(level));
@@ -175,15 +232,75 @@ public final class BuilderStructureScanner {
                 || state.is(Blocks.JIGSAW);
     }
 
-    private static ItemStack requiredItem(BlockState state) {
+    private static ItemStack requiredItem(BlockState state, BuilderToolAction toolAction) {
         if (state.is(Blocks.WATER)) {
             return new ItemStack(Items.WATER_BUCKET);
         }
         if (state.is(Blocks.LAVA)) {
             return new ItemStack(Items.LAVA_BUCKET);
         }
+        if (state.is(Blocks.GRASS_BLOCK)) {
+            return new ItemStack(Items.DIRT);
+        }
+        BlockState source = toolSourceState(state);
+        if (source != null && (toolAction == BuilderToolAction.AXE_STRIP
+                || toolAction == BuilderToolAction.SHOVEL_FLATTEN
+                || toolAction == BuilderToolAction.HOE_TILL)) {
+            Item item = source.getBlock().asItem();
+            return item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
+        }
         Item item = state.getBlock().asItem();
         return item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
+    }
+
+    public static BlockState toolSourceState(BlockState target) {
+        if (target == null) {
+            return null;
+        }
+        Block sourceStripped = sourceStrippedBlock(target.getBlock());
+        if (sourceStripped != null) {
+            BlockState source = sourceStripped.defaultBlockState();
+            if (target.hasProperty(RotatedPillarBlock.AXIS) && source.hasProperty(RotatedPillarBlock.AXIS)) {
+                source = source.setValue(RotatedPillarBlock.AXIS, target.getValue(RotatedPillarBlock.AXIS));
+            }
+            return source;
+        }
+        if (target.is(Blocks.DIRT_PATH) || target.is(Blocks.FARMLAND)) {
+            return Blocks.DIRT.defaultBlockState();
+        }
+        return null;
+    }
+
+    private static Block sourceStrippedBlock(Block block) {
+        if (block == Blocks.STRIPPED_OAK_LOG) return Blocks.OAK_LOG;
+        if (block == Blocks.STRIPPED_SPRUCE_LOG) return Blocks.SPRUCE_LOG;
+        if (block == Blocks.STRIPPED_BIRCH_LOG) return Blocks.BIRCH_LOG;
+        if (block == Blocks.STRIPPED_JUNGLE_LOG) return Blocks.JUNGLE_LOG;
+        if (block == Blocks.STRIPPED_ACACIA_LOG) return Blocks.ACACIA_LOG;
+        if (block == Blocks.STRIPPED_DARK_OAK_LOG) return Blocks.DARK_OAK_LOG;
+        if (block == Blocks.STRIPPED_MANGROVE_LOG) return Blocks.MANGROVE_LOG;
+        if (block == Blocks.STRIPPED_CHERRY_LOG) return Blocks.CHERRY_LOG;
+        if (block == Blocks.STRIPPED_CRIMSON_STEM) return Blocks.CRIMSON_STEM;
+        if (block == Blocks.STRIPPED_WARPED_STEM) return Blocks.WARPED_STEM;
+        if (block == Blocks.STRIPPED_OAK_WOOD) return Blocks.OAK_WOOD;
+        if (block == Blocks.STRIPPED_SPRUCE_WOOD) return Blocks.SPRUCE_WOOD;
+        if (block == Blocks.STRIPPED_BIRCH_WOOD) return Blocks.BIRCH_WOOD;
+        if (block == Blocks.STRIPPED_JUNGLE_WOOD) return Blocks.JUNGLE_WOOD;
+        if (block == Blocks.STRIPPED_ACACIA_WOOD) return Blocks.ACACIA_WOOD;
+        if (block == Blocks.STRIPPED_DARK_OAK_WOOD) return Blocks.DARK_OAK_WOOD;
+        if (block == Blocks.STRIPPED_MANGROVE_WOOD) return Blocks.MANGROVE_WOOD;
+        if (block == Blocks.STRIPPED_CHERRY_WOOD) return Blocks.CHERRY_WOOD;
+        if (block == Blocks.STRIPPED_CRIMSON_HYPHAE) return Blocks.CRIMSON_HYPHAE;
+        if (block == Blocks.STRIPPED_WARPED_HYPHAE) return Blocks.WARPED_HYPHAE;
+        return null;
+    }
+
+    private static boolean isDirtOrGrassBlock(BlockState state) {
+        return state.is(Blocks.DIRT) || state.is(Blocks.GRASS_BLOCK);
+    }
+
+    private static boolean isDirtOrGrassItem(ItemStack stack) {
+        return stack.is(Items.DIRT) || stack.is(Items.GRASS_BLOCK);
     }
 
     private static boolean consumesRequiredItem(BlockState state) {
@@ -250,13 +367,29 @@ public final class BuilderStructureScanner {
         }
     }
 
-    public record BuildBlock(BlockPos localPos, BlockState state, CompoundTag blockEntityTag, ItemStack requiredItem) {
+    public enum BuilderToolAction {
+        NONE,
+        AXE_STRIP,
+        SHOVEL_FLATTEN,
+        HOE_TILL
+    }
+
+    public record BuildBlock(
+            BlockPos localPos,
+            BlockState state,
+            CompoundTag blockEntityTag,
+            ItemStack requiredItem,
+            BuilderToolAction toolAction) {
         public boolean requiresMaterial() {
             return !this.requiredItem.isEmpty();
         }
 
         public boolean materialMatches(ItemStack stack) {
             return sameMaterial(stack, this.requiredItem);
+        }
+
+        public boolean requiresToolAction() {
+            return this.toolAction != BuilderToolAction.NONE;
         }
     }
 

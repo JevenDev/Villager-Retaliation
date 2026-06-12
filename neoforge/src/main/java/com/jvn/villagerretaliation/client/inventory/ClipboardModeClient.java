@@ -31,12 +31,17 @@ public final class ClipboardModeClient {
         }
 
         ItemStack clipboard = heldClipboard(minecraft);
-        if (HiredStorageClipboardItem.mode(clipboard) != HiredStorageClipboardItem.ClipboardMode.SET_WORK_AREA) {
-            return;
-        }
-
         int delta = event.getScrollDeltaY() > 0.0D ? 1 : event.getScrollDeltaY() < 0.0D ? -1 : 0;
         if (delta == 0) {
+            return;
+        }
+        if (Screen.hasControlDown()
+                && HiredStorageClipboardItem.mode(clipboard).isStorageAssignmentMode()) {
+            PacketDistributor.sendToServer(new ClipboardModeChangePayload(delta, -1, true));
+            event.setCanceled(true);
+            return;
+        }
+        if (HiredStorageClipboardItem.mode(clipboard) != HiredStorageClipboardItem.ClipboardMode.SET_WORK_AREA) {
             return;
         }
 

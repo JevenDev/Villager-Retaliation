@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -199,7 +200,7 @@ public final class FishingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
             return ItemStack.EMPTY;
         }
-        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, this::isFishingRod);
+        BlockPos storage = AssignedStorageService.nearestAssignedToolStoragePosContaining(level, villager, this::isFishingRod);
         if (storage == null) {
             context.state().remove(COLLECTING_ROD_TAG);
             HiredWorkerBrain.setFailure(context, "missing_fishing_rod", 0L);
@@ -220,11 +221,11 @@ public final class FishingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
             return ItemStack.EMPTY;
         }
-        int moved = AssignedStorageService.transferFirstMatchingStackAtAssignedStorage(
+        int moved = AssignedStorageService.transferToolAtAssignedStorage(
                 villager,
                 storage,
                 this::isFishingRod,
-                offered -> context.inventory().insertSupply(offered));
+                offered -> context.inventory().insertTool(offered));
         rod = context.inventory().equipBestTool(this::isFishingRod, stack -> rodScore(level, villager, stack));
         if (moved <= 0 || rod.isEmpty()) {
             context.state().remove(COLLECTING_ROD_TAG);
@@ -475,7 +476,7 @@ public final class FishingWorker extends AbstractBlockWorker {
             return false;
         }
         villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(approach));
-        boolean moved = villager.getNavigation().moveTo(path, speed);
+        boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, approach, speed, 0);
         if (moved) {
             HiredPathMemory.rememberNavigationProgress(level, villager, approach, villager.distanceToSqr(approach.getCenter()));
         }

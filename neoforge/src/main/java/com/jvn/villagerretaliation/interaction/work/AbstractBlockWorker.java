@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
@@ -176,11 +178,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     protected void clearActiveBreakingTarget(ServerLevel level, HiredWorkContext context, Villager villager) {
         if (context.state().contains(ACTIVE_BLOCK_POS_TAG)) {
             clearBreakProgress(level, villager, BlockPos.of(context.state().getLong(ACTIVE_BLOCK_POS_TAG)));
-            if (!villager.getNavigation().isDone()) {
-                villager.getNavigation().stop();
-            }
-            villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-            villager.getBrain().eraseMemory(MemoryModuleType.PATH);
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             context.state().remove(ACTIVE_BLOCK_POS_TAG);
             context.state().remove(ACTIVE_APPROACH_POS_TAG);
             context.state().remove(ACTIVE_HIT_X_TAG);
@@ -328,7 +326,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             }
             Path path = villager.getNavigation().createPath(candidate, 0);
             if (path != null && path.canReach() && pathStaysInsideWorkArea(path, context)) {
-                boolean moved = villager.getNavigation().moveTo(path, speed);
+                boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, candidate, speed, 0);
                 if (moved) {
                     HiredPathMemory.rememberNavigationProgress(level, villager, candidate, villager.distanceToSqr(candidate.getCenter()));
                     setTaskState(context, HiredWorkerTaskState.IDLE);
@@ -371,7 +369,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
                         villager.distanceToSqr(currentTarget.approachPos().getCenter()));
                 return true;
             } else {
-                villager.getNavigation().stop();
+                VillagerTaskNavigationUtil.stopHiredNavigation(villager);
                 HiredPathMemory.clearNavigationProgress(villager);
                 return false;
             }
@@ -384,7 +382,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
                     villager,
                     currentTarget.approachPos(),
                     villager.distanceToSqr(currentTarget.approachPos().getCenter()))) {
-                villager.getNavigation().stop();
+                VillagerTaskNavigationUtil.stopHiredNavigation(villager);
                 HiredPathMemory.clearNavigationProgress(villager);
                 return false;
             }
@@ -392,7 +390,12 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         }
         Path path = villager.getNavigation().createPath(currentTarget.approachPos(), 0);
         if (path != null && path.canReach() && pathStaysInsideWorkArea(path, context)) {
-            boolean moved = villager.getNavigation().moveTo(path, speed);
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(
+                    villager,
+                    path,
+                    currentTarget.approachPos(),
+                    speed,
+                    0);
             if (moved) {
                 HiredPathMemory.rememberNavigationProgress(
                         level,
@@ -426,6 +429,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
             return false;
         }
         villager.getMoveControl().setWantedPosition(center.x, target.approachPos().getY(), center.z, speed);
+        VillagerTaskNavigationUtil.setHiredWalkTarget(villager, target.approachPos(), speed, 0);
         return true;
     }
 
@@ -507,6 +511,58 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         return depositOutputsOrMoveToStorage(level, context, villager, speed);
     }
 
+    protected ToolStorageResult equipBestToolOrCollectFromStorage(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Predicate<ItemStack> predicate,
+            ToDoubleFunction<ItemStack> scorer,
+            double speed) {
+        ItemStack tool = context.inventory().equipBestTool(predicate, scorer);
+        if (!tool.isEmpty()) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
+            return new ToolStorageResult(ToolStorageStatus.READY, tool, null);
+        }
+        if (!context.useAssignedStorageForSupplies()) {
+            return new ToolStorageResult(ToolStorageStatus.MISSING, ItemStack.EMPTY, null);
+        }
+
+        BlockPos storage = AssignedStorageService.nearestAssignedToolStoragePosContaining(level, villager, predicate);
+        if (storage == null) {
+            return new ToolStorageResult(ToolStorageStatus.MISSING, ItemStack.EMPTY, null);
+        }
+
+        HiredWorkerBrain.setStorageTarget(context, storage);
+        HiredStorageNavigationGoal.Result result = HiredStorageNavigationGoal.moveToStorageTarget(
+                level,
+                context,
+                villager,
+                storage,
+                speed);
+        if (result == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE, storage);
+            return new ToolStorageResult(ToolStorageStatus.MOVING, ItemStack.EMPTY, storage);
+        }
+        if (result == HiredStorageNavigationGoal.Result.FAILED) {
+            return new ToolStorageResult(ToolStorageStatus.UNREACHABLE, ItemStack.EMPTY, storage);
+        }
+
+        int moved = AssignedStorageService.transferToolAtAssignedStorage(
+                villager,
+                storage,
+                predicate,
+                context.inventory()::insertTool);
+        tool = context.inventory().equipBestTool(predicate, scorer);
+        if (moved <= 0 || tool.isEmpty()) {
+            return new ToolStorageResult(ToolStorageStatus.INVENTORY_FULL, ItemStack.EMPTY, storage);
+        }
+        HiredStorageNavigationGoal.clearStorageTarget(context);
+        HiredWorkerBrain.clearFailure(context);
+        return new ToolStorageResult(ToolStorageStatus.COLLECTED, tool, storage);
+    }
+
     protected boolean isCloseEnough(Villager villager, HiredPathTarget target) {
         return HiredMoveToBlockFaceJob.isCloseEnough(villager, target);
     }
@@ -550,12 +606,8 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     }
 
     protected void stopWorkNavigation(Villager villager) {
-        if (!villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
-        }
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         HiredPathMemory.clearNavigationProgress(villager);
-        villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-        villager.getBrain().eraseMemory(MemoryModuleType.PATH);
     }
 
     protected boolean canMineFromCurrentPosition(ServerLevel level, Villager villager, HiredPathTarget target) {
@@ -623,6 +675,18 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         MOVING,
         STORAGE_FULL,
         UNAVAILABLE
+    }
+
+    protected enum ToolStorageStatus {
+        READY,
+        COLLECTED,
+        MOVING,
+        MISSING,
+        UNREACHABLE,
+        INVENTORY_FULL
+    }
+
+    protected record ToolStorageResult(ToolStorageStatus status, ItemStack tool, BlockPos storagePos) {
     }
 
 }

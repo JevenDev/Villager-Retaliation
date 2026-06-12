@@ -19,7 +19,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
-final class HiredMoveToBlockFaceJob extends HiredPathJob {
+public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     static final double MAX_REACH = 3.0D;
     static final double MAX_REACH_SQR = MAX_REACH * MAX_REACH;
     private static final double BODY_REACH_BUFFER = 0.75D;
@@ -111,7 +111,7 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
             evaluated++;
             Path path = this.villager.getNavigation().createPath(approach.pos(), 0);
             if (path != null && path.canReach() && pathStaysInsideFilter(this.level, path, this.approachFilter)) {
-                double score = approach.score() + path.getNodeCount() * 1.5D;
+                double score = approach.score() + pathTraversalCost(this.level, path);
                 HiredPathResult result = new HiredPathResult(
                         new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()),
                         path,
@@ -197,6 +197,26 @@ final class HiredMoveToBlockFaceJob extends HiredPathJob {
             }
         }
         return true;
+    }
+
+    public static double pathTraversalCost(ServerLevel level, Path path) {
+        if (path == null) {
+            return Double.POSITIVE_INFINITY;
+        }
+        double cost = path.getNodeCount() * 1.5D;
+        int previousY = Integer.MIN_VALUE;
+        for (int i = 0; i < path.getNodeCount(); i++) {
+            BlockPos pos = path.getNode(i).asBlockPos();
+            cost += terrainCost(level, pos) * 0.35D;
+            if (previousY != Integer.MIN_VALUE) {
+                int verticalStep = Math.abs(pos.getY() - previousY);
+                if (verticalStep > 1) {
+                    cost += verticalStep * verticalStep * 8.0D;
+                }
+            }
+            previousY = pos.getY();
+        }
+        return cost;
     }
 
     static Vec3 visibleHitPosition(ServerLevel level, Villager villager, Vec3 start, BlockPos target) {

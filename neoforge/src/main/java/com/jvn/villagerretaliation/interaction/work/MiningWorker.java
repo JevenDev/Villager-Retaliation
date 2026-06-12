@@ -98,17 +98,35 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
 
         BlockState targetState = level.getBlockState(target.blockPos());
-        ItemStack tool = context.inventory().equipBestTool(
+        ToolStorageResult toolResult = equipBestToolOrCollectFromStorage(
+                level,
+                villager,
+                context,
                 stack -> MiningBlockRules.isUsableMiningTool(mode, stack, targetState),
-                stack -> effectiveDestroySpeed(stack, targetState));
-        if (tool.isEmpty()) {
+                stack -> effectiveDestroySpeed(stack, targetState),
+                0.55D);
+        if (toolResult.status() != ToolStorageStatus.READY && toolResult.status() != ToolStorageStatus.COLLECTED) {
+            if (toolResult.status() == ToolStorageStatus.MOVING) {
+                return WorkResult.progressed("interaction.work.status.collecting_tool");
+            }
             HiredWorkPlan.clear(context);
             clearActiveBreakingTarget(level, context, villager);
+            if (toolResult.status() == ToolStorageStatus.UNREACHABLE) {
+                HiredWorkerBrain.setFailure(context, "tool_storage_unreachable", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, toolResult.storagePos());
+                return WorkResult.idle("interaction.work.status.tool_storage_unreachable");
+            }
+            if (toolResult.status() == ToolStorageStatus.INVENTORY_FULL) {
+                HiredWorkerBrain.setFailure(context, "tool_inventory_full", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, toolResult.storagePos());
+                return WorkResult.idle("interaction.work.status.tool_inventory_full");
+            }
             MiningWorkerState.set(context, MiningWorkerState.Phase.BLOCKED_MISSING_TOOL);
             HiredWorkerBrain.setFailure(context, "missing_pickaxe", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
             return WorkResult.idle(miningStatusKey(mode, "missing_tool"));
         }
+        ItemStack tool = toolResult.tool();
         WorkResult outputCapacityResult = depositBeforeMiningIfTargetDropsDoNotFit(level, villager, context, target, targetState, tool);
         if (outputCapacityResult != null) {
             return outputCapacityResult;
@@ -751,7 +769,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                     villager,
                     target.approachPos(),
                     villager.distanceToSqr(target.approachPos().getCenter()))) {
-                villager.getNavigation().stop();
+                VillagerTaskNavigationUtil.stopHiredNavigation(villager);
                 HiredPathMemory.clearNavigationProgress(villager);
                 if (MiningExcavationSupport.shouldUseLadderFallback(context, villager, target)
                         && VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target.approachPos(), speed)) {
@@ -776,7 +794,9 @@ public final class MiningWorker extends AbstractBlockWorker {
             return true;
         }
         Path path = villager.getNavigation().createPath(target.approachPos(), 0);
-        if (path != null && path.canReach() && villager.getNavigation().moveTo(path, speed)) {
+        if (path != null
+                && path.canReach()
+                && VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target.approachPos(), speed, 0)) {
             HiredPathMemory.rememberNavigationProgress(
                     level,
                     villager,

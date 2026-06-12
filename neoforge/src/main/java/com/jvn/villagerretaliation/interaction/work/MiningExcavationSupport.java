@@ -333,7 +333,7 @@ final class MiningExcavationSupport {
         }
         Path path = villager.getNavigation().createPath(target.approachPos(), 0);
         if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
-            villager.getNavigation().moveTo(path, speed);
+            VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target.approachPos(), speed, 0);
             return false;
         }
         VillagerTaskNavigationUtil.moveOnLadderToward(level, villager, target.approachPos(), speed);

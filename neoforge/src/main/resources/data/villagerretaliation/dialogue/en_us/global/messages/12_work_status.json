@@ -82,6 +82,24 @@
       ]
     },
     {
+      "key": "interaction.work.status.collecting_tool",
+      "lines": [
+        "I am collecting the right tool from assigned storage."
+      ]
+    },
+    {
+      "key": "interaction.work.status.tool_storage_unreachable",
+      "lines": [
+        "I found the tool in assigned storage, but I cannot reach that container."
+      ]
+    },
+    {
+      "key": "interaction.work.status.tool_inventory_full",
+      "lines": [
+        "I found the tool, but I cannot fit it in my work gear."
+      ]
+    },
+    {
       "key": "interaction.work.status.no_food",
       "lines": [
         "No food for hired work. Mood and reputation suffered."

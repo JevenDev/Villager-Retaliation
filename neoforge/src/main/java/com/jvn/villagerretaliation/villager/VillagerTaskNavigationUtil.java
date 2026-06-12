@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.villager;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,7 +19,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.pathfinder.PathType;
@@ -67,6 +70,8 @@ public final class VillagerTaskNavigationUtil {
     private static final int SURFACE_ESCAPE_SEARCH_CACHE_TICKS = 20;
     private static final float HIRED_WATER_PATH_COST = 32.0F;
     private static final float HIRED_WATER_BORDER_PATH_COST = 16.0F;
+    private static final float HIRED_RISKY_PATH_COST = 32.0F;
+    private static final float HIRED_BLOCKED_PATH_COST = -1.0F;
     private static final float HIRED_FARMING_WATER_PATH_COST = HIRED_WATER_PATH_COST;
     private static final float HIRED_FARMING_WATER_BORDER_PATH_COST = HIRED_WATER_BORDER_PATH_COST;
     private static final double WATER_TARGET_REACHED_DISTANCE_SQR = 2.25D;
@@ -82,20 +87,54 @@ public final class VillagerTaskNavigationUtil {
     private static final Map<UUID, RecentLadderDismount> RECENT_LADDER_DISMOUNTS = new HashMap<>();
     private static final Map<UUID, LadderSearch> LADDER_SEARCHES = new HashMap<>();
     private static final Map<UUID, SurfaceEscapeSearch> SURFACE_ESCAPE_SEARCHES = new HashMap<>();
-    private static final Map<UUID, WaterPathSettings> WATER_PATH_SETTINGS = new HashMap<>();
+    private static final Map<UUID, HiredNavigationSettings> HIRED_NAVIGATION_SETTINGS = new HashMap<>();
     private static final Map<UUID, WaterMovementProgress> WATER_MOVEMENT_PROGRESS = new HashMap<>();
 
     private VillagerTaskNavigationUtil() {
     }
 
     public static void stopNavigationAndClearTargets(Villager villager) {
+        stopHiredNavigation(villager);
+        villager.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
+    }
+
+    public static boolean moveToHiredPath(
+            Villager villager,
+            Path path,
+            BlockPos target,
+            double speed,
+            int closeEnough) {
+        if (path == null || target == null) {
+            return false;
+        }
+        Brain<Villager> brain = villager.getBrain();
+        brain.setMemory(MemoryModuleType.PATH, path);
+        setHiredWalkTarget(villager, target, speed, closeEnough);
+        if (villager.getNavigation().moveTo(path, speed)) {
+            return true;
+        }
+        brain.eraseMemory(MemoryModuleType.PATH);
+        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+        return false;
+    }
+
+    public static void setHiredWalkTarget(Villager villager, BlockPos target, double speed, int closeEnough) {
+        if (target == null) {
+            villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+            return;
+        }
+        villager.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(target), (float) speed, closeEnough));
+    }
+
+    public static void stopHiredNavigation(Villager villager) {
         if (!villager.getNavigation().isDone()) {
             villager.getNavigation().stop();
         }
         Brain<Villager> brain = villager.getBrain();
         brain.eraseMemory(MemoryModuleType.WALK_TARGET);
         brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
     }
 
     public static void tickPathDoors(ServerLevel level, Villager villager) {
@@ -137,7 +176,6 @@ public final class VillagerTaskNavigationUtil {
 
     public static void tickVillagerWaterSafety(ServerLevel level, Villager villager) {
         restoreVillagerGravity(villager);
-        enableWaterTraversal(villager);
         if (!villager.isInWater()) {
             WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
             return;
@@ -160,35 +198,38 @@ public final class VillagerTaskNavigationUtil {
 
     private static void enableHiredWaterTraversal(Villager villager, float waterPathCost, float waterBorderPathCost) {
         boolean canFloat = villager.getNavigation() instanceof GroundPathNavigation navigation && navigation.canFloat();
-        WATER_PATH_SETTINGS.computeIfAbsent(villager.getUUID(), ignored -> new WaterPathSettings(
-                villager.getPathfindingMalus(PathType.WATER),
-                villager.getPathfindingMalus(PathType.WATER_BORDER),
-                canFloat));
-        enableWaterTraversal(villager, waterPathCost, waterBorderPathCost);
-    }
-
-    private static void enableWaterTraversal(Villager villager) {
-        enableWaterTraversal(villager, HIRED_WATER_PATH_COST, HIRED_WATER_BORDER_PATH_COST);
-    }
-
-    private static void enableWaterTraversal(Villager villager, float waterPathCost, float waterBorderPathCost) {
-        villager.setPathfindingMalus(PathType.WATER, waterPathCost);
-        villager.setPathfindingMalus(PathType.WATER_BORDER, waterBorderPathCost);
-        if (villager.getNavigation() instanceof GroundPathNavigation navigation) {
-            navigation.setCanFloat(true);
-        }
+        HIRED_NAVIGATION_SETTINGS.computeIfAbsent(villager.getUUID(), ignored -> HiredNavigationSettings.capture(villager, canFloat));
+        applyHiredNavigationPolicy(villager, waterPathCost, waterBorderPathCost);
     }
 
     public static void restoreHiredWaterTraversal(Villager villager) {
         WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
-        WaterPathSettings settings = WATER_PATH_SETTINGS.remove(villager.getUUID());
+        HiredNavigationSettings settings = HIRED_NAVIGATION_SETTINGS.remove(villager.getUUID());
         if (settings == null) {
             return;
         }
-        villager.setPathfindingMalus(PathType.WATER, settings.waterMalus());
-        villager.setPathfindingMalus(PathType.WATER_BORDER, settings.waterBorderMalus());
+        settings.pathMaluses().forEach(villager::setPathfindingMalus);
         if (villager.getNavigation() instanceof GroundPathNavigation navigation) {
             navigation.setCanFloat(settings.canFloat());
+        }
+    }
+
+    private static void applyHiredNavigationPolicy(Villager villager, float waterPathCost, float waterBorderPathCost) {
+        villager.setPathfindingMalus(PathType.WATER, waterPathCost);
+        villager.setPathfindingMalus(PathType.WATER_BORDER, waterBorderPathCost);
+        villager.setPathfindingMalus(PathType.TRAPDOOR, HIRED_RISKY_PATH_COST);
+        villager.setPathfindingMalus(PathType.DAMAGE_FIRE, HIRED_RISKY_PATH_COST);
+        villager.setPathfindingMalus(PathType.DANGER_FIRE, HIRED_RISKY_PATH_COST);
+        villager.setPathfindingMalus(PathType.DAMAGE_OTHER, HIRED_RISKY_PATH_COST);
+        villager.setPathfindingMalus(PathType.DANGER_OTHER, HIRED_RISKY_PATH_COST);
+        villager.setPathfindingMalus(PathType.DANGER_POWDER_SNOW, HIRED_BLOCKED_PATH_COST);
+        villager.setPathfindingMalus(PathType.POWDER_SNOW, HIRED_BLOCKED_PATH_COST);
+        villager.setPathfindingMalus(PathType.LAVA, HIRED_BLOCKED_PATH_COST);
+        villager.setPathfindingMalus(PathType.FENCE, HIRED_BLOCKED_PATH_COST);
+        villager.setPathfindingMalus(PathType.LEAVES, HIRED_BLOCKED_PATH_COST);
+        villager.setPathfindingMalus(PathType.DOOR_WOOD_CLOSED, 0.0F);
+        if (villager.getNavigation() instanceof GroundPathNavigation navigation) {
+            navigation.setCanFloat(true);
         }
     }
 
@@ -547,7 +588,7 @@ public final class VillagerTaskNavigationUtil {
         }
         Path path = villager.getNavigation().createPath(approach, 0);
         if (path != null && path.canReach()) {
-            return villager.getNavigation().moveTo(path, speed);
+            return moveToHiredPath(villager, path, approach, speed, 0);
         }
         if (villager.distanceToSqr(approach.getCenter()) <= 16.0D) {
             villager.getMoveControl().setWantedPosition(approach.getX() + 0.5D, approach.getY(), approach.getZ() + 0.5D, speed);
@@ -602,7 +643,7 @@ public final class VillagerTaskNavigationUtil {
             return true;
         }
         Path path = villager.getNavigation().createPath(target, 0);
-        if (path != null && path.canReach() && villager.getNavigation().moveTo(path, speed)) {
+        if (path != null && path.canReach() && moveToHiredPath(villager, path, target, speed, 0)) {
             return true;
         }
         if (moveTowardNearbyLadderThenClimb(level, villager, target, speed)) {
@@ -755,12 +796,7 @@ public final class VillagerTaskNavigationUtil {
     }
 
     private static void stopNavigationPath(Villager villager) {
-        if (!villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
-        }
-        Brain<Villager> brain = villager.getBrain();
-        brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+        stopHiredNavigation(villager);
     }
 
     public static void clearRuntimeState() {
@@ -769,7 +805,7 @@ public final class VillagerTaskNavigationUtil {
         RECENT_LADDER_DISMOUNTS.clear();
         LADDER_SEARCHES.clear();
         SURFACE_ESCAPE_SEARCHES.clear();
-        WATER_PATH_SETTINGS.clear();
+        HIRED_NAVIGATION_SETTINGS.clear();
         WATER_MOVEMENT_PROGRESS.clear();
     }
 
@@ -779,7 +815,7 @@ public final class VillagerTaskNavigationUtil {
         RECENT_LADDER_DISMOUNTS.remove(villager.getUUID());
         LADDER_SEARCHES.remove(villager.getUUID());
         SURFACE_ESCAPE_SEARCHES.remove(villager.getUUID());
-        WATER_PATH_SETTINGS.remove(villager.getUUID());
+        HIRED_NAVIGATION_SETTINGS.remove(villager.getUUID());
         WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
     }
 
@@ -1171,7 +1207,24 @@ public final class VillagerTaskNavigationUtil {
     private record SurfaceEscapeSearch(BlockPos origin, long targetPos, BlockPos escapeTarget, long expiresGameTime) {
     }
 
-    private record WaterPathSettings(float waterMalus, float waterBorderMalus, boolean canFloat) {
+    private record HiredNavigationSettings(Map<PathType, Float> pathMaluses, boolean canFloat) {
+        private static HiredNavigationSettings capture(Villager villager, boolean canFloat) {
+            EnumMap<PathType, Float> pathMaluses = new EnumMap<>(PathType.class);
+            pathMaluses.put(PathType.WATER, villager.getPathfindingMalus(PathType.WATER));
+            pathMaluses.put(PathType.WATER_BORDER, villager.getPathfindingMalus(PathType.WATER_BORDER));
+            pathMaluses.put(PathType.TRAPDOOR, villager.getPathfindingMalus(PathType.TRAPDOOR));
+            pathMaluses.put(PathType.DAMAGE_FIRE, villager.getPathfindingMalus(PathType.DAMAGE_FIRE));
+            pathMaluses.put(PathType.DANGER_FIRE, villager.getPathfindingMalus(PathType.DANGER_FIRE));
+            pathMaluses.put(PathType.DAMAGE_OTHER, villager.getPathfindingMalus(PathType.DAMAGE_OTHER));
+            pathMaluses.put(PathType.DANGER_OTHER, villager.getPathfindingMalus(PathType.DANGER_OTHER));
+            pathMaluses.put(PathType.DANGER_POWDER_SNOW, villager.getPathfindingMalus(PathType.DANGER_POWDER_SNOW));
+            pathMaluses.put(PathType.POWDER_SNOW, villager.getPathfindingMalus(PathType.POWDER_SNOW));
+            pathMaluses.put(PathType.LAVA, villager.getPathfindingMalus(PathType.LAVA));
+            pathMaluses.put(PathType.FENCE, villager.getPathfindingMalus(PathType.FENCE));
+            pathMaluses.put(PathType.LEAVES, villager.getPathfindingMalus(PathType.LEAVES));
+            pathMaluses.put(PathType.DOOR_WOOD_CLOSED, villager.getPathfindingMalus(PathType.DOOR_WOOD_CLOSED));
+            return new HiredNavigationSettings(pathMaluses, canFloat);
+        }
     }
 
     private record WaterMovementProgress(
