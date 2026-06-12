@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.Warnin
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WarningType;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerRow;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus;
+import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.BuilderBuildPhase;
 import com.jvn.villagerretaliation.interaction.work.BuilderTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
@@ -71,10 +72,10 @@ public final class ClipboardWorkforceService {
                         && !noWorkArea
                         && !session.context().isInsideWorkArea(villager.blockPosition());
                 boolean missingTools = brain.taskState() == HiredWorkerTaskState.PAUSED_MISSING_TOOL;
-                boolean materialStorageUnreachable = isBuilderMaterialStorageUnreachable(role, brain);
-                boolean materialInventoryFull = isBuilderMaterialInventoryFull(role, brain);
+                boolean materialStorageUnreachable = isMaterialStorageUnreachable(role, brain);
+                boolean materialInventoryFull = isMaterialInventoryFull(role, brain);
                 boolean buildSiteUnreachable = isBuilderBuildSiteUnreachable(role, brain, session.state());
-                boolean missingMaterials = isBuilderMissingMaterials(role, brain, session.state(), noStorage, materialStorageUnreachable);
+                boolean missingMaterials = isMissingMaterials(role, brain, session.state(), noStorage, materialStorageUnreachable);
                 int dailyWage = HiredVillagerContractService.getContractDailyCost(level, villager, player);
                 boolean unpaid = HiredVillagerContractService.isAwaitingAutoPayment(level, villager);
                 WorkerStatus status = status(
@@ -256,12 +257,20 @@ public final class ClipboardWorkforceService {
                 || scan.contains("no_targets");
     }
 
-    private static boolean isBuilderMissingMaterials(
+    private static boolean isMissingMaterials(
             HiredVillagerRole role,
             HiredWorkerBrain.Snapshot brain,
             CompoundTag state,
             boolean noStorage,
             boolean materialStorageUnreachable) {
+        if (role == HiredVillagerRole.BREWING) {
+            if (noStorage || materialStorageUnreachable) {
+                return false;
+            }
+            String reason = lower(brain.failureReason() + " " + BrewingWorker.blockedReason(state));
+            return reason.contains("missing_brewing_materials")
+                    || reason.contains("interaction.work.brewing.missing_materials");
+        }
         if (role != HiredVillagerRole.BUILDER || noStorage || materialStorageUnreachable) {
             return false;
         }
@@ -270,21 +279,30 @@ public final class ClipboardWorkforceService {
                 || lower(brain.failureReason()).contains("missing_builder_materials");
     }
 
-    private static boolean isBuilderMaterialStorageUnreachable(
-            HiredVillagerRole role,
-            HiredWorkerBrain.Snapshot brain) {
-        return role == HiredVillagerRole.BUILDER
-                && lower(brain.failureReason()).contains("builder_material_storage_unreachable");
-    }
-
-    private static boolean isBuilderMaterialInventoryFull(
+    private static boolean isMaterialStorageUnreachable(
             HiredVillagerRole role,
             HiredWorkerBrain.Snapshot brain) {
         String failure = lower(brain.failureReason());
-        return role == HiredVillagerRole.BUILDER
-                && (failure.contains("builder_material_inventory_full")
-                || failure.contains("builder_material_output_slot_full")
-                || failure.contains("builder_material_output_storage_unreachable"));
+        return switch (role) {
+            case BREWING -> failure.contains("brewing_storage_path_failed");
+            case BUILDER -> failure.contains("builder_material_storage_unreachable");
+            default -> false;
+        };
+    }
+
+    private static boolean isMaterialInventoryFull(
+            HiredVillagerRole role,
+            HiredWorkerBrain.Snapshot brain) {
+        String failure = lower(brain.failureReason());
+        return switch (role) {
+            case BREWING -> failure.contains("brewing_material_inventory_full")
+                    || failure.contains("brewing_water_bottle_space")
+                    || failure.contains("brewing_output_full_after_brew");
+            case BUILDER -> failure.contains("builder_material_inventory_full")
+                    || failure.contains("builder_material_output_slot_full")
+                    || failure.contains("builder_material_output_storage_unreachable");
+            default -> false;
+        };
     }
 
     private static boolean isBuilderBuildSiteUnreachable(
@@ -309,6 +327,16 @@ public final class ClipboardWorkforceService {
             boolean materialStorageUnreachable,
             boolean materialInventoryFull,
             boolean buildSiteUnreachable) {
+        if (role == HiredVillagerRole.BREWING) {
+            return brewingDiagnostic(
+                    brain,
+                    state,
+                    inventoryFull,
+                    noStorage,
+                    missingMaterials,
+                    materialStorageUnreachable,
+                    materialInventoryFull);
+        }
         if (role != HiredVillagerRole.BUILDER) {
             return "";
         }
@@ -392,6 +420,60 @@ public final class ClipboardWorkforceService {
         }
         if (reason.contains("placement_failed")) {
             return "The next construction block failed to place; check collision, support, or protection at the target.";
+        }
+        return "";
+    }
+
+    private static String brewingDiagnostic(
+            HiredWorkerBrain.Snapshot brain,
+            CompoundTag state,
+            boolean inventoryFull,
+            boolean noStorage,
+            boolean missingMaterials,
+            boolean materialStorageUnreachable,
+            boolean materialInventoryFull) {
+        String reason = lower(brain.failureReason() + " " + BrewingWorker.blockedReason(state));
+        String missing = BrewingWorker.missingMaterials(state);
+        if (materialInventoryFull) {
+            return limitDiagnostic(missing == null || missing.isBlank()
+                    ? "Brewer needs room in the job inventory before it can carry brewing materials."
+                    : "Brewer needs room in the job inventory for: " + missing + ".");
+        }
+        if (materialStorageUnreachable) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return limitDiagnostic(storagePos == null
+                    ? "Brewer found required materials in assigned input storage, but cannot path to that container."
+                    : "Brewer found required materials in assigned input storage at "
+                            + HiredWorkerBrain.formatPos(storagePos) + ", but cannot path to it.");
+        }
+        if (missingMaterials) {
+            return limitDiagnostic(missing == null || missing.isBlank()
+                    ? "Brewer is missing materials for the current potion order."
+                    : "Brewer is missing brewing materials: " + missing + ".");
+        }
+        if (noStorage && reason.contains("missing_brewing")) {
+            return "Brewer needs assigned input storage or carried supplies for the current potion order.";
+        }
+        if (reason.contains("no_brewing_stand")) {
+            return "Brewer needs a brewing stand inside the assigned work area.";
+        }
+        if (reason.contains("brewing_stand_path_failed") || reason.contains("brewing_stand_unreachable")) {
+            return "Brewer cannot path to the brewing stand inside the assigned work area.";
+        }
+        if (reason.contains("brewing_water_source_path_failed") || reason.contains("brewing_water_source_unreachable")) {
+            return "Brewer cannot path to the water source for filling bottles.";
+        }
+        if (reason.contains("brewing_stand_wrong_ingredient")) {
+            return "Brewing stand has an ingredient that does not match the active order.";
+        }
+        if (reason.contains("brewing_stand_wrong_fuel")) {
+            return "Brewing stand fuel slot has something other than blaze powder.";
+        }
+        if (reason.contains("brewing_stand_blocked")) {
+            return "Brewing stand bottle slots contain potions from another recipe.";
+        }
+        if (inventoryFull) {
+            return "Brewer inventory is full and output storage cannot take more items right now.";
         }
         return "";
     }

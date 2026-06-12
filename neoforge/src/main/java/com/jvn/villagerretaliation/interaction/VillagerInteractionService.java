@@ -548,13 +548,17 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.brewing.choose_amount");
             return;
         }
+        CompoundTag state = HiredVillagerWorkService.state(villager);
+        HiredVillagerWorkService.initializeDefaults(state, villager);
+        if (BrewingWorker.hasOrder(state)) {
+            sendVillagerNotice(player, villager, "interaction.work.brewing.already_brewing");
+            return;
+        }
         Optional<HiredBrewingRecipeCatalog.BrewingRoute> route = HiredBrewingRecipeCatalog.find(level, itemId, potionId);
         if (route.isEmpty()) {
             sendVillagerNotice(player, villager, "interaction.work.brewing.unknown_recipe");
             return;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
         BrewingWorker.setOrder(state, itemId, potionId, amount, continuous);
         String quantity = continuous ? "continuously" : Integer.toString(amount);
         HiredVillagerWorkService.stopWork(

@@ -299,6 +299,18 @@ public final class AssignedStorageService {
         return nearestAssignedStoragePosContaining(level, villager, predicate, StorageUse.INPUT);
     }
 
+    public static List<BlockPos> assignedStoragePositionsContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate) {
+        return assignedStoragePositionsContaining(
+                level,
+                villager,
+                predicate,
+                ignored -> true,
+                StorageUse.INPUT);
+    }
+
     public static BlockPos nearestAssignedNonPaymentStoragePosContaining(
             ServerLevel level,
             Villager villager,

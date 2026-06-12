@@ -244,6 +244,12 @@
       ]
     },
     {
+      "key": "interaction.work.brewing.already_brewing",
+      "lines": [
+        "I already have a brewing order running. Stop it before choosing another."
+      ]
+    },
+    {
       "key": "interaction.work.brewing.order_summary",
       "lines": [
         "Brewing {amount} x {item}."

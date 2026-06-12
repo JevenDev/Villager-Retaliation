@@ -41,6 +41,8 @@ public final class BrewingWorker extends AbstractBlockWorker {
     private static final String CACHED_WATER_POS_TAG = "BrewingCachedWaterPos";
     private static final String NEXT_STAND_SCAN_GAME_TIME_TAG = "NextBrewingStandScanGameTime";
     private static final String NEXT_WATER_SCAN_GAME_TIME_TAG = "NextBrewingWaterScanGameTime";
+    private static final String MISSING_MATERIALS_TAG = "BrewingMissingMaterials";
+    private static final String BLOCKED_REASON_TAG = "BrewingBlockedReason";
     private static final long FACILITY_SCAN_COOLDOWN_TICKS = 100L;
     private static final int FUEL_USES_PER_BLAZE_POWDER = 20;
     private static final int FIRST_BOTTLE_SLOT = 0;
@@ -48,6 +50,8 @@ public final class BrewingWorker extends AbstractBlockWorker {
     private static final int INGREDIENT_SLOT = 3;
     private static final int FUEL_SLOT = 4;
     private static final int MAX_FACILITY_PATH_ATTEMPTS = 12;
+    private static final int BREWING_STAND_APPROACH_SEARCH_RADIUS = 4;
+    private static final double BREWING_STAND_BODY_REACH_SQR = 16.0D;
 
     @Override
     public HiredVillagerRole role() {
@@ -60,6 +64,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         state.putInt(REMAINING_TAG, Math.max(0, amount));
         state.putBoolean(CONTINUOUS_TAG, continuous);
         state.remove("NextWorkGameTime");
+        clearBrewingBlocked(state);
     }
 
     public static boolean hasOrder(CompoundTag state) {
@@ -84,6 +89,14 @@ public final class BrewingWorker extends AbstractBlockWorker {
                         "amount", state.getBoolean(CONTINUOUS_TAG) ? "continuously" : Integer.toString(state.getInt(REMAINING_TAG)),
                         "item", route.output().getHoverName().getString()))
                 .orElse(Map.of());
+    }
+
+    public static String missingMaterials(CompoundTag state) {
+        return state.getString(MISSING_MATERIALS_TAG);
+    }
+
+    public static String blockedReason(CompoundTag state) {
+        return state.getString(BLOCKED_REASON_TAG);
     }
 
     @Override
@@ -153,23 +166,30 @@ public final class BrewingWorker extends AbstractBlockWorker {
 
         MaterialPlan materials = MaterialPlan.create(level, villager, context, route, waterSource, standPlan);
         if (!materials.hasEverything()) {
+            WorkResult gatheredPartialMaterials = gatherBrewingMaterials(level, villager, context, materials);
+            if (gatheredPartialMaterials != null) {
+                context.setProgressTicks(0);
+                return gatheredPartialMaterials;
+            }
             context.setProgressTicks(0);
+            setBrewingBlocked(context, "missing_brewing_materials", materials.missingMaterials());
             HiredWorkerBrain.setFailure(context, materials.missingStatus(), level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
             return WorkResult.idle(materials.missingStatus());
         }
+        clearBrewingBlocked(context);
         WorkResult gatheredMaterials = gatherBrewingMaterials(level, villager, context, materials);
         if (gatheredMaterials != null) {
             context.setProgressTicks(0);
             return gatheredMaterials;
         }
-        WorkResult preparedInputs = prepareBrewingInputs(level, context, route, standPlan);
+        WorkResult preparedInputs = prepareBrewingInputs(level, context, route, standPlan, materials);
         if (preparedInputs != null) {
             context.setProgressTicks(0);
             swingWorkTool(villager);
             return preparedInputs;
         }
-        if (waterSource && materials.missingCarriedWaterBottles(context) > 0) {
+        if (materials.shouldFillWaterBottles() && materials.missingCarriedWaterBottles(context) > 0) {
             WorkResult waterResult = moveToWaterSourceAndFill(level, villager, context, water, materials.waterBottleCount());
             if (waterResult != null) {
                 context.setProgressTicks(0);
@@ -181,17 +201,24 @@ public final class BrewingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             return WorkResult.idle("interaction.work.brewing.missing_materials");
         }
-        HiredPathTarget target = bestWorkTarget(level, villager, context, stand);
+        HiredPathTarget target = bestBrewingStandTarget(level, villager, context, stand);
         if (target == null) {
+            context.setProgressTicks(0);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, stand);
+            if (moveNearBrewingStand(level, villager, context, stand, 0.45D)) {
+                return WorkResult.progressed("interaction.work.brewing.moving_to_stand");
+            }
             HiredWorkerBrain.setFailure(context, "brewing_stand_unreachable", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, stand);
             return WorkResult.idle("interaction.work.brewing.stand_unreachable");
         }
-        prepareBreakingTarget(level, context, villager, target);
-        if (!canWorkFromCurrentPosition(level, villager, context, target)) {
+        if (storedWorkTarget(context.state()) != null) {
+            clearActiveBreakingTarget(level, context, villager);
+        }
+        if (!canUseBrewingStandFromCurrentPosition(level, villager, context, stand)) {
             context.setProgressTicks(0);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, stand);
-            if (!moveToTarget(level, villager, context, target, 0.45D)
+            if (!moveToBrewingStandTarget(level, villager, context, target, 0.45D)
                     && !moveNearBrewingStand(level, villager, context, stand, 0.45D)) {
                 if (recordWorkPathFailure(level, villager, stand)) {
                     HiredWorkerBrain.setFailure(context, "brewing_stand_path_failed", level.getGameTime() + 20L * 30L);
@@ -209,6 +236,65 @@ public final class BrewingWorker extends AbstractBlockWorker {
 
         context.setProgressTicks(0);
         return workBrewingStand(level, villager, context, route, standPlan.targetBottleCount(), standPlan.collectLimit(context.state()), stand);
+    }
+
+    private boolean moveToBrewingStandTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredPathTarget target,
+            double speed) {
+        if (!context.isInsideWorkArea(target.blockPos())
+                || !context.isInsideWorkArea(target.approachPos())
+                || !context.isLoaded(level, target.blockPos())
+                || !context.isLoaded(level, target.approachPos())) {
+            return false;
+        }
+        if (canUseBrewingStandFromCurrentPosition(level, villager, context, target.blockPos())) {
+            holdWorkPosition(villager, target);
+            return true;
+        }
+        if (!context.isInsideWorkArea(villager.blockPosition())) {
+            stopWorkNavigation(villager);
+            return false;
+        }
+
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (!villager.getNavigation().isDone() && target.approachPos().equals(navigationTarget)) {
+            if (HiredPathMemory.isNavigationBlocked(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()))) {
+                stopWorkNavigation(villager);
+                return false;
+            }
+            return true;
+        }
+
+        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        if (path != null
+                && path.canReach()
+                && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)
+                && VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target.approachPos(), speed, 0)) {
+            HiredPathMemory.rememberNavigationProgress(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()));
+            return true;
+        }
+        if (villager.distanceToSqr(target.approachPos().getCenter()) <= 2.25D
+                && settleIntoApproach(villager, target, speed)) {
+            HiredPathMemory.rememberNavigationProgress(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()));
+            return true;
+        }
+        HiredPathMemory.clearNavigationProgress(villager);
+        return false;
     }
 
     private static boolean moveNearBrewingStand(
@@ -253,6 +339,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             }
         }
         candidates.sort(Comparator.comparingDouble(FacilityCandidate::score));
+        BlockPos fallback = candidates.isEmpty() ? null : candidates.getFirst().pos();
         int attempts = 0;
         for (FacilityCandidate candidate : candidates) {
             double score = brewingStandPathScore(level, villager, context, candidate.pos());
@@ -268,6 +355,11 @@ public final class BrewingWorker extends AbstractBlockWorker {
             }
         }
         if (best == null) {
+            if (fallback != null) {
+                state.putLong(CACHED_STAND_POS_TAG, fallback.asLong());
+                state.remove(NEXT_STAND_SCAN_GAME_TIME_TAG);
+                return fallback;
+            }
             state.putLong(NEXT_STAND_SCAN_GAME_TIME_TAG, level.getGameTime() + FACILITY_SCAN_COOLDOWN_TICKS);
         } else {
             state.putLong(CACHED_STAND_POS_TAG, best.asLong());
@@ -284,19 +376,13 @@ public final class BrewingWorker extends AbstractBlockWorker {
         if (stand == null) {
             return Double.MAX_VALUE;
         }
-        if (context.isInsideWorkArea(villager.blockPosition())
-                && villager.position().distanceToSqr(stand.getCenter()) <= HiredMoveToBlockFaceJob.MAX_REACH_SQR) {
-            return villager.distanceToSqr(stand.getCenter());
+        HiredPathTarget target = bestBrewingStandTarget(level, villager, context, stand);
+        if (target == null) {
+            return Double.MAX_VALUE;
         }
-        HiredPathResult result = new HiredMoveToBlockFaceJob(
-                level,
-                villager,
-                List.of(stand),
-                8,
-                context::isInsideWorkArea).search();
-        return result.reachesDestination()
-                ? result.score() + villager.distanceToSqr(stand.getCenter()) * 0.05D
-                : Double.MAX_VALUE;
+        return villager.distanceToSqr(target.approachPos().getCenter())
+                + HiredMoveToBlockFaceJob.terrainCost(level, target.approachPos())
+                + HiredPathMemory.recentCost(villager, stand);
     }
 
     private static BlockPos nearestWaterSource(
@@ -328,6 +414,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             }
         }
         candidates.sort(Comparator.comparingDouble(FacilityCandidate::score));
+        BlockPos fallback = candidates.isEmpty() ? null : candidates.getFirst().pos();
         int attempts = 0;
         for (FacilityCandidate candidate : candidates) {
             double score = waterPathScore(level, villager, context, candidate.pos(), stand);
@@ -343,6 +430,11 @@ public final class BrewingWorker extends AbstractBlockWorker {
             }
         }
         if (best == null) {
+            if (fallback != null) {
+                state.putLong(CACHED_WATER_POS_TAG, fallback.asLong());
+                state.remove(NEXT_WATER_SCAN_GAME_TIME_TAG);
+                return fallback;
+            }
             state.putLong(NEXT_WATER_SCAN_GAME_TIME_TAG, level.getGameTime() + FACILITY_SCAN_COOLDOWN_TICKS);
         } else {
             state.putLong(CACHED_WATER_POS_TAG, best.asLong());
@@ -417,6 +509,25 @@ public final class BrewingWorker extends AbstractBlockWorker {
         state.remove(TARGET_POTION_TAG);
         state.remove(REMAINING_TAG);
         state.remove(CONTINUOUS_TAG);
+        clearBrewingBlocked(state);
+    }
+
+    private static void setBrewingBlocked(HiredWorkContext context, String reason, String missingMaterials) {
+        context.state().putString(BLOCKED_REASON_TAG, reason == null ? "" : reason);
+        if (missingMaterials == null || missingMaterials.isBlank()) {
+            context.state().remove(MISSING_MATERIALS_TAG);
+        } else {
+            context.state().putString(MISSING_MATERIALS_TAG, missingMaterials);
+        }
+    }
+
+    private static void clearBrewingBlocked(HiredWorkContext context) {
+        clearBrewingBlocked(context.state());
+    }
+
+    private static void clearBrewingBlocked(CompoundTag state) {
+        state.remove(BLOCKED_REASON_TAG);
+        state.remove(MISSING_MATERIALS_TAG);
     }
 
     private WorkResult moveToWaterSourceAndFill(
@@ -499,6 +610,105 @@ public final class BrewingWorker extends AbstractBlockWorker {
         return best;
     }
 
+    private static HiredPathTarget bestBrewingStandTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos stand) {
+        if (stand == null || !isValidBrewingStand(level, context, stand)) {
+            return null;
+        }
+        Vec3 currentHit = brewingStandHitFrom(level, villager, villager.getEyePosition(), stand);
+        if (canUseBrewingStandFromCurrentPosition(level, villager, context, stand, currentHit)) {
+            return new HiredPathTarget(stand.immutable(), villager.blockPosition().immutable(), currentHit);
+        }
+
+        HiredPathTarget best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (BlockPos raw : BlockPos.betweenClosed(
+                stand.offset(-BREWING_STAND_APPROACH_SEARCH_RADIUS, -2, -BREWING_STAND_APPROACH_SEARCH_RADIUS),
+                stand.offset(BREWING_STAND_APPROACH_SEARCH_RADIUS, 2, BREWING_STAND_APPROACH_SEARCH_RADIUS))) {
+            BlockPos candidate = raw.immutable();
+            if (!context.isInsideWorkArea(candidate)
+                    || candidate.equals(villager.blockPosition())
+                    || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)
+                    || HiredPathMemory.isAvoided(level, villager, candidate)) {
+                continue;
+            }
+            Vec3 eye = new Vec3(
+                    candidate.getX() + 0.5D,
+                    candidate.getY() + villager.getEyeHeight(),
+                    candidate.getZ() + 0.5D);
+            Vec3 hit = brewingStandHitFrom(level, villager, eye, stand);
+            if (!canUseBrewingStandFrom(level, candidate, eye, stand, hit)) {
+                continue;
+            }
+            Path path = villager.getNavigation().createPath(candidate, 0);
+            if (path == null
+                    || !path.canReach()
+                    || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
+                continue;
+            }
+            double score = villager.distanceToSqr(candidate.getCenter())
+                    + HiredMoveToBlockFaceJob.pathTraversalCost(level, path)
+                    + HiredMoveToBlockFaceJob.terrainCost(level, candidate)
+                    + HiredPathMemory.recentCost(villager, stand);
+            if (score < bestScore) {
+                bestScore = score;
+                best = new HiredPathTarget(stand.immutable(), candidate, hit);
+            }
+        }
+        return best;
+    }
+
+    private static boolean canUseBrewingStandFromCurrentPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos stand) {
+        return canUseBrewingStandFromCurrentPosition(
+                level,
+                villager,
+                context,
+                stand,
+                brewingStandHitFrom(level, villager, villager.getEyePosition(), stand));
+    }
+
+    private static boolean canUseBrewingStandFromCurrentPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos stand,
+            Vec3 hit) {
+        return context.isInsideWorkArea(villager.blockPosition())
+                && isValidBrewingStand(level, context, stand)
+                && canUseBrewingStandFrom(level, villager.blockPosition(), villager.getEyePosition(), stand, hit);
+    }
+
+    private static boolean canUseBrewingStandFrom(
+            ServerLevel level,
+            BlockPos bodyPos,
+            Vec3 eye,
+            BlockPos stand,
+            Vec3 hit) {
+        return hit != null
+                && level.hasChunkAt(stand)
+                && eye.distanceToSqr(hit) <= HiredMoveToBlockFaceJob.MAX_REACH_SQR
+                && bodyPos.getCenter().distanceToSqr(hit) <= BREWING_STAND_BODY_REACH_SQR;
+    }
+
+    private static Vec3 brewingStandHitFrom(ServerLevel level, Villager villager, Vec3 eye, BlockPos stand) {
+        if (stand == null || !level.hasChunkAt(stand)) {
+            return null;
+        }
+        Vec3 hit = HiredMoveToBlockFaceJob.visibleHitPosition(level, villager, eye, stand);
+        if (hit != null) {
+            return hit;
+        }
+        Vec3 center = Vec3.atCenterOf(stand);
+        return HiredMoveToBlockFaceJob.hasLineOfSightToBlock(level, villager, eye, stand, center) ? center : null;
+    }
+
     private static boolean canUseWaterFromCurrentPosition(Villager villager, BlockPos water) {
         return villager.getEyePosition().distanceToSqr(water.getCenter()) <= HiredMoveToBlockFaceJob.MAX_REACH_SQR
                 && villager.position().distanceToSqr(water.getCenter()) <= 16.0D;
@@ -548,7 +758,8 @@ public final class BrewingWorker extends AbstractBlockWorker {
             ServerLevel level,
             HiredWorkContext context,
             HiredBrewingRecipeCatalog.BrewingRoute route,
-            BrewingStandPlan standPlan) {
+            BrewingStandPlan standPlan,
+            MaterialPlan materials) {
         for (int i = standPlan.nextIngredientIndex(); i < route.ingredients().size(); i++) {
             Item ingredient = route.ingredients().get(i);
             if (countJobItem(context, ingredient) > 0) {
@@ -568,6 +779,17 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.brewing.missing_materials");
             }
             return WorkResult.progressed("interaction.work.brewing.crafted_blaze_powder");
+        }
+        if (materials.shouldFillWaterBottles() && materials.missingCarriedWaterBottles(context) > 0) {
+            int neededGlassBottles = materials.missingCarriedWaterBottles(context);
+            if (countJobItem(context, Items.GLASS_BOTTLE) < neededGlassBottles) {
+                if (!HiredSupplyCrafting.craftCarriedSupplyItem(level, context, Items.GLASS_BOTTLE)) {
+                    HiredWorkerBrain.setFailure(context, "missing_brewing_water_bottles", level.getGameTime() + 100L);
+                    setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+                    return WorkResult.idle("interaction.work.brewing.missing_materials");
+                }
+                return WorkResult.progressed("interaction.work.brewing.crafted_ingredients");
+            }
         }
         return null;
     }
@@ -881,13 +1103,15 @@ public final class BrewingWorker extends AbstractBlockWorker {
             return null;
         }
         if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
+            setBrewingBlocked(context, "missing_brewing_materials", materials.materialsSummary(context));
             HiredWorkerBrain.setFailure(context, "missing_brewing_materials", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             return WorkResult.idle("interaction.work.brewing.missing_materials");
         }
-        StorageNeed firstNeed = needs.getFirst();
-        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, firstNeed.predicate());
+        Predicate<ItemStack> storageNeedFilter = stack -> matchesAnyNeed(needs, stack);
+        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, storageNeedFilter);
         if (storage == null) {
+            setBrewingBlocked(context, "missing_brewing_materials", materials.materialsSummary(context));
             HiredWorkerBrain.setFailure(context, "missing_brewing_materials", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             return WorkResult.idle("interaction.work.brewing.missing_materials");
@@ -905,10 +1129,42 @@ public final class BrewingWorker extends AbstractBlockWorker {
             return WorkResult.progressed("interaction.work.brewing.collecting_materials");
         }
         if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
-            HiredWorkerBrain.setFailure(context, "brewing_storage_path_failed", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
-            return WorkResult.idle("interaction.work.brewing.materials_unreachable");
+            BlockPos failedStorage = storage;
+            for (BlockPos alternateStorage : AssignedStorageService.assignedStoragePositionsContaining(
+                    level,
+                    villager,
+                    storageNeedFilter)) {
+                if (failedStorage.equals(alternateStorage)) {
+                    continue;
+                }
+                HiredWorkerBrain.setStorageTarget(context, alternateStorage);
+                HiredStorageNavigationGoal.Result alternateMoveResult = HiredStorageNavigationGoal.moveToStorageTarget(
+                        level,
+                        context,
+                        villager,
+                        alternateStorage,
+                        0.45D);
+                if (alternateMoveResult == HiredStorageNavigationGoal.Result.MOVING) {
+                    HiredWorkerBrain.clearFailure(context);
+                    setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+                    return WorkResult.progressed("interaction.work.brewing.collecting_materials");
+                }
+                if (alternateMoveResult == HiredStorageNavigationGoal.Result.ARRIVED) {
+                    storage = alternateStorage;
+                    HiredWorkerBrain.setStorageTarget(context, storage);
+                    moveResult = HiredStorageNavigationGoal.Result.ARRIVED;
+                    break;
+                }
+            }
+            if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
+                HiredWorkerBrain.setStorageTarget(context, failedStorage);
+                setBrewingBlocked(context, "brewing_storage_path_failed", materials.materialsSummary(context));
+                HiredWorkerBrain.setFailure(context, "brewing_storage_path_failed", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, failedStorage);
+                return WorkResult.idle("interaction.work.brewing.materials_unreachable");
+            }
         }
+        faceBlock(villager, storage);
         int movedTotal = 0;
         for (StorageNeed need : needs) {
             movedTotal += AssignedStorageService.transferItemsAtAssignedStorage(
@@ -919,14 +1175,29 @@ public final class BrewingWorker extends AbstractBlockWorker {
                     context.inventory()::insertSupply);
         }
         if (movedTotal <= 0) {
+            setBrewingBlocked(context, "brewing_material_inventory_full", materials.materialsSummary(context));
             HiredWorkerBrain.setFailure(context, "brewing_material_inventory_full", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
             return WorkResult.idle("interaction.work.brewing.material_inventory_full");
         }
         HiredStorageNavigationGoal.clearStorageTarget(context);
         HiredWorkerBrain.clearFailure(context);
+        clearBrewingBlocked(context);
+        stopWorkNavigation(villager);
         setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
         return WorkResult.progressed("interaction.work.brewing.gathered_materials");
+    }
+
+    private static boolean matchesAnyNeed(List<StorageNeed> needs, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        for (StorageNeed need : needs) {
+            if (need.predicate().test(stack)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private record BrewingStandPlan(
@@ -1017,10 +1288,10 @@ public final class BrewingWorker extends AbstractBlockWorker {
     private record MaterialPlan(
             Map<Item, Integer> items,
             int waterBottleCount,
-            boolean waterSource,
-            boolean useWaterBottles,
+            boolean fillWaterBottles,
             boolean hasEverything,
-            String missingStatus) {
+            String missingStatus,
+            String missingMaterials) {
         static MaterialPlan create(
                 ServerLevel level,
                 Villager villager,
@@ -1033,34 +1304,49 @@ public final class BrewingWorker extends AbstractBlockWorker {
             for (int i = standPlan.nextIngredientIndex(); i < route.ingredients().size(); i++) {
                 Item ingredient = route.ingredients().get(i);
                 if (!planner.plan(ingredient, 1, items)) {
-                    return missing(items, standPlan.waterBottleCount(), waterSource, false);
+                    return missing(items, standPlan.waterBottleCount(), false, itemLabel(ingredient));
                 }
             }
             if (standPlan.needsFuelForBrewing(route) && planFuel(planner, items) <= 0) {
-                return missing(items, standPlan.waterBottleCount(), waterSource, false);
+                return missing(items, standPlan.waterBottleCount(), false, itemLabel(Items.BLAZE_POWDER));
             }
-            boolean useWaterBottles = standPlan.waterBottleCount() > 0;
-            int availableWaterBottles = countWaterBottles(villager, context);
-            if (waterSource && availableWaterBottles < standPlan.waterBottleCount()) {
-                int missingWaterBottles = standPlan.waterBottleCount() - availableWaterBottles;
+            boolean fillWaterBottles = false;
+            int carriedWaterBottles = countJobWaterBottles(context);
+            if (waterSource && carriedWaterBottles < standPlan.waterBottleCount()) {
+                int missingCarriedWaterBottles = standPlan.waterBottleCount() - carriedWaterBottles;
                 Map<Item, Integer> withGlassBottles = new LinkedHashMap<>(items);
-                if (planner.plan(Items.GLASS_BOTTLE, missingWaterBottles, withGlassBottles)) {
+                if (planner.plan(Items.GLASS_BOTTLE, missingCarriedWaterBottles, withGlassBottles)) {
                     items = withGlassBottles;
+                    fillWaterBottles = true;
                 } else {
-                    return missing(items, standPlan.waterBottleCount(), waterSource, true);
+                    int availableWaterBottles = countWaterBottles(villager, context);
+                    int missingWaterBottles = standPlan.waterBottleCount() - availableWaterBottles;
+                    withGlassBottles = new LinkedHashMap<>(items);
+                    if (missingWaterBottles > 0 && planner.plan(Items.GLASS_BOTTLE, missingWaterBottles, withGlassBottles)) {
+                        items = withGlassBottles;
+                        fillWaterBottles = true;
+                    } else if (availableWaterBottles < standPlan.waterBottleCount()) {
+                        return missing(items, standPlan.waterBottleCount(), false, itemLabel(Items.GLASS_BOTTLE));
+                    }
                 }
-            } else if (!waterSource && availableWaterBottles < standPlan.waterBottleCount()) {
-                return missing(items, standPlan.waterBottleCount(), waterSource, true);
+            } else if (!waterSource && countWaterBottles(villager, context) < standPlan.waterBottleCount()) {
+                return missing(items, standPlan.waterBottleCount(), false, waterBottleLabel());
             }
-            return new MaterialPlan(items, standPlan.waterBottleCount(), waterSource, useWaterBottles, true, "");
+            return new MaterialPlan(items, standPlan.waterBottleCount(), fillWaterBottles, true, "", "");
         }
 
         private static MaterialPlan missing(
                 Map<Item, Integer> items,
                 int waterBottleCount,
-                boolean waterSource,
-                boolean useWaterBottles) {
-            return new MaterialPlan(items, waterBottleCount, waterSource, useWaterBottles, false, "interaction.work.brewing.missing_materials");
+                boolean fillWaterBottles,
+                String missingMaterials) {
+            return new MaterialPlan(
+                    items,
+                    waterBottleCount,
+                    fillWaterBottles,
+                    false,
+                    "interaction.work.brewing.missing_materials",
+                    missingMaterials == null ? "" : missingMaterials);
         }
 
         private static int planFuel(HiredSupplyCrafting.MaterialPlanner planner, Map<Item, Integer> items) {
@@ -1098,25 +1384,47 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 int missing = Math.max(0, entry.getValue() - carried);
                 if (missing > 0) {
                     Item item = entry.getKey();
-                    needs.add(new StorageNeed(stack -> stack.is(item), missing));
+                    needs.add(new StorageNeed(stack -> stack.is(item), missing, itemLabel(item)));
                 }
             }
-            if (this.useWaterBottles) {
+            if (this.waterBottleCount > 0) {
                 int carried = countJobWaterBottles(context);
                 int missing = Math.max(0, this.waterBottleCount - carried);
                 if (missing > 0) {
-                    int plannedGlassBottles = this.items.getOrDefault(Items.GLASS_BOTTLE, 0);
-                    if (this.waterSource && plannedGlassBottles > 0 && countJobItem(context, Items.GLASS_BOTTLE) >= plannedGlassBottles) {
+                    if (this.fillWaterBottles) {
                         return needs;
                     }
-                    needs.add(new StorageNeed(HiredBrewingRecipeCatalog::isWaterPotion, missing));
+                    needs.add(new StorageNeed(HiredBrewingRecipeCatalog::isWaterPotion, missing, waterBottleLabel()));
                 }
             }
             return needs;
         }
 
+        private String materialsSummary(HiredWorkContext context) {
+            if (!this.hasEverything() && !this.missingMaterials().isBlank()) {
+                return this.missingMaterials();
+            }
+            List<StorageNeed> needs = storageNeeds(context);
+            if (needs.isEmpty()) {
+                return this.missingMaterials();
+            }
+            List<String> parts = new ArrayList<>();
+            for (StorageNeed need : needs) {
+                String part = need.count() + " " + need.label();
+                parts.add(part);
+                if (parts.size() >= 4) {
+                    break;
+                }
+            }
+            return String.join(", ", parts);
+        }
+
         private int missingCarriedWaterBottles(HiredWorkContext context) {
             return Math.max(0, this.waterBottleCount - countJobWaterBottles(context));
+        }
+
+        private boolean shouldFillWaterBottles() {
+            return this.fillWaterBottles;
         }
 
         private static int countWaterBottles(Villager villager, HiredWorkContext context) {
@@ -1130,9 +1438,17 @@ public final class BrewingWorker extends AbstractBlockWorker {
         private static int countJobWaterBottles(HiredWorkContext context) {
             return HiredSupplyCrafting.countCarried(context, HiredBrewingRecipeCatalog::isWaterPotion);
         }
+
+        private static String itemLabel(Item item) {
+            return new ItemStack(item).getHoverName().getString();
+        }
+
+        private static String waterBottleLabel() {
+            return PotionContents.createItemStack(Items.POTION, Potions.WATER).getHoverName().getString();
+        }
     }
 
-    private record StorageNeed(Predicate<ItemStack> predicate, int count) {
+    private record StorageNeed(Predicate<ItemStack> predicate, int count, String label) {
     }
 
     private record FacilityCandidate(BlockPos pos, double score) {

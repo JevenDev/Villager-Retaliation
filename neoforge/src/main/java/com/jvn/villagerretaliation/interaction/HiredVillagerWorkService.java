@@ -739,6 +739,7 @@ public final class HiredVillagerWorkService {
         lines.add("Inventory/storage: outputStacks=" + outputStacks
                 + ", outputItems=" + outputItems
                 + ", autoDeposit=" + session.state().getBoolean("AutoDepositOutputs")
+                + ", assignedSupplies=" + session.state().getBoolean("UseAssignedStorageForSupplies")
                 + ", assignedStorage=" + hasAssignedStorage
                 + ", canDepositNow=" + canDepositNow);
         lines.add("Status: " + valueOrNone(snapshot.status()));
