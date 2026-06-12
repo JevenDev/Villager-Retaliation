@@ -30,7 +30,103 @@
     {
       "key": "interaction.work.animal_breeding.output_full_blocked",
       "lines": [
-        "I found eggs to collect, but my output slots are full."
+        "I found animal output to collect, but my output slots are full."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.missing_shears",
+      "lines": [
+        "I found sheep ready for shearing, but I need shears in my supplies."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.missing_bucket",
+      "lines": [
+        "I found an animal ready for milking, but I need an empty bucket in my supplies."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.collecting_shears",
+      "lines": [
+        "I am heading to assigned storage for shears."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.collecting_bucket",
+      "lines": [
+        "I am heading to assigned storage for an empty bucket."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.gathered_shears",
+      "lines": [
+        "I gathered shears from assigned storage."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.gathered_bucket",
+      "lines": [
+        "I gathered an empty bucket from assigned storage."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.product_supply_unreachable",
+      "lines": [
+        "I found animal-handling supplies in storage, but I cannot reach them."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.product_supply_inventory_full",
+      "lines": [
+        "I found animal-handling supplies, but my supply slots are full."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.product_unreachable",
+      "lines": [
+        "I found an animal ready for handling, but I cannot reach it safely."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.product_changed",
+      "lines": [
+        "That animal is no longer ready."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.moving_to_sheep",
+      "lines": [
+        "I am moving to a sheep ready for shearing."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.moving_to_milk",
+      "lines": [
+        "I am moving to an animal ready for milking."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.shearing",
+      "lines": [
+        "I am shearing the sheep."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.milking",
+      "lines": [
+        "I am milking the animal."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.sheared_sheep",
+      "lines": [
+        "I sheared {count} wool from the sheep."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.milked_animal",
+      "lines": [
+        "I milked {target}."
       ]
     },
     {

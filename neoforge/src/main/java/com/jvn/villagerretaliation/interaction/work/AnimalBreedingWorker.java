@@ -16,11 +16,19 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.pathfinder.Path;
@@ -29,8 +37,10 @@ import net.minecraft.world.phys.Vec3;
 
 public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private static final double BREEDING_REACH_SQR = 9.0D;
+    private static final double HANDLING_REACH_SQR = 9.0D;
     private static final double EGG_PICKUP_REACH_SQR = 2.25D;
     private static final int BREEDING_WORK_TICKS = 3;
+    private static final int PRODUCT_WORK_TICKS = 3;
     private static final int VANILLA_PARENT_BREEDING_COOLDOWN_TICKS = 6000;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
     private static final String NEXT_ANIMAL_SCAN_GAME_TIME_TAG = "NextAnimalBreedingScanGameTime";
@@ -56,14 +66,21 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
         BreedingSearch search = findBreedingPair(level, villager, context);
         if (search.pair() == null) {
+            AnimalProductTarget productTarget = findAnimalProductTarget(level, villager, context);
+            if (productTarget != null) {
+                WorkResult productResult = handleAnimalProduct(level, villager, context, productTarget);
+                if (productResult != null) {
+                    return productResult;
+                }
+            }
             context.setProgressTicks(0);
+            HiredWorkerBrain.setLastTargetScanResult(context, search.scannedRecently() ? "animal_scan_cooldown" : "no_breedable_pairs");
             if (search.hasPairWithoutFood()) {
                 HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
                 HiredWorkerBrain.setLastTargetScanResult(context, "missing_breeding_food");
                 setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
                 return WorkResult.idle("interaction.work.animal_breeding.missing_food");
             }
-            HiredWorkerBrain.setLastTargetScanResult(context, search.scannedRecently() ? "animal_scan_cooldown" : "no_breedable_pairs");
             if (roamInsideWorkArea(level, villager, context, 0.35D)) {
                 return WorkResult.progressed("interaction.work.animal_breeding.roaming");
             }
@@ -228,6 +245,197 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         return WorkResult.progressed("interaction.work.animal_breeding.gathered_food");
     }
 
+    private WorkResult handleAnimalProduct(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            AnimalProductTarget target) {
+        if (!canStoreProductOutputs(context, target)) {
+            DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
+            if (depositResult == DepositResult.DEPOSITED) {
+                return WorkResult.progressed("interaction.work.animal_breeding.output_full_depositing");
+            }
+            if (depositResult == DepositResult.MOVING) {
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+                return WorkResult.progressed("interaction.work.animal_breeding.output_full_depositing");
+            }
+            if (depositResult == DepositResult.STORAGE_FULL) {
+                return WorkResult.idle(storageFullStatus(context));
+            }
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, target.animal().blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
+        }
+
+        WorkResult gatheredSupply = gatherAnimalHandlingSupply(level, villager, context, target);
+        if (gatheredSupply != null) {
+            return gatheredSupply;
+        }
+
+        if (!canHandleProductFromCurrentPosition(villager, context, target.animal())) {
+            context.setProgressTicks(0);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target.animal().blockPosition());
+            if (!moveToAnimal(level, villager, context, target.animal(), 0.45D)) {
+                HiredWorkerBrain.setFailure(context, "animal_product_target_unreachable", level.getGameTime() + 20L * 30L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.animal().blockPosition());
+                return WorkResult.idle("interaction.work.animal_breeding.product_unreachable");
+            }
+            return WorkResult.progressed(target.movingMessageKey());
+        }
+
+        stopWorkNavigation(villager);
+        faceAnimal(villager, target.animal());
+        HiredWorkerBrain.clearFailure(context);
+        HiredWorkerBrain.setLastTargetScanResult(context, target.scanResult());
+        setTaskState(context, HiredWorkerTaskState.WORKING, target.animal().blockPosition());
+
+        int progress = context.progressTicks() + 1;
+        if (progress < PRODUCT_WORK_TICKS) {
+            context.setProgressTicks(progress);
+            swingWorkTool(villager);
+            return WorkResult.progressed(target.workingMessageKey());
+        }
+
+        context.setProgressTicks(0);
+        return switch (target.kind()) {
+            case SHEAR -> shearSheep(level, villager, context, target.sheep());
+            case MILK -> milkAnimal(level, villager, context, target.animal());
+        };
+    }
+
+    private WorkResult gatherAnimalHandlingSupply(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            AnimalProductTarget target) {
+        if (HiredSupplyCrafting.countCarried(context, target.supplyPredicate()) > 0) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
+            return null;
+        }
+        if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
+            HiredWorkerBrain.setFailure(context, target.missingSupplyFailure(), level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target.animal().blockPosition());
+            return WorkResult.idle(target.missingSupplyMessageKey());
+        }
+        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, target.supplyPredicate());
+        if (storage == null) {
+            HiredWorkerBrain.setFailure(context, target.missingSupplyFailure(), level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target.animal().blockPosition());
+            return WorkResult.idle(target.missingSupplyMessageKey());
+        }
+
+        HiredWorkerBrain.setStorageTarget(context, storage);
+        HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
+                level,
+                context,
+                villager,
+                storage,
+                0.45D);
+        if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+            return WorkResult.progressed(target.collectingSupplyMessageKey());
+        }
+        if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
+            HiredWorkerBrain.setFailure(context, "animal_product_storage_path_failed", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
+            return WorkResult.idle("interaction.work.animal_breeding.product_supply_unreachable");
+        }
+
+        int moved = AssignedStorageService.transferFirstMatchingStackAtAssignedStorage(
+                villager,
+                storage,
+                target.supplyPredicate(),
+                context.inventory()::insertSupply);
+        if (moved <= 0) {
+            HiredWorkerBrain.setFailure(context, "animal_product_supply_inventory_full", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
+            return WorkResult.idle("interaction.work.animal_breeding.product_supply_inventory_full");
+        }
+        HiredStorageNavigationGoal.clearStorageTarget(context);
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+        return WorkResult.progressed(target.gatheredSupplyMessageKey());
+    }
+
+    private WorkResult shearSheep(ServerLevel level, Villager villager, HiredWorkContext context, Sheep sheep) {
+        if (sheep == null || !sheep.readyForShearing()) {
+            HiredWorkerBrain.setFailure(context, "animal_product_target_changed", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, sheep == null ? villager.blockPosition() : sheep.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.product_changed");
+        }
+        int shearsSlot = firstSupplySlot(context, stack -> stack.is(Items.SHEARS));
+        if (shearsSlot < 0) {
+            HiredWorkerBrain.setFailure(context, "missing_shears", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, sheep.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.missing_shears");
+        }
+
+        int woolCount = 1 + level.random.nextInt(3);
+        ItemStack wool = new ItemStack(woolItem(sheep.getColor()), woolCount);
+        if (!context.canStoreOutputs(List.of(wool))) {
+            DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
+            if (depositResult == DepositResult.DEPOSITED || depositResult == DepositResult.MOVING) {
+                return WorkResult.progressed("interaction.work.animal_breeding.output_full_depositing");
+            }
+            if (depositResult == DepositResult.STORAGE_FULL) {
+                return WorkResult.idle(storageFullStatus(context));
+            }
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, sheep.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
+        }
+        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, wool);
+        if (!remainder.isEmpty()) {
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, sheep.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
+        }
+        sheep.setSheared(true);
+        level.playSound(null, sheep, SoundEvents.SHEEP_SHEAR, SoundSource.NEUTRAL, 1.0F, 1.0F);
+        damageSupplyItem(context, shearsSlot, villager);
+        swingWorkTool(villager);
+        setTaskState(context, HiredWorkerTaskState.IDLE, sheep.blockPosition());
+        return WorkResult.completed(
+                "interaction.work.animal_breeding.sheared_sheep",
+                java.util.Map.of("count", Integer.toString(wool.getCount())));
+    }
+
+    private WorkResult milkAnimal(ServerLevel level, Villager villager, HiredWorkContext context, Animal animal) {
+        if (!isMilkable(animal)) {
+            HiredWorkerBrain.setFailure(context, "animal_product_target_changed", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, animal == null ? villager.blockPosition() : animal.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.product_changed");
+        }
+        if (context.inventory().consumeSupply(stack -> stack.is(Items.BUCKET), 1) <= 0) {
+            HiredWorkerBrain.setFailure(context, "missing_bucket", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, animal.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.missing_bucket");
+        }
+
+        ItemStack milk = new ItemStack(Items.MILK_BUCKET);
+        if (!context.canStoreOutputs(List.of(milk))) {
+            context.inventory().insertSupply(new ItemStack(Items.BUCKET));
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, animal.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
+        }
+        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, milk);
+        if (!remainder.isEmpty()) {
+            context.inventory().insertSupply(new ItemStack(Items.BUCKET));
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, animal.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
+        }
+        level.playSound(null, animal, milkingSound(animal), SoundSource.NEUTRAL, 1.0F, 1.0F);
+        swingWorkTool(villager);
+        setTaskState(context, HiredWorkerTaskState.IDLE, animal.blockPosition());
+        return WorkResult.completed(
+                "interaction.work.animal_breeding.milked_animal",
+                java.util.Map.of("target", HiredAnimalBreedingTargets.label(typeId(animal))));
+    }
+
     private WorkResult collectGroundEggs(ServerLevel level, Villager villager, HiredWorkContext context) {
         ItemEntity egg = findNearestGroundEgg(level, villager, context);
         if (egg == null) {
@@ -357,6 +565,47 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 && !HiredPathMemory.isAvoided(level, villager, pos);
     }
 
+    private AnimalProductTarget findAnimalProductTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
+        Set<ResourceLocation> selectedTargets = HiredAnimalBreedingTargets.selectedTargetIds(context.state());
+        AABB bounds = workAreaBounds(context);
+        List<Animal> animals = new ArrayList<>(level.getEntitiesOfClass(
+                Animal.class,
+                bounds,
+                animal -> isEligibleProductAnimal(level, context, villager, animal, selectedTargets)));
+        animals.sort(Comparator.comparingDouble(villager::distanceToSqr));
+        for (Animal animal : animals) {
+            if (animal instanceof Sheep sheep && sheep.readyForShearing()) {
+                return AnimalProductTarget.shearing(sheep);
+            }
+            if (isMilkable(animal)) {
+                return AnimalProductTarget.milking(animal);
+            }
+        }
+        return null;
+    }
+
+    private boolean canStoreProductOutputs(HiredWorkContext context, AnimalProductTarget target) {
+        return switch (target.kind()) {
+            case SHEAR -> context.hasOutputSpace();
+            case MILK -> context.canStoreOutputs(List.of(new ItemStack(Items.MILK_BUCKET)));
+        };
+    }
+
+    private static boolean isEligibleProductAnimal(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            Animal animal,
+            Set<ResourceLocation> selectedTargets) {
+        return animal.isAlive()
+                && !animal.isBaby()
+                && context.isInsideWorkArea(animal.blockPosition())
+                && context.isLoaded(level, animal.blockPosition())
+                && !HiredPathMemory.isAvoided(level, villager, animal.blockPosition())
+                && HiredAnimalBreedingTargets.matches(animal, selectedTargets)
+                && (animal instanceof Sheep sheep && sheep.readyForShearing() || isMilkable(animal));
+    }
+
     private static void rememberHandledAnimals(HiredWorkContext context, long gameTime, Animal first, Animal second) {
         long cooldownUntil = gameTime + VANILLA_PARENT_BREEDING_COOLDOWN_TICKS;
         UUID firstId = first.getUUID();
@@ -450,6 +699,13 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 && villager.distanceToSqr(pair.first()) <= BREEDING_REACH_SQR;
     }
 
+    private boolean canHandleProductFromCurrentPosition(Villager villager, HiredWorkContext context, Animal animal) {
+        return animal != null
+                && context.isInsideWorkArea(villager.blockPosition())
+                && context.isInsideWorkArea(animal.blockPosition())
+                && villager.distanceToSqr(animal) <= HANDLING_REACH_SQR;
+    }
+
     private boolean moveToAnimal(
             ServerLevel level,
             Villager villager,
@@ -505,9 +761,136 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         return net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(animal.getType());
     }
 
+    private static boolean isMilkable(Animal animal) {
+        return animal instanceof Cow || animal instanceof Goat;
+    }
+
+    private static net.minecraft.sounds.SoundEvent milkingSound(Animal animal) {
+        return animal instanceof Goat ? SoundEvents.GOAT_MILK : SoundEvents.COW_MILK;
+    }
+
+    private static int firstSupplySlot(HiredWorkContext context, Predicate<ItemStack> predicate) {
+        for (int slot : context.inventory().supplySlots()) {
+            ItemStack stack = context.inventory().getItem(slot);
+            if (!stack.isEmpty() && predicate.test(stack)) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    private static void damageSupplyItem(HiredWorkContext context, int slot, Villager villager) {
+        ItemStack stack = context.inventory().getItem(slot);
+        if (stack.isEmpty()) {
+            return;
+        }
+        stack.hurtAndBreak(1, villager, EquipmentSlot.MAINHAND);
+        if (stack.isEmpty()) {
+            context.inventory().setItem(slot, ItemStack.EMPTY);
+        } else {
+            context.inventory().setChanged();
+        }
+    }
+
+    private static Item woolItem(DyeColor color) {
+        return switch (color) {
+            case WHITE -> Items.WHITE_WOOL;
+            case ORANGE -> Items.ORANGE_WOOL;
+            case MAGENTA -> Items.MAGENTA_WOOL;
+            case LIGHT_BLUE -> Items.LIGHT_BLUE_WOOL;
+            case YELLOW -> Items.YELLOW_WOOL;
+            case LIME -> Items.LIME_WOOL;
+            case PINK -> Items.PINK_WOOL;
+            case GRAY -> Items.GRAY_WOOL;
+            case LIGHT_GRAY -> Items.LIGHT_GRAY_WOOL;
+            case CYAN -> Items.CYAN_WOOL;
+            case PURPLE -> Items.PURPLE_WOOL;
+            case BLUE -> Items.BLUE_WOOL;
+            case BROWN -> Items.BROWN_WOOL;
+            case GREEN -> Items.GREEN_WOOL;
+            case RED -> Items.RED_WOOL;
+            case BLACK -> Items.BLACK_WOOL;
+        };
+    }
+
     private record BreedingSearch(BreedingPair pair, boolean hasPairWithoutFood, boolean scannedRecently) {
     }
 
     private record BreedingPair(Animal first, Animal second, Predicate<ItemStack> foodPredicate, ResourceLocation typeId) {
+    }
+
+    private enum AnimalProductKind {
+        SHEAR,
+        MILK
+    }
+
+    private record AnimalProductTarget(Animal animal, AnimalProductKind kind) {
+        static AnimalProductTarget shearing(Sheep sheep) {
+            return new AnimalProductTarget(sheep, AnimalProductKind.SHEAR);
+        }
+
+        static AnimalProductTarget milking(Animal animal) {
+            return new AnimalProductTarget(animal, AnimalProductKind.MILK);
+        }
+
+        Sheep sheep() {
+            return this.animal instanceof Sheep sheep ? sheep : null;
+        }
+
+        Predicate<ItemStack> supplyPredicate() {
+            return switch (this.kind) {
+                case SHEAR -> stack -> stack.is(Items.SHEARS);
+                case MILK -> stack -> stack.is(Items.BUCKET);
+            };
+        }
+
+        String scanResult() {
+            return switch (this.kind) {
+                case SHEAR -> "shearable_sheep_found";
+                case MILK -> "milkable_animal_found";
+            };
+        }
+
+        String missingSupplyFailure() {
+            return switch (this.kind) {
+                case SHEAR -> "missing_shears";
+                case MILK -> "missing_bucket";
+            };
+        }
+
+        String missingSupplyMessageKey() {
+            return switch (this.kind) {
+                case SHEAR -> "interaction.work.animal_breeding.missing_shears";
+                case MILK -> "interaction.work.animal_breeding.missing_bucket";
+            };
+        }
+
+        String collectingSupplyMessageKey() {
+            return switch (this.kind) {
+                case SHEAR -> "interaction.work.animal_breeding.collecting_shears";
+                case MILK -> "interaction.work.animal_breeding.collecting_bucket";
+            };
+        }
+
+        String gatheredSupplyMessageKey() {
+            return switch (this.kind) {
+                case SHEAR -> "interaction.work.animal_breeding.gathered_shears";
+                case MILK -> "interaction.work.animal_breeding.gathered_bucket";
+            };
+        }
+
+        String movingMessageKey() {
+            return switch (this.kind) {
+                case SHEAR -> "interaction.work.animal_breeding.moving_to_sheep";
+                case MILK -> "interaction.work.animal_breeding.moving_to_milk";
+            };
+        }
+
+        String workingMessageKey() {
+            return switch (this.kind) {
+                case SHEAR -> "interaction.work.animal_breeding.shearing";
+                case MILK -> "interaction.work.animal_breeding.milking";
+            };
+        }
     }
 }

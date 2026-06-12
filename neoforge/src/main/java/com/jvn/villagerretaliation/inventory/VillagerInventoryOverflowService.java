@@ -7,10 +7,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -34,6 +36,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.ChestType;
 
 final class VillagerInventoryOverflowService {
     private static final int SCAN_INTERVAL_TICKS = 100;
@@ -122,7 +125,7 @@ final class VillagerInventoryOverflowService {
     }
 
     private static List<ContainerCandidate> nearbyGeneratedVillageContainers(ServerLevel level, BlockPos center) {
-        List<ContainerCandidate> containers = new ArrayList<>();
+        Map<BlockPos, ContainerCandidate> containers = new LinkedHashMap<>();
         BlockPos min = center.offset(-SCAN_RADIUS, -SCAN_RADIUS, -SCAN_RADIUS);
         BlockPos max = center.offset(SCAN_RADIUS, SCAN_RADIUS, SCAN_RADIUS);
         for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
@@ -135,11 +138,13 @@ final class VillagerInventoryOverflowService {
             if (!GeneratedContainerLootResources.isVillagePropertyLootTable(level.getServer(), lootTable)) {
                 continue;
             }
-            containers.add(new ContainerCandidate(pos.immutable(), container));
+            ContainerCandidate candidate = ContainerCandidate.resolve(level, pos.immutable(), container);
+            containers.putIfAbsent(candidate.pos(), candidate);
         }
 
-        containers.sort(Comparator.comparingDouble(candidate -> candidate.pos().distSqr(center)));
-        return containers;
+        return containers.values().stream()
+                .sorted(Comparator.comparingDouble(candidate -> candidate.distanceToSqr(center)))
+                .toList();
     }
 
     private static ItemStack markOwnedByVillager(ItemStack stack, Villager villager) {
@@ -185,7 +190,7 @@ final class VillagerInventoryOverflowService {
 
     private static void rememberUsedContainer(List<ContainerCandidate> usedContainers, ContainerCandidate candidate) {
         for (ContainerCandidate usedContainer : usedContainers) {
-            if (usedContainer.pos().equals(candidate.pos())) {
+            if (usedContainer.matches(candidate.pos())) {
                 return;
             }
         }
@@ -271,11 +276,12 @@ final class VillagerInventoryOverflowService {
         if (pos == null) {
             return;
         }
-        ContainerFeedbackKey key = new ContainerFeedbackKey(level.dimension(), pos.immutable());
-        if (PENDING_CONTAINER_CLOSES.remove(key) == null) {
-            return;
+        for (BlockPos feedbackPos : connectedFeedbackPositions(level, pos)) {
+            ContainerFeedbackKey key = new ContainerFeedbackKey(level.dimension(), feedbackPos.immutable());
+            if (PENDING_CONTAINER_CLOSES.remove(key) != null) {
+                closeContainerFeedback(level, feedbackPos);
+            }
         }
-        closeContainerFeedback(level, pos);
     }
 
     private static boolean extendOpenContainerSession(ServerLevel level, BlockPos pos) {
@@ -340,7 +346,130 @@ final class VillagerInventoryOverflowService {
         }
     }
 
-    record ContainerCandidate(BlockPos pos, Container container) {
+    private static List<BlockPos> connectedFeedbackPositions(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof ChestBlock) {
+            return ContainerCandidate.connectedChestPositions(level, state, pos);
+        }
+        return List.of(pos.immutable());
+    }
+
+    record ContainerCandidate(BlockPos pos, Container container, List<BlockPos> positions) {
+        ContainerCandidate {
+            pos = pos.immutable();
+            positions = normalizePositions(pos, positions);
+        }
+
+        static ContainerCandidate resolve(ServerLevel level, BlockPos pos, Container fallback) {
+            BlockState state = level.getBlockState(pos);
+            if (state.getBlock() instanceof ChestBlock chest) {
+                Container combined = ChestBlock.getContainer(chest, state, level, pos, false);
+                if (combined != null) {
+                    List<BlockPos> connectedPositions = connectedChestPositions(level, state, pos);
+                    return new ContainerCandidate(canonicalPosition(connectedPositions), combined, connectedPositions);
+                }
+            }
+            return new ContainerCandidate(pos, fallback, List.of(pos));
+        }
+
+        boolean matches(BlockPos otherPos) {
+            if (otherPos == null) {
+                return false;
+            }
+            for (BlockPos storagePos : this.positions) {
+                if (storagePos.equals(otherPos)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        boolean anyPositionMatches(java.util.function.Predicate<BlockPos> predicate) {
+            java.util.function.Predicate<BlockPos> safePredicate = predicate == null ? ignored -> true : predicate;
+            for (BlockPos storagePos : this.positions) {
+                if (safePredicate.test(storagePos)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        boolean isInInteractionRange(Villager villager) {
+            for (BlockPos storagePos : this.positions) {
+                if (AssignedStorageService.isInInteractionRange(villager, storagePos)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        double distanceToSqr(BlockPos reference) {
+            double best = Double.MAX_VALUE;
+            for (BlockPos storagePos : this.positions) {
+                best = Math.min(best, storagePos.distSqr(reference));
+            }
+            return best;
+        }
+
+        BlockPos nearestPosition(BlockPos reference, java.util.function.Predicate<BlockPos> predicate) {
+            java.util.function.Predicate<BlockPos> safePredicate = predicate == null ? ignored -> true : predicate;
+            BlockPos best = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (BlockPos storagePos : this.positions) {
+                if (!safePredicate.test(storagePos)) {
+                    continue;
+                }
+                double distance = storagePos.distSqr(reference);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = storagePos;
+                }
+            }
+            return best == null ? this.pos : best.immutable();
+        }
+
+        static List<BlockPos> connectedChestPositions(ServerLevel level, BlockState state, BlockPos pos) {
+            List<BlockPos> positions = new ArrayList<>();
+            positions.add(pos.immutable());
+            if (!state.hasProperty(ChestBlock.TYPE) || state.getValue(ChestBlock.TYPE) == ChestType.SINGLE) {
+                return positions;
+            }
+            Direction connectedDirection = ChestBlock.getConnectedDirection(state);
+            BlockPos connectedPos = pos.relative(connectedDirection);
+            if (level.getBlockState(connectedPos).getBlock() instanceof ChestBlock) {
+                positions.add(connectedPos.immutable());
+            }
+            return positions;
+        }
+
+        private static List<BlockPos> normalizePositions(BlockPos fallback, List<BlockPos> positions) {
+            List<BlockPos> normalized = new ArrayList<>();
+            if (positions != null) {
+                for (BlockPos position : positions) {
+                    if (position == null || normalized.contains(position)) {
+                        continue;
+                    }
+                    normalized.add(position.immutable());
+                }
+            }
+            if (normalized.isEmpty()) {
+                normalized.add(fallback.immutable());
+            }
+            return List.copyOf(normalized);
+        }
+
+        private static BlockPos canonicalPosition(List<BlockPos> positions) {
+            BlockPos best = null;
+            for (BlockPos position : positions) {
+                if (best == null
+                        || position.getX() < best.getX()
+                        || position.getX() == best.getX() && position.getY() < best.getY()
+                        || position.getX() == best.getX() && position.getY() == best.getY() && position.getZ() < best.getZ()) {
+                    best = position;
+                }
+            }
+            return best == null ? BlockPos.ZERO : best.immutable();
+        }
     }
 
     private record ContainerFeedbackKey(ResourceKey<Level> dimension, BlockPos pos) {

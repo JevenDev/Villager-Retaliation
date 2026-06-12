@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.block.PaymentBoxBlockEntity;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignmentResult;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -173,11 +174,8 @@ public final class AssignedStorageService {
         if (storagePos == null || stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
             return stack;
         }
-        if (!isInInteractionRange(villager, storagePos)) {
-            return stack;
-        }
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
-            if (!candidate.pos().equals(storagePos)) {
+            if (!candidate.matches(storagePos) || !candidate.isInInteractionRange(villager)) {
                 continue;
             }
             List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
@@ -217,15 +215,24 @@ public final class AssignedStorageService {
         if (storagePos == null || !(villager.level() instanceof ServerLevel level)) {
             return false;
         }
-        if (!isInInteractionRange(villager, storagePos)) {
-            return false;
-        }
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
-            if (candidate.pos().equals(storagePos)) {
+            if (candidate.matches(storagePos) && candidate.isInInteractionRange(villager)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public static List<BlockPos> assignedStorageInteractionPositions(ServerLevel level, Villager villager, BlockPos storagePos) {
+        if (level == null || villager == null || storagePos == null) {
+            return List.of();
+        }
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+            if (candidate.matches(storagePos)) {
+                return candidate.positions();
+            }
+        }
+        return level.hasChunkAt(storagePos) ? List.of(storagePos.immutable()) : List.of();
     }
 
     public static BlockPos nearestAssignedStoragePos(ServerLevel level, Villager villager) {
@@ -266,11 +273,11 @@ public final class AssignedStorageService {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
-                .filter(candidate -> safeFilter.test(candidate.pos()))
+                .filter(candidate -> candidate.anyPositionMatches(safeFilter))
                 .min((first, second) -> Double.compare(
-                        first.pos().distSqr(villagerPos),
-                        second.pos().distSqr(villagerPos)))
-                .map(candidate -> candidate.pos().immutable())
+                        first.distanceToSqr(villagerPos),
+                        second.distanceToSqr(villagerPos)))
+                .map(candidate -> candidate.nearestPosition(villagerPos, safeFilter))
                 .orElse(null);
     }
 
@@ -282,11 +289,11 @@ public final class AssignedStorageService {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
-                .filter(candidate -> safeFilter.test(candidate.pos()))
+                .filter(candidate -> candidate.anyPositionMatches(safeFilter))
                 .sorted((first, second) -> Double.compare(
-                        first.pos().distSqr(villagerPos),
-                        second.pos().distSqr(villagerPos)))
-                .map(candidate -> candidate.pos().immutable())
+                        first.distanceToSqr(villagerPos),
+                        second.distanceToSqr(villagerPos)))
+                .map(candidate -> candidate.nearestPosition(villagerPos, safeFilter))
                 .toList();
     }
 
@@ -367,12 +374,12 @@ public final class AssignedStorageService {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
-                .filter(candidate -> safeFilter.test(candidate.pos()))
+                .filter(candidate -> candidate.anyPositionMatches(safeFilter))
                 .filter(candidate -> containerHasItem(candidate.container(), safePredicate))
                 .min((first, second) -> Double.compare(
-                        first.pos().distSqr(villagerPos),
-                        second.pos().distSqr(villagerPos)))
-                .map(candidate -> candidate.pos().immutable())
+                        first.distanceToSqr(villagerPos),
+                        second.distanceToSqr(villagerPos)))
+                .map(candidate -> candidate.nearestPosition(villagerPos, safeFilter))
                 .orElse(null);
     }
 
@@ -386,12 +393,12 @@ public final class AssignedStorageService {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
-                .filter(candidate -> safeFilter.test(candidate.pos()))
+                .filter(candidate -> candidate.anyPositionMatches(safeFilter))
                 .filter(candidate -> containerHasItem(candidate.container(), safePredicate))
                 .sorted((first, second) -> Double.compare(
-                        first.pos().distSqr(villagerPos),
-                        second.pos().distSqr(villagerPos)))
-                .map(candidate -> candidate.pos().immutable())
+                        first.distanceToSqr(villagerPos),
+                        second.distanceToSqr(villagerPos)))
+                .map(candidate -> candidate.nearestPosition(villagerPos, safeFilter))
                 .toList();
     }
 
@@ -399,9 +406,9 @@ public final class AssignedStorageService {
         BlockPos villagerPos = villager.blockPosition();
         return livePaymentContainerCandidates(level, villager).stream()
                 .min((first, second) -> Double.compare(
-                        first.pos().distSqr(villagerPos),
-                        second.pos().distSqr(villagerPos)))
-                .map(candidate -> candidate.pos().immutable())
+                        first.distanceToSqr(villagerPos),
+                        second.distanceToSqr(villagerPos)))
+                .map(candidate -> candidate.nearestPosition(villagerPos, ignored -> true))
                 .orElse(null);
     }
 
@@ -413,7 +420,7 @@ public final class AssignedStorageService {
             return false;
         }
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
-            if (candidate.pos().equals(paymentPos)) {
+            if (candidate.matches(paymentPos)) {
                 return true;
             }
         }
@@ -425,7 +432,7 @@ public final class AssignedStorageService {
             return false;
         }
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
-            if (candidate.pos().equals(paymentPos)) {
+            if (candidate.matches(paymentPos)) {
                 return true;
             }
         }
@@ -450,7 +457,7 @@ public final class AssignedStorageService {
         BlockHitResult hit = villager.level().clip(new ClipContext(
                 start,
                 end,
-                ClipContext.Block.COLLIDER,
+                ClipContext.Block.OUTLINE,
                 ClipContext.Fluid.NONE,
                 villager));
         return hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(pos);
@@ -468,7 +475,7 @@ public final class AssignedStorageService {
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int remaining = count;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveInputContainerCandidates(level, villager)) {
-            if (!safeFilter.test(candidate.pos())) {
+            if (!candidate.anyPositionMatches(safeFilter)) {
                 continue;
             }
             Container container = candidate.container();
@@ -518,7 +525,7 @@ public final class AssignedStorageService {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         int count = 0;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager, use)) {
-            if (!safeFilter.test(candidate.pos())) {
+            if (!candidate.anyPositionMatches(safeFilter)) {
                 continue;
             }
             Container container = candidate.container();
@@ -574,15 +581,14 @@ public final class AssignedStorageService {
         if (storagePos == null
                 || maxCount <= 0
                 || receiver == null
-                || !(villager.level() instanceof ServerLevel level)
-                || !isInInteractionRange(villager, storagePos)) {
+                || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
         Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int movedTotal = 0;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager, use)) {
-            if (!candidate.pos().equals(storagePos)) {
+            if (!candidate.matches(storagePos) || !candidate.isInInteractionRange(villager)) {
                 continue;
             }
             Container container = candidate.container();
@@ -617,13 +623,12 @@ public final class AssignedStorageService {
             Function<ItemStack, ItemStack> receiver) {
         if (storagePos == null
                 || receiver == null
-                || !(villager.level() instanceof ServerLevel level)
-                || !isInInteractionRange(villager, storagePos)) {
+                || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
         Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
-            if (!candidate.pos().equals(storagePos)) {
+            if (!candidate.matches(storagePos) || !candidate.isInInteractionRange(villager)) {
                 continue;
             }
             Container container = candidate.container();
@@ -684,7 +689,7 @@ public final class AssignedStorageService {
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int remaining = count;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
-            if (!candidate.pos().equals(paymentPos)) {
+            if (!candidate.matches(paymentPos)) {
                 continue;
             }
             Container container = candidate.container();
@@ -731,7 +736,7 @@ public final class AssignedStorageService {
         }
         int count = 0;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
-            if (!candidate.pos().equals(paymentPos)) {
+            if (!candidate.matches(paymentPos)) {
                 continue;
             }
             Container container = candidate.container();
@@ -784,7 +789,7 @@ public final class AssignedStorageService {
             Villager villager,
             Predicate<AssignedContainerRecord> recordFilter) {
         AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
-        List<VillagerInventoryOverflowService.ContainerCandidate> containers = new ArrayList<>();
+        Map<BlockPos, VillagerInventoryOverflowService.ContainerCandidate> containers = new LinkedHashMap<>();
         for (AssignedContainerRecord record : data.assignedTo(villager.getUUID())) {
             if (recordFilter != null && !recordFilter.test(record)) {
                 continue;
@@ -812,9 +817,11 @@ public final class AssignedStorageService {
                 continue;
             }
             data.updateValidation(record, "valid");
-            containers.add(new VillagerInventoryOverflowService.ContainerCandidate(record.pos().immutable(), container));
+            VillagerInventoryOverflowService.ContainerCandidate candidate =
+                    VillagerInventoryOverflowService.ContainerCandidate.resolve(level, record.pos().immutable(), container);
+            containers.putIfAbsent(candidate.pos(), candidate);
         }
-        return containers;
+        return new ArrayList<>(containers.values());
     }
 
     private static List<VillagerInventoryOverflowService.ContainerCandidate> nearbyLiveContainerCandidates(
@@ -830,7 +837,7 @@ public final class AssignedStorageService {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         List<VillagerInventoryOverflowService.ContainerCandidate> containers = new ArrayList<>();
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
-            if (safeFilter.test(candidate.pos()) && isInInteractionRange(villager, candidate.pos())) {
+            if (candidate.anyPositionMatches(safeFilter) && candidate.isInInteractionRange(villager)) {
                 containers.add(candidate);
             }
         }
@@ -844,7 +851,7 @@ public final class AssignedStorageService {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         List<VillagerInventoryOverflowService.ContainerCandidate> containers = new ArrayList<>();
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveOutputContainerCandidates(level, villager)) {
-            if (safeFilter.test(candidate.pos()) && isInInteractionRange(villager, candidate.pos())) {
+            if (candidate.anyPositionMatches(safeFilter) && candidate.isInInteractionRange(villager)) {
                 containers.add(candidate);
             }
         }

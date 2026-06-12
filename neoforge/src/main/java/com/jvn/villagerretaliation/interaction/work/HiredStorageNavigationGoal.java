@@ -4,7 +4,9 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
@@ -49,51 +51,53 @@ final class HiredStorageNavigationGoal {
             return Result.ARRIVED;
         }
 
+        List<BlockPos> storagePositions = storageInteractionPositions(level, villager, storage);
+        BlockPos primaryStorage = nearestStoragePosition(villager, storagePositions);
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
-        double distanceSqr = villager.distanceToSqr(storage.getCenter());
-        if (continueStorageIntermediateNavigation(level, context, villager, storage, navigationTarget)) {
+        double distanceSqr = nearestStorageDistanceSqr(villager, storagePositions);
+        if (continueStorageIntermediateNavigation(level, context, villager, storagePositions, navigationTarget)) {
             return Result.MOVING;
         }
         if (villager.getNavigation().isDone()
-                && (isStorageNavigationTarget(storage, navigationTarget)
+                && (isStorageNavigationTarget(storagePositions, navigationTarget)
                 || distanceSqr <= STORAGE_APPROACH_SEARCH_RADIUS * STORAGE_APPROACH_SEARCH_RADIUS)) {
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             clearStorageNavigationState(context);
-            if (moveToStorageApproach(level, context, villager, storage, speed, null)) {
+            if (moveToStorageApproach(level, context, villager, storagePositions, speed, null)) {
                 return Result.MOVING;
             }
         }
-        if (shouldPreferLadderNavigation(villager, storage)) {
-            if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, storage, speed)) {
-                rememberStorageNavigationTarget(context, level, storage);
-                HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+        if (shouldPreferLadderNavigation(villager, primaryStorage)) {
+            if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, primaryStorage, speed)) {
+                rememberStorageNavigationTarget(context, level, primaryStorage);
+                HiredPathMemory.rememberNavigationProgress(level, villager, primaryStorage, distanceSqr);
                 return Result.MOVING;
             }
-            if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, storage, speed)) {
-                rememberStorageNavigationTarget(context, level, storage);
-                HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+            if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, primaryStorage, speed)) {
+                rememberStorageNavigationTarget(context, level, primaryStorage);
+                HiredPathMemory.rememberNavigationProgress(level, villager, primaryStorage, distanceSqr);
                 return Result.MOVING;
             }
         }
-        if (!villager.getNavigation().isDone() && isStorageNavigationTarget(storage, navigationTarget)) {
-            if (HiredPathMemory.isNavigationBlocked(level, villager, storage, distanceSqr)) {
+        if (!villager.getNavigation().isDone() && isStorageNavigationTarget(storagePositions, navigationTarget)) {
+            if (HiredPathMemory.isNavigationBlocked(level, villager, primaryStorage, distanceSqr)) {
                 VillagerTaskNavigationUtil.stopHiredNavigation(villager);
                 clearStorageNavigationState(context);
-                if (moveToStorageApproach(level, context, villager, storage, speed, null)) {
+                if (moveToStorageApproach(level, context, villager, storagePositions, speed, null)) {
                     return Result.MOVING;
                 }
-                if (moveToStorageBlock(level, context, villager, storage, speed, distanceSqr)) {
+                if (moveToStorageBlock(level, context, villager, storagePositions, speed, distanceSqr)) {
                     return Result.MOVING;
                 }
-                if (moveTowardStorageIntermediate(level, context, villager, storage, speed)) {
+                if (moveTowardStorageIntermediate(level, context, villager, storagePositions, speed)) {
                     return Result.MOVING;
                 }
-                if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, storage, speed)) {
-                    HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+                if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, primaryStorage, speed)) {
+                    HiredPathMemory.rememberNavigationProgress(level, villager, primaryStorage, distanceSqr);
                     return Result.MOVING;
                 }
-                if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, storage, speed)) {
-                    HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+                if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, primaryStorage, speed)) {
+                    HiredPathMemory.rememberNavigationProgress(level, villager, primaryStorage, distanceSqr);
                     return Result.MOVING;
                 }
                 HiredPathMemory.clearNavigationProgress(villager);
@@ -106,23 +110,23 @@ final class HiredStorageNavigationGoal {
             clearStorageNavigationState(context);
         }
 
-        if (moveToStorageApproach(level, context, villager, storage, speed, null)) {
+        if (moveToStorageApproach(level, context, villager, storagePositions, speed, null)) {
             return Result.MOVING;
         }
-        if (moveToStorageBlock(level, context, villager, storage, speed, distanceSqr)) {
+        if (moveToStorageBlock(level, context, villager, storagePositions, speed, distanceSqr)) {
             return Result.MOVING;
         }
-        if (moveTowardStorageIntermediate(level, context, villager, storage, speed)) {
+        if (moveTowardStorageIntermediate(level, context, villager, storagePositions, speed)) {
             return Result.MOVING;
         }
-        if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, storage, speed)) {
-            rememberStorageNavigationTarget(context, level, storage);
-            HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+        if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, primaryStorage, speed)) {
+            rememberStorageNavigationTarget(context, level, primaryStorage);
+            HiredPathMemory.rememberNavigationProgress(level, villager, primaryStorage, distanceSqr);
             return Result.MOVING;
         }
-        if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, storage, speed)) {
-            rememberStorageNavigationTarget(context, level, storage);
-            HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+        if (VillagerTaskNavigationUtil.moveTowardHighestSafePositionInLoadedChunk(level, villager, primaryStorage, speed)) {
+            rememberStorageNavigationTarget(context, level, primaryStorage);
+            HiredPathMemory.rememberNavigationProgress(level, villager, primaryStorage, distanceSqr);
             return Result.MOVING;
         }
         HiredPathMemory.clearNavigationProgress(villager);
@@ -177,35 +181,41 @@ final class HiredStorageNavigationGoal {
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
-            BlockPos storage,
+            List<BlockPos> storagePositions,
             double speed,
             double distanceSqr) {
-        Path path = villager.getNavigation().createPath(storage, STORAGE_WALK_TARGET_CLOSE_ENOUGH);
-        if (path == null || !path.canReach()) {
-            return false;
+        for (BlockPos storage : orderedStoragePositions(villager, storagePositions)) {
+            if (!context.isLoaded(level, storage)) {
+                continue;
+            }
+            Path path = villager.getNavigation().createPath(storage, STORAGE_WALK_TARGET_CLOSE_ENOUGH);
+            if (path == null || !path.canReach()) {
+                continue;
+            }
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(
+                    villager,
+                    path,
+                    storage,
+                    speed,
+                    STORAGE_WALK_TARGET_CLOSE_ENOUGH);
+            if (moved) {
+                rememberStorageNavigationTarget(context, level, storage);
+                HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
+                return true;
+            }
         }
-        boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(
-                villager,
-                path,
-                storage,
-                speed,
-                STORAGE_WALK_TARGET_CLOSE_ENOUGH);
-        if (moved) {
-            rememberStorageNavigationTarget(context, level, storage);
-            HiredPathMemory.rememberNavigationProgress(level, villager, storage, distanceSqr);
-        }
-        return moved;
+        return false;
     }
 
     private static boolean continueStorageIntermediateNavigation(
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
-            BlockPos storage,
+            List<BlockPos> storagePositions,
             BlockPos navigationTarget) {
         if (villager.getNavigation().isDone()
                 || navigationTarget == null
-                || isStorageNavigationTarget(storage, navigationTarget)
+                || isStorageNavigationTarget(storagePositions, navigationTarget)
                 || !isRememberedStorageNavigationTarget(context, navigationTarget)) {
             return false;
         }
@@ -225,9 +235,9 @@ final class HiredStorageNavigationGoal {
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
-            BlockPos storage,
+            List<BlockPos> storagePositions,
             double speed) {
-        BlockPos target = bestStorageIntermediateTarget(level, context, villager, storage);
+        BlockPos target = bestStorageIntermediateTarget(level, context, villager, storagePositions);
         if (target == null) {
             return false;
         }
@@ -251,9 +261,9 @@ final class HiredStorageNavigationGoal {
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
-            BlockPos storage) {
+            List<BlockPos> storagePositions) {
         BlockPos origin = villager.blockPosition();
-        double currentStorageDistance = origin.distSqr(storage);
+        double currentStorageDistance = nearestBlockDistanceSqr(origin, storagePositions);
         List<StorageIntermediate> candidates = new ArrayList<>();
         for (BlockPos raw : BlockPos.betweenClosed(
                 origin.offset(-STORAGE_INTERMEDIATE_SEARCH_RADIUS, -STORAGE_INTERMEDIATE_VERTICAL_RADIUS, -STORAGE_INTERMEDIATE_SEARCH_RADIUS),
@@ -265,13 +275,13 @@ final class HiredStorageNavigationGoal {
                     || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)) {
                 continue;
             }
-            double storageDistance = candidate.distSqr(storage);
+            double storageDistance = nearestBlockDistanceSqr(candidate, storagePositions);
             if (storageDistance >= currentStorageDistance - 1.0D) {
                 continue;
             }
             candidates.add(new StorageIntermediate(
                     candidate,
-                    storageIntermediateScore(level, villager, candidate, storage, storageDistance)));
+                    storageIntermediateScore(level, villager, candidate, storageDistance)));
         }
         candidates.sort(Comparator.comparingDouble(StorageIntermediate::score));
 
@@ -298,7 +308,6 @@ final class HiredStorageNavigationGoal {
             ServerLevel level,
             Villager villager,
             BlockPos candidate,
-            BlockPos storage,
             double storageDistance) {
         int vertical = Math.abs(candidate.getY() - villager.blockPosition().getY());
         return storageDistance * 0.35D
@@ -311,10 +320,10 @@ final class HiredStorageNavigationGoal {
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
-            BlockPos storage,
+            List<BlockPos> storagePositions,
             double speed,
             BlockPos excludedApproach) {
-        BlockPos approach = bestStorageApproach(level, context, villager, storage, excludedApproach);
+        BlockPos approach = bestStorageApproach(level, context, villager, storagePositions, excludedApproach);
         return approach != null
                 && moveToApproach(level, context, villager, approach, speed, villager.distanceToSqr(approach.getCenter()));
     }
@@ -323,30 +332,30 @@ final class HiredStorageNavigationGoal {
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
-            BlockPos storage,
+            List<BlockPos> storagePositions,
             BlockPos excludedApproach) {
-        if (!context.isLoaded(level, storage)) {
-            return null;
-        }
-        if (AssignedStorageService.canInteractWithAssignedStorage(villager, storage)) {
-            return villager.blockPosition().immutable();
-        }
-
         List<BlockPos> candidates = new ArrayList<>();
-        for (BlockPos rawCandidate : BlockPos.betweenClosed(
-                storage.offset(-STORAGE_APPROACH_SEARCH_RADIUS, -2, -STORAGE_APPROACH_SEARCH_RADIUS),
-                storage.offset(STORAGE_APPROACH_SEARCH_RADIUS, 2, STORAGE_APPROACH_SEARCH_RADIUS))) {
-            BlockPos candidate = rawCandidate.immutable();
-            if (!context.isLoaded(level, candidate)
-                    || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)
-                    || candidate.equals(excludedApproach)
-                    || HiredPathMemory.isAvoided(level, villager, candidate)
-                    || !canInteractWithStorageFrom(level, villager, candidate, storage)) {
+        Set<BlockPos> seen = new HashSet<>();
+        for (BlockPos storage : orderedStoragePositions(villager, storagePositions)) {
+            if (!context.isLoaded(level, storage)) {
                 continue;
             }
-            candidates.add(candidate);
+            for (BlockPos rawCandidate : BlockPos.betweenClosed(
+                    storage.offset(-STORAGE_APPROACH_SEARCH_RADIUS, -2, -STORAGE_APPROACH_SEARCH_RADIUS),
+                    storage.offset(STORAGE_APPROACH_SEARCH_RADIUS, 2, STORAGE_APPROACH_SEARCH_RADIUS))) {
+                BlockPos candidate = rawCandidate.immutable();
+                if (!seen.add(candidate)
+                        || !context.isLoaded(level, candidate)
+                        || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)
+                        || candidate.equals(excludedApproach)
+                        || HiredPathMemory.isAvoided(level, villager, candidate)
+                        || !canInteractWithStorageFrom(level, villager, candidate, storagePositions)) {
+                    continue;
+                }
+                candidates.add(candidate);
+            }
         }
-        candidates.sort(Comparator.comparingDouble(candidate -> storageApproachScore(level, villager, candidate, storage)));
+        candidates.sort(Comparator.comparingDouble(candidate -> storageApproachScore(level, villager, candidate, storagePositions)));
         int attempts = 0;
         BlockPos best = null;
         double bestScore = Double.MAX_VALUE;
@@ -356,7 +365,7 @@ final class HiredStorageNavigationGoal {
             }
             Path path = villager.getNavigation().createPath(candidate, 0);
             if (path != null && path.canReach()) {
-                double score = storageApproachScore(level, villager, candidate, storage)
+                double score = storageApproachScore(level, villager, candidate, storagePositions)
                         + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
                 if (score < bestScore) {
                     bestScore = score;
@@ -371,21 +380,26 @@ final class HiredStorageNavigationGoal {
             ServerLevel level,
             Villager villager,
             BlockPos approach,
-            BlockPos storage) {
-        if (approach.distSqr(storage) > STORAGE_TRANSFER_REACH_SQR) {
-            return false;
-        }
+            List<BlockPos> storagePositions) {
         Vec3 eye = new Vec3(
                 approach.getX() + 0.5D,
                 approach.getY() + villager.getEyeHeight(),
                 approach.getZ() + 0.5D);
-        BlockHitResult hit = level.clip(new ClipContext(
-                eye,
-                Vec3.atCenterOf(storage),
-                ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.NONE,
-                villager));
-        return hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(storage);
+        for (BlockPos storage : storagePositions) {
+            if (approach.distSqr(storage) > STORAGE_TRANSFER_REACH_SQR) {
+                continue;
+            }
+            BlockHitResult hit = level.clip(new ClipContext(
+                    eye,
+                    Vec3.atCenterOf(storage),
+                    ClipContext.Block.OUTLINE,
+                    ClipContext.Fluid.NONE,
+                    villager));
+            if (hit.getType() == HitResult.Type.BLOCK && containsStoragePosition(storagePositions, hit.getBlockPos())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean moveToApproach(
@@ -442,21 +456,85 @@ final class HiredStorageNavigationGoal {
         clearStorageNavigationState(context);
     }
 
-    private static boolean isStorageNavigationTarget(BlockPos storage, BlockPos navigationTarget) {
-        return navigationTarget != null
-                && (storage.equals(navigationTarget)
-                || navigationTarget.distSqr(storage) <= STORAGE_APPROACH_SEARCH_RADIUS * STORAGE_APPROACH_SEARCH_RADIUS);
+    private static boolean isStorageNavigationTarget(List<BlockPos> storagePositions, BlockPos navigationTarget) {
+        if (navigationTarget == null) {
+            return false;
+        }
+        for (BlockPos storage : storagePositions) {
+            if (storage.equals(navigationTarget)
+                    || navigationTarget.distSqr(storage) <= STORAGE_APPROACH_SEARCH_RADIUS * STORAGE_APPROACH_SEARCH_RADIUS) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    private static double storageApproachScore(ServerLevel level, Villager villager, BlockPos approach, BlockPos storage) {
+    private static double storageApproachScore(ServerLevel level, Villager villager, BlockPos approach, List<BlockPos> storagePositions) {
         double distance = villager.distanceToSqr(approach.getCenter());
         int vertical = Math.abs(approach.getY() - villager.blockPosition().getY());
-        double reachSlack = approach.getCenter().distanceToSqr(storage.getCenter());
+        BlockPos nearestStorage = nearestStoragePosition(approach, storagePositions);
+        double reachSlack = nearestCenterDistanceSqr(approach.getCenter(), storagePositions);
         return distance
                 + vertical * vertical * 3.0D
                 + reachSlack * 0.25D
                 + HiredMoveToBlockFaceJob.terrainCost(level, approach)
-                + HiredPathMemory.recentCost(villager, storage);
+                + HiredPathMemory.recentCost(villager, nearestStorage);
+    }
+
+    private static List<BlockPos> storageInteractionPositions(ServerLevel level, Villager villager, BlockPos storage) {
+        List<BlockPos> positions = AssignedStorageService.assignedStorageInteractionPositions(level, villager, storage);
+        return positions.isEmpty() ? List.of(storage.immutable()) : positions;
+    }
+
+    private static List<BlockPos> orderedStoragePositions(Villager villager, List<BlockPos> storagePositions) {
+        return storagePositions.stream()
+                .sorted(Comparator.comparingDouble(storage -> villager.distanceToSqr(storage.getCenter())))
+                .toList();
+    }
+
+    private static BlockPos nearestStoragePosition(Villager villager, List<BlockPos> storagePositions) {
+        return storagePositions.stream()
+                .min(Comparator.comparingDouble(storage -> villager.distanceToSqr(storage.getCenter())))
+                .orElse(BlockPos.ZERO);
+    }
+
+    private static BlockPos nearestStoragePosition(BlockPos reference, List<BlockPos> storagePositions) {
+        return storagePositions.stream()
+                .min(Comparator.comparingDouble(reference::distSqr))
+                .orElse(BlockPos.ZERO);
+    }
+
+    private static double nearestStorageDistanceSqr(Villager villager, List<BlockPos> storagePositions) {
+        double best = Double.MAX_VALUE;
+        for (BlockPos storage : storagePositions) {
+            best = Math.min(best, villager.distanceToSqr(storage.getCenter()));
+        }
+        return best;
+    }
+
+    private static double nearestBlockDistanceSqr(BlockPos reference, List<BlockPos> storagePositions) {
+        double best = Double.MAX_VALUE;
+        for (BlockPos storage : storagePositions) {
+            best = Math.min(best, reference.distSqr(storage));
+        }
+        return best;
+    }
+
+    private static double nearestCenterDistanceSqr(Vec3 reference, List<BlockPos> storagePositions) {
+        double best = Double.MAX_VALUE;
+        for (BlockPos storage : storagePositions) {
+            best = Math.min(best, reference.distanceToSqr(storage.getCenter()));
+        }
+        return best;
+    }
+
+    private static boolean containsStoragePosition(List<BlockPos> storagePositions, BlockPos pos) {
+        for (BlockPos storage : storagePositions) {
+            if (storage.equals(pos)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private record StorageIntermediate(BlockPos pos, double score) {
