@@ -20,7 +20,6 @@ final class HiredStorageNavigationGoal {
     private static final int STORAGE_APPROACH_SEARCH_RADIUS = 4;
     private static final int STORAGE_WALK_TARGET_CLOSE_ENOUGH = 2;
     private static final int STORAGE_APPROACH_CLOSE_ENOUGH = 0;
-    private static final double STORAGE_APPROACH_SETTLE_SQR = 9.0D;
     private static final double STORAGE_TRANSFER_REACH_SQR = 4.0D;
     private static final int MAX_APPROACH_PATH_ATTEMPTS = 4;
     private static final int STORAGE_REPATH_INTERVAL_TICKS = 30;
@@ -60,7 +59,7 @@ final class HiredStorageNavigationGoal {
                 || distanceSqr <= STORAGE_APPROACH_SEARCH_RADIUS * STORAGE_APPROACH_SEARCH_RADIUS)) {
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             clearStorageNavigationState(context);
-            if (settleTowardStorageApproach(level, context, villager, storage, speed)) {
+            if (moveToStorageApproach(level, context, villager, storage, speed, null)) {
                 return Result.MOVING;
             }
         }
@@ -320,27 +319,6 @@ final class HiredStorageNavigationGoal {
                 && moveToApproach(level, context, villager, approach, speed, villager.distanceToSqr(approach.getCenter()));
     }
 
-    private static boolean settleTowardStorageApproach(
-            ServerLevel level,
-            HiredWorkContext context,
-            Villager villager,
-            BlockPos storage,
-            double speed) {
-        BlockPos approach = bestStorageApproach(level, context, villager, storage, null);
-        if (approach == null || villager.distanceToSqr(approach.getCenter()) > STORAGE_APPROACH_SETTLE_SQR) {
-            return false;
-        }
-        villager.getMoveControl().setWantedPosition(
-                approach.getX() + 0.5D,
-                approach.getY(),
-                approach.getZ() + 0.5D,
-                speed);
-        setStorageWalkTarget(villager, approach, speed, STORAGE_APPROACH_CLOSE_ENOUGH);
-        rememberStorageNavigationTarget(context, level, approach);
-        HiredPathMemory.rememberNavigationProgress(level, villager, approach, villager.distanceToSqr(approach.getCenter()));
-        return true;
-    }
-
     private static BlockPos bestStorageApproach(
             ServerLevel level,
             HiredWorkContext context,
@@ -468,10 +446,6 @@ final class HiredStorageNavigationGoal {
         return navigationTarget != null
                 && (storage.equals(navigationTarget)
                 || navigationTarget.distSqr(storage) <= STORAGE_APPROACH_SEARCH_RADIUS * STORAGE_APPROACH_SEARCH_RADIUS);
-    }
-
-    private static void setStorageWalkTarget(Villager villager, BlockPos target, double speed, int closeEnough) {
-        VillagerTaskNavigationUtil.setHiredWalkTarget(villager, target, speed, closeEnough);
     }
 
     private static double storageApproachScore(ServerLevel level, Villager villager, BlockPos approach, BlockPos storage) {

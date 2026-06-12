@@ -7,13 +7,13 @@ import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
@@ -154,13 +154,7 @@ public final class HiredVillagerContractService {
         contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
                 .ifPresent(tag -> {
-                    HiredVillagerRole role = roleFromContract(level, villager, tag);
-                    HiredVillagerWorkService.stopWork(level, villager, role, "Work stopped. Villager died.");
-                    tag.putString(STATUS_TAG, STATUS_ENDED);
-                    unlockProfessionAfterHire(villager, tag);
-                    AssignedStorageService.removeAllAssignedStorage(level, villager);
-                    villager.getNavigation().stop();
-                    villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+                    finishContract(level, villager, tag, STATUS_ENDED, "Work stopped. Villager died.", false);
                 });
     }
 
@@ -210,13 +204,8 @@ public final class HiredVillagerContractService {
             return 0;
         }
         CompoundTag tag = activeContract.get();
-        HiredVillagerRole role = roleFromContract(level, villager, tag);
-        HiredVillagerWorkService.stopWork(level, villager, role, "Work stopped. Contract ended.");
         int refund = earlyEndRefund(level, tag);
-        tag.putString(STATUS_TAG, STATUS_ENDED);
-        unlockProfessionAfterHire(villager, tag);
-        depositJobInventoryToAssignedStorage(villager);
-        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        finishContract(level, villager, tag, STATUS_ENDED, "Work stopped. Contract ended.", true);
         return refund;
     }
 
@@ -318,8 +307,7 @@ public final class HiredVillagerContractService {
         setWorkStatus(villager, "Contract paused. Assigned payment box must be in a loaded chunk for renewal.");
         tag.putString(STATUS_TAG, STATUS_AWAITING_AUTO_PAYMENT);
         tag.putLong(AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG, level.getGameTime());
-        villager.getNavigation().stop();
-        villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+        VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
         villager.setPersistenceRequired();
     }
 
@@ -377,15 +365,7 @@ public final class HiredVillagerContractService {
     }
 
     private static void expireContract(ServerLevel level, Villager villager, CompoundTag tag, String status) {
-        HiredVillagerRole role = roleFromContract(level, villager, tag);
-        HiredVillagerWorkService.stopWork(level, villager, role, status);
-        tag.putString(STATUS_TAG, STATUS_EXPIRED);
-        unlockProfessionAfterHire(villager, tag);
-        depositJobInventoryToAssignedStorage(villager);
-        AssignedStorageService.removeAllAssignedStorage(level, villager);
-        villager.getNavigation().stop();
-        villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-        villager.setPersistenceRequired();
+        finishContract(level, villager, tag, STATUS_EXPIRED, status, true);
     }
 
     private static boolean isAwaitingAutoPaymentExpired(ServerLevel level, CompoundTag tag) {
@@ -399,6 +379,25 @@ public final class HiredVillagerContractService {
 
     private static void depositJobInventoryToAssignedStorage(Villager villager) {
         HiredJobInventory.getJobInventory(villager).depositRemovableItemsToAssignedStorage();
+    }
+
+    private static void finishContract(
+            ServerLevel level,
+            Villager villager,
+            CompoundTag tag,
+            String contractStatus,
+            String workStatus,
+            boolean depositJobInventory) {
+        HiredVillagerRole role = roleFromContract(level, villager, tag);
+        HiredVillagerWorkService.stopWork(level, villager, role, workStatus);
+        tag.putString(STATUS_TAG, contractStatus);
+        unlockProfessionAfterHire(villager, tag);
+        if (depositJobInventory) {
+            depositJobInventoryToAssignedStorage(villager);
+        }
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+        villager.setPersistenceRequired();
     }
 
     private static void setWorkStatus(Villager villager, String status) {

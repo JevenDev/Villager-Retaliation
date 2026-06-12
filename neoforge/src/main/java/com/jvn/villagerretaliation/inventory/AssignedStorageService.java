@@ -30,8 +30,6 @@ public final class AssignedStorageService {
     public static final String TOOL_PURPOSE = "tool";
     public static final String PAYMENT_PURPOSE = "payment";
     private static final double STORAGE_INTERACTION_REACH_SQR = 25.0D;
-    private static final double OUTPUT_DEPOSIT_REACH_BLOCKS = 2.0D;
-    private static final double OUTPUT_DEPOSIT_REACH_SQR = OUTPUT_DEPOSIT_REACH_BLOCKS * OUTPUT_DEPOSIT_REACH_BLOCKS;
 
     private AssignedStorageService() {
     }
@@ -175,7 +173,7 @@ public final class AssignedStorageService {
         if (storagePos == null || stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
             return stack;
         }
-        if (!isInOutputDepositRange(villager, storagePos)) {
+        if (!isInInteractionRange(villager, storagePos)) {
             return stack;
         }
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
@@ -219,7 +217,7 @@ public final class AssignedStorageService {
         if (storagePos == null || !(villager.level() instanceof ServerLevel level)) {
             return false;
         }
-        if (!isInOutputDepositRange(villager, storagePos)) {
+        if (!isInInteractionRange(villager, storagePos)) {
             return false;
         }
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
@@ -435,18 +433,18 @@ public final class AssignedStorageService {
     }
 
     public static boolean isInInteractionRange(Villager villager, BlockPos pos) {
-        return villager.getEyePosition().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR
-                && villager.position().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR;
-    }
-
-    public static boolean isInOutputDepositRange(Villager villager, BlockPos pos) {
-        if (villager.blockPosition().distSqr(pos) > OUTPUT_DEPOSIT_REACH_SQR) {
+        if (villager == null || pos == null) {
             return false;
         }
-        return hasLineOfSightToStorage(villager, pos);
+        return villager.getEyePosition().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR
+                && villager.position().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR
+                && hasLineOfSightToStorage(villager, pos);
     }
 
     private static boolean hasLineOfSightToStorage(Villager villager, BlockPos pos) {
+        if (villager == null || pos == null) {
+            return false;
+        }
         Vec3 start = villager.getEyePosition();
         Vec3 end = Vec3.atCenterOf(pos);
         BlockHitResult hit = villager.level().clip(new ClipContext(
@@ -577,7 +575,7 @@ public final class AssignedStorageService {
                 || maxCount <= 0
                 || receiver == null
                 || !(villager.level() instanceof ServerLevel level)
-                || !isInOutputDepositRange(villager, storagePos)) {
+                || !isInInteractionRange(villager, storagePos)) {
             return 0;
         }
         Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
@@ -620,7 +618,7 @@ public final class AssignedStorageService {
         if (storagePos == null
                 || receiver == null
                 || !(villager.level() instanceof ServerLevel level)
-                || !isInOutputDepositRange(villager, storagePos)) {
+                || !isInInteractionRange(villager, storagePos)) {
             return 0;
         }
         Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
