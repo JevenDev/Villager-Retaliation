@@ -22,6 +22,42 @@
       ]
     },
     {
+      "key": "interaction.work.animal_breeding.output_full_depositing",
+      "lines": [
+        "My output slots are full, so I am depositing animal handling output."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.output_full_blocked",
+      "lines": [
+        "I found eggs to collect, but my output slots are full."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.egg_unreachable",
+      "lines": [
+        "I found eggs in the work area, but I cannot reach them safely."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.egg_repositioning",
+      "lines": [
+        "I am finding a safe path to the eggs."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.moving_to_egg",
+      "lines": [
+        "I am moving to collect dropped eggs."
+      ]
+    },
+    {
+      "key": "interaction.work.animal_breeding.collected_eggs",
+      "lines": [
+        "I collected {count} egg(s)."
+      ]
+    },
+    {
       "key": "interaction.work.animal_breeding.missing_food",
       "lines": [
         "I found animals to breed, but I need the right food in my supplies."

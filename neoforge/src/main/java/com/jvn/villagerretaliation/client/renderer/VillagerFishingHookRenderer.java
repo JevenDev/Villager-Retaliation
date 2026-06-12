@@ -13,6 +13,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -64,7 +65,9 @@ public class VillagerFishingHookRenderer extends EntityRenderer<VillagerFishingH
 
     private Vec3 getOwnerHandPos(LivingEntity owner, float swing, float partialTick) {
         int side = owner.getMainArm() == HumanoidArm.RIGHT ? 1 : -1;
-        ItemStack mainHand = owner.getMainHandItem();
+        ItemStack mainHand = owner instanceof AbstractVillager villager
+                ? VillagerRenderEquipmentState.visibleMainHand(villager)
+                : owner.getMainHandItem();
         if (!mainHand.canPerformAction(net.neoforged.neoforge.common.ItemAbilities.FISHING_ROD_CAST)) {
             side = -side;
         }

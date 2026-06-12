@@ -55,6 +55,7 @@ public final class HiredStorageClipboardItem extends Item {
     private static final String FIRST_POS_TAG = "FirstPos";
     private static final String SECOND_POS_TAG = "SecondPos";
     private static final String MODE_TAG = "Mode";
+    private static final String LAST_STORAGE_MODE_TAG = "LastStorageMode";
     private static final int MAX_SELECTIONS = 8;
     private static final int DEFAULT_WORK_AREA_HORIZONTAL_RADIUS = 4;
     private static final int DEFAULT_WORK_AREA_VERTICAL_RADIUS = 2;
@@ -222,15 +223,36 @@ public final class HiredStorageClipboardItem extends Item {
 
     public static ClipboardMode cycleMode(ItemStack stack, int delta, boolean storageVariantOnly) {
         ClipboardMode current = mode(stack);
-        ClipboardMode next = storageVariantOnly ? current.cycleStorageVariant(delta) : current.cycle(delta);
+        ClipboardMode rememberedStorageMode = lastStorageMode(stack);
+        ClipboardMode next = storageVariantOnly
+                ? current.cycleStorageVariant(delta)
+                : current.cycleInventoryMode(delta, rememberedStorageMode);
+        ClipboardMode nextLastStorageMode = next.isStorageAssignmentMode() ? next : rememberedStorageMode;
         CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
             CompoundTag clipboardTag = tag.contains(TAG, Tag.TAG_COMPOUND)
                     ? tag.getCompound(TAG)
                     : new CompoundTag();
             clipboardTag.putString(MODE_TAG, next.id);
+            clipboardTag.putString(LAST_STORAGE_MODE_TAG, nextLastStorageMode.id);
             tag.put(TAG, clipboardTag);
         });
         return next;
+    }
+
+    private static ClipboardMode lastStorageMode(ItemStack stack) {
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (customData.isEmpty() || !customData.contains(TAG)) {
+            return ClipboardMode.ASSIGN_STORAGE;
+        }
+        CompoundTag clipboardTag = customData.copyTag().getCompound(TAG);
+        if (clipboardTag.contains(LAST_STORAGE_MODE_TAG, Tag.TAG_STRING)) {
+            ClipboardMode remembered = ClipboardMode.byId(clipboardTag.getString(LAST_STORAGE_MODE_TAG));
+            if (remembered.isStorageAssignmentMode()) {
+                return remembered;
+            }
+        }
+        ClipboardMode current = ClipboardMode.byId(clipboardTag.getString(MODE_TAG));
+        return current.isStorageAssignmentMode() ? current : ClipboardMode.ASSIGN_STORAGE;
     }
 
     public static void changeHeldClipboardMode(ServerPlayer player, int delta) {
@@ -731,6 +753,12 @@ public final class HiredStorageClipboardItem extends Item {
                 ASSIGN_INPUT_STORAGE,
                 ASSIGN_OUTPUT_STORAGE
         };
+        private static final ClipboardMode[] INVENTORY_CYCLE_VALUES = {
+                ASSIGN_STORAGE,
+                ASSIGN_PAYMENT,
+                WORK_AREA,
+                SET_WORK_AREA
+        };
         private final String id;
         private final String label;
 
@@ -776,12 +804,19 @@ public final class HiredStorageClipboardItem extends Item {
             };
         }
 
-        private ClipboardMode cycle(int delta) {
+        private ClipboardMode cycleInventoryMode(int delta, ClipboardMode lastStorageMode) {
             if (delta == 0) {
                 return this;
             }
-            int index = Math.floorMod(this.ordinal() + Integer.compare(delta, 0), VALUES.length);
-            return VALUES[index];
+            ClipboardMode inventoryMode = isStorageAssignmentMode() ? ASSIGN_STORAGE : this;
+            for (int i = 0; i < INVENTORY_CYCLE_VALUES.length; i++) {
+                if (INVENTORY_CYCLE_VALUES[i] == inventoryMode) {
+                    int index = Math.floorMod(i + Integer.compare(delta, 0), INVENTORY_CYCLE_VALUES.length);
+                    ClipboardMode next = INVENTORY_CYCLE_VALUES[index];
+                    return next == ASSIGN_STORAGE ? lastStorageMode : next;
+                }
+            }
+            return lastStorageMode;
         }
 
         private ClipboardMode cycleStorageVariant(int delta) {

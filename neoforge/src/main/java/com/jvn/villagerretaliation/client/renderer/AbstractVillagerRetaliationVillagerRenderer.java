@@ -8,7 +8,6 @@ import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
 import com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache;
 import com.jvn.villagerretaliation.client.renderer.layer.CombatItemInHandLayer;
 import com.jvn.villagerretaliation.client.renderer.layer.VillagerCrossedArmsItemLayer;
-import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.Util;
 import net.minecraft.client.model.geom.ModelLayerLocation;
@@ -121,7 +120,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     private boolean shouldUseCombatTextureAndModel(T villager, float attackTime) {
         boolean needsSideArmModel = this.poseProvider.shouldUseCombatModel(villager)
                 || attackTime > 0.0F
-                || !VillagerRetaliationVillagerEquipment.visibleMainHand(villager).isEmpty()
+                || !VillagerRenderEquipmentState.visibleMainHand(villager).isEmpty()
                 || !villager.getOffhandItem().isEmpty();
         if (needsSideArmModel) {
             return true;

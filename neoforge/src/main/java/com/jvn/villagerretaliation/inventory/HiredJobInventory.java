@@ -56,6 +56,9 @@ public final class HiredJobInventory implements Container {
     }
 
     public static void maintainEquipmentSlots(Villager villager) {
+        if (villager == null || villager.getPersistentData().getCompound(TAG).isEmpty()) {
+            return;
+        }
         new HiredJobInventory(villager).maintainEquipmentAuthority();
     }
 

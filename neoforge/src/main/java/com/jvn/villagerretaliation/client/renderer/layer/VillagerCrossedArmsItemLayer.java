@@ -2,13 +2,13 @@ package com.jvn.villagerretaliation.client.renderer.layer;
 
 import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
+import com.jvn.villagerretaliation.client.renderer.VillagerRenderEquipmentState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -41,7 +41,7 @@ public class VillagerCrossedArmsItemLayer<T extends AbstractVillager> extends Re
             return;
         }
 
-        ItemStack mainHand = villager.getItemBySlot(EquipmentSlot.MAINHAND);
+        ItemStack mainHand = VillagerRenderEquipmentState.visibleMainHand(villager);
         if (mainHand.isEmpty()) {
             return;
         }

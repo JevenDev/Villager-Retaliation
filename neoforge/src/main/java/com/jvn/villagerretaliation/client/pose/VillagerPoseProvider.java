@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.client.pose;
 
+import com.jvn.villagerretaliation.client.renderer.VillagerRenderEquipmentState;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
-import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.CrossbowItem;
@@ -13,7 +13,7 @@ public interface VillagerPoseProvider<T extends AbstractVillager> {
     boolean shouldUseCombatModel(T villager);
 
     default boolean shouldRenderHeldItem(T villager) {
-        return !VillagerRetaliationVillagerEquipment.visibleMainHand(villager).isEmpty()
+        return !VillagerRenderEquipmentState.visibleMainHand(villager).isEmpty()
                 || !villager.getOffhandItem().isEmpty();
     }
 
