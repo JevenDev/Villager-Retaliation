@@ -5,6 +5,7 @@
   "mixins": [
     "AbstractContainerMenuAccessor",
     "BrewingStandBlockEntityAccessor",
+    "EntityNameMixin",
     "HarvestFarmlandMixin",
     "VillagerBrainTickMixin",
     "VillagerTradeLevelingMixin",
