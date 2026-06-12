@@ -351,6 +351,9 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 8, max = 64)
         public int hiredBuilderMaxSiteDistance = 28;
 
+        @RangeConstraint(min = 8, max = 128)
+        public int hiredBuilderMaterialStorageRadius = 32;
+
         @RangeConstraint(min = 0, max = 512)
         public int hiredBuilderBaseEmeraldCost = 8;
 

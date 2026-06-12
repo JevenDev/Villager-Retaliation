@@ -1226,7 +1226,8 @@ public final class VillagerInteractionService {
                 "cost", formatCurrency(level, cost),
                 "blocks", Integer.toString(plan.get().blocks().size()),
                 "materials", missing.summary(),
-                "site", HiredWorkerBrain.formatPos(preview.origin())));
+                "site", HiredWorkerBrain.formatPos(preview.origin()),
+                "storage_radius", Integer.toString(Math.max(1, VillagerRetaliationConfig.HIRED_BUILDER_MATERIAL_STORAGE_RADIUS.get()))));
         VillagerConversationService.start(player, villager);
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
     }

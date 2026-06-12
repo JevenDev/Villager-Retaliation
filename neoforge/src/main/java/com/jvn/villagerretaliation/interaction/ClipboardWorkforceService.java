@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WarningSummary;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WarningType;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerRow;
@@ -340,6 +341,13 @@ public final class ClipboardWorkforceService {
                             + " contains the needed construction blocks, but the builder cannot path to it.");
         }
         if (missingMaterials) {
+            if (lower(brain.failureReason()).contains("missing_builder_materials_storage_too_far")) {
+                int radius = Math.max(1, VillagerRetaliationConfig.HIRED_BUILDER_MATERIAL_STORAGE_RADIUS.get());
+                return limitDiagnostic(missing.isBlank()
+                        ? "Builder needs assigned construction-block storage within " + radius + " blocks of the build site."
+                        : "Builder needs assigned construction-block storage within " + radius + " blocks of the build site for: "
+                                + missing + ".");
+            }
             if (lower(brain.failureReason()).contains("missing_builder_materials_storage_unreachable")) {
                 return limitDiagnostic(missing.isBlank()
                         ? missingMaterialStorageWaitDiagnostic(brain)

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
@@ -374,24 +375,30 @@ public final class BuilderWorker extends AbstractBlockWorker {
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
-            MissingMaterials missing) {
+            MissingMaterials missing,
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin) {
         BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
         BuilderTaskState.setMissingMaterials(context.state(), missing.summary());
         Map<String, String> replacements = Map.of(
                 "materials", missing.summary(),
-                "structure", BuilderTaskState.structureLabel(context.state()));
+                "structure", BuilderTaskState.structureLabel(context.state()),
+                "storage_radius", Integer.toString(builderMaterialStorageRadius()));
         if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
+            stopAfterBuilderStorageAction(villager);
             HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.setFailure(context, "missing_builder_materials", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE);
             return WorkResult.idle("interaction.work.builder.waiting_materials", replacements);
         }
 
-        List<BlockPos> storages = AssignedStorageService.assignedNonPaymentStoragePositions(level, villager, ignored -> true);
+        Predicate<BlockPos> storageFilter = builderMaterialStorageFilter(plan, origin);
+        List<BlockPos> storages = AssignedStorageService.assignedNonPaymentStoragePositions(level, villager, storageFilter);
         if (storages.isEmpty()) {
+            stopAfterBuilderStorageAction(villager);
             HiredStorageNavigationGoal.clearStorageTarget(context);
-            HiredWorkerBrain.setFailure(context, "missing_builder_materials", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE);
+            HiredWorkerBrain.setFailure(context, "missing_builder_materials_storage_too_far", 0L);
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
             return WorkResult.idle("interaction.work.builder.waiting_materials", replacements);
         }
 
@@ -411,6 +418,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 return WorkResult.progressed("interaction.work.builder.moving_to_material_storage", replacements);
             }
             if (moveResult == HiredStorageNavigationGoal.Result.ARRIVED) {
+                stopAfterBuilderStorageAction(villager);
                 HiredWorkerBrain.clearFailure(context);
                 setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
                 return WorkResult.idle("interaction.work.builder.waiting_materials_at_storage", replacements);
@@ -537,10 +545,12 @@ public final class BuilderWorker extends AbstractBlockWorker {
         BuilderTaskState.setMissingMaterials(context.state(), missingSummary.summary());
         List<BuilderStructureScanner.MaterialRequirement> storageMissing = missing;
         Predicate<ItemStack> storageMaterialFilter = stack -> matchesAnyMaterial(storageMissing, stack);
+        Predicate<BlockPos> storagePositionFilter = builderMaterialStorageFilter(plan, origin);
         BlockPos storage = AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
                 level,
                 villager,
-                storageMaterialFilter);
+                storageMaterialFilter,
+                storagePositionFilter);
         if (storage == null && context.inventory().hasOutput(stack -> matchesAnyMaterial(storageMissing, stack))) {
             WorkResult outputMaterialResult = makeRoomForCarriedOutputMaterials(
                     level,
@@ -575,7 +585,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
             storage = AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
                     level,
                     villager,
-                    storageMaterialFilter);
+                    storageMaterialFilter,
+                    storagePositionFilter);
         }
         List<BuilderStructureScanner.MaterialRequirement> currentStorageMissing = missing;
         if (storage == null && context.inventory().hasOutput(stack -> matchesAnyMaterial(currentStorageMissing, stack))) {
@@ -583,7 +594,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
         if (storage == null) {
             BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
-            return waitForMaterialsAtAssignedStorage(level, villager, context, missingSummary);
+            return waitForMaterialsAtAssignedStorage(level, villager, context, missingSummary, plan, origin);
         }
 
         HiredWorkerBrain.setStorageTarget(context, storage);
@@ -606,7 +617,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                     level,
                     villager,
                     storageMaterialFilter,
-                    pos -> !failedStorage.equals(pos))) {
+                    pos -> !failedStorage.equals(pos) && storagePositionFilter.test(pos))) {
                 HiredWorkerBrain.setStorageTarget(context, alternateStorage);
                 HiredStorageNavigationGoal.Result alternateMoveResult = HiredStorageNavigationGoal.moveToStorageTarget(
                         level,
@@ -667,16 +678,24 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 level,
                 startIndex,
                 batch.endIndex());
+        boolean changedStorageInventory = depositedOutputs > 0 || promotedOutputs > 0 || movedMaterials > 0;
         if (stillMissing.isEmpty()) {
+            if (changedStorageInventory) {
+                stopAfterBuilderStorageAction(villager);
+            }
             HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.clearFailure(context);
             BuilderTaskState.clearMissingMaterials(context.state());
+            if (changedStorageInventory) {
+                return WorkResult.progressed("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
+            }
             return null;
         }
         BuilderTaskState.setMissingMaterials(
                 context.state(),
                 missingMaterialDeficits(stillMissing).summary());
-        if (movedMaterials > 0 || promotedOutputs > 0 || depositedOutputs > 0) {
+        if (changedStorageInventory) {
+            stopAfterBuilderStorageAction(villager);
             HiredWorkerBrain.clearFailure(context);
             setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, storage);
             BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
@@ -730,9 +749,16 @@ public final class BuilderWorker extends AbstractBlockWorker {
         if (AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
                 level,
                 villager,
-                stack -> matchesAnyMaterial(remainingStorageMissing, stack)) == null) {
+                stack -> matchesAnyMaterial(remainingStorageMissing, stack),
+                storagePositionFilter) == null) {
             BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
-            return waitForMaterialsAtAssignedStorage(level, villager, context, missingMaterialDeficits(stillMissing));
+            return waitForMaterialsAtAssignedStorage(
+                    level,
+                    villager,
+                    context,
+                    missingMaterialDeficits(stillMissing),
+                    plan,
+                    origin);
         }
 
         HiredWorkerBrain.setFailure(context, "builder_material_inventory_full", level.getGameTime() + 100L);
@@ -740,6 +766,47 @@ public final class BuilderWorker extends AbstractBlockWorker {
         HiredWorkerBrain.setStorageTarget(context, storage);
         BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.WAITING_FOR_MATERIALS);
         return WorkResult.idle("interaction.work.builder.material_inventory_full", BuilderTaskState.replacements(context.state()));
+    }
+
+    private static Predicate<BlockPos> builderMaterialStorageFilter(
+            BuilderStructureScanner.StructurePlan plan,
+            BlockPos origin) {
+        if (plan == null || origin == null) {
+            return ignored -> false;
+        }
+        BlockPos min = plan.worldMin(origin);
+        BlockPos max = plan.worldMax(origin);
+        long radius = builderMaterialStorageRadius();
+        long radiusSqr = radius * radius;
+        return pos -> isBuilderMaterialStorageNearSite(pos, min, max, radiusSqr);
+    }
+
+    private static boolean isBuilderMaterialStorageNearSite(
+            BlockPos storage,
+            BlockPos min,
+            BlockPos max,
+            long radiusSqr) {
+        if (storage == null) {
+            return false;
+        }
+        long dx = axisDistance(storage.getX(), min.getX(), max.getX());
+        long dy = axisDistance(storage.getY(), min.getY(), max.getY());
+        long dz = axisDistance(storage.getZ(), min.getZ(), max.getZ());
+        return dx * dx + dy * dy + dz * dz <= radiusSqr;
+    }
+
+    private static long axisDistance(int value, int min, int max) {
+        if (value < min) {
+            return min - (long) value;
+        }
+        if (value > max) {
+            return value - (long) max;
+        }
+        return 0L;
+    }
+
+    private static int builderMaterialStorageRadius() {
+        return Math.max(1, VillagerRetaliationConfig.HIRED_BUILDER_MATERIAL_STORAGE_RADIUS.get());
     }
 
     private WorkResult makeRoomForCarriedOutputMaterials(
@@ -798,16 +865,24 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 level,
                 startIndex,
                 batch.endIndex());
+        boolean changedStorageInventory = depositedOutputs > 0 || promotedOutputs > 0;
         if (stillMissing.isEmpty()) {
+            if (changedStorageInventory) {
+                stopAfterBuilderStorageAction(villager);
+            }
             HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.clearFailure(context);
             BuilderTaskState.clearMissingMaterials(context.state());
+            if (changedStorageInventory) {
+                return WorkResult.progressed("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));
+            }
             return null;
         }
         BuilderTaskState.setMissingMaterials(
                 context.state(),
                 missingMaterialDeficits(stillMissing).summary());
-        if (depositedOutputs > 0 || promotedOutputs > 0) {
+        if (changedStorageInventory) {
+            stopAfterBuilderStorageAction(villager);
             HiredWorkerBrain.clearFailure(context);
             setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, storage);
             BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
@@ -879,6 +954,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return null;
         }
 
+        stopAfterBuilderStorageAction(villager);
         swingWorkTool(villager);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, storage);
@@ -932,6 +1008,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return null;
         }
 
+        stopAfterBuilderStorageAction(villager);
         swingWorkTool(villager);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, storage);
@@ -979,6 +1056,12 @@ public final class BuilderWorker extends AbstractBlockWorker {
             movedStacks++;
         }
         return movedStacks;
+    }
+
+    private static void stopAfterBuilderStorageAction(Villager villager) {
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        villager.getMoveControl().setWantedPosition(villager.getX(), villager.getY(), villager.getZ(), 0.0D);
+        villager.setDeltaMovement(villager.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));
     }
 
     private static int promoteOutputMaterialsToSupply(
@@ -1055,7 +1138,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
         return Map.of(
                 "materials", "1x " + block.requiredItem().getHoverName().getString(),
-                "structure", BuilderTaskState.structureLabel(state));
+                "structure", BuilderTaskState.structureLabel(state),
+                "storage_radius", Integer.toString(builderMaterialStorageRadius()));
     }
 
     private static Map<String, String> materialReplacements(
@@ -1063,7 +1147,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
             List<BuilderStructureScanner.MaterialRequirement> materials) {
         return Map.of(
                 "materials", BuilderStructureScanner.materialSummary(materials, 5),
-                "structure", BuilderTaskState.structureLabel(state));
+                "structure", BuilderTaskState.structureLabel(state),
+                "storage_radius", Integer.toString(builderMaterialStorageRadius()));
     }
 
     private static List<BuilderStructureScanner.MaterialRequirement> remainingMaterials(
@@ -2450,7 +2535,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 damageTool(context, villager, actionTool);
             }
             if (block.blockEntityTag() != null && level.getBlockEntity(worldPos) instanceof BlockEntity blockEntity) {
-                CompoundTag tag = block.blockEntityTag().copy();
+                CompoundTag tag = sanitizeBuiltBlockEntityTag(block.blockEntityTag());
                 tag.putInt("x", worldPos.getX());
                 tag.putInt("y", worldPos.getY());
                 tag.putInt("z", worldPos.getZ());
@@ -2462,6 +2547,13 @@ public final class BuilderWorker extends AbstractBlockWorker {
             context.inventory().consumeSupply(materialBlock::materialMatches, 1);
         }
         return true;
+    }
+
+    private static CompoundTag sanitizeBuiltBlockEntityTag(CompoundTag source) {
+        CompoundTag tag = source.copy();
+        tag.remove("LootTable");
+        tag.remove("LootTableSeed");
+        return tag;
     }
 
     private WorkResult finishBuild(

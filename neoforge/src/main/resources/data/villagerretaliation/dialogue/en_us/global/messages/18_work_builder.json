@@ -114,7 +114,7 @@
     {
       "key": "interaction.work.builder.started_waiting_materials",
       "lines": [
-        "I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage."
+        "I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site."
       ]
     },
     {
@@ -138,7 +138,7 @@
     {
       "key": "interaction.work.builder.waiting_materials",
       "lines": [
-        "I need more construction materials for {structure}: {materials}. Put them in assigned storage or my job inventory."
+        "I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory."
       ]
     },
     {

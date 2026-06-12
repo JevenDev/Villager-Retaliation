@@ -122,6 +122,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_HIRED_WORK_SKILL_GROWTH = bind("balance.enableHiredWorkSkillGrowth", Boolean.class);
     public static final ConfigValue<Integer> HIRED_BUILDER_MAX_BLOCKS = bind("balance.hiredBuilderMaxBlocks", Integer.class);
     public static final ConfigValue<Integer> HIRED_BUILDER_MAX_SITE_DISTANCE = bind("balance.hiredBuilderMaxSiteDistance", Integer.class);
+    public static final ConfigValue<Integer> HIRED_BUILDER_MATERIAL_STORAGE_RADIUS = bind("balance.hiredBuilderMaterialStorageRadius", Integer.class);
     public static final ConfigValue<Integer> HIRED_BUILDER_BASE_EMERALD_COST = bind("balance.hiredBuilderBaseEmeraldCost", Integer.class);
     public static final ConfigValue<Integer> HIRED_BUILDER_EMERALDS_PER_64_BLOCKS = bind("balance.hiredBuilderEmeraldsPer64Blocks", Integer.class);
     public static final ConfigValue<Boolean> HIRED_BUILDER_CAN_REPLACE_SOFT_BLOCKS = bind("balance.hiredBuilderCanReplaceSoftBlocks", Boolean.class);
