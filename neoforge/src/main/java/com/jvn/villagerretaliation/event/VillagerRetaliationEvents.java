@@ -51,6 +51,7 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -88,8 +89,11 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 public final class VillagerRetaliationEvents {
+    private static final AtomicBoolean BUILDER_CATALOG_SYNC_DIRTY = new AtomicBoolean();
+
     private VillagerRetaliationEvents() {
     }
 
@@ -122,8 +126,20 @@ public final class VillagerRetaliationEvents {
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
         event.addListener((barrier, resourceManager, preparationProfiler, reloadProfiler, backgroundExecutor, gameExecutor) ->
                 java.util.concurrent.CompletableFuture
-                        .runAsync(VillagerDataWarmup::clearResourceCaches, backgroundExecutor)
+                        .runAsync(() -> {
+                            VillagerDataWarmup.clearResourceCaches();
+                            BUILDER_CATALOG_SYNC_DIRTY.set(true);
+                        }, backgroundExecutor)
                         .thenCompose(barrier::wait));
+    }
+
+    public static void onServerTickPost(ServerTickEvent.Post event) {
+        if (!BUILDER_CATALOG_SYNC_DIRTY.compareAndSet(true, false)) {
+            return;
+        }
+        for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
+            VillagerReputationNetworking.sendBuilderStructureCatalog(player);
+        }
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {

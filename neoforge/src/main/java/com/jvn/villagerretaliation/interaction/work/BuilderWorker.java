@@ -1267,7 +1267,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         if (structureId.isEmpty()) {
             return Optional.empty();
         }
-        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(structureId.get());
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(level.getServer(), structureId.get());
         if (entry.isEmpty()) {
             return Optional.empty();
         }

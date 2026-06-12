@@ -133,6 +133,34 @@ public final class DatapackDiagnostics {
                 exception.getMessage());
     }
 
+    public static void warnSkippedEntry(
+            ResourceLocation location,
+            String systemName,
+            String context,
+            String reason) {
+        warn(
+                "Villager Retaliation datapack {} {} {} will be skipped: {}",
+                location,
+                systemName,
+                context,
+                reason);
+    }
+
+    public static void warnInvalidResourceLocation(
+            ResourceLocation location,
+            String systemName,
+            String context,
+            String value,
+            String expected) {
+        warn(
+                "Villager Retaliation datapack {} {} references invalid {} id \"{}\". {}",
+                location,
+                context,
+                systemName,
+                value,
+                expected);
+    }
+
     public static void warnDuplicateId(
             ResourceLocation location,
             String systemName,

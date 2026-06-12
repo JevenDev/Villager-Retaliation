@@ -18,6 +18,7 @@ Use a datapack for behavior and authored text:
       profession_loot/
       villager_names/
     my_pack/
+      builder_structures/
       dialogue/en_us/
       dialogue_trees/en_us/
       forced_dialogue/
@@ -60,6 +61,7 @@ These systems can live in your own namespace:
 - Quests
 - Forced dialogue
 - Skill trades
+- Builder structures
 - Story structures
 - Story biomes
 - Referenced loot tables
@@ -70,6 +72,7 @@ Example:
 data/my_pack/dialogue/en_us/global/lines/rumors.json
 data/my_pack/quests/lost_civilization/echo_shard.json
 data/my_pack/skill_trades/cartographer.json
+data/my_pack/builder_structures/custom_houses.json
 data/my_pack/loot_table/villager/profession/alchemist/common.json
 ```
 

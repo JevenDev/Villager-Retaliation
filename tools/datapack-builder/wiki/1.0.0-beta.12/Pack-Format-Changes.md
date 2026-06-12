@@ -18,7 +18,8 @@ Beta.12 is not a marker-only update. Review these areas before changing pack tar
 4. Dialogue filtering: beta.12 adds temporary mood filters, Social Attribute score filters, `priority`, `category`, and `text_key`.
 5. Quests: canonical quest JSON is the maintained shape. Old advancement-style quest shapes are not the beta.12 target.
 6. Skill trades: beta.12 adds trade refresh behavior, persistent trade pools, and targetable Special Orders.
-7. Builder workflow: there is no automatic beta.11 to beta.12 conversion pass.
+7. Builder structures: eligible hired-builder structures are now data driven through `data/<namespace>/builder_structures/`.
+8. Builder workflow: there is no automatic beta.11 to beta.12 conversion pass.
 
 ## Most Important Authoring Differences
 
@@ -92,6 +93,25 @@ Entries can now expose direct requests:
   "cooldown_days": 3
 }
 ```
+
+### 5. Builder Structures Can Include Modded Templates
+
+Add builder-menu structures through normal datapack files:
+
+```json
+{
+  "entries": [
+    {
+      "structure": "examplemod:village/houses/carpenter_house",
+      "category": "Modded Village",
+      "label": "Carpenter House",
+      "base_cost": 18
+    }
+  ]
+}
+```
+
+See [Builder Structures](Builder-Structures.md) for remove and replace examples.
 
 ## Safe Migration Plan
 

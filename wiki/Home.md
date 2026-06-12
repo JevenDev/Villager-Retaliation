@@ -24,6 +24,7 @@ Every page includes at least one copyable example. Start small, test one system 
 | Pacification | Items that calm hostile villagers | `data/villagerretaliation/pacification/` | [Pacification](Pacification.md) |
 | Profession loot | Villager drop rules backed by loot tables | `data/villagerretaliation/profession_loot/` | [Profession Loot](Profession-Loot.md) |
 | Skill trades | Skill-based extra trade offers and Special Orders | `data/<namespace>/skill_trades/` | [Skill Trades](Skill-Trades.md) |
+| Builder structures | Structure templates hired builders can offer and build costs | `data/<namespace>/builder_structures/` | [Builder Structures](Builder-Structures.md) |
 | Story discovery | Structures and biomes used by `share_story` dialogue | `data/<namespace>/story_structures/` and `story_biomes/` | [Story Discovery](Story-Discovery.md) |
 | Villager names | Add to or replace the preset name pool | `data/villagerretaliation/villager_names/` | [Villager Names](Villager-Names.md) |
 | GUI localization | Buttons, profile text, relationship rows, profession labels | `assets/villagerretaliation/lang/<locale>.json` | [Localization](Localization.md) |
@@ -61,7 +62,7 @@ Run `/reload`, talk to a villager, and confirm the option appears.
 
 - [Pack Development](Pack-Development.md)
 - [JSON Reference](JSON-Reference.md)
-- One of: [Dialogue](Dialogue.md), [Forced Dialogue](Forced-Dialogue.md), [Quests](Quests.md), or [Notifications](Notifications.md)
+- One of: [Dialogue](Dialogue.md), [Forced Dialogue](Forced-Dialogue.md), [Quests](Quests.md), [Notifications](Notifications.md), or [Builder Structures](Builder-Structures.md)
 - [Example Packs](Example-Packs.md)
 - [Pack Format Changes](Pack-Format-Changes.md) if you are updating an older pack
 

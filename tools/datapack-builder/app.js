@@ -321,6 +321,7 @@ const WIKI_PAGE_FILES = [
   "Gifts.md",
   "Pacification.md",
   "Profession-Loot.md",
+  "Builder-Structures.md",
   "Story-Discovery.md",
   "Villager-Names.md",
   "Resource-Pack-Models.md",

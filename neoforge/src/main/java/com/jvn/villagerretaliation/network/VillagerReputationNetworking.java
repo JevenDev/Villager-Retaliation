@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.network;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.interaction.work.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -14,7 +15,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "24";
+    private static final String PROTOCOL_VERSION = "25";
 
     private VillagerReputationNetworking() {
     }
@@ -25,6 +26,12 @@ public final class VillagerReputationNetworking {
                 ServerConfigSyncPayload.TYPE,
                 ServerConfigSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                BuilderStructureCatalogSyncPayload.TYPE,
+                BuilderStructureCatalogSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.BuilderStructureCatalogClient",
                 "accept"
         );
         network.safePlayToClientThreaded(
@@ -356,6 +363,16 @@ public final class VillagerReputationNetworking {
     public static void sendServerConfig(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, new ServerConfigSyncPayload(
                 VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get()
+        ));
+        sendBuilderStructureCatalog(player);
+    }
+
+    public static void sendBuilderStructureCatalog(ServerPlayer player) {
+        if (player == null || player.server == null) {
+            return;
+        }
+        PacketDistributor.sendToPlayer(player, new BuilderStructureCatalogSyncPayload(
+                BuilderStructureCatalog.entries(player.server)
         ));
     }
 

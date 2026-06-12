@@ -61,6 +61,19 @@ Some systems also support entry-level removal by `id`.
 }
 ```
 
+Builder structures also support removal by structure id:
+
+```json
+{
+  "entries": [
+    {
+      "structure": "minecraft:village/plains/houses/plains_small_house_1",
+      "remove": true
+    }
+  ]
+}
+```
+
 ## Arrays and Single Values
 
 Many fields accept one value or several values.

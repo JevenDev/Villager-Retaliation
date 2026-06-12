@@ -898,6 +898,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         for (BuilderStructureCatalog.Entry entry : BuilderStructureCatalog.entries()) {
             categories.add(entry.category());
         }
+        if (categories.isEmpty()) {
+            this.options.add(DialogueOption.enabled(translate("recruit.builder_no_structures"), NO_ACTION));
+        }
         for (String category : categories) {
             this.options.add(DialogueOption.enabled(
                     translate("recruit.builder_category", category),
@@ -911,6 +914,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             openBuilderStructuresPage();
             return;
         }
+        int added = 0;
         for (BuilderStructureCatalog.Entry entry : BuilderStructureCatalog.entries()) {
             if (!entry.category().equals(this.selectedBuilderCategory)) {
                 continue;
@@ -920,6 +924,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 requestBuilderOrder(HiredBuilderOrderPayload.Action.PREVIEW, entry);
                 openPage(DialoguePage.BUILDER_CONFIRM);
             }));
+            added++;
+        }
+        if (added == 0) {
+            this.options.add(DialogueOption.enabled(translate("recruit.builder_no_category_structures"), NO_ACTION));
         }
         addOption("recruit.nevermind", this::openBuilderStructuresPage);
     }

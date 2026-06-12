@@ -654,7 +654,7 @@ public final class VillagerInteractionService {
             return;
         }
 
-        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(preview.structureId());
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(player.server, preview.structureId());
         if (entry.isEmpty()) {
             player.displayClientMessage(Component.literal("That blueprint structure is not available."), true);
             return;
@@ -1024,7 +1024,7 @@ public final class VillagerInteractionService {
             Villager villager,
             CompoundTag state,
             ResourceLocation structureId) {
-        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(structureId);
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(player.server, structureId);
         if (entry.isEmpty()) {
             sendVillagerNotice(player, villager, "interaction.work.builder.unknown_structure");
             return;
@@ -1080,7 +1080,7 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
             return;
         }
-        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(structureId);
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(player.server, structureId);
         if (entry.isEmpty()) {
             sendVillagerNotice(player, villager, "interaction.work.builder.unknown_structure");
             return;
@@ -1166,7 +1166,7 @@ public final class VillagerInteractionService {
             rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
             return;
         }
-        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(preview.structureId());
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(player.server, preview.structureId());
         if (entry.isEmpty()) {
             rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.unknown_structure");
             return;

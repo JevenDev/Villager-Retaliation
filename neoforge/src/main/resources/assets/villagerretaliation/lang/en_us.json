@@ -549,6 +549,8 @@
   "villagerretaliation.gui.recruit.stop_brewing": "Stop Brewing",
   "villagerretaliation.gui.recruit.work_config_builder": "Construction",
   "villagerretaliation.gui.recruit.stop_builder_build": "Cancel Construction",
+  "villagerretaliation.gui.recruit.builder_no_structures": "No builder structures are available.",
+  "villagerretaliation.gui.recruit.builder_no_category_structures": "No structures are available in this category.",
   "villagerretaliation.gui.recruit.builder_category": "%s Structures",
   "villagerretaliation.gui.recruit.builder_selected": "Selected: %s",
   "villagerretaliation.gui.recruit.builder_confirm": "Buy Blueprint",
