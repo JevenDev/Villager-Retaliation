@@ -26,8 +26,10 @@ public record HiredWorkArea(
         if (max == null) {
             max = min;
         }
-        min = minPos(min, max);
-        max = maxPos(min, max);
+        BlockPos originalMin = min;
+        BlockPos originalMax = max;
+        min = minPos(originalMin, originalMax);
+        max = maxPos(originalMin, originalMax);
         center = center == null ? centerPos(min, max) : center.immutable();
         horizontalRadius = Math.max(1, horizontalRadius(center, min, max));
         verticalRadius = Math.max(1, verticalRadius(center, min, max));

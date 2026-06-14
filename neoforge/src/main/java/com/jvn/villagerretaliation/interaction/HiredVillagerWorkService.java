@@ -1369,12 +1369,11 @@ public final class HiredVillagerWorkService {
         int nutrition = 0;
         for (int slot : inventory.supplySlots()) {
             ItemStack stack = inventory.getItem(slot);
-            FoodProperties food = stack.get(DataComponents.FOOD);
-            if (stack.isEmpty() || food == null) {
+            if (!isFoodItem(stack)) {
                 continue;
             }
             while (!stack.isEmpty() && nutrition < neededNutrition) {
-                nutrition += Math.max(1, food.nutrition());
+                nutrition += foodNutrition(stack);
                 inventory.consumeSupply(candidate -> candidate == stack, 1);
             }
             if (nutrition >= neededNutrition) {
@@ -1382,13 +1381,23 @@ public final class HiredVillagerWorkService {
             }
         }
         if (assignedSupplies && nutrition < neededNutrition) {
-            nutrition += AssignedStorageService.consumeItems(
+            nutrition += AssignedStorageService.consumeItemValue(
                     villager,
-                    stack -> stack.get(DataComponents.FOOD) != null,
+                    HiredVillagerWorkService::isFoodItem,
+                    HiredVillagerWorkService::foodNutrition,
                     neededNutrition - nutrition,
                     area::contains);
         }
         return nutrition;
+    }
+
+    private static boolean isFoodItem(ItemStack stack) {
+        return !stack.isEmpty() && stack.get(DataComponents.FOOD) != null;
+    }
+
+    private static int foodNutrition(ItemStack stack) {
+        FoodProperties food = stack.get(DataComponents.FOOD);
+        return food == null ? 0 : Math.max(1, food.nutrition());
     }
 
     static int efficiencyPercent(ServerLevel level, Villager villager, HiredVillagerRole role, CompoundTag state, HiredJobInventory inventory) {

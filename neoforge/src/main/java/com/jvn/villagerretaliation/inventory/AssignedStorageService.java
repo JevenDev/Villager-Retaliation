@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -471,6 +472,7 @@ public final class AssignedStorageService {
         if (count <= 0 || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int remaining = count;
@@ -499,6 +501,50 @@ public final class AssignedStorageService {
         }
         VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
         return count - remaining;
+    }
+
+    public static int consumeItemValue(
+            Villager villager,
+            Predicate<ItemStack> predicate,
+            ToIntFunction<ItemStack> value,
+            int targetValue,
+            Predicate<BlockPos> positionFilter) {
+        if (targetValue <= 0 || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        ToIntFunction<ItemStack> safeValue = value == null ? ignored -> 1 : value;
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
+        int consumedValue = 0;
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveInputContainerCandidates(level, villager)) {
+            if (!candidate.anyPositionMatches(safeFilter)) {
+                continue;
+            }
+            Container container = candidate.container();
+            boolean used = false;
+            for (int slot = 0; slot < container.getContainerSize() && consumedValue < targetValue; slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.isEmpty() || !safePredicate.test(stack)) {
+                    continue;
+                }
+                int itemValue = Math.max(1, safeValue.applyAsInt(stack));
+                int remainingValue = targetValue - consumedValue;
+                int requested = Math.max(1, (remainingValue + itemValue - 1) / itemValue);
+                int removed = Math.min(requested, stack.getCount());
+                container.removeItem(slot, removed);
+                consumedValue += removed * itemValue;
+                used = true;
+            }
+            if (used) {
+                usedContainers.add(candidate);
+            }
+            if (consumedValue >= targetValue) {
+                break;
+            }
+        }
+        VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
+        return consumedValue;
     }
 
     public static int countItems(Villager villager, Predicate<ItemStack> predicate) {
@@ -656,6 +702,7 @@ public final class AssignedStorageService {
         if (count <= 0 || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int remaining = count;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
@@ -663,7 +710,7 @@ public final class AssignedStorageService {
             boolean used = false;
             for (int slot = 0; slot < container.getContainerSize() && remaining > 0; slot++) {
                 ItemStack stack = container.getItem(slot);
-                if (stack.isEmpty() || !predicate.test(stack)) {
+                if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
                 int removed = Math.min(remaining, stack.getCount());
@@ -686,6 +733,7 @@ public final class AssignedStorageService {
         if (paymentPos == null || count <= 0 || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
+        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int remaining = count;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : livePaymentContainerCandidates(level, villager)) {
@@ -696,7 +744,7 @@ public final class AssignedStorageService {
             boolean used = false;
             for (int slot = 0; slot < container.getContainerSize() && remaining > 0; slot++) {
                 ItemStack stack = container.getItem(slot);
-                if (stack.isEmpty() || !predicate.test(stack)) {
+                if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
                 int removed = Math.min(remaining, stack.getCount());

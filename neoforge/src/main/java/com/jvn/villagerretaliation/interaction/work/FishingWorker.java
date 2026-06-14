@@ -75,16 +75,7 @@ public final class FishingWorker extends AbstractBlockWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (context.state().getBoolean(CATCH_COMPLETED_TAG)) {
-            WorkResult depositResult = depositFullOutputIfNeeded(level, villager, context);
-            if (depositResult != null) {
-                return depositResult;
-            }
-            context.state().remove(CATCH_COMPLETED_TAG);
-            clearFishingTarget(context);
-            setTaskState(context, HiredWorkerTaskState.IDLE);
-            return context.state().getBoolean(CATCH_OVERFLOW_TAG)
-                    ? WorkResult.completed("interaction.work.fishing.completed_overflow")
-                    : WorkResult.completed("interaction.work.fishing.completed");
+            return finishCompletedCatch(level, villager, context);
         }
         context.state().remove(CATCH_OVERFLOW_TAG);
 
@@ -117,7 +108,7 @@ public final class FishingWorker extends AbstractBlockWorker {
         if (hook != null) {
             if (hook.isBiting()) {
                 retrieveCatch(level, villager, context, hook);
-                return WorkResult.completed("interaction.work.fishing.completed");
+                return finishCompletedCatch(level, villager, context);
             }
             setTaskState(context, HiredWorkerTaskState.WORKING, hook.blockPosition());
             faceBlock(villager, hook.position());
@@ -183,6 +174,21 @@ public final class FishingWorker extends AbstractBlockWorker {
         }
         context.state().remove(DEPOSITING_OUTPUTS_TAG);
         return null;
+    }
+
+    private WorkResult finishCompletedCatch(ServerLevel level, Villager villager, HiredWorkContext context) {
+        WorkResult depositResult = depositFullOutputIfNeeded(level, villager, context);
+        if (depositResult != null) {
+            return depositResult;
+        }
+        boolean overflow = context.state().getBoolean(CATCH_OVERFLOW_TAG);
+        context.state().remove(CATCH_COMPLETED_TAG);
+        context.state().remove(CATCH_OVERFLOW_TAG);
+        clearFishingTarget(context);
+        setTaskState(context, HiredWorkerTaskState.IDLE);
+        return overflow
+                ? WorkResult.completed("interaction.work.fishing.completed_overflow")
+                : WorkResult.completed("interaction.work.fishing.completed");
     }
 
     @Override

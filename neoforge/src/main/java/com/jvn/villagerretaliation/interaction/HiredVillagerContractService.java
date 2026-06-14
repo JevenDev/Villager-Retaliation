@@ -38,6 +38,7 @@ public final class HiredVillagerContractService {
     private static final String STATUS_EXPIRED = "expired";
     private static final String STATUS_AWAITING_AUTO_PAYMENT = "awaiting_auto_payment";
     private static final long DAY_TICKS = 24000L;
+    private static final int MAX_CONTRACT_DAYS = 30;
     private static final int HIRED_PROFESSION_LOCK_XP = 1;
 
     private HiredVillagerContractService() {
@@ -98,7 +99,7 @@ public final class HiredVillagerContractService {
                 minDailyCost,
                 maxDailyCost
         );
-        return dailyCost * Math.max(1, days);
+        return dailyCost * clampedContractDays(days);
     }
 
     public static int getDailyCost(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -159,7 +160,7 @@ public final class HiredVillagerContractService {
     }
 
     public static void startHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
-        int safeDays = Mth.clamp(days, 1, 30);
+        int safeDays = clampedContractDays(days);
         long startGameTime = level.getGameTime();
         CompoundTag tag = new CompoundTag();
         tag.putUUID(HIRER_TAG, player.getUUID());
@@ -184,7 +185,7 @@ public final class HiredVillagerContractService {
         if (contract.isEmpty()) {
             return false;
         }
-        int safeDays = Mth.clamp(days, 1, 30);
+        int safeDays = clampedContractDays(days);
         CompoundTag tag = contract.get();
         long currentEnd = Math.max(level.getGameTime(), tag.getLong(END_GAME_TIME_TAG));
         tag.putLong(END_GAME_TIME_TAG, currentEnd + safeDays * DAY_TICKS);
@@ -251,6 +252,7 @@ public final class HiredVillagerContractService {
             HiredVillagerWorkService.stopWork(level, villager, currentRole, "Work stopped. Role changed.");
         }
         tag.putString(ROLE_TAG, role.serializedName());
+        villager.setPersistenceRequired();
         return true;
     }
 
@@ -405,7 +407,7 @@ public final class HiredVillagerContractService {
     }
 
     private static void extendActiveContract(ServerLevel level, CompoundTag tag, int days, int emeraldsPaid) {
-        int safeDays = Mth.clamp(days, 1, 30);
+        int safeDays = clampedContractDays(days);
         long currentEnd = Math.max(level.getGameTime(), tag.getLong(END_GAME_TIME_TAG));
         tag.putLong(END_GAME_TIME_TAG, currentEnd + safeDays * DAY_TICKS);
         tag.putInt(DURATION_DAYS_TAG, tag.getInt(DURATION_DAYS_TAG) + safeDays);
@@ -453,6 +455,10 @@ public final class HiredVillagerContractService {
         tag.remove(PROFESSION_LOCK_ARTIFICIAL_TAG);
         tag.remove(PROFESSION_LOCK_ORIGINAL_XP_TAG);
         tag.remove(PROFESSION_LOCK_APPLIED_XP_TAG);
+    }
+
+    private static int clampedContractDays(int days) {
+        return Mth.clamp(days, 1, MAX_CONTRACT_DAYS);
     }
 
     private static int earlyEndRefund(ServerLevel level, CompoundTag contract) {
