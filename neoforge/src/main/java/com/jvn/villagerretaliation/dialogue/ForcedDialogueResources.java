@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
@@ -36,10 +37,13 @@ public final class ForcedDialogueResources {
     private static final String RESOURCE_ROOT = "forced_dialogue";
     private static final String DEFAULT_NAMESPACE = "villagerretaliation";
     private static final String LEAVE_OPTION_ID = "leave";
+    private static final String TEXT_KEY_PREFIX = "{{vr_text_key:";
+    private static final String TEXT_KEY_END = "}}";
     private static final Set<String> ROOT_KEYS = Set.of(
             "entries", "notifications", "messages", "openings", "closings", "pacify",
             "metadata",
             "id", "trigger", "event", "line", "lines", "priority", "chance", "witness_radius",
+            "replace", "remove", "line_key", "line_keys", "text_key", "text_keys",
             "witness_profession", "witness_professions", "professions",
             "requires_witness_unarmed", "witness_unarmed", "requires_witness_armed", "witness_armed",
             "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
@@ -54,7 +58,7 @@ public final class ForcedDialogueResources {
             "options", "leave_option", "leave_options");
     private static final Set<String> ENTRY_KEYS = ROOT_KEYS;
     private static final Set<String> OPTION_KEYS = Set.of(
-            "id", "label", "response", "responses", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
+            "id", "label", "label_key", "response", "responses", "response_key", "response_keys", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation", "take_items", "take_stolen_items",
             "conditions",
             "follow_up", "requires_high_knowledge", "requires_high_guts", "requires_high_proficiency", "requires_high_kindness", "requires_high_charm",
@@ -148,13 +152,24 @@ public final class ForcedDialogueResources {
                     "closings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
                     "pacify", "data/villagerretaliation/dialogue/<locale>/<file>.json"));
             DatapackDiagnostics.warnUnknownRootKeys(location, "forced dialogue", root, ROOT_KEYS);
+            if (readBoolean(root, "replace")) {
+                definitions.clear();
+                if (isControlOnly(root, "replace", "metadata")) {
+                    return;
+                }
+            }
             ResourceLocation defaultQuestId = defaultQuestId(location, root, null);
             JsonArray entries = root.getAsJsonArray("entries");
             if (entries != null) {
                 int index = 0;
                 for (JsonElement element : entries) {
                     if (element.isJsonObject()) {
-                        readEntry(location, element.getAsJsonObject(), index, defaultQuestId)
+                        JsonObject entry = element.getAsJsonObject();
+                        if (removeDefinition(location, entry, index, definitions)) {
+                            index++;
+                            continue;
+                        }
+                        readEntry(location, entry, index, defaultQuestId)
                                 .ifPresent(definition -> putDefinition(location, definitions, definition));
                     }
                     index++;
@@ -162,8 +177,37 @@ public final class ForcedDialogueResources {
                 return;
             }
 
+            if (removeDefinition(location, root, 0, definitions)) {
+                return;
+            }
             readEntry(location, root, 0, defaultQuestId).ifPresent(definition -> putDefinition(location, definitions, definition));
         });
+    }
+
+    private static boolean isControlOnly(JsonObject root, String... allowedKeys) {
+        Set<String> allowed = new java.util.HashSet<>(List.of(allowedKeys));
+        for (String key : root.keySet()) {
+            if (!allowed.contains(key)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean removeDefinition(
+            ResourceLocation location,
+            JsonObject entry,
+            int index,
+            Map<String, ForcedDialogueDefinition> definitions) {
+        if (!readBoolean(entry, "remove")) {
+            return false;
+        }
+        String id = readString(entry, "id");
+        if (id.isBlank()) {
+            id = fallbackId(location, index);
+        }
+        definitions.remove(id);
+        return true;
     }
 
     private static void putDefinition(
@@ -314,6 +358,15 @@ public final class ForcedDialogueResources {
         if (!line.isBlank()) {
             lines.add(0, line);
         }
+        List<String> keys = readStringList(entry, "line_key", "line_keys", "text_key", "text_keys");
+        if (!keys.isEmpty()) {
+            String fallback = line.isBlank() && !lines.isEmpty() ? lines.getFirst() : line;
+            return keys.stream()
+                    .map(key -> textKeyMarker(key, fallback))
+                    .filter(value -> !value.isBlank())
+                    .distinct()
+                    .toList();
+        }
         return lines.stream()
                 .filter(value -> !value.isBlank())
                 .distinct()
@@ -329,6 +382,15 @@ public final class ForcedDialogueResources {
         String response = readString(entry, singleKey);
         if (!response.isBlank()) {
             responses.add(0, response);
+        }
+        List<String> keys = readStringList(entry, singleKey + "_key", singleKey + "_keys");
+        if (!keys.isEmpty()) {
+            String fallback = response.isBlank() && !responses.isEmpty() ? responses.getFirst() : response;
+            return keys.stream()
+                    .map(key -> textKeyMarker(key, fallback))
+                    .filter(value -> !value.isBlank())
+                    .distinct()
+                    .toList();
         }
         return responses.stream()
                 .filter(value -> !value.isBlank())
@@ -359,6 +421,10 @@ public final class ForcedDialogueResources {
             }
             String id = readString(option, "id");
             String label = readString(option, "label");
+            String labelKey = readString(option, "label_key");
+            if (!labelKey.isBlank()) {
+                label = textKeyMarker(labelKey, label);
+            }
             if (id.isBlank() || label.isBlank()) {
                 index++;
                 continue;
@@ -388,6 +454,10 @@ public final class ForcedDialogueResources {
                         DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue leave option", optionContext(option, index), option, OPTION_KEYS);
                     }
                     String label = readString(option, "label");
+                    String labelKey = readString(option, "label_key");
+                    if (!labelKey.isBlank()) {
+                        label = textKeyMarker(labelKey, label);
+                    }
                     leaveOptions.add(readOption(
                             location,
                             optionContext(option, index),
@@ -413,6 +483,10 @@ public final class ForcedDialogueResources {
         }
         JsonObject option = element != null && element.isJsonObject() ? element.getAsJsonObject() : new JsonObject();
         String label = readString(option, "label");
+        String labelKey = readString(option, "label_key");
+        if (!labelKey.isBlank()) {
+            label = textKeyMarker(labelKey, label);
+        }
         return List.of(readOption(
                 location,
                 optionContext(option, 0),
@@ -599,37 +673,74 @@ public final class ForcedDialogueResources {
     }
 
     static String resolveTemplate(String text, ForcedDialogueContext context, Map<String, String> extraReplacements) {
+        if (text == null) {
+            return "";
+        }
         Map<String, String> replacements = new HashMap<>();
-        replacements.put("villager", context.villagerName());
-        replacements.put("player", context.playerName());
-        replacements.put("target", context.targetName());
-        replacements.put("target_article", VillagerInteractionTextUtil.withIndefiniteArticle(context.targetName()));
-        replacements.put("target_name", context.targetName());
-        replacements.put("target_kind", context.targetKind());
-        replacements.put("target_type", context.targetType());
-        replacements.put("item", context.itemName());
-        replacements.put("item_id", context.itemId());
-        replacements.put("count", Integer.toString(context.itemCount()));
-        replacements.put("item_count", Integer.toString(context.itemCount()));
-        replacements.put("item_stack", context.itemStack());
-        replacements.put("items", context.itemList());
-        replacements.put("stolen_item", context.itemName());
-        replacements.put("stolen_item_id", context.itemId());
-        replacements.put("stolen_count", Integer.toString(context.itemCount()));
-        replacements.put("stolen_item_count", Integer.toString(context.itemCount()));
-        replacements.put("stolen_stack", context.itemStack());
-        replacements.put("stolen_items", context.itemList());
-        replacements.put("container", context.containerName());
-        replacements.put("loot_table", context.lootTable());
-        replacements.put("prior_container_thefts", Integer.toString(context.priorContainerThefts()));
-        replacements.put("container_theft_offense", Integer.toString(context.priorContainerThefts() + 1));
-        replacements.put("prior_retaliations", Integer.toString(context.priorRetaliations()));
-        replacements.put("retaliation_offense", Integer.toString(context.priorRetaliations() + 1));
-        replacements.put("x", Integer.toString(context.x()));
-        replacements.put("y", Integer.toString(context.y()));
-        replacements.put("z", Integer.toString(context.z()));
+        if (context != null) {
+            replacements.put("villager", context.villagerName());
+            replacements.put("player", context.playerName());
+            replacements.put("target", context.targetName());
+            replacements.put("target_article", VillagerInteractionTextUtil.withIndefiniteArticle(context.targetName()));
+            replacements.put("target_name", context.targetName());
+            replacements.put("target_kind", context.targetKind());
+            replacements.put("target_type", context.targetType());
+            replacements.put("item", context.itemName());
+            replacements.put("item_id", context.itemId());
+            replacements.put("count", Integer.toString(context.itemCount()));
+            replacements.put("item_count", Integer.toString(context.itemCount()));
+            replacements.put("item_stack", context.itemStack());
+            replacements.put("items", context.itemList());
+            replacements.put("stolen_item", context.itemName());
+            replacements.put("stolen_item_id", context.itemId());
+            replacements.put("stolen_count", Integer.toString(context.itemCount()));
+            replacements.put("stolen_item_count", Integer.toString(context.itemCount()));
+            replacements.put("stolen_stack", context.itemStack());
+            replacements.put("stolen_items", context.itemList());
+            replacements.put("container", context.containerName());
+            replacements.put("loot_table", context.lootTable());
+            replacements.put("prior_container_thefts", Integer.toString(context.priorContainerThefts()));
+            replacements.put("container_theft_offense", Integer.toString(context.priorContainerThefts() + 1));
+            replacements.put("prior_retaliations", Integer.toString(context.priorRetaliations()));
+            replacements.put("retaliation_offense", Integer.toString(context.priorRetaliations() + 1));
+            replacements.put("x", Integer.toString(context.x()));
+            replacements.put("y", Integer.toString(context.y()));
+            replacements.put("z", Integer.toString(context.z()));
+        }
         replacements.putAll(extraReplacements);
+        TextKeyMarker marker = textKeyMarker(text);
+        if (marker != null) {
+            String fallback = VillagerDialogueResources.resolveTemplate(marker.fallback(), replacements);
+            if (context != null && context.server() != null && context.random() != null) {
+                return VillagerDialogueResources
+                        .globalMessage(context.server(), context.random(), marker.key(), context.locale(), replacements)
+                        .orElse(fallback);
+            }
+            return fallback;
+        }
         return VillagerDialogueResources.resolveTemplate(text, replacements);
+    }
+
+    private static String textKeyMarker(String key, String fallback) {
+        if (key == null || key.isBlank()) {
+            return fallback == null ? "" : fallback;
+        }
+        return TEXT_KEY_PREFIX + key.trim() + TEXT_KEY_END + (fallback == null ? "" : fallback);
+    }
+
+    private static TextKeyMarker textKeyMarker(String text) {
+        if (text == null || !text.startsWith(TEXT_KEY_PREFIX)) {
+            return null;
+        }
+        int end = text.indexOf(TEXT_KEY_END, TEXT_KEY_PREFIX.length());
+        if (end < 0) {
+            return null;
+        }
+        String key = text.substring(TEXT_KEY_PREFIX.length(), end).trim();
+        if (key.isBlank()) {
+            return null;
+        }
+        return new TextKeyMarker(key, text.substring(end + TEXT_KEY_END.length()));
     }
 
     private static <E extends Enum<E>> Optional<E> readEnum(JsonObject entry, String key, Class<E> enumClass) {
@@ -649,8 +760,8 @@ public final class ForcedDialogueResources {
         return DatapackJsonReader.readString(entry, key);
     }
 
-    private static List<String> readStringList(JsonObject entry, String key) {
-        return DatapackJsonReader.readStringList(entry, key);
+    private static List<String> readStringList(JsonObject entry, String... keys) {
+        return DatapackJsonReader.readStringList(entry, keys);
     }
 
     private static Optional<ResourceLocation> readResourceLocation(JsonObject entry, String key) {
@@ -1030,6 +1141,67 @@ public final class ForcedDialogueResources {
             int priorRetaliations,
             int x,
             int y,
-            int z) {
+            int z,
+            MinecraftServer server,
+            RandomSource random,
+            String locale) {
+        public ForcedDialogueContext(
+                String villagerName,
+                String playerName,
+                String targetName,
+                String targetKind,
+                String targetType,
+                String itemName,
+                String itemId,
+                int itemCount,
+                String itemStack,
+                String itemList,
+                String containerName,
+                String lootTable,
+                int priorContainerThefts,
+                int priorRetaliations,
+                int x,
+                int y,
+                int z) {
+            this(
+                    villagerName,
+                    playerName,
+                    targetName,
+                    targetKind,
+                    targetType,
+                    itemName,
+                    itemId,
+                    itemCount,
+                    itemStack,
+                    itemList,
+                    containerName,
+                    lootTable,
+                    priorContainerThefts,
+                    priorRetaliations,
+                    x,
+                    y,
+                    z,
+                    null,
+                    null,
+                    VillagerLocale.DEFAULT_LOCALE);
+        }
+
+        public ForcedDialogueContext {
+            villagerName = villagerName == null ? "" : villagerName;
+            playerName = playerName == null ? "" : playerName;
+            targetName = targetName == null ? "" : targetName;
+            targetKind = targetKind == null ? "" : targetKind;
+            targetType = targetType == null ? "" : targetType;
+            itemName = itemName == null ? "" : itemName;
+            itemId = itemId == null ? "" : itemId;
+            itemStack = itemStack == null ? "" : itemStack;
+            itemList = itemList == null ? "" : itemList;
+            containerName = containerName == null ? "" : containerName;
+            lootTable = lootTable == null ? "" : lootTable;
+            locale = VillagerLocale.normalize(locale);
+        }
+    }
+
+    private record TextKeyMarker(String key, String fallback) {
     }
 }

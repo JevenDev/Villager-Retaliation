@@ -13,205 +13,239 @@
       "key": "interaction.work.animal_breeding.roaming",
       "lines": [
         "I found no ready pairs yet, so I am checking the pen."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.roaming.000"
     },
     {
       "key": "interaction.work.animal_breeding.no_targets",
       "lines": [
         "There are no ready animal pairs in my work area."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.no_targets.001"
     },
     {
       "key": "interaction.work.animal_breeding.output_full_depositing",
       "lines": [
         "My output slots are full, so I am depositing animal handling output."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.output_full_depositing.002"
     },
     {
       "key": "interaction.work.animal_breeding.output_full_blocked",
       "lines": [
         "I found animal output to collect, but my output slots are full."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.output_full_blocked.003"
     },
     {
       "key": "interaction.work.animal_breeding.missing_shears",
       "lines": [
         "I found sheep ready for shearing, but I need shears in my supplies."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.missing_shears.004"
     },
     {
       "key": "interaction.work.animal_breeding.missing_bucket",
       "lines": [
         "I found an animal ready for milking, but I need an empty bucket in my supplies."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.missing_bucket.005"
     },
     {
       "key": "interaction.work.animal_breeding.collecting_shears",
       "lines": [
         "I am heading to assigned storage for shears."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collecting_shears.006"
     },
     {
       "key": "interaction.work.animal_breeding.collecting_bucket",
       "lines": [
         "I am heading to assigned storage for an empty bucket."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collecting_bucket.007"
     },
     {
       "key": "interaction.work.animal_breeding.gathered_shears",
       "lines": [
         "I gathered shears from assigned storage."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.gathered_shears.008"
     },
     {
       "key": "interaction.work.animal_breeding.gathered_bucket",
       "lines": [
         "I gathered an empty bucket from assigned storage."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.gathered_bucket.009"
     },
     {
       "key": "interaction.work.animal_breeding.product_supply_unreachable",
       "lines": [
         "I found animal-handling supplies in storage, but I cannot reach them."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.product_supply_unreachable.010"
     },
     {
       "key": "interaction.work.animal_breeding.product_supply_inventory_full",
       "lines": [
         "I found animal-handling supplies, but my supply slots are full."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.product_supply_inventory_full.011"
     },
     {
       "key": "interaction.work.animal_breeding.product_unreachable",
       "lines": [
         "I found an animal ready for handling, but I cannot reach it safely."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.product_unreachable.012"
     },
     {
       "key": "interaction.work.animal_breeding.product_changed",
       "lines": [
         "That animal is no longer ready."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.product_changed.013"
     },
     {
       "key": "interaction.work.animal_breeding.moving_to_sheep",
       "lines": [
         "I am moving to a sheep ready for shearing."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_sheep.014"
     },
     {
       "key": "interaction.work.animal_breeding.moving_to_milk",
       "lines": [
         "I am moving to an animal ready for milking."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_milk.015"
     },
     {
       "key": "interaction.work.animal_breeding.shearing",
       "lines": [
         "I am shearing the sheep."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.shearing.016"
     },
     {
       "key": "interaction.work.animal_breeding.milking",
       "lines": [
         "I am milking the animal."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.milking.017"
     },
     {
       "key": "interaction.work.animal_breeding.sheared_sheep",
       "lines": [
         "I sheared {count} wool from the sheep."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.sheared_sheep.018"
     },
     {
       "key": "interaction.work.animal_breeding.milked_animal",
       "lines": [
         "I milked {target}."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.milked_animal.019"
     },
     {
       "key": "interaction.work.animal_breeding.egg_unreachable",
       "lines": [
         "I found eggs in the work area, but I cannot reach them safely."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.egg_unreachable.020"
     },
     {
       "key": "interaction.work.animal_breeding.egg_repositioning",
       "lines": [
         "I am finding a safe path to the eggs."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.egg_repositioning.021"
     },
     {
       "key": "interaction.work.animal_breeding.moving_to_egg",
       "lines": [
         "I am moving to collect dropped eggs."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_egg.022"
     },
     {
       "key": "interaction.work.animal_breeding.collected_eggs",
       "lines": [
         "I collected {count} egg(s)."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collected_eggs.023"
     },
     {
       "key": "interaction.work.animal_breeding.missing_food",
       "lines": [
         "I found animals to breed, but I need the right food in my supplies."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.missing_food.024"
     },
     {
       "key": "interaction.work.animal_breeding.collecting_food",
       "lines": [
         "I am heading to assigned storage for breeding food."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collecting_food.025"
     },
     {
       "key": "interaction.work.animal_breeding.food_unreachable",
       "lines": [
         "I found breeding food in storage, but I cannot reach it."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.food_unreachable.026"
     },
     {
       "key": "interaction.work.animal_breeding.food_inventory_full",
       "lines": [
         "I found breeding food, but my supply slots are full."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.food_inventory_full.027"
     },
     {
       "key": "interaction.work.animal_breeding.gathered_food",
       "lines": [
         "I gathered breeding food from assigned storage."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.gathered_food.028"
     },
     {
       "key": "interaction.work.animal_breeding.pair_unreachable",
       "lines": [
         "I cannot reach that animal pair safely."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.pair_unreachable.029"
     },
     {
       "key": "interaction.work.animal_breeding.moving_to_pair",
       "lines": [
         "I am moving to a ready animal pair."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_pair.030"
     },
     {
       "key": "interaction.work.animal_breeding.feeding",
       "lines": [
         "I am feeding the animals."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.feeding.031"
     },
     {
       "key": "interaction.work.animal_breeding.pair_changed",
       "lines": [
         "That animal pair is no longer ready."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.pair_changed.032"
     },
     {
       "key": "interaction.work.animal_breeding.completed",
       "lines": [
         "I fed {target} for breeding."
-      ]
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.completed.033"
     }
   ]
 }

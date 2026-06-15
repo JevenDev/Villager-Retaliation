@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The leather repair request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.leather_repairs.dialogue.start",
+    "reminder_key": "quest.village_supply.leather_repairs.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.leather_repairs.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.leather_repairs.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.leather_repairs.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.leather_repairs.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.leather_repairs.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.leather_repairs.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.leather_repairs.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring leather for tool loops, armor straps, and pack repairs.",
-    "title": "Leather Repairs"
+    "title": "Leather Repairs",
+    "title_key": "quest.village_supply.leather_repairs.title",
+    "description_key": "quest.village_supply.leather_repairs.description"
   },
   "id": "villagerretaliation:leather_repairs",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The leather is cut-ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 8 leather for repair straps."
+        "text": "Bring 8 leather for repair straps.",
+        "text_key": "quest.village_supply.leather_repairs.objective.bring_leather.text",
+        "complete_text_key": "quest.village_supply.leather_repairs.objective.bring_leather.complete_text"
       },
       "type": "item_check"
     }
@@ -88,14 +101,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 8 leather for repair straps."
+        "text": "Bring 8 leather for repair straps.",
+        "text_key": "quest.village_supply.leather_repairs.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the leather."
+        "text": "Return to the quest giver with the leather.",
+        "text_key": "quest.village_supply.leather_repairs.tracker.return.text"
       }
     },
-    "title": "Leather Repairs"
+    "title": "Leather Repairs",
+    "title_key": "quest.village_supply.leather_repairs.tracker.title"
   }
 }

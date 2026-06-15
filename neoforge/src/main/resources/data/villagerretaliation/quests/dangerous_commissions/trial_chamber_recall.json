@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "This request needs a better equipped ally."
-    ]
+    ],
+    "start_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.start",
+    "reminder_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.reminder",
+    "turn_in_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.turn_in",
+    "already_completed_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.already_completed",
+    "unavailable_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.unavailable",
+    "inactive_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.inactive",
+    "missing_target_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_target",
+    "missing_proof_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_proof",
+    "locate_failed_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.locate_failed"
   },
   "display": {
     "description": "Survey a Trial Chamber and return with a Trial Key and Breeze Rod.",
-    "title": "Trial Chamber Recall"
+    "title": "Trial Chamber Recall",
+    "title_key": "quest.dangerous_commissions.trial_chamber_recall.title",
+    "description_key": "quest.dangerous_commissions.trial_chamber_recall.description"
   },
   "id": "villagerretaliation:trial_chamber_recall",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The chamber hazard has been proven.",
         "progress": 0.84,
         "show_progress": true,
-        "text": "Bring 1 breeze rod from the chamber."
+        "text": "Bring 1 breeze rod from the chamber.",
+        "text_key": "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.text",
+        "complete_text_key": "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.complete_text"
       },
       "type": "item_check"
     }
@@ -95,17 +108,20 @@
       "bring_breeze_rod": {
         "progress": 0.84,
         "show_progress": true,
-        "text": "Recover 1 Breeze Rod from the chamber."
+        "text": "Recover 1 Breeze Rod from the chamber.",
+        "text_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.bring_breeze_rod.text"
       },
       "proof": {
         "progress": 0.66,
         "show_progress": true,
-        "text": "Bring back a Trial Key and Breeze Rod."
+        "text": "Bring back a Trial Key and Breeze Rod.",
+        "text_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the Trial Chamber proof."
+        "text": "Return to the quest giver with the Trial Chamber proof.",
+        "text_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.return.text"
       },
       "travel": {
         "metadata": {
@@ -113,9 +129,11 @@
         },
         "progress": 0.25,
         "show_progress": true,
-        "text": "Enter the Trial Chamber near {target_x}, {target_z}."
+        "text": "Enter the Trial Chamber near {target_x}, {target_z}.",
+        "text_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.travel.text"
       }
     },
-    "title": "Trial Chamber Recall"
+    "title": "Trial Chamber Recall",
+    "title_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.title"
   }
 }

@@ -1,0 +1,3232 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "section.messages",
+      "generated.quest_text"
+    ],
+    "topic": "quests.text"
+  },
+  "messages": [
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.description",
+      "key": "quest.dangerous_commissions.gilded_debt.description",
+      "lines": [
+        "Reach a Bastion Remnant and bring back Gilded Blackstone for a risky settlement."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.dialogue.already_completed",
+      "key": "quest.dangerous_commissions.gilded_debt.dialogue.already_completed",
+      "lines": [
+        "Gilded Debt is already settled."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.dialogue.inactive",
+      "key": "quest.dangerous_commissions.gilded_debt.dialogue.inactive",
+      "lines": [
+        "The conditions for this quest are not right at the moment."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.dialogue.locate_failed",
+      "key": "quest.dangerous_commissions.gilded_debt.dialogue.locate_failed",
+      "lines": [
+        "The bastion will not show itself. I refuse to chase a debt blind."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.dialogue.missing_proof",
+      "key": "quest.dangerous_commissions.gilded_debt.dialogue.missing_proof",
+      "lines": [
+        "Gilded Blackstone is the proof. Without it, this is only an expensive apology."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.dialogue.missing_target",
+      "key": "quest.dangerous_commissions.gilded_debt.dialogue.missing_target",
+      "lines": [
+        "Do not hand me gold and call it courage. Reach the bastion first."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.dialogue.reminder",
+      "key": "quest.dangerous_commissions.gilded_debt.dialogue.reminder",
+      "lines": [
+        "Bastion near {target_x}, {target_z}. Gilded Blackstone for proof, one gold block for settlement. No second ledger."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.dialogue.start",
+      "key": "quest.dangerous_commissions.gilded_debt.dialogue.start",
+      "lines": [
+        "The bastion is {direction}, about {distance} blocks away, near {target_x}, {target_z}. Bring Gilded Blackstone and one gold block. If you abandon this, I close the matter for good."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.dialogue.turn_in",
+      "key": "quest.dangerous_commissions.gilded_debt.dialogue.turn_in",
+      "lines": [
+        "Settled. The village gains relief, and a few whispers it will deserve. Some rewards are complicated."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.dialogue.unavailable",
+      "key": "quest.dangerous_commissions.gilded_debt.dialogue.unavailable",
+      "lines": [
+        "No. This ledger opens only for someone already trusted with sharp endings."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.objective.bring_gold_block.complete_text",
+      "key": "quest.dangerous_commissions.gilded_debt.objective.bring_gold_block.complete_text",
+      "lines": [
+        "The settlement gold is ready."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.objective.bring_gold_block.text",
+      "key": "quest.dangerous_commissions.gilded_debt.objective.bring_gold_block.text",
+      "lines": [
+        "Bring 1 gold block to settle the debt cleanly."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.title",
+      "key": "quest.dangerous_commissions.gilded_debt.title",
+      "lines": [
+        "Gilded Debt"
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.tracker.bring_gold_block.text",
+      "key": "quest.dangerous_commissions.gilded_debt.tracker.bring_gold_block.text",
+      "lines": [
+        "Add 1 gold block to settle the old debt."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.tracker.proof.text",
+      "key": "quest.dangerous_commissions.gilded_debt.tracker.proof.text",
+      "lines": [
+        "Bring Gilded Blackstone and 1 gold block."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.tracker.return.text",
+      "key": "quest.dangerous_commissions.gilded_debt.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the gilded proof."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.tracker.title",
+      "key": "quest.dangerous_commissions.gilded_debt.tracker.title",
+      "lines": [
+        "Gilded Debt"
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.gilded_debt.tracker.travel.text",
+      "key": "quest.dangerous_commissions.gilded_debt.tracker.travel.text",
+      "lines": [
+        "Find the Bastion Remnant near {target_x}, {target_z}."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.description",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.description",
+      "lines": [
+        "Enter a Woodland Mansion and return with a Totem of Undying."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.already_completed",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.already_completed",
+      "lines": [
+        "House of Ill Omens is already settled."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.inactive",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.inactive",
+      "lines": [
+        "The conditions for this quest are not right at the moment."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.locate_failed",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.locate_failed",
+      "lines": [
+        "The mansion is beyond my reach today. The woods are keeping their mouth shut."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_proof",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_proof",
+      "lines": [
+        "Bring the Totem. Nothing else carries enough of that house on it."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_target",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_target",
+      "lines": [
+        "The totem needs the mansion behind it. I need the place confirmed."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.reminder",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.reminder",
+      "lines": [
+        "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to pay the informants who helped us."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.start",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.start",
+      "lines": [
+        "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Bring a Totem of Undying and 12 emeralds for informants."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.turn_in",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.turn_in",
+      "lines": [
+        "A Totem of Undying. That is not proof of safety, but it is proof the village has a shield with a name."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.unavailable",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.unavailable",
+      "lines": [
+        "This is not a request for someone the village only half trusts."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.objective.bring_emeralds.complete_text",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.objective.bring_emeralds.complete_text",
+      "lines": [
+        "The informant payment is ready."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.objective.bring_emeralds.text",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.objective.bring_emeralds.text",
+      "lines": [
+        "Bring 12 emeralds to repay informants after the mansion run."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.title",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.title",
+      "lines": [
+        "House of Ill Omens"
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.tracker.bring_emeralds.text",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.tracker.bring_emeralds.text",
+      "lines": [
+        "Set aside 12 emeralds for informants."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.tracker.proof.text",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.tracker.proof.text",
+      "lines": [
+        "Bring a Totem of Undying and 12 emeralds."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.tracker.return.text",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the mansion proof."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.tracker.title",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.tracker.title",
+      "lines": [
+        "House of Ill Omens"
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.tracker.travel.text",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.tracker.travel.text",
+      "lines": [
+        "Enter the Woodland Mansion near {target_x}, {target_z}."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.description",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.description",
+      "lines": [
+        "Reach a Nether Fortress and return with Nether Wart and a Blaze Rod."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.dialogue.already_completed",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.already_completed",
+      "lines": [
+        "Nether Wart Warranty is already settled."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.dialogue.inactive",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.inactive",
+      "lines": [
+        "The conditions for this quest are not right at the moment."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.dialogue.locate_failed",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.locate_failed",
+      "lines": [
+        "I cannot read a fortress route from here. The Nether is being unusually honest about being hostile."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_proof",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_proof",
+      "lines": [
+        "Bring Nether Wart. The whole request is written around it."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_target",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_target",
+      "lines": [
+        "Nether Wart without the fortress route is a guess. I need the place confirmed."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.dialogue.reminder",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.reminder",
+      "lines": [
+        "Fortress near {target_x}, {target_z}. Nether Wart is the cure; a Blaze Rod proves you reached the heat of it."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.dialogue.start",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.start",
+      "lines": [
+        "The fortress mark sits {direction}, about {distance} blocks away, near {target_x}, {target_z}. Bring Nether Wart and one Blaze Rod."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.dialogue.turn_in",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.turn_in",
+      "lines": [
+        "That will brew into more than medicine. It will brew into confidence. Take your reward."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.dialogue.unavailable",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.unavailable",
+      "lines": [
+        "This request needs steadier hands than you have shown me so far."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.complete_text",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.complete_text",
+      "lines": [
+        "The blaze rod proves the route."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.text",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.text",
+      "lines": [
+        "Bring 1 blaze rod so the cleric knows the fortress was real."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.title",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.title",
+      "lines": [
+        "Nether Wart Warranty"
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.tracker.bring_blaze_rod.text",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.tracker.bring_blaze_rod.text",
+      "lines": [
+        "Bring 1 blaze rod with the nether wart."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.tracker.proof.text",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.tracker.proof.text",
+      "lines": [
+        "Collect nether wart and a blaze rod."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.tracker.return.text",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the Nether proof."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.tracker.title",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.tracker.title",
+      "lines": [
+        "Nether Wart Warranty"
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.nether_wart_warranty.tracker.travel.text",
+      "key": "quest.dangerous_commissions.nether_wart_warranty.tracker.travel.text",
+      "lines": [
+        "Find the fortress near {target_x}, {target_z}."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.description",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.description",
+      "lines": [
+        "Survey a Trial Chamber and return with a Trial Key and Breeze Rod."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.dialogue.already_completed",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.already_completed",
+      "lines": [
+        "Trial Chamber Recall is already settled."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.dialogue.inactive",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.inactive",
+      "lines": [
+        "The conditions for this quest are not right at the moment."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.dialogue.locate_failed",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.locate_failed",
+      "lines": [
+        "No chamber answers the map today. Maybe that is mercy."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_proof",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_proof",
+      "lines": [
+        "Bring a Trial Key. It is the chamber admitting you were there."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_target",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_target",
+      "lines": [
+        "The items matter after you set foot in the chamber itself."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.dialogue.reminder",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.reminder",
+      "lines": [
+        "Trial Chamber near {target_x}, {target_z}. Key, Breeze Rod, return alive enough to explain both."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.dialogue.start",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.start",
+      "lines": [
+        "The chamber is {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.dialogue.turn_in",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.turn_in",
+      "lines": [
+        "A key and a Breeze Rod. Good. That chamber can stay mysterious, but not unmeasured."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.dialogue.unavailable",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.unavailable",
+      "lines": [
+        "This request needs a better equipped ally."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.complete_text",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.complete_text",
+      "lines": [
+        "The chamber hazard has been proven."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.text",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.text",
+      "lines": [
+        "Bring 1 breeze rod from the chamber."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.title",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.title",
+      "lines": [
+        "Trial Chamber Recall"
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.tracker.bring_breeze_rod.text",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.tracker.bring_breeze_rod.text",
+      "lines": [
+        "Recover 1 Breeze Rod from the chamber."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.tracker.proof.text",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.tracker.proof.text",
+      "lines": [
+        "Bring back a Trial Key and Breeze Rod."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.tracker.return.text",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the Trial Chamber proof."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.tracker.title",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.tracker.title",
+      "lines": [
+        "Trial Chamber Recall"
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.trial_chamber_recall.tracker.travel.text",
+      "key": "quest.dangerous_commissions.trial_chamber_recall.tracker.travel.text",
+      "lines": [
+        "Enter the Trial Chamber near {target_x}, {target_z}."
+      ]
+    },
+    {
+      "id": "quest.dialogue.abandoned",
+      "key": "quest.dialogue.abandoned",
+      "lines": [
+        "{quest} was abandoned."
+      ]
+    },
+    {
+      "id": "quest.dialogue.abandoned_cooldown",
+      "key": "quest.dialogue.abandoned_cooldown",
+      "lines": [
+        "You stepped away from {quest}. Come back when enough time has passed."
+      ]
+    },
+    {
+      "id": "quest.dialogue.abandoned_forever",
+      "key": "quest.dialogue.abandoned_forever",
+      "lines": [
+        "{quest} is no longer available after being abandoned."
+      ]
+    },
+    {
+      "id": "quest.dialogue.already_completed",
+      "key": "quest.dialogue.already_completed",
+      "lines": [
+        "{quest} is already complete."
+      ]
+    },
+    {
+      "id": "quest.dialogue.inactive",
+      "key": "quest.dialogue.inactive",
+      "lines": [
+        "{quest} is not active right now."
+      ]
+    },
+    {
+      "id": "quest.dialogue.inventory_full",
+      "key": "quest.dialogue.inventory_full",
+      "lines": [
+        "Your inventory is too full to receive the reward for {quest}."
+      ]
+    },
+    {
+      "id": "quest.dialogue.locate_failed",
+      "key": "quest.dialogue.locate_failed",
+      "lines": [
+        "I cannot find a valid target for {quest} right now."
+      ]
+    },
+    {
+      "id": "quest.dialogue.locked_to_villager",
+      "key": "quest.dialogue.locked_to_villager",
+      "lines": [
+        "You need to return to the villager who gave you {quest}."
+      ]
+    },
+    {
+      "id": "quest.dialogue.missing_objectives",
+      "key": "quest.dialogue.missing_objectives",
+      "lines": [
+        "There is still more to finish for {quest}."
+      ]
+    },
+    {
+      "id": "quest.dialogue.missing_proof",
+      "key": "quest.dialogue.missing_proof",
+      "lines": [
+        "Bring what I asked for before we close {quest}."
+      ]
+    },
+    {
+      "id": "quest.dialogue.missing_target",
+      "key": "quest.dialogue.missing_target",
+      "lines": [
+        "There is still more to do for {quest}."
+      ]
+    },
+    {
+      "id": "quest.dialogue.reminder",
+      "key": "quest.dialogue.reminder",
+      "lines": [
+        "How is {quest} coming along?"
+      ]
+    },
+    {
+      "id": "quest.dialogue.start",
+      "key": "quest.dialogue.start",
+      "lines": [
+        "I have work that could use your hands: {quest}."
+      ]
+    },
+    {
+      "id": "quest.dialogue.turn_in",
+      "key": "quest.dialogue.turn_in",
+      "lines": [
+        "You finished {quest}. Thank you."
+      ]
+    },
+    {
+      "id": "quest.dialogue.unavailable",
+      "key": "quest.dialogue.unavailable",
+      "lines": [
+        "{quest} is not available right now."
+      ]
+    },
+    {
+      "id": "quest.expired",
+      "key": "quest.expired",
+      "lines": [
+        "Quest expired: {quest}"
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.description",
+      "key": "quest.lost_civilization.end_city_survey.description",
+      "lines": [
+        "Reach an End City and bring back a Shulker Shell with a Chorus Flower sample."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.dialogue.already_completed",
+      "key": "quest.lost_civilization.end_city_survey.dialogue.already_completed",
+      "lines": [
+        "End City Survey is already settled."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.dialogue.inactive",
+      "key": "quest.lost_civilization.end_city_survey.dialogue.inactive",
+      "lines": [
+        "The conditions for this quest are not right at the moment."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.dialogue.locate_failed",
+      "key": "quest.lost_civilization.end_city_survey.dialogue.locate_failed",
+      "lines": [
+        "The End refuses a clean mark today. Even maps know when to hesitate."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.dialogue.missing_proof",
+      "key": "quest.lost_civilization.end_city_survey.dialogue.missing_proof",
+      "lines": [
+        "Bring a Shulker Shell. The city has to leave a hard signature."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.dialogue.missing_target",
+      "key": "quest.lost_civilization.end_city_survey.dialogue.missing_target",
+      "lines": [
+        "A shell alone is not a survey. Reach the End City itself."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.dialogue.reminder",
+      "key": "quest.lost_civilization.end_city_survey.dialogue.reminder",
+      "lines": [
+        "End City near {target_x}, {target_z}. Shulker Shell for proof, Chorus Flower for study. Try not to let the void edit the report."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.dialogue.start",
+      "key": "quest.lost_civilization.end_city_survey.dialogue.start",
+      "lines": [
+        "The city mark is {direction}, about {distance} blocks from here, near {target_x}, {target_z}. Bring a Shulker Shell and one Chorus Flower."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.dialogue.turn_in",
+      "key": "quest.lost_civilization.end_city_survey.dialogue.turn_in",
+      "lines": [
+        "A shell and a Chorus Flower. The village has heard stories. Now it has evidence. Your name will travel farther than the road."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.dialogue.unavailable",
+      "key": "quest.lost_civilization.end_city_survey.dialogue.unavailable",
+      "lines": [
+        "This survey waits for someone the village can trust with impossible directions."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.complete_text",
+      "key": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.complete_text",
+      "lines": [
+        "The Chorus Flower sample is intact."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.text",
+      "key": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.text",
+      "lines": [
+        "Bring 1 Chorus Flower as a living sample."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.title",
+      "key": "quest.lost_civilization.end_city_survey.title",
+      "lines": [
+        "End City Survey"
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.tracker.bring_chorus_flower.text",
+      "key": "quest.lost_civilization.end_city_survey.tracker.bring_chorus_flower.text",
+      "lines": [
+        "Keep 1 Chorus Flower sample intact."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.tracker.proof.text",
+      "key": "quest.lost_civilization.end_city_survey.tracker.proof.text",
+      "lines": [
+        "Bring a Shulker Shell and 1 Chorus Flower."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.tracker.return.text",
+      "key": "quest.lost_civilization.end_city_survey.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with proof from the End City."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.tracker.title",
+      "key": "quest.lost_civilization.end_city_survey.tracker.title",
+      "lines": [
+        "End City Survey"
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.end_city_survey.tracker.travel.text",
+      "key": "quest.lost_civilization.end_city_survey.tracker.travel.text",
+      "lines": [
+        "Reach the End City near {target_x}, {target_z}."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.tales_of_a_lost_civilization.description",
+      "key": "quest.lost_civilization.tales_of_a_lost_civilization.description",
+      "lines": [
+        "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.complete_text",
+      "key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.complete_text",
+      "lines": [
+        "Recovered {objective_item}."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.text",
+      "key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.text",
+      "lines": [
+        "Recover {objective_item} as proof of the journey."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.tales_of_a_lost_civilization.title",
+      "key": "quest.lost_civilization.tales_of_a_lost_civilization.title",
+      "lines": [
+        "Tales of a Lost Civilization"
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.proof.text",
+      "key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.proof.text",
+      "lines": [
+        "Recover {proof_item} as proof of the journey."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.return.text",
+      "key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.return.text",
+      "lines": [
+        "Return to the cartographer with {proof_item}."
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title",
+      "key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title",
+      "lines": [
+        "Tales of a Lost Civilization"
+      ]
+    },
+    {
+      "id": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.travel.text",
+      "key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.travel.text",
+      "lines": [
+        "Reach the Ancient City center near {target_x}, {target_z}."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.description",
+      "key": "quest.old_roads.sunken_ledger.description",
+      "lines": [
+        "Search a shipwreck and return with a compass and paper before the route is forgotten."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.dialogue.already_completed",
+      "key": "quest.old_roads.sunken_ledger.dialogue.already_completed",
+      "lines": [
+        "Sunken Ledger is already settled."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.dialogue.inactive",
+      "key": "quest.old_roads.sunken_ledger.dialogue.inactive",
+      "lines": [
+        "The conditions for this quest are not right at the moment."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.dialogue.locate_failed",
+      "key": "quest.old_roads.sunken_ledger.dialogue.locate_failed",
+      "lines": [
+        "The coast is not answering. I cannot find a wreck worth sending you to."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.dialogue.missing_proof",
+      "key": "quest.old_roads.sunken_ledger.dialogue.missing_proof",
+      "lines": [
+        "Bring me a compass from the wreck. Direction is the point of this errand."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.dialogue.missing_target",
+      "key": "quest.old_roads.sunken_ledger.dialogue.missing_target",
+      "lines": [
+        "The compass matters after you reach the wreck itself."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.dialogue.reminder",
+      "key": "quest.old_roads.sunken_ledger.dialogue.reminder",
+      "lines": [
+        "Shipwreck near {target_x}, {target_z}. Compass for proof, paper for the ledger."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.dialogue.start",
+      "key": "quest.old_roads.sunken_ledger.dialogue.start",
+      "lines": [
+        "The wreck should be {direction}, about {distance} blocks away, near {target_x}, {target_z}. Bring a compass and 8 paper for the copy."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.dialogue.turn_in",
+      "key": "quest.old_roads.sunken_ledger.dialogue.turn_in",
+      "lines": [
+        "A compass from the wreck and pages to save the route. Good. The water can keep the rest."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.dialogue.unavailable",
+      "key": "quest.old_roads.sunken_ledger.dialogue.unavailable",
+      "lines": [
+        "Not every villager should trust you with drowned records yet."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.objective.bring_paper.complete_text",
+      "key": "quest.old_roads.sunken_ledger.objective.bring_paper.complete_text",
+      "lines": [
+        "The blank pages are dry and ready."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.objective.bring_paper.text",
+      "key": "quest.old_roads.sunken_ledger.objective.bring_paper.text",
+      "lines": [
+        "Bring 8 paper to copy the damaged ledger."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.title",
+      "key": "quest.old_roads.sunken_ledger.title",
+      "lines": [
+        "Sunken Ledger"
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.tracker.bring_paper.text",
+      "key": "quest.old_roads.sunken_ledger.tracker.bring_paper.text",
+      "lines": [
+        "Collect 8 paper for a clean copy."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.tracker.proof.text",
+      "key": "quest.old_roads.sunken_ledger.tracker.proof.text",
+      "lines": [
+        "Bring a compass and 8 paper."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.tracker.return.text",
+      "key": "quest.old_roads.sunken_ledger.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the compass and paper."
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.tracker.title",
+      "key": "quest.old_roads.sunken_ledger.tracker.title",
+      "lines": [
+        "Sunken Ledger"
+      ]
+    },
+    {
+      "id": "quest.old_roads.sunken_ledger.tracker.travel.text",
+      "key": "quest.old_roads.sunken_ledger.tracker.travel.text",
+      "lines": [
+        "Reach the shipwreck near {target_x}, {target_z}."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.description",
+      "key": "quest.old_roads.the_broken_milestone.description",
+      "lines": [
+        "Find nearby Trail Ruins and bring a brush and stone to restore the road marker."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.dialogue.already_completed",
+      "key": "quest.old_roads.the_broken_milestone.dialogue.already_completed",
+      "lines": [
+        "The Broken Milestone is already settled."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.dialogue.inactive",
+      "key": "quest.old_roads.the_broken_milestone.dialogue.inactive",
+      "lines": [
+        "The conditions for this quest are not right at the moment."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.dialogue.locate_failed",
+      "key": "quest.old_roads.the_broken_milestone.dialogue.locate_failed",
+      "lines": [
+        "The road is too quiet today. I cannot find the broken marker from here."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.dialogue.missing_proof",
+      "key": "quest.old_roads.the_broken_milestone.dialogue.missing_proof",
+      "lines": [
+        "Bring a brush from the work. A clean story needs its dust on it."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.dialogue.missing_target",
+      "key": "quest.old_roads.the_broken_milestone.dialogue.missing_target",
+      "lines": [
+        "The stone is useful, but I need you to reach the ruins near the marker first."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.dialogue.reminder",
+      "key": "quest.old_roads.the_broken_milestone.dialogue.reminder",
+      "lines": [
+        "Trail ruins near {target_x}, {target_z}. I need a brush for the old dust and 12 smooth stone for the new face."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.dialogue.start",
+      "key": "quest.old_roads.the_broken_milestone.dialogue.start",
+      "lines": [
+        "The old mark is about {distance} blocks {direction}, near {target_x}, {target_z}. Bring a brush and 12 smooth stone so we can set the route right."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.dialogue.turn_in",
+      "key": "quest.old_roads.the_broken_milestone.dialogue.turn_in",
+      "lines": [
+        "Good. A repaired road is a quiet promise that someone can still come home."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.dialogue.unavailable",
+      "key": "quest.old_roads.the_broken_milestone.dialogue.unavailable",
+      "lines": [
+        "That route is not ready for your hands yet."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.complete_text",
+      "key": "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.complete_text",
+      "lines": [
+        "The replacement stone is ready."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.text",
+      "key": "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.text",
+      "lines": [
+        "Bring 12 smooth stone for the repaired marker."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.title",
+      "key": "quest.old_roads.the_broken_milestone.title",
+      "lines": [
+        "The Broken Milestone"
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.tracker.bring_smooth_stone.text",
+      "key": "quest.old_roads.the_broken_milestone.tracker.bring_smooth_stone.text",
+      "lines": [
+        "Gather 12 smooth stone for the repair."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.tracker.proof.text",
+      "key": "quest.old_roads.the_broken_milestone.tracker.proof.text",
+      "lines": [
+        "Bring a brush and 12 smooth stone."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.tracker.return.text",
+      "key": "quest.old_roads.the_broken_milestone.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the brush and stone."
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.tracker.title",
+      "key": "quest.old_roads.the_broken_milestone.tracker.title",
+      "lines": [
+        "The Broken Milestone"
+      ]
+    },
+    {
+      "id": "quest.old_roads.the_broken_milestone.tracker.travel.text",
+      "key": "quest.old_roads.the_broken_milestone.tracker.travel.text",
+      "lines": [
+        "Reach the old road mark near {target_x}, {target_z}."
+      ]
+    },
+    {
+      "id": "quest.tracker.metadata.issued_by",
+      "key": "quest.tracker.metadata.issued_by",
+      "lines": [
+        "Issued by {issuer}"
+      ]
+    },
+    {
+      "id": "quest.tracker.status.abandoned",
+      "key": "quest.tracker.status.abandoned",
+      "lines": [
+        "Abandoned"
+      ]
+    },
+    {
+      "id": "quest.tracker.status.abandoned_cooldown",
+      "key": "quest.tracker.status.abandoned_cooldown",
+      "lines": [
+        "Abandoned, available again after {time_remaining}"
+      ]
+    },
+    {
+      "id": "quest.tracker.status.active",
+      "key": "quest.tracker.status.active",
+      "lines": [
+        "Active"
+      ]
+    },
+    {
+      "id": "quest.tracker.status.completed",
+      "key": "quest.tracker.status.completed",
+      "lines": [
+        "Completed"
+      ]
+    },
+    {
+      "id": "quest.tracker.status.consumed",
+      "key": "quest.tracker.status.consumed",
+      "lines": [
+        "Consumed"
+      ]
+    },
+    {
+      "id": "quest.tracker.status.expired",
+      "key": "quest.tracker.status.expired",
+      "lines": [
+        "Expired"
+      ]
+    },
+    {
+      "id": "quest.tracker.status.inactive",
+      "key": "quest.tracker.status.inactive",
+      "lines": [
+        "Inactive"
+      ]
+    },
+    {
+      "id": "quest.tracker.status.not_started",
+      "key": "quest.tracker.status.not_started",
+      "lines": [
+        "Not started"
+      ]
+    },
+    {
+      "id": "quest.tracker.status.ready",
+      "key": "quest.tracker.status.ready",
+      "lines": [
+        "Ready to turn in"
+      ]
+    },
+    {
+      "id": "quest.tracker.step.abandoned",
+      "key": "quest.tracker.step.abandoned",
+      "lines": [
+        "This quest has been abandoned."
+      ]
+    },
+    {
+      "id": "quest.tracker.step.abandoned_cooldown",
+      "key": "quest.tracker.step.abandoned_cooldown",
+      "lines": [
+        "This quest can be picked up again after {time_remaining}."
+      ]
+    },
+    {
+      "id": "quest.tracker.step.completed",
+      "key": "quest.tracker.step.completed",
+      "lines": [
+        "This quest is complete."
+      ]
+    },
+    {
+      "id": "quest.tracker.step.consumed",
+      "key": "quest.tracker.step.consumed",
+      "lines": [
+        "This quest has been consumed."
+      ]
+    },
+    {
+      "id": "quest.tracker.step.expired",
+      "key": "quest.tracker.step.expired",
+      "lines": [
+        "This quest expired."
+      ]
+    },
+    {
+      "id": "quest.tracker.step.inactive",
+      "key": "quest.tracker.step.inactive",
+      "lines": [
+        "Quest conditions are not currently met."
+      ]
+    },
+    {
+      "id": "quest.tracker.step.proof",
+      "key": "quest.tracker.step.proof",
+      "lines": [
+        "Complete the remaining objective."
+      ]
+    },
+    {
+      "id": "quest.tracker.step.return",
+      "key": "quest.tracker.step.return",
+      "lines": [
+        "Return to the quest giver."
+      ]
+    },
+    {
+      "id": "quest.tracker.step.travel",
+      "key": "quest.tracker.step.travel",
+      "lines": [
+        "Travel to the quest target."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.description",
+      "key": "quest.village_defense.fletchers_countermark.description",
+      "lines": [
+        "Scout a Pillager Outpost and return with a crossbow as proof of the threat."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.dialogue.already_completed",
+      "key": "quest.village_defense.fletchers_countermark.dialogue.already_completed",
+      "lines": [
+        "Fletcher's Countermark is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.dialogue.inactive",
+      "key": "quest.village_defense.fletchers_countermark.dialogue.inactive",
+      "lines": [
+        "The conditions for this quest are not right at the moment."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.dialogue.locate_failed",
+      "key": "quest.village_defense.fletchers_countermark.dialogue.locate_failed",
+      "lines": [
+        "I cannot pin the outpost from here. The mark may be old, or worse, moving."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.dialogue.missing_proof",
+      "key": "quest.village_defense.fletchers_countermark.dialogue.missing_proof",
+      "lines": [
+        "Bring a crossbow from the threat. I want weight, not rumor."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.dialogue.missing_target",
+      "key": "quest.village_defense.fletchers_countermark.dialogue.missing_target",
+      "lines": [
+        "A crossbow can come from many hands. I need you to scout the outpost itself."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.dialogue.reminder",
+      "key": "quest.village_defense.fletchers_countermark.dialogue.reminder",
+      "lines": [
+        "Outpost near {target_x}, {target_z}. Crossbow for proof, 24 arrows so we answer properly."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.dialogue.start",
+      "key": "quest.village_defense.fletchers_countermark.dialogue.start",
+      "lines": [
+        "The outpost lies {direction}, about {distance} blocks, near {target_x}, {target_z}. Bring a crossbow and 24 arrows."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.dialogue.turn_in",
+      "key": "quest.village_defense.fletchers_countermark.dialogue.turn_in",
+      "lines": [
+        "That is enough proof. The village will know where to point its fear, and its arrows."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.dialogue.unavailable",
+      "key": "quest.village_defense.fletchers_countermark.dialogue.unavailable",
+      "lines": [
+        "You are not the scout I need for this yet."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.objective.bring_arrows.complete_text",
+      "key": "quest.village_defense.fletchers_countermark.objective.bring_arrows.complete_text",
+      "lines": [
+        "The arrow bundle is ready."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.objective.bring_arrows.text",
+      "key": "quest.village_defense.fletchers_countermark.objective.bring_arrows.text",
+      "lines": [
+        "Bring 24 arrows to restock the watch after the scout."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.title",
+      "key": "quest.village_defense.fletchers_countermark.title",
+      "lines": [
+        "Fletcher's Countermark"
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.tracker.bring_arrows.text",
+      "key": "quest.village_defense.fletchers_countermark.tracker.bring_arrows.text",
+      "lines": [
+        "Bundle 24 arrows for the village watch."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.tracker.proof.text",
+      "key": "quest.village_defense.fletchers_countermark.tracker.proof.text",
+      "lines": [
+        "Bring back a crossbow and 24 arrows."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.tracker.return.text",
+      "key": "quest.village_defense.fletchers_countermark.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the outpost proof."
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.tracker.title",
+      "key": "quest.village_defense.fletchers_countermark.tracker.title",
+      "lines": [
+        "Fletcher's Countermark"
+      ]
+    },
+    {
+      "id": "quest.village_defense.fletchers_countermark.tracker.travel.text",
+      "key": "quest.village_defense.fletchers_countermark.tracker.travel.text",
+      "lines": [
+        "Scout the outpost near {target_x}, {target_z}."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.description",
+      "key": "quest.village_defense.watch_arrows.description",
+      "lines": [
+        "Bring arrows so the village watch can answer trouble before it reaches the doors."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.dialogue.already_completed",
+      "key": "quest.village_defense.watch_arrows.dialogue.already_completed",
+      "lines": [
+        "Watch Arrows is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.dialogue.inactive",
+      "key": "quest.village_defense.watch_arrows.dialogue.inactive",
+      "lines": [
+        "The watch is not counting arrows right now."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.dialogue.locate_failed",
+      "key": "quest.village_defense.watch_arrows.dialogue.locate_failed",
+      "lines": [
+        "No watch post is ready for another arrow request."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.dialogue.missing_proof",
+      "key": "quest.village_defense.watch_arrows.dialogue.missing_proof",
+      "lines": [
+        "Bring the arrows before I restock the watch."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.dialogue.missing_target",
+      "key": "quest.village_defense.watch_arrows.dialogue.missing_target",
+      "lines": [
+        "The watch still needs 16 arrows."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.dialogue.reminder",
+      "key": "quest.village_defense.watch_arrows.dialogue.reminder",
+      "lines": [
+        "Sixteen arrows for the watch. Straight shafts, sharp points, no speeches needed."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.dialogue.start",
+      "key": "quest.village_defense.watch_arrows.dialogue.start",
+      "lines": [
+        "Bring 16 arrows. The watch sleeps better when the quiver has weight."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.dialogue.turn_in",
+      "key": "quest.village_defense.watch_arrows.dialogue.turn_in",
+      "lines": [
+        "Good. That is a little distance between danger and the doors."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.dialogue.unavailable",
+      "key": "quest.village_defense.watch_arrows.dialogue.unavailable",
+      "lines": [
+        "The arrow request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.objective.bring_arrows.complete_text",
+      "key": "quest.village_defense.watch_arrows.objective.bring_arrows.complete_text",
+      "lines": [
+        "The watch arrows are bundled."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.objective.bring_arrows.text",
+      "key": "quest.village_defense.watch_arrows.objective.bring_arrows.text",
+      "lines": [
+        "Bring 16 arrows for the village watch."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.title",
+      "key": "quest.village_defense.watch_arrows.title",
+      "lines": [
+        "Watch Arrows"
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.tracker.proof.text",
+      "key": "quest.village_defense.watch_arrows.tracker.proof.text",
+      "lines": [
+        "Bring 16 arrows for the village watch."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.tracker.return.text",
+      "key": "quest.village_defense.watch_arrows.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the arrow."
+      ]
+    },
+    {
+      "id": "quest.village_defense.watch_arrows.tracker.title",
+      "key": "quest.village_defense.watch_arrows.tracker.title",
+      "lines": [
+        "Watch Arrows"
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.description",
+      "key": "quest.village_supply.beetroot_bundle.description",
+      "lines": [
+        "Bring beetroot for stews, pickling jars, and simple sickroom meals."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.dialogue.already_completed",
+      "key": "quest.village_supply.beetroot_bundle.dialogue.already_completed",
+      "lines": [
+        "Beetroot Bundle is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.dialogue.inactive",
+      "key": "quest.village_supply.beetroot_bundle.dialogue.inactive",
+      "lines": [
+        "The pantry list is not being counted right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.dialogue.locate_failed",
+      "key": "quest.village_supply.beetroot_bundle.dialogue.locate_failed",
+      "lines": [
+        "No pantry slate is ready for another beetroot request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.dialogue.missing_proof",
+      "key": "quest.village_supply.beetroot_bundle.dialogue.missing_proof",
+      "lines": [
+        "Bring the beetroot before I call the bundle complete."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.dialogue.missing_target",
+      "key": "quest.village_supply.beetroot_bundle.dialogue.missing_target",
+      "lines": [
+        "The pantry still needs 16 beetroot."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.dialogue.reminder",
+      "key": "quest.village_supply.beetroot_bundle.dialogue.reminder",
+      "lines": [
+        "Sixteen beetroot for soups and pickling jars. Not glamorous, but glamour has never fed anyone."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.dialogue.start",
+      "key": "quest.village_supply.beetroot_bundle.dialogue.start",
+      "lines": [
+        "Bring 16 beetroot. The stew pot looks more hopeful when it sees color."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.dialogue.turn_in",
+      "key": "quest.village_supply.beetroot_bundle.dialogue.turn_in",
+      "lines": [
+        "Good. A little red in the pot makes hard meals feel planned."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.dialogue.unavailable",
+      "key": "quest.village_supply.beetroot_bundle.dialogue.unavailable",
+      "lines": [
+        "The beetroot request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.objective.bring_beetroot.complete_text",
+      "key": "quest.village_supply.beetroot_bundle.objective.bring_beetroot.complete_text",
+      "lines": [
+        "The beetroot bundle is tied and ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.objective.bring_beetroot.text",
+      "key": "quest.village_supply.beetroot_bundle.objective.bring_beetroot.text",
+      "lines": [
+        "Bring 16 beetroot for the pantry."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.title",
+      "key": "quest.village_supply.beetroot_bundle.title",
+      "lines": [
+        "Beetroot Bundle"
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.tracker.proof.text",
+      "key": "quest.village_supply.beetroot_bundle.tracker.proof.text",
+      "lines": [
+        "Bring 16 beetroot for the pantry."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.tracker.return.text",
+      "key": "quest.village_supply.beetroot_bundle.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the beetroot."
+      ]
+    },
+    {
+      "id": "quest.village_supply.beetroot_bundle.tracker.title",
+      "key": "quest.village_supply.beetroot_bundle.tracker.title",
+      "lines": [
+        "Beetroot Bundle"
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.description",
+      "key": "quest.village_supply.berry_picking.description",
+      "lines": [
+        "Bring sweet berries for quick meals and traveling pouches."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.dialogue.already_completed",
+      "key": "quest.village_supply.berry_picking.dialogue.already_completed",
+      "lines": [
+        "Berry Picking is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.dialogue.inactive",
+      "key": "quest.village_supply.berry_picking.dialogue.inactive",
+      "lines": [
+        "The berry baskets are not being counted right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.dialogue.locate_failed",
+      "key": "quest.village_supply.berry_picking.dialogue.locate_failed",
+      "lines": [
+        "No one has set out the berry baskets yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.dialogue.missing_proof",
+      "key": "quest.village_supply.berry_picking.dialogue.missing_proof",
+      "lines": [
+        "Bring the sweet berries before I call the baskets full."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.dialogue.missing_target",
+      "key": "quest.village_supply.berry_picking.dialogue.missing_target",
+      "lines": [
+        "The baskets still need 16 sweet berries."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.dialogue.reminder",
+      "key": "quest.village_supply.berry_picking.dialogue.reminder",
+      "lines": [
+        "Sixteen sweet berries for the stores. Mind the thorns; they are very committed."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.dialogue.start",
+      "key": "quest.village_supply.berry_picking.dialogue.start",
+      "lines": [
+        "Bring 16 sweet berries. Easy to bruise, easier to miss when they are gone."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.dialogue.turn_in",
+      "key": "quest.village_supply.berry_picking.dialogue.turn_in",
+      "lines": [
+        "Fresh enough. The children will call it dessert, and I will let them."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.dialogue.unavailable",
+      "key": "quest.village_supply.berry_picking.dialogue.unavailable",
+      "lines": [
+        "The berry request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.objective.bring_berries.complete_text",
+      "key": "quest.village_supply.berry_picking.objective.bring_berries.complete_text",
+      "lines": [
+        "The berry baskets are full."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.objective.bring_berries.text",
+      "key": "quest.village_supply.berry_picking.objective.bring_berries.text",
+      "lines": [
+        "Gather 16 sweet berries for village stores."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.title",
+      "key": "quest.village_supply.berry_picking.title",
+      "lines": [
+        "Berry Picking"
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.tracker.proof.text",
+      "key": "quest.village_supply.berry_picking.tracker.proof.text",
+      "lines": [
+        "Gather 16 sweet berries for village stores."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.tracker.return.text",
+      "key": "quest.village_supply.berry_picking.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the sweet berries."
+      ]
+    },
+    {
+      "id": "quest.village_supply.berry_picking.tracker.title",
+      "key": "quest.village_supply.berry_picking.tracker.title",
+      "lines": [
+        "Berry Picking"
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.description",
+      "key": "quest.village_supply.bottle_stock.description",
+      "lines": [
+        "Bring glass bottles for tonics, inks, and careful measuring."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.dialogue.already_completed",
+      "key": "quest.village_supply.bottle_stock.dialogue.already_completed",
+      "lines": [
+        "Bottle Stock is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.dialogue.inactive",
+      "key": "quest.village_supply.bottle_stock.dialogue.inactive",
+      "lines": [
+        "The apothecary shelf is not taking bottles right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.dialogue.locate_failed",
+      "key": "quest.village_supply.bottle_stock.dialogue.locate_failed",
+      "lines": [
+        "No shelf count is ready for another bottle request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.dialogue.missing_proof",
+      "key": "quest.village_supply.bottle_stock.dialogue.missing_proof",
+      "lines": [
+        "Bring the bottles before I restock the shelf."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.dialogue.missing_target",
+      "key": "quest.village_supply.bottle_stock.dialogue.missing_target",
+      "lines": [
+        "The shelf still needs 12 glass bottles."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.dialogue.reminder",
+      "key": "quest.village_supply.bottle_stock.dialogue.reminder",
+      "lines": [
+        "Twelve glass bottles. It is hard to keep remedies organized when they keep being liquid-shaped."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.dialogue.start",
+      "key": "quest.village_supply.bottle_stock.dialogue.start",
+      "lines": [
+        "Bring 12 glass bottles. I can manage without drama; I would prefer not to manage without containers."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.dialogue.turn_in",
+      "key": "quest.village_supply.bottle_stock.dialogue.turn_in",
+      "lines": [
+        "Good. Empty bottles are only boring until the village runs out of them."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.dialogue.unavailable",
+      "key": "quest.village_supply.bottle_stock.dialogue.unavailable",
+      "lines": [
+        "The bottle request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.objective.bring_bottles.complete_text",
+      "key": "quest.village_supply.bottle_stock.objective.bring_bottles.complete_text",
+      "lines": [
+        "The bottle shelf is stocked and ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.objective.bring_bottles.text",
+      "key": "quest.village_supply.bottle_stock.objective.bring_bottles.text",
+      "lines": [
+        "Bring 12 glass bottles for the shelf."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.title",
+      "key": "quest.village_supply.bottle_stock.title",
+      "lines": [
+        "Bottle Stock"
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.tracker.proof.text",
+      "key": "quest.village_supply.bottle_stock.tracker.proof.text",
+      "lines": [
+        "Bring 12 glass bottles for the shelf."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.tracker.return.text",
+      "key": "quest.village_supply.bottle_stock.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the glass bottles."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bottle_stock.tracker.title",
+      "key": "quest.village_supply.bottle_stock.tracker.title",
+      "lines": [
+        "Bottle Stock"
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.description",
+      "key": "quest.village_supply.bread_delivery.description",
+      "lines": [
+        "Bring bread so the village can stretch its stores through a hard night."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.dialogue.already_completed",
+      "key": "quest.village_supply.bread_delivery.dialogue.already_completed",
+      "lines": [
+        "Bread Delivery is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.dialogue.inactive",
+      "key": "quest.village_supply.bread_delivery.dialogue.inactive",
+      "lines": [
+        "The larder request is not open right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.dialogue.locate_failed",
+      "key": "quest.village_supply.bread_delivery.dialogue.locate_failed",
+      "lines": [
+        "The stores are not ready for another bread request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.dialogue.missing_proof",
+      "key": "quest.village_supply.bread_delivery.dialogue.missing_proof",
+      "lines": [
+        "Bring the bread before we close this."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.dialogue.missing_target",
+      "key": "quest.village_supply.bread_delivery.dialogue.missing_target",
+      "lines": [
+        "We still need all 16 bread for the stores."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.dialogue.reminder",
+      "key": "quest.village_supply.bread_delivery.dialogue.reminder",
+      "lines": [
+        "Sixteen bread, if you can spare it. No heroics today, just weight on the shelf."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.dialogue.start",
+      "key": "quest.village_supply.bread_delivery.dialogue.start",
+      "lines": [
+        "Bring me 16 bread. Simple work, but it keeps people steady."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.dialogue.turn_in",
+      "key": "quest.village_supply.bread_delivery.dialogue.turn_in",
+      "lines": [
+        "Good. A full shelf makes brave talk sound less hollow. Take this with my thanks."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.dialogue.unavailable",
+      "key": "quest.village_supply.bread_delivery.dialogue.unavailable",
+      "lines": [
+        "The bread shelves are closed to new help for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.objective.bring_bread.complete_text",
+      "key": "quest.village_supply.bread_delivery.objective.bring_bread.complete_text",
+      "lines": [
+        "The bread is packed and ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.objective.bring_bread.text",
+      "key": "quest.village_supply.bread_delivery.objective.bring_bread.text",
+      "lines": [
+        "Gather 16 bread for the village stores."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.title",
+      "key": "quest.village_supply.bread_delivery.title",
+      "lines": [
+        "Bread Delivery"
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.tracker.proof.text",
+      "key": "quest.village_supply.bread_delivery.tracker.proof.text",
+      "lines": [
+        "Bring 16 bread back to the quest giver."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.tracker.return.text",
+      "key": "quest.village_supply.bread_delivery.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the bread."
+      ]
+    },
+    {
+      "id": "quest.village_supply.bread_delivery.tracker.title",
+      "key": "quest.village_supply.bread_delivery.tracker.title",
+      "lines": [
+        "Bread Delivery"
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.description",
+      "key": "quest.village_supply.clay_repairs.description",
+      "lines": [
+        "Bring clay for small repairs around wells, ovens, and cracked walls."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.dialogue.already_completed",
+      "key": "quest.village_supply.clay_repairs.dialogue.already_completed",
+      "lines": [
+        "Clay Repairs is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.dialogue.inactive",
+      "key": "quest.village_supply.clay_repairs.dialogue.inactive",
+      "lines": [
+        "The repair bench is not taking clay right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.dialogue.locate_failed",
+      "key": "quest.village_supply.clay_repairs.dialogue.locate_failed",
+      "lines": [
+        "No repair list is ready for a clay request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.dialogue.missing_proof",
+      "key": "quest.village_supply.clay_repairs.dialogue.missing_proof",
+      "lines": [
+        "Bring the clay before I mix the patchwork."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.dialogue.missing_target",
+      "key": "quest.village_supply.clay_repairs.dialogue.missing_target",
+      "lines": [
+        "The repair bench still needs 16 clay balls."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.dialogue.reminder",
+      "key": "quest.village_supply.clay_repairs.dialogue.reminder",
+      "lines": [
+        "Sixteen clay balls. Damp is fine; mud with ambition is still useful."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.dialogue.start",
+      "key": "quest.village_supply.clay_repairs.dialogue.start",
+      "lines": [
+        "Bring 16 clay balls. I can patch three problems before they become one expensive one."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.dialogue.turn_in",
+      "key": "quest.village_supply.clay_repairs.dialogue.turn_in",
+      "lines": [
+        "That will patch the little cracks before they learn confidence."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.dialogue.unavailable",
+      "key": "quest.village_supply.clay_repairs.dialogue.unavailable",
+      "lines": [
+        "The clay repair request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.objective.bring_clay.complete_text",
+      "key": "quest.village_supply.clay_repairs.objective.bring_clay.complete_text",
+      "lines": [
+        "The clay is ready for patching."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.objective.bring_clay.text",
+      "key": "quest.village_supply.clay_repairs.objective.bring_clay.text",
+      "lines": [
+        "Bring 16 clay balls for village repairs."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.title",
+      "key": "quest.village_supply.clay_repairs.title",
+      "lines": [
+        "Clay Repairs"
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.tracker.proof.text",
+      "key": "quest.village_supply.clay_repairs.tracker.proof.text",
+      "lines": [
+        "Bring 16 clay balls for village repairs."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.tracker.return.text",
+      "key": "quest.village_supply.clay_repairs.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the clay ball."
+      ]
+    },
+    {
+      "id": "quest.village_supply.clay_repairs.tracker.title",
+      "key": "quest.village_supply.clay_repairs.tracker.title",
+      "lines": [
+        "Clay Repairs"
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.description",
+      "key": "quest.village_supply.egg_baskets.description",
+      "lines": [
+        "Bring eggs so the kitchens can stretch breakfast and broth."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.dialogue.already_completed",
+      "key": "quest.village_supply.egg_baskets.dialogue.already_completed",
+      "lines": [
+        "Egg Baskets is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.dialogue.inactive",
+      "key": "quest.village_supply.egg_baskets.dialogue.inactive",
+      "lines": [
+        "The breakfast baskets are not being counted right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.dialogue.locate_failed",
+      "key": "quest.village_supply.egg_baskets.dialogue.locate_failed",
+      "lines": [
+        "No kitchen slate is ready for another egg request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.dialogue.missing_proof",
+      "key": "quest.village_supply.egg_baskets.dialogue.missing_proof",
+      "lines": [
+        "Bring the eggs before I call the baskets full."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.dialogue.missing_target",
+      "key": "quest.village_supply.egg_baskets.dialogue.missing_target",
+      "lines": [
+        "The kitchen still needs 12 eggs."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.dialogue.reminder",
+      "key": "quest.village_supply.egg_baskets.dialogue.reminder",
+      "lines": [
+        "Twelve eggs for the kitchen. Fragile, useful, and always somehow more urgent than they sound."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.dialogue.start",
+      "key": "quest.village_supply.egg_baskets.dialogue.start",
+      "lines": [
+        "Bring 12 eggs. A quiet morning starts with full baskets."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.dialogue.turn_in",
+      "key": "quest.village_supply.egg_baskets.dialogue.turn_in",
+      "lines": [
+        "Good. That is breakfast, broth, and one less complaint before dawn."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.dialogue.unavailable",
+      "key": "quest.village_supply.egg_baskets.dialogue.unavailable",
+      "lines": [
+        "The egg request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.objective.bring_eggs.complete_text",
+      "key": "quest.village_supply.egg_baskets.objective.bring_eggs.complete_text",
+      "lines": [
+        "The egg baskets are full and ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.objective.bring_eggs.text",
+      "key": "quest.village_supply.egg_baskets.objective.bring_eggs.text",
+      "lines": [
+        "Bring 12 eggs for the kitchen baskets."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.title",
+      "key": "quest.village_supply.egg_baskets.title",
+      "lines": [
+        "Egg Baskets"
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.tracker.proof.text",
+      "key": "quest.village_supply.egg_baskets.tracker.proof.text",
+      "lines": [
+        "Bring 12 eggs for the kitchen baskets."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.tracker.return.text",
+      "key": "quest.village_supply.egg_baskets.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the eggs."
+      ]
+    },
+    {
+      "id": "quest.village_supply.egg_baskets.tracker.title",
+      "key": "quest.village_supply.egg_baskets.tracker.title",
+      "lines": [
+        "Egg Baskets"
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.description",
+      "key": "quest.village_supply.feather_fletching.description",
+      "lines": [
+        "Bring feathers so arrows and message shafts can be finished in proper batches."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.dialogue.already_completed",
+      "key": "quest.village_supply.feather_fletching.dialogue.already_completed",
+      "lines": [
+        "Feather Fletching is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.dialogue.inactive",
+      "key": "quest.village_supply.feather_fletching.dialogue.inactive",
+      "lines": [
+        "The fletching bench is not counting feathers right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.dialogue.locate_failed",
+      "key": "quest.village_supply.feather_fletching.dialogue.locate_failed",
+      "lines": [
+        "No work order is ready for another feather request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.dialogue.missing_proof",
+      "key": "quest.village_supply.feather_fletching.dialogue.missing_proof",
+      "lines": [
+        "Bring the feathers before I tie the shafts."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.dialogue.missing_target",
+      "key": "quest.village_supply.feather_fletching.dialogue.missing_target",
+      "lines": [
+        "The bench still needs 16 feathers."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.dialogue.reminder",
+      "key": "quest.village_supply.feather_fletching.dialogue.reminder",
+      "lines": [
+        "Sixteen feathers for fletching. Straight arrows are easier when the back half agrees with the front."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.dialogue.start",
+      "key": "quest.village_supply.feather_fletching.dialogue.start",
+      "lines": [
+        "Bring 16 feathers. A village with arrows walks differently at dusk."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.dialogue.turn_in",
+      "key": "quest.village_supply.feather_fletching.dialogue.turn_in",
+      "lines": [
+        "Good. Feathers make the difference between warning shots and expensive guesses."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.dialogue.unavailable",
+      "key": "quest.village_supply.feather_fletching.dialogue.unavailable",
+      "lines": [
+        "The feather request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.objective.bring_feathers.complete_text",
+      "key": "quest.village_supply.feather_fletching.objective.bring_feathers.complete_text",
+      "lines": [
+        "The fletching bundle is ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.objective.bring_feathers.text",
+      "key": "quest.village_supply.feather_fletching.objective.bring_feathers.text",
+      "lines": [
+        "Bring 16 feathers for the fletching bench."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.title",
+      "key": "quest.village_supply.feather_fletching.title",
+      "lines": [
+        "Feather Fletching"
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.tracker.proof.text",
+      "key": "quest.village_supply.feather_fletching.tracker.proof.text",
+      "lines": [
+        "Bring 16 feathers for the fletching bench."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.tracker.return.text",
+      "key": "quest.village_supply.feather_fletching.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the feathers."
+      ]
+    },
+    {
+      "id": "quest.village_supply.feather_fletching.tracker.title",
+      "key": "quest.village_supply.feather_fletching.tracker.title",
+      "lines": [
+        "Feather Fletching"
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.description",
+      "key": "quest.village_supply.fresh_cod.description",
+      "lines": [
+        "Bring cod for a simple village supper."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.dialogue.already_completed",
+      "key": "quest.village_supply.fresh_cod.dialogue.already_completed",
+      "lines": [
+        "Fresh Cod is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.dialogue.inactive",
+      "key": "quest.village_supply.fresh_cod.dialogue.inactive",
+      "lines": [
+        "The supper pot is not asking for fish right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.dialogue.locate_failed",
+      "key": "quest.village_supply.fresh_cod.dialogue.locate_failed",
+      "lines": [
+        "No supper list is ready for a cod request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.dialogue.missing_proof",
+      "key": "quest.village_supply.fresh_cod.dialogue.missing_proof",
+      "lines": [
+        "Bring the cod before I call supper handled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.dialogue.missing_target",
+      "key": "quest.village_supply.fresh_cod.dialogue.missing_target",
+      "lines": [
+        "The pot still needs 10 cod."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.dialogue.reminder",
+      "key": "quest.village_supply.fresh_cod.dialogue.reminder",
+      "lines": [
+        "Ten cod for supper. Fresh is best; recognizable is required."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.dialogue.start",
+      "key": "quest.village_supply.fresh_cod.dialogue.start",
+      "lines": [
+        "Bring 10 cod. Not a feast, just enough to make the evening kinder."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.dialogue.turn_in",
+      "key": "quest.village_supply.fresh_cod.dialogue.turn_in",
+      "lines": [
+        "That will do nicely. A hot pan can make morale out of fish."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.dialogue.unavailable",
+      "key": "quest.village_supply.fresh_cod.dialogue.unavailable",
+      "lines": [
+        "The cod request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.objective.bring_cod.complete_text",
+      "key": "quest.village_supply.fresh_cod.objective.bring_cod.complete_text",
+      "lines": [
+        "The supper fish is ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.objective.bring_cod.text",
+      "key": "quest.village_supply.fresh_cod.objective.bring_cod.text",
+      "lines": [
+        "Bring 10 cod for supper."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.title",
+      "key": "quest.village_supply.fresh_cod.title",
+      "lines": [
+        "Fresh Cod"
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.tracker.proof.text",
+      "key": "quest.village_supply.fresh_cod.tracker.proof.text",
+      "lines": [
+        "Bring 10 cod for supper."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.tracker.return.text",
+      "key": "quest.village_supply.fresh_cod.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the cod."
+      ]
+    },
+    {
+      "id": "quest.village_supply.fresh_cod.tracker.title",
+      "key": "quest.village_supply.fresh_cod.tracker.title",
+      "lines": [
+        "Fresh Cod"
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.description",
+      "key": "quest.village_supply.ink_supply.description",
+      "lines": [
+        "Bring ink so ledgers, maps, and warning notices remain legible."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.dialogue.already_completed",
+      "key": "quest.village_supply.ink_supply.dialogue.already_completed",
+      "lines": [
+        "Ink Supply is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.dialogue.inactive",
+      "key": "quest.village_supply.ink_supply.dialogue.inactive",
+      "lines": [
+        "The ledger desk is not taking ink right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.dialogue.locate_failed",
+      "key": "quest.village_supply.ink_supply.dialogue.locate_failed",
+      "lines": [
+        "No ledger note is ready for an ink request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.dialogue.missing_proof",
+      "key": "quest.village_supply.ink_supply.dialogue.missing_proof",
+      "lines": [
+        "Bring the ink sacs before I refill the desk."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.dialogue.missing_target",
+      "key": "quest.village_supply.ink_supply.dialogue.missing_target",
+      "lines": [
+        "The ledger still needs 6 ink sacs."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.dialogue.reminder",
+      "key": "quest.village_supply.ink_supply.dialogue.reminder",
+      "lines": [
+        "Six ink sacs for the ledger. The village prefers its debts and warnings visible."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.dialogue.start",
+      "key": "quest.village_supply.ink_supply.dialogue.start",
+      "lines": [
+        "Bring 6 ink sacs. A ledger written in faded gray is just a future argument."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.dialogue.turn_in",
+      "key": "quest.village_supply.ink_supply.dialogue.turn_in",
+      "lines": [
+        "Dark ink. Excellent. Now our mistakes can be preserved properly."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.dialogue.unavailable",
+      "key": "quest.village_supply.ink_supply.dialogue.unavailable",
+      "lines": [
+        "The ink request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.objective.bring_ink.complete_text",
+      "key": "quest.village_supply.ink_supply.objective.bring_ink.complete_text",
+      "lines": [
+        "The ink is ready for the desk."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.objective.bring_ink.text",
+      "key": "quest.village_supply.ink_supply.objective.bring_ink.text",
+      "lines": [
+        "Bring 6 ink sacs for the ledger."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.title",
+      "key": "quest.village_supply.ink_supply.title",
+      "lines": [
+        "Ink Supply"
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.tracker.proof.text",
+      "key": "quest.village_supply.ink_supply.tracker.proof.text",
+      "lines": [
+        "Bring 6 ink sacs for the ledger."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.tracker.return.text",
+      "key": "quest.village_supply.ink_supply.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the ink sac."
+      ]
+    },
+    {
+      "id": "quest.village_supply.ink_supply.tracker.title",
+      "key": "quest.village_supply.ink_supply.tracker.title",
+      "lines": [
+        "Ink Supply"
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.description",
+      "key": "quest.village_supply.kiln_fuel.description",
+      "lines": [
+        "Bring coal to keep the kiln and forge work moving."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.dialogue.already_completed",
+      "key": "quest.village_supply.kiln_fuel.dialogue.already_completed",
+      "lines": [
+        "Kiln Fuel is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.dialogue.inactive",
+      "key": "quest.village_supply.kiln_fuel.dialogue.inactive",
+      "lines": [
+        "The kiln is not taking fuel right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.dialogue.locate_failed",
+      "key": "quest.village_supply.kiln_fuel.dialogue.locate_failed",
+      "lines": [
+        "The firebox list is not ready for another coal request."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.dialogue.missing_proof",
+      "key": "quest.village_supply.kiln_fuel.dialogue.missing_proof",
+      "lines": [
+        "Bring the coal before I stoke the firebox."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.dialogue.missing_target",
+      "key": "quest.village_supply.kiln_fuel.dialogue.missing_target",
+      "lines": [
+        "The firebox still needs 12 coal."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.dialogue.reminder",
+      "key": "quest.village_supply.kiln_fuel.dialogue.reminder",
+      "lines": [
+        "Twelve coal for the firebox. The work stops quickly when the heat does."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.dialogue.start",
+      "key": "quest.village_supply.kiln_fuel.dialogue.start",
+      "lines": [
+        "Bring 12 coal. The kiln is hungry, and hungry kilns become cold workshops."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.dialogue.turn_in",
+      "key": "quest.village_supply.kiln_fuel.dialogue.turn_in",
+      "lines": [
+        "Good fuel. We can make useful things instead of excuses."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.dialogue.unavailable",
+      "key": "quest.village_supply.kiln_fuel.dialogue.unavailable",
+      "lines": [
+        "The kiln fuel request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.objective.bring_coal.complete_text",
+      "key": "quest.village_supply.kiln_fuel.objective.bring_coal.complete_text",
+      "lines": [
+        "The coal is stacked by the firebox."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.objective.bring_coal.text",
+      "key": "quest.village_supply.kiln_fuel.objective.bring_coal.text",
+      "lines": [
+        "Bring 12 coal for the kiln and forge fires."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.title",
+      "key": "quest.village_supply.kiln_fuel.title",
+      "lines": [
+        "Kiln Fuel"
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.tracker.proof.text",
+      "key": "quest.village_supply.kiln_fuel.tracker.proof.text",
+      "lines": [
+        "Bring 12 coal for the kiln and forge fires."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.tracker.return.text",
+      "key": "quest.village_supply.kiln_fuel.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the coal."
+      ]
+    },
+    {
+      "id": "quest.village_supply.kiln_fuel.tracker.title",
+      "key": "quest.village_supply.kiln_fuel.tracker.title",
+      "lines": [
+        "Kiln Fuel"
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.description",
+      "key": "quest.village_supply.leather_repairs.description",
+      "lines": [
+        "Bring leather for tool loops, armor straps, and pack repairs."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.dialogue.already_completed",
+      "key": "quest.village_supply.leather_repairs.dialogue.already_completed",
+      "lines": [
+        "Leather Repairs is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.dialogue.inactive",
+      "key": "quest.village_supply.leather_repairs.dialogue.inactive",
+      "lines": [
+        "The repair pile is not taking leather right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.dialogue.locate_failed",
+      "key": "quest.village_supply.leather_repairs.dialogue.locate_failed",
+      "lines": [
+        "No strap list is ready for a leather request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.dialogue.missing_proof",
+      "key": "quest.village_supply.leather_repairs.dialogue.missing_proof",
+      "lines": [
+        "Bring the leather before I cut repair straps."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.dialogue.missing_target",
+      "key": "quest.village_supply.leather_repairs.dialogue.missing_target",
+      "lines": [
+        "The repair pile still needs 8 leather."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.dialogue.reminder",
+      "key": "quest.village_supply.leather_repairs.dialogue.reminder",
+      "lines": [
+        "Eight leather for repairs. Clean cuts save more work than clever knots."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.dialogue.start",
+      "key": "quest.village_supply.leather_repairs.dialogue.start",
+      "lines": [
+        "Bring 8 leather. Half the village owns something held together by hope and a strap."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.dialogue.turn_in",
+      "key": "quest.village_supply.leather_repairs.dialogue.turn_in",
+      "lines": [
+        "Good hide. This will keep handles on tools and packs on backs."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.dialogue.unavailable",
+      "key": "quest.village_supply.leather_repairs.dialogue.unavailable",
+      "lines": [
+        "The leather repair request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.objective.bring_leather.complete_text",
+      "key": "quest.village_supply.leather_repairs.objective.bring_leather.complete_text",
+      "lines": [
+        "The leather is cut-ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.objective.bring_leather.text",
+      "key": "quest.village_supply.leather_repairs.objective.bring_leather.text",
+      "lines": [
+        "Bring 8 leather for repair straps."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.title",
+      "key": "quest.village_supply.leather_repairs.title",
+      "lines": [
+        "Leather Repairs"
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.tracker.proof.text",
+      "key": "quest.village_supply.leather_repairs.tracker.proof.text",
+      "lines": [
+        "Bring 8 leather for repair straps."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.tracker.return.text",
+      "key": "quest.village_supply.leather_repairs.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the leather."
+      ]
+    },
+    {
+      "id": "quest.village_supply.leather_repairs.tracker.title",
+      "key": "quest.village_supply.leather_repairs.tracker.title",
+      "lines": [
+        "Leather Repairs"
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.description",
+      "key": "quest.village_supply.map_paper.description",
+      "lines": [
+        "Bring paper so village records, maps, and warnings can stay current."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.dialogue.already_completed",
+      "key": "quest.village_supply.map_paper.dialogue.already_completed",
+      "lines": [
+        "Map Paper is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.dialogue.inactive",
+      "key": "quest.village_supply.map_paper.dialogue.inactive",
+      "lines": [
+        "The map desk is not taking paper right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.dialogue.locate_failed",
+      "key": "quest.village_supply.map_paper.dialogue.locate_failed",
+      "lines": [
+        "The record desk is not ready to post a paper request."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.dialogue.missing_proof",
+      "key": "quest.village_supply.map_paper.dialogue.missing_proof",
+      "lines": [
+        "Bring the paper before I copy the records."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.dialogue.missing_target",
+      "key": "quest.village_supply.map_paper.dialogue.missing_target",
+      "lines": [
+        "The desk still needs 24 paper."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.dialogue.reminder",
+      "key": "quest.village_supply.map_paper.dialogue.reminder",
+      "lines": [
+        "Twenty-four paper. Clean sheets, if possible; mystery stains become official history."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.dialogue.start",
+      "key": "quest.village_supply.map_paper.dialogue.start",
+      "lines": [
+        "Bring 24 paper. Nothing heroic, unless you have seen what happens when records go missing."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.dialogue.turn_in",
+      "key": "quest.village_supply.map_paper.dialogue.turn_in",
+      "lines": [
+        "Good paper. The kind that makes a warning look worth reading."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.dialogue.unavailable",
+      "key": "quest.village_supply.map_paper.dialogue.unavailable",
+      "lines": [
+        "The paper request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.objective.bring_paper.complete_text",
+      "key": "quest.village_supply.map_paper.objective.bring_paper.complete_text",
+      "lines": [
+        "The paper stack is ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.objective.bring_paper.text",
+      "key": "quest.village_supply.map_paper.objective.bring_paper.text",
+      "lines": [
+        "Bring 24 paper for village notes and maps."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.title",
+      "key": "quest.village_supply.map_paper.title",
+      "lines": [
+        "Map Paper"
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.tracker.proof.text",
+      "key": "quest.village_supply.map_paper.tracker.proof.text",
+      "lines": [
+        "Bring 24 paper for village notes and maps."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.tracker.return.text",
+      "key": "quest.village_supply.map_paper.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the paper."
+      ]
+    },
+    {
+      "id": "quest.village_supply.map_paper.tracker.title",
+      "key": "quest.village_supply.map_paper.tracker.title",
+      "lines": [
+        "Map Paper"
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.description",
+      "key": "quest.village_supply.seed_stockpile.description",
+      "lines": [
+        "Bring seed grain so the village can replant without touching winter stores."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.dialogue.already_completed",
+      "key": "quest.village_supply.seed_stockpile.dialogue.already_completed",
+      "lines": [
+        "Seed Stockpile is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.dialogue.inactive",
+      "key": "quest.village_supply.seed_stockpile.dialogue.inactive",
+      "lines": [
+        "The seed reserve is not open for counting right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.dialogue.locate_failed",
+      "key": "quest.village_supply.seed_stockpile.dialogue.locate_failed",
+      "lines": [
+        "The reserve ledger is not ready for another seed request."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.dialogue.missing_proof",
+      "key": "quest.village_supply.seed_stockpile.dialogue.missing_proof",
+      "lines": [
+        "Show me the wheat seeds before I mark the reserve full."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.dialogue.missing_target",
+      "key": "quest.village_supply.seed_stockpile.dialogue.missing_target",
+      "lines": [
+        "The reserve still needs the full 32 wheat seeds."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.dialogue.reminder",
+      "key": "quest.village_supply.seed_stockpile.dialogue.reminder",
+      "lines": [
+        "Thirty-two wheat seeds for the reserve. Small things become bread if we keep them safe."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.dialogue.start",
+      "key": "quest.village_supply.seed_stockpile.dialogue.start",
+      "lines": [
+        "Bring me 32 wheat seeds. It is humble work, which is why everyone notices when it is missing."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.dialogue.turn_in",
+      "key": "quest.village_supply.seed_stockpile.dialogue.turn_in",
+      "lines": [
+        "Good. That is tomorrow's field in a sack. Take this for your trouble."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.dialogue.unavailable",
+      "key": "quest.village_supply.seed_stockpile.dialogue.unavailable",
+      "lines": [
+        "The seed bin is not asking for help right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.objective.bring_seeds.complete_text",
+      "key": "quest.village_supply.seed_stockpile.objective.bring_seeds.complete_text",
+      "lines": [
+        "The seed sacks are tied and ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.objective.bring_seeds.text",
+      "key": "quest.village_supply.seed_stockpile.objective.bring_seeds.text",
+      "lines": [
+        "Bring 32 wheat seeds for the reserve."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.title",
+      "key": "quest.village_supply.seed_stockpile.title",
+      "lines": [
+        "Seed Stockpile"
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.tracker.proof.text",
+      "key": "quest.village_supply.seed_stockpile.tracker.proof.text",
+      "lines": [
+        "Bring 32 wheat seeds for the reserve."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.tracker.return.text",
+      "key": "quest.village_supply.seed_stockpile.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the wheat seeds."
+      ]
+    },
+    {
+      "id": "quest.village_supply.seed_stockpile.tracker.title",
+      "key": "quest.village_supply.seed_stockpile.tracker.title",
+      "lines": [
+        "Seed Stockpile"
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.description",
+      "key": "quest.village_supply.torch_bundle.description",
+      "lines": [
+        "Bring torches so storehouses, pens, and work corners stay usable after dusk."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.dialogue.already_completed",
+      "key": "quest.village_supply.torch_bundle.dialogue.already_completed",
+      "lines": [
+        "Torch Bundle is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.dialogue.inactive",
+      "key": "quest.village_supply.torch_bundle.dialogue.inactive",
+      "lines": [
+        "The night rack is not taking torches right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.dialogue.locate_failed",
+      "key": "quest.village_supply.torch_bundle.dialogue.locate_failed",
+      "lines": [
+        "No watch list is ready for another torch request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.dialogue.missing_proof",
+      "key": "quest.village_supply.torch_bundle.dialogue.missing_proof",
+      "lines": [
+        "Bring the torches before I mark the corners lit."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.dialogue.missing_target",
+      "key": "quest.village_supply.torch_bundle.dialogue.missing_target",
+      "lines": [
+        "The watch rack still needs 16 torches."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.dialogue.reminder",
+      "key": "quest.village_supply.torch_bundle.dialogue.reminder",
+      "lines": [
+        "Sixteen torches. The dark is cheap, which is why we spend so much avoiding it."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.dialogue.start",
+      "key": "quest.village_supply.torch_bundle.dialogue.start",
+      "lines": [
+        "Bring 16 torches. I would like fewer surprises after sundown."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.dialogue.turn_in",
+      "key": "quest.village_supply.torch_bundle.dialogue.turn_in",
+      "lines": [
+        "Good. Light does a lot for morale when walls start making noises."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.dialogue.unavailable",
+      "key": "quest.village_supply.torch_bundle.dialogue.unavailable",
+      "lines": [
+        "The torch request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.objective.bring_torches.complete_text",
+      "key": "quest.village_supply.torch_bundle.objective.bring_torches.complete_text",
+      "lines": [
+        "The torch rack is stocked and ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.objective.bring_torches.text",
+      "key": "quest.village_supply.torch_bundle.objective.bring_torches.text",
+      "lines": [
+        "Bring 16 torches for the watch rack."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.title",
+      "key": "quest.village_supply.torch_bundle.title",
+      "lines": [
+        "Torch Bundle"
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.tracker.proof.text",
+      "key": "quest.village_supply.torch_bundle.tracker.proof.text",
+      "lines": [
+        "Bring 16 torches for the watch rack."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.tracker.return.text",
+      "key": "quest.village_supply.torch_bundle.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the torches."
+      ]
+    },
+    {
+      "id": "quest.village_supply.torch_bundle.tracker.title",
+      "key": "quest.village_supply.torch_bundle.tracker.title",
+      "lines": [
+        "Torch Bundle"
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.description",
+      "key": "quest.village_supply.village_lanterns.description",
+      "lines": [
+        "Bring lanterns before the watch loses the edges of the village to darkness."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.dialogue.already_completed",
+      "key": "quest.village_supply.village_lanterns.dialogue.already_completed",
+      "lines": [
+        "Village Lanterns is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.dialogue.inactive",
+      "key": "quest.village_supply.village_lanterns.dialogue.inactive",
+      "lines": [
+        "The watch is not posting a lantern request right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.dialogue.locate_failed",
+      "key": "quest.village_supply.village_lanterns.dialogue.locate_failed",
+      "lines": [
+        "The watch cannot place another lantern request from here."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.dialogue.missing_proof",
+      "key": "quest.village_supply.village_lanterns.dialogue.missing_proof",
+      "lines": [
+        "Bring the lanterns before we close this."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.dialogue.missing_target",
+      "key": "quest.village_supply.village_lanterns.dialogue.missing_target",
+      "lines": [
+        "We still need all 6 lanterns for the watch."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.dialogue.reminder",
+      "key": "quest.village_supply.village_lanterns.dialogue.reminder",
+      "lines": [
+        "Six lanterns, and sooner is better. Darkness will not wait."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.dialogue.start",
+      "key": "quest.village_supply.village_lanterns.dialogue.start",
+      "lines": [
+        "Bring 6 lanterns soon; this request matters less after a couple of days."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.dialogue.turn_in",
+      "key": "quest.village_supply.village_lanterns.dialogue.turn_in",
+      "lines": [
+        "That will hold the corners of the village a little brighter. Good work."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.dialogue.unavailable",
+      "key": "quest.village_supply.village_lanterns.dialogue.unavailable",
+      "lines": [
+        "The watch is not ready to post that request right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.expiration.text",
+      "key": "quest.village_supply.village_lanterns.expiration.text",
+      "lines": [
+        "Quest expired: {quest}"
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.objective.bring_lanterns.complete_text",
+      "key": "quest.village_supply.village_lanterns.objective.bring_lanterns.complete_text",
+      "lines": [
+        "The lanterns are ready for hanging."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.objective.bring_lanterns.text",
+      "key": "quest.village_supply.village_lanterns.objective.bring_lanterns.text",
+      "lines": [
+        "Bring 6 lanterns for the village watch."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.title",
+      "key": "quest.village_supply.village_lanterns.title",
+      "lines": [
+        "Village Lanterns"
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.tracker.proof.text",
+      "key": "quest.village_supply.village_lanterns.tracker.proof.text",
+      "lines": [
+        "Bring 6 lanterns before the request goes stale."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.tracker.return.text",
+      "key": "quest.village_supply.village_lanterns.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the lanterns."
+      ]
+    },
+    {
+      "id": "quest.village_supply.village_lanterns.tracker.title",
+      "key": "quest.village_supply.village_lanterns.tracker.title",
+      "lines": [
+        "Village Lanterns"
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.description",
+      "key": "quest.village_supply.wool_blankets.description",
+      "lines": [
+        "Bring wool for clean bedding and warm wraps."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.dialogue.already_completed",
+      "key": "quest.village_supply.wool_blankets.dialogue.already_completed",
+      "lines": [
+        "Wool Blankets is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.dialogue.inactive",
+      "key": "quest.village_supply.wool_blankets.dialogue.inactive",
+      "lines": [
+        "The bedding request is not open right now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.dialogue.locate_failed",
+      "key": "quest.village_supply.wool_blankets.dialogue.locate_failed",
+      "lines": [
+        "No sickbed list is ready for a wool request yet."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.dialogue.missing_proof",
+      "key": "quest.village_supply.wool_blankets.dialogue.missing_proof",
+      "lines": [
+        "Bring the white wool before I mark the beds supplied."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.dialogue.missing_target",
+      "key": "quest.village_supply.wool_blankets.dialogue.missing_target",
+      "lines": [
+        "The sickbeds still need 12 white wool."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.dialogue.reminder",
+      "key": "quest.village_supply.wool_blankets.dialogue.reminder",
+      "lines": [
+        "Twelve white wool for the sickbeds. Soft, clean, and preferably not argued over by sheep."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.dialogue.start",
+      "key": "quest.village_supply.wool_blankets.dialogue.start",
+      "lines": [
+        "Bring 12 white wool. Clean bedding does more healing than people admit."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.dialogue.turn_in",
+      "key": "quest.village_supply.wool_blankets.dialogue.turn_in",
+      "lines": [
+        "Good. That is comfort with corners folded in."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.dialogue.unavailable",
+      "key": "quest.village_supply.wool_blankets.dialogue.unavailable",
+      "lines": [
+        "The wool blanket request is closed for now."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.objective.bring_wool.complete_text",
+      "key": "quest.village_supply.wool_blankets.objective.bring_wool.complete_text",
+      "lines": [
+        "The wool bundles are clean and ready."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.objective.bring_wool.text",
+      "key": "quest.village_supply.wool_blankets.objective.bring_wool.text",
+      "lines": [
+        "Bring 12 white wool for sickbeds."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.title",
+      "key": "quest.village_supply.wool_blankets.title",
+      "lines": [
+        "Wool Blankets"
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.tracker.proof.text",
+      "key": "quest.village_supply.wool_blankets.tracker.proof.text",
+      "lines": [
+        "Bring 12 white wool for sickbeds."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.tracker.return.text",
+      "key": "quest.village_supply.wool_blankets.tracker.return.text",
+      "lines": [
+        "Return to the quest giver with the white wool."
+      ]
+    },
+    {
+      "id": "quest.village_supply.wool_blankets.tracker.title",
+      "key": "quest.village_supply.wool_blankets.tracker.title",
+      "lines": [
+        "Wool Blankets"
+      ]
+    }
+  ]
+}

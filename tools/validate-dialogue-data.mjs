@@ -314,6 +314,17 @@ const dialogueTreeQuestActions = new Set(["start", "remind", "turn_in", "abandon
 const questObjectiveTypes = new Set(["structure_visit", "item_check", "condition"]);
 const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "completed", "abandoned", "expired"]);
 const questAbandonmentModes = new Set(["remove_forever", "allow_repickup", "cooldown"]);
+const questDialogueStages = [
+  "start",
+  "reminder",
+  "turn_in",
+  "already_completed",
+  "unavailable",
+  "inactive",
+  "missing_target",
+  "missing_proof",
+  "locate_failed"
+];
 
 const knownPlaceholders = new Set([
   "activity",
@@ -401,6 +412,7 @@ const knownPlaceholders = new Set([
   "held_item_slot",
   "has_proof",
   "interrupted_villager",
+  "issuer",
   "item",
   "item_count",
   "item_id",
@@ -701,6 +713,8 @@ function checkQuest(file, data) {
 
   checkUnknownObjectKeys(file, data, "root", new Set([
     "id",
+    "replace",
+    "remove",
     "display",
     "metadata",
     "links",
@@ -716,7 +730,12 @@ function checkQuest(file, data) {
     "dialogue"
   ]));
 
+  checkOptionalBoolean(file, data, "root", "replace");
+  checkOptionalBoolean(file, data, "root", "remove");
   checkDialogueMetadata(file, data, "root");
+  if (data.remove === true || (data.replace === true && isControlOnly(data, ["replace", "metadata"]))) {
+    return;
+  }
   const defaultQuestId = questIdForFile(file, data);
   checkQuestMetadataConsistency(file, data, "root", defaultQuestId);
   checkDisplayObject(file, data.display, "display");
@@ -740,9 +759,11 @@ function checkDisplayObject(file, display, location) {
     errors.push(`${relative(file)}: ${location} must be an object.`);
     return;
   }
-  checkUnknownObjectKeys(file, display, location, new Set(["title", "description"]));
+  checkUnknownObjectKeys(file, display, location, new Set(["title", "description", "title_key", "description_key"]));
   checkOptionalString(file, display, location, "title");
   checkOptionalString(file, display, location, "description");
+  checkOptionalString(file, display, location, "title_key");
+  checkOptionalString(file, display, location, "description_key");
 }
 
 function checkQuestOffer(file, offer, location) {
@@ -921,9 +942,11 @@ function checkQuestObjectiveTracker(file, tracker, location) {
     errors.push(`${relative(file)}: ${location} must be an object.`);
     return;
   }
-  checkUnknownObjectKeys(file, tracker, location, new Set(["text", "complete_text", "show_progress", "progress", "metadata"]));
+  checkUnknownObjectKeys(file, tracker, location, new Set(["text", "complete_text", "text_key", "complete_text_key", "show_progress", "progress", "metadata"]));
   checkOptionalString(file, tracker, location, "text");
   checkOptionalString(file, tracker, location, "complete_text");
+  checkOptionalString(file, tracker, location, "text_key");
+  checkOptionalString(file, tracker, location, "complete_text_key");
   checkOptionalBoolean(file, tracker, location, "show_progress");
   checkOptionalNumber(file, tracker, location, "progress", { min: 0, max: 1 });
   checkStringMap(file, tracker.metadata, `${location}.metadata`);
@@ -997,7 +1020,9 @@ function checkQuestExpiration(file, expiration, location, defaultQuestId = "") {
     "allow_repickup",
     "notify",
     "notification",
-    "text"
+    "text",
+    "text_key",
+    "notification_text_key"
   ]));
   for (const key of ["after_ticks", "after_seconds", "after_days"]) {
     checkOptionalInteger(file, expiration, location, key, { min: 0 });
@@ -1008,6 +1033,8 @@ function checkQuestExpiration(file, expiration, location, defaultQuestId = "") {
   }
   checkOptionalString(file, expiration, location, "notification");
   checkOptionalString(file, expiration, location, "text");
+  checkOptionalString(file, expiration, location, "text_key");
+  checkOptionalString(file, expiration, location, "notification_text_key");
 }
 
 function checkQuestTracker(file, tracker, location) {
@@ -1018,8 +1045,9 @@ function checkQuestTracker(file, tracker, location) {
     errors.push(`${relative(file)}: ${location} must be an object.`);
     return;
   }
-  checkUnknownObjectKeys(file, tracker, location, new Set(["title", "steps", "metadata"]));
+  checkUnknownObjectKeys(file, tracker, location, new Set(["title", "title_key", "steps", "metadata"]));
   checkOptionalString(file, tracker, location, "title");
+  checkOptionalString(file, tracker, location, "title_key");
   checkStringMap(file, tracker.metadata, `${location}.metadata`);
   if (tracker.steps !== undefined) {
     if (!tracker.steps || typeof tracker.steps !== "object" || Array.isArray(tracker.steps)) {
@@ -1031,8 +1059,9 @@ function checkQuestTracker(file, tracker, location) {
           errors.push(`${relative(file)}: ${stepLocation} must be an object.`);
           continue;
         }
-        checkUnknownObjectKeys(file, step, stepLocation, new Set(["text", "show_progress", "progress", "metadata"]));
+        checkUnknownObjectKeys(file, step, stepLocation, new Set(["text", "text_key", "show_progress", "progress", "metadata"]));
         checkOptionalString(file, step, stepLocation, "text");
+        checkOptionalString(file, step, stepLocation, "text_key");
         checkOptionalBoolean(file, step, stepLocation, "show_progress");
         checkOptionalNumber(file, step, stepLocation, "progress", { min: 0, max: 1 });
         checkStringMap(file, step.metadata, `${stepLocation}.metadata`);
@@ -1164,19 +1193,38 @@ function checkQuestDialogue(file, dialogue, location) {
     return;
   }
   checkUnknownObjectKeys(file, dialogue, location, new Set([
-    "start",
-    "reminder",
-    "turn_in",
-    "already_completed",
-    "unavailable",
-    "inactive",
-    "missing_target",
-    "missing_proof",
-    "locate_failed"
+    ...questDialogueStages,
+    ...questDialogueStages.map((key) => `${key}_key`),
+    ...questDialogueStages.map((key) => `${key}_keys`)
   ]));
 
-  for (const key of ["start", "reminder", "turn_in", "already_completed", "unavailable", "inactive", "missing_target", "missing_proof", "locate_failed"]) {
+  for (const key of questDialogueStages) {
+    checkQuestDialogueStage(file, dialogue, location, key);
+    checkStringList(file, dialogue, location, [`${key}_key`, `${key}_keys`], "quest dialogue text key");
+  }
+}
+
+function checkQuestDialogueStage(file, dialogue, location, key) {
+  const value = dialogue[key];
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value === "string" || Array.isArray(value)) {
     checkStringList(file, dialogue, location, [key], "quest dialogue line");
+    return;
+  }
+  const stageLocation = `${location}.${key}`;
+  if (!value || typeof value !== "object") {
+    errors.push(`${relative(file)}: ${stageLocation} must be a string, array of strings, or object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, value, stageLocation, new Set(["text", "texts", "line", "lines", "text_key", "text_keys"]));
+  checkStringList(file, value, stageLocation, ["text", "texts", "line", "lines"], "quest dialogue line");
+  checkStringList(file, value, stageLocation, ["text_key", "text_keys"], "quest dialogue text key");
+  if (
+    readValues(value, ["text", "texts", "line", "lines", "text_key", "text_keys"]).length === 0
+  ) {
+    errors.push(`${relative(file)}: ${stageLocation} must define text, lines, text_key, or text_keys.`);
   }
 }
 
@@ -1186,9 +1234,14 @@ function checkDialogueTree(file, data) {
     return;
   }
   const defaultQuestId = dialogueTreeDefaultQuestId(file, data);
+  checkOptionalBoolean(file, data, "root", "replace");
+  checkOptionalBoolean(file, data, "root", "remove");
   checkDialogueMetadata(file, data, "root");
   checkDialogueTreeMetadataConsistency(file, data, "root");
   checkConditions(file, data, "root", defaultQuestId);
+  if (data.remove === true || (data.replace === true && isControlOnly(data, ["replace", "metadata"]))) {
+    return;
+  }
 
   if (!Array.isArray(data.entries) || data.entries.length === 0) {
     errors.push(`${relative(file)}: dialogue tree must define at least one entry.`);
@@ -1324,7 +1377,16 @@ function checkDialogueTreeActions(file, actions, location, defaultQuestId = "") 
 }
 
 function checkForcedDialogue(file, data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    errors.push(`${relative(file)}: forced dialogue root must be an object.`);
+    return;
+  }
+  checkOptionalBoolean(file, data, "root", "replace");
+  checkOptionalBoolean(file, data, "root", "remove");
   checkDialogueMetadata(file, data, "root");
+  if (data.remove === true || (data.replace === true && isControlOnly(data, ["replace", "metadata"]))) {
+    return;
+  }
   const defaultQuestId = stringValue(metadataObject(data).quest);
   const entries = entriesFor(data);
   checkIds(file, entries, "forced dialogue entry");
@@ -1332,12 +1394,22 @@ function checkForcedDialogue(file, data) {
     if (Object.hasOwn(entry, "event") && !Object.hasOwn(entry, "trigger")) {
       warnings.push(`${relative(file)}: entries[${entryIndex}].event is a legacy alias for trigger; prefer trigger in new data.`);
     }
+    checkForcedDialogueEntryText(file, entry, `entries[${entryIndex}]`);
     checkDialogueMetadata(file, entry, `entries[${entryIndex}]`);
     const entryQuestId = stringValue(metadataObject(entry).quest) || defaultQuestId;
     checkForcedDialogueOptions(file, entry.options, `entries[${entryIndex}].options`, entryQuestId);
     checkForcedDialogueOptions(file, entry.leave_options, `entries[${entryIndex}].leave_options`, entryQuestId);
     checkForcedDialogueOption(file, entry.leave_option, `entries[${entryIndex}].leave_option`, entryQuestId);
   }
+}
+
+function checkForcedDialogueEntryText(file, entry, location) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+    return;
+  }
+  checkOptionalBoolean(file, entry, location, "remove");
+  checkStringList(file, entry, location, ["line", "lines"], "forced dialogue line");
+  checkStringList(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");
 }
 
 function checkForcedDialogueOptions(file, options, location, defaultQuestId = "") {
@@ -1353,12 +1425,34 @@ function checkForcedDialogueOption(file, option, location, defaultQuestId = "") 
   if (!option || typeof option !== "object" || Array.isArray(option)) {
     return;
   }
+  checkOptionalString(file, option, location, "label_key");
+  checkStringList(file, option, location, ["response", "responses"], "forced dialogue response");
+  checkStringList(file, option, location, ["response_key", "response_keys"], "forced dialogue response key");
+  checkForcedDialogueResultText(file, option.take_items, `${location}.take_items`);
+  checkForcedDialogueResultText(file, option.payment, `${location}.payment`);
+  checkForcedDialogueResultText(file, option.take_stolen_items, `${location}.take_stolen_items`);
+  checkForcedDialogueResultText(file, option.return_stolen_items, `${location}.return_stolen_items`);
   checkConditions(file, option, location, defaultQuestId);
   if (option.follow_up && typeof option.follow_up === "object" && !Array.isArray(option.follow_up)) {
+    checkForcedDialogueEntryText(file, option.follow_up, `${location}.follow_up`);
     checkForcedDialogueOptions(file, option.follow_up.options, `${location}.follow_up.options`, defaultQuestId);
     checkForcedDialogueOptions(file, option.follow_up.leave_options, `${location}.follow_up.leave_options`, defaultQuestId);
     checkForcedDialogueOption(file, option.follow_up.leave_option, `${location}.follow_up.leave_option`, defaultQuestId);
   }
+}
+
+function checkForcedDialogueResultText(file, value, location) {
+  if (value === undefined || value === true || value === false) {
+    return;
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    errors.push(`${relative(file)}: ${location} must be a boolean or object.`);
+    return;
+  }
+  checkStringList(file, value, location, ["success_response", "success_responses"], "forced dialogue success response");
+  checkStringList(file, value, location, ["failure_response", "failure_responses"], "forced dialogue failure response");
+  checkStringList(file, value, location, ["success_response_key", "success_response_keys"], "forced dialogue success response key");
+  checkStringList(file, value, location, ["failure_response_key", "failure_response_keys"], "forced dialogue failure response key");
 }
 
 function dialogueSectionsFor(file, data) {
@@ -1739,6 +1833,10 @@ function checkUnknownObjectKeys(file, object, location, allowedKeys) {
       errors.push(`${relative(file)}: ${location}.${key} is not a supported field.`);
     }
   }
+}
+
+function isControlOnly(object, allowedKeys) {
+  return Object.keys(object).every((key) => allowedKeys.includes(key));
 }
 
 function readValues(entry, keys) {

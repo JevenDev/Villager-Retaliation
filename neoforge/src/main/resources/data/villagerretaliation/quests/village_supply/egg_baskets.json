@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The egg request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.egg_baskets.dialogue.start",
+    "reminder_key": "quest.village_supply.egg_baskets.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.egg_baskets.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.egg_baskets.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.egg_baskets.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.egg_baskets.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.egg_baskets.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.egg_baskets.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.egg_baskets.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
-    "title": "Egg Baskets"
+    "title": "Egg Baskets",
+    "title_key": "quest.village_supply.egg_baskets.title",
+    "description_key": "quest.village_supply.egg_baskets.description"
   },
   "id": "villagerretaliation:egg_baskets",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The egg baskets are full and ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 12 eggs for the kitchen baskets."
+        "text": "Bring 12 eggs for the kitchen baskets.",
+        "text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.text",
+        "complete_text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.complete_text"
       },
       "type": "item_check"
     }
@@ -88,14 +101,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 12 eggs for the kitchen baskets."
+        "text": "Bring 12 eggs for the kitchen baskets.",
+        "text_key": "quest.village_supply.egg_baskets.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the eggs."
+        "text": "Return to the quest giver with the eggs.",
+        "text_key": "quest.village_supply.egg_baskets.tracker.return.text"
       }
     },
-    "title": "Egg Baskets"
+    "title": "Egg Baskets",
+    "title_key": "quest.village_supply.egg_baskets.tracker.title"
   }
 }

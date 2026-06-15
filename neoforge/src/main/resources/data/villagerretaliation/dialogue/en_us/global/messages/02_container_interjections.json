@@ -22,7 +22,8 @@
         "Let it be. I trust {player} to take only what is needed.",
         "They have helped us before. Give them room, but keep it honest.",
         "I will <pulse>vouch</pulse> for {player}. Treat the {container} with care."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_opened.vouch.allow.000"
     },
     {
       "key": "container_opened.vouch.deny",
@@ -37,7 +38,8 @@
         "Not today. Some boundaries stay firm, even for familiar hands.",
         "Step back from the {container}. We can talk before anyone reaches further.",
         "I trust you enough to say this plainly: <pulse>close it</pulse>."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_opened.vouch.deny.001"
     },
     {
       "key": "container_opened.vouch.royalty",
@@ -52,7 +54,8 @@
         "This is not theft. This is trust given where trust was earned.",
         "Step aside. The village does not question its liege over every latch.",
         "Our liege has the village's <pulse>trust</pulse>. Let the {container} open."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_opened.vouch.royalty.002"
     },
     {
       "key": "container_opened.vouch.original_response",
@@ -67,7 +70,8 @@
         "Then go carefully. Their trust is not yours to waste.",
         "If they are willing to stand for you, I will step back.",
         "{previous_villager}'s word is enough for now. Keep the {container} <pulse>tidy</pulse>."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_opened.vouch.original_response.003"
     },
     {
       "key": "container_opened.vouch.original_response.royalty",
@@ -82,7 +86,8 @@
         "Take what is needed. The village stands behind you.",
         "I understand. I will step back from the {container}.",
         "As you wish. The village's <pulse>trust</pulse> is with you."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_opened.vouch.original_response.royalty.004"
     },
     {
       "key": "container_theft.backup_interjection",
@@ -97,7 +102,8 @@
         "More than one pair of eyes saw what happened at that {stolen_container}.",
         "You can argue with one witness. It gets harder with two.",
         "<shake>Do not lie</shake> about what half the village saw."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_theft.backup_interjection.005"
     },
     {
       "key": "container_theft.backup_interjection.second",
@@ -112,7 +118,8 @@
         "The village is watching, <purple>{player}</purple>. Put it back.",
         "This is not confusion. This is one witness backing another.",
         "Return {stolen_stack} before this gets <shake>worse</shake>."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_theft.backup_interjection.second.006"
     },
     {
       "key": "container_theft.backup_interjection.third",
@@ -127,7 +134,8 @@
         "This is not a misunderstanding, not with this many eyes on it.",
         "Put {stolen_item_pronoun} back before the whole square knows.",
         "<shake>Enough.</shake> Return what you took."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_theft.backup_interjection.third.007"
     },
     {
       "key": "container_opened.backup_interjection",
@@ -142,7 +150,8 @@
         "The {container} is not yours to search without permission.",
         "Back away from the {container}. This does not need to become a theft report.",
         "Close it now, before suspicion starts <pulse>settling in</pulse>."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_opened.backup_interjection.008"
     },
     {
       "key": "container_opened.backup_interjection.second",
@@ -157,7 +166,8 @@
         "The village keeps stores for everyone, not for quiet hands.",
         "Do not make this harder than it needs to be.",
         "Step away from {container}, <purple>{player}</purple>. <shake>Now.</shake>"
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_opened.backup_interjection.second.009"
     },
     {
       "key": "container_opened.backup_interjection.third",
@@ -172,7 +182,8 @@
         "The village is not guessing anymore. Step back.",
         "If you need supplies, ask like the rest of us.",
         "That {container} stays closed unless the village says otherwise."
-      ]
+      ],
+      "id": "global.messages.02_container_interjections.messages.container_opened.backup_interjection.third.010"
     }
   ]
 }

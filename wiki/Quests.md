@@ -58,6 +58,53 @@ For new packs, prefer the questline folder layout.
 | `tracker` | Optional custom quest tracker text |
 | `triggers` | Event-based reactions while the quest exists |
 
+## Locale-Friendly Text
+
+Inline English can stay in the quest as a fallback, but every player-facing quest string can point at a datapack message key:
+
+```json
+{
+  "display": {
+    "title": "Bread Delivery",
+    "title_key": "quest.village_supply.bread_delivery.title",
+    "description": "Bring 16 bread to the village stores.",
+    "description_key": "quest.village_supply.bread_delivery.description"
+  },
+  "dialogue": {
+    "start": ["Bring me 16 bread."],
+    "start_key": "quest.village_supply.bread_delivery.dialogue.start"
+  }
+}
+```
+
+Put the keyed text in `data/<namespace>/dialogue/<locale>/.../messages/*.json`:
+
+```json
+{
+  "messages": [
+    {
+      "id": "quest.village_supply.bread_delivery.title",
+      "key": "quest.village_supply.bread_delivery.title",
+      "lines": ["Bread Delivery"]
+    }
+  ]
+}
+```
+
+Supported quest text keys:
+
+| Place | Key fields |
+| --- | --- |
+| `display` | `title_key`, `description_key` |
+| objective `tracker` | `text_key`, `complete_text_key` |
+| top-level `tracker` | `title_key` |
+| tracker `steps.*` | `text_key` |
+| `dialogue` stages | `<stage>_key`, `<stage>_keys` |
+| object-form dialogue stage | `text_key`, `text_keys` |
+| `rules.expiration` | `text_key` or `notification_text_key` |
+
+Quest dialogue stages are `start`, `reminder`, `turn_in`, `already_completed`, `unavailable`, `inactive`, `missing_target`, `missing_proof`, and `locate_failed`.
+
 ## Example: Structure Quest
 
 ```json
@@ -89,9 +136,11 @@ For new packs, prefer the questline folder layout.
 {
   "tracker": {
     "title": "Bread Delivery",
+    "title_key": "quest.village_supply.bread_delivery.tracker.title",
     "steps": {
       "proof": {
         "text": "Bring 16 bread back to the quest giver.",
+        "text_key": "quest.village_supply.bread_delivery.tracker.proof.text",
         "show_progress": true,
         "progress": 0.7
       }
@@ -125,6 +174,25 @@ For new packs, prefer the questline folder layout.
 }
 ```
 
+## Replacing Or Removing Built-Ins
+
+At the top of any quest file:
+
+```json
+{ "replace": true }
+```
+
+clears all quests loaded so far for that reload pass. Use it in the first quest file of a total overhaul pack, then define only your own quests.
+
+```json
+{
+  "id": "villagerretaliation:bread_delivery",
+  "remove": true
+}
+```
+
+removes one quest by `id`. If `id` is omitted, the id is inferred from the file path.
+
 ## Best Practice
 
-Pair every quest with a [Dialogue Tree](Dialogue-Trees.md) for the offer, reminder, and turn-in scene. Keep the quest file focused on state and the tree focused on the conversation.
+Pair every quest with a [Dialogue Tree](Dialogue-Trees.md) for the offer, reminder, and turn-in scene. Keep the quest file focused on state, and put translatable wording behind message keys so translators do not have to edit objective logic.

@@ -13,253 +13,295 @@
       "key": "interaction.work.brewing.no_order",
       "lines": [
         "No brewing order selected."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.no_order.000"
     },
     {
       "key": "interaction.work.brewing.depositing_outputs",
       "lines": [
         "I am putting finished potions away before brewing more."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.depositing_outputs.001"
     },
     {
       "key": "interaction.work.brewing.choose_order",
       "lines": [
         "Choose a potion and amount before I start brewing."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.choose_order.002"
     },
     {
       "key": "interaction.work.brewing.recipe_unavailable",
       "lines": [
         "That potion recipe is no longer available."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.recipe_unavailable.003"
     },
     {
       "key": "interaction.work.brewing.no_stand",
       "lines": [
         "I need a brewing stand inside the assigned job site."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.no_stand.004"
     },
     {
       "key": "interaction.work.brewing.order_complete",
       "lines": [
         "The brewing order is complete."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.order_complete.005"
     },
     {
       "key": "interaction.work.brewing.wrong_bottles",
       "lines": [
         "The brewing stand has different bottles in it."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.wrong_bottles.006"
     },
     {
       "key": "interaction.work.brewing.wrong_ingredient",
       "lines": [
         "The brewing stand has the wrong ingredient in it."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.wrong_ingredient.007"
     },
     {
       "key": "interaction.work.brewing.wrong_fuel",
       "lines": [
         "The brewing stand has the wrong fuel in it."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.wrong_fuel.008"
     },
     {
       "key": "interaction.work.brewing.missing_materials",
       "lines": [
         "Missing materials."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.missing_materials.009"
     },
     {
       "key": "interaction.work.brewing.stand_unreachable",
       "lines": [
         "I cannot reach the assigned brewing stand."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.stand_unreachable.010"
     },
     {
       "key": "interaction.work.brewing.stand_blocked",
       "lines": [
         "The brewing stand is blocked off, so I am waiting for a clear path."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.stand_blocked.011"
     },
     {
       "key": "interaction.work.brewing.repositioning_stand",
       "lines": [
         "I am moving into position at the brewing stand."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.repositioning_stand.012"
     },
     {
       "key": "interaction.work.brewing.moving_to_stand",
       "lines": [
         "I am heading to the brewing stand."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.moving_to_stand.013"
     },
     {
       "key": "interaction.work.brewing.water_unreachable",
       "lines": [
         "I cannot reach the assigned water source."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.water_unreachable.014"
     },
     {
       "key": "interaction.work.brewing.water_blocked",
       "lines": [
         "The water source is blocked off, so I am waiting for a clear path."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.water_blocked.015"
     },
     {
       "key": "interaction.work.brewing.repositioning_water",
       "lines": [
         "I am moving into position at the water source."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.repositioning_water.016"
     },
     {
       "key": "interaction.work.brewing.moving_to_water",
       "lines": [
         "I am heading to the water source."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.moving_to_water.017"
     },
     {
       "key": "interaction.work.brewing.water_bottle_space",
       "lines": [
         "I need room in my job inventory to fill water bottles."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.water_bottle_space.018"
     },
     {
       "key": "interaction.work.brewing.crafted_ingredients",
       "lines": [
         "I crafted brewing ingredients."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.crafted_ingredients.019"
     },
     {
       "key": "interaction.work.brewing.crafted_blaze_powder",
       "lines": [
         "I crafted blaze powder for the brewing stand."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.crafted_blaze_powder.020"
     },
     {
       "key": "interaction.work.brewing.collected_output",
       "lines": [
         "I collected {count} brewed {item}."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.collected_output.021"
     },
     {
       "key": "interaction.work.brewing.clear_bottle_space",
       "lines": [
         "I need room in my job inventory before I can clear extra bottles from the stand."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.clear_bottle_space.022"
     },
     {
       "key": "interaction.work.brewing.cleared_extra_bottles",
       "lines": [
         "I cleared extra water bottles from the brewing stand before starting this order."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.cleared_extra_bottles.023"
     },
     {
       "key": "interaction.work.brewing.finishing_larger_batch",
       "lines": [
         "I am finishing the larger batch already in the brewing stand."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.finishing_larger_batch.024"
     },
     {
       "key": "interaction.work.brewing.waiting_current_batch",
       "lines": [
         "I am waiting for the current brewing batch to finish."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.waiting_current_batch.025"
     },
     {
       "key": "interaction.work.brewing.loaded_water_bottles",
       "lines": [
         "I loaded water bottles into the brewing stand."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.loaded_water_bottles.026"
     },
     {
       "key": "interaction.work.brewing.ready_to_collect",
       "lines": [
         "I am ready to collect the finished potions."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.ready_to_collect.027"
     },
     {
       "key": "interaction.work.brewing.waiting_stand",
       "lines": [
         "I am waiting for the brewing stand to finish."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.waiting_stand.028"
     },
     {
       "key": "interaction.work.brewing.loaded_ingredient",
       "lines": [
         "I loaded the next brewing ingredient."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.loaded_ingredient.029"
     },
     {
       "key": "interaction.work.brewing.loaded_blaze_powder",
       "lines": [
         "I loaded blaze powder into the brewing stand."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.loaded_blaze_powder.030"
     },
     {
       "key": "interaction.work.brewing.collecting_materials",
       "lines": [
         "I am collecting brewing materials from storage."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.collecting_materials.031"
     },
     {
       "key": "interaction.work.brewing.materials_unreachable",
       "lines": [
         "I cannot reach the assigned brewing materials."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.materials_unreachable.032"
     },
     {
       "key": "interaction.work.brewing.material_inventory_full",
       "lines": [
         "I need room in my job inventory to carry brewing materials."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.material_inventory_full.033"
     },
     {
       "key": "interaction.work.brewing.gathered_materials",
       "lines": [
         "I gathered brewing materials from storage."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.gathered_materials.034"
     },
     {
       "key": "interaction.work.brewing.requires_role_choose",
       "lines": [
         "Assign me to Brewing before choosing a potion."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.requires_role_choose.035"
     },
     {
       "key": "interaction.work.brewing.requires_role_change",
       "lines": [
         "Assign me to Brewing before changing brewing orders."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.requires_role_change.036"
     },
     {
       "key": "interaction.work.brewing.choose_amount",
       "lines": [
         "Choose how many potions I should brew."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.choose_amount.037"
     },
     {
       "key": "interaction.work.brewing.unknown_recipe",
       "lines": [
         "I do not know that brewing recipe."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.unknown_recipe.038"
     },
     {
       "key": "interaction.work.brewing.already_brewing",
       "lines": [
         "I already have a brewing order running. Stop it before choosing another."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.already_brewing.039"
     },
     {
       "key": "interaction.work.brewing.order_summary",
       "lines": [
         "Brewing {amount} x {item}."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.order_summary.040"
     },
     {
       "key": "interaction.work.brewing.stopped",
       "lines": [
         "Brewing stopped."
-      ]
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.stopped.041"
     }
   ]
 }

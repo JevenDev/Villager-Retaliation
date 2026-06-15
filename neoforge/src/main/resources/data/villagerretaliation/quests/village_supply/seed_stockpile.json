@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The seed bin is not asking for help right now."
-    ]
+    ],
+    "start_key": "quest.village_supply.seed_stockpile.dialogue.start",
+    "reminder_key": "quest.village_supply.seed_stockpile.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.seed_stockpile.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.seed_stockpile.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.seed_stockpile.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.seed_stockpile.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.seed_stockpile.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.seed_stockpile.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.seed_stockpile.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring seed grain so the village can replant without touching winter stores.",
-    "title": "Seed Stockpile"
+    "title": "Seed Stockpile",
+    "title_key": "quest.village_supply.seed_stockpile.title",
+    "description_key": "quest.village_supply.seed_stockpile.description"
   },
   "id": "villagerretaliation:seed_stockpile",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The seed sacks are tied and ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 32 wheat seeds for the reserve."
+        "text": "Bring 32 wheat seeds for the reserve.",
+        "text_key": "quest.village_supply.seed_stockpile.objective.bring_seeds.text",
+        "complete_text_key": "quest.village_supply.seed_stockpile.objective.bring_seeds.complete_text"
       },
       "type": "item_check"
     }
@@ -84,14 +97,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 32 wheat seeds for the reserve."
+        "text": "Bring 32 wheat seeds for the reserve.",
+        "text_key": "quest.village_supply.seed_stockpile.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the wheat seeds."
+        "text": "Return to the quest giver with the wheat seeds.",
+        "text_key": "quest.village_supply.seed_stockpile.tracker.return.text"
       }
     },
-    "title": "Seed Stockpile"
+    "title": "Seed Stockpile",
+    "title_key": "quest.village_supply.seed_stockpile.tracker.title"
   }
 }

@@ -72,6 +72,25 @@ Use the `quests/` path for quest-owned scenes.
 | `responses` | Buttons shown inside the scene |
 | `actions` | State changes such as starting a quest, giving XP, or forcing another scene |
 
+## Replacing Or Removing Built-Ins
+
+At the top of a dialogue-tree file:
+
+```json
+{ "replace": true }
+```
+
+clears all dialogue trees loaded so far. Use this for total conversation overhauls.
+
+```json
+{
+  "id": "villagerretaliation:bread_delivery",
+  "remove": true
+}
+```
+
+removes one tree by `id`. If `id` is omitted, the tree id is inferred from the file path. This is useful when you want to remove a built-in quest scene and provide your own normal dialogue or forced dialogue instead.
+
 ## Example: Non-Quest Branch
 
 Trees are not just for quests. This is a simple lore branch:

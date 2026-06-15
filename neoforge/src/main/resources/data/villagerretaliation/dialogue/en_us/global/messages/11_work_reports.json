@@ -22,7 +22,8 @@
         "The area is under watch. I am {activity} in {work_area}.",
         "I have {work_area} covered for now. My task is {activity}.",
         "Nothing gets ignored on my watch in {work_area}. I am {activity}. {status_detail}"
-      ]
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.combat.000"
     },
     {
       "key": "interaction.work_report.mining",
@@ -37,7 +38,8 @@
         "Work below ground is moving along near {target}. I am {activity}.",
         "I am still on the mining job in {work_area}. {status_detail}",
         "The excavation is under way in {work_area}; for now I am {activity}."
-      ]
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.mining.001"
     },
     {
       "key": "interaction.work_report.logging",
@@ -52,7 +54,8 @@
         "The timber work is moving along. My current task is {activity}.",
         "I am handling the next tree near {target} in {work_area}.",
         "Woodcutting keeps me busy in {work_area}. I am {activity}. {status_detail}"
-      ]
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.logging.002"
     },
     {
       "key": "interaction.work_report.farming",
@@ -67,7 +70,8 @@
         "The crops still need me in {work_area}. {status_detail}",
         "I am carrying on with the farming, with my attention on {target}.",
         "Work in the fields is steady. I am {activity} in {work_area}."
-      ]
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.farming.003"
     },
     {
       "key": "interaction.work_report.fishing",
@@ -82,7 +86,8 @@
         "The water still needs patience in {work_area}. {status_detail}",
         "I am carrying on with the fishing, focused on {target}.",
         "Fishing is moving along. I am {activity} in {work_area}."
-      ]
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.fishing.004"
     },
     {
       "key": "interaction.work_report.brewing",
@@ -97,7 +102,8 @@
         "The potion work is not forgotten in {work_area}.",
         "I am tending the brewing setup with my attention on {target}.",
         "My brewing report is simple: in {work_area}, I am {activity}. {status_detail}"
-      ]
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.brewing.005"
     },
     {
       "key": "interaction.work_report.builder",
@@ -112,7 +118,8 @@
         "The build is not finished yet, so I am {activity}.",
         "I am handling the next part of the structure near {target}.",
         "Construction report: I am {activity} in {work_area}. {status_detail}"
-      ]
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.builder.006"
     },
     {
       "key": "interaction.work_report.animal_handling",
@@ -127,7 +134,8 @@
         "Animal work keeps me in {work_area}. {status_detail}",
         "I am managing the pen and keeping attention on {target}.",
         "My handling report is this: in {work_area}, I am {activity}. {status_detail}"
-      ]
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.animal_handling.007"
     },
     {
       "key": "interaction.work_report.nitwit",
@@ -142,7 +150,8 @@
         "Work, of a sort, continues. I am {activity}.",
         "I am keeping to my assignment, with attention on {target}.",
         "If you must know, I am {activity} in {work_area}. {status_detail}"
-      ]
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.nitwit.008"
     }
   ]
 }

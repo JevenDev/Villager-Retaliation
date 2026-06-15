@@ -22,7 +22,8 @@
         "Every now and then, I think about that {gift_item} and smile again.",
         "A gift like that makes a person feel seen.",
         "That {gift_item} was <pulse>kindness</pulse> I could hold in my hands."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.direct.loved.000"
     },
     {
       "key": "gift_memory.direct.liked",
@@ -37,7 +38,8 @@
         "I have kept that {gift_item} close enough to matter.",
         "That was a sensible gift, and I mean that kindly.",
         "Thank you again. The {gift_item} has been <pulse>useful</pulse>."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.direct.liked.001"
     },
     {
       "key": "gift_memory.direct.neutral",
@@ -52,7 +54,8 @@
         "It was an unusual choice, that {gift_item}.",
         "I will admit, the {gift_item} made me pause.",
         "The {gift_item} is still waiting for me to decide what it means."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.direct.neutral.002"
     },
     {
       "key": "gift_memory.direct.disliked",
@@ -67,7 +70,8 @@
         "I know you gave me the {gift_item}. I also know how it felt.",
         "If you meant well with the {gift_item}, it did not land that way.",
         "Some gifts are hard to forget for the wrong reasons."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.direct.disliked.003"
     },
     {
       "key": "gift_memory.direct.hated",
@@ -82,7 +86,8 @@
         "That {gift_item} still sits badly in my memory.",
         "Some things should not be handed over with a smile.",
         "The {gift_item} felt <shake>cruel</shake>, whether you meant it or not."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.direct.hated.004"
     },
     {
       "key": "gift_memory.village.loved",
@@ -97,7 +102,8 @@
         "{villager_name} seemed truly touched by the {gift_item}.",
         "You chose well. The {gift_item} mattered to {villager_name}.",
         "That {gift_item} gave {villager_name} a reason to smile."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.village.loved.005"
     },
     {
       "key": "gift_memory.village.liked",
@@ -112,7 +118,8 @@
         "That {gift_item} landed kindly enough.",
         "{villager_name} seemed glad to have it.",
         "The {gift_item} was a <pulse>welcome</pulse> choice."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.village.liked.006"
     },
     {
       "key": "gift_memory.village.neutral",
@@ -127,7 +134,8 @@
         "{villager_name} accepted the {gift_item}, but I would not call it a perfect fit.",
         "The {gift_item} made people curious, if nothing else.",
         "That was a <wavy>peculiar</wavy> choice for {villager_name}."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.village.neutral.007"
     },
     {
       "key": "gift_memory.village.disliked",
@@ -142,7 +150,8 @@
         "That gift made things awkward, from what I heard.",
         "I would avoid giving {villager_name} another {gift_item}.",
         "That {gift_item} left a <wavy>sour</wavy> impression."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.village.disliked.008"
     },
     {
       "key": "gift_memory.village.hated",
@@ -157,7 +166,8 @@
         "People are still talking about that {gift_item}, and not kindly.",
         "{villager_name} had every reason to be upset.",
         "A gift like that becomes a <shake>warning</shake>, not a favor."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_memory.village.hated.009"
     },
     {
       "key": "gift_response.global.loved",
@@ -172,7 +182,8 @@
         "That is a rare kindness. I will remember it.",
         "You have made my day warmer than it was.",
         "Thank you. This is a <pulse>real gift</pulse>."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.global.loved.010"
     },
     {
       "key": "gift_response.global.liked",
@@ -187,7 +198,8 @@
         "You chose well enough to make me smile.",
         "I appreciate this. Truly.",
         "The {gift_item} is welcome here."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.global.liked.011"
     },
     {
       "key": "gift_response.global.neutral",
@@ -202,7 +214,8 @@
         "This gives me something to consider.",
         "Thank you. It is... different.",
         "I will take it. Let me think on it."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.global.neutral.012"
     },
     {
       "key": "gift_response.global.disliked",
@@ -217,7 +230,8 @@
         "This is not the best choice for me.",
         "I will take it, but I cannot say I am pleased.",
         "Next time, maybe choose something else."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.global.disliked.013"
     },
     {
       "key": "gift_response.global.hated",
@@ -232,7 +246,8 @@
         "{gift_item} is the wrong thing to place in my hands.",
         "If this was meant as kindness, it failed.",
         "Do not bring me something like this again."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.global.hated.014"
     },
     {
       "key": "gift_response.profession.loved",
@@ -247,7 +262,8 @@
         "A gift this fitting is rare.",
         "That is a fine choice for my trade.",
         "You brought something I can truly <pulse>use</pulse>."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.profession.loved.015"
     },
     {
       "key": "gift_response.profession.liked",
@@ -262,7 +278,8 @@
         "You chose something with my work in mind. Thank you.",
         "This {gift_item} will not sit idle for long.",
         "A useful gift is always welcome at my bench."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.profession.liked.016"
     },
     {
       "key": "gift_response.profession.neutral",
@@ -277,7 +294,8 @@
         "I will set it aside until I know where it fits.",
         "It might come in handy. We will see.",
         "Thank you. The {gift_item} gives me something to think about."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.profession.neutral.017"
     },
     {
       "key": "gift_response.profession.disliked",
@@ -292,7 +310,8 @@
         "This feels more careless than useful.",
         "If you meant to support my work, {gift_item} misses the mark.",
         "Next time, bring something that fits the trade."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.profession.disliked.018"
     },
     {
       "key": "gift_response.profession.hated",
@@ -307,7 +326,8 @@
         "Take it away before it causes more trouble.",
         "This is an insult to the work I do.",
         "Do not bring me something like this again."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.profession.hated.019"
     },
     {
       "key": "gift_response.owned.self",
@@ -322,7 +342,8 @@
         "You do not get credit for giving me what was already mine.",
         "I will take the {gift_item} back. I will also remember how it left.",
         "This is a <pulse>return</pulse>, not a gift."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.owned.self.020"
     },
     {
       "key": "gift_response.owned.other",
@@ -337,7 +358,8 @@
         "A stolen gift is still stolen, even with nicer words around it.",
         "Do not use me to hide where that {gift_item} came from.",
         "This needs to go <pulse>back</pulse> to {owner_villager}."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_response.owned.other.021"
     },
     {
       "key": "gift_advice_followup.liked",
@@ -353,7 +375,8 @@
         "Seems my memory served us both this time.",
         "Good. {gift_item} was the <pulse>right call</pulse>."
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "global.messages.03_gifts.messages.gift_advice_followup.liked.022"
     },
     {
       "key": "gift_advice_followup.disliked",
@@ -369,7 +392,8 @@
         "Sometimes a gift teaches by going wrong. Next time, bring {alternative_gift}.",
         "Let us correct the course: {alternative_gift}, not {gift_item}."
       ],
-      "weight": 52
+      "weight": 52,
+      "id": "global.messages.03_gifts.messages.gift_advice_followup.disliked.023"
     },
     {
       "key": "gift_advice_followup.disliked",
@@ -391,7 +415,8 @@
         "hostile",
         "fearful"
       ],
-      "weight": 36
+      "weight": 36,
+      "id": "global.messages.03_gifts.messages.gift_advice_followup.disliked.024"
     },
     {
       "key": "gift_advice_followup.disliked",
@@ -412,7 +437,8 @@
         "hostile",
         "fearful"
       ],
-      "weight": 18
+      "weight": 18,
+      "id": "global.messages.03_gifts.messages.gift_advice_followup.disliked.025"
     },
     {
       "key": "gift_advice_followup.disliked",
@@ -432,7 +458,8 @@
         "rude",
         "hostile"
       ],
-      "weight": 18
+      "weight": 18,
+      "id": "global.messages.03_gifts.messages.gift_advice_followup.disliked.026"
     },
     {
       "key": "gift_advice_followup.disliked",
@@ -453,7 +480,8 @@
         "rude",
         "fearful"
       ],
-      "weight": 18
+      "weight": 18,
+      "id": "global.messages.03_gifts.messages.gift_advice_followup.disliked.027"
     },
     {
       "key": "gift_advice_followup.missing",
@@ -468,7 +496,8 @@
         "I do not want to pretend I know more than I do.",
         "Ask someone else. They may remember better.",
         "The advice is <wavy>gone</wavy> from me for now."
-      ]
+      ],
+      "id": "global.messages.03_gifts.messages.gift_advice_followup.missing.028"
     },
     {
       "key": "gift_given",
@@ -484,7 +513,8 @@
         "This is for you. Let it help where it can.",
         "You gave the village help. Let the village give you this."
       ],
-      "weight": 54
+      "weight": 54,
+      "id": "global.messages.03_gifts.messages.gift_given.029"
     },
     {
       "key": "gift_taken_back.returned",
@@ -500,7 +530,8 @@
         "I will remember the giving. I will also remember the taking.",
         "A returned gift leaves colder hands behind."
       ],
-      "weight": 50
+      "weight": 50,
+      "id": "global.messages.03_gifts.messages.gift_taken_back.returned.030"
     },
     {
       "key": "gift_taken_back.stolen",
@@ -516,7 +547,8 @@
         "You have taken enough liberties with my trust.",
         "<shake>Return</shake> the {gift_item}."
       ],
-      "weight": 50
+      "weight": 50,
+      "id": "global.messages.03_gifts.messages.gift_taken_back.stolen.031"
     },
     {
       "key": "trade_payment_taken_back.returned",
@@ -532,7 +564,8 @@
         "That {trade_item} stopped being yours when the trade was done.",
         "Do not make an honest trade look <wavy>crooked</wavy>."
       ],
-      "weight": 50
+      "weight": 50,
+      "id": "global.messages.03_gifts.messages.trade_payment_taken_back.returned.032"
     },
     {
       "key": "trade_payment_taken_back.stolen",
@@ -548,7 +581,8 @@
         "Put the {trade_item} back before the village hears more.",
         "<shake>Stop.</shake> That payment is not yours."
       ],
-      "weight": 50
+      "weight": 50,
+      "id": "global.messages.03_gifts.messages.trade_payment_taken_back.stolen.033"
     }
   ]
 }

@@ -13,73 +13,85 @@
       "key": "interaction.work.fishing.depositing_output",
       "lines": [
         "My catch needs storage before I cast again."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.depositing_output.000"
     },
     {
       "key": "interaction.work.fishing.output_full_blocked",
       "lines": [
         "I cannot carry more fish, and there is nowhere nearby to put them."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.output_full_blocked.001"
     },
     {
       "key": "interaction.work.fishing.missing_rod",
       "lines": [
         "I need a fishing rod before I can work the water."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.missing_rod.002"
     },
     {
       "key": "interaction.work.fishing.collecting_rod",
       "lines": [
         "I am fetching a fishing rod from assigned storage."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.collecting_rod.003"
     },
     {
       "key": "interaction.work.fishing.waiting_for_bite",
       "lines": [
         "The line is in the water. Now I am waiting for a bite."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.waiting_for_bite.004"
     },
     {
       "key": "interaction.work.fishing.roaming",
       "lines": [
         "I am looking along the bank for a good place to cast."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.roaming.005"
     },
     {
       "key": "interaction.work.fishing.no_open_water",
       "lines": [
         "There is no fishable surface water within casting range of my work area."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.no_open_water.006"
     },
     {
       "key": "interaction.work.fishing.water_unreachable",
       "lines": [
         "I can see fishable water, but I cannot reach a safe place to cast from."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.water_unreachable.007"
     },
     {
       "key": "interaction.work.fishing.moving_to_water",
       "lines": [
         "I am moving to the water now."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.moving_to_water.008"
     },
     {
       "key": "interaction.work.fishing.cast",
       "lines": [
         "I cast the line. Now we see what answers."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.cast.009"
     },
     {
       "key": "interaction.work.fishing.completed",
       "lines": [
         "I reeled in the catch and stored it."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.completed.010"
     },
     {
       "key": "interaction.work.fishing.completed_overflow",
       "lines": [
         "I reeled in the catch, but some of it had to be dropped because storage was full."
-      ]
+      ],
+      "id": "global.messages.16_work_fishing.messages.interaction.work.fishing.completed_overflow.011"
     }
   ]
 }

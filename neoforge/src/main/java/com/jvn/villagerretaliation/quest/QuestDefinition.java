@@ -22,6 +22,8 @@ public record QuestDefinition(
         ResourceLocation id,
         String title,
         String description,
+        String titleKey,
+        String descriptionKey,
         String questline,
         ResourceLocation parent,
         Offer offer,
@@ -38,6 +40,8 @@ public record QuestDefinition(
     public QuestDefinition {
         title = title == null || title.isBlank() ? id.toString() : title;
         description = description == null ? "" : description;
+        titleKey = titleKey == null ? "" : titleKey;
+        descriptionKey = descriptionKey == null ? "" : descriptionKey;
         questline = questline == null ? "" : questline;
         offer = offer == null ? Offer.any() : offer;
         target = target == null ? Target.EMPTY : target;
@@ -215,15 +219,19 @@ public record QuestDefinition(
     public record ObjectiveTracker(
             String text,
             String completeText,
+            String textKey,
+            String completeTextKey,
             boolean showProgress,
             float progress,
             java.util.Map<String, String> metadata
     ) {
-        public static final ObjectiveTracker EMPTY = new ObjectiveTracker("", "", true, -1.0F, java.util.Map.of());
+        public static final ObjectiveTracker EMPTY = new ObjectiveTracker("", "", "", "", true, -1.0F, java.util.Map.of());
 
         public ObjectiveTracker {
             text = text == null ? "" : text;
             completeText = completeText == null ? "" : completeText;
+            textKey = textKey == null ? "" : textKey;
+            completeTextKey = completeTextKey == null ? "" : completeTextKey;
             progress = Math.max(-1.0F, Math.min(1.0F, progress));
             metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
         }
@@ -231,22 +239,27 @@ public record QuestDefinition(
         public boolean hasAnyDisplay() {
             return !this.text.isBlank()
                     || !this.completeText.isBlank()
+                    || !this.textKey.isBlank()
+                    || !this.completeTextKey.isBlank()
                     || this.progress >= 0.0F
                     || !this.metadata.isEmpty();
         }
 
         public boolean hasActiveDisplay() {
             return !this.text.isBlank()
+                    || !this.textKey.isBlank()
                     || this.progress >= 0.0F
                     || !this.metadata.isEmpty();
         }
 
         public boolean hasCompletionDisplay() {
-            return !this.completeText.isBlank();
+            return !this.completeText.isBlank() || !this.completeTextKey.isBlank();
         }
 
-        public String displayText(boolean complete) {
-            return complete && !this.completeText.isBlank() ? this.completeText : this.text;
+        public SelectedText displayText(boolean complete) {
+            return complete && (!this.completeText.isBlank() || !this.completeTextKey.isBlank())
+                    ? new SelectedText(this.completeText, this.completeTextKey)
+                    : new SelectedText(this.text, this.textKey);
         }
     }
 
@@ -329,7 +342,8 @@ public record QuestDefinition(
             boolean allowRepickup,
             boolean sendNotification,
             String notificationTrigger,
-            String notificationText
+            String notificationText,
+            String notificationTextKey
     ) {
         public static final Expiration DEFAULT = new Expiration(
                 0L,
@@ -338,7 +352,8 @@ public record QuestDefinition(
                 true,
                 true,
                 "quest.expired",
-                "Quest expired: {quest}"
+                "Quest expired: {quest}",
+                "quest.expired"
         );
 
         public Expiration {
@@ -350,6 +365,7 @@ public record QuestDefinition(
             notificationText = notificationText == null || notificationText.isBlank()
                     ? "Quest expired: {quest}"
                     : notificationText;
+            notificationTextKey = notificationTextKey == null ? "" : notificationTextKey;
         }
 
         public boolean enabled() {
@@ -374,13 +390,15 @@ public record QuestDefinition(
 
     public record Tracker(
             String title,
+            String titleKey,
             java.util.Map<String, Step> steps,
             java.util.Map<String, String> metadata
     ) {
-        public static final Tracker EMPTY = new Tracker("", java.util.Map.of(), java.util.Map.of());
+        public static final Tracker EMPTY = new Tracker("", "", java.util.Map.of(), java.util.Map.of());
 
         public Tracker {
             title = title == null ? "" : title;
+            titleKey = titleKey == null ? "" : titleKey;
             steps = steps == null ? java.util.Map.of() : java.util.Map.copyOf(steps);
             metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
         }
@@ -395,14 +413,16 @@ public record QuestDefinition(
 
     public record Step(
             String text,
+            String textKey,
             boolean showProgress,
             float progress,
             java.util.Map<String, String> metadata
     ) {
-        public static final Step EMPTY = new Step("", false, -1.0F, java.util.Map.of());
+        public static final Step EMPTY = new Step("", "", false, -1.0F, java.util.Map.of());
 
         public Step {
             text = text == null ? "" : text;
+            textKey = textKey == null ? "" : textKey;
             progress = Math.max(-1.0F, Math.min(1.0F, progress));
             metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
         }
@@ -459,73 +479,136 @@ public record QuestDefinition(
 
     public record Dialogue(
             List<String> start,
+            List<String> startKeys,
             List<String> reminder,
+            List<String> reminderKeys,
             List<String> turnIn,
+            List<String> turnInKeys,
             List<String> alreadyCompleted,
+            List<String> alreadyCompletedKeys,
             List<String> unavailable,
+            List<String> unavailableKeys,
             List<String> inactive,
+            List<String> inactiveKeys,
             List<String> missingTarget,
+            List<String> missingTargetKeys,
             List<String> missingProof,
-            List<String> locateFailed
+            List<String> missingProofKeys,
+            List<String> locateFailed,
+            List<String> locateFailedKeys
     ) {
         public static final Dialogue EMPTY = new Dialogue(
                 List.of("I do not have the details for that quest."),
+                List.of("quest.dialogue.start"),
                 List.of("I do not have the details for that quest."),
+                List.of("quest.dialogue.reminder"),
                 List.of("Thank you."),
+                List.of("quest.dialogue.turn_in"),
                 List.of("That matter is already settled."),
+                List.of("quest.dialogue.already_completed"),
                 List.of("This is not the right moment."),
+                List.of("quest.dialogue.unavailable"),
                 List.of("This is not the right moment."),
+                List.of("quest.dialogue.inactive"),
                 List.of("You have not reached the place I marked yet."),
+                List.of("quest.dialogue.missing_target"),
                 List.of("Bring back proof that you found it."),
-                List.of("I cannot get a clear reading on that place.")
+                List.of("quest.dialogue.missing_proof"),
+                List.of("I cannot get a clear reading on that place."),
+                List.of("quest.dialogue.locate_failed")
         );
 
         public Dialogue {
             start = normalize(start, List.of("I do not have the details for that quest."));
+            startKeys = normalizeKeys(startKeys);
             reminder = normalize(reminder, List.of("I do not have the details for that quest."));
+            reminderKeys = normalizeKeys(reminderKeys);
             turnIn = normalize(turnIn, List.of("Thank you."));
+            turnInKeys = normalizeKeys(turnInKeys);
             alreadyCompleted = normalize(alreadyCompleted, List.of("That matter is already settled."));
+            alreadyCompletedKeys = normalizeKeys(alreadyCompletedKeys);
             unavailable = normalize(unavailable, List.of("This is not the right moment."));
+            unavailableKeys = normalizeKeys(unavailableKeys);
             inactive = normalize(inactive, List.of("This is not the right moment."));
+            inactiveKeys = normalizeKeys(inactiveKeys);
             missingTarget = normalize(missingTarget, List.of("You have not reached the place I marked yet."));
+            missingTargetKeys = normalizeKeys(missingTargetKeys);
             missingProof = normalize(missingProof, List.of("Bring back proof that you found it."));
+            missingProofKeys = normalizeKeys(missingProofKeys);
             locateFailed = normalize(locateFailed, List.of("I cannot get a clear reading on that place."));
+            locateFailedKeys = normalizeKeys(locateFailedKeys);
         }
 
         public String selectStart(RandomSource random) {
-            return select(this.start, random);
+            return selectStartText(random).text();
+        }
+
+        public SelectedText selectStartText(RandomSource random) {
+            return select(this.start, this.startKeys, random);
         }
 
         public String selectReminder(RandomSource random) {
-            return select(this.reminder, random);
+            return selectReminderText(random).text();
+        }
+
+        public SelectedText selectReminderText(RandomSource random) {
+            return select(this.reminder, this.reminderKeys, random);
         }
 
         public String selectTurnIn(RandomSource random) {
-            return select(this.turnIn, random);
+            return selectTurnInText(random).text();
+        }
+
+        public SelectedText selectTurnInText(RandomSource random) {
+            return select(this.turnIn, this.turnInKeys, random);
         }
 
         public String selectAlreadyCompleted(RandomSource random) {
-            return select(this.alreadyCompleted, random);
+            return selectAlreadyCompletedText(random).text();
+        }
+
+        public SelectedText selectAlreadyCompletedText(RandomSource random) {
+            return select(this.alreadyCompleted, this.alreadyCompletedKeys, random);
         }
 
         public String selectUnavailable(RandomSource random) {
-            return select(this.unavailable, random);
+            return selectUnavailableText(random).text();
+        }
+
+        public SelectedText selectUnavailableText(RandomSource random) {
+            return select(this.unavailable, this.unavailableKeys, random);
         }
 
         public String selectInactive(RandomSource random) {
-            return select(this.inactive, random);
+            return selectInactiveText(random).text();
+        }
+
+        public SelectedText selectInactiveText(RandomSource random) {
+            return select(this.inactive, this.inactiveKeys, random);
         }
 
         public String selectMissingTarget(RandomSource random) {
-            return select(this.missingTarget, random);
+            return selectMissingTargetText(random).text();
+        }
+
+        public SelectedText selectMissingTargetText(RandomSource random) {
+            return select(this.missingTarget, this.missingTargetKeys, random);
         }
 
         public String selectMissingProof(RandomSource random) {
-            return select(this.missingProof, random);
+            return selectMissingProofText(random).text();
+        }
+
+        public SelectedText selectMissingProofText(RandomSource random) {
+            return select(this.missingProof, this.missingProofKeys, random);
         }
 
         public String selectLocateFailed(RandomSource random) {
-            return select(this.locateFailed, random);
+            return selectLocateFailedText(random).text();
+        }
+
+        public SelectedText selectLocateFailedText(RandomSource random) {
+            return select(this.locateFailed, this.locateFailedKeys, random);
         }
 
         private static List<String> normalize(List<String> lines, List<String> fallback) {
@@ -538,11 +621,35 @@ public record QuestDefinition(
             return normalized.isEmpty() ? fallback : List.copyOf(normalized);
         }
 
-        private static String select(List<String> lines, RandomSource random) {
+        private static List<String> normalizeKeys(List<String> keys) {
+            if (keys == null || keys.isEmpty()) {
+                return List.of();
+            }
+            return keys.stream()
+                    .filter(key -> key != null && !key.isBlank())
+                    .toList();
+        }
+
+        private static SelectedText select(List<String> lines, List<String> keys, RandomSource random) {
+            String text = selectInline(lines, random);
+            if (keys != null && !keys.isEmpty()) {
+                return new SelectedText(text, selectInline(keys, random));
+            }
+            return new SelectedText(text, "");
+        }
+
+        private static String selectInline(List<String> lines, RandomSource random) {
             if (lines == null || lines.isEmpty()) {
                 return "";
             }
             return lines.get(random.nextInt(lines.size()));
+        }
+    }
+
+    public record SelectedText(String text, String key) {
+        public SelectedText {
+            text = text == null ? "" : text;
+            key = key == null ? "" : key;
         }
     }
 }

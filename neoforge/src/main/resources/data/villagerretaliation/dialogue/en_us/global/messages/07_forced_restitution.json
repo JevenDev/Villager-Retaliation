@@ -22,7 +22,8 @@
         "You can still handle this cleanly, but not by standing there silent.",
         "Repair starts with what you do next, not what you wish had happened.",
         "Choose plainly. This moment is already <pulse>heavy</pulse> enough."
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.prompt.000"
     },
     {
       "key": "forced.restitution.haggle.accept",
@@ -37,7 +38,8 @@
         "Pay {payment_count} {payment_items}. Less than before, but not nothing.",
         "I will soften the price, not the lesson.",
         "{payment_count} {payment_items}. That is the <pulse>reduced</pulse> amount, and it is final."
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.haggle.accept.001"
     },
     {
       "key": "forced.restitution.haggle.deny",
@@ -52,7 +54,8 @@
         "The amount is already plain. Do not make me repeat it colder.",
         "You do not bargain down trust after breaking it.",
         "<shake>No.</shake> The payment stays as it is."
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.haggle.deny.002"
     },
     {
       "key": "forced.restitution.option.pay.label",
@@ -67,7 +70,8 @@
         "Here is the payment",
         "I will cover the cost",
         "I will pay the <pulse>{payment_count} {payment_items}</pulse>"
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.option.pay.label.003"
     },
     {
       "key": "forced.restitution.option.haggle.label",
@@ -82,7 +86,8 @@
         "That cost is too steep",
         "Ask for less, and I can settle this",
         "That amount feels <wavy>too high</wavy>"
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.option.haggle.label.004"
     },
     {
       "key": "forced.restitution.option.refuse.label",
@@ -97,7 +102,8 @@
         "No. Find another answer",
         "I will not pay",
         "<shake>No.</shake>"
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.option.refuse.label.005"
     },
     {
       "key": "forced.restitution.option.threaten.label",
@@ -112,7 +118,8 @@
         "You will regret pressing me",
         "Stand aside",
         "<shake>Threaten them</shake>"
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.option.threaten.label.006"
     },
     {
       "key": "forced.restitution.pay.success",
@@ -127,7 +134,8 @@
         "You paid what was owed. Now do better with what remains.",
         "That is enough for restitution.",
         "Payment accepted. Let this end <pulse>cleanly</pulse>."
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.pay.success.007"
     },
     {
       "key": "forced.restitution.pay.failure",
@@ -142,7 +150,8 @@
         "The payment is missing, so the problem remains.",
         "No. That is not the {payment_count} {payment_items} owed.",
         "You do not have enough. The choice is still <pulse>open</pulse>."
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.pay.failure.008"
     },
     {
       "key": "forced.restitution.refuse.response",
@@ -157,7 +166,8 @@
         "The village offered a way to settle it. You refused.",
         "Then the debt stays where everyone can see it.",
         "<shake>So be it.</shake> The village will remember."
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.refuse.response.009"
     },
     {
       "key": "forced.restitution.threaten.response",
@@ -172,7 +182,8 @@
         "You could have settled this. You chose fear instead.",
         "The village knows what your apology is worth now.",
         "<shake>Careful.</shake> You just made this much worse."
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.threaten.response.010"
     },
     {
       "key": "forced.restitution.reduced_pay.success",
@@ -187,7 +198,8 @@
         "That payment is enough to end this cleanly.",
         "Good. You met the bargain. Now meet the expectation.",
         "Reduced payment accepted. Keep your hands <pulse>honest</pulse> next time."
-      ]
+      ],
+      "id": "global.messages.07_forced_restitution.messages.forced.restitution.reduced_pay.success.011"
     }
   ]
 }

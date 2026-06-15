@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The clay repair request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.clay_repairs.dialogue.start",
+    "reminder_key": "quest.village_supply.clay_repairs.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.clay_repairs.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.clay_repairs.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.clay_repairs.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.clay_repairs.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.clay_repairs.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.clay_repairs.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.clay_repairs.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring clay for small repairs around wells, ovens, and cracked walls.",
-    "title": "Clay Repairs"
+    "title": "Clay Repairs",
+    "title_key": "quest.village_supply.clay_repairs.title",
+    "description_key": "quest.village_supply.clay_repairs.description"
   },
   "id": "villagerretaliation:clay_repairs",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The clay is ready for patching.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 16 clay balls for village repairs."
+        "text": "Bring 16 clay balls for village repairs.",
+        "text_key": "quest.village_supply.clay_repairs.objective.bring_clay.text",
+        "complete_text_key": "quest.village_supply.clay_repairs.objective.bring_clay.complete_text"
       },
       "type": "item_check"
     }
@@ -84,14 +97,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 16 clay balls for village repairs."
+        "text": "Bring 16 clay balls for village repairs.",
+        "text_key": "quest.village_supply.clay_repairs.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the clay ball."
+        "text": "Return to the quest giver with the clay ball.",
+        "text_key": "quest.village_supply.clay_repairs.tracker.return.text"
       }
     },
-    "title": "Clay Repairs"
+    "title": "Clay Repairs",
+    "title_key": "quest.village_supply.clay_repairs.tracker.title"
   }
 }

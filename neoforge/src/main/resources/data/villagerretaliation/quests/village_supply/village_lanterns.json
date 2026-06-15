@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The watch is not ready to post that request right now."
-    ]
+    ],
+    "start_key": "quest.village_supply.village_lanterns.dialogue.start",
+    "reminder_key": "quest.village_supply.village_lanterns.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.village_lanterns.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.village_lanterns.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.village_lanterns.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.village_lanterns.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.village_lanterns.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.village_lanterns.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.village_lanterns.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring lanterns before the watch loses the edges of the village to darkness.",
-    "title": "Village Lanterns"
+    "title": "Village Lanterns",
+    "title_key": "quest.village_supply.village_lanterns.title",
+    "description_key": "quest.village_supply.village_lanterns.description"
   },
   "id": "villagerretaliation:village_lanterns",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The lanterns are ready for hanging.",
         "progress": 0.75,
         "show_progress": true,
-        "text": "Bring 6 lanterns for the village watch."
+        "text": "Bring 6 lanterns for the village watch.",
+        "text_key": "quest.village_supply.village_lanterns.objective.bring_lanterns.text",
+        "complete_text_key": "quest.village_supply.village_lanterns.objective.bring_lanterns.complete_text"
       },
       "type": "item_check"
     }
@@ -77,7 +90,8 @@
       "allow_repickup": true,
       "consume": false,
       "notification": "quest.expired",
-      "text": "Quest expired: {quest}"
+      "text": "Quest expired: {quest}",
+      "text_key": "quest.village_supply.village_lanterns.expiration.text"
     },
     "locked_to_villager": true,
     "max_completions": 0,
@@ -92,14 +106,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 6 lanterns before the request goes stale."
+        "text": "Bring 6 lanterns before the request goes stale.",
+        "text_key": "quest.village_supply.village_lanterns.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the lanterns."
+        "text": "Return to the quest giver with the lanterns.",
+        "text_key": "quest.village_supply.village_lanterns.tracker.return.text"
       }
     },
-    "title": "Village Lanterns"
+    "title": "Village Lanterns",
+    "title_key": "quest.village_supply.village_lanterns.tracker.title"
   }
 }

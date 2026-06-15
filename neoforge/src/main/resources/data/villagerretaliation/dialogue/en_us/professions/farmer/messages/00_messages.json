@@ -80,7 +80,8 @@
         "hostile",
         "fearful"
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "professions.farmer.messages.00_messages.messages.gift_advice_followup.disliked.003"
     },
     {
       "key": "gift_advice_followup.disliked",
@@ -100,7 +101,8 @@
         "rude",
         "hostile"
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "professions.farmer.messages.00_messages.messages.gift_advice_followup.disliked.004"
     }
   ]
 }

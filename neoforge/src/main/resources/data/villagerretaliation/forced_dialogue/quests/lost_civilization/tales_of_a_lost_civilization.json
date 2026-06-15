@@ -7,14 +7,18 @@
           "label": "I remember",
           "order": 0,
           "end_conversation": true,
-          "response": "Then go carefully. Some places were lost for a reason."
+          "response": "Then go carefully. Some places were lost for a reason.",
+          "label_key": "forced_dialogue.quests.lost_civilization.tales_of_a_lost_civilization.quest.lost_civilization.storm_reminder.option.quest.lost_civilization.remember.label",
+          "response_key": "forced_dialogue.quests.lost_civilization.tales_of_a_lost_civilization.quest.lost_civilization.storm_reminder.option.quest.lost_civilization.remember.response"
         },
         {
           "id": "quest.lost_civilization.directions",
           "label": "Mark it again",
           "order": 10,
           "end_conversation": true,
-          "response": "My notes put it about {distance} blocks {direction}, near {target_x}, {target_z}. Look for the city center, then bring back {proof_item}."
+          "response": "My notes put it about {distance} blocks {direction}, near {target_x}, {target_z}. Look for the city center, then bring back {proof_item}.",
+          "label_key": "forced_dialogue.quests.lost_civilization.tales_of_a_lost_civilization.quest.lost_civilization.storm_reminder.option.quest.lost_civilization.directions.label",
+          "response_key": "forced_dialogue.quests.lost_civilization.tales_of_a_lost_civilization.quest.lost_civilization.storm_reminder.option.quest.lost_civilization.directions.response"
         }
       ],
       "lines": [
@@ -27,14 +31,17 @@
       "leave_option": {
         "label": "Leave",
         "end_conversation": true,
-        "response": "The map will wait. The storm may not."
+        "response": "The map will wait. The storm may not.",
+        "label_key": "forced_dialogue.quests.lost_civilization.tales_of_a_lost_civilization.quest.lost_civilization.storm_reminder.leave.option.leave.label",
+        "response_key": "forced_dialogue.quests.lost_civilization.tales_of_a_lost_civilization.quest.lost_civilization.storm_reminder.leave.option.leave.response"
       },
       "output": {
         "mode": "forced_dialogue"
       },
       "requires_line_of_sight": true,
       "trigger": "quest",
-      "witness_profession": "minecraft:cartographer"
+      "witness_profession": "minecraft:cartographer",
+      "line_key": "forced_dialogue.quests.lost_civilization.tales_of_a_lost_civilization.quest.lost_civilization.storm_reminder.line"
     }
   ]
 }

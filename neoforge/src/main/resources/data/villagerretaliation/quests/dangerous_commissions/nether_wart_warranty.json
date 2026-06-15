@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "This request needs steadier hands than you have shown me so far."
-    ]
+    ],
+    "start_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.start",
+    "reminder_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.reminder",
+    "turn_in_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.turn_in",
+    "already_completed_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.already_completed",
+    "unavailable_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.unavailable",
+    "inactive_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.inactive",
+    "missing_target_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_target",
+    "missing_proof_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_proof",
+    "locate_failed_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.locate_failed"
   },
   "display": {
     "description": "Reach a Nether Fortress and return with Nether Wart and a Blaze Rod.",
-    "title": "Nether Wart Warranty"
+    "title": "Nether Wart Warranty",
+    "title_key": "quest.dangerous_commissions.nether_wart_warranty.title",
+    "description_key": "quest.dangerous_commissions.nether_wart_warranty.description"
   },
   "id": "villagerretaliation:nether_wart_warranty",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The blaze rod proves the route.",
         "progress": 0.82,
         "show_progress": true,
-        "text": "Bring 1 blaze rod so the cleric knows the fortress was real."
+        "text": "Bring 1 blaze rod so the cleric knows the fortress was real.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.text",
+        "complete_text_key": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.complete_text"
       },
       "type": "item_check"
     }
@@ -93,17 +106,20 @@
       "bring_blaze_rod": {
         "progress": 0.82,
         "show_progress": true,
-        "text": "Bring 1 blaze rod with the nether wart."
+        "text": "Bring 1 blaze rod with the nether wart.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.bring_blaze_rod.text"
       },
       "proof": {
         "progress": 0.66,
         "show_progress": true,
-        "text": "Collect nether wart and a blaze rod."
+        "text": "Collect nether wart and a blaze rod.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the Nether proof."
+        "text": "Return to the quest giver with the Nether proof.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.return.text"
       },
       "travel": {
         "metadata": {
@@ -111,9 +127,11 @@
         },
         "progress": 0.25,
         "show_progress": true,
-        "text": "Find the fortress near {target_x}, {target_z}."
+        "text": "Find the fortress near {target_x}, {target_z}.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.travel.text"
       }
     },
-    "title": "Nether Wart Warranty"
+    "title": "Nether Wart Warranty",
+    "title_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.title"
   }
 }

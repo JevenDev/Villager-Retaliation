@@ -71,6 +71,40 @@ Forced-dialogue options can take items directly from the player.
 }
 ```
 
+## Locale-Friendly Text
+
+Forced dialogue can keep inline English as fallback text while using datapack message keys as the translation surface:
+
+```json
+{
+  "id": "my_pack.container_theft.warning",
+  "trigger": "container_theft",
+  "line": "Hands off that {container}. I saw what you took.",
+  "line_key": "forced_dialogue.my_pack.container_theft.warning.line",
+  "options": [
+    {
+      "id": "apologize",
+      "label": "Apologize",
+      "label_key": "forced_dialogue.my_pack.container_theft.warning.apologize.label",
+      "response": "Then prove it next time before the village has to ask.",
+      "response_key": "forced_dialogue.my_pack.container_theft.warning.apologize.response"
+    }
+  ]
+}
+```
+
+Supported key fields:
+
+| Place | Key fields |
+| --- | --- |
+| entry line | `line_key`, `line_keys`, `text_key`, `text_keys` |
+| option label | `label_key` |
+| option response | `response_key`, `response_keys` |
+| payment or stolen-item success | `success_response_key`, `success_response_keys` |
+| payment or stolen-item failure | `failure_response_key`, `failure_response_keys` |
+
+When a key is present, the keyed message is used first and the inline text is only a fallback.
+
 ## Example: Chat Bark
 
 ```json
@@ -103,3 +137,22 @@ Use forced dialogue when:
 - you want a reactive bark tied to a trigger instead of a Talk menu request
 
 Use normal [Dialogue](Dialogue.md) when the player chooses to ask something on purpose.
+
+## Replacing Or Removing Built-Ins
+
+Use top-level `replace: true` to clear all forced-dialogue definitions loaded so far:
+
+```json
+{ "replace": true }
+```
+
+Use `remove: true` with an `id` to remove one definition:
+
+```json
+{
+  "id": "player_item_proximity_diamond_sword_warning",
+  "remove": true
+}
+```
+
+Inside an `entries` array, `remove: true` removes that entry. Without an explicit `id`, the fallback id is inferred from the file path and entry index.

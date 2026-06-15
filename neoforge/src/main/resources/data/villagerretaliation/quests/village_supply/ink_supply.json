@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The ink request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.ink_supply.dialogue.start",
+    "reminder_key": "quest.village_supply.ink_supply.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.ink_supply.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.ink_supply.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.ink_supply.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.ink_supply.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.ink_supply.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.ink_supply.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.ink_supply.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring ink so ledgers, maps, and warning notices remain legible.",
-    "title": "Ink Supply"
+    "title": "Ink Supply",
+    "title_key": "quest.village_supply.ink_supply.title",
+    "description_key": "quest.village_supply.ink_supply.description"
   },
   "id": "villagerretaliation:ink_supply",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The ink is ready for the desk.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 6 ink sacs for the ledger."
+        "text": "Bring 6 ink sacs for the ledger.",
+        "text_key": "quest.village_supply.ink_supply.objective.bring_ink.text",
+        "complete_text_key": "quest.village_supply.ink_supply.objective.bring_ink.complete_text"
       },
       "type": "item_check"
     }
@@ -88,14 +101,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 6 ink sacs for the ledger."
+        "text": "Bring 6 ink sacs for the ledger.",
+        "text_key": "quest.village_supply.ink_supply.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the ink sac."
+        "text": "Return to the quest giver with the ink sac.",
+        "text_key": "quest.village_supply.ink_supply.tracker.return.text"
       }
     },
-    "title": "Ink Supply"
+    "title": "Ink Supply",
+    "title_key": "quest.village_supply.ink_supply.tracker.title"
   }
 }

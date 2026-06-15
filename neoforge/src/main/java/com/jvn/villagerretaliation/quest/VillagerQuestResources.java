@@ -102,6 +102,21 @@ public final class VillagerQuestResources {
             Map<ResourceLocation, ResourceLocation> sources) {
         DatapackResourceLoader.readObject(location, "quest", resource).ifPresent(root -> {
             ResourceLocation fallbackId = fallbackQuestId(location);
+            if (DatapackJsonReader.readBoolean(root, "replace")) {
+                quests.clear();
+                sources.clear();
+                if (isControlOnly(root, "replace", "metadata")) {
+                    return;
+                }
+            }
+            if (DatapackJsonReader.readBoolean(root, "remove")) {
+                ResourceLocation removeId = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
+                if (removeId != null) {
+                    quests.remove(removeId);
+                    sources.remove(removeId);
+                }
+                return;
+            }
             QuestDefinition definition = readQuest(location, root, fallbackId);
             if (definition == null) {
                 return;
@@ -114,6 +129,16 @@ public final class VillagerQuestResources {
         });
     }
 
+    private static boolean isControlOnly(JsonObject root, String... allowedKeys) {
+        Set<String> allowed = new java.util.HashSet<>(List.of(allowedKeys));
+        for (String key : root.keySet()) {
+            if (!allowed.contains(key)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static QuestDefinition readQuest(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
         ResourceLocation id = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
         if (id == null) {
@@ -123,12 +148,16 @@ public final class VillagerQuestResources {
         JsonObject display = DatapackJsonReader.readObject(root, "display");
         String title = display == null ? "" : DatapackJsonReader.readString(display, "title");
         String description = display == null ? "" : DatapackJsonReader.readString(display, "description");
+        String titleKey = display == null ? "" : DatapackJsonReader.readString(display, "title_key");
+        String descriptionKey = display == null ? "" : DatapackJsonReader.readString(display, "description_key");
         ResourceLocation parent = DatapackJsonReader.readResourceLocation(root, "parent").orElse(null);
 
         return new QuestDefinition(
                 id,
                 title,
                 description,
+                titleKey,
+                descriptionKey,
                 DatapackJsonReader.readString(root, "questline"),
                 parent,
                 readOffer(location, root),
@@ -452,10 +481,12 @@ public final class VillagerQuestResources {
         }
         String text = DatapackJsonReader.readString(tracker, "text");
         String completeText = DatapackJsonReader.readString(tracker, "complete_text");
+        String textKey = DatapackJsonReader.readString(tracker, "text_key");
+        String completeTextKey = DatapackJsonReader.readString(tracker, "complete_text_key");
         boolean showProgress = DatapackJsonReader.readBoolean(tracker, "show_progress", true);
         float progress = (float) DatapackJsonReader.readDouble(tracker, "progress", -1.0D);
         Map<String, String> metadata = readStringMap(DatapackJsonReader.readObject(tracker, "metadata"));
-        return new QuestDefinition.ObjectiveTracker(text, completeText, showProgress, progress, metadata);
+        return new QuestDefinition.ObjectiveTracker(text, completeText, textKey, completeTextKey, showProgress, progress, metadata);
     }
 
     private static QuestDefinition.Rewards readRewards(JsonObject root) {
@@ -533,7 +564,8 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readBoolean(expiration, "allow_repickup", true),
                 DatapackJsonReader.readBoolean(expiration, "notify", true),
                 firstNonBlank(DatapackJsonReader.readString(expiration, "notification"), "quest.expired"),
-                firstNonBlank(DatapackJsonReader.readString(expiration, "text"), "Quest expired: {quest}")
+                firstNonBlank(DatapackJsonReader.readString(expiration, "text"), "Quest expired: {quest}"),
+                DatapackJsonReader.readString(expiration, "text_key", "notification_text_key")
         );
     }
 
@@ -555,6 +587,7 @@ public final class VillagerQuestResources {
 
         return new QuestDefinition.Tracker(
                 DatapackJsonReader.readString(tracker, "title"),
+                DatapackJsonReader.readString(tracker, "title_key"),
                 steps,
                 readStringMap(DatapackJsonReader.readObject(tracker, "metadata"))
         );
@@ -563,6 +596,7 @@ public final class VillagerQuestResources {
     private static QuestDefinition.Step readTrackerStep(JsonObject step) {
         return new QuestDefinition.Step(
                 DatapackJsonReader.readString(step, "text"),
+                DatapackJsonReader.readString(step, "text_key"),
                 DatapackJsonReader.readBoolean(step, "show_progress", true),
                 (float) DatapackJsonReader.readDouble(step, "progress", -1.0D),
                 readStringMap(DatapackJsonReader.readObject(step, "metadata"))
@@ -667,14 +701,23 @@ public final class VillagerQuestResources {
         }
         return new QuestDefinition.Dialogue(
                 readLines(dialogue, "start"),
+                readLineKeys(dialogue, "start"),
                 readLines(dialogue, "reminder"),
+                readLineKeys(dialogue, "reminder"),
                 readLines(dialogue, "turn_in"),
+                readLineKeys(dialogue, "turn_in"),
                 readLines(dialogue, "already_completed"),
+                readLineKeys(dialogue, "already_completed"),
                 readLines(dialogue, "unavailable"),
+                readLineKeys(dialogue, "unavailable"),
                 readLines(dialogue, "inactive"),
+                readLineKeys(dialogue, "inactive"),
                 readLines(dialogue, "missing_target"),
+                readLineKeys(dialogue, "missing_target"),
                 readLines(dialogue, "missing_proof"),
-                readLines(dialogue, "locate_failed")
+                readLineKeys(dialogue, "missing_proof"),
+                readLines(dialogue, "locate_failed"),
+                readLineKeys(dialogue, "locate_failed")
         );
     }
 
@@ -717,6 +760,19 @@ public final class VillagerQuestResources {
             return DatapackJsonReader.readLines(element.getAsJsonObject());
         }
         return List.of();
+    }
+
+    private static List<String> readLineKeys(JsonObject root, String key) {
+        List<String> keys = new ArrayList<>();
+        keys.addAll(DatapackJsonReader.readStringList(root, key + "_key", key + "_keys"));
+        JsonElement element = root.get(key);
+        if (element != null && element.isJsonObject()) {
+            keys.addAll(DatapackJsonReader.readStringList(element.getAsJsonObject(), "text_key", "text_keys"));
+        }
+        return keys.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .distinct()
+                .toList();
     }
 
     private static ResourceLocation fallbackQuestId(ResourceLocation location) {

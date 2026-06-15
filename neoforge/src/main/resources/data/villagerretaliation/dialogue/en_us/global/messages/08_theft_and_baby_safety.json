@@ -17,7 +17,8 @@
         "I put {item_stack} away because you took it from village stores. Do not make me say this twice.",
         "You reached into the chest, then into my inventory. That is a pattern, not a mistake.",
         "The village already had to take {item_stack} back from you. Leave it where I put it."
-      ]
+      ],
+      "id": "global.messages.08_theft_and_baby_safety.messages.interaction.confiscated_stolen_item.first_offense.000"
     },
     {
       "key": "interaction.confiscated_stolen_item.second_offense",
@@ -27,7 +28,8 @@
         "You are trying to steal the same kind of trouble twice. The next time, we stop talking.",
         "That item was removed from you for a reason. Touch my inventory again and I will not ask politely.",
         "You took from the village, then from me, and now you test whether I remember. I do."
-      ]
+      ],
+      "id": "global.messages.08_theft_and_baby_safety.messages.interaction.confiscated_stolen_item.second_offense.001"
     },
     {
       "key": "interaction.confiscated_stolen_item.aggro",
@@ -37,7 +39,8 @@
         "You keep stealing what we already took back. Now you answer for {item_stack}.",
         "First the chest, then my inventory, now {item_stack} again. No more words.",
         "You had two chances to stop reaching for {item_stack}. You wasted both."
-      ]
+      ],
+      "id": "global.messages.08_theft_and_baby_safety.messages.interaction.confiscated_stolen_item.aggro.002"
     },
     {
       "key": "interaction.ambient.baby_damaged.player",
@@ -45,7 +48,8 @@
         "Ow! Why would you do that?",
         "Stop! That hurts!",
         "Help! They hit me!"
-      ]
+      ],
+      "id": "global.messages.08_theft_and_baby_safety.messages.interaction.ambient.baby_damaged.player.003"
     },
     {
       "key": "interaction.ambient.baby_damaged.other",
@@ -53,7 +57,8 @@
         "Ow! Something hit me!",
         "Help! That hurt!",
         "I want to go home!"
-      ]
+      ],
+      "id": "global.messages.08_theft_and_baby_safety.messages.interaction.ambient.baby_damaged.other.004"
     },
     {
       "key": "interaction.ambient.baby_witnessed_death.player",
@@ -61,7 +66,8 @@
         "No no no! I saw what you did!",
         "Help! They hurt them!",
         "I want the grownups!"
-      ]
+      ],
+      "id": "global.messages.08_theft_and_baby_safety.messages.interaction.ambient.baby_witnessed_death.player.005"
     },
     {
       "key": "interaction.ambient.baby_witnessed_death.other",
@@ -69,7 +75,8 @@
         "No no no! Run!",
         "Where are the grownups?",
         "Hide! Hide now!"
-      ]
+      ],
+      "id": "global.messages.08_theft_and_baby_safety.messages.interaction.ambient.baby_witnessed_death.other.006"
     }
   ]
 }

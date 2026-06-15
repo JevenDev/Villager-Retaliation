@@ -22,7 +22,8 @@
         "Are you sure you want to dismiss me before the contract ends?",
         "Do you mean to end our contract now, before the agreed time?",
         "If you end our contract early, that will be the end of it. Are you sure?"
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.end_hire_confirmation_prompt.000"
     },
     {
       "key": "interaction.end_hire_confirmation_declined",
@@ -37,7 +38,8 @@
         "Then we keep to the original agreement.",
         "Understood. The contract remains active.",
         "All right. We will leave the contract untouched."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.end_hire_confirmation_declined.001"
     },
     {
       "key": "interaction.end_hire_confirmation_accepted",
@@ -52,7 +54,8 @@
         "Understood. That closes our agreement.",
         "All right. The contract is done.",
         "Then we part ways here. The contract is ended."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.end_hire_confirmation_accepted.002"
     },
     {
       "key": "interaction.end_hire_confirmation_accepted_refund",
@@ -67,7 +70,8 @@
         "Understood. That closes our agreement, with {refund_amount} returned to you.",
         "All right. The contract is done, and you are refunded {refund_amount}.",
         "Then we part ways here. The contract is ended, and {refund_amount} comes back to you."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.end_hire_confirmation_accepted_refund.003"
     },
     {
       "key": "interaction.hired_contract_days_left",
@@ -82,7 +86,8 @@
         "There is still {time_remaining} left on my hire.",
         "Our agreement continues for {time_remaining} yet.",
         "I am under contract with you for {time_remaining} longer."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.hired_contract_days_left.004"
     },
     {
       "key": "interaction.hired_contract_taken",
@@ -97,7 +102,8 @@
         "Another agreement has claimed my time already.",
         "I cannot take a new contract while this one stands.",
         "I have a contract already, and it still holds."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.hired_contract_taken.005"
     },
     {
       "key": "interaction.contract_offer_overview",
@@ -112,7 +118,8 @@
         "My available work is {available_roles}, and the daily rate is {contract_cost}.",
         "I can be hired for {available_roles}. It will cost {contract_cost} a day.",
         "These are the roles I can fill: {available_roles}. My daily cost is {contract_cost}."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.contract_offer_overview.006"
     },
     {
       "key": "interaction.hire_cost",
@@ -127,7 +134,8 @@
         "For a term of {time_remaining}, I ask {contract_cost}.",
         "The cost of hiring me for {time_remaining} is {contract_cost}.",
         "A {time_remaining} contract with me would be {contract_cost}."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.hire_cost.007"
     },
     {
       "key": "interaction.hire_started",
@@ -142,7 +150,8 @@
         "Then we have an agreement: {role} work for {time_remaining}, at {contract_cost}.",
         "Our contract is made. I will serve as {role} for {time_remaining}.",
         "So be it. I am hired as {role} for {time_remaining}, for {contract_cost}."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.hire_started.008"
     },
     {
       "key": "interaction.extend_cost",
@@ -157,7 +166,8 @@
         "A further {time_remaining} would require {contract_cost}.",
         "To continue our arrangement for {time_remaining} longer, it will cost {contract_cost}.",
         "That much more time costs {contract_cost}: {time_remaining} added to the contract."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.extend_cost.009"
     },
     {
       "key": "interaction.extend_unavailable",
@@ -172,7 +182,8 @@
         "This agreement will not take an extension at the moment.",
         "No, I cannot extend our contract right now.",
         "The contract refuses to grow any longer for now."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.extend_unavailable.010"
     },
     {
       "key": "interaction.extend_success",
@@ -187,19 +198,22 @@
         "Then I remain in your service for {time_remaining} more. That leaves {new_time_remaining} on the contract.",
         "So be it. For {contract_cost}, the contract grows by {time_remaining}.",
         "Our arrangement has been extended. Add {time_remaining}, and we now stand at {new_time_remaining} remaining."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.extend_success.011"
     },
     {
       "key": "interaction.hire.end_requires_hirer",
       "lines": [
         "Only the hiring player can end this contract."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.hire.end_requires_hirer.012"
     },
     {
       "key": "interaction.hire.extend_requires_hirer",
       "lines": [
         "Only the hiring player can extend this contract."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.hire.extend_requires_hirer.013"
     },
     {
       "key": "interaction.hire_unavailable",
@@ -214,7 +228,8 @@
         "I am not taking that kind of work yet.",
         "Come back when hiring is actually possible.",
         "For now, that offer has nowhere to land."
-      ]
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.hire_unavailable.014"
     }
   ]
 }

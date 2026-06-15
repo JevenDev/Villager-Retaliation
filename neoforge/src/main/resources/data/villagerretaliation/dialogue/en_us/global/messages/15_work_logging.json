@@ -13,151 +13,176 @@
       "key": "interaction.work.logging.searching_scan",
       "lines": [
         "I am searching the work area for a sound tree to cut."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.searching_scan.000"
     },
     {
       "key": "interaction.work.logging.no_target_depositing",
       "lines": [
         "I found no good timber nearby, so I am heading to storage for now."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.no_target_depositing.001"
     },
     {
       "key": "interaction.work.logging.roaming",
       "lines": [
         "I found no good timber yet, so I am ranging through the work area."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.roaming.002"
     },
     {
       "key": "interaction.work.logging.no_targets",
       "lines": [
         "There is no good timber within reach just now."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.no_targets.003"
     },
     {
       "key": "interaction.work.logging.missing_axe",
       "lines": [
         "I need a proper axe before I can keep logging."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.missing_axe.004"
     },
     {
       "key": "interaction.work.logging.collecting_leaf_tool",
       "lines": [
         "I am getting shears or a hoe before I clear leaves."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.collecting_leaf_tool.005"
     },
     {
       "key": "interaction.work.logging.collected_leaf_tool",
       "lines": [
         "I found a tool for the leaves and am heading back to the stand."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.collected_leaf_tool.006"
     },
     {
       "key": "interaction.work.logging.searching_saplings",
       "lines": [
         "I am checking the work area for saplings that could use bonemeal."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.searching_saplings.007"
     },
     {
       "key": "interaction.work.logging.sapling_blocked",
       "lines": [
         "I cannot reach that sapling well enough to tend it."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.sapling_blocked.008"
     },
     {
       "key": "interaction.work.logging.sapling_repositioning",
       "lines": [
         "I am changing position to tend that sapling."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.sapling_repositioning.009"
     },
     {
       "key": "interaction.work.logging.moving_to_sapling",
       "lines": [
         "I am moving to bonemeal that sapling."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.moving_to_sapling.010"
     },
     {
       "key": "interaction.work.logging.bonemealing_sapling",
       "lines": [
         "I bonemealed a sapling in the work area."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.bonemealing_sapling.011"
     },
     {
       "key": "interaction.work.logging.sapling_changed",
       "lines": [
         "That sapling is no longer ready for the work I had in mind."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.sapling_changed.012"
     },
     {
       "key": "interaction.work.logging.moving_to_decay_drop",
       "lines": [
         "I am picking up what the tree left behind."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.moving_to_decay_drop.013"
     },
     {
       "key": "interaction.work.logging.decay_drop_repositioning",
       "lines": [
         "I am changing position to reach that tree drop."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.decay_drop_repositioning.014"
     },
     {
       "key": "interaction.work.logging.decay_drop_unreachable",
       "lines": [
         "I cannot reach that tree drop safely."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.decay_drop_unreachable.015"
     },
     {
       "key": "interaction.work.logging.collected_decay_drops",
       "lines": [
         "I picked up {count} tree drops from the ground."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.collected_decay_drops.016"
     },
     {
       "key": "interaction.work.logging.blocked_target",
       "lines": [
         "That trunk will not do. I am looking for another I can reach."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.blocked_target.017"
     },
     {
       "key": "interaction.work.logging.repositioning",
       "lines": [
         "That trunk is awkward from here, so I am changing my approach."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.repositioning.018"
     },
     {
       "key": "interaction.work.logging.moving_to_target",
       "lines": [
         "I am moving into place to work that tree."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.moving_to_target.019"
     },
     {
       "key": "interaction.work.logging.working_target",
       "lines": [
         "I am chopping through the trunk now."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.working_target.020"
     },
     {
       "key": "interaction.work.logging.completed",
       "lines": [
         "I finished felling the tree and gathered {logs} logs."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.completed.021"
     },
     {
       "key": "interaction.work.logging.output_full_depositing",
       "lines": [
         "My hands are full of timber, so I am taking it to storage first."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.output_full_depositing.022"
     },
     {
       "key": "interaction.work.logging.output_full_blocked",
       "lines": [
         "I cannot carry more timber, and there is nowhere to put it."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.output_full_blocked.023"
     },
     {
       "key": "interaction.work.logging.target_changed",
       "lines": [
         "That tree is no longer fit for the work I had in mind."
-      ]
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.target_changed.024"
     }
   ]
 }

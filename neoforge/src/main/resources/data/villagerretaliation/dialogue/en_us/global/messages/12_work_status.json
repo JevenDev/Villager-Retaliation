@@ -13,415 +13,484 @@
       "key": "interaction.work.status.none",
       "lines": [
         "Nothing needs doing just now."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.none.000"
     },
     {
       "key": "interaction.work.status.waiting_tick",
       "lines": [
         "I am waiting for the next work tick."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.waiting_tick.001"
     },
     {
       "key": "interaction.work.status.waiting_for_hirer",
       "lines": [
         "I am waiting for the one who hired me to return."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.waiting_for_hirer.002"
     },
     {
       "key": "interaction.work.status.no_routine",
       "lines": [
         "I do not have a proper work routine for that role yet."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.no_routine.003"
     },
     {
       "key": "interaction.work.status.paused",
       "lines": [
         "You have told me to hold for now."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.paused.004"
     },
     {
       "key": "interaction.work.status.enabled",
       "lines": [
         "I am back to work."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.enabled.005"
     },
     {
       "key": "interaction.work.status.cooldown",
       "lines": [
         "I am catching my breath before the next task."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.cooldown.006"
     },
     {
       "key": "interaction.work.status.paused_for_command",
       "lines": [
         "I am following your command, so I have paused my hired work."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.paused_for_command.007"
     },
     {
       "key": "interaction.work.status.no_work_area",
       "lines": [
         "No work area assigned."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.no_work_area.008"
     },
     {
       "key": "interaction.work.status.storage_full",
       "lines": [
         "I have nowhere left to deposit these collected items."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.storage_full.009"
     },
     {
       "key": "interaction.work.status.storage_full_after_deposit",
       "lines": [
         "I deposited what I could, but storage is full now."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.storage_full_after_deposit.010"
     },
     {
       "key": "interaction.work.status.storage_full_waiting",
       "lines": [
         "I am staying near storage and waiting for room to deposit collected items."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.storage_full_waiting.011"
     },
     {
       "key": "interaction.work.status.collecting_tool",
       "lines": [
         "I am collecting the right tool from assigned storage."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.collecting_tool.012"
     },
     {
       "key": "interaction.work.status.tool_storage_unreachable",
       "lines": [
         "I found the tool in assigned storage, but I cannot reach that container."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.tool_storage_unreachable.013"
     },
     {
       "key": "interaction.work.status.tool_inventory_full",
       "lines": [
         "I found the tool, but I cannot fit it in my work gear."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.tool_inventory_full.014"
     },
     {
       "key": "interaction.work.status.no_food",
       "lines": [
         "No food for hired work. Mood and reputation suffered."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.no_food.015"
     },
     {
       "key": "interaction.work.status.return_path_lost",
       "lines": [
         "I lost the path back into the work area, so I am finding a better way down."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.return_path_lost.016"
     },
     {
       "key": "interaction.work.status.returning_bounds",
       "lines": [
         "I have drifted beyond the work bounds, so I am heading back."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.returning_bounds.017"
     },
     {
       "key": "interaction.work.status.return_retry_wait",
       "lines": [
         "I am outside the work bounds and waiting a moment before trying the path back again."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.return_retry_wait.018"
     },
     {
       "key": "interaction.work.status.returning_excavation_ladder",
       "lines": [
         "I am returning to the excavation ladder."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.returning_excavation_ladder.019"
     },
     {
       "key": "interaction.work.status.moving_excavation_ladder",
       "lines": [
         "I am moving to the excavation ladder."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.moving_excavation_ladder.020"
     },
     {
       "key": "interaction.work.status.need_excavation_ladder_path",
       "lines": [
         "I need a clear path to the excavation ladder."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.need_excavation_ladder_path.021"
     },
     {
       "key": "interaction.work.status.returning_by_ladder",
       "lines": [
         "I am using the ladder to get back into the work area."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.returning_by_ladder.022"
     },
     {
       "key": "interaction.work.status.returning_to_safe_ground",
       "lines": [
         "I am climbing out to safer ground before returning to the work area."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.returning_to_safe_ground.023"
     },
     {
       "key": "interaction.work.status.returning_from_far_bounds",
       "lines": [
         "I am too far from the work bounds, so I am making my way back."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.returning_from_far_bounds.024"
     },
     {
       "key": "interaction.work.status.return_path_missing",
       "lines": [
         "I am outside the work bounds, and I have not found a good way back yet."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.return_path_missing.025"
     },
     {
       "key": "interaction.work.status.return_could_not_move",
       "lines": [
         "I know I must return to the work bounds, but I could not get moving yet."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.return_could_not_move.026"
     },
     {
       "key": "interaction.work.status.horizontal_radius",
       "lines": [
         "My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.horizontal_radius.027"
     },
     {
       "key": "interaction.work.status.vertical_radius",
       "lines": [
         "My job site vertical range is now {radius} blocks. I cannot manage beyond {max}."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.vertical_radius.028"
     },
     {
       "key": "interaction.work.status.bounds",
       "lines": [
         "My job site bounds are now {dimensions} ({bounds})."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.bounds.029"
     },
     {
       "key": "interaction.work.status.assigned_supplies_enabled",
       "lines": [
         "I may draw supplies from the assigned storage now."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.assigned_supplies_enabled.030"
     },
     {
       "key": "interaction.work.status.assigned_supplies_disabled",
       "lines": [
         "I will stick to what I carry and what is in my work gear."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.assigned_supplies_disabled.031"
     },
     {
       "key": "interaction.work.status.auto_deposit_enabled",
       "lines": [
         "I will put away my finished goods on my own."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.auto_deposit_enabled.032"
     },
     {
       "key": "interaction.work.status.auto_deposit_disabled",
       "lines": [
         "I will keep what I gather until told otherwise."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.auto_deposit_disabled.033"
     },
     {
       "key": "interaction.work.status.combat_orders",
       "lines": [
         "My combat orders are now {mode}."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.combat_orders.034"
     },
     {
       "key": "interaction.work.status.mining_orders",
       "lines": [
         "My mining orders are now {mode}."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.mining_orders.035"
     },
     {
       "key": "interaction.work.status.logging_filter",
       "lines": [
         "I will now favor {filter} when I look for timber."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.logging_filter.036"
     },
     {
       "key": "interaction.work.status.logging_option",
       "lines": [
         "{option} is now {state}."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.logging_option.037"
     },
     {
       "key": "interaction.work.status.farming_mode",
       "lines": [
         "My farming approach is now {mode}."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.farming_mode.038"
     },
     {
       "key": "interaction.work.status.animal_focus",
       "lines": [
         "I have changed what I am watching for with the animals."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.animal_focus.039"
     },
     {
       "key": "interaction.work.status.animal_breeding_target",
       "lines": [
         "I will now breed {target} when the right food is available."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.animal_breeding_target.040"
     },
     {
       "key": "interaction.work.status.nitwit_focus",
       "lines": [
         "I have rearranged my very particular style of helping."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.nitwit_focus.041"
     },
     {
       "key": "interaction.work.status.no_extra_setup",
       "lines": [
         "There is no extra setup for {role} just yet."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.no_extra_setup.042"
     },
     {
       "key": "interaction.work.status.custom_box",
       "lines": [
         "Custom work box selected: {dimensions} blocks."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.custom_box.043"
     },
     {
       "key": "interaction.work.status.custom_box_capped",
       "lines": [
         "This area is too large for this worker, so I clamped it to their current skill range. Custom work box selected: {dimensions} blocks."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.custom_box_capped.044"
     },
     {
       "key": "interaction.work.status.center_reset_to_villager",
       "lines": [
         "My job site is reset to my position: {range}."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.center_reset_to_villager.045"
     },
     {
       "key": "interaction.work.status.center_set_here",
       "lines": [
         "My job site center is now here: {range}."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.center_set_here.046"
     },
     {
       "key": "interaction.work.area.none",
       "lines": [
         "No work area assigned"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.area.none.047"
     },
     {
       "key": "interaction.work.target.none",
       "lines": [
         "no fixed spot just now"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.target.none.048"
     },
     {
       "key": "interaction.work.activity.paused",
       "lines": [
         "resting until you ask me to resume"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.paused.049"
     },
     {
       "key": "interaction.work.activity.waiting",
       "lines": [
         "waiting for the next bit of work"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.waiting.050"
     },
     {
       "key": "interaction.work.activity.selecting_target",
       "lines": [
         "looking over the area for the next task"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.selecting_target.051"
     },
     {
       "key": "interaction.work.activity.moving_to_target",
       "lines": [
         "heading toward {target}"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.moving_to_target.052"
     },
     {
       "key": "interaction.work.activity.validating_target",
       "lines": [
         "checking the spot at {target}"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.validating_target.053"
     },
     {
       "key": "interaction.work.activity.working",
       "lines": [
         "working at {target}"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.working.054"
     },
     {
       "key": "interaction.work.activity.collecting_output",
       "lines": [
         "gathering what I finished at {target}"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.collecting_output.055"
     },
     {
       "key": "interaction.work.activity.finding_chain_target",
       "lines": [
         "looking for the next useful spot near {target}"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.finding_chain_target.056"
     },
     {
       "key": "interaction.work.activity.moving_to_storage",
       "lines": [
         "carrying goods toward {target}"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.moving_to_storage.057"
     },
     {
       "key": "interaction.work.activity.returning_to_work_area",
       "lines": [
         "making my way back into the work area"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.returning_to_work_area.058"
     },
     {
       "key": "interaction.work.activity.depositing",
       "lines": [
         "putting supplies away at {target}"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.depositing.059"
     },
     {
       "key": "interaction.work.activity.waiting_for_materials",
       "lines": [
         "waiting by assigned storage for construction materials"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.waiting_for_materials.060"
     },
     {
       "key": "interaction.work.activity.paused_storage_full",
       "lines": [
         "waiting near full storage at {target}"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.paused_storage_full.061"
     },
     {
       "key": "interaction.work.activity.no_work_area",
       "lines": [
         "waiting for you to assign a job site"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.no_work_area.062"
     },
     {
       "key": "interaction.work.activity.paused_full_inventory",
       "lines": [
         "stopped because my inventory is full"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.paused_full_inventory.063"
     },
     {
       "key": "interaction.work.activity.paused_no_storage",
       "lines": [
         "waiting because there is nowhere proper to store things"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.paused_no_storage.064"
     },
     {
       "key": "interaction.work.activity.failed_cooldown",
       "lines": [
         "waiting a moment before I try that again"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.failed_cooldown.065"
     },
     {
       "key": "interaction.work.activity.paused_missing_tool",
       "lines": [
         "waiting because I do not have the right tool"
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.activity.paused_missing_tool.066"
     },
     {
       "key": "interaction.work.manage.requires_hirer",
       "lines": [
         "Only the hiring player can manage hired work."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.manage.requires_hirer.067"
     },
     {
       "key": "interaction.work.configure.requires_role",
       "lines": [
         "Assign me to {role} before configuring that work."
-      ]
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.configure.requires_role.068"
     }
   ]
 }

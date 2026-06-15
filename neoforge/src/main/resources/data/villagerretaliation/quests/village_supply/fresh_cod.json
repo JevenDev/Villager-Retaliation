@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The cod request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.fresh_cod.dialogue.start",
+    "reminder_key": "quest.village_supply.fresh_cod.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.fresh_cod.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.fresh_cod.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.fresh_cod.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.fresh_cod.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.fresh_cod.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.fresh_cod.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.fresh_cod.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring cod for a simple village supper.",
-    "title": "Fresh Cod"
+    "title": "Fresh Cod",
+    "title_key": "quest.village_supply.fresh_cod.title",
+    "description_key": "quest.village_supply.fresh_cod.description"
   },
   "id": "villagerretaliation:fresh_cod",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The supper fish is ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 10 cod for supper."
+        "text": "Bring 10 cod for supper.",
+        "text_key": "quest.village_supply.fresh_cod.objective.bring_cod.text",
+        "complete_text_key": "quest.village_supply.fresh_cod.objective.bring_cod.complete_text"
       },
       "type": "item_check"
     }
@@ -88,14 +101,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 10 cod for supper."
+        "text": "Bring 10 cod for supper.",
+        "text_key": "quest.village_supply.fresh_cod.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the cod."
+        "text": "Return to the quest giver with the cod.",
+        "text_key": "quest.village_supply.fresh_cod.tracker.return.text"
       }
     },
-    "title": "Fresh Cod"
+    "title": "Fresh Cod",
+    "title_key": "quest.village_supply.fresh_cod.tracker.title"
   }
 }

@@ -13,181 +13,211 @@
       "key": "interaction.clipboard.storage.hold_clipboard",
       "lines": [
         "Hold the clipboard to manage assigned storage."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.clipboard.storage.hold_clipboard.000"
     },
     {
       "key": "interaction.clipboard.work_area.hold_clipboard",
       "lines": [
         "Hold the clipboard to manage assigned work areas."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.clipboard.work_area.hold_clipboard.001"
     },
     {
       "key": "interaction.clipboard.work_area.same_dimension",
       "lines": [
         "Stand in the same dimension as this worker to set the job site center."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.clipboard.work_area.same_dimension.002"
     },
     {
       "key": "interaction.clipboard.selection_cleared",
       "lines": [
         "Clipboard selection cleared."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.clipboard.selection_cleared.003"
     },
     {
       "key": "interaction.job_inventory.requires_hirer",
       "lines": [
         "Only the hiring player can open hired job inventory."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.job_inventory.requires_hirer.004"
     },
     {
       "key": "interaction.storage.assign_requires_access",
       "lines": [
         "You need trust or an active hire contract to assign my storage."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assign_requires_access.005"
     },
     {
       "key": "interaction.storage.select_with_clipboard",
       "lines": [
         "Select storage with the clipboard first."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.select_with_clipboard.006"
     },
     {
       "key": "interaction.storage.assign_result.assigned",
       "lines": [
         "Assigned {count} container{plural}."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assign_result.assigned.007"
     },
     {
       "key": "interaction.storage.assign_result.already_assigned",
       "lines": [
         "That storage is already assigned to another villager."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assign_result.already_assigned.008"
     },
     {
       "key": "interaction.storage.assign_result.invalid",
       "lines": [
         "No valid selected containers were found."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assign_result.invalid.009"
     },
     {
       "key": "interaction.storage.assign_result.none",
       "lines": [
         "No storage was assigned."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assign_result.none.010"
     },
     {
       "key": "interaction.storage.inspect_requires_access",
       "lines": [
         "You need trust or an active hire contract to inspect my storage."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.inspect_requires_access.011"
     },
     {
       "key": "interaction.storage.assigned_count",
       "lines": [
         "Assigned containers: {count}."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assigned_count.012"
     },
     {
       "key": "interaction.storage.remove_requires_access",
       "lines": [
         "You need trust or an active hire contract to remove my storage."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.remove_requires_access.013"
     },
     {
       "key": "interaction.storage.removed_count",
       "lines": [
         "Removed {count} assigned container{plural}."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.removed_count.014"
     },
     {
       "key": "interaction.payment_storage.requires_hire",
       "lines": [
         "Hire me first, then assign recurring payment storage."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.payment_storage.requires_hire.015"
     },
     {
       "key": "interaction.payment_storage.assigned_count",
       "lines": [
         "Payment containers: {count}. Auto-payment is {auto_payment}."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.payment_storage.assigned_count.016"
     },
     {
       "key": "interaction.payment_storage.remove_requires_hirer",
       "lines": [
         "Only the hiring player can remove payment storage."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.payment_storage.remove_requires_hirer.017"
     },
     {
       "key": "interaction.payment_storage.removed_count",
       "lines": [
         "Removed {count} payment container{plural}."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.payment_storage.removed_count.018"
     },
     {
       "key": "interaction.earnings.deposit_requires_access",
       "lines": [
         "You need trust or an active hire contract to manage my earnings."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.deposit_requires_access.019"
     },
     {
       "key": "interaction.earnings.no_excess",
       "lines": [
         "No excess earnings to deposit."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.no_excess.020"
     },
     {
       "key": "interaction.earnings.storage_unavailable",
       "lines": [
         "Assigned storage is unavailable."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.storage_unavailable.021"
     },
     {
       "key": "interaction.earnings.no_assigned_storage",
       "lines": [
         "No assigned storage. I kept the currency in my wallet."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.no_assigned_storage.022"
     },
     {
       "key": "interaction.earnings.storage_full",
       "lines": [
         "Assigned storage is full. I kept the currency in my wallet."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.storage_full.023"
     },
     {
       "key": "interaction.earnings.deposited_partial",
       "lines": [
         "Deposited {deposited}. Storage is full, so I kept {remaining} in my wallet."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.deposited_partial.024"
     },
     {
       "key": "interaction.earnings.deposited_all",
       "lines": [
         "Deposited {deposited} into assigned storage."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.earnings.deposited_all.025"
     },
     {
       "key": "interaction.auto_payment.requires_hire",
       "lines": [
         "Hire me first, then set up recurring payment."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.auto_payment.requires_hire.026"
     },
     {
       "key": "interaction.auto_payment.requires_storage",
       "lines": [
         "Assign a payment container first with the clipboard's recurring payment mode."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.auto_payment.requires_storage.027"
     },
     {
       "key": "interaction.auto_payment.enabled",
       "lines": [
         "Recurring payment enabled."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.auto_payment.enabled.028"
     },
     {
       "key": "interaction.auto_payment.disabled",
       "lines": [
         "Recurring payment disabled."
-      ]
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.auto_payment.disabled.029"
     }
   ]
 }

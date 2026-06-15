@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The feather request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.feather_fletching.dialogue.start",
+    "reminder_key": "quest.village_supply.feather_fletching.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.feather_fletching.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.feather_fletching.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.feather_fletching.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.feather_fletching.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.feather_fletching.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.feather_fletching.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.feather_fletching.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring feathers so arrows and message shafts can be finished in proper batches.",
-    "title": "Feather Fletching"
+    "title": "Feather Fletching",
+    "title_key": "quest.village_supply.feather_fletching.title",
+    "description_key": "quest.village_supply.feather_fletching.description"
   },
   "id": "villagerretaliation:feather_fletching",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The fletching bundle is ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 16 feathers for the fletching bench."
+        "text": "Bring 16 feathers for the fletching bench.",
+        "text_key": "quest.village_supply.feather_fletching.objective.bring_feathers.text",
+        "complete_text_key": "quest.village_supply.feather_fletching.objective.bring_feathers.complete_text"
       },
       "type": "item_check"
     }
@@ -88,14 +101,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 16 feathers for the fletching bench."
+        "text": "Bring 16 feathers for the fletching bench.",
+        "text_key": "quest.village_supply.feather_fletching.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the feathers."
+        "text": "Return to the quest giver with the feathers.",
+        "text_key": "quest.village_supply.feather_fletching.tracker.return.text"
       }
     },
-    "title": "Feather Fletching"
+    "title": "Feather Fletching",
+    "title_key": "quest.village_supply.feather_fletching.tracker.title"
   }
 }

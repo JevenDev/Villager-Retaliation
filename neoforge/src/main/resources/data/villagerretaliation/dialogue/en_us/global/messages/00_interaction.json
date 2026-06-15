@@ -22,7 +22,8 @@
         "I will not wander off.",
         "I will stay where the ground feels familiar.",
         "Go on. I will be <pulse>right here</pulse>."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.follow_stay.000"
     },
     {
       "key": "interaction.follow_start",
@@ -37,7 +38,8 @@
         "Stay where I can see you, and I will come.",
         "I am with you. For now.",
         "All right. Let us go before I think too hard about it."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.follow_start.001"
     },
     {
       "key": "interaction.follow_hold_position",
@@ -52,7 +54,8 @@
         "This place will do. I will keep it.",
         "Understood. I will stay planted here.",
         "Then I am staying here unless I must run or fight."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.follow_hold_position.002"
     },
     {
       "key": "opening.return_after_absence",
@@ -69,7 +72,8 @@
         "I remember faces, and yours has been missing since {days_since_seen_phrase}."
       ],
       "show_for_babies": false,
-      "weight": 34
+      "weight": 34,
+      "id": "global.messages.00_interaction.messages.opening.return_after_absence.003"
     },
     {
       "key": "opening.return_after_absence",
@@ -86,7 +90,8 @@
         "Hi again! Did anything exciting chase you?"
       ],
       "show_for_adults": false,
-      "weight": 34
+      "weight": 34,
+      "id": "global.messages.00_interaction.messages.opening.return_after_absence.004"
     },
     {
       "key": "interaction.follow_betrayal",
@@ -102,7 +107,8 @@
         "I should not have had to fear the person I followed.",
         "<shake>I trusted you.</shake> Remember that."
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "global.messages.00_interaction.messages.interaction.follow_betrayal.005"
     },
     {
       "key": "interaction.refuse_despised",
@@ -117,7 +123,8 @@
         "I will not pretend this is a conversation.",
         "Go bother someone who has not learned better.",
         "<shake>Stay away.</shake> I mean it."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.refuse_despised.006"
     },
     {
       "key": "interaction.refuse_angry",
@@ -132,7 +139,8 @@
         "Come back when my hands stop shaking.",
         "Anger is all I have ready right now.",
         "Not now. Let the <shake>anger</shake> settle first."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.refuse_angry.007"
     },
     {
       "key": "interaction.busy",
@@ -147,7 +155,8 @@
         "I cannot stop for this right now.",
         "The day is already tugging at my sleeves.",
         "Not now. The work will not finish itself."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.busy.008"
     },
     {
       "key": "interaction.unavailable",
@@ -162,7 +171,8 @@
         "You will need to ask another time.",
         "I am done with this for now.",
         "No. I am not available for that anymore."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.unavailable.009"
     },
     {
       "key": "interaction.conversation_ended",
@@ -177,7 +187,8 @@
         "No more words for now.",
         "The matter is closed.",
         "We are finished here."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.conversation_ended.010"
     },
     {
       "key": "interaction.unknown_dialogue_option",
@@ -192,7 +203,8 @@
         "I am drawing a blank.",
         "Whatever that means, I do not have words for it.",
         "I cannot make sense of that right now."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.unknown_dialogue_option.011"
     },
     {
       "key": "interaction.trade_unavailable",
@@ -207,7 +219,8 @@
         "I cannot do business right now.",
         "Come back later if you want to trade.",
         "Not now. Trading is <pulse>closed</pulse> for me."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.trade_unavailable.012"
     },
     {
       "key": "interaction.refuse_trade",
@@ -222,7 +235,8 @@
         "I am keeping my stock where it is.",
         "Trading requires trust. We do not have that.",
         "Not with you. Not today."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.refuse_trade.013"
     },
     {
       "key": "interaction.inventory_unavailable",
@@ -237,7 +251,8 @@
         "I am keeping my pockets to myself.",
         "Not right now. My things are staying put.",
         "Trust comes before open pockets."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.inventory_unavailable.014"
     },
     {
       "key": "interaction.not_trusted_enough",
@@ -252,7 +267,8 @@
         "You have not earned that kind of answer from me.",
         "That is for people I know better.",
         "Trust grows slowly. This is too soon."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.not_trusted_enough.015"
     },
     {
       "key": "interaction.gift_unavailable",
@@ -267,7 +283,8 @@
         "Try another time, perhaps.",
         "I cannot receive that at the moment.",
         "No gifts right now. The timing is wrong."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.gift_unavailable.016"
     },
     {
       "key": "interaction.keep_distance",
@@ -282,7 +299,8 @@
         "Do not crowd me.",
         "Back up. Slowly.",
         "<shake>Give me room.</shake>"
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.keep_distance.017"
     },
     {
       "key": "interaction.child_refuse_gift",
@@ -298,7 +316,8 @@
         "I am little, so I have to ask first.",
         "Hold on. I need a <pulse>grown-up</pulse> answer."
       ],
-      "show_for_adults": false
+      "show_for_adults": false,
+      "id": "global.messages.00_interaction.messages.interaction.child_refuse_gift.018"
     },
     {
       "key": "interaction.gift_invalid",
@@ -313,7 +332,8 @@
         "That is not suitable for me.",
         "Try offering something else.",
         "No. That gift does not fit."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.gift_invalid.019"
     },
     {
       "key": "interaction.gift_empty_slot",
@@ -328,7 +348,8 @@
         "I see the gesture. I do not see the item.",
         "Empty hands make very light presents.",
         "Bring something first, then we can talk."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.gift_empty_slot.020"
     },
     {
       "key": "interaction.gift_inventory_full",
@@ -343,7 +364,8 @@
         "I am already carrying too much.",
         "That gift will have to wait. I am full up.",
         "My inventory is <pulse>packed</pulse> right now."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.gift_inventory_full.021"
     },
     {
       "key": "interaction.recruit_unavailable",
@@ -358,7 +380,8 @@
         "I cannot join you right now.",
         "Ask me another time, maybe.",
         "No. I cannot come with you today."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.recruit_unavailable.022"
     },
     {
       "key": "interaction.child_refuse_trade",
@@ -374,7 +397,8 @@
         "Ask someone taller. They know prices.",
         "I am still learning what emeralds are for."
       ],
-      "show_for_adults": false
+      "show_for_adults": false,
+      "id": "global.messages.00_interaction.messages.interaction.child_refuse_trade.023"
     },
     {
       "key": "interaction.no_trades",
@@ -389,7 +413,8 @@
         "No goods, no prices, no trade.",
         "Come back another time if you are looking for trades.",
         "The trade table is empty for now."
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.no_trades.024"
     },
     {
       "key": "dialogue.fallback",
@@ -404,7 +429,8 @@
         "<i>They hesitate, then stay quiet.</i>",
         "<i>They look at you like the words got lost on the way out.</i>",
         "<i>They fall silent.</i>"
-      ]
+      ],
+      "id": "global.messages.00_interaction.messages.dialogue.fallback.025"
     }
   ]
 }

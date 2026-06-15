@@ -117,7 +117,23 @@ public final class DialogueTreeResources {
             Map<ResourceLocation, DialogueTreeDefinition> trees,
             Map<ResourceLocation, ResourceLocation> sources) {
         DatapackResourceLoader.readObject(location, "dialogue tree", resource).ifPresent(root -> {
-            DialogueTreeDefinition definition = readTree(location, root, fallbackTreeId(location, locale));
+            ResourceLocation fallbackId = fallbackTreeId(location, locale);
+            if (DatapackJsonReader.readBoolean(root, "replace")) {
+                trees.clear();
+                sources.clear();
+                if (isControlOnly(root, "replace", "metadata")) {
+                    return;
+                }
+            }
+            if (DatapackJsonReader.readBoolean(root, "remove")) {
+                ResourceLocation removeId = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
+                if (removeId != null) {
+                    trees.remove(removeId);
+                    sources.remove(removeId);
+                }
+                return;
+            }
+            DialogueTreeDefinition definition = readTree(location, root, fallbackId);
             if (definition == null) {
                 return;
             }
@@ -127,6 +143,16 @@ public final class DialogueTreeResources {
             }
             trees.put(definition.id(), definition);
         });
+    }
+
+    private static boolean isControlOnly(JsonObject root, String... allowedKeys) {
+        Set<String> allowed = new java.util.HashSet<>(List.of(allowedKeys));
+        for (String key : root.keySet()) {
+            if (!allowed.contains(key)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static DialogueTreeDefinition readTree(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {

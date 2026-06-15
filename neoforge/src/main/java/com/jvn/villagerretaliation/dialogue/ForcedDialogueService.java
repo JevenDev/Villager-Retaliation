@@ -28,6 +28,7 @@ import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.util.ArrayList;
@@ -383,7 +384,10 @@ public final class ForcedDialogueService {
                 0,
                 villager.blockPosition().getX(),
                 villager.blockPosition().getY(),
-                villager.blockPosition().getZ());
+                villager.blockPosition().getZ(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.locale(player));
         if (!VillagerInteractionService.openForcedDialogue(
                 player,
                 villager,
@@ -1223,7 +1227,7 @@ public final class ForcedDialogueService {
             VillagerInteractionService.broadcastForcedVillagerChat(
                     player.serverLevel(),
                     villager,
-                    definition.lines().get(0),
+                    ForcedDialogueResources.resolveTemplate(definition.lines().get(0), session.context()),
                     VillagerInteractionService.villagerSpeakerLabel(villager)
             );
         }
@@ -1680,7 +1684,7 @@ public final class ForcedDialogueService {
                 level.getGameTime(),
                 offerIndex,
                 definitionId));
-        String line = definition.selectLine(level.getRandom());
+        String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
             VillagerInteractionService.broadcastForcedVillagerChat(
                     level,
@@ -1760,7 +1764,10 @@ public final class ForcedDialogueService {
                 0,
                 pos.getX(),
                 pos.getY(),
-                pos.getZ());
+                pos.getZ(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.locale(player));
     }
 
     private static void handleFailedStolenItemReturn(
@@ -2364,7 +2371,10 @@ public final class ForcedDialogueService {
                 previous.priorRetaliations(),
                 previous.x(),
                 previous.y(),
-                previous.z());
+                previous.z(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.locale(player));
     }
 
     private static Map<String, String> containerTheftBackupReplacements(
@@ -2812,6 +2822,7 @@ public final class ForcedDialogueService {
         String questId = replacements.getOrDefault("quest_id", "");
         String target = replacements.getOrDefault("target", quest);
         String proofItem = replacements.getOrDefault("proof_item", target);
+        ServerLevel level = player.serverLevel();
         return new ForcedDialogueContext(
                 villagerName,
                 playerName,
@@ -2829,7 +2840,10 @@ public final class ForcedDialogueService {
                 0,
                 villager.blockPosition().getX(),
                 villager.blockPosition().getY(),
-                villager.blockPosition().getZ()
+                villager.blockPosition().getZ(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.locale(player)
         );
     }
 
@@ -3020,7 +3034,10 @@ public final class ForcedDialogueService {
                 0,
                 villager.blockPosition().getX(),
                 villager.blockPosition().getY(),
-                villager.blockPosition().getZ()
+                villager.blockPosition().getZ(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.DEFAULT_LOCALE
         );
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
@@ -3292,7 +3309,10 @@ public final class ForcedDialogueService {
                 0,
                 snapshot.pos().getX(),
                 snapshot.pos().getY(),
-                snapshot.pos().getZ()
+                snapshot.pos().getZ(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.locale(player)
         );
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
@@ -3347,7 +3367,10 @@ public final class ForcedDialogueService {
                 0,
                 snapshot.pos().getX(),
                 snapshot.pos().getY(),
-                snapshot.pos().getZ()
+                snapshot.pos().getZ(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.locale(player)
         );
         boolean royaltyAggroBypass = isRoyaltyFor(level, witness, player);
         int reputationDelta = definition.reputationDelta();
@@ -3613,7 +3636,10 @@ public final class ForcedDialogueService {
                 priorRetaliations,
                 villager.blockPosition().getX(),
                 villager.blockPosition().getY(),
-                villager.blockPosition().getZ()
+                villager.blockPosition().getZ(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.locale(player)
         );
         if (definition.reputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             VillagerReputationManager.addWitnessedReputation(level, villager, player.getUUID(), definition.reputationDelta(), villager.blockPosition());
@@ -3691,7 +3717,10 @@ public final class ForcedDialogueService {
                 0,
                 victim.blockPosition().getX(),
                 victim.blockPosition().getY(),
-                victim.blockPosition().getZ()
+                victim.blockPosition().getZ(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.locale(player)
         );
         if (definition.reputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             VillagerReputationManager.addWitnessedReputation(level, witness, player.getUUID(), definition.reputationDelta(), victim.blockPosition());
@@ -3799,7 +3828,10 @@ public final class ForcedDialogueService {
                 priorRetaliations,
                 villager.blockPosition().getX(),
                 villager.blockPosition().getY(),
-                villager.blockPosition().getZ()
+                villager.blockPosition().getZ(),
+                level.getServer(),
+                level.getRandom(),
+                VillagerLocale.locale(player)
         );
         String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (!line.isBlank()) {
@@ -3838,15 +3870,40 @@ public final class ForcedDialogueService {
                 .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
                 .map(option -> DialogueOptionDefinition.simple(
                         option.id(),
-                        forcedOptionLabel(option, session),
+                        forcedOptionLabel(option, level, player, session),
                         DialogueRequestType.QUESTION,
                         option.order()))
                 .toList();
     }
 
-    private static String forcedOptionLabel(ForcedDialogueOption option, ForcedDialogueSession session) {
+    private static String forcedOptionLabel(
+            ForcedDialogueOption option,
+            ServerLevel level,
+            ServerPlayer player,
+            ForcedDialogueSession session) {
         if (session == null) {
-            return option.label();
+            ForcedDialogueContext context = new ForcedDialogueContext(
+                    "",
+                    player == null ? "" : player.getDisplayName().getString(),
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    0,
+                    "",
+                    "",
+                    "",
+                    "",
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    level == null ? null : level.getServer(),
+                    level == null ? null : level.getRandom(),
+                    player == null ? VillagerLocale.DEFAULT_LOCALE : VillagerLocale.locale(player));
+            return ForcedDialogueResources.resolveTemplate(option.label(), context);
         }
         return ForcedDialogueResources.resolveTemplate(
                 option.label(),

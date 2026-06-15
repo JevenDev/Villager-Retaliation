@@ -23,7 +23,8 @@
         "If this is not urgent, it can wait for daylight.",
         "<wavy>Mmph...</wavy> ask me when my eyes agree to open."
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "global.messages.06_reputation_and_sleep.messages.sleep.disturbance.000"
     },
     {
       "key": "sleep.repeated_disturbance",
@@ -39,7 +40,8 @@
         "You are making the bed feel farther away every time.",
         "<shake>Enough.</shake> I need sleep."
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "global.messages.06_reputation_and_sleep.messages.sleep.repeated_disturbance.001"
     },
     {
       "key": "sleep.broken_bed",
@@ -55,7 +57,8 @@
         "<shake>Why would you break it?</shake>",
         "Fix it, or do not expect me to forget."
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "global.messages.06_reputation_and_sleep.messages.sleep.broken_bed.002"
     },
     {
       "key": "reputation.insult_child",
@@ -71,7 +74,8 @@
         "That was not funny. It was mean.",
         "<shake>I want someone older.</shake>"
       ],
-      "show_for_adults": false
+      "show_for_adults": false,
+      "id": "global.messages.06_reputation_and_sleep.messages.reputation.insult_child.003"
     },
     {
       "key": "retaliation.royalty_aggro_bypass",
@@ -86,7 +90,8 @@
         "My liege, please. Do not turn our loyalty into something painful.",
         "You carry our trust. Do not make it <shake>tremble</shake> like this.",
         "I will stand down, but my heart will not forget."
-      ]
+      ],
+      "id": "global.messages.06_reputation_and_sleep.messages.retaliation.royalty_aggro_bypass.004"
     },
     {
       "key": "reputation.positive",
@@ -102,7 +107,8 @@
         "You have a steady way of hearing people out.",
         "This was a <pulse>pleasant</pulse> surprise."
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "global.messages.06_reputation_and_sleep.messages.reputation.positive.005"
     },
     {
       "key": "reputation.angry",
@@ -118,7 +124,8 @@
         "This talk has gone exactly as badly as I feared.",
         "<shake>Enough.</shake> I am angry, and you know why."
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "global.messages.06_reputation_and_sleep.messages.reputation.angry.006"
     },
     {
       "key": "reputation.repeated_question",
@@ -134,7 +141,8 @@
         "The next answer will not be better just because you ask again.",
         "Enough. My patience is <pulse>running low</pulse>."
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "global.messages.06_reputation_and_sleep.messages.reputation.repeated_question.007"
     },
     {
       "key": "reputation.repeated_dialogue",
@@ -150,7 +158,8 @@
         "This conversation is starting to feel like a stuck gate.",
         "Enough. The words are going <wavy>around in circles</wavy>."
       ],
-      "weight": 20
+      "weight": 20,
+      "id": "global.messages.06_reputation_and_sleep.messages.reputation.repeated_dialogue.008"
     },
     {
       "key": "reputation.joke_missed",
@@ -165,7 +174,8 @@
         "Maybe let that one rest and try another.",
         "The joke wandered off before the funny part arrived.",
         "That was a brave little disaster."
-      ]
+      ],
+      "id": "global.messages.06_reputation_and_sleep.messages.reputation.joke_missed.009"
     }
   ]
 }

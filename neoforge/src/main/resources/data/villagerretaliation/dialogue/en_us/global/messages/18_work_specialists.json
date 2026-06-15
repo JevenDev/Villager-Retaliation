@@ -13,37 +13,43 @@
       "key": "interaction.work.nitwit.cooldown",
       "lines": [
         "I am helping in my own hard-to-measure way."
-      ]
+      ],
+      "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.cooldown.000"
     },
     {
       "key": "interaction.work.nitwit.report.sky",
       "lines": [
         "Nitwit report: I found the sky. Still up there."
-      ]
+      ],
+      "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.report.sky.001"
     },
     {
       "key": "interaction.work.nitwit.report.supervising",
       "lines": [
         "Nitwit report: I am supervising the general direction of things."
-      ]
+      ],
+      "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.report.supervising.002"
     },
     {
       "key": "interaction.work.nitwit.report.shadows",
       "lines": [
         "Nitwit report: danger check complete. I disliked several shadows."
-      ]
+      ],
+      "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.report.shadows.003"
     },
     {
       "key": "interaction.work.nitwit.report.pointing",
       "lines": [
         "Nitwit report: I can point at work, if that helps."
-      ]
+      ],
+      "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.report.pointing.004"
     },
     {
       "key": "interaction.work.animal_handling.placeholder",
       "lines": [
         "I am ready to tend the animals once there are lures and a safe pen."
-      ]
+      ],
+      "id": "global.messages.18_work_specialists.messages.interaction.work.animal_handling.placeholder.005"
     }
   ]
 }

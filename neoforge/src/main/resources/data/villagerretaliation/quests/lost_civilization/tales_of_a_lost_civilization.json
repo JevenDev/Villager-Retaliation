@@ -2,7 +2,9 @@
   "id": "villagerretaliation:tales_of_a_lost_civilization",
   "display": {
     "description": "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard.",
-    "title": "Tales of a Lost Civilization"
+    "title": "Tales of a Lost Civilization",
+    "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.title",
+    "description_key": "quest.lost_civilization.tales_of_a_lost_civilization.description"
   },
   "questline": "lost_civilization",
   "offer": {
@@ -39,7 +41,9 @@
         },
         "progress": 0.66,
         "show_progress": true,
-        "text": "Recover {objective_item} as proof of the journey."
+        "text": "Recover {objective_item} as proof of the journey.",
+        "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.text",
+        "complete_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.complete_text"
       },
       "type": "item_check"
     }
@@ -66,7 +70,8 @@
         },
         "progress": 0.66,
         "show_progress": true,
-        "text": "Recover {proof_item} as proof of the journey."
+        "text": "Recover {proof_item} as proof of the journey.",
+        "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.proof.text"
       },
       "return": {
         "metadata": {
@@ -74,7 +79,8 @@
         },
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the cartographer with {proof_item}."
+        "text": "Return to the cartographer with {proof_item}.",
+        "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.return.text"
       },
       "travel": {
         "metadata": {
@@ -82,10 +88,12 @@
         },
         "progress": 0.25,
         "show_progress": true,
-        "text": "Reach the Ancient City center near {target_x}, {target_z}."
+        "text": "Reach the Ancient City center near {target_x}, {target_z}.",
+        "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.travel.text"
       }
     },
-    "title": "Tales of a Lost Civilization"
+    "title": "Tales of a Lost Civilization",
+    "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title"
   },
   "triggers": [
     {

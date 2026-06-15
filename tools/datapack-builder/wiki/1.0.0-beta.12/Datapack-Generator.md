@@ -31,6 +31,8 @@ The current rewrite in this repo targets `VR 1.0.0-beta.12`.
 | --- | --- |
 | Dialogue | `data/<namespace>/dialogue/<locale>/` |
 | Forced dialogue | `data/<namespace>/forced_dialogue/` |
+| Imported quests | `data/<namespace>/quests/` |
+| Imported dialogue trees | `data/<namespace>/dialogue_trees/<locale>/` |
 | Notifications | `data/villagerretaliation/notifications/<locale>/` |
 | Gifts | `data/villagerretaliation/gifts/` |
 | Pacification | `data/villagerretaliation/pacification/` |
@@ -79,9 +81,12 @@ Import works best when your pack already follows the documented folder layout.
 
 - Files under `dialogue/<locale>/` import as dialogue.
 - Files under `forced_dialogue/` import as forced dialogue.
+- Files under `quests/` and `dialogue_trees/<locale>/` are recognized and preserved as JSON pass-through files.
 - Files under `notifications/<locale>/` import as notifications.
 
 If an older handwritten pack mixed several systems into one file, split those files first. The game itself also treats those paths as separate loaders.
+
+Quest and dialogue-tree pass-through means the builder keeps those files in the pack and export zip. It does not yet provide full structured editors for quest objectives, quest rules, or branching tree nodes.
 
 ## Good Safety Checks
 

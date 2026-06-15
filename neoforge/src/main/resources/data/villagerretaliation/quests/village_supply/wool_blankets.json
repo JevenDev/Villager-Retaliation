@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The wool blanket request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.wool_blankets.dialogue.start",
+    "reminder_key": "quest.village_supply.wool_blankets.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.wool_blankets.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.wool_blankets.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.wool_blankets.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.wool_blankets.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.wool_blankets.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.wool_blankets.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.wool_blankets.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring wool for clean bedding and warm wraps.",
-    "title": "Wool Blankets"
+    "title": "Wool Blankets",
+    "title_key": "quest.village_supply.wool_blankets.title",
+    "description_key": "quest.village_supply.wool_blankets.description"
   },
   "id": "villagerretaliation:wool_blankets",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The wool bundles are clean and ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 12 white wool for sickbeds."
+        "text": "Bring 12 white wool for sickbeds.",
+        "text_key": "quest.village_supply.wool_blankets.objective.bring_wool.text",
+        "complete_text_key": "quest.village_supply.wool_blankets.objective.bring_wool.complete_text"
       },
       "type": "item_check"
     }
@@ -88,14 +101,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 12 white wool for sickbeds."
+        "text": "Bring 12 white wool for sickbeds.",
+        "text_key": "quest.village_supply.wool_blankets.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the white wool."
+        "text": "Return to the quest giver with the white wool.",
+        "text_key": "quest.village_supply.wool_blankets.tracker.return.text"
       }
     },
-    "title": "Wool Blankets"
+    "title": "Wool Blankets",
+    "title_key": "quest.village_supply.wool_blankets.tracker.title"
   }
 }

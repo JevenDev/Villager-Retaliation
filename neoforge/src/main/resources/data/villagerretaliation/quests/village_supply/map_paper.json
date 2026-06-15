@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The paper request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.map_paper.dialogue.start",
+    "reminder_key": "quest.village_supply.map_paper.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.map_paper.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.map_paper.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.map_paper.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.map_paper.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.map_paper.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.map_paper.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.map_paper.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring paper so village records, maps, and warnings can stay current.",
-    "title": "Map Paper"
+    "title": "Map Paper",
+    "title_key": "quest.village_supply.map_paper.title",
+    "description_key": "quest.village_supply.map_paper.description"
   },
   "id": "villagerretaliation:map_paper",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The paper stack is ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 24 paper for village notes and maps."
+        "text": "Bring 24 paper for village notes and maps.",
+        "text_key": "quest.village_supply.map_paper.objective.bring_paper.text",
+        "complete_text_key": "quest.village_supply.map_paper.objective.bring_paper.complete_text"
       },
       "type": "item_check"
     }
@@ -85,14 +98,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 24 paper for village notes and maps."
+        "text": "Bring 24 paper for village notes and maps.",
+        "text_key": "quest.village_supply.map_paper.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the paper."
+        "text": "Return to the quest giver with the paper.",
+        "text_key": "quest.village_supply.map_paper.tracker.return.text"
       }
     },
-    "title": "Map Paper"
+    "title": "Map Paper",
+    "title_key": "quest.village_supply.map_paper.tracker.title"
   }
 }

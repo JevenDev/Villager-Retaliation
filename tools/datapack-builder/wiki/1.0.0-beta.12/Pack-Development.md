@@ -12,6 +12,7 @@ Use a datapack for behavior and authored text:
   data/
     villagerretaliation/
       gifts/
+      currency/
       notifications/
       pacification/
       profession_loot/
@@ -37,7 +38,6 @@ Use a resource pack for GUI text, textures, and model JSON:
     villagerretaliation/
       lang/en_us.json
       models/entity/villager/combat_villager.json
-      models/entity/villager/render_options.json
       textures/entity/villager/villager.png
 ```
 
@@ -49,6 +49,7 @@ These systems are intentionally fixed to the mod namespace:
 | --- | --- |
 | Notifications | `villagerretaliation` |
 | Gifts | `villagerretaliation` |
+| Currency | `villagerretaliation` |
 | Pacification | `villagerretaliation` |
 | Profession loot rules | `villagerretaliation` |
 | Villager names | `villagerretaliation` |
@@ -82,6 +83,15 @@ Minecraft resolves exact resource paths first. Villager Retaliation then merges 
 - A file at the same resource path as a built-in file replaces that built-in file before VR reads it.
 - Inside many systems, a later entry with the same `id` replaces an earlier entry without replacing the whole file.
 - Top-level `replace: true` clears the loaded pool for that file type before the current file is applied.
+- Top-level `remove: true` removes one quest, dialogue tree, or forced-dialogue definition by `id`.
+
+| System | Additive by default | Clear everything | Remove one entry |
+| --- | --- | --- | --- |
+| Dialogue | Yes | `replace: true` or `replace_sections` | Replace by same entry `id` |
+| Dialogue trees | Yes | `replace: true` | `remove: true` with `id` |
+| Quests | Yes | `replace: true` | `remove: true` with `id` |
+| Forced dialogue | Yes | `replace: true` | `remove: true` with `id` |
+| Notifications, gifts, pacification, names | Loader-specific merge rules | Same-path replacement | Usually replace by file or entry `id` |
 
 Use your own file names when you want additive content:
 
@@ -89,7 +99,16 @@ Use your own file names when you want additive content:
 data/my_pack/dialogue/en_us/my_pack/lines/rumors.json
 data/villagerretaliation/notifications/en_us/my_pack/world_text.json
 data/villagerretaliation/gifts/my_pack_preferences.json
+data/villagerretaliation/currency/default.json
 ```
+
+Use a small control file when you want a complete overhaul:
+
+```json
+{ "replace": true }
+```
+
+For quests and dialogue trees, a control-only `replace` file clears the built-ins without registering a dummy quest or tree.
 
 ## Suggested Workflow
 

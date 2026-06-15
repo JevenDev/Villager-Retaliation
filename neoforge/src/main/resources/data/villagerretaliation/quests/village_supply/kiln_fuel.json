@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The kiln fuel request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.kiln_fuel.dialogue.start",
+    "reminder_key": "quest.village_supply.kiln_fuel.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.kiln_fuel.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.kiln_fuel.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.kiln_fuel.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.kiln_fuel.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.kiln_fuel.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.kiln_fuel.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.kiln_fuel.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring coal to keep the kiln and forge work moving.",
-    "title": "Kiln Fuel"
+    "title": "Kiln Fuel",
+    "title_key": "quest.village_supply.kiln_fuel.title",
+    "description_key": "quest.village_supply.kiln_fuel.description"
   },
   "id": "villagerretaliation:kiln_fuel",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The coal is stacked by the firebox.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 12 coal for the kiln and forge fires."
+        "text": "Bring 12 coal for the kiln and forge fires.",
+        "text_key": "quest.village_supply.kiln_fuel.objective.bring_coal.text",
+        "complete_text_key": "quest.village_supply.kiln_fuel.objective.bring_coal.complete_text"
       },
       "type": "item_check"
     }
@@ -87,14 +100,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 12 coal for the kiln and forge fires."
+        "text": "Bring 12 coal for the kiln and forge fires.",
+        "text_key": "quest.village_supply.kiln_fuel.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the coal."
+        "text": "Return to the quest giver with the coal.",
+        "text_key": "quest.village_supply.kiln_fuel.tracker.return.text"
       }
     },
-    "title": "Kiln Fuel"
+    "title": "Kiln Fuel",
+    "title_key": "quest.village_supply.kiln_fuel.tracker.title"
   }
 }

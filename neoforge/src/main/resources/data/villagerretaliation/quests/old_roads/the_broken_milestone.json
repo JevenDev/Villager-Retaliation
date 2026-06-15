@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "That route is not ready for your hands yet."
-    ]
+    ],
+    "start_key": "quest.old_roads.the_broken_milestone.dialogue.start",
+    "reminder_key": "quest.old_roads.the_broken_milestone.dialogue.reminder",
+    "turn_in_key": "quest.old_roads.the_broken_milestone.dialogue.turn_in",
+    "already_completed_key": "quest.old_roads.the_broken_milestone.dialogue.already_completed",
+    "unavailable_key": "quest.old_roads.the_broken_milestone.dialogue.unavailable",
+    "inactive_key": "quest.old_roads.the_broken_milestone.dialogue.inactive",
+    "missing_target_key": "quest.old_roads.the_broken_milestone.dialogue.missing_target",
+    "missing_proof_key": "quest.old_roads.the_broken_milestone.dialogue.missing_proof",
+    "locate_failed_key": "quest.old_roads.the_broken_milestone.dialogue.locate_failed"
   },
   "display": {
     "description": "Find nearby Trail Ruins and bring a brush and stone to restore the road marker.",
-    "title": "The Broken Milestone"
+    "title": "The Broken Milestone",
+    "title_key": "quest.old_roads.the_broken_milestone.title",
+    "description_key": "quest.old_roads.the_broken_milestone.description"
   },
   "id": "villagerretaliation:the_broken_milestone",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The replacement stone is ready.",
         "progress": 0.78,
         "show_progress": true,
-        "text": "Bring 12 smooth stone for the repaired marker."
+        "text": "Bring 12 smooth stone for the repaired marker.",
+        "text_key": "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.text",
+        "complete_text_key": "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.complete_text"
       },
       "type": "item_check"
     }
@@ -93,17 +106,20 @@
       "bring_smooth_stone": {
         "progress": 0.78,
         "show_progress": true,
-        "text": "Gather 12 smooth stone for the repair."
+        "text": "Gather 12 smooth stone for the repair.",
+        "text_key": "quest.old_roads.the_broken_milestone.tracker.bring_smooth_stone.text"
       },
       "proof": {
         "progress": 0.66,
         "show_progress": true,
-        "text": "Bring a brush and 12 smooth stone."
+        "text": "Bring a brush and 12 smooth stone.",
+        "text_key": "quest.old_roads.the_broken_milestone.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the brush and stone."
+        "text": "Return to the quest giver with the brush and stone.",
+        "text_key": "quest.old_roads.the_broken_milestone.tracker.return.text"
       },
       "travel": {
         "metadata": {
@@ -111,9 +127,11 @@
         },
         "progress": 0.25,
         "show_progress": true,
-        "text": "Reach the old road mark near {target_x}, {target_z}."
+        "text": "Reach the old road mark near {target_x}, {target_z}.",
+        "text_key": "quest.old_roads.the_broken_milestone.tracker.travel.text"
       }
     },
-    "title": "The Broken Milestone"
+    "title": "The Broken Milestone",
+    "title_key": "quest.old_roads.the_broken_milestone.tracker.title"
   }
 }

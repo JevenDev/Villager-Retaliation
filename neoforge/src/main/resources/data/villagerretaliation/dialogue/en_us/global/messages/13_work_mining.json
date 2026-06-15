@@ -13,265 +13,309 @@
       "key": "interaction.work.mining.scan_excavation",
       "lines": [
         "I am still checking the excavation area for reachable blocks."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.scan_excavation.000"
     },
     {
       "key": "interaction.work.mining.output_full_depositing",
       "lines": [
         "My packs are full, so I am taking the mined output to storage before I continue."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.output_full_depositing.001"
     },
     {
       "key": "interaction.work.mining.output_full_blocked",
       "lines": [
         "I cannot carry more ore, and I have nowhere to stow it."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.output_full_blocked.002"
     },
     {
       "key": "interaction.work.mining.post_clear_scan",
       "lines": [
         "I cleared that block and am checking the assigned area for the next reachable face."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.post_clear_scan.003"
     },
     {
       "key": "interaction.work.mining.post_clear_depositing",
       "lines": [
         "I have gathered the mined output and am taking it to storage."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.post_clear_depositing.004"
     },
     {
       "key": "interaction.work.mining.deposited_checking_packs",
       "lines": [
         "I put away my mined output and am checking my packs before I continue."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.deposited_checking_packs.005"
     },
     {
       "key": "interaction.work.mining.support.moving",
       "lines": [
         "I am moving into position to place excavation supports."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.moving.006"
     },
     {
       "key": "interaction.work.mining.support.placed_ladder",
       "lines": [
         "I placed the next ladder support for the excavation."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.placed_ladder.007"
     },
     {
       "key": "interaction.work.mining.support.placed_torch",
       "lines": [
         "I placed a torch for the excavation."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.placed_torch.008"
     },
     {
       "key": "interaction.work.mining.support.missing_ladders",
       "lines": [
         "I need ladders in my job supplies or assigned storage before I can excavate safely."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.missing_ladders.009"
     },
     {
       "key": "interaction.work.mining.support.gathering_supplies",
       "lines": [
         "I am heading to assigned storage for excavation supplies."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.gathering_supplies.010"
     },
     {
       "key": "interaction.work.mining.support.gathered_supplies",
       "lines": [
         "I gathered excavation supplies from storage and am returning to the job site."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.gathered_supplies.011"
     },
     {
       "key": "interaction.work.mining.no_target_deposit.excavate_area",
       "lines": [
         "There are no reachable excavation blocks right now, so I am heading to storage for now."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.no_target_deposit.excavate_area.012"
     },
     {
       "key": "interaction.work.mining.no_target_deposit.exposed_ores",
       "lines": [
         "There is no exposed ore in this pocket, so I am heading to storage for now."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.no_target_deposit.exposed_ores.013"
     },
     {
       "key": "interaction.work.mining.searching.excavate_area",
       "lines": [
         "I see no reachable block face yet, so I am searching the excavation area."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.searching.excavate_area.014"
     },
     {
       "key": "interaction.work.mining.searching.exposed_ores",
       "lines": [
         "I see no exposed ore nearby, so I am searching the work area."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.searching.exposed_ores.015"
     },
     {
       "key": "interaction.work.mining.deposited_waiting.excavate_area",
       "lines": [
         "I am putting away what I mined while I wait for another reachable block face."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.deposited_waiting.excavate_area.016"
     },
     {
       "key": "interaction.work.mining.deposited_waiting.exposed_ores",
       "lines": [
         "I am putting away what I mined while I wait for fresh ore to show itself."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.deposited_waiting.exposed_ores.017"
     },
     {
       "key": "interaction.work.mining.no_targets.excavate_area",
       "lines": [
         "There are no reachable excavation blocks within the assigned area just now."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.no_targets.excavate_area.018"
     },
     {
       "key": "interaction.work.mining.no_targets.exposed_ores",
       "lines": [
         "There is no exposed ore within reach just now."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.no_targets.exposed_ores.019"
     },
     {
       "key": "interaction.work.mining.missing_tool.excavate_area",
       "lines": [
         "I need a better pickaxe, shovel, or axe before I can excavate that block."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.missing_tool.excavate_area.020"
     },
     {
       "key": "interaction.work.mining.missing_tool.exposed_ores",
       "lines": [
         "I need a better pickaxe before I can break that ore."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.missing_tool.exposed_ores.021"
     },
     {
       "key": "interaction.work.mining.blocked_target.excavate_area",
       "lines": [
         "That block face is blocked off. I am looking for another reachable part of the area."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.blocked_target.excavate_area.022"
     },
     {
       "key": "interaction.work.mining.blocked_target.exposed_ores",
       "lines": [
         "That ore is blocked off. I am looking for another vein I can reach."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.blocked_target.exposed_ores.023"
     },
     {
       "key": "interaction.work.mining.repositioning.excavate_area",
       "lines": [
         "That block is awkward from here, so I am changing my position."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.repositioning.excavate_area.024"
     },
     {
       "key": "interaction.work.mining.repositioning.exposed_ores",
       "lines": [
         "That ore is awkward from here, so I am changing my position."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.repositioning.exposed_ores.025"
     },
     {
       "key": "interaction.work.mining.blocked_swing.excavate_area",
       "lines": [
         "I cannot get a clean swing at that block yet, so I am repositioning."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.blocked_swing.excavate_area.026"
     },
     {
       "key": "interaction.work.mining.blocked_swing.exposed_ores",
       "lines": [
         "I cannot get a clean swing at that ore yet, so I am repositioning."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.blocked_swing.exposed_ores.027"
     },
     {
       "key": "interaction.work.mining.moving_to_target.excavate_area",
       "lines": [
         "I am moving toward the excavation face now."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.moving_to_target.excavate_area.028"
     },
     {
       "key": "interaction.work.mining.moving_to_target.exposed_ores",
       "lines": [
         "I am moving toward the ore now."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.moving_to_target.exposed_ores.029"
     },
     {
       "key": "interaction.work.mining.working_target.excavate_area",
       "lines": [
         "I am cutting into the assigned area now."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.working_target.excavate_area.030"
     },
     {
       "key": "interaction.work.mining.working_target.exposed_ores",
       "lines": [
         "I am working the ore face now."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.working_target.exposed_ores.031"
     },
     {
       "key": "interaction.work.mining.next_target.excavate_area",
       "lines": [
         "That block is cleared, and I am moving on to the next reachable face."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.next_target.excavate_area.032"
     },
     {
       "key": "interaction.work.mining.next_target.exposed_ores",
       "lines": [
         "That ore is mined out, and I am moving on to the next exposed vein."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.next_target.exposed_ores.033"
     },
     {
       "key": "interaction.work.mining.completed_searching.excavate_area",
       "lines": [
         "I have gathered what I could, and I am searching the area for another reachable face."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_searching.excavate_area.034"
     },
     {
       "key": "interaction.work.mining.completed_searching.exposed_ores",
       "lines": [
         "I have gathered what I could, and I am searching the area for more ore."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_searching.exposed_ores.035"
     },
     {
       "key": "interaction.work.mining.completed_deposited.excavate_area",
       "lines": [
         "I cleared that block, gathered it, and put it away."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_deposited.excavate_area.036"
     },
     {
       "key": "interaction.work.mining.completed_deposited.exposed_ores",
       "lines": [
         "I mined the ore, gathered it, and put it away."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_deposited.exposed_ores.037"
     },
     {
       "key": "interaction.work.mining.completed_no_next.excavate_area",
       "lines": [
         "I cleared that block and gathered it, but there is no other reachable face nearby."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_no_next.excavate_area.038"
     },
     {
       "key": "interaction.work.mining.completed_no_next.exposed_ores",
       "lines": [
         "I mined the ore and gathered it, but there is no other exposed vein nearby."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_no_next.exposed_ores.039"
     },
     {
       "key": "interaction.work.mining.continuing_excavation.deposited",
       "lines": [
         "I cleared that block, gathered it, put it away, and am checking for the next reachable face."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.continuing_excavation.deposited.040"
     },
     {
       "key": "interaction.work.mining.continuing_excavation.default",
       "lines": [
         "I cleared that block and gathered it. I am checking the assigned area for the next reachable face."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.continuing_excavation.default.041"
     },
     {
       "key": "interaction.work.mining.completed_excavation.deposited",
       "lines": [
         "The assigned excavation is finished, and I put the last of the output away."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_excavation.deposited.042"
     },
     {
       "key": "interaction.work.mining.completed_excavation.default",
       "lines": [
         "The assigned excavation is finished. I do not see another block to clear."
-      ]
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_excavation.default.043"
     }
   ]
 }

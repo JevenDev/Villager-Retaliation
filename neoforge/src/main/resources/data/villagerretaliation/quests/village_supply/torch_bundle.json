@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The torch request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.torch_bundle.dialogue.start",
+    "reminder_key": "quest.village_supply.torch_bundle.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.torch_bundle.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.torch_bundle.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.torch_bundle.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.torch_bundle.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.torch_bundle.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.torch_bundle.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.torch_bundle.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring torches so storehouses, pens, and work corners stay usable after dusk.",
-    "title": "Torch Bundle"
+    "title": "Torch Bundle",
+    "title_key": "quest.village_supply.torch_bundle.title",
+    "description_key": "quest.village_supply.torch_bundle.description"
   },
   "id": "villagerretaliation:torch_bundle",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The torch rack is stocked and ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 16 torches for the watch rack."
+        "text": "Bring 16 torches for the watch rack.",
+        "text_key": "quest.village_supply.torch_bundle.objective.bring_torches.text",
+        "complete_text_key": "quest.village_supply.torch_bundle.objective.bring_torches.complete_text"
       },
       "type": "item_check"
     }
@@ -89,14 +102,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 16 torches for the watch rack."
+        "text": "Bring 16 torches for the watch rack.",
+        "text_key": "quest.village_supply.torch_bundle.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the torches."
+        "text": "Return to the quest giver with the torches.",
+        "text_key": "quest.village_supply.torch_bundle.tracker.return.text"
       }
     },
-    "title": "Torch Bundle"
+    "title": "Torch Bundle",
+    "title_key": "quest.village_supply.torch_bundle.tracker.title"
   }
 }

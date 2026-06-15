@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The bread shelves are closed to new help for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.bread_delivery.dialogue.start",
+    "reminder_key": "quest.village_supply.bread_delivery.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.bread_delivery.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.bread_delivery.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.bread_delivery.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.bread_delivery.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.bread_delivery.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.bread_delivery.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.bread_delivery.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring bread so the village can stretch its stores through a hard night.",
-    "title": "Bread Delivery"
+    "title": "Bread Delivery",
+    "title_key": "quest.village_supply.bread_delivery.title",
+    "description_key": "quest.village_supply.bread_delivery.description"
   },
   "id": "villagerretaliation:bread_delivery",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The bread is packed and ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Gather 16 bread for the village stores."
+        "text": "Gather 16 bread for the village stores.",
+        "text_key": "quest.village_supply.bread_delivery.objective.bring_bread.text",
+        "complete_text_key": "quest.village_supply.bread_delivery.objective.bring_bread.complete_text"
       },
       "type": "item_check"
     }
@@ -84,14 +97,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 16 bread back to the quest giver."
+        "text": "Bring 16 bread back to the quest giver.",
+        "text_key": "quest.village_supply.bread_delivery.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the bread."
+        "text": "Return to the quest giver with the bread.",
+        "text_key": "quest.village_supply.bread_delivery.tracker.return.text"
       }
     },
-    "title": "Bread Delivery"
+    "title": "Bread Delivery",
+    "title_key": "quest.village_supply.bread_delivery.tracker.title"
   }
 }

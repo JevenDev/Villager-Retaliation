@@ -13,265 +13,309 @@
       "key": "interaction.work.builder.choose_structure",
       "lines": [
         "Choose a structure for me to build."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.choose_structure.000"
     },
     {
       "key": "interaction.work.builder.requires_role_choose",
       "lines": [
         "Assign me to Builder before choosing a construction job."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.requires_role_choose.001"
     },
     {
       "key": "interaction.work.builder.no_job_site",
       "lines": [
         "Builders do not use assigned job sites. I will travel between storage and the construction site."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.no_job_site.002"
     },
     {
       "key": "interaction.work.builder.unknown_structure",
       "lines": [
         "I do not know that structure."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.unknown_structure.003"
     },
     {
       "key": "interaction.work.builder.structure_unavailable",
       "lines": [
         "That structure is not available right now."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.structure_unavailable.004"
     },
     {
       "key": "interaction.work.builder.preview",
       "lines": [
         "{structure} needs {blocks} blocks. The blueprint is {blueprint_cost}; construction will cost {cost}. I will need {materials}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.preview.005"
     },
     {
       "key": "interaction.work.builder.preview_blocked",
       "lines": [
         "I cannot start {structure}: {reason}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.preview_blocked.006"
     },
     {
       "key": "interaction.work.builder.preview_first",
       "lines": [
         "Choose and preview a structure before buying a blueprint."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.preview_first.007"
     },
     {
       "key": "interaction.work.builder.already_building",
       "lines": [
         "I am already working on {structure}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.already_building.008"
     },
     {
       "key": "interaction.work.builder.need_payment",
       "lines": [
         "I need {cost} in your inventory or my assigned payment box before I can start building {structure}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.need_payment.009"
     },
     {
       "key": "interaction.work.builder.need_blueprint_payment",
       "lines": [
         "I need {blueprint_cost} from you before I can draw up a blueprint for {structure}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.need_blueprint_payment.010"
     },
     {
       "key": "interaction.work.builder.blueprint_ready",
       "lines": [
         "Here is the blueprint for {structure}. Place and rotate it where you want; construction will cost {cost} when you hand it to a builder."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_ready.011"
     },
     {
       "key": "interaction.work.builder.blueprint_missing",
       "lines": [
         "Hold the construction blueprint when you ask me to start."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_missing.012"
     },
     {
       "key": "interaction.work.builder.blueprint_expired",
       "lines": [
         "That blueprint is expired."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_expired.013"
     },
     {
       "key": "interaction.work.builder.blueprint_started",
       "lines": [
         "That blueprint has already started a construction job."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_started.014"
     },
     {
       "key": "interaction.work.builder.blueprint_completed",
       "lines": [
         "That blueprint is already completed."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_completed.015"
     },
     {
       "key": "interaction.work.builder.started",
       "lines": [
         "I will build {structure} at {site}. I have marked the materials and payment."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.started.016"
     },
     {
       "key": "interaction.work.builder.started_waiting_materials",
       "lines": [
         "I will build {structure} at {site}. I still need {materials}, so I will wait by assigned storage within {storage_radius} blocks of the build site."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.started_waiting_materials.017"
     },
     {
       "key": "interaction.work.builder.status_summary",
       "lines": [
         "I am building {structure}: {placed} of {blocks} blocks placed."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.status_summary.018"
     },
     {
       "key": "interaction.work.builder.cancelled",
       "lines": [
         "Construction cancelled."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.cancelled.019"
     },
     {
       "key": "interaction.work.builder.cancelled_refund",
       "lines": [
         "Construction cancelled. I returned {cost} because no blocks were placed."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.cancelled_refund.020"
     },
     {
       "key": "interaction.work.builder.waiting_materials",
       "lines": [
         "I need more construction materials for {structure}: {materials}. Put them in assigned storage within {storage_radius} blocks of the build site or my job inventory."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.waiting_materials.021"
     },
     {
       "key": "interaction.work.builder.moving_to_material_storage",
       "lines": [
         "I need {materials} for {structure}, so I am heading to assigned storage to restock."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.moving_to_material_storage.022"
     },
     {
       "key": "interaction.work.builder.waiting_materials_at_storage",
       "lines": [
         "I am at assigned storage waiting for {materials} to build {structure}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.waiting_materials_at_storage.023"
     },
     {
       "key": "interaction.work.builder.collecting_materials",
       "lines": [
         "I am collecting construction materials from assigned storage."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.collecting_materials.024"
     },
     {
       "key": "interaction.work.builder.material_inventory_full",
       "lines": [
         "I need room in my job inventory to carry construction materials. I will dump excavation output first, but other protected items may still be blocking space."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.material_inventory_full.025"
     },
     {
       "key": "interaction.work.builder.materials_unreachable",
       "lines": [
         "I found the needed construction materials in assigned storage, but I cannot reach that container."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.materials_unreachable.026"
     },
     {
       "key": "interaction.work.builder.waiting_material_storage_unreachable",
       "lines": [
         "I still need {materials} for {structure}. I cannot reach assigned storage to wait for them."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.waiting_material_storage_unreachable.027"
     },
     {
       "key": "interaction.work.builder.site_missing",
       "lines": [
         "I do not have a build site for this structure."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.site_missing.028"
     },
     {
       "key": "interaction.work.builder.no_safe_site",
       "lines": [
         "I cannot find a safe place nearby for that structure."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.no_safe_site.029"
     },
     {
       "key": "interaction.work.builder.too_large",
       "lines": [
         "{structure} is too large for the current builder limit."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.too_large.030"
     },
     {
       "key": "interaction.work.builder.site_outside_area",
       "lines": [
         "The planned build site is outside my assigned work area."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.site_outside_area.031"
     },
     {
       "key": "interaction.work.builder.site_too_far",
       "lines": [
         "The planned build site is too far from us."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.site_too_far.032"
     },
     {
       "key": "interaction.work.builder.site_unloaded",
       "lines": [
         "Part of the planned build site is not loaded."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.site_unloaded.033"
     },
     {
       "key": "interaction.work.builder.blocked_existing",
       "lines": [
         "Something important is already at {target}, so I will not replace it."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.blocked_existing.034"
     },
     {
       "key": "interaction.work.builder.blocked_support",
       "lines": [
         "The next block at {target} needs support before I can place it."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.blocked_support.035"
     },
     {
       "key": "interaction.work.builder.blocked_entity",
       "lines": [
         "Someone or something is standing where I need to build at {target}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.blocked_entity.036"
     },
     {
       "key": "interaction.work.builder.path_blocked",
       "lines": [
         "I cannot reach the next construction spot at {target}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.path_blocked.037"
     },
     {
       "key": "interaction.work.builder.missing_clear_tool",
       "lines": [
         "I need the right tool to clear the block at {target} before I can keep building {structure}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.missing_clear_tool.038"
     },
     {
       "key": "interaction.work.builder.missing_placement_tool",
       "lines": [
         "I need a {tool} to prepare the next construction block at {target} for {structure}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.missing_placement_tool.039"
     },
     {
       "key": "interaction.work.builder.moving_to_site",
       "lines": [
         "I am moving to the next construction spot at {target}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.moving_to_site.040"
     },
     {
       "key": "interaction.work.builder.placement_failed",
       "lines": [
         "I could not place the next block at {target}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.placement_failed.041"
     },
     {
       "key": "interaction.work.builder.placed_block",
       "lines": [
         "I placed the next block for {structure}: {placed} of {blocks}."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.placed_block.042"
     },
     {
       "key": "interaction.work.builder.complete",
       "lines": [
         "{structure} is complete."
-      ]
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.complete.043"
     }
   ]
 }

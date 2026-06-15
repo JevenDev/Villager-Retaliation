@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "You are not the scout I need for this yet."
-    ]
+    ],
+    "start_key": "quest.village_defense.fletchers_countermark.dialogue.start",
+    "reminder_key": "quest.village_defense.fletchers_countermark.dialogue.reminder",
+    "turn_in_key": "quest.village_defense.fletchers_countermark.dialogue.turn_in",
+    "already_completed_key": "quest.village_defense.fletchers_countermark.dialogue.already_completed",
+    "unavailable_key": "quest.village_defense.fletchers_countermark.dialogue.unavailable",
+    "inactive_key": "quest.village_defense.fletchers_countermark.dialogue.inactive",
+    "missing_target_key": "quest.village_defense.fletchers_countermark.dialogue.missing_target",
+    "missing_proof_key": "quest.village_defense.fletchers_countermark.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_defense.fletchers_countermark.dialogue.locate_failed"
   },
   "display": {
     "description": "Scout a Pillager Outpost and return with a crossbow as proof of the threat.",
-    "title": "Fletcher's Countermark"
+    "title": "Fletcher's Countermark",
+    "title_key": "quest.village_defense.fletchers_countermark.title",
+    "description_key": "quest.village_defense.fletchers_countermark.description"
   },
   "id": "villagerretaliation:fletchers_countermark",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The arrow bundle is ready.",
         "progress": 0.8,
         "show_progress": true,
-        "text": "Bring 24 arrows to restock the watch after the scout."
+        "text": "Bring 24 arrows to restock the watch after the scout.",
+        "text_key": "quest.village_defense.fletchers_countermark.objective.bring_arrows.text",
+        "complete_text_key": "quest.village_defense.fletchers_countermark.objective.bring_arrows.complete_text"
       },
       "type": "item_check"
     }
@@ -93,17 +106,20 @@
       "bring_arrows": {
         "progress": 0.8,
         "show_progress": true,
-        "text": "Bundle 24 arrows for the village watch."
+        "text": "Bundle 24 arrows for the village watch.",
+        "text_key": "quest.village_defense.fletchers_countermark.tracker.bring_arrows.text"
       },
       "proof": {
         "progress": 0.66,
         "show_progress": true,
-        "text": "Bring back a crossbow and 24 arrows."
+        "text": "Bring back a crossbow and 24 arrows.",
+        "text_key": "quest.village_defense.fletchers_countermark.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the outpost proof."
+        "text": "Return to the quest giver with the outpost proof.",
+        "text_key": "quest.village_defense.fletchers_countermark.tracker.return.text"
       },
       "travel": {
         "metadata": {
@@ -111,9 +127,11 @@
         },
         "progress": 0.25,
         "show_progress": true,
-        "text": "Scout the outpost near {target_x}, {target_z}."
+        "text": "Scout the outpost near {target_x}, {target_z}.",
+        "text_key": "quest.village_defense.fletchers_countermark.tracker.travel.text"
       }
     },
-    "title": "Fletcher's Countermark"
+    "title": "Fletcher's Countermark",
+    "title_key": "quest.village_defense.fletchers_countermark.tracker.title"
   }
 }

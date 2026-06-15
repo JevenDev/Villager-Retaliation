@@ -29,7 +29,8 @@
       "priority": -50,
       "requires_line_of_sight": true,
       "trigger": "player_item_proximity",
-      "witness_radius": 4
+      "witness_radius": 4,
+      "line_key": "forced_dialogue.default.player_item_proximity_diamond_sword_warning.line"
     },
     {
       "chance": 0.35,
@@ -57,7 +58,8 @@
         "minecraft:player"
       ],
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_unarmed_player.line"
     },
     {
       "chance": 0.35,
@@ -104,7 +106,8 @@
         "minecraft:enderman"
       ],
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_unarmed_mob.line"
     },
     {
       "chance": 0.35,
@@ -131,7 +134,8 @@
         "minecraft:player"
       ],
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_player.line"
     },
     {
       "chance": 0.35,
@@ -162,7 +166,8 @@
         "minecraft:witch"
       ],
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_raider.line"
     },
     {
       "chance": 0.35,
@@ -189,7 +194,8 @@
         "minecraft:evoker"
       ],
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_evoker.line"
     },
     {
       "chance": 0.35,
@@ -216,7 +222,8 @@
         "minecraft:pillager"
       ],
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_pillager.line"
     },
     {
       "chance": 0.35,
@@ -243,7 +250,8 @@
         "minecraft:vindicator"
       ],
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_vindicator.line"
     },
     {
       "chance": 0.35,
@@ -278,7 +286,8 @@
         "minecraft:phantom"
       ],
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_undead.line"
     },
     {
       "chance": 0.35,
@@ -310,7 +319,8 @@
         "minecraft:enderman"
       ],
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_monster.line"
     },
     {
       "chance": 0.35,
@@ -334,7 +344,8 @@
       "priority": 0,
       "requires_line_of_sight": true,
       "trigger": "retaliation_started",
-      "witness_radius": 24
+      "witness_radius": 24,
+      "line_key": "forced_dialogue.default.retaliation_started_callout_generic.line"
     },
     {
       "options": [
@@ -356,7 +367,9 @@
             "I will not call this settled, but I will call it a start.",
             "Apologizing does not erase it. It does give you a chance not to become worse.",
             "<pulse>Good.</pulse> Let the next thing this village remembers be restraint."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.option.low_guts_rally_apologize.label",
+          "response_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.option.low_guts_rally_apologize.response"
         },
         {
           "id": "low_guts_rally_accident",
@@ -377,7 +390,9 @@
             "Fine. But if it happens again, no one will care what you meant.",
             "You may not have meant harm, but harm still arrived.",
             "Be careful, {player}. Around here, <wavy>accidents</wavy> have a way of becoming reputations."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.option.low_guts_rally_accident.label",
+          "response_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.option.low_guts_rally_accident.response"
         },
         {
           "id": "low_guts_rally_refuse",
@@ -397,7 +412,9 @@
             "Fine. The village can live without your excuse.",
             "Then we settle this without your side of the story.",
             "<shake>Wrong choice.</shake>"
-          ]
+          ],
+          "label_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.option.low_guts_rally_refuse.label",
+          "response_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.option.low_guts_rally_refuse.response"
         },
         {
           "id": "low_guts_rally_threaten",
@@ -417,7 +434,9 @@
             "The village heard you. That was your last mistake here.",
             "You threaten the frightened and call it strength. Pathetic.",
             "<shake><color:red>Enough.</color></shake>"
-          ]
+          ],
+          "label_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.option.low_guts_rally_threaten.label",
+          "response_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.option.low_guts_rally_threaten.response"
         }
       ],
       "lines": [
@@ -442,7 +461,9 @@
         "aggro": true,
         "end_conversation": true,
         "reputation": -4,
-        "response": "Walk away if you want. <pulse>{victim}</pulse> will still remember who made them run."
+        "response": "Walk away if you want. <pulse>{victim}</pulse> will still remember who made them run.",
+        "label_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.leave.option.leave.response"
       },
       "output": {
         "mode": "forced_dialogue"
@@ -454,7 +475,8 @@
         "minecraft:player"
       ],
       "trigger": "low_guts_rally",
-      "witness_radius": 16
+      "witness_radius": 16,
+      "line_key": "forced_dialogue.default.low_guts_rally_player_hit_confrontation.line"
     },
     {
       "aggro_immediately": true,
@@ -474,7 +496,8 @@
       "reputation": -25,
       "requires_line_of_sight": true,
       "trigger": "container_theft",
-      "witness_radius": 16
+      "witness_radius": 16,
+      "line_key": "forced_dialogue.default.repeated_village_container_theft_final_warning.line"
     },
     {
       "options": [
@@ -501,8 +524,12 @@
             "success_response": "You already had your <color:gold>warning</color>. Returning it is the smallest part of making this right.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.return_repeat_theft.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.return_repeat_theft.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.return_repeat_theft.label",
+          "response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.return_repeat_theft.response"
         },
         {
           "id": "pay_repeat_theft",
@@ -532,8 +559,12 @@
             "success_response": "<gradient:#55ff55:#ffd34d>Twenty-five emeralds.</gradient> That pays for the goods. It does not buy back the warning you wasted.",
             "success_responses": [
               "That payment covers the damage for now. The village will be <pulse>watching</pulse> what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.pay_repeat_theft.take_items.success",
+            "failure_response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.pay_repeat_theft.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.pay_repeat_theft.label",
+          "response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.pay_repeat_theft.response"
         },
         {
           "id": "threaten_repeat_witness",
@@ -545,7 +576,9 @@
           "response": "I already let you walk once. <shake>I will not do it again.</shake>",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.threaten_repeat_witness.label",
+          "response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.option.threaten_repeat_witness.response"
         }
       ],
       "lines": [
@@ -581,8 +614,12 @@
             "<shake>Thief!</shake>",
             "Hey! <shake>Thief!</shake>",
             "<jump>Not yours!</jump>"
-          ]
-        }
+          ],
+          "success_response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.leave.option.leave.take_stolen_items.success",
+          "failure_response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.leave.option.leave.take_stolen_items.failure"
+        },
+        "label_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.leave.option.leave.response"
       },
       "max_recent_container_thefts": 1,
       "min_recent_container_thefts": 1,
@@ -593,7 +630,8 @@
       "reputation": -18,
       "requires_line_of_sight": true,
       "trigger": "container_theft",
-      "witness_radius": 16
+      "witness_radius": 16,
+      "line_key": "forced_dialogue.default.repeated_village_container_theft_second_warning.line"
     },
     {
       "options": [
@@ -619,8 +657,12 @@
             "success_response": "Good. A blade taken in secret cuts trust first.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.return_blade.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.return_blade.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.return_blade.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.return_blade.response"
         },
         {
           "id": "accept_warning",
@@ -638,7 +680,9 @@
           "response": "You have earned enough respect that I will call this foolish, not hostile. Do not test that twice.",
           "responses": [
             "I hear you. Make sure your next action proves it."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.accept_warning.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.accept_warning.response"
         },
         {
           "id": "pay_for_steel",
@@ -671,8 +715,12 @@
             "success_response": "Ten emeralds covers the stock. It does not make the taking clean.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.pay_for_steel.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.pay_for_steel.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.pay_for_steel.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.pay_for_steel.response"
         },
         {
           "id": "low_reputation_price",
@@ -707,8 +755,12 @@
             "success_response": "Twenty emeralds. Now leave the steel where villagers can find it.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.low_reputation_price.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.low_reputation_price.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.low_reputation_price.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.low_reputation_price.response"
         },
         {
           "id": "threaten",
@@ -720,7 +772,9 @@
           "response": "Then draw your answer.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -764,8 +818,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -796,8 +854,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -829,8 +891,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_weaponsmith",
@@ -844,7 +910,8 @@
       "witness_professions": [
         "weaponsmith"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_theft.line"
     },
     {
       "options": [
@@ -870,8 +937,12 @@
             "success_response": "Return it, then let your next kindness arrive before your next mistake.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.return_offering.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.return_offering.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.return_offering.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.return_offering.response"
         },
         {
           "id": "ask_forgiveness",
@@ -883,7 +954,9 @@
           "response": "Forgiveness is not a lid you close. It is a habit you rebuild.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.ask_forgiveness.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.ask_forgiveness.response"
         },
         {
           "id": "temple_restitution",
@@ -912,8 +985,12 @@
             "success_response": "Twelve emeralds will refill what fear empties. Do not touch the temple stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.temple_restitution.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.temple_restitution.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.temple_restitution.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.temple_restitution.response"
         },
         {
           "id": "dismiss_temple",
@@ -925,7 +1002,9 @@
           "response": "Then you do not understand what you took.",
           "responses": [
             "I hear you. Make sure your next action proves it."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.dismiss_temple.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.option.dismiss_temple.response"
         }
       ],
       "lines": [
@@ -969,8 +1048,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -1001,8 +1084,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -1034,8 +1121,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_temple",
@@ -1049,7 +1140,8 @@
       "witness_professions": [
         "cleric"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_temple_container_theft.line"
     },
     {
       "options": [
@@ -1063,7 +1155,9 @@
           "response": "Good. Some paths should be offered, not taken.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_opened.option.close_it.response"
         },
         {
           "id": "ask_for_map",
@@ -1075,7 +1169,9 @@
           "response": "Ask properly later. A good direction starts with permission.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_opened.option.ask_for_map.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_opened.option.ask_for_map.response"
         },
         {
           "id": "deny",
@@ -1087,7 +1183,9 @@
           "response": "I know what an opened chest sounds like. I map more than roads.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -1107,7 +1205,9 @@
         "response": "Leaving does not make this disappear.",
         "responses": [
           "Leaving now is wiser than making this worse."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_cartographer",
       "output": {
@@ -1124,7 +1224,8 @@
       "witness_professions": [
         "cartographer"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_cartographer_container_opened.line"
     },
     {
       "options": [
@@ -1138,7 +1239,9 @@
           "response": "Good. Armor kept in place protects more than armor carried off.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.close_it.response"
         },
         {
           "id": "offer_payment",
@@ -1167,8 +1270,12 @@
             "success_response": "Four emeralds, and the chest stays closed.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.offer_payment.response"
         },
         {
           "id": "explain_need",
@@ -1180,7 +1287,9 @@
           "response": "If danger is coming, say that first. A village can arm itself faster than it can forgive theft.",
           "responses": [
             "Then ask plainly before reaching. Need does not make village stores yours."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.explain_need.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.explain_need.response"
         },
         {
           "id": "threaten",
@@ -1192,7 +1301,9 @@
           "response": "Then you are the danger.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.option.threaten.response"
         }
       ],
       "lines": [
@@ -1212,7 +1323,9 @@
         "response": "Leaving does not make this disappear.",
         "responses": [
           "Leaving now is wiser than making this worse."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_armorer",
       "output": {
@@ -1229,7 +1342,8 @@
       "witness_professions": [
         "armorer"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_armorer_container_opened.line"
     },
     {
       "options": [
@@ -1255,8 +1369,12 @@
             "success_response": "Good. Armor belongs where the village can reach it.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.return_armor.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.return_armor.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.return_armor.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.return_armor.response"
         },
         {
           "id": "apologize",
@@ -1268,7 +1386,9 @@
           "response": "You understand the danger, then. Keep your hands away from our protection.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.apologize.response"
         },
         {
           "id": "offer_payment",
@@ -1304,8 +1424,12 @@
             "success_response": "Ten emeralds will cover the missing protection. The warning stays.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -1317,7 +1441,9 @@
           "response": "Armor has weight. So does a lie.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -1329,7 +1455,9 @@
           "response": "Then you are the danger I was preparing for.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -1373,8 +1501,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -1405,8 +1537,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -1438,8 +1574,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_armorer",
@@ -1453,7 +1593,8 @@
       "witness_professions": [
         "armorer"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_armorer_container_theft.line"
     },
     {
       "options": [
@@ -1479,8 +1620,12 @@
             "success_response": "Good. Food returned quickly still feeds the right mouths.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.return_food.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.return_food.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.return_food.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.return_food.response"
         },
         {
           "id": "apologize",
@@ -1492,7 +1637,9 @@
           "response": "Hungry people ask. Thieves make everyone hungrier.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.apologize.response"
         },
         {
           "id": "offer_payment",
@@ -1528,8 +1675,12 @@
             "success_response": "Six emeralds replaces the food. Next time, speak before taking.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -1541,7 +1692,9 @@
           "response": "I know the sound of my stores leaving.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -1553,7 +1706,9 @@
           "response": "Threats do not season theft into something better.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -1597,8 +1752,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -1629,8 +1788,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -1662,8 +1825,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_butcher",
@@ -1677,7 +1844,8 @@
       "witness_professions": [
         "butcher"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_butcher_container_theft.line"
     },
     {
       "options": [
@@ -1703,8 +1871,12 @@
             "success_response": "Good. A returned map still points in the right direction.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.return_maps.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.return_maps.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.return_maps.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.return_maps.response"
         },
         {
           "id": "apologize",
@@ -1716,7 +1888,9 @@
           "response": "An apology is a start. Permission is the route you skipped.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.apologize.response"
         },
         {
           "id": "offer_payment",
@@ -1752,8 +1926,12 @@
             "success_response": "Eight emeralds will replace the supplies. Do not chart another path through my chest.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -1765,7 +1943,9 @@
           "response": "I notice missing marks. I notice missing goods too.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -1777,7 +1957,9 @@
           "response": "Threats are a poor compass.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -1821,8 +2003,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -1853,8 +2039,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -1886,8 +2076,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_cartographer",
@@ -1901,7 +2095,8 @@
       "witness_professions": [
         "cartographer"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_cartographer_container_theft.line"
     },
     {
       "options": [
@@ -1927,8 +2122,12 @@
             "success_response": "Good. The catch returns before trust sinks any deeper.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.return_catch.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.return_catch.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.return_catch.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.return_catch.response"
         },
         {
           "id": "apologize",
@@ -1940,7 +2139,9 @@
           "response": "Then remember patience before hunger next time.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.apologize.response"
         },
         {
           "id": "offer_payment",
@@ -1976,8 +2177,12 @@
             "success_response": "Six emeralds will refill the stores. Keep your hands off the nets.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -1989,7 +2194,9 @@
           "response": "I know what I hauled in, and I know what you hauled out.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -2001,7 +2208,9 @@
           "response": "Then you have mistaken a fisherman for easy prey.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -2045,8 +2254,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -2077,8 +2290,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -2110,8 +2327,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_fisher",
@@ -2125,7 +2346,8 @@
       "witness_professions": [
         "fisherman"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_fisher_container_theft.line"
     },
     {
       "options": [
@@ -2151,8 +2373,12 @@
             "success_response": "Good. Arrows should leave the village only with purpose.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.return_arrows.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.return_arrows.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.return_arrows.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.return_arrows.response"
         },
         {
           "id": "apologize",
@@ -2164,7 +2390,9 @@
           "response": "Then aim that apology at better choices.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.apologize.response"
         },
         {
           "id": "offer_payment",
@@ -2200,8 +2428,12 @@
             "success_response": "Seven emeralds covers the stock. Do not reach for the fletching chest again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -2213,7 +2445,9 @@
           "response": "I can spot a bent arrow. I can spot a crooked answer.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -2225,7 +2459,9 @@
           "response": "Then every arrow in this village has a clearer target.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -2269,8 +2505,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -2301,8 +2541,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -2334,8 +2578,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_fletcher",
@@ -2349,7 +2597,8 @@
       "witness_professions": [
         "fletcher"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_fletcher_container_theft.line"
     },
     {
       "options": [
@@ -2375,8 +2624,12 @@
             "success_response": "Good. A returned block keeps its place in the wall.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.return_stone.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.return_stone.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.return_stone.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.return_stone.response"
         },
         {
           "id": "apologize",
@@ -2388,7 +2641,9 @@
           "response": "Words are softer than stone. Build better habits.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.apologize.response"
         },
         {
           "id": "offer_payment",
@@ -2424,8 +2679,12 @@
             "success_response": "Seven emeralds will replace the stock. Keep your hands off the work chest.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -2437,7 +2696,9 @@
           "response": "Stone leaves dust. Theft leaves a mark too.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -2449,7 +2710,9 @@
           "response": "Threaten a mason and you learn what a wall is for.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -2493,8 +2756,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -2525,8 +2792,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -2558,8 +2829,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_mason",
@@ -2573,7 +2848,8 @@
       "witness_professions": [
         "mason"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_mason_container_theft.line"
     },
     {
       "options": [
@@ -2599,8 +2875,12 @@
             "success_response": "Good. Returned work can still warm someone.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.return_wool.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.return_wool.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.return_wool.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.return_wool.response"
         },
         {
           "id": "apologize",
@@ -2612,7 +2892,9 @@
           "response": "Then mind the fence next time, and the boundary too.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.apologize.response"
         },
         {
           "id": "offer_payment",
@@ -2648,8 +2930,12 @@
             "success_response": "Five emeralds covers the stock. Do not shear from our chest again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -2661,7 +2947,9 @@
           "response": "I count my flock and my stores. You are short on truth.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -2673,7 +2961,9 @@
           "response": "Threats are a thin blanket.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -2717,8 +3007,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -2749,8 +3043,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -2782,8 +3080,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_shepherd",
@@ -2797,7 +3099,8 @@
       "witness_professions": [
         "shepherd"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_shepherd_container_theft.line"
     },
     {
       "options": [
@@ -2823,8 +3126,12 @@
             "success_response": "Good. Returned work still carries fewer stains than stolen work.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.return_leather.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.return_leather.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.return_leather.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.return_leather.response"
         },
         {
           "id": "apologize",
@@ -2836,7 +3143,9 @@
           "response": "Then wear the lesson better than you wore the excuse.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.apologize.response"
         },
         {
           "id": "offer_payment",
@@ -2872,8 +3181,12 @@
             "success_response": "Seven emeralds replaces the leatherwork. Ask before touching my stores.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -2885,7 +3198,9 @@
           "response": "Leather keeps marks. So does a village.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -2897,7 +3212,9 @@
           "response": "Threats will not tan this into honesty.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -2941,8 +3258,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -2973,8 +3294,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -3006,8 +3331,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_tannery",
@@ -3021,7 +3350,8 @@
       "witness_professions": [
         "leatherworker"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_leatherworker_container_theft.line"
     },
     {
       "options": [
@@ -3047,8 +3377,12 @@
             "success_response": "Good. Work can continue when tools return.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.return_tools.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.return_tools.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.return_tools.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.return_tools.response"
         },
         {
           "id": "apologize",
@@ -3060,7 +3394,9 @@
           "response": "An apology is useful only if your hands learn from it.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.apologize.response"
         },
         {
           "id": "offer_payment",
@@ -3096,8 +3432,12 @@
             "success_response": "Nine emeralds covers the stock. Touch the chest again and the price will not be coins.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -3109,7 +3449,9 @@
           "response": "I know every tool by handle and wear. I know when one is missing.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -3121,7 +3463,9 @@
           "response": "Threaten the hand that makes tools and you may meet what they are for.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -3165,8 +3509,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -3197,8 +3545,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -3230,8 +3582,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_table": "minecraft:chests/village/village_toolsmith",
@@ -3245,7 +3601,8 @@
       "witness_professions": [
         "toolsmith"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_toolsmith_container_theft.line"
     },
     {
       "options": [
@@ -3271,8 +3628,12 @@
             "success_response": "Then do it now. A village remembers the hand that returns what it took.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_container_theft.option.return_items.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_container_theft.option.return_items.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.return_items.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.return_items.response"
         },
         {
           "id": "apologize",
@@ -3284,7 +3645,9 @@
           "response": "An apology is a start. Closed lids and empty hands are better.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.apologize.response"
         },
         {
           "id": "accept_warning",
@@ -3302,7 +3665,9 @@
           "response": "Your name still carries weight here, so I will treat this as a mistake. Do not make me regret it.",
           "responses": [
             "I hear you. Make sure your next action proves it."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.accept_warning.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.accept_warning.response"
         },
         {
           "id": "offer_payment",
@@ -3335,8 +3700,12 @@
             "success_response": "Eight emeralds will help replace what you took. Consider this a warning, not a purchase.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_container_theft.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_container_theft.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.offer_payment.response"
         },
         {
           "id": "offer_costly_payment",
@@ -3371,8 +3740,12 @@
             "success_response": "Sixteen emeralds pays for the risk you keep bringing to our doors. Do better, or there will not be another price.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_container_theft.option.offer_costly_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_container_theft.option.offer_costly_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.offer_costly_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.offer_costly_payment.response"
         },
         {
           "id": "needed_supplies",
@@ -3384,7 +3757,9 @@
           "response": "Need asks before it takes. If you are hungry, speak to us like a neighbor.",
           "responses": [
             "Then ask plainly before reaching. Need does not make village stores yours."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.needed_supplies.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.needed_supplies.response"
         },
         {
           "id": "thought_abandoned",
@@ -3396,7 +3771,9 @@
           "response": "A quiet chest is not an abandoned one. These stores keep roofs standing.",
           "responses": [
             "Standing village stores are not abandoned."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.thought_abandoned.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.thought_abandoned.response"
         },
         {
           "id": "low_intellect_confuse_theft",
@@ -3416,7 +3793,9 @@
             "What chest? Wait. Was there another chest? I... may have shouted before I understood.",
             "No chest? But I saw... hm. Maybe I should sit down before accusing anyone else.",
             "If there was no chest, then I have made a very loud mistake."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.low_intellect_confuse_theft.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.low_intellect_confuse_theft.response"
         },
         {
           "id": "only_borrowing",
@@ -3428,7 +3807,9 @@
           "response": "Borrowing has a witness before and a return after. You skipped the first half.",
           "responses": [
             "I hear you. Make sure your next action proves it."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.only_borrowing.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.only_borrowing.response"
         },
         {
           "id": "deny",
@@ -3440,7 +3821,9 @@
           "response": "I watched your hands. Do not make the lie worse than the theft.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -3452,7 +3835,9 @@
           "response": "Then we are past words.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -3496,8 +3881,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -3528,8 +3917,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -3561,8 +3954,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_theft.leave.option.leave_2.response"
         }
       ],
       "loot_tables": [
@@ -3590,7 +3987,8 @@
       "reputation": -10,
       "requires_line_of_sight": true,
       "trigger": "container_theft",
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_container_theft.line"
     },
     {
       "options": [
@@ -3604,7 +4002,9 @@
           "response": "Words are easy after the lid closes. Put your hands to better use.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_container_theft.option.apologize.label",
+          "response_key": "forced_dialogue.default.witnessed_container_theft.option.apologize.response"
         },
         {
           "id": "return_items",
@@ -3628,8 +4028,12 @@
             "success_response": "Good. Let your next choice be quieter and kinder.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_container_theft.option.return_items.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_container_theft.option.return_items.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_container_theft.option.return_items.label",
+          "response_key": "forced_dialogue.default.witnessed_container_theft.option.return_items.response"
         },
         {
           "id": "deny",
@@ -3641,7 +4045,9 @@
           "response": "I watched you take from it. Do not make me repeat myself.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_container_theft.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_container_theft.option.deny.response"
         },
         {
           "id": "threaten",
@@ -3653,7 +4059,9 @@
           "response": "Then we are past talking.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_container_theft.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_container_theft.option.threaten.response"
         }
       ],
       "lines": [
@@ -3697,8 +4105,12 @@
               "Put that back!",
               "Hands off!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_0.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_0.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_0.label",
+          "response_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_0.response"
         },
         {
           "label": "Leave",
@@ -3729,8 +4141,12 @@
               "Thief!",
               "Hey! Thief!",
               "Not yours!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_1.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_1.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_1.label",
+          "response_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_1.response"
         },
         {
           "label": "Leave",
@@ -3762,8 +4178,12 @@
               "Thief! Put it back!",
               "Drop it, thief!",
               "Put it back, now!"
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_2.take_stolen_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_2.take_stolen_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_2.label",
+          "response_key": "forced_dialogue.default.witnessed_container_theft.leave.option.leave_2.response"
         }
       ],
       "output": {
@@ -3773,7 +4193,8 @@
       "reputation": -8,
       "requires_line_of_sight": true,
       "trigger": "container_theft",
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_container_theft.line"
     },
     {
       "options": [
@@ -3787,7 +4208,9 @@
           "response": "Good. Blades stay useful when trust stays sharper than curiosity.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -3799,7 +4222,9 @@
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -3835,8 +4260,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -3848,7 +4277,9 @@
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -3868,7 +4299,9 @@
         "response": "That is right. Back from the chest.",
         "responses": [
           "I hear you. Make sure your next action proves it."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_weaponsmith",
       "output": {
@@ -3885,7 +4318,8 @@
       "witness_professions": [
         "weaponsmith"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_opened.line"
     },
     {
       "options": [
@@ -3899,7 +4333,9 @@
           "response": "Good. Leave healing stores where frightened hands can find them.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -3911,7 +4347,9 @@
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -3947,8 +4385,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -3960,7 +4402,9 @@
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_temple_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -3980,7 +4424,9 @@
         "response": "That is right. Back from the chest.",
         "responses": [
           "I hear you. Make sure your next action proves it."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_temple_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_temple_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_temple",
       "output": {
@@ -3997,7 +4443,8 @@
       "witness_professions": [
         "cleric"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_temple_container_opened.line"
     },
     {
       "options": [
@@ -4011,7 +4458,9 @@
           "response": "Good. Food shared honestly tastes better.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -4023,7 +4472,9 @@
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -4059,8 +4510,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -4072,7 +4527,9 @@
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -4092,7 +4549,9 @@
         "response": "That is right. Back from the chest.",
         "responses": [
           "I hear you. Make sure your next action proves it."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_butcher",
       "output": {
@@ -4109,7 +4568,8 @@
       "witness_professions": [
         "butcher"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_butcher_container_opened.line"
     },
     {
       "options": [
@@ -4123,7 +4583,9 @@
           "response": "Good. The river gives enough trouble without neighbors taking more.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -4135,7 +4597,9 @@
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -4171,8 +4635,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -4184,7 +4652,9 @@
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -4204,7 +4674,9 @@
         "response": "That is right. Back from the chest.",
         "responses": [
           "I hear you. Make sure your next action proves it."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_fisher",
       "output": {
@@ -4221,7 +4693,8 @@
       "witness_professions": [
         "fisherman"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_fisher_container_opened.line"
     },
     {
       "options": [
@@ -4235,7 +4708,9 @@
           "response": "Good. Arrows should fly at threats, not vanish into pockets.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -4247,7 +4722,9 @@
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -4283,8 +4760,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -4296,7 +4777,9 @@
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -4316,7 +4799,9 @@
         "response": "That is right. Back from the chest.",
         "responses": [
           "I hear you. Make sure your next action proves it."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_fletcher",
       "output": {
@@ -4333,7 +4818,8 @@
       "witness_professions": [
         "fletcher"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_fletcher_container_opened.line"
     },
     {
       "options": [
@@ -4347,7 +4833,9 @@
           "response": "Good. Stone stays useful when it stays accounted for.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -4359,7 +4847,9 @@
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -4395,8 +4885,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -4408,7 +4902,9 @@
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_mason_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -4428,7 +4924,9 @@
         "response": "That is right. Back from the chest.",
         "responses": [
           "I hear you. Make sure your next action proves it."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_mason_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_mason_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_mason",
       "output": {
@@ -4445,7 +4943,8 @@
       "witness_professions": [
         "mason"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_mason_container_opened.line"
     },
     {
       "options": [
@@ -4459,7 +4958,9 @@
           "response": "Good. Fences are easier to mend than trust.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -4471,7 +4972,9 @@
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -4507,8 +5010,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -4520,7 +5027,9 @@
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -4540,7 +5049,9 @@
         "response": "That is right. Back from the chest.",
         "responses": [
           "I hear you. Make sure your next action proves it."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_shepherd",
       "output": {
@@ -4557,7 +5068,8 @@
       "witness_professions": [
         "shepherd"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_shepherd_container_opened.line"
     },
     {
       "options": [
@@ -4571,7 +5083,9 @@
           "response": "Good. Take your needs to a trade, not a latch.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -4583,7 +5097,9 @@
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -4619,8 +5135,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -4632,7 +5152,9 @@
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -4652,7 +5174,9 @@
         "response": "That is right. Back from the chest.",
         "responses": [
           "I hear you. Make sure your next action proves it."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_tannery",
       "output": {
@@ -4669,7 +5193,8 @@
       "witness_professions": [
         "leatherworker"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_leatherworker_container_opened.line"
     },
     {
       "options": [
@@ -4683,7 +5208,9 @@
           "response": "Good. Work goes better when tools stay where they belong.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -4695,7 +5222,9 @@
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -4731,8 +5260,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.offer_payment.response"
         },
         {
           "id": "deny",
@@ -4744,7 +5277,9 @@
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.option.deny.response"
         }
       ],
       "lines": [
@@ -4764,7 +5299,9 @@
         "response": "That is right. Back from the chest.",
         "responses": [
           "I hear you. Make sure your next action proves it."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_toolsmith",
       "output": {
@@ -4781,7 +5318,8 @@
       "witness_professions": [
         "toolsmith"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_toolsmith_container_opened.line"
     },
     {
       "options": [
@@ -4795,7 +5333,9 @@
           "response": "Good. Stay where I can see you and keep your hands away from village stores.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.step_back_from_container.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.step_back_from_container.response"
         },
         {
           "id": "pay_container_trespass_fine",
@@ -4824,8 +5364,12 @@
             "success_response": "Eight emeralds settles this warning. Touch nothing else.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.pay_container_trespass_fine.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.pay_container_trespass_fine.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.pay_container_trespass_fine.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.pay_container_trespass_fine.response"
         },
         {
           "id": "claim_need",
@@ -4837,7 +5381,9 @@
           "response": "Need starts with asking from the road, not opening our stores after what you have done.",
           "responses": [
             "Then ask plainly before reaching. Need does not make village stores yours."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.claim_need.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.claim_need.response"
         },
         {
           "id": "deny_hostile_container_open",
@@ -4849,7 +5395,9 @@
           "response": "The lid moved under your hand. Do not lie while standing over our stores.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.deny_hostile_container_open.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.option.deny_hostile_container_open.response"
         }
       ],
       "lines": [
@@ -4870,7 +5418,9 @@
         "response": "Walk away from the chest. The village will remember that you reached for it.",
         "responses": [
           "Leaving now is wiser than making this worse."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.leave.option.leave.response"
       },
       "loot_tables": [
         "minecraft:chests/village/village_armorer",
@@ -4902,7 +5452,8 @@
       ],
       "requires_line_of_sight": true,
       "trigger": "container_opened",
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_container_opened_hostile.line"
     },
     {
       "options": [
@@ -4934,8 +5485,12 @@
             "success_response": "A full stack of emeralds pays for the broken forge stock. It does not buy back trust.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.option.pay_weaponsmith_break_damage.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.option.pay_weaponsmith_break_damage.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.option.pay_weaponsmith_break_damage.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.option.pay_weaponsmith_break_damage.response"
         },
         {
           "id": "apologize_weaponsmith_break",
@@ -4947,7 +5502,9 @@
           "response": "Apology heard. Warning given.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.option.apologize_weaponsmith_break.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.option.apologize_weaponsmith_break.response"
         },
         {
           "id": "threaten_weaponsmith_break",
@@ -4959,7 +5516,9 @@
           "response": "Then draw your answer.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.option.threaten_weaponsmith_break.label",
+          "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.option.threaten_weaponsmith_break.response"
         }
       ],
       "lines": [
@@ -4980,7 +5539,9 @@
         "response": "Break forge stores and walk away? No. I remember that.",
         "responses": [
           "Leaving now is wiser than making this worse."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_weaponsmith",
       "output": {
@@ -4993,7 +5554,8 @@
       "witness_professions": [
         "weaponsmith"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_weaponsmith_container_broken.line"
     },
     {
       "options": [
@@ -5025,8 +5587,12 @@
             "success_response": "A full stack of emeralds pays for the broken armor stores. Next time, ask before you swing.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.option.pay_armorer_break_damage.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.option.pay_armorer_break_damage.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.option.pay_armorer_break_damage.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.option.pay_armorer_break_damage.response"
         },
         {
           "id": "claim_armorer_break_accident",
@@ -5038,7 +5604,9 @@
           "response": "One crack is an accident. A broken chest is a choice you kept making.",
           "responses": [
             "Then learn from the accident before it becomes a habit."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.option.claim_armorer_break_accident.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.option.claim_armorer_break_accident.response"
         },
         {
           "id": "threaten_armorer_break",
@@ -5050,7 +5618,9 @@
           "response": "Then we skip the warning.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.option.threaten_armorer_break.label",
+          "response_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.option.threaten_armorer_break.response"
         }
       ],
       "lines": [
@@ -5071,7 +5641,9 @@
         "response": "Walking away from broken armor stores is not harmless.",
         "responses": [
           "Leaving now is wiser than making this worse."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_armorer",
       "output": {
@@ -5084,7 +5656,8 @@
       "witness_professions": [
         "armorer"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_armorer_container_broken.line"
     },
     {
       "options": [
@@ -5116,8 +5689,12 @@
             "success_response": "Forty-eight emeralds pays for the broken tool stores. Leave the rest where it belongs.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.option.pay_toolsmith_break_damage.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.option.pay_toolsmith_break_damage.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.option.pay_toolsmith_break_damage.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.option.pay_toolsmith_break_damage.response"
         },
         {
           "id": "apologize_toolsmith_break",
@@ -5129,7 +5706,9 @@
           "response": "Then make your apology useful: stop breaking village tools.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.option.apologize_toolsmith_break.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.option.apologize_toolsmith_break.response"
         },
         {
           "id": "threaten_toolsmith_break",
@@ -5141,7 +5720,9 @@
           "response": "Tools are good at answering threats.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.option.threaten_toolsmith_break.label",
+          "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.option.threaten_toolsmith_break.response"
         }
       ],
       "lines": [
@@ -5162,7 +5743,9 @@
         "response": "Leaving the broken tool chest behind does not leave the blame behind.",
         "responses": [
           "Leaving now is wiser than making this worse."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.leave.option.leave.response"
       },
       "loot_table": "minecraft:chests/village/village_toolsmith",
       "output": {
@@ -5175,7 +5758,8 @@
       "witness_professions": [
         "toolsmith"
       ],
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_toolsmith_container_broken.line"
     },
     {
       "options": [
@@ -5189,7 +5773,9 @@
           "response": "Words do not rebuild a chest, but they are a better start than silence.",
           "responses": [
             "Apology heard. Better choices will matter more than better words."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_broken.option.apologize_container_break.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_broken.option.apologize_container_break.response"
         },
         {
           "id": "pay_container_break_damage",
@@ -5225,8 +5811,12 @@
             "success_response": "Thirty-two emeralds pays for the broken village stores. Ask before breaking what keeps the village stocked.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_container_broken.option.pay_container_break_damage.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_container_broken.option.pay_container_break_damage.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_container_broken.option.pay_container_break_damage.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_broken.option.pay_container_break_damage.response"
         },
         {
           "id": "claim_container_break_accident",
@@ -5238,7 +5828,9 @@
           "response": "Accidents stop after the first crack. Remember that.",
           "responses": [
             "Then learn from the accident before it becomes a habit."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_broken.option.claim_container_break_accident.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_broken.option.claim_container_break_accident.response"
         },
         {
           "id": "threaten_container_break",
@@ -5250,7 +5842,9 @@
           "response": "Then we are done talking.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_broken.option.threaten_container_break.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_broken.option.threaten_container_break.response"
         }
       ],
       "lines": [
@@ -5271,7 +5865,9 @@
         "response": "Breaking village stores and walking away will be remembered.",
         "responses": [
           "Leaving now is wiser than making this worse."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_container_broken.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_container_broken.leave.option.leave.response"
       },
       "loot_tables": [
         "minecraft:chests/village/village_armorer",
@@ -5298,7 +5894,8 @@
       "reputation": 0,
       "requires_line_of_sight": true,
       "trigger": "container_broken",
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_container_broken.line"
     },
     {
       "options": [
@@ -5312,7 +5909,9 @@
           "response": "Good. Leave village stores for village needs.",
           "responses": [
             "Good. Keep your hands clear of village stores."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened.option.close_it.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened.option.close_it.response"
         },
         {
           "id": "ask_permission",
@@ -5324,7 +5923,9 @@
           "response": "Ask before the lid opens next time. We share better with people who speak first.",
           "responses": [
             "Ask first next time. A spoken request carries farther than an opened lid."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened.option.ask_permission.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened.option.ask_permission.response"
         },
         {
           "id": "offer_payment",
@@ -5360,8 +5961,12 @@
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
             "success_responses": [
               "That payment covers the damage for now. The village will be watching what you do next."
-            ]
-          }
+            ],
+            "success_response_key": "forced_dialogue.default.witnessed_village_container_opened.option.offer_payment.take_items.success",
+            "failure_response_key": "forced_dialogue.default.witnessed_village_container_opened.option.offer_payment.take_items.failure"
+          },
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened.option.offer_payment.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened.option.offer_payment.response"
         },
         {
           "id": "checking_supplies",
@@ -5373,7 +5978,9 @@
           "response": "Then check with a villager beside you. Alone, it looks like hunger with pockets.",
           "responses": [
             "Next time, check with someone watching beside you."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened.option.checking_supplies.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened.option.checking_supplies.response"
         },
         {
           "id": "need_help",
@@ -5385,7 +5992,9 @@
           "response": "Need is not shameful. Taking without asking is. Speak plainly next time.",
           "responses": [
             "Then ask plainly before reaching. Need does not make village stores yours."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened.option.need_help.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened.option.need_help.response"
         },
         {
           "id": "thought_abandoned",
@@ -5397,7 +6006,9 @@
           "response": "If the village still stands, its stores still belong to someone.",
           "responses": [
             "Standing village stores are not abandoned."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened.option.thought_abandoned.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened.option.thought_abandoned.response"
         },
         {
           "id": "low_intellect_confuse_opened",
@@ -5417,7 +6028,9 @@
             "No chest? But I heard the latch. Maybe the echo came from another house.",
             "What chest indeed. I may have accused the wrong moment.",
             "If there was no chest, then I should stop arguing with shadows."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened.option.low_intellect_confuse_opened.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened.option.low_intellect_confuse_opened.response"
         },
         {
           "id": "deny",
@@ -5429,7 +6042,9 @@
           "response": "The lid opened under your hand. Do not ask me to mistrust my own eyes.",
           "responses": [
             "Do not dress an open lid up as innocence. I saw enough."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened.option.deny.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened.option.deny.response"
         },
         {
           "id": "threaten",
@@ -5441,7 +6056,9 @@
           "response": "Then we are past words.",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
-          ]
+          ],
+          "label_key": "forced_dialogue.default.witnessed_village_container_opened.option.threaten.label",
+          "response_key": "forced_dialogue.default.witnessed_village_container_opened.option.threaten.response"
         }
       ],
       "lines": [
@@ -5461,7 +6078,9 @@
         "response": "Leaving does not make this disappear.",
         "responses": [
           "Leaving now is wiser than making this worse."
-        ]
+        ],
+        "label_key": "forced_dialogue.default.witnessed_village_container_opened.leave.option.leave.label",
+        "response_key": "forced_dialogue.default.witnessed_village_container_opened.leave.option.leave.response"
       },
       "loot_tables": [
         "minecraft:chests/village/village_armorer",
@@ -5492,7 +6111,8 @@
       ],
       "requires_line_of_sight": true,
       "trigger": "container_opened",
-      "witness_radius": 12
+      "witness_radius": 12,
+      "line_key": "forced_dialogue.default.witnessed_village_container_opened.line"
     }
   ]
 }

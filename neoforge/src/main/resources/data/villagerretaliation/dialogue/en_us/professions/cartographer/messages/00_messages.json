@@ -22,7 +22,8 @@
         "The parchment needed truth more than decoration. This helps.",
         "Now the next traveler has warning instead of guesswork. That matters.",
         "I will mark the road, the risk, and the part where returning was the impressive bit."
-      ]
+      ],
+      "id": "professions.cartographer.messages.00_messages.messages.cartographer_map_report.missing.000"
     },
     {
       "id": "cartographer_cartographer_map_report_structure_village_variants",

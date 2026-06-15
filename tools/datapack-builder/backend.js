@@ -436,7 +436,7 @@
     }
 
     function isNamespaceRootDataPath(path) {
-      return /^[a-z0-9_.-]+\/(?:dialogue|forced_dialogue|notifications|gifts|pacification|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
+      return /^[a-z0-9_.-]+\/(?:dialogue|dialogue_trees|forced_dialogue|notifications|gifts|pacification|quests|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
     }
 
     function isTextPath(path) {
@@ -445,10 +445,12 @@
 
     function importedKnownKind(state, path) {
       if (/^data\/[^/]+\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
+      if (/^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/.test(path)) return "dialogue_trees";
       if (/^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)) return "forced_dialogue";
       if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
       if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
       if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
+      if (/^data\/[^/]+\/quests\/.+\.json$/.test(path)) return "quests";
       if (/^data\/[^/]+\/story_structures\/.+\.json$/.test(path)) return "story_structures";
       if (/^data\/[^/]+\/story_biomes\/.+\.json$/.test(path)) return "story_biomes";
       if (path === namesPath(state)) return "names";
@@ -473,6 +475,11 @@
         && jsonContainsAnyKey(value, beta12DialogueKeys)
       ));
       if (hasBeta12DialogueField) return "1.0.0-beta.12";
+      const hasBeta12Path = paths.some((path) => (
+        /^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/.test(path)
+        || /^data\/[^/]+\/quests\/.+\.json$/.test(path)
+      ));
+      if (hasBeta12Path) return "1.0.0-beta.12";
       const hasBeta11Path = paths.some((path) => (
         /^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)
         || /^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)
@@ -522,6 +529,16 @@
         const parsed = json();
         if (!parsed) return false;
         replaceForcedDialogueFile(state, path, parsed);
+        return true;
+      }
+
+      if (
+        path.match(/^data\/[^/]+\/quests\/.+\.json$/)
+        || path.match(/^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/)
+      ) {
+        const parsed = json();
+        if (!parsed) return false;
+        state.extraFiles[path] = source;
         return true;
       }
 
@@ -711,6 +728,11 @@
         if (namespaceMatch) state.meta.namespace = namespaceify(namespaceMatch[1], state.meta.namespace || "my_pack");
         state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
         mergeArray(state, "forcedDialogue", "entries", normalizeForcedDialogueEntries(json), path);
+        return true;
+      }
+
+      if (/^data\/[^/]+\/quests\/.+\.json$/.test(path) || /^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/.test(path)) {
+        state.extraFiles[path] = stripTextBom(source);
         return true;
       }
 

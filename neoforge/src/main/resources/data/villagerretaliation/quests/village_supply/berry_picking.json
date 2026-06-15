@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The berry request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.berry_picking.dialogue.start",
+    "reminder_key": "quest.village_supply.berry_picking.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.berry_picking.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.berry_picking.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.berry_picking.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.berry_picking.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.berry_picking.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.berry_picking.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.berry_picking.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring sweet berries for quick meals and traveling pouches.",
-    "title": "Berry Picking"
+    "title": "Berry Picking",
+    "title_key": "quest.village_supply.berry_picking.title",
+    "description_key": "quest.village_supply.berry_picking.description"
   },
   "id": "villagerretaliation:berry_picking",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The berry baskets are full.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Gather 16 sweet berries for village stores."
+        "text": "Gather 16 sweet berries for village stores.",
+        "text_key": "quest.village_supply.berry_picking.objective.bring_berries.text",
+        "complete_text_key": "quest.village_supply.berry_picking.objective.bring_berries.complete_text"
       },
       "type": "item_check"
     }
@@ -85,14 +98,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Gather 16 sweet berries for village stores."
+        "text": "Gather 16 sweet berries for village stores.",
+        "text_key": "quest.village_supply.berry_picking.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the sweet berries."
+        "text": "Return to the quest giver with the sweet berries.",
+        "text_key": "quest.village_supply.berry_picking.tracker.return.text"
       }
     },
-    "title": "Berry Picking"
+    "title": "Berry Picking",
+    "title_key": "quest.village_supply.berry_picking.tracker.title"
   }
 }

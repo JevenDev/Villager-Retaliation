@@ -13,49 +13,57 @@
       "key": "interaction.work.combat.passive.guard",
       "lines": [
         "I remain on guard and ready to answer trouble."
-      ]
+      ],
+      "id": "global.messages.14_work_combat.messages.interaction.work.combat.passive.guard.000"
     },
     {
       "key": "interaction.work.combat.passive.roaming",
       "lines": [
         "I am roaming the work area and watching for trouble."
-      ]
+      ],
+      "id": "global.messages.14_work_combat.messages.interaction.work.combat.passive.roaming.001"
     },
     {
       "key": "interaction.work.combat.passive.attack_all",
       "lines": [
         "I am sweeping the area and will engage any non-villager creature I find."
-      ]
+      ],
+      "id": "global.messages.14_work_combat.messages.interaction.work.combat.passive.attack_all.002"
     },
     {
       "key": "interaction.work.combat.passive.hunting",
       "lines": [
         "I am roaming the area and hunting animals."
-      ]
+      ],
+      "id": "global.messages.14_work_combat.messages.interaction.work.combat.passive.hunting.003"
     },
     {
       "key": "interaction.work.combat.active.guard",
       "lines": [
         "I am defending the area against {target}."
-      ]
+      ],
+      "id": "global.messages.14_work_combat.messages.interaction.work.combat.active.guard.004"
     },
     {
       "key": "interaction.work.combat.active.roaming",
       "lines": [
         "I found trouble while roaming and I am engaging {target}."
-      ]
+      ],
+      "id": "global.messages.14_work_combat.messages.interaction.work.combat.active.roaming.005"
     },
     {
       "key": "interaction.work.combat.active.attack_all",
       "lines": [
         "I am pressing the attack against {target}."
-      ]
+      ],
+      "id": "global.messages.14_work_combat.messages.interaction.work.combat.active.attack_all.006"
     },
     {
       "key": "interaction.work.combat.active.hunting",
       "lines": [
         "I am hunting down {target}."
-      ]
+      ],
+      "id": "global.messages.14_work_combat.messages.interaction.work.combat.active.hunting.007"
     }
   ]
 }

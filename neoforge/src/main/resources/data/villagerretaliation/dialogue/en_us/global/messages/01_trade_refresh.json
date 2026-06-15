@@ -22,7 +22,8 @@
         "Come back tomorrow. By then, I should know whether {trade_item} can change.",
         "I can review that offer. Let me sleep on the numbers first.",
         "All right. The {trade_item} trade is worth a <pulse>second look</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.accept.000"
     },
     {
       "key": "trade_refresh.already_pending",
@@ -37,7 +38,8 @@
         "I have already marked that trade for review.",
         "One review at a time. That one is already waiting on tomorrow.",
         "The trade is already <pulse>pending</pulse>. Check back tomorrow."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.already_pending.001"
     },
     {
       "key": "trade_refresh.not_ready",
@@ -52,7 +54,8 @@
         "That trade needs a better option than I can source today.",
         "Not yet. I do not have the right replacement in reach.",
         "Give me time to grow my craft before asking for that kind of change."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.not_ready.002"
     },
     {
       "key": "trade_refresh.unavailable",
@@ -67,7 +70,8 @@
         "The slot is not ready to be changed.",
         "I cannot adjust that trade while it is in this state.",
         "That offer is <pulse>locked</pulse> for now."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.unavailable.003"
     },
     {
       "key": "trade_refresh.revered_prompt",
@@ -82,7 +86,8 @@
         "The {trade_item} trade can be refreshed, or we can arrange a careful order.",
         "Do you want a new offer tomorrow, or a Special Order with your name on it?",
         "Your reputation gives you options. Choose the <pulse>refresh</pulse>, or choose the order."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.revered_prompt.004"
     },
     {
       "key": "trade_refresh.ready",
@@ -97,7 +102,8 @@
         "The counter is ready for you. I have {restocked_summary}.",
         "Come take a look when you can. {restocked_summary} is prepared.",
         "{restocked_summary} is <pulse>ready</pulse>. I set it aside with your name in mind."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready.005"
     },
     {
       "key": "trade_refresh.ready_interjection",
@@ -112,7 +118,8 @@
         "Before this slips my mind, <purple>{player}</purple>, {restocked_summary} is waiting for you.",
         "Sorry, one counter matter: <purple>{player}</purple>, I finished {restocked_summary}.",
         "I will be quick. <purple>{player}</purple>, your requested stock is <pulse>ready</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_interjection.006"
     },
     {
       "key": "trade_refresh.ready_interjection.second",
@@ -127,7 +134,8 @@
         "Since we are already interrupting politely, I have {restocked_summary} ready.",
         "Another counter has news. <purple>{player}</purple>, {restocked_summary} is finished.",
         "Sorry for the extra voice, but your order is <pulse>ready</pulse> too."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_interjection.second.007"
     },
     {
       "key": "trade_refresh.ready_interjection.third",
@@ -142,7 +150,8 @@
         "Before the line gets any longer, I have {restocked_summary} waiting.",
         "Final interruption from me: {restocked_summary} is ready at my counter.",
         "One last thing. {restocked_summary} is <pulse>ready</pulse> when you are."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_interjection.third.008"
     },
     {
       "key": "trade_refresh.ready_theft_interjection",
@@ -157,7 +166,8 @@
         "I would rather not stand in the middle of this, so quickly: {restocked_summary} is ready.",
         "<shake>Bad timing</shake>, I know. Your stock is waiting at my counter.",
         "When everyone is done staring, {restocked_summary} is <pulse>ready</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_theft_interjection.009"
     },
     {
       "key": "trade_refresh.ready_theft_interjection.second",
@@ -172,7 +182,8 @@
         "Everyone is already watching, so there it is: {restocked_summary} is finished.",
         "This is not my favorite moment to speak, but the stock is ready.",
         "<shake>Awkward</shake> or not, {restocked_summary} is waiting."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_theft_interjection.second.010"
     },
     {
       "key": "trade_refresh.ready_theft_interjection.third",
@@ -187,7 +198,8 @@
         "One final uncomfortable notice: your stock is finished.",
         "I will step back after this. {restocked_summary} is ready.",
         "<shake>Last interruption</shake>, I swear. {restocked_summary} is ready."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_theft_interjection.third.011"
     },
     {
       "key": "trade_refresh.special_order_select",
@@ -202,7 +214,8 @@
         "This is what I can source, prepare, and stand behind.",
         "Special Orders take planning, so choose the one you truly want.",
         "Here is the <pulse>realistic</pulse> list. No fantasy stock, no false promises."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_select.012"
     },
     {
       "key": "trade_refresh.special_order_confirm",
@@ -217,7 +230,8 @@
         "I can arrange it, but specific stock takes patience: {wait_days} {wait_day_word}.",
         "If you confirm {trade_item}, expect {wait_days} {wait_day_word} before it is ready.",
         "{trade_item} is possible. The ledger asks for <pulse>{wait_days} {wait_day_word}</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_confirm.013"
     },
     {
       "key": "trade_refresh.special_order_queued",
@@ -232,7 +246,8 @@
         "{trade_item} is queued. I will handle it properly, not quickly.",
         "I have accepted the order. Give me <pulse>{wait_days} {wait_day_word}</pulse>.",
         "That Special Order is set. Come back when the ledger has had time to breathe."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_queued.014"
     },
     {
       "key": "trade_refresh.special_order_queued_first",
@@ -247,7 +262,8 @@
         "Your first Special Order is <pulse>set</pulse>.",
         "The ledger has room, and {trade_item} now has a place on it.",
         "Good. First order accepted: {trade_item}."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_queued_first.015"
     },
     {
       "key": "trade_refresh.special_order_queued_second",
@@ -262,7 +278,8 @@
         "Second Special Order accepted. Give me {wait_days} {wait_day_word}.",
         "I have room for this, but we are approaching the limit.",
         "Two orders are now <pulse>active</pulse>. {trade_item} is one of them."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_queued_second.016"
     },
     {
       "key": "trade_refresh.special_order_queued_third",
@@ -277,7 +294,8 @@
         "{trade_item} is queued. The order book is officially at its limit.",
         "That fills the last open slot. I will need room before anything else.",
         "Third Special Order <pulse>accepted</pulse>. The queue is full now."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_queued_third.017"
     },
     {
       "key": "trade_refresh.special_order_unavailable",
@@ -292,7 +310,8 @@
         "I do not have the skill, stock, or supplier for that yet.",
         "Ask again another time. Today, that order is not possible.",
         "That Special Order is <shake>out of reach</shake> for now."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_unavailable.018"
     },
     {
       "key": "trade_refresh.special_order_pending",
@@ -307,7 +326,8 @@
         "I have not forgotten that one. It is already being prepared.",
         "One order per trade at a time. It keeps the mess manageable.",
         "That trade is already <pulse>pending</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_pending.019"
     },
     {
       "key": "trade_refresh.special_order_limit_reached",
@@ -322,7 +342,8 @@
         "You have filled every slot I can spare.",
         "Come back once one request is finished, and I can talk again.",
         "Your Special Order queue is <pulse>full</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_limit_reached.020"
     },
     {
       "key": "trade_refresh.request_limit_reached",
@@ -337,7 +358,8 @@
         "Finish one request, then bring me the next.",
         "Your active requests are already at my cap.",
         "The request list is <pulse>full</pulse> for now."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.request_limit_reached.021"
     },
     {
       "key": "trade_refresh.special_order_cooldown",
@@ -352,7 +374,8 @@
         "Come back after {cooldown_days} {cooldown_day_word}, and we can talk stock.",
         "That kind of order cannot be rushed twice in a row.",
         "The cooldown is still <pulse>{cooldown_days} {cooldown_day_word}</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_cooldown.022"
     },
     {
       "key": "trade_refresh.special_order_payment_missing",
@@ -367,7 +390,8 @@
         "That Special Order requires more than the usual trade.",
         "{extra_cost} is missing. Without it, I cannot accept the order.",
         "Pay {extra_cost}, and the order can <pulse>begin</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_payment_missing.023"
     },
     {
       "key": "trade_refresh.special_order_status_select",
@@ -382,7 +406,8 @@
         "Which order should I read back to you?",
         "I can give you the status. Just choose the request.",
         "The ledger is <pulse>open</pulse>. Which order are we checking?"
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_status_select.024"
     },
     {
       "key": "trade_refresh.special_order_status",
@@ -397,7 +422,8 @@
         "{trade_item} is still being prepared. Check back in {time_remaining}.",
         "The ledger says {trade_item} needs {time_remaining} more.",
         "{trade_item} is not ready yet, but it is <pulse>on track</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_status.025"
     },
     {
       "key": "trade_refresh.special_order_status_empty",
@@ -412,7 +438,8 @@
         "I cannot check what has not been ordered.",
         "Bring me a request first, then I can track it.",
         "The order ledger is <wavy>empty</wavy> under your name."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_status_empty.026"
     },
     {
       "key": "trade_refresh.requirements.not_ready",
@@ -427,7 +454,8 @@
         "That slot needs a valid option before I can touch it.",
         "I need more skill or better stock before that trade can change.",
         "Right now, that replacement is <shake>not ready</shake>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.not_ready.027"
     },
     {
       "key": "trade_refresh.requirements.unavailable",
@@ -442,7 +470,8 @@
         "I need a real offer on the counter before I can change it.",
         "This cannot be refreshed from where it stands.",
         "That trade is <pulse>unavailable</pulse> for changes."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.unavailable.028"
     },
     {
       "key": "trade_refresh.requirements.special_order_unavailable",
@@ -457,7 +486,8 @@
         "I need a sourceable order, not a wish on paper.",
         "That request does not match my current catalog.",
         "That Special Order is <shake>not possible</shake> for me yet."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_unavailable.029"
     },
     {
       "key": "trade_refresh.requirements.special_order_pending",
@@ -472,7 +502,8 @@
         "Let me clear the current line before adding another.",
         "That slot cannot hold two promises at once.",
         "The trade is already <pulse>pending</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_pending.030"
     },
     {
       "key": "trade_refresh.requirements.special_order_limit_reached",
@@ -487,7 +518,8 @@
         "The limit is not personal. It is how I keep orders from becoming mistakes.",
         "Too many active orders means worse work. I will not do that.",
         "Your Special Order slots are <pulse>full</pulse>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_limit_reached.031"
     },
     {
       "key": "trade_refresh.requirements.request_limit_reached",
@@ -502,7 +534,8 @@
         "Let me finish something before you add more to the pile.",
         "No open request slot, no new request.",
         "Your request list is <pulse>full</pulse> right now."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.request_limit_reached.032"
     },
     {
       "key": "trade_refresh.requirements.special_order_cooldown",
@@ -517,7 +550,8 @@
         "The cooldown is still standing between us and the next order.",
         "Specific stock needs breathing room between requests.",
         "Wait <pulse>{cooldown_days} {cooldown_day_word}</pulse>, then ask again."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_cooldown.033"
     },
     {
       "key": "trade_refresh.requirements.special_order_payment_missing",
@@ -532,7 +566,8 @@
         "I can do the work, but not without the extra cost.",
         "That order needs {extra_cost} before it can begin.",
         "{extra_cost} is the <pulse>missing</pulse> part."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_payment_missing.034"
     },
     {
       "key": "trade_refresh.requirements.special_order_status_empty",
@@ -547,7 +582,8 @@
         "I cannot give a status on empty space.",
         "No request is waiting under your name.",
         "Your Special Order ledger is <wavy>empty</wavy>."
-      ]
+      ],
+      "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_status_empty.035"
     }
   ]
 }

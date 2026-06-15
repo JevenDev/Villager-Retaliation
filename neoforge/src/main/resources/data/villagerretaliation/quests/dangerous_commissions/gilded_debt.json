@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "No. This ledger opens only for someone already trusted with sharp endings."
-    ]
+    ],
+    "start_key": "quest.dangerous_commissions.gilded_debt.dialogue.start",
+    "reminder_key": "quest.dangerous_commissions.gilded_debt.dialogue.reminder",
+    "turn_in_key": "quest.dangerous_commissions.gilded_debt.dialogue.turn_in",
+    "already_completed_key": "quest.dangerous_commissions.gilded_debt.dialogue.already_completed",
+    "unavailable_key": "quest.dangerous_commissions.gilded_debt.dialogue.unavailable",
+    "inactive_key": "quest.dangerous_commissions.gilded_debt.dialogue.inactive",
+    "missing_target_key": "quest.dangerous_commissions.gilded_debt.dialogue.missing_target",
+    "missing_proof_key": "quest.dangerous_commissions.gilded_debt.dialogue.missing_proof",
+    "locate_failed_key": "quest.dangerous_commissions.gilded_debt.dialogue.locate_failed"
   },
   "display": {
     "description": "Reach a Bastion Remnant and bring back Gilded Blackstone for a risky settlement.",
-    "title": "Gilded Debt"
+    "title": "Gilded Debt",
+    "title_key": "quest.dangerous_commissions.gilded_debt.title",
+    "description_key": "quest.dangerous_commissions.gilded_debt.description"
   },
   "id": "villagerretaliation:gilded_debt",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The settlement gold is ready.",
         "progress": 0.85,
         "show_progress": true,
-        "text": "Bring 1 gold block to settle the debt cleanly."
+        "text": "Bring 1 gold block to settle the debt cleanly.",
+        "text_key": "quest.dangerous_commissions.gilded_debt.objective.bring_gold_block.text",
+        "complete_text_key": "quest.dangerous_commissions.gilded_debt.objective.bring_gold_block.complete_text"
       },
       "type": "item_check"
     }
@@ -94,17 +107,20 @@
       "bring_gold_block": {
         "progress": 0.85,
         "show_progress": true,
-        "text": "Add 1 gold block to settle the old debt."
+        "text": "Add 1 gold block to settle the old debt.",
+        "text_key": "quest.dangerous_commissions.gilded_debt.tracker.bring_gold_block.text"
       },
       "proof": {
         "progress": 0.66,
         "show_progress": true,
-        "text": "Bring Gilded Blackstone and 1 gold block."
+        "text": "Bring Gilded Blackstone and 1 gold block.",
+        "text_key": "quest.dangerous_commissions.gilded_debt.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the gilded proof."
+        "text": "Return to the quest giver with the gilded proof.",
+        "text_key": "quest.dangerous_commissions.gilded_debt.tracker.return.text"
       },
       "travel": {
         "metadata": {
@@ -112,9 +128,11 @@
         },
         "progress": 0.25,
         "show_progress": true,
-        "text": "Find the Bastion Remnant near {target_x}, {target_z}."
+        "text": "Find the Bastion Remnant near {target_x}, {target_z}.",
+        "text_key": "quest.dangerous_commissions.gilded_debt.tracker.travel.text"
       }
     },
-    "title": "Gilded Debt"
+    "title": "Gilded Debt",
+    "title_key": "quest.dangerous_commissions.gilded_debt.tracker.title"
   }
 }

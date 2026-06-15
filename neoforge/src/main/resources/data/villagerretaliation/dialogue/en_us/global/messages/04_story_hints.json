@@ -22,7 +22,8 @@
         "Someone swore the grass, trees, or stone changes {vague_direction}. I would not ignore that.",
         "If you are looking for somewhere new, start {vague_direction}. The rumors point that way.",
         "There is a <wavy>rumor</wavy> of stranger land {vague_direction}. Rumors like that sometimes have feet."
-      ]
+      ],
+      "id": "global.messages.04_story_hints.messages.story_hint.biome.vague.000"
     },
     {
       "key": "story_hint.biome.named",
@@ -37,7 +38,8 @@
         "Someone came through saying {target_article} waits {vague_direction}.",
         "{target_article} has been mentioned more than once, always somewhere {vague_direction}.",
         "If you want a lead, follow the talk of {target_article} {vague_direction}."
-      ]
+      ],
+      "id": "global.messages.04_story_hints.messages.story_hint.biome.named.001"
     },
     {
       "key": "story_hint.biome.precise",
@@ -52,7 +54,8 @@
         "I would start looking for {target_article} around {distance} {direction}.",
         "The directions I heard were clear enough: {distance} {direction} for {target_article}.",
         "About {distance} {direction}, if the rumor has not wandered too far from the truth."
-      ]
+      ],
+      "id": "global.messages.04_story_hints.messages.story_hint.biome.precise.002"
     },
     {
       "key": "story_hint.structure.rumor",
@@ -67,7 +70,8 @@
         "The road gossip keeps pointing toward {target_article} {vague_direction}{vertical}.",
         "{target_article} may be out there {vague_direction}{vertical}, if the stories have bones under them.",
         "I would not call it certain, but {target_article} keeps coming up when people mention {vague_direction}{vertical}."
-      ]
+      ],
+      "id": "global.messages.04_story_hints.messages.story_hint.structure.rumor.003"
     },
     {
       "key": "story_hint.structure.precise",
@@ -82,7 +86,8 @@
         "The details I heard were {distance} {direction}{vertical}, give or take a little fear.",
         "{target_article} is said to be close to {distance} {direction}{vertical}.",
         "About {distance} {direction}{vertical}. That is where the story points."
-      ]
+      ],
+      "id": "global.messages.04_story_hints.messages.story_hint.structure.precise.004"
     },
     {
       "key": "story_hint.map",
@@ -97,7 +102,8 @@
         "The <color:gold>map</color> is yours. Use it to find {target_article}.",
         "I marked the route as best I could. Look for {target_article} around {distance} {direction}{vertical}.",
         "Here. Let the <color:gold>map</color> do some of the remembering for you."
-      ]
+      ],
+      "id": "global.messages.04_story_hints.messages.story_hint.map.005"
     },
     {
       "key": "story_hint_report.missing",
@@ -112,7 +118,8 @@
         "Find it first. Then I will believe the story has weight.",
         "Bring back what you saw, not just what you hoped was there.",
         "Go put the rumor under your boots, then come back."
-      ]
+      ],
+      "id": "global.messages.04_story_hints.messages.story_hint_report.missing.006"
     },
     {
       "key": "share_story.missing",
@@ -127,7 +134,8 @@
         "I cannot follow a story that has no shape yet.",
         "That one is slipping through my hands. Start again.",
         "I need a clearer story before I can answer."
-      ]
+      ],
+      "id": "global.messages.04_story_hints.messages.share_story.missing.007"
     },
     {
       "key": "story_hint_report.biome",
@@ -143,7 +151,8 @@
         "Good. Now when people speak of {target_article}, I can say someone actually reached it.",
         "You brought the rumor back with dirt on its boots. That is the best kind."
       ],
-      "weight": 46
+      "weight": 46,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.biome.008"
     },
     {
       "key": "story_hint_report.structure.village",
@@ -159,7 +168,8 @@
         "I will remember that road. Villages should know where other villages stand.",
         "You found people, not just a place. That makes the story <pulse>matter</pulse>."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.village.009"
     },
     {
       "key": "story_hint_report.structure.temple",
@@ -175,7 +185,8 @@
         "I respect old stone most when it is far away from me.",
         "You came back from {target_article}. That is the important part."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.temple.010"
     },
     {
       "key": "story_hint_report.structure.mansion",
@@ -191,7 +202,8 @@
         "Some roofs do not mean safety. That one sounds like proof.",
         "You found it and left it behind. That may be the wisest part of the story."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.mansion.011"
     },
     {
       "key": "story_hint_report.structure.monument",
@@ -207,7 +219,8 @@
         "I hope you had air enough and sense enough down there.",
         "A place like that makes the <wavy>ocean</wavy> feel less empty and more watchful."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.monument.012"
     },
     {
       "key": "story_hint_report.structure.mineshaft",
@@ -223,7 +236,8 @@
         "Some tunnels keep working long after the miners leave.",
         "You came back from {target_article}. Good. Not every tunnel gives people back."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.mineshaft.013"
     },
     {
       "key": "story_hint_report.structure.ancient_city",
@@ -239,7 +253,8 @@
         "{target_article} is real. Then quiet has a shape, and it is down there.",
         "Carry that name gently. Some places deserve <pulse>silence</pulse> more than songs."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.ancient_city.014"
     },
     {
       "key": "story_hint_report.structure.stronghold",
@@ -255,7 +270,8 @@
         "If the stone felt like it was watching you, I would not be surprised.",
         "You found a door under the world. Step carefully if you go back."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.stronghold.015"
     },
     {
       "key": "story_hint_report.structure.nether",
@@ -271,7 +287,8 @@
         "Some roads should be marked less for travel and more for warning.",
         "You returned from the smoke and heat. That alone is worth noting."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.nether.016"
     },
     {
       "key": "story_hint_report.structure.outpost",
@@ -287,7 +304,8 @@
         "Good. Knowing where danger waits is better than meeting it by surprise.",
         "I will remember that direction with <pulse>caution</pulse>."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.outpost.017"
     },
     {
       "key": "story_hint_report.structure.ruins",
@@ -303,7 +321,8 @@
         "You found what remains. Sometimes remains are enough to worry over.",
         "{target_article} is real, then. The past still has <wavy>edges</wavy>."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.ruins.018"
     },
     {
       "key": "story_hint_report.structure.trial_chambers",
@@ -319,7 +338,8 @@
         "You came back from {target_article}. That means the place tested you and did not keep you.",
         "If you go again, carry caution like a shield."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.trial_chambers.019"
     },
     {
       "key": "story_hint_report.structure.generic",
@@ -335,7 +355,8 @@
         "{target_article} is real. That makes the road to it matter.",
         "I will mark that story as <pulse>true enough</pulse> for now."
       ],
-      "weight": 108
+      "weight": 108,
+      "id": "global.messages.04_story_hints.messages.story_hint_report.structure.generic.020"
     },
     {
       "key": "story_hint_report.generic",
@@ -350,7 +371,8 @@
         "You confirmed it. I will speak of it with less doubt now.",
         "{target_article} is real, then. Good to know, and better to know from someone who returned.",
         "The rumor has weight now. I will <pulse>remember</pulse>."
-      ]
+      ],
+      "id": "global.messages.04_story_hints.messages.story_hint_report.generic.021"
     }
   ]
 }

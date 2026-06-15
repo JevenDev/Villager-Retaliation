@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The bottle request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_supply.bottle_stock.dialogue.start",
+    "reminder_key": "quest.village_supply.bottle_stock.dialogue.reminder",
+    "turn_in_key": "quest.village_supply.bottle_stock.dialogue.turn_in",
+    "already_completed_key": "quest.village_supply.bottle_stock.dialogue.already_completed",
+    "unavailable_key": "quest.village_supply.bottle_stock.dialogue.unavailable",
+    "inactive_key": "quest.village_supply.bottle_stock.dialogue.inactive",
+    "missing_target_key": "quest.village_supply.bottle_stock.dialogue.missing_target",
+    "missing_proof_key": "quest.village_supply.bottle_stock.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_supply.bottle_stock.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring glass bottles for tonics, inks, and careful measuring.",
-    "title": "Bottle Stock"
+    "title": "Bottle Stock",
+    "title_key": "quest.village_supply.bottle_stock.title",
+    "description_key": "quest.village_supply.bottle_stock.description"
   },
   "id": "villagerretaliation:bottle_stock",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The bottle shelf is stocked and ready.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 12 glass bottles for the shelf."
+        "text": "Bring 12 glass bottles for the shelf.",
+        "text_key": "quest.village_supply.bottle_stock.objective.bring_bottles.text",
+        "complete_text_key": "quest.village_supply.bottle_stock.objective.bring_bottles.complete_text"
       },
       "type": "item_check"
     }
@@ -88,14 +101,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 12 glass bottles for the shelf."
+        "text": "Bring 12 glass bottles for the shelf.",
+        "text_key": "quest.village_supply.bottle_stock.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the glass bottles."
+        "text": "Return to the quest giver with the glass bottles.",
+        "text_key": "quest.village_supply.bottle_stock.tracker.return.text"
       }
     },
-    "title": "Bottle Stock"
+    "title": "Bottle Stock",
+    "title_key": "quest.village_supply.bottle_stock.tracker.title"
   }
 }

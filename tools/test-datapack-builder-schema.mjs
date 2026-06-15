@@ -305,6 +305,8 @@ function testSurfaceImportsAndEdits(app) {
   app.state = app.createInitialState();
   const imports = [
     ["data/examplepack/forced_dialogue/theft.json", { entries: [{ trigger: "theft", line: "Stop." }] }],
+    ["data/villagerretaliation/quests/example/errand.json", { id: "villagerretaliation:errand", replace: true }],
+    ["data/villagerretaliation/dialogue_trees/en_us/quests/example/errand.json", { id: "villagerretaliation:errand", remove: true }],
     ["data/villagerretaliation/notifications/en_us/events.json", { notifications: [{ trigger: "quest.expired", text: "Expired.", kind: "quest" }] }],
     ["data/villagerretaliation/gifts/custom.json", { preferences: [{ reaction: "liked", item: "minecraft:bread" }], rewards: [{ item: "minecraft:emerald" }] }],
     ["data/villagerretaliation/pacification/payments.json", { payments: [{ item: "minecraft:emerald", count: 4 }] }],
@@ -318,11 +320,14 @@ function testSurfaceImportsAndEdits(app) {
   }
 
   assert(app.state.forcedDialogue.entries.length === 1, "Forced dialogue import missed entries.");
+  assert(Object.hasOwn(app.state.extraFiles, "data/villagerretaliation/quests/example/errand.json"), "Quest import was not preserved.");
+  assert(Object.hasOwn(app.state.extraFiles, "data/villagerretaliation/dialogue_trees/en_us/quests/example/errand.json"), "Dialogue tree import was not preserved.");
   assert(app.state.notifications.notifications[0].trigger === "quest.expired", "Notification import missed quest trigger.");
   assert(app.state.gifts.preferences[0].item === "minecraft:bread", "Gift import missed preference.");
   assert(app.state.pacification.payments[0].count === 4, "Pacification import missed payment.");
   assert(app.state.stories.namespace === "storypack", "Story import did not update namespace.");
   assert(app.state.names.male_names.includes("Rowan"), "Name import missed legacy names field.");
+  assert(Object.hasOwn(app.generatedFiles(), "data/villagerretaliation/quests/example/errand.json"), "Quest passthrough was not exported.");
 
   assert(app.applyEditedFile("data/villagerretaliation/notifications/en_us/events.json", JSON.stringify({
     notifications: [{ trigger: "gift_given", text: "Thanks.", kind: "hud" }]
@@ -343,6 +348,11 @@ function testBackendPathNormalization(app) {
     "villagerretaliation/gifts/gifts.json": "{\"preferences\":[]}"
   });
   assert(Object.hasOwn(namespaceRoot, "data/villagerretaliation/gifts/gifts.json"), "Namespace-root import was not lifted under data/.");
+
+  const questNamespaceRoot = app.backend.normalizeImportedPaths({
+    "villagerretaliation/quests/example/errand.json": "{\"replace\":true}"
+  });
+  assert(Object.hasOwn(questNamespaceRoot, "data/villagerretaliation/quests/example/errand.json"), "Namespace-root quest import was not lifted under data/.");
 }
 
 const app = createAppHarness();

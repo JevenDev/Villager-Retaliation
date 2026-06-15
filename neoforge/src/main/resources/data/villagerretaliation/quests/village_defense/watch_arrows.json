@@ -26,11 +26,22 @@
     ],
     "unavailable": [
       "The arrow request is closed for now."
-    ]
+    ],
+    "start_key": "quest.village_defense.watch_arrows.dialogue.start",
+    "reminder_key": "quest.village_defense.watch_arrows.dialogue.reminder",
+    "turn_in_key": "quest.village_defense.watch_arrows.dialogue.turn_in",
+    "already_completed_key": "quest.village_defense.watch_arrows.dialogue.already_completed",
+    "unavailable_key": "quest.village_defense.watch_arrows.dialogue.unavailable",
+    "inactive_key": "quest.village_defense.watch_arrows.dialogue.inactive",
+    "missing_target_key": "quest.village_defense.watch_arrows.dialogue.missing_target",
+    "missing_proof_key": "quest.village_defense.watch_arrows.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_defense.watch_arrows.dialogue.locate_failed"
   },
   "display": {
     "description": "Bring arrows so the village watch can answer trouble before it reaches the doors.",
-    "title": "Watch Arrows"
+    "title": "Watch Arrows",
+    "title_key": "quest.village_defense.watch_arrows.title",
+    "description_key": "quest.village_defense.watch_arrows.description"
   },
   "id": "villagerretaliation:watch_arrows",
   "objectives": [
@@ -42,7 +53,9 @@
         "complete_text": "The watch arrows are bundled.",
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 16 arrows for the village watch."
+        "text": "Bring 16 arrows for the village watch.",
+        "text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.text",
+        "complete_text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.complete_text"
       },
       "type": "item_check"
     }
@@ -87,14 +100,17 @@
       "proof": {
         "progress": 0.7,
         "show_progress": true,
-        "text": "Bring 16 arrows for the village watch."
+        "text": "Bring 16 arrows for the village watch.",
+        "text_key": "quest.village_defense.watch_arrows.tracker.proof.text"
       },
       "return": {
         "progress": 1,
         "show_progress": true,
-        "text": "Return to the quest giver with the arrow."
+        "text": "Return to the quest giver with the arrow.",
+        "text_key": "quest.village_defense.watch_arrows.tracker.return.text"
       }
     },
-    "title": "Watch Arrows"
+    "title": "Watch Arrows",
+    "title_key": "quest.village_defense.watch_arrows.tracker.title"
   }
 }
