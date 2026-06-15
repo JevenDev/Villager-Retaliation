@@ -145,6 +145,14 @@ public final class ForcedDialogueService {
     private ForcedDialogueService() {
     }
 
+    public static void clearRuntimeState() {
+        RECENT_CONTAINER_CLICKS.clear();
+        OPEN_CONTAINER_SNAPSHOTS.clear();
+        FORCED_SESSIONS.clear();
+        NEXT_SHARED_PARTICIPANT_SCAN_TICKS.clear();
+        NEXT_PLAYER_ITEM_PROXIMITY_TICK.clear();
+    }
+
     public static void rememberPotentialContainerOpen(PlayerInteractEvent.RightClickBlock event) {
         if (!(event.getEntity() instanceof ServerPlayer player)
                 || !(event.getLevel() instanceof ServerLevel level)

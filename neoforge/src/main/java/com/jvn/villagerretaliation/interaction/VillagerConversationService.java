@@ -23,6 +23,11 @@ public final class VillagerConversationService {
     private VillagerConversationService() {
     }
 
+    public static void clearRuntimeState() {
+        SESSIONS_BY_PLAYER.clear();
+        PLAYER_BY_VILLAGER.clear();
+    }
+
     public static boolean start(ServerPlayer player, Villager villager) {
         return start(player, villager, false);
     }

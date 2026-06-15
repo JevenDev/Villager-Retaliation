@@ -27,6 +27,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 
 public final class VillagerInteractionClientHandler {
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
@@ -165,6 +166,12 @@ public final class VillagerInteractionClientHandler {
         }
         ClientVillagerConversationState.forgetSpeakerLabel(payload.entityId());
         resetVillagerChatGroup(payload.entityId());
+    }
+
+    public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        VillagerInteractionChatVisibility.restoreHiddenVillagerMessages(Minecraft.getInstance());
+        ClientVillagerConversationState.clear();
+        resetVillagerChatGroup();
     }
 
     private static VillagerInteractionSessionScreen activeInteractionScreen(Screen screen, int villagerEntityId) {

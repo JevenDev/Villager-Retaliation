@@ -67,10 +67,81 @@ public record DialogueOptionDefinition(
     private static final String LEFT_BEHIND_SCENARIO = "left_behind";
 
     public DialogueOptionDefinition {
+        id = id == null ? "" : id;
         metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
         questAction = questAction == null ? DialogueQuestAction.EMPTY : questAction;
         treeReference = treeReference == null ? DialogueTreeReference.EMPTY : treeReference;
+        label = label == null ? "" : label;
+        requestType = requestType == null ? DialogueRequestType.QUESTION : requestType;
+        professions = professions == null ? Set.of() : Set.copyOf(professions);
+        dispositions = dispositions == null ? Set.of() : Set.copyOf(dispositions);
+        equipmentCondition = equipmentCondition == null ? VillagerEquipmentCondition.empty() : equipmentCondition;
+        playerItemCondition = playerItemCondition == null ? VillagerPlayerItemCondition.empty() : playerItemCondition;
+        reputationCondition = reputationCondition == null ? VillagerReputationCondition.empty() : reputationCondition;
+        itemPayment = itemPayment == null ? DialogueItemPayment.empty() : itemPayment;
         conditions = conditions == null ? List.of() : List.copyOf(conditions);
+    }
+
+    public static DialogueOptionDefinition transmitted(
+            String id,
+            String label,
+            DialogueRequestType requestType,
+            boolean forceCameraTowardsVillager,
+            int order) {
+        return new DialogueOptionDefinition(
+                id,
+                null,
+                DialogueEntryMetadata.EMPTY,
+                DialogueQuestAction.EMPTY,
+                DialogueTreeReference.EMPTY,
+                label,
+                requestType,
+                true,
+                true,
+                Set.of(),
+                Set.of(),
+                VillagerEquipmentCondition.empty(),
+                VillagerPlayerItemCondition.empty(),
+                VillagerReputationCondition.empty(),
+                DialogueItemPayment.empty(),
+                forceCameraTowardsVillager,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                List.of(),
+                false,
+                order
+        );
     }
 
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {

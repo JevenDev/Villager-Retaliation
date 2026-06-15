@@ -24,6 +24,10 @@ public final class DialogueTreeService {
     private DialogueTreeService() {
     }
 
+    public static void clearRuntimeState() {
+        SESSIONS.clear();
+    }
+
     public static String entryOptionId(ResourceLocation treeId, String entryId) {
         return ENTRY_OPTION_PREFIX + treeId + ":" + entryId;
     }
@@ -248,10 +252,6 @@ public final class DialogueTreeService {
     }
 
     private record ActionText(String lineId, String text, Map<String, String> replacements) {
-        private static ActionText empty() {
-            return new ActionText("", "", Map.of());
-        }
-
         private ActionText {
             lineId = lineId == null ? "" : lineId;
             text = text == null ? "" : text;

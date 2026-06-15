@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
+import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
@@ -115,11 +116,14 @@ public final class VillagerRetaliationEvents {
         VillagerGossipHooks.clear();
         VillagerReputationManager.clearSyncState();
         VillagerCombatSurvivalService.clearRuntimeState();
+        VillagerConversationService.clearRuntimeState();
         VillagerRecruitmentService.clearRuntimeState();
         HiredVillagerWorkService.clearRuntimeState();
         HiredOreBlockTracker.clearRuntimeState();
         VillagerTradeMemory.clearRuntimeState();
         VillagerSocialGraphService.clearRuntimeState();
+        ForcedDialogueService.clearRuntimeState();
+        DialogueTreeService.clearRuntimeState();
         HiredDebugPreviewService.clearRuntimeState();
     }
 

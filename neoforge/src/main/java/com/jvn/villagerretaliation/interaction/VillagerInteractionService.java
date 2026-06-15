@@ -60,7 +60,6 @@ import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -331,7 +330,10 @@ public final class VillagerInteractionService {
             return false;
         }
         Entity entity = player.serverLevel().getEntity(entityId);
-        if (!(entity instanceof Villager villager) || !canUseForcedInteractionSystem(player, villager)) {
+        if (!(entity instanceof Villager villager)
+                || !VillagerConversationService.isForced(player, villager)
+                || !canUseForcedInteractionSystem(player, villager)
+                || !VillagerConversationService.validate(player, villager)) {
             VillagerConversationService.endForPlayer(player, true);
             return true;
         }
@@ -799,26 +801,6 @@ public final class VillagerInteractionService {
         return Optional.empty();
     }
 
-    private static Optional<HiredVillagerTarget> findBuilderJobByJobId(ServerPlayer player, UUID jobId) {
-        if (jobId == null) {
-            return Optional.empty();
-        }
-        for (ServerLevel level : player.server.getAllLevels()) {
-            for (Entity entity : level.getAllEntities()) {
-                if (!(entity instanceof Villager villager)
-                        || !villager.isAlive()
-                        || !HiredVillagerContractService.isHiredBy(level, villager, player)) {
-                    continue;
-                }
-                CompoundTag state = HiredVillagerWorkService.state(villager);
-                if (BuilderTaskState.jobId(state).filter(jobId::equals).isPresent()) {
-                    return Optional.of(new HiredVillagerTarget(level, villager));
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
     private static boolean handleHireDurationRequest(
             ServerPlayer player,
             ServerLevel level,
@@ -1052,21 +1034,6 @@ public final class VillagerInteractionService {
                         "materials", plan.get().materialSummary(5),
                         "missing", missing.summary(),
                         "site", HiredWorkerBrain.formatPos(initialSite)));
-    }
-
-    private static String builderPreviewBlockReason(
-            ServerPlayer player,
-            ServerLevel level,
-            Villager villager,
-            BuilderSitePlanner.SiteResult site) {
-        List<String> reasons = new ArrayList<>();
-        if (!site.valid()) {
-            String siteReason = VillagerDialogueResources
-                    .message(createDialogueContext(level, player, villager), site.statusKey(), site.replacements())
-                    .orElse(site.statusKey());
-            reasons.add(siteReason);
-        }
-        return reasons.isEmpty() ? "not ready yet" : String.join("; ", reasons);
     }
 
     private static void confirmBuilderOrder(

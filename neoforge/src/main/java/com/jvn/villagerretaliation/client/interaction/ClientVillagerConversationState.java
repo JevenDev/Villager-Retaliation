@@ -89,6 +89,7 @@ public final class ClientVillagerConversationState {
     }
 
     public static void clear() {
+        SPEAKER_LABELS.clear();
         focusedVillagerEntityId = -1;
         forceCameraTowardsVillager = false;
         if (cameraFocusTicks > 0) {

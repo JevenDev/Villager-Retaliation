@@ -1273,10 +1273,6 @@ public final class BrewingWorker extends AbstractBlockWorker {
                     && this.currentStep >= route.ingredients().size();
         }
 
-        private int outputCount(CompoundTag state) {
-            return Math.max(1, Math.min(this.targetBottleCount, collectLimit(state)));
-        }
-
         private int collectLimit(CompoundTag state) {
             if (state.getBoolean(CONTINUOUS_TAG)) {
                 return BOTTLE_SLOT_COUNT;
