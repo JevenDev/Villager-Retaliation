@@ -2,6 +2,7 @@
   "entries": [
     {
       "id": "example_template.forced.container_theft",
+      "message_prefix": "forced.example_template.container_theft",
       "trigger": "container_theft",
       "output": {
         "mode": "forced_dialogue"

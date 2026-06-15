@@ -80,7 +80,7 @@ At the top of a dialogue-tree file:
 { "replace": true }
 ```
 
-clears all dialogue trees loaded so far. Use this for total conversation overhauls.
+puts the dialogue-tree loader in replacement mode. VR skips built-in tree resources, then loads add-on tree files normally. In non-default locales, replacement mode also clears inherited fallback trees before applying that locale's add-on trees. Use this for total conversation overhauls.
 
 ```json
 {

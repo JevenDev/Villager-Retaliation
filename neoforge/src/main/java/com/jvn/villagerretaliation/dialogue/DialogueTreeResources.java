@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -22,7 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class DialogueTreeResources {
@@ -104,45 +104,69 @@ public final class DialogueTreeResources {
             Map<ResourceLocation, DialogueTreeDefinition> trees,
             Map<ResourceLocation, ResourceLocation> sources) {
         String root = RESOURCE_ROOT + locale;
-        DatapackResourceLoader.forEachJsonResource(
-                server,
-                root,
-                (location, resource) -> readFile(location, resource, locale, trees, sources));
+        List<LoadedTreeResource> resources = DatapackResourceLoader.jsonResources(server, root).stream()
+                .map(resource -> DatapackResourceLoader.readObject(resource.location(), "dialogue tree", resource.resource())
+                        .map(json -> new LoadedTreeResource(resource, json)))
+                .flatMap(Optional::stream)
+                .toList();
+        boolean replacementMode = resources.stream()
+                .anyMatch(resource -> DatapackJsonReader.readBoolean(resource.root(), "replace"));
+        if (replacementMode) {
+            trees.clear();
+            sources.clear();
+        }
+        for (LoadedTreeResource resource : resources) {
+            if (replacementMode
+                    && isBuiltInModResource(resource.resource())
+                    && !DatapackJsonReader.readBoolean(resource.root(), "replace")) {
+                continue;
+            }
+            readFile(resource.resource().location(), resource.root(), locale, trees, sources, replacementMode);
+        }
     }
 
     private static void readFile(
             ResourceLocation location,
-            Resource resource,
+            JsonObject root,
             String locale,
             Map<ResourceLocation, DialogueTreeDefinition> trees,
-            Map<ResourceLocation, ResourceLocation> sources) {
-        DatapackResourceLoader.readObject(location, "dialogue tree", resource).ifPresent(root -> {
-            ResourceLocation fallbackId = fallbackTreeId(location, locale);
-            if (DatapackJsonReader.readBoolean(root, "replace")) {
+            Map<ResourceLocation, ResourceLocation> sources,
+            boolean replacementMode) {
+        ResourceLocation fallbackId = fallbackTreeId(location, locale);
+        if (DatapackJsonReader.readBoolean(root, "replace")) {
+            if (!replacementMode) {
                 trees.clear();
                 sources.clear();
-                if (isControlOnly(root, "replace", "metadata")) {
-                    return;
-                }
             }
-            if (DatapackJsonReader.readBoolean(root, "remove")) {
-                ResourceLocation removeId = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
-                if (removeId != null) {
-                    trees.remove(removeId);
-                    sources.remove(removeId);
-                }
+            if (isControlOnly(root, "replace", "metadata")) {
                 return;
             }
-            DialogueTreeDefinition definition = readTree(location, root, fallbackId);
-            if (definition == null) {
-                return;
+        }
+        if (DatapackJsonReader.readBoolean(root, "remove")) {
+            ResourceLocation removeId = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
+            if (removeId != null) {
+                trees.remove(removeId);
+                sources.remove(removeId);
             }
-            ResourceLocation previous = sources.put(definition.id(), location);
-            if (previous != null) {
-                DatapackDiagnostics.warnDuplicateId(location, "dialogue tree", definition.id().toString(), previous);
-            }
-            trees.put(definition.id(), definition);
-        });
+            return;
+        }
+        DialogueTreeDefinition definition = readTree(location, root, fallbackId);
+        if (definition == null) {
+            return;
+        }
+        ResourceLocation previous = sources.put(definition.id(), location);
+        if (previous != null) {
+            DatapackDiagnostics.warnDuplicateId(location, "dialogue tree", definition.id().toString(), previous);
+        }
+        trees.put(definition.id(), definition);
+    }
+
+    private static boolean isBuiltInModResource(DatapackResourceLoader.JsonResource resource) {
+        return VillagerRetaliation.MOD_ID.equals(resource.location().getNamespace())
+                && resource.isFromPack(VillagerRetaliation.MOD_ID);
+    }
+
+    private record LoadedTreeResource(DatapackResourceLoader.JsonResource resource, JsonObject root) {
     }
 
     private static boolean isControlOnly(JsonObject root, String... allowedKeys) {

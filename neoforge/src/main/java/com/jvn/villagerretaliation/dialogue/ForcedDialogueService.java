@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialog
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueOutputMode;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueStolenItemReturn;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueTrigger;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.LocalizedText;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.GeneratedContainerTooltipPayload;
@@ -117,7 +118,7 @@ public final class ForcedDialogueService {
             new ForcedDialogueOutput(ForcedDialogueOutputMode.FORCED_DIALOGUE, 0.0D);
     private static final ForcedDialogueOption SIMPLE_LEAVE_OPTION = new ForcedDialogueOption(
             LEAVE_OPTION_ID,
-            "Leave",
+            LocalizedText.inline("Leave"),
             List.of(),
             0,
             false,
@@ -345,7 +346,7 @@ public final class ForcedDialogueService {
                 null,
                 ForcedDialogueTrigger.QUEST,
                 SIMPLE_FORCED_OUTPUT,
-                List.of(line),
+                List.of(LocalizedText.inline(line)),
                 true,
                 false,
                 true,
@@ -862,12 +863,12 @@ public final class ForcedDialogueService {
                 && tryAdvanceDynamicForcedDialogueGroup(player, villager, session)) {
             return true;
         }
-        String responseText = option.selectResponse(player.serverLevel().getRandom());
-        String stolenItemReturnResponse = stolenItemReturn.selectSuccessResponse(player.serverLevel().getRandom());
+        LocalizedText responseText = option.selectResponse(player.serverLevel().getRandom());
+        LocalizedText stolenItemReturnResponse = stolenItemReturn.selectSuccessResponse(player.serverLevel().getRandom());
         if (returnedStolenItems && !stolenItemReturnResponse.isBlank()) {
             responseText = stolenItemReturnResponse;
         }
-        String itemPaymentResponse = itemPayment.selectSuccessResponse(player.serverLevel().getRandom());
+        LocalizedText itemPaymentResponse = itemPayment.selectSuccessResponse(player.serverLevel().getRandom());
         if (!itemPayment.isEmpty() && !itemPaymentResponse.isBlank()) {
             responseText = itemPaymentResponse;
         }
@@ -935,7 +936,7 @@ public final class ForcedDialogueService {
         return !option.itemPayment().isEmpty()
                 && !isRestitutionPaymentOption(option)
                 && (option.id().toLowerCase(Locale.ROOT).contains("restitution")
-                || option.label().toLowerCase(Locale.ROOT).contains("restitution"));
+                || option.label().text().toLowerCase(Locale.ROOT).contains("restitution"));
     }
 
     private static boolean isRestitutionPaymentOption(ForcedDialogueOption option) {
@@ -1087,7 +1088,7 @@ public final class ForcedDialogueService {
     private static ForcedDialogueOption dynamicOption(
             String id,
             String label,
-            List<String> responses,
+            List<LocalizedText> responses,
             int reputationDelta,
             boolean aggro,
             double aggroChance,
@@ -1098,7 +1099,7 @@ public final class ForcedDialogueService {
             VillagerReputationCondition reputationCondition) {
         return new ForcedDialogueOption(
                 id,
-                label,
+                LocalizedText.inline(label),
                 responses,
                 reputationDelta,
                 aggro,
@@ -1113,12 +1114,12 @@ public final class ForcedDialogueService {
                 ForcedDialogueFollowUp.empty());
     }
 
-    private static List<String> forcedMessageList(
+    private static List<LocalizedText> forcedMessageList(
             ServerPlayer player,
             Villager villager,
             String key,
             Map<String, String> replacements) {
-        return List.of(forcedMessage(player, villager, key, replacements));
+        return List.of(LocalizedText.inline(forcedMessage(player, villager, key, replacements)));
     }
 
     private static String forcedMessage(
@@ -1251,7 +1252,7 @@ public final class ForcedDialogueService {
                 source.source(),
                 source.trigger(),
                 source.output(),
-                line.isBlank() ? List.of() : List.of(line),
+                line.isBlank() ? List.of() : List.of(LocalizedText.inline(line)),
                 true,
                 false,
                 source.forceCameraTowardsVillager(),
@@ -1356,7 +1357,7 @@ public final class ForcedDialogueService {
                 optionDefinition.source(),
                 optionDefinition.trigger(),
                 optionDefinition.output(),
-                line.isBlank() ? List.of() : List.of(line),
+                line.isBlank() ? List.of() : List.of(LocalizedText.inline(line)),
                 optionDefinition.initiateDialogue(),
                 optionDefinition.aggroImmediately(),
                 optionDefinition.forceCameraTowardsVillager(),
@@ -1425,7 +1426,9 @@ public final class ForcedDialogueService {
                 .map(option -> withRequirementResponse(option, response))
                 .toList();
         return tradeRefreshDefinition(
-                optionDefinition.selectLine(level.getRandom()),
+                ForcedDialogueResources.resolveTemplate(
+                        optionDefinition.selectLine(level.getRandom()),
+                        tradeRefreshContext(level, villager, player, replacements)),
                 optionDefinition,
                 options,
                 optionDefinition.leaveOption(),
@@ -1439,7 +1442,7 @@ public final class ForcedDialogueService {
         return new ForcedDialogueOption(
                 option.id(),
                 option.label(),
-                List.of(response),
+                List.of(LocalizedText.inline(response)),
                 option.reputationDelta(),
                 option.aggro(),
                 option.aggroChance(),
@@ -1620,7 +1623,7 @@ public final class ForcedDialogueService {
     private static ForcedDialogueOption dynamicTradeRefreshOption(String id, String label, int order) {
         return new ForcedDialogueOption(
                 id,
-                label,
+                LocalizedText.inline(label),
                 List.of(),
                 0,
                 false,
@@ -2449,7 +2452,7 @@ public final class ForcedDialogueService {
                 source.source(),
                 source.trigger(),
                 source.output(),
-                line.isBlank() ? List.of() : List.of(line),
+                line.isBlank() ? List.of() : List.of(LocalizedText.inline(line)),
                 true,
                 false,
                 source.forceCameraTowardsVillager(),
@@ -3180,7 +3183,7 @@ public final class ForcedDialogueService {
     private static List<ForcedDialogueOption> containerVouchAllowOptions() {
         return List.of(new ForcedDialogueOption(
                 CONTAINER_OPENED_VOUCH_ACCEPT_OPTION_ID,
-                "I'll be careful",
+                LocalizedText.inline("I'll be careful"),
                 List.of(),
                 0,
                 false,

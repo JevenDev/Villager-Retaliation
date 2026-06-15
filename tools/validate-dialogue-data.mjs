@@ -732,6 +732,8 @@ function checkQuest(file, data) {
 
   checkOptionalBoolean(file, data, "root", "replace");
   checkOptionalBoolean(file, data, "root", "remove");
+  checkOptionalString(file, data, "root", "message_prefix");
+  checkOptionalString(file, data, "root", "text_prefix");
   checkDialogueMetadata(file, data, "root");
   if (data.remove === true || (data.replace === true && isControlOnly(data, ["replace", "metadata"]))) {
     return;
@@ -1408,6 +1410,8 @@ function checkForcedDialogueEntryText(file, entry, location) {
     return;
   }
   checkOptionalBoolean(file, entry, location, "remove");
+  checkOptionalString(file, entry, location, "message_prefix");
+  checkOptionalString(file, entry, location, "text_prefix");
   checkStringList(file, entry, location, ["line", "lines"], "forced dialogue line");
   checkStringList(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");
 }
@@ -1425,6 +1429,8 @@ function checkForcedDialogueOption(file, option, location, defaultQuestId = "") 
   if (!option || typeof option !== "object" || Array.isArray(option)) {
     return;
   }
+  checkOptionalString(file, option, location, "message_prefix");
+  checkOptionalString(file, option, location, "text_prefix");
   checkOptionalString(file, option, location, "label_key");
   checkStringList(file, option, location, ["response", "responses"], "forced dialogue response");
   checkStringList(file, option, location, ["response_key", "response_keys"], "forced dialogue response key");

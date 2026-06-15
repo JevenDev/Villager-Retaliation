@@ -182,7 +182,7 @@ At the top of any quest file:
 { "replace": true }
 ```
 
-clears all quests loaded so far for that reload pass. Use it in the first quest file of a total overhaul pack, then define only your own quests.
+puts the quest loader in replacement mode. VR skips built-in quest resources, then loads add-on quest files normally. A control-only replace file is valid; it disables the built-ins without registering a placeholder quest. Put your replacement quests in the same file or any other quest file in your datapack.
 
 ```json
 {

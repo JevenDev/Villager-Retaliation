@@ -6731,6 +6731,7 @@ function renderForcedDialogue() {
         <form class="entry-form" data-form="forcedDialogue">
           <div class="form-grid">
             ${field({ id: "forced-id", label: "Entry id", value: entry.id })}
+            ${field({ id: "forced-message_prefix", label: "Message prefix", value: entry.message_prefix ?? entry.text_prefix ?? "", help: "Optional. Generates .line and option label/response message keys from this prefix." })}
             ${selectField({ id: "forced-trigger", label: "Trigger", value: forcedTriggerValue(entry), options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
             ${selectField({ id: "forced-output_mode", label: "Output mode", value: outputMode, options: CONSTANTS.forcedOutputModes, allowBlank: false })}
             ${field({ id: "forced-output_radius", label: "Output radius", value: outputRadius, type: "number", attrs: 'min="1" step="1"', className: chatOnlyClass })}
@@ -7314,6 +7315,7 @@ function readForcedDialogueEntry(options = {}) {
   }
   const entry = {
     id: readValue("forced-id").trim(),
+    message_prefix: readValue("forced-message_prefix").trim(),
     trigger: readValue("forced-trigger"),
     priority: parseInteger(readValue("forced-priority")),
     chance: parseNumber(readValue("forced-chance")),
@@ -7700,6 +7702,7 @@ function addForcedDialogueExample() {
   const slug = state.meta.slug || "my_pack";
   state.forcedDialogue.entries.push({
     id: `${slug}.container_theft.warning`,
+    message_prefix: `forced.${slug}.container_theft.warning`,
     trigger: "container_theft",
     output: {
       mode: "forced_dialogue"
@@ -8088,6 +8091,7 @@ function dialogueFolderTemplateFiles() {
     entries: [
       {
         id: "example_template.forced.container_theft",
+        message_prefix: "forced.example_template.container_theft",
         trigger: "container_theft",
         output: { mode: "forced_dialogue" },
         line: "example",
@@ -8110,6 +8114,7 @@ function dialogueFolderTemplateFiles() {
     entries: [
       {
         id: "example_template.forced.retaliation_chat",
+        message_prefix: "forced.example_template.retaliation_chat",
         trigger: "retaliation_started",
         output: {
           mode: "chat",
@@ -8275,6 +8280,7 @@ function loadStarterPack() {
   });
   state.forcedDialogue.entries.push({
     id: "village_rumors.container_theft.warning",
+    message_prefix: "forced.village_rumors.container_theft.warning",
     trigger: "container_theft",
     output: {
       mode: "forced_dialogue"
@@ -8317,6 +8323,7 @@ function loadStarterPack() {
     ]
   }, {
     id: "village_rumors.retaliation_started.callout",
+    message_prefix: "forced.village_rumors.retaliation_started.callout",
     trigger: "retaliation_started",
     output: {
       mode: "chat",

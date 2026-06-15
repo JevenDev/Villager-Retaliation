@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
@@ -34,7 +35,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.level.Level;
 
@@ -88,45 +88,65 @@ public final class VillagerQuestResources {
     private static Map<ResourceLocation, QuestDefinition> read(MinecraftServer server) {
         Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
-        DatapackResourceLoader.forEachJsonResource(
-                server,
-                RESOURCE_ROOT,
-                (location, resource) -> readFile(location, resource, quests, sources));
+        List<LoadedQuestResource> resources = DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT).stream()
+                .map(resource -> DatapackResourceLoader.readObject(resource.location(), "quest", resource.resource())
+                        .map(root -> new LoadedQuestResource(resource, root)))
+                .flatMap(Optional::stream)
+                .toList();
+        boolean replacementMode = resources.stream()
+                .anyMatch(resource -> DatapackJsonReader.readBoolean(resource.root(), "replace"));
+        for (LoadedQuestResource resource : resources) {
+            if (replacementMode
+                    && isBuiltInModResource(resource.resource())
+                    && !DatapackJsonReader.readBoolean(resource.root(), "replace")) {
+                continue;
+            }
+            readFile(resource.resource().location(), resource.root(), quests, sources, replacementMode);
+        }
         return Map.copyOf(quests);
     }
 
     private static void readFile(
             ResourceLocation location,
-            Resource resource,
+            JsonObject root,
             Map<ResourceLocation, QuestDefinition> quests,
-            Map<ResourceLocation, ResourceLocation> sources) {
-        DatapackResourceLoader.readObject(location, "quest", resource).ifPresent(root -> {
-            ResourceLocation fallbackId = fallbackQuestId(location);
-            if (DatapackJsonReader.readBoolean(root, "replace")) {
+            Map<ResourceLocation, ResourceLocation> sources,
+            boolean replacementMode) {
+        ResourceLocation fallbackId = fallbackQuestId(location);
+        if (DatapackJsonReader.readBoolean(root, "replace")) {
+            if (!replacementMode) {
                 quests.clear();
                 sources.clear();
-                if (isControlOnly(root, "replace", "metadata")) {
-                    return;
-                }
             }
-            if (DatapackJsonReader.readBoolean(root, "remove")) {
-                ResourceLocation removeId = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
-                if (removeId != null) {
-                    quests.remove(removeId);
-                    sources.remove(removeId);
-                }
+            if (isControlOnly(root, "replace", "metadata")) {
                 return;
             }
-            QuestDefinition definition = readQuest(location, root, fallbackId);
-            if (definition == null) {
-                return;
+        }
+        if (DatapackJsonReader.readBoolean(root, "remove")) {
+            ResourceLocation removeId = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
+            if (removeId != null) {
+                quests.remove(removeId);
+                sources.remove(removeId);
             }
-            ResourceLocation previous = sources.put(definition.id(), location);
-            if (previous != null) {
-                DatapackDiagnostics.warnDuplicateId(location, "quest", definition.id().toString(), previous);
-            }
-            quests.put(definition.id(), definition);
-        });
+            return;
+        }
+        QuestDefinition definition = readQuest(location, root, fallbackId);
+        if (definition == null) {
+            return;
+        }
+        ResourceLocation previous = sources.put(definition.id(), location);
+        if (previous != null) {
+            DatapackDiagnostics.warnDuplicateId(location, "quest", definition.id().toString(), previous);
+        }
+        quests.put(definition.id(), definition);
+    }
+
+    private static boolean isBuiltInModResource(DatapackResourceLoader.JsonResource resource) {
+        return VillagerRetaliation.MOD_ID.equals(resource.location().getNamespace())
+                && resource.isFromPack(VillagerRetaliation.MOD_ID);
+    }
+
+    private record LoadedQuestResource(DatapackResourceLoader.JsonResource resource, JsonObject root) {
     }
 
     private static boolean isControlOnly(JsonObject root, String... allowedKeys) {

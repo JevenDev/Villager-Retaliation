@@ -82,7 +82,8 @@ Minecraft resolves exact resource paths first. Villager Retaliation then merges 
 
 - A file at the same resource path as a built-in file replaces that built-in file before VR reads it.
 - Inside many systems, a later entry with the same `id` replaces an earlier entry without replacing the whole file.
-- Top-level `replace: true` clears the loaded pool for that file type before the current file is applied.
+- For quests, dialogue trees, and forced dialogue, top-level `replace: true` puts that loader in replacement mode: VR skips built-in resources for that system, then applies add-on resources.
+- For normal dialogue, top-level `replace: true` clears the current dialogue pool, and `replace_sections` can clear only selected sections.
 - Top-level `remove: true` removes one quest, dialogue tree, or forced-dialogue definition by `id`.
 
 | System | Additive by default | Clear everything | Remove one entry |
@@ -108,7 +109,7 @@ Use a small control file when you want a complete overhaul:
 { "replace": true }
 ```
 
-For quests and dialogue trees, a control-only `replace` file clears the built-ins without registering a dummy quest or tree.
+For quests, dialogue trees, and forced dialogue, a control-only `replace` file disables the built-ins without registering a dummy quest, tree, or forced-dialogue entry. Put your replacement content in the same file or any other add-on file for that system.
 
 ## Suggested Workflow
 

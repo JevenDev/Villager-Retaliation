@@ -99,18 +99,18 @@ Forced dialogue supports the same message catalog:
 
 ```json
 {
+  "message_prefix": "forced.my_pack.theft.warning",
   "line": "Hands off that {container}.",
-  "line_key": "forced_dialogue.my_pack.theft.warning.line",
   "options": [
     {
       "label": "Apologize",
-      "label_key": "forced_dialogue.my_pack.theft.warning.apologize.label",
-      "response": "Then prove it.",
-      "response_key": "forced_dialogue.my_pack.theft.warning.apologize.response"
+      "response": "Then prove it."
     }
   ]
 }
 ```
+
+With `message_prefix`, VR looks for `.line`, `.option.<id>.label`, `.option.<id>.response`, `.option.<id>.take_items.success`, and matching failure or stolen-item keys. Explicit fields such as `line_key`, `label_key`, and `response_key` still work and override the generated keys.
 
 Translate entry lines, option labels, option responses, and payment/stolen-item success or failure responses with message entries in `data/<namespace>/dialogue/<locale>/.../messages/*.json`.
 

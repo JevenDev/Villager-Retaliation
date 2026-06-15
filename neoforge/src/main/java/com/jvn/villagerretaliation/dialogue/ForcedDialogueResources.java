@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -28,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -37,13 +37,11 @@ public final class ForcedDialogueResources {
     private static final String RESOURCE_ROOT = "forced_dialogue";
     private static final String DEFAULT_NAMESPACE = "villagerretaliation";
     private static final String LEAVE_OPTION_ID = "leave";
-    private static final String TEXT_KEY_PREFIX = "{{vr_text_key:";
-    private static final String TEXT_KEY_END = "}}";
     private static final Set<String> ROOT_KEYS = Set.of(
             "entries", "notifications", "messages", "openings", "closings", "pacify",
             "metadata",
             "id", "trigger", "event", "line", "lines", "priority", "chance", "witness_radius",
-            "replace", "remove", "line_key", "line_keys", "text_key", "text_keys",
+            "replace", "remove", "message_prefix", "text_prefix", "line_key", "line_keys", "text_key", "text_keys",
             "witness_profession", "witness_professions", "professions",
             "requires_witness_unarmed", "witness_unarmed", "requires_witness_armed", "witness_armed",
             "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
@@ -58,7 +56,7 @@ public final class ForcedDialogueResources {
             "options", "leave_option", "leave_options");
     private static final Set<String> ENTRY_KEYS = ROOT_KEYS;
     private static final Set<String> OPTION_KEYS = Set.of(
-            "id", "label", "label_key", "response", "responses", "response_key", "response_keys", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
+            "id", "label", "label_key", "message_prefix", "text_prefix", "response", "responses", "response_key", "response_keys", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation", "take_items", "take_stolen_items",
             "conditions",
             "follow_up", "requires_high_knowledge", "requires_high_guts", "requires_high_proficiency", "requires_high_kindness", "requires_high_charm",
@@ -133,55 +131,77 @@ public final class ForcedDialogueResources {
 
     private static List<ForcedDialogueDefinition> read(MinecraftServer server) {
         Map<String, ForcedDialogueDefinition> definitions = new LinkedHashMap<>();
-        DatapackResourceLoader.forEachJsonResource(
-                server,
-                RESOURCE_ROOT,
-                (location, resource) -> readFile(location, resource, definitions));
+        List<LoadedForcedDialogueResource> resources = DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT).stream()
+                .map(resource -> DatapackResourceLoader.readObject(resource.location(), "forced dialogue", resource.resource())
+                        .map(root -> new LoadedForcedDialogueResource(resource, root)))
+                .flatMap(Optional::stream)
+                .toList();
+        boolean replacementMode = resources.stream()
+                .anyMatch(resource -> readBoolean(resource.root(), "replace"));
+        for (LoadedForcedDialogueResource resource : resources) {
+            if (replacementMode
+                    && isBuiltInModResource(resource.resource())
+                    && !readBoolean(resource.root(), "replace")) {
+                continue;
+            }
+            readFile(resource.resource().location(), resource.root(), definitions, replacementMode);
+        }
         return List.copyOf(definitions.values());
     }
 
     private static void readFile(
             ResourceLocation location,
-            Resource resource,
-            Map<String, ForcedDialogueDefinition> definitions) {
-        DatapackResourceLoader.readObject(location, "forced dialogue", resource).ifPresent(root -> {
-            DatapackDiagnostics.warnMisplacedRootKeys(location, "forced dialogue", root, Map.of(
-                    "notifications", "data/villagerretaliation/notifications/<locale>/<file>.json",
-                    "messages", "data/villagerretaliation/dialogue/<locale>/<file>.json",
-                    "openings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
-                    "closings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
-                    "pacify", "data/villagerretaliation/dialogue/<locale>/<file>.json"));
-            DatapackDiagnostics.warnUnknownRootKeys(location, "forced dialogue", root, ROOT_KEYS);
-            if (readBoolean(root, "replace")) {
+            JsonObject root,
+            Map<String, ForcedDialogueDefinition> definitions,
+            boolean replacementMode) {
+        DatapackDiagnostics.warnMisplacedRootKeys(location, "forced dialogue", root, Map.of(
+                "notifications", "data/villagerretaliation/notifications/<locale>/<file>.json",
+                "messages", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                "openings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                "closings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                "pacify", "data/villagerretaliation/dialogue/<locale>/<file>.json"));
+        DatapackDiagnostics.warnUnknownRootKeys(location, "forced dialogue", root, ROOT_KEYS);
+        if (readBoolean(root, "replace")) {
+            if (!replacementMode) {
                 definitions.clear();
-                if (isControlOnly(root, "replace", "metadata")) {
-                    return;
-                }
             }
-            ResourceLocation defaultQuestId = defaultQuestId(location, root, null);
-            JsonArray entries = root.getAsJsonArray("entries");
-            if (entries != null) {
-                int index = 0;
-                for (JsonElement element : entries) {
-                    if (element.isJsonObject()) {
-                        JsonObject entry = element.getAsJsonObject();
-                        if (removeDefinition(location, entry, index, definitions)) {
-                            index++;
-                            continue;
-                        }
-                        readEntry(location, entry, index, defaultQuestId)
-                                .ifPresent(definition -> putDefinition(location, definitions, definition));
+            if (isControlOnly(root, "replace", "metadata")) {
+                return;
+            }
+        }
+        ResourceLocation defaultQuestId = defaultQuestId(location, root, null);
+        String rootMessagePrefix = readMessagePrefix(root, "");
+        JsonArray entries = root.getAsJsonArray("entries");
+        if (entries != null) {
+            int index = 0;
+            for (JsonElement element : entries) {
+                if (element.isJsonObject()) {
+                    JsonObject entry = element.getAsJsonObject();
+                    if (removeDefinition(location, entry, index, definitions)) {
+                        index++;
+                        continue;
                     }
-                    index++;
+                    readEntry(location, entry, index, defaultQuestId, rootMessagePrefix)
+                            .ifPresent(definition -> putDefinition(location, definitions, definition));
                 }
-                return;
+                index++;
             }
+            return;
+        }
 
-            if (removeDefinition(location, root, 0, definitions)) {
-                return;
-            }
-            readEntry(location, root, 0, defaultQuestId).ifPresent(definition -> putDefinition(location, definitions, definition));
-        });
+        if (removeDefinition(location, root, 0, definitions)) {
+            return;
+        }
+        readEntry(location, root, 0, defaultQuestId, rootMessagePrefix)
+                .ifPresent(definition -> putDefinition(location, definitions, definition));
+    }
+
+    private static boolean isBuiltInModResource(DatapackResourceLoader.JsonResource resource) {
+        return VillagerRetaliation.MOD_ID.equals(resource.location().getNamespace())
+                && resource.isFromPack(VillagerRetaliation.MOD_ID);
+    }
+
+    private record LoadedForcedDialogueResource(DatapackResourceLoader.JsonResource resource, JsonObject root) {
     }
 
     private static boolean isControlOnly(JsonObject root, String... allowedKeys) {
@@ -224,7 +244,8 @@ public final class ForcedDialogueResources {
             ResourceLocation location,
             JsonObject entry,
             int index,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            String rootMessagePrefix) {
         DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue", entryContext(entry, index), entry, ENTRY_KEYS);
         DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext(entry, index), entry);
         ResourceLocation entryQuestId = defaultQuestId(location, entry, defaultQuestId);
@@ -235,19 +256,19 @@ public final class ForcedDialogueResources {
         if (trigger.isEmpty()) {
             warnWrongForcedTriggerFamily(location, entry, index);
         }
-        List<String> lines = readLines(entry);
-        if (trigger.isEmpty() || lines.isEmpty()) {
-            return Optional.empty();
-        }
-
         String id = readString(entry, "id");
         if (id.isBlank()) {
             id = fallbackId(location, index);
         }
+        String messagePrefix = readMessagePrefix(entry, childMessagePrefix(rootMessagePrefix, id));
+        List<LocalizedText> lines = readLines(entry, messagePrefix);
+        if (trigger.isEmpty() || lines.isEmpty()) {
+            return Optional.empty();
+        }
 
-        List<ForcedDialogueOption> leaveOptions = readLeaveOptions(location, entry, trigger.get(), entryQuestId);
+        List<ForcedDialogueOption> leaveOptions = readLeaveOptions(location, entry, trigger.get(), entryQuestId, messagePrefix);
         ForcedDialogueOption leaveOption = leaveOptions.stream().findFirst().orElse(defaultLeaveOption());
-        List<ForcedDialogueOption> options = readOptions(location, entry, leaveOption, entryQuestId);
+        List<ForcedDialogueOption> options = readOptions(location, entry, leaveOption, entryQuestId, messagePrefix);
         String leaveOptionId = leaveOption.id();
         leaveOption = options.stream()
                 .filter(option -> option.id().equals(leaveOptionId))
@@ -352,47 +373,56 @@ public final class ForcedDialogueResources {
         return Set.copyOf(entityTypes);
     }
 
-    private static List<String> readLines(JsonObject entry) {
+    private static List<LocalizedText> readLines(JsonObject entry, String messagePrefix) {
         List<String> lines = new ArrayList<>(readStringList(entry, "lines"));
         String line = readString(entry, "line");
         if (!line.isBlank()) {
             lines.add(0, line);
         }
         List<String> keys = readStringList(entry, "line_key", "line_keys", "text_key", "text_keys");
-        if (!keys.isEmpty()) {
-            String fallback = line.isBlank() && !lines.isEmpty() ? lines.getFirst() : line;
-            return keys.stream()
-                    .map(key -> textKeyMarker(key, fallback))
-                    .filter(value -> !value.isBlank())
-                    .distinct()
-                    .toList();
+        if (keys.isEmpty() && !messagePrefix.isBlank() && !lines.isEmpty()) {
+            keys = List.of(messagePrefix + ".line");
         }
-        return lines.stream()
-                .filter(value -> !value.isBlank())
-                .distinct()
-                .toList();
+        String fallback = line.isBlank() && !lines.isEmpty() ? lines.getFirst() : line;
+        return localizedVariants(lines, keys, fallback);
     }
 
-    private static List<String> readResponses(JsonObject entry) {
-        return readResponseVariants(entry, "response", "responses");
+    private static List<LocalizedText> readResponses(JsonObject entry, String messageKey) {
+        return readResponseVariants(entry, "response", "responses", messageKey);
     }
 
-    private static List<String> readResponseVariants(JsonObject entry, String singleKey, String listKey) {
+    private static List<LocalizedText> readResponseVariants(JsonObject entry, String singleKey, String listKey, String messageKey) {
         List<String> responses = new ArrayList<>(readStringList(entry, listKey));
         String response = readString(entry, singleKey);
         if (!response.isBlank()) {
             responses.add(0, response);
         }
         List<String> keys = readStringList(entry, singleKey + "_key", singleKey + "_keys");
+        if (keys.isEmpty() && !messageKey.isBlank() && !responses.isEmpty()) {
+            keys = List.of(messageKey);
+        }
+        String fallback = response.isBlank() && !responses.isEmpty() ? responses.getFirst() : response;
+        return localizedVariants(responses, keys, fallback);
+    }
+
+    private static List<LocalizedText> localizedVariants(List<String> values, List<String> keys, String fallback) {
         if (!keys.isEmpty()) {
-            String fallback = response.isBlank() && !responses.isEmpty() ? responses.getFirst() : response;
             return keys.stream()
-                    .map(key -> textKeyMarker(key, fallback))
+                    .map(key -> LocalizedText.keyed(key, fallback))
                     .filter(value -> !value.isBlank())
                     .distinct()
                     .toList();
         }
-        return responses.stream()
+        return inlineTexts(values);
+    }
+
+    public static LocalizedText inlineText(String text) {
+        return LocalizedText.inline(text);
+    }
+
+    public static List<LocalizedText> inlineTexts(List<String> texts) {
+        return texts.stream()
+                .map(LocalizedText::inline)
                 .filter(value -> !value.isBlank())
                 .distinct()
                 .toList();
@@ -402,7 +432,8 @@ public final class ForcedDialogueResources {
             ResourceLocation location,
             JsonObject entry,
             ForcedDialogueOption leaveOption,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            String messagePrefix) {
         JsonArray entries = entry.getAsJsonArray("options");
         if (entries == null) {
             return List.of(leaveOption);
@@ -420,16 +451,13 @@ public final class ForcedDialogueResources {
                 DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue option", optionContext(option, index), option, OPTION_KEYS);
             }
             String id = readString(option, "id");
-            String label = readString(option, "label");
-            String labelKey = readString(option, "label_key");
-            if (!labelKey.isBlank()) {
-                label = textKeyMarker(labelKey, label);
-            }
+            String optionMessagePrefix = readMessagePrefix(option, childMessagePrefix(childMessagePrefix(messagePrefix, "option"), id));
+            LocalizedText label = readLabel(option, optionMessagePrefix);
             if (id.isBlank() || label.isBlank()) {
                 index++;
                 continue;
             }
-            options.add(readOption(location, optionContext(option, index), option, id, label, index, defaultQuestId));
+            options.add(readOption(location, optionContext(option, index), option, id, label, index, defaultQuestId, optionMessagePrefix));
             index++;
         }
         if (options.stream().noneMatch(option -> option.id().equals(leaveOption.id()))) {
@@ -442,7 +470,8 @@ public final class ForcedDialogueResources {
             ResourceLocation location,
             JsonObject entry,
             ForcedDialogueTrigger trigger,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            String messagePrefix) {
         JsonArray options = entry.getAsJsonArray("leave_options");
         if (options != null) {
             List<ForcedDialogueOption> leaveOptions = new ArrayList<>();
@@ -453,19 +482,17 @@ public final class ForcedDialogueResources {
                     if (location != null) {
                         DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue leave option", optionContext(option, index), option, OPTION_KEYS);
                     }
-                    String label = readString(option, "label");
-                    String labelKey = readString(option, "label_key");
-                    if (!labelKey.isBlank()) {
-                        label = textKeyMarker(labelKey, label);
-                    }
+                    String optionMessagePrefix = readMessagePrefix(option, childMessagePrefix(messagePrefix, "leave." + index));
+                    LocalizedText label = readLabel(option, optionMessagePrefix);
                     leaveOptions.add(readOption(
                             location,
                             optionContext(option, index),
                             option,
                             LEAVE_OPTION_ID,
-                            label.isBlank() ? "Leave" : label,
+                            label.isBlank() ? LocalizedText.inline("Leave") : label,
                             1000 + index,
-                            defaultQuestId));
+                            defaultQuestId,
+                            optionMessagePrefix));
                 }
                 index++;
             }
@@ -482,23 +509,21 @@ public final class ForcedDialogueResources {
             return defaultTheftLeaveOptions();
         }
         JsonObject option = element != null && element.isJsonObject() ? element.getAsJsonObject() : new JsonObject();
-        String label = readString(option, "label");
-        String labelKey = readString(option, "label_key");
-        if (!labelKey.isBlank()) {
-            label = textKeyMarker(labelKey, label);
-        }
+        String optionMessagePrefix = readMessagePrefix(option, childMessagePrefix(messagePrefix, "leave"));
+        LocalizedText label = readLabel(option, optionMessagePrefix);
         return List.of(readOption(
                 location,
                 optionContext(option, 0),
                 option,
                 LEAVE_OPTION_ID,
-                label.isBlank() ? "Leave" : label,
+                label.isBlank() ? LocalizedText.inline("Leave") : label,
                 1000,
-                defaultQuestId));
+                defaultQuestId,
+                optionMessagePrefix));
     }
 
     static ForcedDialogueOption defaultLeaveOption() {
-        return readOption(new JsonObject(), LEAVE_OPTION_ID, "Leave", 1000);
+        return readOption(new JsonObject(), LEAVE_OPTION_ID, LocalizedText.inline("Leave"), 1000);
     }
 
     private static List<ForcedDialogueOption> defaultTheftLeaveOptions() {
@@ -521,9 +546,9 @@ public final class ForcedDialogueResources {
                 0.75D,
                 1002);
         return List.of(
-                readOption(trusted, LEAVE_OPTION_ID, "Leave", 1000),
-                readOption(wary, LEAVE_OPTION_ID, "Leave", 1001),
-                readOption(hostile, LEAVE_OPTION_ID, "Leave", 1002));
+                readOption(trusted, LEAVE_OPTION_ID, LocalizedText.inline("Leave"), 1000),
+                readOption(wary, LEAVE_OPTION_ID, LocalizedText.inline("Leave"), 1001),
+                readOption(hostile, LEAVE_OPTION_ID, LocalizedText.inline("Leave"), 1002));
     }
 
     private static JsonObject defaultTheftLeaveOption(
@@ -561,8 +586,8 @@ public final class ForcedDialogueResources {
         return option;
     }
 
-    private static ForcedDialogueOption readOption(JsonObject option, String id, String label, int fallbackOrder) {
-        return readOption(null, optionContext(option, fallbackOrder), option, id, label, fallbackOrder, null);
+    private static ForcedDialogueOption readOption(JsonObject option, String id, LocalizedText label, int fallbackOrder) {
+        return readOption(null, optionContext(option, fallbackOrder), option, id, label, fallbackOrder, null, "");
     }
 
     private static ForcedDialogueOption readOption(
@@ -570,53 +595,55 @@ public final class ForcedDialogueResources {
             String context,
             JsonObject option,
             String id,
-            String label,
+            LocalizedText label,
             int fallbackOrder,
-            ResourceLocation defaultQuestId) {
+            ResourceLocation defaultQuestId,
+            String messagePrefix) {
         return new ForcedDialogueOption(
                 id,
                 label,
-                readResponses(option),
+                readResponses(option, childMessagePrefix(messagePrefix, "response")),
                 readInt(option, "reputation", 0),
                 readBoolean(option, "aggro"),
                 clampChance(readDouble(option, "aggro_chance", 0.0D)),
                 readBoolean(option, "end_conversation", true),
                 readInt(option, "order", fallbackOrder),
-                readStolenItemReturn(option),
-                readItemPayment(option),
+                readStolenItemReturn(option, messagePrefix),
+                readItemPayment(option, messagePrefix),
                 VillagerReputationCondition.read(option),
                 readSocialAttributeCondition(option),
                 DialogueCondition.readList(location, context, option, defaultQuestId),
-                readFollowUp(option, defaultQuestId)
+                readFollowUp(option, defaultQuestId, messagePrefix)
         );
     }
 
-    private static ForcedDialogueFollowUp readFollowUp(JsonObject option, ResourceLocation defaultQuestId) {
+    private static ForcedDialogueFollowUp readFollowUp(JsonObject option, ResourceLocation defaultQuestId, String optionMessagePrefix) {
         JsonElement element = option.get("follow_up");
         if (element == null || !element.isJsonObject()) {
             return ForcedDialogueFollowUp.empty();
         }
 
         JsonObject followUp = element.getAsJsonObject();
-        ForcedDialogueOption leaveOption = readLeaveOptions(null, followUp, ForcedDialogueTrigger.CONTAINER_OPENED, defaultQuestId)
+        String messagePrefix = readMessagePrefix(followUp, childMessagePrefix(optionMessagePrefix, "follow_up"));
+        ForcedDialogueOption leaveOption = readLeaveOptions(null, followUp, ForcedDialogueTrigger.CONTAINER_OPENED, defaultQuestId, messagePrefix)
                 .stream()
                 .findFirst()
                 .orElse(defaultLeaveOption());
-        List<ForcedDialogueOption> options = readOptions(null, followUp, leaveOption, defaultQuestId);
+        List<ForcedDialogueOption> options = readOptions(null, followUp, leaveOption, defaultQuestId, messagePrefix);
         String leaveOptionId = leaveOption.id();
         leaveOption = options.stream()
                 .filter(candidate -> candidate.id().equals(leaveOptionId))
                 .findFirst()
                 .orElse(leaveOption);
-        return new ForcedDialogueFollowUp(readLines(followUp), options, leaveOption, List.of(leaveOption));
+        return new ForcedDialogueFollowUp(readLines(followUp, messagePrefix), options, leaveOption, List.of(leaveOption));
     }
 
-    private static ForcedDialogueStolenItemReturn readStolenItemReturn(JsonObject option) {
+    private static ForcedDialogueStolenItemReturn readStolenItemReturn(JsonObject option, String messagePrefix) {
         return readStolenItemReturnJson(option, "take_stolen_items")
                 .or(() -> readStolenItemReturnJson(option, "return_stolen_items"))
                 .map(entry -> new ForcedDialogueStolenItemReturn(
-                        readResponseVariants(entry, "success_response", "success_responses"),
-                        readResponseVariants(entry, "failure_response", "failure_responses"),
+                        readResponseVariants(entry, "success_response", "success_responses", childMessagePrefix(messagePrefix, "take_stolen_items.success")),
+                        readResponseVariants(entry, "failure_response", "failure_responses", childMessagePrefix(messagePrefix, "take_stolen_items.failure")),
                         readInt(entry, "success_reputation", 0),
                         readInt(entry, "failure_reputation", 0),
                         readBoolean(entry, "failure_aggro"),
@@ -640,13 +667,13 @@ public final class ForcedDialogueResources {
         return element.isJsonObject() ? Optional.of(element.getAsJsonObject()) : Optional.empty();
     }
 
-    private static ForcedDialogueItemPayment readItemPayment(JsonObject option) {
+    private static ForcedDialogueItemPayment readItemPayment(JsonObject option, String messagePrefix) {
         return readPaymentJson(option, "take_items")
                 .or(() -> readPaymentJson(option, "payment"))
                 .map(payment -> new ForcedDialogueItemPayment(
                         payment.removal(),
-                        readResponseVariants(payment.entry(), "success_response", "success_responses"),
-                        readResponseVariants(payment.entry(), "failure_response", "failure_responses"),
+                        readResponseVariants(payment.entry(), "success_response", "success_responses", childMessagePrefix(messagePrefix, "take_items.success")),
+                        readResponseVariants(payment.entry(), "failure_response", "failure_responses", childMessagePrefix(messagePrefix, "take_items.failure")),
                         readInt(payment.entry(), "success_reputation", 0),
                         readInt(payment.entry(), "failure_reputation", 0),
                         readBoolean(payment.entry(), "failure_aggro"),
@@ -676,6 +703,28 @@ public final class ForcedDialogueResources {
         if (text == null) {
             return "";
         }
+        return VillagerDialogueResources.resolveTemplate(text, templateReplacements(context, extraReplacements));
+    }
+
+    static String resolveTemplate(LocalizedText text, ForcedDialogueContext context) {
+        return resolveTemplate(text, context, Map.of());
+    }
+
+    static String resolveTemplate(LocalizedText text, ForcedDialogueContext context, Map<String, String> extraReplacements) {
+        if (text == null) {
+            return "";
+        }
+        Map<String, String> replacements = templateReplacements(context, extraReplacements);
+        String fallback = VillagerDialogueResources.resolveTemplate(text.text(), replacements);
+        if (!text.key().isBlank() && context != null && context.server() != null && context.random() != null) {
+            return VillagerDialogueResources
+                    .globalMessage(context.server(), context.random(), text.key(), context.locale(), replacements)
+                    .orElse(fallback);
+        }
+        return fallback;
+    }
+
+    private static Map<String, String> templateReplacements(ForcedDialogueContext context, Map<String, String> extraReplacements) {
         Map<String, String> replacements = new HashMap<>();
         if (context != null) {
             replacements.put("villager", context.villagerName());
@@ -708,39 +757,44 @@ public final class ForcedDialogueResources {
             replacements.put("z", Integer.toString(context.z()));
         }
         replacements.putAll(extraReplacements);
-        TextKeyMarker marker = textKeyMarker(text);
-        if (marker != null) {
-            String fallback = VillagerDialogueResources.resolveTemplate(marker.fallback(), replacements);
-            if (context != null && context.server() != null && context.random() != null) {
-                return VillagerDialogueResources
-                        .globalMessage(context.server(), context.random(), marker.key(), context.locale(), replacements)
-                        .orElse(fallback);
-            }
-            return fallback;
-        }
-        return VillagerDialogueResources.resolveTemplate(text, replacements);
+        return replacements;
     }
 
-    private static String textKeyMarker(String key, String fallback) {
-        if (key == null || key.isBlank()) {
-            return fallback == null ? "" : fallback;
+    private static LocalizedText readLabel(JsonObject option, String messagePrefix) {
+        String label = readString(option, "label");
+        String labelKey = readString(option, "label_key");
+        if (labelKey.isBlank() && !messagePrefix.isBlank() && !label.isBlank()) {
+            labelKey = messagePrefix + ".label";
         }
-        return TEXT_KEY_PREFIX + key.trim() + TEXT_KEY_END + (fallback == null ? "" : fallback);
+        return labelKey.isBlank() ? LocalizedText.inline(label) : LocalizedText.keyed(labelKey, label);
     }
 
-    private static TextKeyMarker textKeyMarker(String text) {
-        if (text == null || !text.startsWith(TEXT_KEY_PREFIX)) {
-            return null;
+    private static String readMessagePrefix(JsonObject entry, String fallback) {
+        String prefix = readString(entry, "message_prefix");
+        if (prefix.isBlank()) {
+            prefix = readString(entry, "text_prefix");
         }
-        int end = text.indexOf(TEXT_KEY_END, TEXT_KEY_PREFIX.length());
-        if (end < 0) {
-            return null;
+        return prefix.isBlank() ? fallback : prefix.trim();
+    }
+
+    private static String childMessagePrefix(String parent, String child) {
+        if (parent == null || parent.isBlank()) {
+            return "";
         }
-        String key = text.substring(TEXT_KEY_PREFIX.length(), end).trim();
-        if (key.isBlank()) {
-            return null;
+        String part = messageKeyPart(child);
+        return part.isBlank() ? parent : parent + "." + part;
+    }
+
+    private static String messageKeyPart(String value) {
+        if (value == null) {
+            return "";
         }
-        return new TextKeyMarker(key, text.substring(end + TEXT_KEY_END.length()));
+        return value.trim()
+                .toLowerCase(Locale.ROOT)
+                .replace(':', '.')
+                .replace('/', '.')
+                .replaceAll("[^a-z0-9_.-]+", "_")
+                .replaceAll("^[._-]+|[._-]+$", "");
     }
 
     private static <E extends Enum<E>> Optional<E> readEnum(JsonObject entry, String key, Class<E> enumClass) {
@@ -913,12 +967,39 @@ public final class ForcedDialogueResources {
         DROP_AT_CONTAINER
     }
 
+    public record LocalizedText(String text, String key) {
+        private static final LocalizedText EMPTY = new LocalizedText("", "");
+
+        public LocalizedText {
+            text = text == null ? "" : text;
+            key = key == null ? "" : key.trim();
+        }
+
+        public static LocalizedText inline(String text) {
+            if (text == null || text.isBlank()) {
+                return EMPTY;
+            }
+            return new LocalizedText(text, "");
+        }
+
+        public static LocalizedText keyed(String key, String fallback) {
+            if ((key == null || key.isBlank()) && (fallback == null || fallback.isBlank())) {
+                return EMPTY;
+            }
+            return new LocalizedText(fallback, key);
+        }
+
+        public boolean isBlank() {
+            return this.text.isBlank() && this.key.isBlank();
+        }
+    }
+
     public record ForcedDialogueDefinition(
             String id,
             ResourceLocation source,
             ForcedDialogueTrigger trigger,
             ForcedDialogueOutput output,
-            List<String> lines,
+            List<LocalizedText> lines,
             boolean initiateDialogue,
             boolean aggroImmediately,
             boolean forceCameraTowardsVillager,
@@ -940,9 +1021,9 @@ public final class ForcedDialogueResources {
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
             List<ForcedDialogueOption> leaveOptions) {
-        public String selectLine(RandomSource random) {
+        public LocalizedText selectLine(RandomSource random) {
             if (this.lines.isEmpty()) {
-                return "";
+                return LocalizedText.EMPTY;
             }
             return this.lines.get(random.nextInt(this.lines.size()));
         }
@@ -997,8 +1078,8 @@ public final class ForcedDialogueResources {
 
     public record ForcedDialogueOption(
             String id,
-            String label,
-            List<String> responses,
+            LocalizedText label,
+            List<LocalizedText> responses,
             int reputationDelta,
             boolean aggro,
             double aggroChance,
@@ -1010,16 +1091,16 @@ public final class ForcedDialogueResources {
             SocialAttributeCondition socialAttributeCondition,
             List<DialogueCondition> conditions,
             ForcedDialogueFollowUp followUp) {
-        public String selectResponse(RandomSource random) {
+        public LocalizedText selectResponse(RandomSource random) {
             if (this.responses.isEmpty()) {
-                return "";
+                return LocalizedText.EMPTY;
             }
             return this.responses.get(random.nextInt(this.responses.size()));
         }
     }
 
     public record ForcedDialogueFollowUp(
-            List<String> lines,
+            List<LocalizedText> lines,
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
             List<ForcedDialogueOption> leaveOptions) {
@@ -1034,14 +1115,14 @@ public final class ForcedDialogueResources {
             return this == EMPTY || this.options.isEmpty();
         }
 
-        public String selectLine(RandomSource random) {
+        public LocalizedText selectLine(RandomSource random) {
             return selectResponse(this.lines, random);
         }
     }
 
     public record ForcedDialogueStolenItemReturn(
-            List<String> successResponses,
-            List<String> failureResponses,
+            List<LocalizedText> successResponses,
+            List<LocalizedText> failureResponses,
             int successReputationDelta,
             int failureReputationDelta,
             boolean failureAggro,
@@ -1068,19 +1149,19 @@ public final class ForcedDialogueResources {
             return this == EMPTY;
         }
 
-        public String selectSuccessResponse(RandomSource random) {
+        public LocalizedText selectSuccessResponse(RandomSource random) {
             return selectResponse(this.successResponses, random);
         }
 
-        public String selectFailureResponse(RandomSource random) {
+        public LocalizedText selectFailureResponse(RandomSource random) {
             return selectResponse(this.failureResponses, random);
         }
     }
 
     public record ForcedDialogueItemPayment(
             VillagerInventoryItemRemoval removal,
-            List<String> successResponses,
-            List<String> failureResponses,
+            List<LocalizedText> successResponses,
+            List<LocalizedText> failureResponses,
             int successReputationDelta,
             int failureReputationDelta,
             boolean failureAggro,
@@ -1108,18 +1189,18 @@ public final class ForcedDialogueResources {
             return this.removal.isEmpty();
         }
 
-        public String selectSuccessResponse(RandomSource random) {
+        public LocalizedText selectSuccessResponse(RandomSource random) {
             return selectResponse(this.successResponses, random);
         }
 
-        public String selectFailureResponse(RandomSource random) {
+        public LocalizedText selectFailureResponse(RandomSource random) {
             return selectResponse(this.failureResponses, random);
         }
     }
 
-    private static String selectResponse(List<String> responses, RandomSource random) {
+    private static LocalizedText selectResponse(List<LocalizedText> responses, RandomSource random) {
         if (responses.isEmpty()) {
-            return "";
+            return LocalizedText.EMPTY;
         }
         return responses.get(random.nextInt(responses.size()));
     }
@@ -1200,8 +1281,5 @@ public final class ForcedDialogueResources {
             lootTable = lootTable == null ? "" : lootTable;
             locale = VillagerLocale.normalize(locale);
         }
-    }
-
-    private record TextKeyMarker(String key, String fallback) {
     }
 }
