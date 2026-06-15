@@ -240,6 +240,14 @@ public record QuestDefinition(
                     || this.progress >= 0.0F
                     || !this.metadata.isEmpty();
         }
+
+        public boolean hasCompletionDisplay() {
+            return !this.completeText.isBlank();
+        }
+
+        public String displayText(boolean complete) {
+            return complete && !this.completeText.isBlank() ? this.completeText : this.text;
+        }
     }
 
     public enum ObjectiveType {
@@ -391,11 +399,11 @@ public record QuestDefinition(
             float progress,
             java.util.Map<String, String> metadata
     ) {
-        public static final Step EMPTY = new Step("", false, 0.0F, java.util.Map.of());
+        public static final Step EMPTY = new Step("", false, -1.0F, java.util.Map.of());
 
         public Step {
             text = text == null ? "" : text;
-            progress = Math.max(0.0F, Math.min(1.0F, progress));
+            progress = Math.max(-1.0F, Math.min(1.0F, progress));
             metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
         }
     }
@@ -524,7 +532,10 @@ public record QuestDefinition(
             if (lines == null || lines.isEmpty()) {
                 return fallback;
             }
-            return List.copyOf(lines.stream().filter(line -> line != null && !line.isBlank()).toList());
+            List<String> normalized = lines.stream()
+                    .filter(line -> line != null && !line.isBlank())
+                    .toList();
+            return normalized.isEmpty() ? fallback : List.copyOf(normalized);
         }
 
         private static String select(List<String> lines, RandomSource random) {

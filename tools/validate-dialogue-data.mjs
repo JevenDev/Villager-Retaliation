@@ -852,8 +852,8 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkConditions(file, objective, objectiveLocation, defaultQuestId);
     checkQuestObjectiveTracker(file, objective.tracker, `${objectiveLocation}.tracker`);
 
-    if (type === "structure_visit" && !stringValue(objective.structure) && readValues(objective, ["pieces"]).length === 0) {
-      errors.push(`${relative(file)}: ${objectiveLocation} must define structure or pieces for a structure_visit objective.`);
+    if (type === "structure_visit" && !stringValue(objective.structure)) {
+      errors.push(`${relative(file)}: ${objectiveLocation}.structure is required for a structure_visit objective.`);
     }
     if (type === "item_check" && !stringValue(objective.item)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.item is required for an item_check objective.`);

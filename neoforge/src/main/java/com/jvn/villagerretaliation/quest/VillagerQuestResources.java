@@ -261,7 +261,7 @@ public final class VillagerQuestResources {
             return Optional.empty();
         }
         if (type == QuestDefinition.ObjectiveType.ITEM_CHECK && item == null) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "item_check objective must define item or proof_item.");
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "item_check objective must define item.");
             return Optional.empty();
         }
         if (type == QuestDefinition.ObjectiveType.CONDITION && conditions.isEmpty()) {

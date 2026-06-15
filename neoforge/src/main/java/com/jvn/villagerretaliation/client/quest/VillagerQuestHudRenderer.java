@@ -57,16 +57,6 @@ final class VillagerQuestHudRenderer {
         return trackerWidth(screenWidth);
     }
 
-    private static int maxScaledTextWidth(Font font, QuestTrackerSyncPayload.Entry entry) {
-        return Math.max(
-                VillagerClientUiUtil.scaledTextWidth(font, entry.title(), textScale()),
-                Math.max(
-                        VillagerClientUiUtil.scaledTextWidth(font, entry.objective(), textScale()),
-                        Math.max(
-                                VillagerClientUiUtil.scaledTextWidth(font, entry.status(), textScale()),
-                                VillagerClientUiUtil.scaledTextWidth(font, entry.metadata(), textScale()))));
-    }
-
     static int panelGap() {
         return VillagerAdaptiveGuiScale.unitAtLeast(PANEL_GAP, 1);
     }
@@ -149,13 +139,6 @@ final class VillagerQuestHudRenderer {
         }
         NotificationLine lastLine = lines.get(lines.size() - 1);
         return lastLine.top() + lineStep;
-    }
-
-    private static int notificationContentTopOffset(int contentHeight, int viewportHeight, int overflow) {
-        if (overflow > 0 || contentHeight <= 0) {
-            return 0;
-        }
-        return Math.max(0, (viewportHeight - contentHeight) / 2);
     }
 
     private static int notificationScroll(int age, int overflow) {
