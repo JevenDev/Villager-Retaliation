@@ -103,11 +103,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_CONTAINER_HOTBAR_GAP = 24;
     private static final int INTERACTION_CONTAINER_ORNAMENT_WIDTH = 288;
     private static final int INTERACTION_CONTAINER_ORNAMENT_HEIGHT = 104;
-    private static final int INTERACTION_CONTAINER_ORNAMENT_Y = 0;
+    private static final int INTERACTION_CONTAINER_ORNAMENT_Y = -3;
     private static final int INTERACTION_CONTAINER_NAME_X = 6;
-    private static final int INTERACTION_CONTAINER_NAME_Y = 5;
+    private static final int INTERACTION_CONTAINER_NAME_Y = 3;
     private static final int INTERACTION_NAMEPLATE_X = 0;
-    private static final int INTERACTION_NAMEPLATE_Y = 0;
+    private static final int INTERACTION_NAMEPLATE_Y = -2;
     private static final int INTERACTION_NAMEPLATE_TEXTURE_WIDTH = 20;
     private static final int INTERACTION_NAMEPLATE_TEXTURE_HEIGHT = 20;
     private static final int INTERACTION_NAMEPLATE_SLICE_LEFT = 4;
