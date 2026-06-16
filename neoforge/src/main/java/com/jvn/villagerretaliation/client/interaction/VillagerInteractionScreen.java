@@ -106,6 +106,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_STATS_ANCHOR_X = 277;
     private static final int INTERACTION_STATS_BASELINE_Y = 93;
     private static final int INTERACTION_STATS_TEXT_RAISE = 2;
+    private static final int INTERACTION_OPTION_WIDTH = 64;
+    private static final int INTERACTION_OPTION_HEIGHT = 17;
+    private static final int INTERACTION_OPTION_STRIDE = 16;
+    private static final int INTERACTION_OPTION_TEXT_INSET = 5;
+    private static final int INTERACTION_OPTION_TEXT_TOP = 5;
+    private static final int INTERACTION_OPTION_TEXT_RIGHT_PADDING = INTERACTION_OPTION_TEXT_INSET;
+    private static final int INTERACTION_OPTION_ARROW_WIDTH = 9;
+    private static final int INTERACTION_OPTION_ARROW_HEIGHT = 6;
+    private static final int INTERACTION_OPTION_MAX_LINE_CHARACTERS = 20;
+    private static final int INTERACTION_OPTION_LINE_STEP = 10;
     private static final int INTERACTION_ICON_SIZE = 16;
     private static final int INTERACTION_ICON_TEXT_GAP = 4;
     private static final int INTERACTION_TOOLTIP_MAX_WIDTH = 220;
@@ -183,6 +193,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int selectedInventorySlot = -1;
     private int lastMouseX;
     private int lastMouseY;
+    private boolean keyboardOptionFocusVisible;
     private long experimentalSkillsAnimationStartMillis = -1L;
     private long experimentalSkillsExitStartMillis = -1L;
     private Button giftButton;
@@ -375,7 +386,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.screenLayerZ());
         renderInteractionContainer(graphics);
-        renderTopBackButton(graphics, mouseX, mouseY);
         if (this.page == DialoguePage.GIFT) {
             renderGiftPage(graphics, mouseX, mouseY, partialTick);
         } else if (this.page == DialoguePage.PROFILE) {
@@ -394,7 +404,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
             renderOptions(graphics, mouseX, mouseY, optionsTop());
         }
-        renderHint(graphics);
         renderInteractionStatTooltips(graphics, mouseX, mouseY);
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
@@ -440,8 +449,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return true;
         }
 
-        if (tryClickBackButton(mouseX, mouseY)
-                || trySelectSkillDetails(mouseX, mouseY)
+        if (trySelectSkillDetails(mouseX, mouseY)
                 || tryBeginSkillInfoScrollbarDrag(mouseX, mouseY)
                 || tryBeginScrollbarDrag(mouseX, mouseY)
                 || tryActivateHoveredOption(mouseX, mouseY)) {
@@ -599,6 +607,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
         }
         this.state.resetOptions(!this.options.isEmpty());
+        this.keyboardOptionFocusVisible = false;
         ensureSelectedVisible();
     }
 
@@ -1560,6 +1569,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         this.state.moveSelectedOption(direction, this.options.size());
+        this.keyboardOptionFocusVisible = true;
         ensureSelectedVisible();
     }
 
@@ -1845,6 +1855,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0) {
             this.state.setSelectedOption(hovered);
+            this.keyboardOptionFocusVisible = false;
         }
     }
 
@@ -1939,6 +1950,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         this.state.setSelectedOption(hovered);
+        this.keyboardOptionFocusVisible = false;
         ensureSelectedVisible();
         activateSelected();
         return true;
@@ -2105,6 +2117,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int optionsTop() {
+        if (usesInteractionOptionStack()) {
+            return interactionContainerTop();
+        }
         return experimentalOptionsTop(optionViewportHeight());
     }
 
@@ -2129,6 +2144,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int optionsLeft() {
+        if (usesInteractionOptionStack()) {
+            return interactionContainerRightWithOptionOverlap();
+        }
         return experimentalOptionsLeft();
     }
 
@@ -2198,14 +2216,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int optionWidth() {
+        if (usesInteractionOptionStack()) {
+            return interactionOptionStackWidth();
+        }
         return VillagerInteractionLayoutMetrics.optionWidth();
     }
 
     private int optionHeight() {
+        if (usesInteractionOptionStack()) {
+            return INTERACTION_OPTION_HEIGHT;
+        }
         return VillagerInteractionLayoutMetrics.optionHeight();
     }
 
     private int optionTextInset() {
+        if (usesInteractionOptionStack()) {
+            return INTERACTION_OPTION_TEXT_INSET;
+        }
         return VillagerInteractionLayoutMetrics.optionTextInset();
     }
 
@@ -2242,6 +2269,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int optionViewportHeight() {
+        if (usesInteractionOptionStack()) {
+            return INTERACTION_CONTAINER_HEIGHT;
+        }
         return VillagerInteractionLayoutMetrics.optionViewportHeight(this.options.size());
     }
 
@@ -2262,7 +2292,40 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int optionStride() {
+        if (usesInteractionOptionStack()) {
+            return INTERACTION_OPTION_STRIDE;
+        }
         return VillagerInteractionLayoutMetrics.optionStride();
+    }
+
+    private boolean usesInteractionOptionStack() {
+        return shouldRenderInteractionContainer();
+    }
+
+    private int interactionOptionStackWidth() {
+        int desiredWidth = INTERACTION_OPTION_WIDTH;
+        for (int index = 0; index < this.options.size(); index++) {
+            for (String line : VillagerInteractionOptionList.pixelOptionLabelLines(this.optionListContext, index)) {
+                desiredWidth = Math.max(
+                        desiredWidth,
+                        this.font.width(line)
+                                + INTERACTION_OPTION_TEXT_INSET
+                                + INTERACTION_OPTION_TEXT_RIGHT_PADDING);
+            }
+        }
+        int maxAvailableWidth = Math.max(INTERACTION_OPTION_WIDTH, this.width - interactionContainerRightWithOptionOverlap() - 4);
+        return Math.min(desiredWidth, maxAvailableWidth);
+    }
+
+    private String interactionOptionLabel(int index) {
+        if (index < 0 || index >= this.options.size()) {
+            return "";
+        }
+        return (index + 1) + ". " + this.options.get(index).label();
+    }
+
+    private int interactionContainerRightWithOptionOverlap() {
+        return interactionContainerLeft() + INTERACTION_CONTAINER_WIDTH - 1;
     }
 
     private void ensureSelectedVisible() {
@@ -2360,6 +2423,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int optionsScrollbarLeft() {
+        if (usesInteractionOptionStack()) {
+            return optionsLeft() + optionWidth() + 1;
+        }
         return VillagerInteractionExperimentalLayout.scrollbarLeft(
                 this.width,
                 optionsLeft(),
@@ -2759,7 +2825,72 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public boolean usePixelOptionButtons() {
+            return VillagerInteractionScreen.this.usesInteractionOptionStack();
+        }
+
+        @Override
+        public ResourceLocation pixelOptionTexture(boolean selected, boolean hovered) {
+            return selected || hovered
+                    ? VillagerRetaliationClientAssets.INTERACTION_OPTION_HOVER_TEXTURE
+                    : VillagerRetaliationClientAssets.INTERACTION_OPTION_BUTTON_TEXTURE;
+        }
+
+        @Override
+        public boolean pixelOptionKeyboardFocusVisible() {
+            return VillagerInteractionScreen.this.keyboardOptionFocusVisible;
+        }
+
+        @Override
+        public String pixelOptionLabel(int index) {
+            return VillagerInteractionScreen.this.interactionOptionLabel(index);
+        }
+
+        @Override
+        public int pixelOptionTextTop() {
+            return INTERACTION_OPTION_TEXT_TOP;
+        }
+
+        @Override
+        public int pixelOptionTextRightPadding() {
+            return INTERACTION_OPTION_TEXT_RIGHT_PADDING;
+        }
+
+        @Override
+        public int pixelOptionMaxLineCharacters() {
+            return INTERACTION_OPTION_MAX_LINE_CHARACTERS;
+        }
+
+        @Override
+        public int pixelOptionLineStep() {
+            return INTERACTION_OPTION_LINE_STEP;
+        }
+
+        @Override
+        public ResourceLocation pixelOptionArrowUpTexture() {
+            return VillagerRetaliationClientAssets.INTERACTION_OPTION_ARROW_UP_TEXTURE;
+        }
+
+        @Override
+        public ResourceLocation pixelOptionArrowDownTexture() {
+            return VillagerRetaliationClientAssets.INTERACTION_OPTION_ARROW_DOWN_TEXTURE;
+        }
+
+        @Override
+        public int pixelOptionArrowWidth() {
+            return INTERACTION_OPTION_ARROW_WIDTH;
+        }
+
+        @Override
+        public int pixelOptionArrowHeight() {
+            return INTERACTION_OPTION_ARROW_HEIGHT;
+        }
+
+        @Override
         public void renderScrollbar(GuiGraphics graphics) {
+            if (usePixelOptionButtons()) {
+                return;
+            }
             VillagerInteractionScreen.this.renderScrollbar(graphics);
         }
     }
