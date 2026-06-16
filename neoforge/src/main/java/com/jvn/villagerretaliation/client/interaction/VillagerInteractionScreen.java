@@ -101,8 +101,28 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_CONTAINER_WIDTH = 282;
     private static final int INTERACTION_CONTAINER_HEIGHT = 113;
     private static final int INTERACTION_CONTAINER_HOTBAR_GAP = 24;
+    private static final int INTERACTION_CONTAINER_ORNAMENT_WIDTH = 288;
+    private static final int INTERACTION_CONTAINER_ORNAMENT_HEIGHT = 104;
+    private static final int INTERACTION_CONTAINER_ORNAMENT_Y = 0;
     private static final int INTERACTION_CONTAINER_NAME_X = 6;
     private static final int INTERACTION_CONTAINER_NAME_Y = 5;
+    private static final int INTERACTION_NAMEPLATE_X = 0;
+    private static final int INTERACTION_NAMEPLATE_Y = 0;
+    private static final int INTERACTION_NAMEPLATE_TEXTURE_WIDTH = 20;
+    private static final int INTERACTION_NAMEPLATE_TEXTURE_HEIGHT = 20;
+    private static final int INTERACTION_NAMEPLATE_SLICE_LEFT = 4;
+    private static final int INTERACTION_NAMEPLATE_SLICE_RIGHT = 4;
+    private static final int INTERACTION_NAMEPLATE_SLICE_TOP = 4;
+    private static final int INTERACTION_NAMEPLATE_SLICE_BOTTOM = 4;
+    private static final int INTERACTION_NAMEPLATE_RIGHT_PADDING = 6;
+    private static final int INTERACTION_NAMEPLATE_MAX_NAME_CHARS = 16;
+    private static final int INTERACTION_NAMEPLATE_ORNAMENT_TEXTURE_WIDTH = 26;
+    private static final int INTERACTION_NAMEPLATE_ORNAMENT_TEXTURE_HEIGHT = 26;
+    private static final int INTERACTION_NAMEPLATE_ORNAMENT_SLICE_LEFT = 7;
+    private static final int INTERACTION_NAMEPLATE_ORNAMENT_SLICE_RIGHT = 7;
+    private static final int INTERACTION_NAMEPLATE_ORNAMENT_SLICE_TOP = 7;
+    private static final int INTERACTION_NAMEPLATE_ORNAMENT_SLICE_BOTTOM = 7;
+    private static final int INTERACTION_NAMEPLATE_ORNAMENT_MARGIN = 3;
     private static final int INTERACTION_DIALOGUE_LEFT = 69;
     private static final int INTERACTION_DIALOGUE_TOP = 26;
     private static final int INTERACTION_DIALOGUE_RIGHT = 270;
@@ -137,7 +157,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_ICON_SIZE = 16;
     private static final int INTERACTION_ICON_TEXT_GAP = 4;
     private static final int INTERACTION_TOOLTIP_MAX_WIDTH = 220;
-    private static final int INTERACTION_NAME_COLOR = 0xFF2E2418;
+    private static final int INTERACTION_NAME_COLOR = 0xFFF3CA55;
     private static final int INTERACTION_DIALOGUE_COLOR = 0xFF35291C;
     private static final int INTERACTION_STATS_COLOR = 0xFF2E2418;
     private static final Runnable NO_ACTION = () -> {
@@ -1638,6 +1658,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         int left = interactionContainerLeft();
         int top = interactionContainerTop();
+        String displayedName = interactionDisplayName();
+        renderInteractionNameplate(graphics, left, top, displayedName);
         graphics.blit(
                 VillagerRetaliationClientAssets.INTERACTION_CONTAINER_TEXTURE,
                 left,
@@ -1651,7 +1673,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         );
         graphics.drawString(
                 this.font,
-                this.villagerName,
+                displayedName,
                 left + INTERACTION_CONTAINER_NAME_X,
                 top + INTERACTION_CONTAINER_NAME_Y,
                 INTERACTION_NAME_COLOR,
@@ -1661,6 +1683,131 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         renderInteractionContainerOverlay(graphics, left, top);
         renderInteractionDialogue(graphics, left, top);
         renderInteractionStats(graphics, left, top);
+        renderInteractionContainerOrnament(graphics, left, top);
+    }
+
+    private String interactionDisplayName() {
+        if (this.villagerName.length() <= INTERACTION_NAMEPLATE_MAX_NAME_CHARS) {
+            return this.villagerName;
+        }
+        return this.villagerName.substring(0, INTERACTION_NAMEPLATE_MAX_NAME_CHARS);
+    }
+
+    private void renderInteractionNameplate(GuiGraphics graphics, int left, int top, String displayedName) {
+        int width = interactionNameplateWidth(displayedName);
+        int plateLeft = left + INTERACTION_NAMEPLATE_X;
+        int plateTop = top + INTERACTION_NAMEPLATE_Y;
+        blitNineSlicedTexture(
+                graphics,
+                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_NAMEPLATE_TEXTURE,
+                plateLeft,
+                plateTop,
+                width,
+                INTERACTION_NAMEPLATE_TEXTURE_HEIGHT,
+                INTERACTION_NAMEPLATE_TEXTURE_WIDTH,
+                INTERACTION_NAMEPLATE_TEXTURE_HEIGHT,
+                INTERACTION_NAMEPLATE_SLICE_LEFT,
+                INTERACTION_NAMEPLATE_SLICE_RIGHT,
+                INTERACTION_NAMEPLATE_SLICE_TOP,
+                INTERACTION_NAMEPLATE_SLICE_BOTTOM
+        );
+        blitNineSlicedTexture(
+                graphics,
+                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_NAMEPLATE_ORNAMENT_TEXTURE,
+                plateLeft - INTERACTION_NAMEPLATE_ORNAMENT_MARGIN,
+                plateTop - INTERACTION_NAMEPLATE_ORNAMENT_MARGIN,
+                width + INTERACTION_NAMEPLATE_ORNAMENT_MARGIN * 2,
+                INTERACTION_NAMEPLATE_ORNAMENT_TEXTURE_HEIGHT,
+                INTERACTION_NAMEPLATE_ORNAMENT_TEXTURE_WIDTH,
+                INTERACTION_NAMEPLATE_ORNAMENT_TEXTURE_HEIGHT,
+                INTERACTION_NAMEPLATE_ORNAMENT_SLICE_LEFT,
+                INTERACTION_NAMEPLATE_ORNAMENT_SLICE_RIGHT,
+                INTERACTION_NAMEPLATE_ORNAMENT_SLICE_TOP,
+                INTERACTION_NAMEPLATE_ORNAMENT_SLICE_BOTTOM
+        );
+    }
+
+    private int interactionNameplateWidth(String displayedName) {
+        return Math.max(
+                INTERACTION_NAMEPLATE_TEXTURE_WIDTH,
+                INTERACTION_CONTAINER_NAME_X + this.font.width(displayedName) + INTERACTION_NAMEPLATE_RIGHT_PADDING
+        );
+    }
+
+    private void renderInteractionContainerOrnament(GuiGraphics graphics, int left, int top) {
+        graphics.blit(
+                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_ORNAMENT_TEXTURE,
+                left + (INTERACTION_CONTAINER_WIDTH - INTERACTION_CONTAINER_ORNAMENT_WIDTH) / 2,
+                top + INTERACTION_CONTAINER_ORNAMENT_Y,
+                0,
+                0,
+                INTERACTION_CONTAINER_ORNAMENT_WIDTH,
+                INTERACTION_CONTAINER_ORNAMENT_HEIGHT,
+                INTERACTION_CONTAINER_ORNAMENT_WIDTH,
+                INTERACTION_CONTAINER_ORNAMENT_HEIGHT
+        );
+    }
+
+    private void blitNineSlicedTexture(
+            GuiGraphics graphics,
+            ResourceLocation texture,
+            int left,
+            int top,
+            int width,
+            int height,
+            int textureWidth,
+            int textureHeight,
+            int sliceLeft,
+            int sliceRight,
+            int sliceTop,
+            int sliceBottom) {
+        int centerSourceWidth = textureWidth - sliceLeft - sliceRight;
+        int centerSourceHeight = textureHeight - sliceTop - sliceBottom;
+        int centerWidth = Math.max(0, width - sliceLeft - sliceRight);
+        int centerHeight = Math.max(0, height - sliceTop - sliceBottom);
+
+        blitNineSlicedTexturePart(graphics, texture, left, top, sliceLeft, sliceTop, 0, 0, sliceLeft, sliceTop, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + sliceLeft, top, centerWidth, sliceTop, sliceLeft, 0, centerSourceWidth, sliceTop, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + width - sliceRight, top, sliceRight, sliceTop, textureWidth - sliceRight, 0, sliceRight, sliceTop, textureWidth, textureHeight);
+
+        blitNineSlicedTexturePart(graphics, texture, left, top + sliceTop, sliceLeft, centerHeight, 0, sliceTop, sliceLeft, centerSourceHeight, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + sliceLeft, top + sliceTop, centerWidth, centerHeight, sliceLeft, sliceTop, centerSourceWidth, centerSourceHeight, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + width - sliceRight, top + sliceTop, sliceRight, centerHeight, textureWidth - sliceRight, sliceTop, sliceRight, centerSourceHeight, textureWidth, textureHeight);
+
+        blitNineSlicedTexturePart(graphics, texture, left, top + height - sliceBottom, sliceLeft, sliceBottom, 0, textureHeight - sliceBottom, sliceLeft, sliceBottom, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + sliceLeft, top + height - sliceBottom, centerWidth, sliceBottom, sliceLeft, textureHeight - sliceBottom, centerSourceWidth, sliceBottom, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + width - sliceRight, top + height - sliceBottom, sliceRight, sliceBottom, textureWidth - sliceRight, textureHeight - sliceBottom, sliceRight, sliceBottom, textureWidth, textureHeight);
+    }
+
+    private void blitNineSlicedTexturePart(
+            GuiGraphics graphics,
+            ResourceLocation texture,
+            int destLeft,
+            int destTop,
+            int destWidth,
+            int destHeight,
+            int sourceLeft,
+            int sourceTop,
+            int sourceWidth,
+            int sourceHeight,
+            int textureWidth,
+            int textureHeight) {
+        if (destWidth <= 0 || destHeight <= 0 || sourceWidth <= 0 || sourceHeight <= 0) {
+            return;
+        }
+        graphics.blit(
+                texture,
+                destLeft,
+                destTop,
+                destWidth,
+                destHeight,
+                (float) sourceLeft,
+                (float) sourceTop,
+                sourceWidth,
+                sourceHeight,
+                textureWidth,
+                textureHeight
+        );
     }
 
     private void renderInteractionContainerOverlay(GuiGraphics graphics, int left, int top) {
