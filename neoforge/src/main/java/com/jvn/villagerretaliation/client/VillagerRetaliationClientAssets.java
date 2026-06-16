@@ -26,6 +26,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/villager_inventory");
     public static final ResourceLocation INTERACTION_CONTAINER_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container");
+    public static final ResourceLocation INTERACTION_CONTAINER_OVERLAY_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_overlay");
     public static final ResourceLocation INTERACTION_REPUTATION_ICON_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_reputation_icon");
     public static final ResourceLocation INTERACTION_OPTION_BUTTON_TEXTURE =
@@ -36,6 +38,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/option_button/interactions_options_arrow_up");
     public static final ResourceLocation INTERACTION_OPTION_ARROW_DOWN_TEXTURE =
             texture("gui/villager_interaction_screen/option_button/interactions_options_arrow_down");
+    public static final ResourceLocation INTERACTION_OPTION_SELECTION_ARROW_HOVER_TEXTURE =
+            texture("gui/villager_interaction_screen/option_button/interaction_option_selection_arrow_hover");
     public static final ResourceLocation CLIPBOARD_WORKFORCE_BASE_TEXTURE =
             texture("gui/clipboard_workforce/clipboard_base");
     public static final ResourceLocation CLIPBOARD_WORKFORCE_PAPER_TEXTURE =

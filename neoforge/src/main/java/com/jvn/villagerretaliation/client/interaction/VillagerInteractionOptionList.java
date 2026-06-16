@@ -164,7 +164,11 @@ final class VillagerInteractionOptionList {
             int left,
             int top,
             int viewportBottom) {
-        graphics.enableScissor(left, top, left + context.optionWidth(), viewportBottom);
+        int scissorRight = left + context.optionWidth();
+        if (context.pixelOptionSelectionArrowTexture() != null) {
+            scissorRight += context.pixelOptionSelectionArrowGap() + context.pixelOptionSelectionArrowWidth();
+        }
+        graphics.enableScissor(left, top, scissorRight, viewportBottom);
         for (int index = 0; index < context.optionCount(); index++) {
             int rowHeight = optionHeight(context, index);
             float y = top + optionOffset(context, index) - context.optionScroll();
@@ -199,6 +203,32 @@ final class VillagerInteractionOptionList {
                     false
             );
         }
+        if (active) {
+            renderPixelSelectionArrow(context, graphics, left, top, rowHeight);
+        }
+    }
+
+    private static void renderPixelSelectionArrow(Context context, GuiGraphics graphics, int left, int top, int rowHeight) {
+        ResourceLocation texture = context.pixelOptionSelectionArrowTexture();
+        if (texture == null) {
+            return;
+        }
+
+        int arrowWidth = context.pixelOptionSelectionArrowWidth();
+        int arrowHeight = context.pixelOptionSelectionArrowHeight();
+        int arrowLeft = left + context.optionWidth() + context.pixelOptionSelectionArrowGap();
+        int arrowTop = top + Math.max(0, (rowHeight - arrowHeight) / 2);
+        graphics.blit(
+                texture,
+                arrowLeft,
+                arrowTop,
+                0,
+                0,
+                arrowWidth,
+                arrowHeight,
+                arrowWidth,
+                arrowHeight
+        );
     }
 
     private static void renderPixelScrollArrows(Context context, GuiGraphics graphics, int left, int top, int viewportBottom) {
@@ -568,6 +598,22 @@ final class VillagerInteractionOptionList {
 
         default int pixelOptionArrowHeight() {
             return 6;
+        }
+
+        default ResourceLocation pixelOptionSelectionArrowTexture() {
+            return null;
+        }
+
+        default int pixelOptionSelectionArrowWidth() {
+            return 0;
+        }
+
+        default int pixelOptionSelectionArrowHeight() {
+            return 0;
+        }
+
+        default int pixelOptionSelectionArrowGap() {
+            return 0;
         }
 
         void renderScrollbar(GuiGraphics graphics);

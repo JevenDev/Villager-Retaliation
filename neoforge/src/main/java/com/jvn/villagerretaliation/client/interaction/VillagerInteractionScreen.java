@@ -56,6 +56,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -65,9 +66,12 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.util.Mth;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 public class VillagerInteractionScreen extends Screen implements VillagerInteractionSessionScreen {
@@ -103,6 +107,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_DIALOGUE_TOP = 26;
     private static final int INTERACTION_DIALOGUE_RIGHT = 270;
     private static final int INTERACTION_DIALOGUE_BOTTOM = 68;
+    private static final int INTERACTION_PORTRAIT_LEFT = 6;
+    private static final int INTERACTION_PORTRAIT_TOP = 20;
+    private static final int INTERACTION_PORTRAIT_RIGHT = 60;
+    private static final int INTERACTION_PORTRAIT_BOTTOM = 74;
+    private static final int INTERACTION_PORTRAIT_SCALE = 62;
+    private static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 2;
+    private static final int INTERACTION_CONTAINER_OVERLAY_X = 4;
+    private static final int INTERACTION_CONTAINER_OVERLAY_Y = 68;
+    private static final int INTERACTION_CONTAINER_OVERLAY_WIDTH = 59;
+    private static final int INTERACTION_CONTAINER_OVERLAY_HEIGHT = 45;
+    private static final float INTERACTION_CONTAINER_OVERLAY_Z = 120.0F;
     private static final int INTERACTION_STATS_ANCHOR_X = 277;
     private static final int INTERACTION_STATS_BASELINE_Y = 93;
     private static final int INTERACTION_STATS_TEXT_RAISE = 2;
@@ -114,6 +129,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_OPTION_TEXT_RIGHT_PADDING = INTERACTION_OPTION_TEXT_INSET;
     private static final int INTERACTION_OPTION_ARROW_WIDTH = 9;
     private static final int INTERACTION_OPTION_ARROW_HEIGHT = 6;
+    private static final int INTERACTION_OPTION_SELECTION_ARROW_WIDTH = 8;
+    private static final int INTERACTION_OPTION_SELECTION_ARROW_HEIGHT = 11;
+    private static final int INTERACTION_OPTION_SELECTION_ARROW_GAP = 5;
     private static final int INTERACTION_OPTION_MAX_LINE_CHARACTERS = 20;
     private static final int INTERACTION_OPTION_LINE_STEP = 10;
     private static final int INTERACTION_ICON_SIZE = 16;
@@ -1639,8 +1657,85 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 INTERACTION_NAME_COLOR,
                 false
         );
+        renderInteractionVillagerPortrait(graphics, left, top);
+        renderInteractionContainerOverlay(graphics, left, top);
         renderInteractionDialogue(graphics, left, top);
         renderInteractionStats(graphics, left, top);
+    }
+
+    private void renderInteractionContainerOverlay(GuiGraphics graphics, int left, int top) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, INTERACTION_CONTAINER_OVERLAY_Z);
+        try {
+            graphics.blit(
+                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OVERLAY_TEXTURE,
+                    left + INTERACTION_CONTAINER_OVERLAY_X,
+                    top + INTERACTION_CONTAINER_OVERLAY_Y,
+                    0,
+                    0,
+                    INTERACTION_CONTAINER_OVERLAY_WIDTH,
+                    INTERACTION_CONTAINER_OVERLAY_HEIGHT,
+                    INTERACTION_CONTAINER_OVERLAY_WIDTH,
+                    INTERACTION_CONTAINER_OVERLAY_HEIGHT
+            );
+        } finally {
+            graphics.pose().popPose();
+        }
+    }
+
+    private void renderInteractionVillagerPortrait(GuiGraphics graphics, int left, int top) {
+        Entity entity = Minecraft.getInstance().level == null
+                ? null
+                : Minecraft.getInstance().level.getEntity(this.villagerEntityId);
+        if (!(entity instanceof LivingEntity livingEntity)) {
+            return;
+        }
+
+        int portraitLeft = left + INTERACTION_PORTRAIT_LEFT;
+        int portraitTop = top + INTERACTION_PORTRAIT_TOP;
+        int portraitRight = left + INTERACTION_PORTRAIT_RIGHT;
+        int portraitBottom = top + INTERACTION_PORTRAIT_BOTTOM;
+        float centerX = (portraitLeft + portraitRight) / 2.0F;
+        float centerY = (portraitTop + portraitBottom) / 2.0F;
+        float renderY = portraitBottom + INTERACTION_PORTRAIT_RENDER_Y_OFFSET;
+        float mouseYaw = (float) Math.atan((centerX - this.lastMouseX) / 40.0F);
+        float mousePitch = (float) Math.atan((centerY - this.lastMouseY) / 40.0F);
+        Quaternionf entityRotation = new Quaternionf().rotateZ((float) Math.PI);
+        Quaternionf cameraRotation = new Quaternionf().rotateX(mousePitch * 20.0F * ((float) Math.PI / 180.0F));
+        entityRotation.mul(cameraRotation);
+
+        float previousBodyRot = livingEntity.yBodyRot;
+        float previousYRot = livingEntity.getYRot();
+        float previousXRot = livingEntity.getXRot();
+        float previousHeadRotO = livingEntity.yHeadRotO;
+        float previousHeadRot = livingEntity.yHeadRot;
+        livingEntity.yBodyRot = 180.0F + mouseYaw * 20.0F;
+        livingEntity.setYRot(180.0F + mouseYaw * 40.0F);
+        livingEntity.setXRot(-mousePitch * 20.0F);
+        livingEntity.yHeadRot = livingEntity.getYRot();
+        livingEntity.yHeadRotO = livingEntity.getYRot();
+
+        float scale = livingEntity.getScale();
+        graphics.enableScissor(portraitLeft, portraitTop, portraitRight, portraitBottom);
+        try {
+            InventoryScreen.renderEntityInInventory(
+                    graphics,
+                    centerX,
+                    renderY,
+                    INTERACTION_PORTRAIT_SCALE / scale,
+                    new Vector3f(0.0F, livingEntity.getBbHeight() / 2.0F + 0.0625F * scale, 0.0F),
+                    entityRotation,
+                    cameraRotation,
+                    livingEntity
+            );
+        } finally {
+            graphics.disableScissor();
+            livingEntity.yBodyRot = previousBodyRot;
+            livingEntity.setYRot(previousYRot);
+            livingEntity.setXRot(previousXRot);
+            livingEntity.yHeadRotO = previousHeadRotO;
+            livingEntity.yHeadRot = previousHeadRot;
+        }
     }
 
     private boolean shouldRenderInteractionContainer() {
@@ -2884,6 +2979,26 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public int pixelOptionArrowHeight() {
             return INTERACTION_OPTION_ARROW_HEIGHT;
+        }
+
+        @Override
+        public ResourceLocation pixelOptionSelectionArrowTexture() {
+            return VillagerRetaliationClientAssets.INTERACTION_OPTION_SELECTION_ARROW_HOVER_TEXTURE;
+        }
+
+        @Override
+        public int pixelOptionSelectionArrowWidth() {
+            return INTERACTION_OPTION_SELECTION_ARROW_WIDTH;
+        }
+
+        @Override
+        public int pixelOptionSelectionArrowHeight() {
+            return INTERACTION_OPTION_SELECTION_ARROW_HEIGHT;
+        }
+
+        @Override
+        public int pixelOptionSelectionArrowGap() {
+            return INTERACTION_OPTION_SELECTION_ARROW_GAP;
         }
 
         @Override
