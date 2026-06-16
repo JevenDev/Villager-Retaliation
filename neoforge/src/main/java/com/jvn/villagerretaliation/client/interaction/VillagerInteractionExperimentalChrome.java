@@ -92,16 +92,6 @@ final class VillagerInteractionExperimentalChrome {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         if (exitSkillsPanel != null && exitElapsedMillis >= 0.0F) {
             renderExitSkillsPanel(graphics, exitSkillsPanel, width, height, elapsedMillis, exitElapsedMillis, mouseX, mouseY);
-        } else {
-            VillagerInteractionScreenShaderRenderer.renderExperimentalChrome(
-                    graphics,
-                    width,
-                    height,
-                    elapsedMillis,
-                    exitElapsedMillis,
-                    mouseX,
-                    mouseY,
-                    professionColors);
         }
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();

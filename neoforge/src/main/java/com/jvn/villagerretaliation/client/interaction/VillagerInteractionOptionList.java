@@ -119,7 +119,7 @@ final class VillagerInteractionOptionList {
         float cursorShiftY = isHovered ? context.hoverShift(mouseY, y, rowHeight, context.experimentalUnit(2)) * hoverMix : 0.0F;
         float edgeAlpha = context.edgeFadeAlpha(y, viewportTop, viewportBottom);
         int textColor = optionTextColor(selected, isHovered);
-        float textFadeInAlpha = VillagerInteractionExperimentalChrome.textFadeInAlpha();
+        float textFadeInAlpha = context.textAlpha();
         if (!VillagerInteractionExperimentalChrome.shouldDrawText(textFadeInAlpha)) {
             return;
         }
@@ -313,6 +313,8 @@ final class VillagerInteractionOptionList {
         int experimentalUnitAtLeast(int value, int minimum);
 
         int optionsScrollbarLeft();
+
+        float textAlpha();
 
         void renderScrollbar(GuiGraphics graphics);
     }

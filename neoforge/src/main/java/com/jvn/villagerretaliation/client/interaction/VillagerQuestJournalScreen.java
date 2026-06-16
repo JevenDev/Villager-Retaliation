@@ -1019,6 +1019,11 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
 
         @Override
+        public float textAlpha() {
+            return VillagerInteractionExperimentalChrome.textFadeInAlpha();
+        }
+
+        @Override
         public void renderScrollbar(GuiGraphics graphics) {
             VillagerQuestJournalScreen.this.renderScrollbar(graphics);
         }

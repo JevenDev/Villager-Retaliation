@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -40,6 +41,7 @@ public record OpenVillagerInteractionPayload(
         String walletCurrencyName,
         String walletCurrencyPluralName,
         String walletCurrencyLabel,
+        ResourceLocation walletCurrencyIconSprite,
         boolean forceCameraTowardsVillager,
         List<HiredVillagerRole> availableHiredRoles,
         HiredVillagerRole activeHiredRole,
@@ -87,6 +89,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeUtf(payload.walletCurrencyName(), 64);
         buffer.writeUtf(payload.walletCurrencyPluralName(), 64);
         buffer.writeUtf(payload.walletCurrencyLabel(), 64);
+        buffer.writeResourceLocation(payload.walletCurrencyIconSprite());
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
         writeHiredRoles(buffer, payload.availableHiredRoles());
         buffer.writeEnum(payload.activeHiredRole());
@@ -132,6 +135,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readUtf(64),
                 buffer.readUtf(64),
                 buffer.readUtf(64),
+                buffer.readResourceLocation(),
                 buffer.readBoolean(),
                 readHiredRoles(buffer),
                 buffer.readEnum(HiredVillagerRole.class),

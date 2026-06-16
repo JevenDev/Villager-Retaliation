@@ -110,6 +110,7 @@ public final class VillagerInteractionClientHandler {
                 payload.walletCurrencyName(),
                 payload.walletCurrencyPluralName(),
                 payload.walletCurrencyLabel(),
+                payload.walletCurrencyIconSprite(),
                 payload.forceCameraTowardsVillager(),
                 payload.availableHiredRoles(),
                 payload.activeHiredRole(),
@@ -155,7 +156,13 @@ public final class VillagerInteractionClientHandler {
     }
 
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
-        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
+        Minecraft minecraft = Minecraft.getInstance();
+        VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (screen != null) {
+            screen.acceptVillagerDialogue(payload.text());
+            return;
+        }
+        pushVillagerChatMessage(minecraft, payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
     }
 
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {

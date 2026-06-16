@@ -21,13 +21,15 @@ import net.minecraft.world.item.Items;
 public final class VillagerCurrencyResources {
     private static final String CURRENCY_ROOT = "currency";
     public static final TagKey<Item> CURRENCY_TAG = TagKey.create(Registries.ITEM, VillagerRetaliation.id("currency"));
+    private static final ResourceLocation DEFAULT_ICON_SPRITE = ResourceLocation.withDefaultNamespace("item/emerald");
     private static final CurrencyDefinition DEFAULT_CURRENCY = new CurrencyDefinition(
             Items.EMERALD,
             Set.of(Items.EMERALD),
             Set.of(CURRENCY_TAG),
             "emerald",
             "emeralds",
-            "Emeralds"
+            "Emeralds",
+            DEFAULT_ICON_SPRITE
     );
 
     private static volatile CachedCurrency cachedCurrency = CachedCurrency.empty();
@@ -69,7 +71,7 @@ public final class VillagerCurrencyResources {
 
     public static Text text(MinecraftServer server) {
         CurrencyDefinition currency = load(server);
-        return new Text(currency.name(), currency.pluralName(), currency.walletLabel());
+        return new Text(currency.name(), currency.pluralName(), currency.walletLabel(), currency.iconSprite());
     }
 
     private static CurrencyDefinition load(MinecraftServer server) {
@@ -129,13 +131,26 @@ public final class VillagerCurrencyResources {
         String name = fallback(DatapackJsonReader.readString(root, "name", "singular_name"), fallbackName);
         String pluralName = fallback(DatapackJsonReader.readString(root, "plural_name"), name + "s");
         String walletLabel = fallback(DatapackJsonReader.readString(root, "wallet_label"), titleCase(pluralName));
+        ResourceLocation iconSprite = readIconSprite(root).orElseGet(() -> itemSprite(item.get()));
         return Optional.of(new CurrencyDefinition(
                 item.get(),
                 Set.copyOf(acceptedItems),
                 Set.copyOf(acceptedTags),
                 name,
                 pluralName,
-                walletLabel
+                walletLabel,
+                iconSprite
+        ));
+    }
+
+    private static Optional<ResourceLocation> readIconSprite(JsonObject root) {
+        return parseSpriteLocation(DatapackJsonReader.readString(
+                root,
+                "icon_sprite",
+                "currency_sprite",
+                "display_sprite",
+                "sprite",
+                "texture"
         ));
     }
 
@@ -159,6 +174,28 @@ public final class VillagerCurrencyResources {
         return Optional.ofNullable(ResourceLocation.tryParse(normalized));
     }
 
+    private static Optional<ResourceLocation> parseSpriteLocation(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        String normalized = value.trim().replace('\\', '/');
+        int namespaceSeparator = normalized.indexOf(':');
+        String namespace = namespaceSeparator >= 0 ? normalized.substring(0, namespaceSeparator) : "minecraft";
+        String path = namespaceSeparator >= 0 ? normalized.substring(namespaceSeparator + 1) : normalized;
+        if (path.startsWith("textures/")) {
+            path = path.substring("textures/".length());
+        }
+        if (path.endsWith(".png")) {
+            path = path.substring(0, path.length() - ".png".length());
+        }
+        return Optional.ofNullable(ResourceLocation.tryParse(namespace + ":" + path));
+    }
+
+    private static ResourceLocation itemSprite(Item item) {
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(item);
+        return ResourceLocation.fromNamespaceAndPath(itemId.getNamespace(), "item/" + itemId.getPath());
+    }
+
     private static String fallback(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
     }
@@ -176,7 +213,8 @@ public final class VillagerCurrencyResources {
             Set<TagKey<Item>> acceptedTags,
             String name,
             String pluralName,
-            String walletLabel) {
+            String walletLabel,
+            ResourceLocation iconSprite) {
         private boolean matches(ItemStack stack) {
             return this.acceptedItems.stream().anyMatch(stack::is)
                     || this.acceptedTags.stream().anyMatch(stack::is);
@@ -198,6 +236,6 @@ public final class VillagerCurrencyResources {
         }
     }
 
-    public record Text(String name, String pluralName, String walletLabel) {
+    public record Text(String name, String pluralName, String walletLabel, ResourceLocation iconSprite) {
     }
 }

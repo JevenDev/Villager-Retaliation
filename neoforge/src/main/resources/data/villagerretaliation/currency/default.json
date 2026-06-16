@@ -1,5 +1,6 @@
 {
   "item": "minecraft:emerald",
+  "icon_sprite": "minecraft:item/emerald",
   "name": "emerald",
   "plural_name": "emeralds",
   "wallet_label": "Emeralds"

@@ -22,4 +22,6 @@ interface VillagerInteractionSessionScreen {
     void replaceFromServer();
 
     void closeFromServer();
+
+    void acceptVillagerDialogue(String text);
 }

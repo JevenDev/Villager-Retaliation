@@ -14,11 +14,6 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import org.joml.Matrix4f;
 
 public final class VillagerInteractionScreenShaderRenderer {
-    private static final float DITHER_CELL_SIZE = 1.0F;
-    private static final float DITHER_ARC_DEPTH = 30.0F;
-
-    private static ShaderInstance interactionVeilShader;
-    private static ShaderInstance experimentalChromeShader;
     private static ShaderInstance experimentalNotificationShader;
     private static ShaderInstance experimentalSkillsShader;
 
@@ -164,22 +159,6 @@ public final class VillagerInteractionScreenShaderRenderer {
             event.registerShader(
                     new ShaderInstance(
                             event.getResourceProvider(),
-                            VillagerRetaliationClientAssets.INTERACTION_VEIL_SHADER,
-                            DefaultVertexFormat.POSITION
-                    ),
-                    shader -> interactionVeilShader = shader
-            );
-            event.registerShader(
-                    new ShaderInstance(
-                            event.getResourceProvider(),
-                            VillagerRetaliationClientAssets.EXPERIMENTAL_CHROME_SHADER,
-                            DefaultVertexFormat.POSITION
-                    ),
-                    shader -> experimentalChromeShader = shader
-            );
-            event.registerShader(
-                    new ShaderInstance(
-                            event.getResourceProvider(),
                             VillagerRetaliationClientAssets.EXPERIMENTAL_NOTIFICATION_SHADER,
                             DefaultVertexFormat.POSITION
                     ),
@@ -196,63 +175,6 @@ public final class VillagerInteractionScreenShaderRenderer {
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to register interaction screen shaders", exception);
         }
-    }
-
-    public static void renderInteractionVeil(GuiGraphics graphics, int width, int height, float veilTop, float fadeHeight) {
-        if (interactionVeilShader == null) {
-            return;
-        }
-
-        setUniform(interactionVeilShader, "VeilTop", veilTop);
-        setUniform(interactionVeilShader, "FadeHeight", fadeHeight);
-        setUniform(interactionVeilShader, "CellSize", DITHER_CELL_SIZE);
-        setUniform(interactionVeilShader, "ScreenWidth", (float) width);
-        setUniform(interactionVeilShader, "ArcDepth", DITHER_ARC_DEPTH);
-        drawQuad(graphics, interactionVeilShader, new ShaderRect(0.0F, Math.max(0.0F, veilTop), width, height));
-    }
-
-    public static boolean renderExperimentalChrome(
-            GuiGraphics graphics,
-            int width,
-            int height,
-            float elapsedMillis,
-            float exitElapsedMillis,
-            int mouseX,
-            int mouseY) {
-        return renderExperimentalChrome(
-                graphics,
-                width,
-                height,
-                elapsedMillis,
-                exitElapsedMillis,
-                mouseX,
-                mouseY,
-                VillagerProfessionUiColors.DEFAULT_COLORS);
-    }
-
-    public static boolean renderExperimentalChrome(
-            GuiGraphics graphics,
-            int width,
-            int height,
-            float elapsedMillis,
-            float exitElapsedMillis,
-            int mouseX,
-            int mouseY,
-            VillagerProfessionUiColors.ColorPair colors) {
-        if (experimentalChromeShader == null) {
-            return false;
-        }
-
-        setUniform(experimentalChromeShader, "ScreenWidth", (float) width);
-        setUniform(experimentalChromeShader, "ScreenHeight", (float) height);
-        setUniform(experimentalChromeShader, "MouseX", (float) mouseX);
-        setUniform(experimentalChromeShader, "MouseY", (float) mouseY);
-        setUniform(experimentalChromeShader, "ElapsedMillis", elapsedMillis);
-        setUniform(experimentalChromeShader, "ExitElapsedMillis", exitElapsedMillis);
-        setChromeColorUniforms(experimentalChromeShader, colors);
-
-        drawQuad(graphics, experimentalChromeShader, new ShaderRect(0, 0, width, height));
-        return true;
     }
 
     public static boolean renderExperimentalNotification(

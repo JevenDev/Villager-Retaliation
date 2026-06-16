@@ -24,6 +24,10 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/info_icon");
     public static final ResourceLocation VILLAGER_INVENTORY_TEXTURE =
             texture("gui/villager_interaction_screen/villager_inventory");
+    public static final ResourceLocation INTERACTION_CONTAINER_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container");
+    public static final ResourceLocation INTERACTION_REPUTATION_ICON_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_reputation_icon");
     public static final ResourceLocation CLIPBOARD_WORKFORCE_BASE_TEXTURE =
             texture("gui/clipboard_workforce/clipboard_base");
     public static final ResourceLocation CLIPBOARD_WORKFORCE_PAPER_TEXTURE =
@@ -60,10 +64,6 @@ public final class VillagerRetaliationClientAssets {
     public static final ResourceLocation COMBAT_VILLAGER_CEM_MODEL_LEGACY_FOLDER =
             ResourceLocation.withDefaultNamespace("optifine/cem/" + VillagerRetaliation.MOD_ID + "/villager.jem");
 
-    public static final ResourceLocation INTERACTION_VEIL_SHADER =
-            VillagerRetaliation.id("interaction_veil");
-    public static final ResourceLocation EXPERIMENTAL_CHROME_SHADER =
-            VillagerRetaliation.id("experimental_chrome");
     public static final ResourceLocation EXPERIMENTAL_NOTIFICATION_SHADER =
             VillagerRetaliation.id("experimental_notification");
     public static final ResourceLocation EXPERIMENTAL_SKILLS_SHADER =

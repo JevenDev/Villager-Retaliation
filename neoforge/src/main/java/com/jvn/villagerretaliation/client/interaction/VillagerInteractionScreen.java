@@ -3,10 +3,10 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.toucanlib.client.ToucanScrollbarThumb;
 import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.toucanlib.client.ToucanScrollbars;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.reputation.VillagerReputationIconSet;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
-import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
@@ -54,13 +54,16 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.util.Mth;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
@@ -72,26 +75,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final String BACK_LABEL_KEY = GUI_KEY_PREFIX + "back";
     private static final String FORCED_LEAVE_OPTION_ID = "leave";
     private static final String DIALOGUE_TREE_LEAVE_OPTION_ID = DialogueTreeService.LEAVE_OPTION_ID;
-    private static final String BLUEPRINT_START_OPTION_ID = "construction_blueprint_start";
     private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
     private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
-    private static final int OPTION_HEIGHT = 18;
-    private static final int INFO_PANEL_CHAT_PADDING = 20;
-    private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
-    private static final float EXPERIMENTAL_INFO_NAME_SCALE = 1.85F;
-    private static final float EXPERIMENTAL_INFO_DETAIL_SCALE = 1.4F;
-    private static final int CHAT_EDGE_MARGIN = 4;
-    private static final int CHAT_TOP_MARGIN = 12;
-    private static final int CHAT_INPUT_AND_GAP_HEIGHT = 38;
-    private static final int CHAT_EXTRA_WIDTH = 8;
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
     private static final float OPTION_SELECTED_SCALE = 0.02F;
-    private static final int INFO_LABEL_COLOR = 0x96E8E4DA;
     private static final int INFO_VALUE_COLOR = 0xFFF8F6EF;
     private static final int INFO_SECONDARY_COLOR = 0xB8D5D0C6;
-    private static final int WALLET_COLOR = 0xFFB6FF4A;
     private static final int GIFT_BUTTON_WIDTH = 64;
     private static final int GIFT_BUTTON_HEIGHT = 18;
     private static final int PROFILE_CHART_RADIUS = 36;
@@ -102,6 +93,25 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int PROFILE_CHART_POINT_HOVER_COLOR = 0xFFFFFFFF;
     private static final int PROFILE_CHART_POINT_HIT_RADIUS = 6;
     private static final int PROFILE_SKILL_COLUMNS = 2;
+    private static final ResourceLocation DEFAULT_CURRENCY_ICON_SPRITE = ResourceLocation.withDefaultNamespace("item/emerald");
+    private static final int INTERACTION_CONTAINER_WIDTH = 282;
+    private static final int INTERACTION_CONTAINER_HEIGHT = 113;
+    private static final int INTERACTION_CONTAINER_HOTBAR_GAP = 24;
+    private static final int INTERACTION_CONTAINER_NAME_X = 6;
+    private static final int INTERACTION_CONTAINER_NAME_Y = 5;
+    private static final int INTERACTION_DIALOGUE_LEFT = 69;
+    private static final int INTERACTION_DIALOGUE_TOP = 26;
+    private static final int INTERACTION_DIALOGUE_RIGHT = 270;
+    private static final int INTERACTION_DIALOGUE_BOTTOM = 68;
+    private static final int INTERACTION_STATS_ANCHOR_X = 277;
+    private static final int INTERACTION_STATS_BASELINE_Y = 93;
+    private static final int INTERACTION_STATS_TEXT_RAISE = 2;
+    private static final int INTERACTION_ICON_SIZE = 16;
+    private static final int INTERACTION_ICON_TEXT_GAP = 4;
+    private static final int INTERACTION_TOOLTIP_MAX_WIDTH = 220;
+    private static final int INTERACTION_NAME_COLOR = 0xFF2E2418;
+    private static final int INTERACTION_DIALOGUE_COLOR = 0xFF35291C;
+    private static final int INTERACTION_STATS_COLOR = 0xFF2E2418;
     private static final Runnable NO_ACTION = () -> {
     };
 
@@ -129,6 +139,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final String walletCurrencyName;
     private final String walletCurrencyPluralName;
     private final String walletCurrencyLabel;
+    private final ResourceLocation walletCurrencyIconSprite;
     private final EnumSet<HiredVillagerRole> availableHiredRoles;
     private final HiredVillagerRole activeHiredRole;
     private boolean activeBrewingOrder;
@@ -175,11 +186,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private long experimentalSkillsAnimationStartMillis = -1L;
     private long experimentalSkillsExitStartMillis = -1L;
     private Button giftButton;
-    private Double originalChatWidth;
+    private String villagerDialogueText = "";
     private final GiftPageContext giftPageContext = new GiftPageContext();
     private final OptionListContext optionListContext = new OptionListContext();
     private final NavigationChromeContext navigationChromeContext = new NavigationChromeContext();
-    private final ExperimentalChromeContext experimentalChromeContext = new ExperimentalChromeContext();
     private final ProfilePageContext profilePageContext = new ProfilePageContext();
     private final SkillsPageContext skillsPageContext = new SkillsPageContext();
 
@@ -208,6 +218,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             String walletCurrencyName,
             String walletCurrencyPluralName,
             String walletCurrencyLabel,
+            ResourceLocation walletCurrencyIconSprite,
             boolean forceCameraTowardsVillager,
             List<HiredVillagerRole> availableHiredRoles,
             HiredVillagerRole activeHiredRole,
@@ -250,6 +261,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.walletCurrencyName = blankToDefault(walletCurrencyName, "emerald");
         this.walletCurrencyPluralName = blankToDefault(walletCurrencyPluralName, "emeralds");
         this.walletCurrencyLabel = blankToDefault(walletCurrencyLabel, "Emeralds");
+        this.walletCurrencyIconSprite = walletCurrencyIconSprite == null ? DEFAULT_CURRENCY_ICON_SPRITE : walletCurrencyIconSprite;
         this.availableHiredRoles = availableHiredRoles == null || availableHiredRoles.isEmpty()
                 ? EnumSet.noneOf(HiredVillagerRole.class)
                 : EnumSet.copyOf(availableHiredRoles);
@@ -287,14 +299,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 .build());
         this.giftButton.visible = false;
         rebuildOptions();
-        applyChatWidthOverride();
     }
 
     @Override
     public void tick() {
         syncCameraFocusState();
         ClientVillagerConversationState.tickCameraFocus();
-        applyChatWidthOverride();
     }
 
     @Override
@@ -335,17 +345,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     public void replaceFromServer() {
         this.closingFromServer = true;
         this.replacingFromServer = true;
-        restoreChatWidthOverride();
     }
 
     public void closeFromServer() {
         this.closingFromServer = true;
         if (Minecraft.getInstance().screen != this) {
-            restoreChatWidthOverride();
             VillagerInteractionChatVisibility.restoreHiddenVillagerMessages(Minecraft.getInstance());
             ClientVillagerConversationState.clear();
         }
         Minecraft.getInstance().setScreen(null);
+    }
+
+    @Override
+    public void acceptVillagerDialogue(String text) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        this.villagerDialogueText = text.strip();
     }
 
     @Override
@@ -358,7 +374,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         updateSkillScroll();
 
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.screenLayerZ());
-        VillagerInteractionExperimentalChrome.renderFocus(this.experimentalChromeContext, graphics, mouseX, mouseY);
+        renderInteractionContainer(graphics);
         renderTopBackButton(graphics, mouseX, mouseY);
         if (this.page == DialoguePage.GIFT) {
             renderGiftPage(graphics, mouseX, mouseY, partialTick);
@@ -379,8 +395,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             renderOptions(graphics, mouseX, mouseY, optionsTop());
         }
         renderHint(graphics);
-        VillagerInteractionExperimentalChrome.renderNameTooltip(this.experimentalChromeContext, graphics, mouseX, mouseY);
-        VillagerInteractionExperimentalChrome.renderWalletTooltip(this.experimentalChromeContext, graphics, mouseX, mouseY);
+        renderInteractionStatTooltips(graphics, mouseX, mouseY);
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
@@ -485,7 +500,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
 
-        restoreChatWidthOverride();
         if (!this.replacingFromServer) {
             VillagerInteractionChatVisibility.restoreHiddenVillagerMessages(Minecraft.getInstance());
             ClientVillagerConversationState.clear();
@@ -1414,123 +1428,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void leaveConversation() {
-        VillagerInteractionExperimentalChrome.startExitAnimation(
-                buildExperimentalExitTextElements(),
-                buildExperimentalExitFadeTextElements(),
-                buildExperimentalExitFadeRectElements());
         this.minecraft.setScreen(null);
-    }
-
-    private List<VillagerInteractionExperimentalChrome.ExitTextElement> buildExperimentalExitTextElements() {
-        List<VillagerInteractionExperimentalChrome.ExitTextElement> textElements = new ArrayList<>();
-        float textScale = experimentalScaleFactor();
-        float nameScale = 1.85F * textScale;
-        float detailScale = 1.4F * textScale;
-        int lineGap = experimentalUnit(5);
-        int reputationY = experimentalInfoBottom() - Math.round(this.font.lineHeight * detailScale);
-        int professionY = reputationY - lineGap - Math.round(this.font.lineHeight * detailScale);
-        int nameY = professionY - lineGap - Math.round(this.font.lineHeight * nameScale);
-        int right = experimentalInfoRight();
-        textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                this.villagerName, right, nameY, moodColor(this.primaryMood), nameScale, 0.0F, -18.0F, this.height + 96.0F, true));
-        textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                this.professionName, right, professionY, INFO_SECONDARY_COLOR, detailScale, 45.0F, -10.0F, this.height + 82.0F, true));
-        textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                reputationText(), right, reputationY, reputationColor(), detailScale, 90.0F, -6.0F, this.height + 74.0F, true));
-
-        int optionLeft = experimentalOptionsLeft();
-        int textLeft = optionLeft + optionTextInset();
-        int top = optionsTop();
-        int viewportTop = top;
-        int viewportBottom = top + optionViewportHeight();
-        for (int index = 0; index < this.options.size(); index++) {
-            float y = top + VillagerInteractionOptionList.optionOffset(this.optionListContext, index) - this.state.optionScroll();
-            if (y + VillagerInteractionOptionList.optionHeight(this.optionListContext, index) < viewportTop || y > viewportBottom) {
-                continue;
-            }
-
-            boolean selected = index == this.state.selectedOption();
-            int color = selected ? 0xFFF8F8F4 : 0xCFC7C8C5;
-            float scale = (1.48F + (selected ? OPTION_SELECTED_SCALE : 0.0F)) * textScale;
-            float delay = 120.0F + index * 28.0F;
-            int textY = Mth.floor(y + optionTextYOffset());
-            if (selected) {
-                int selectorX = textLeft - experimentalUnit(17);
-                int selectorY = Math.round(y + VillagerInteractionOptionList.optionHeight(this.optionListContext, index) * 0.5F
-                        - this.font.lineHeight * scale * 0.5F) + 3;
-                textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                        ">", selectorX, selectorY, 0xFFFFFFFF, scale, delay, 0.0F, this.height - selectorY + 72.0F, false));
-            }
-            List<String> labelLines = VillagerInteractionOptionList.wrappedOptionLabelLines(this.optionListContext, this.options.get(index).label(), scale);
-            for (int lineIndex = 0; lineIndex < labelLines.size(); lineIndex++) {
-                int lineY = textY + lineIndex * optionHeight();
-                textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                        labelLines.get(lineIndex),
-                        textLeft,
-                        lineY,
-                        color,
-                        scale,
-                        delay + 24.0F,
-                        0.0F,
-                        this.height - lineY + 88.0F,
-                        false));
-            }
-        }
-        return textElements;
-    }
-
-    private List<VillagerInteractionExperimentalChrome.ExitFadeTextElement> buildExperimentalExitFadeTextElements() {
-        List<VillagerInteractionExperimentalChrome.ExitFadeTextElement> textElements = new ArrayList<>();
-        String hintText = translate(canNavigateBack() ? "hint.back" : "hint.leave");
-        float scale = experimentalScaleFactor();
-        int width = Math.round(this.font.width(hintText) * scale);
-        int height = Math.round(this.font.lineHeight * scale);
-        textElements.add(new VillagerInteractionExperimentalChrome.ExitFadeTextElement(
-                hintText,
-                this.width - width - experimentalUnit(8),
-                this.height - height - experimentalUnit(5),
-                0x66FFFFFF,
-                scale));
-        return textElements;
-    }
-
-    private List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> buildExperimentalExitFadeRectElements() {
-        List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements = new ArrayList<>();
-        addScrollbarExitFadeRects(rectElements, scrollbarThumb(), this.state.optionScroll(), maxOptionScroll());
-        if (this.page == DialoguePage.SKILLS) {
-            addScrollbarExitFadeRects(rectElements, skillInfoScrollbarThumb(), this.skillScroll, maxSkillScroll());
-        }
-        return rectElements;
-    }
-
-    private void addScrollbarExitFadeRects(
-            List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements,
-            ToucanScrollbarThumb scrollbarThumb,
-            float currentScroll,
-            float maxScroll) {
-        if (scrollbarThumb == null) {
-            return;
-        }
-
-        boolean canScrollUp = currentScroll > 0.75F;
-        boolean canScrollDown = currentScroll < maxScroll - 0.75F;
-        int fadeLength = Math.min(8, Math.max(3, scrollbarThumb.height() / 3));
-        for (int y = scrollbarThumb.top(); y < scrollbarThumb.bottom(); y++) {
-            float alphaFactor = 1.0F;
-            if (canScrollUp && y < scrollbarThumb.top() + fadeLength) {
-                alphaFactor = Math.min(alphaFactor, (y - scrollbarThumb.top() + 1.0F) / fadeLength);
-            }
-            if (canScrollDown && y >= scrollbarThumb.bottom() - fadeLength) {
-                alphaFactor = Math.min(alphaFactor, (scrollbarThumb.bottom() - y) / (float) fadeLength);
-            }
-            rectElements.add(new VillagerInteractionExperimentalChrome.ExitFadeRectElement(
-                    scrollbarThumb.left(),
-                    y,
-                    scrollbarThumb.right(),
-                    y + 1,
-                    0xBFFFFFFF,
-                    alphaFactor));
-        }
     }
 
     private void activateSelected() {
@@ -1705,6 +1603,174 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         );
     }
 
+    private void renderInteractionContainer(GuiGraphics graphics) {
+        if (!shouldRenderInteractionContainer()) {
+            return;
+        }
+
+        int left = interactionContainerLeft();
+        int top = interactionContainerTop();
+        graphics.blit(
+                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_TEXTURE,
+                left,
+                top,
+                0,
+                0,
+                INTERACTION_CONTAINER_WIDTH,
+                INTERACTION_CONTAINER_HEIGHT,
+                INTERACTION_CONTAINER_WIDTH,
+                INTERACTION_CONTAINER_HEIGHT
+        );
+        graphics.drawString(
+                this.font,
+                this.villagerName,
+                left + INTERACTION_CONTAINER_NAME_X,
+                top + INTERACTION_CONTAINER_NAME_Y,
+                INTERACTION_NAME_COLOR,
+                false
+        );
+        renderInteractionDialogue(graphics, left, top);
+        renderInteractionStats(graphics, left, top);
+    }
+
+    private boolean shouldRenderInteractionContainer() {
+        return this.page != DialoguePage.GIFT
+                && this.page != DialoguePage.PROFILE
+                && this.page != DialoguePage.SKILLS;
+    }
+
+    private void renderInteractionDialogue(GuiGraphics graphics, int left, int top) {
+        if (this.villagerDialogueText.isBlank()) {
+            return;
+        }
+
+        int textLeft = left + INTERACTION_DIALOGUE_LEFT;
+        int textTop = top + INTERACTION_DIALOGUE_TOP;
+        int textRight = left + INTERACTION_DIALOGUE_RIGHT;
+        int textBottom = top + INTERACTION_DIALOGUE_BOTTOM;
+        int lineStep = this.font.lineHeight;
+        int maxLines = Math.max(1, (textBottom - textTop) / lineStep);
+        List<FormattedCharSequence> lines = this.font.split(
+                Component.literal(this.villagerDialogueText),
+                INTERACTION_DIALOGUE_RIGHT - INTERACTION_DIALOGUE_LEFT
+        );
+        graphics.enableScissor(textLeft, textTop, textRight, textBottom);
+        for (int index = 0; index < Math.min(maxLines, lines.size()); index++) {
+            graphics.drawString(
+                    this.font,
+                    lines.get(index),
+                    textLeft,
+                    textTop + index * lineStep,
+                    INTERACTION_DIALOGUE_COLOR,
+                    false
+            );
+        }
+        graphics.disableScissor();
+    }
+
+    private void renderInteractionStats(GuiGraphics graphics, int left, int top) {
+        InteractionStatLayout stats = interactionStatLayout(left, top);
+        graphics.blit(
+                VillagerRetaliationClientAssets.INTERACTION_REPUTATION_ICON_TEXTURE,
+                stats.reputationIconLeft(),
+                stats.iconTop(),
+                0,
+                0,
+                INTERACTION_ICON_SIZE,
+                INTERACTION_ICON_SIZE,
+                INTERACTION_ICON_SIZE,
+                INTERACTION_ICON_SIZE
+        );
+        graphics.drawString(this.font, stats.reputationText(), stats.reputationTextLeft(), stats.textTop(), INTERACTION_STATS_COLOR, false);
+        TextureAtlasSprite currencySprite = Minecraft.getInstance()
+                .getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
+                .apply(this.walletCurrencyIconSprite);
+        graphics.blit(stats.currencyIconLeft(), stats.iconTop(), 0, INTERACTION_ICON_SIZE, INTERACTION_ICON_SIZE, currencySprite);
+        graphics.drawString(this.font, stats.currencyText(), stats.currencyTextLeft(), stats.textTop(), INTERACTION_STATS_COLOR, false);
+    }
+
+    private void renderInteractionStatTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (!shouldRenderInteractionContainer()) {
+            return;
+        }
+
+        InteractionStatLayout stats = interactionStatLayout(interactionContainerLeft(), interactionContainerTop());
+        if (stats.containsCurrency(mouseX, mouseY)) {
+            renderInteractionTooltip(
+                    graphics,
+                    List.of(
+                            Component.literal(walletTooltipTitle()).withStyle(ChatFormatting.GREEN),
+                            Component.literal(walletTooltipBody()).withStyle(ChatFormatting.GRAY)),
+                    mouseX,
+                    mouseY);
+            return;
+        }
+
+        if (stats.containsReputation(mouseX, mouseY)) {
+            renderInteractionTooltip(
+                    graphics,
+                    List.of(
+                            Component.literal(reputationText()).withStyle(ChatFormatting.YELLOW),
+                            Component.literal(localizedReputationLevelName()).withStyle(ChatFormatting.GRAY)),
+                    mouseX,
+                    mouseY);
+        }
+    }
+
+    private void renderInteractionTooltip(GuiGraphics graphics, List<Component> tooltip, int mouseX, int mouseY) {
+        if (tooltip.isEmpty()) {
+            return;
+        }
+        List<FormattedCharSequence> lines = new ArrayList<>();
+        for (Component component : tooltip) {
+            List<FormattedCharSequence> wrappedLines = this.font.split(component, INTERACTION_TOOLTIP_MAX_WIDTH);
+            if (wrappedLines.isEmpty()) {
+                lines.add(component.getVisualOrderText());
+            } else {
+                lines.addAll(wrappedLines);
+            }
+        }
+        graphics.renderTooltip(this.font, lines, DefaultTooltipPositioner.INSTANCE, mouseX, mouseY);
+    }
+
+    private InteractionStatLayout interactionStatLayout(int left, int top) {
+        int textTop = top + INTERACTION_STATS_BASELINE_Y - this.font.lineHeight - INTERACTION_STATS_TEXT_RAISE;
+        int iconTop = top + INTERACTION_STATS_BASELINE_Y - INTERACTION_ICON_SIZE;
+        String currencyText = walletText();
+        String reputationText = Integer.toString(this.reputation);
+
+        int currencyTextRight = left + INTERACTION_STATS_ANCHOR_X;
+        int currencyTextLeft = currencyTextRight - this.font.width(currencyText);
+        int currencyIconLeft = currencyTextLeft - INTERACTION_ICON_TEXT_GAP - INTERACTION_ICON_SIZE;
+        int reputationTextRight = currencyIconLeft - INTERACTION_ICON_TEXT_GAP;
+        int reputationTextLeft = reputationTextRight - this.font.width(reputationText);
+        int reputationIconLeft = reputationTextLeft - INTERACTION_ICON_TEXT_GAP - INTERACTION_ICON_SIZE;
+        int hitTop = Math.min(textTop, iconTop);
+        int hitBottom = Math.max(textTop + this.font.lineHeight, iconTop + INTERACTION_ICON_SIZE);
+        return new InteractionStatLayout(
+                textTop,
+                iconTop,
+                currencyText,
+                reputationText,
+                currencyTextLeft,
+                currencyTextRight,
+                currencyIconLeft,
+                reputationTextLeft,
+                reputationTextRight,
+                reputationIconLeft,
+                hitTop,
+                hitBottom
+        );
+    }
+
+    private int interactionContainerLeft() {
+        return (this.width - INTERACTION_CONTAINER_WIDTH) / 2;
+    }
+
+    private int interactionContainerTop() {
+        return Math.max(4, this.height - INTERACTION_CONTAINER_HEIGHT - INTERACTION_CONTAINER_HOTBAR_GAP);
+    }
+
     private void renderTopBackButton(GuiGraphics graphics, int mouseX, int mouseY) {
         VillagerInteractionNavigationChrome.renderTopBackButton(this.navigationChromeContext, graphics, mouseX, mouseY);
     }
@@ -1713,14 +1779,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         VillagerInteractionNavigationChrome.renderHint(this.navigationChromeContext, graphics);
     }
 
-    void renderBackdropBehindChat(GuiGraphics graphics) {
-        int veilTop = interactionVeilTop();
+    void renderPositionedHudChat(GuiGraphics graphics) {
         if (experimentalSkillsBackdropVisible()) {
             VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.hudLayerZ());
             renderExperimentalSkillsBackdrop(graphics);
             VillagerClientUiUtil.popGuiLayer(graphics);
         }
-        VillagerInteractionExperimentalChrome.renderBackdrop(graphics, this.width, this.height, veilTop, this.lastMouseX, this.lastMouseY);
     }
 
     private void renderExperimentalSkillsBackdrop(GuiGraphics graphics) {
@@ -1769,62 +1833,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return chromeExitElapsedMillis;
         }
         return this.experimentalSkillsExitStartMillis < 0L ? -1.0F : Util.getMillis() - this.experimentalSkillsExitStartMillis;
-    }
-
-    void renderPositionedHudChat(GuiGraphics graphics) {
-        renderBackdropBehindChat(graphics);
-
-        Minecraft minecraft = Minecraft.getInstance();
-        ChatRenderLayout layout = chatRenderLayout();
-        VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.chatLayerZ());
-        graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
-        graphics.pose().pushPose();
-        graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
-        VillagerChatEffectRenderer.render(graphics, minecraft);
-        graphics.pose().popPose();
-        graphics.disableScissor();
-        VillagerClientUiUtil.popGuiLayer(graphics);
-    }
-
-    ChatRenderLayout chatRenderLayout() {
-        Minecraft minecraft = Minecraft.getInstance();
-        ChatComponent chat = minecraft.gui.getChat();
-        int chatWidth = chat.getWidth() + CHAT_EXTRA_WIDTH;
-        int chatHeight = chat.getHeight();
-        int groupWidth = Mth.clamp(chatWidth, 40, Math.max(40, this.width - CHAT_EDGE_MARGIN * 2));
-        int groupHeight = Mth.clamp(chatHeight + CHAT_INPUT_AND_GAP_HEIGHT, 40, Math.max(40, this.height - CHAT_EDGE_MARGIN * 2));
-        int vanillaTop = this.height - 40 - chatHeight;
-        int vanillaLeft = 0;
-
-        InteractionChatPosition position = VillagerRetaliationConfig.INTERACTION_CHAT_POSITION.get();
-        int targetLeft;
-        if (position.anchorsRight()) {
-            targetLeft = this.width - groupWidth - CHAT_EDGE_MARGIN;
-        } else if (position.anchorsCenter()) {
-            targetLeft = (this.width - groupWidth) / 2;
-        } else {
-            targetLeft = vanillaLeft;
-        }
-
-        int targetTop;
-        if (position.anchorsTop()) {
-            targetTop = CHAT_TOP_MARGIN;
-        } else if (position.anchorsMiddle()) {
-            targetTop = (this.height - groupHeight) / 2;
-        } else {
-            targetTop = vanillaTop;
-        }
-
-        targetLeft = Mth.clamp(targetLeft, 0, Math.max(0, this.width - groupWidth));
-        targetTop = Mth.clamp(targetTop, 0, Math.max(0, this.height - groupHeight));
-        return new ChatRenderLayout(
-                targetLeft,
-                targetTop,
-                targetLeft + groupWidth,
-                targetTop + groupHeight,
-                targetLeft - vanillaLeft,
-                targetTop - vanillaTop
-        );
     }
 
     private boolean isFamilyPageActive() {
@@ -2078,10 +2086,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return VillagerInteractionSkillsPage.skillsInfoContentHeight(this.skillsPageContext);
     }
 
-    private int interactionVeilTop() {
-        return Math.max(0, conversationInfoTop() + VEIL_DITHER_START_OFFSET);
-    }
-
     private int skillInfoViewportTop() {
         if (this.page == DialoguePage.SKILLS) {
             return experimentalOptionViewportTop();
@@ -2139,34 +2143,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return VillagerInteractionExperimentalLayout.optionsLeft(this.width, optionWidth());
     }
 
-    private int experimentalInfoRight() {
-        return VillagerInteractionExperimentalLayout.infoRight(this.width, experimentalOptionsLeft());
-    }
-
-    private int experimentalInfoLeft() {
-        float scale = experimentalScaleFactor();
-        int nameWidth = Math.round(this.font.width(this.villagerName) * EXPERIMENTAL_INFO_NAME_SCALE * scale);
-        int professionWidth = Math.round(this.font.width(this.professionName) * EXPERIMENTAL_INFO_DETAIL_SCALE * scale);
-        int reputationWidth = Math.round(this.font.width(reputationText()) * EXPERIMENTAL_INFO_DETAIL_SCALE * scale);
-        int walletWidth = Math.round(this.font.width(walletText()) * EXPERIMENTAL_INFO_DETAIL_SCALE * scale);
-        int infoWidth = Math.max(nameWidth, Math.max(Math.max(professionWidth, reputationWidth), walletWidth));
-        return experimentalInfoRight() - infoWidth;
-    }
-
-    private int experimentalInfoBottom() {
-        return optionsTop() + optionViewportHeight();
-    }
-
     private int experimentalPageLeft() {
         return VillagerInteractionExperimentalLayout.pageLeft(this.width, optionWidth());
-    }
-
-    private String genderText() {
-        return translate("info.gender", this.genderName);
-    }
-
-    private String moodText() {
-        return translate("info.mood", moodName(this.primaryMood));
     }
 
     private String reputationText() {
@@ -2178,16 +2156,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private String walletTooltipTitle() {
-        return translate("info.wallet.tooltip.title", this.walletCurrencyPluralName);
+        return translate("info.wallet.tooltip.title", this.walletCurrencyLabel);
     }
 
     private String walletTooltipBody() {
         return translate("info.wallet.tooltip.body", this.walletCurrencyPluralName);
     }
 
-    private int reputationColor() {
-        Integer color = VillagerReputationIconSet.colorFor(this.reputationLevel).getColor();
-        return color == null ? INFO_LABEL_COLOR : 0xFF000000 | color;
+    private String localizedReputationLevelName() {
+        if (this.reputationLevel == null) {
+            return "Unknown";
+        }
+        String key = "villagerretaliation.reputation.level." + this.reputationLevel.name().toLowerCase(Locale.ROOT);
+        return I18n.exists(key) ? I18n.get(key) : this.reputationLevel.name();
     }
 
     private String familyButtonText() {
@@ -2210,41 +2191,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         ItemStack offhand = minecraft.player.getOffhandItem();
         return VillagerRetaliationItems.isClipboard(offhand) ? offhand : ItemStack.EMPTY;
-    }
-
-    private void applyChatWidthOverride() {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.options == null) {
-            return;
-        }
-        if (this.originalChatWidth == null) {
-            this.originalChatWidth = (Double) minecraft.options.chatWidth().get();
-        }
-
-        int targetPixelWidth = Math.max(40, interactionChatTargetPixelWidth());
-        double targetChatWidth = Mth.clamp((targetPixelWidth - 40.0D) / 280.0D, 0.0D, this.originalChatWidth);
-        minecraft.options.chatWidth().set(targetChatWidth);
-    }
-
-    private int interactionChatTargetPixelWidth() {
-        InteractionChatPosition position = VillagerRetaliationConfig.INTERACTION_CHAT_POSITION.get();
-        int padding = experimentalUnit(INFO_PANEL_CHAT_PADDING);
-        if (position.anchorsCenter()) {
-            return this.width - CHAT_EDGE_MARGIN * 2;
-        }
-        if (position.anchorsRight()) {
-            return Math.max(40, optionsLeft() - padding);
-        }
-        return Math.max(40, experimentalInfoLeft() - padding);
-    }
-
-    private void restoreChatWidthOverride() {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.options == null || this.originalChatWidth == null) {
-            return;
-        }
-        minecraft.options.chatWidth().set(this.originalChatWidth);
-        this.originalChatWidth = null;
     }
 
     private int focusCenterY() {
@@ -2376,7 +2322,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             ToucanScrollbarThumb scrollbarThumb,
             float currentScroll,
             float maxScroll) {
-        ToucanScrollbars.renderFadedThumb(graphics, scrollbarThumb, currentScroll, maxScroll, 0xBFFFFFFF, VillagerInteractionExperimentalChrome.chromeAlpha());
+        ToucanScrollbars.renderFadedThumb(graphics, scrollbarThumb, currentScroll, maxScroll, 0xBFFFFFFF, 1.0F);
     }
 
     private ToucanScrollbarThumb scrollbarThumb() {
@@ -2464,15 +2410,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private boolean cameraShouldForceTowardsVillager() {
         return this.forcedDialogue || this.forceCameraTowardsVillager;
-    }
-
-    private static int moodColor(VillagerMood mood) {
-        return switch (mood) {
-            case GRATEFUL, CONTENT, HOPEFUL, PROUD -> 0xD08BE0A9;
-            case SUSPICIOUS, STRESSED, LONELY -> 0xD0E6D58A;
-            case AFRAID, ANGRY, GRIEVING, PROTECTIVE -> 0xD0E69A8A;
-            case NEUTRAL -> 0xCFEAE6DC;
-        };
     }
 
     private static String maleAncestorLabel(int generation) {
@@ -2642,13 +2579,29 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private record TopBackButtonBounds(int left, int right, int top, int bottom) {
     }
 
-    record ChatRenderLayout(int left, int top, int right, int bottom, int xOffset, int yOffset) {
-        int translatedMouseX(int mouseX) {
-            return mouseX - this.xOffset;
+    private record InteractionStatLayout(
+            int textTop,
+            int iconTop,
+            String currencyText,
+            String reputationText,
+            int currencyTextLeft,
+            int currencyTextRight,
+            int currencyIconLeft,
+            int reputationTextLeft,
+            int reputationTextRight,
+            int reputationIconLeft,
+            int hitTop,
+            int hitBottom) {
+        boolean containsCurrency(double mouseX, double mouseY) {
+            return contains(mouseX, mouseY, this.currencyIconLeft, this.currencyTextRight);
         }
 
-        int translatedMouseY(int mouseY) {
-            return mouseY - this.yOffset;
+        boolean containsReputation(double mouseX, double mouseY) {
+            return contains(mouseX, mouseY, this.reputationIconLeft, this.reputationTextRight);
+        }
+
+        private boolean contains(double mouseX, double mouseY, int left, int right) {
+            return mouseX >= left && mouseX <= right && mouseY >= this.hitTop && mouseY <= this.hitBottom;
         }
     }
 
@@ -2801,110 +2754,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public float textAlpha() {
+            return 1.0F;
+        }
+
+        @Override
         public void renderScrollbar(GuiGraphics graphics) {
             VillagerInteractionScreen.this.renderScrollbar(graphics);
-        }
-    }
-
-    private final class ExperimentalChromeContext implements VillagerInteractionExperimentalChrome.Context {
-        @Override
-        public Font font() {
-            return VillagerInteractionScreen.this.font;
-        }
-
-        @Override
-        public int infoRight() {
-            return VillagerInteractionScreen.this.experimentalInfoRight();
-        }
-
-        @Override
-        public int infoBottom() {
-            return VillagerInteractionScreen.this.experimentalInfoBottom();
-        }
-
-        @Override
-        public int screenWidth() {
-            return VillagerInteractionScreen.this.width;
-        }
-
-        @Override
-        public int screenHeight() {
-            return VillagerInteractionScreen.this.height;
-        }
-
-        @Override
-        public String villagerName() {
-            return VillagerInteractionScreen.this.villagerName;
-        }
-
-        @Override
-        public String professionName() {
-            return VillagerInteractionScreen.this.professionName;
-        }
-
-        @Override
-        public String genderText() {
-            return VillagerInteractionScreen.this.genderText();
-        }
-
-        @Override
-        public String moodText() {
-            return VillagerInteractionScreen.this.moodText();
-        }
-
-        @Override
-        public String reputationText() {
-            return VillagerInteractionScreen.this.reputationText();
-        }
-
-        @Override
-        public String walletText() {
-            return VillagerInteractionScreen.this.walletText();
-        }
-
-        @Override
-        public String walletTooltipTitle() {
-            return VillagerInteractionScreen.this.walletTooltipTitle();
-        }
-
-        @Override
-        public String walletTooltipBody() {
-            return VillagerInteractionScreen.this.walletTooltipBody();
-        }
-
-        @Override
-        public int moodColor() {
-            return VillagerInteractionScreen.moodColor(VillagerInteractionScreen.this.primaryMood);
-        }
-
-        @Override
-        public int reputationColor() {
-            return VillagerInteractionScreen.this.reputationColor();
-        }
-
-        @Override
-        public int walletColor() {
-            return WALLET_COLOR;
-        }
-
-        @Override
-        public int infoSecondaryColor() {
-            return INFO_SECONDARY_COLOR;
-        }
-
-        @Override
-        public int infoLabelColor() {
-            return INFO_LABEL_COLOR;
-        }
-
-        @Override
-        public float experimentalTextScale() {
-            return VillagerInteractionScreen.this.experimentalScaleFactor();
-        }
-
-        @Override
-        public int experimentalUnit(int value) {
-            return VillagerInteractionScreen.this.experimentalUnit(value);
         }
     }
 
@@ -2979,7 +2835,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public float chromeAlpha() {
-            return VillagerInteractionExperimentalChrome.chromeAlpha();
+            return 1.0F;
         }
     }
 
