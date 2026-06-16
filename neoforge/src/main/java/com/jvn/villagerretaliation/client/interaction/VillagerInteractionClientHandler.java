@@ -111,6 +111,7 @@ public final class VillagerInteractionClientHandler {
                 payload.walletCurrencyPluralName(),
                 payload.walletCurrencyLabel(),
                 payload.walletCurrencyIconSprite(),
+                payload.walletCurrencyTextColor(),
                 payload.forceCameraTowardsVillager(),
                 payload.availableHiredRoles(),
                 payload.activeHiredRole(),

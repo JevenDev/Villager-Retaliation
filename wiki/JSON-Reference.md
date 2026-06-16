@@ -150,7 +150,8 @@ Built-in default:
   "item": "minecraft:emerald",
   "name": "emerald",
   "plural_name": "emeralds",
-  "wallet_label": "Emeralds"
+  "wallet_label": "Emeralds",
+  "text_color": "#55ff55"
 }
 ```
 
@@ -164,6 +165,7 @@ Fields:
 | `name` | Singular display name used in notices. |
 | `plural_name` | Plural display name used in notices. |
 | `wallet_label` | Label shown in the villager interaction wallet line. |
+| `text_color` / `wallet_text_color` / `wallet_color` / `color` | Hex or named color for the villager interaction wallet number. Defaults to `#55ff55`. |
 
 Payment-box recipes and client-side "hold currency" checks also use the `villagerretaliation:currency` item tag:
 

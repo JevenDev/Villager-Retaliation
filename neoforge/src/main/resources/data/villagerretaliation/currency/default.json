@@ -3,5 +3,6 @@
   "icon_sprite": "minecraft:item/emerald",
   "name": "emerald",
   "plural_name": "emeralds",
-  "wallet_label": "Emeralds"
+  "wallet_label": "Emeralds",
+  "text_color": "#55ff55"
 }

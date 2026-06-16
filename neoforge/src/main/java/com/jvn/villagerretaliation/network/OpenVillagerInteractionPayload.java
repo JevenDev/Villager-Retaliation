@@ -42,6 +42,7 @@ public record OpenVillagerInteractionPayload(
         String walletCurrencyPluralName,
         String walletCurrencyLabel,
         ResourceLocation walletCurrencyIconSprite,
+        int walletCurrencyTextColor,
         boolean forceCameraTowardsVillager,
         List<HiredVillagerRole> availableHiredRoles,
         HiredVillagerRole activeHiredRole,
@@ -90,6 +91,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeUtf(payload.walletCurrencyPluralName(), 64);
         buffer.writeUtf(payload.walletCurrencyLabel(), 64);
         buffer.writeResourceLocation(payload.walletCurrencyIconSprite());
+        buffer.writeInt(payload.walletCurrencyTextColor());
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
         writeHiredRoles(buffer, payload.availableHiredRoles());
         buffer.writeEnum(payload.activeHiredRole());
@@ -136,6 +138,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readUtf(64),
                 buffer.readUtf(64),
                 buffer.readResourceLocation(),
+                buffer.readInt(),
                 buffer.readBoolean(),
                 readHiredRoles(buffer),
                 buffer.readEnum(HiredVillagerRole.class),

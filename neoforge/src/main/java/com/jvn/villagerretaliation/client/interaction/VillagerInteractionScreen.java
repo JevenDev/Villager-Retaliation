@@ -133,17 +133,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_PORTRAIT_BOTTOM = 74;
     private static final int INTERACTION_PORTRAIT_SCALE = 62;
     private static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 2;
+    private static final int INTERACTION_PORTRAIT_ORNAMENT_WIDTH = 65;
+    private static final int INTERACTION_PORTRAIT_ORNAMENT_HEIGHT = 65;
+    private static final int INTERACTION_PORTRAIT_ORNAMENT_X_OFFSET = 1;
+    private static final int INTERACTION_PORTRAIT_ORNAMENT_Y_OFFSET = 1;
+    private static final float INTERACTION_PORTRAIT_ORNAMENT_Z = 119.0F;
     private static final int INTERACTION_CONTAINER_OVERLAY_X = 4;
     private static final int INTERACTION_CONTAINER_OVERLAY_Y = 68;
     private static final int INTERACTION_CONTAINER_OVERLAY_WIDTH = 59;
     private static final int INTERACTION_CONTAINER_OVERLAY_HEIGHT = 45;
     private static final float INTERACTION_CONTAINER_OVERLAY_Z = 120.0F;
-    private static final int INTERACTION_STATS_ANCHOR_X = 277;
+    private static final int INTERACTION_STATS_ANCHOR_X = 276;
     private static final int INTERACTION_STATS_BASELINE_Y = 93;
     private static final int INTERACTION_STATS_TEXT_RAISE = 2;
     private static final int INTERACTION_OPTION_WIDTH = 64;
     private static final int INTERACTION_OPTION_HEIGHT = 17;
     private static final int INTERACTION_OPTION_STRIDE = 16;
+    private static final int INTERACTION_OPTION_CONTAINER_GAP = 5;
     private static final int INTERACTION_OPTION_TEXT_INSET = 5;
     private static final int INTERACTION_OPTION_TEXT_TOP = 5;
     private static final int INTERACTION_OPTION_TEXT_RIGHT_PADDING = INTERACTION_OPTION_TEXT_INSET;
@@ -151,7 +157,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_OPTION_ARROW_HEIGHT = 6;
     private static final int INTERACTION_OPTION_SELECTION_ARROW_WIDTH = 8;
     private static final int INTERACTION_OPTION_SELECTION_ARROW_HEIGHT = 11;
-    private static final int INTERACTION_OPTION_SELECTION_ARROW_GAP = 5;
+    private static final int INTERACTION_OPTION_SELECTION_ARROW_GAP = 2;
     private static final int INTERACTION_OPTION_MAX_LINE_CHARACTERS = 20;
     private static final int INTERACTION_OPTION_LINE_STEP = 10;
     private static final int INTERACTION_ICON_SIZE = 16;
@@ -159,7 +165,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_TOOLTIP_MAX_WIDTH = 220;
     private static final int INTERACTION_NAME_COLOR = 0xFFF3CA55;
     private static final int INTERACTION_DIALOGUE_COLOR = 0xFF35291C;
-    private static final int INTERACTION_STATS_COLOR = 0xFF2E2418;
+    private static final int INTERACTION_REPUTATION_TEXT_COLOR = 0xFFFFFF55;
+    private static final int TEXT_OUTLINE_COLOR = 0xFF000000;
     private static final Runnable NO_ACTION = () -> {
     };
 
@@ -188,6 +195,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final String walletCurrencyPluralName;
     private final String walletCurrencyLabel;
     private final ResourceLocation walletCurrencyIconSprite;
+    private final int walletCurrencyTextColor;
     private final EnumSet<HiredVillagerRole> availableHiredRoles;
     private final HiredVillagerRole activeHiredRole;
     private boolean activeBrewingOrder;
@@ -268,6 +276,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             String walletCurrencyPluralName,
             String walletCurrencyLabel,
             ResourceLocation walletCurrencyIconSprite,
+            int walletCurrencyTextColor,
             boolean forceCameraTowardsVillager,
             List<HiredVillagerRole> availableHiredRoles,
             HiredVillagerRole activeHiredRole,
@@ -311,6 +320,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.walletCurrencyPluralName = blankToDefault(walletCurrencyPluralName, "emeralds");
         this.walletCurrencyLabel = blankToDefault(walletCurrencyLabel, "Emeralds");
         this.walletCurrencyIconSprite = walletCurrencyIconSprite == null ? DEFAULT_CURRENCY_ICON_SPRITE : walletCurrencyIconSprite;
+        this.walletCurrencyTextColor = walletCurrencyTextColor | 0xFF000000;
         this.availableHiredRoles = availableHiredRoles == null || availableHiredRoles.isEmpty()
                 ? EnumSet.noneOf(HiredVillagerRole.class)
                 : EnumSet.copyOf(availableHiredRoles);
@@ -1659,7 +1669,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int left = interactionContainerLeft();
         int top = interactionContainerTop();
         String displayedName = interactionDisplayName();
-        renderInteractionNameplate(graphics, left, top, displayedName);
         graphics.blit(
                 VillagerRetaliationClientAssets.INTERACTION_CONTAINER_TEXTURE,
                 left,
@@ -1671,6 +1680,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 INTERACTION_CONTAINER_WIDTH,
                 INTERACTION_CONTAINER_HEIGHT
         );
+        renderInteractionVillagerPortrait(graphics, left, top);
+        renderInteractionPortraitOrnament(graphics, left, top);
+        renderInteractionContainerOverlay(graphics, left, top);
+        renderInteractionDialogue(graphics, left, top);
+        renderInteractionStats(graphics, left, top);
+        renderInteractionContainerOrnament(graphics, left, top);
+        renderInteractionNameplate(graphics, left, top, displayedName);
         graphics.drawString(
                 this.font,
                 displayedName,
@@ -1679,11 +1695,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 INTERACTION_NAME_COLOR,
                 false
         );
-        renderInteractionVillagerPortrait(graphics, left, top);
-        renderInteractionContainerOverlay(graphics, left, top);
-        renderInteractionDialogue(graphics, left, top);
-        renderInteractionStats(graphics, left, top);
-        renderInteractionContainerOrnament(graphics, left, top);
     }
 
     private String interactionDisplayName() {
@@ -1830,6 +1841,35 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
+    private void renderInteractionPortraitOrnament(GuiGraphics graphics, int left, int top) {
+        int portraitLeft = left + INTERACTION_PORTRAIT_LEFT;
+        int portraitTop = top + INTERACTION_PORTRAIT_TOP;
+        int portraitRight = left + INTERACTION_PORTRAIT_RIGHT;
+        int portraitBottom = top + INTERACTION_PORTRAIT_BOTTOM;
+        int ornamentLeft = (portraitLeft + portraitRight - INTERACTION_PORTRAIT_ORNAMENT_WIDTH) / 2
+                + INTERACTION_PORTRAIT_ORNAMENT_X_OFFSET;
+        int ornamentTop = (portraitTop + portraitBottom - INTERACTION_PORTRAIT_ORNAMENT_HEIGHT) / 2
+                + INTERACTION_PORTRAIT_ORNAMENT_Y_OFFSET;
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, INTERACTION_PORTRAIT_ORNAMENT_Z);
+        try {
+            graphics.blit(
+                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_PORTRAIT_ORNAMENT_TEXTURE,
+                    ornamentLeft,
+                    ornamentTop,
+                    0,
+                    0,
+                    INTERACTION_PORTRAIT_ORNAMENT_WIDTH,
+                    INTERACTION_PORTRAIT_ORNAMENT_HEIGHT,
+                    INTERACTION_PORTRAIT_ORNAMENT_WIDTH,
+                    INTERACTION_PORTRAIT_ORNAMENT_HEIGHT
+            );
+        } finally {
+            graphics.pose().popPose();
+        }
+    }
+
     private void renderInteractionVillagerPortrait(GuiGraphics graphics, int left, int top) {
         Entity entity = Minecraft.getInstance().level == null
                 ? null
@@ -1933,12 +1973,32 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 INTERACTION_ICON_SIZE,
                 INTERACTION_ICON_SIZE
         );
-        graphics.drawString(this.font, stats.reputationText(), stats.reputationTextLeft(), stats.textTop(), INTERACTION_STATS_COLOR, false);
+        drawOutlinedString(
+                graphics,
+                stats.reputationText(),
+                stats.reputationTextLeft(),
+                stats.textTop(),
+                INTERACTION_REPUTATION_TEXT_COLOR
+        );
         TextureAtlasSprite currencySprite = Minecraft.getInstance()
                 .getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
                 .apply(this.walletCurrencyIconSprite);
         graphics.blit(stats.currencyIconLeft(), stats.iconTop(), 0, INTERACTION_ICON_SIZE, INTERACTION_ICON_SIZE, currencySprite);
-        graphics.drawString(this.font, stats.currencyText(), stats.currencyTextLeft(), stats.textTop(), INTERACTION_STATS_COLOR, false);
+        drawOutlinedString(
+                graphics,
+                stats.currencyText(),
+                stats.currencyTextLeft(),
+                stats.textTop(),
+                this.walletCurrencyTextColor
+        );
+    }
+
+    private void drawOutlinedString(GuiGraphics graphics, String text, int x, int y, int color) {
+        graphics.drawString(this.font, text, x - 1, y, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(this.font, text, x + 1, y, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(this.font, text, x, y - 1, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(this.font, text, x, y + 1, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(this.font, text, x, y, color, false);
     }
 
     private void renderInteractionStatTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -2387,7 +2447,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private int optionsLeft() {
         if (usesInteractionOptionStack()) {
-            return interactionContainerRightWithOptionOverlap();
+            return interactionOptionStackLeft();
         }
         return experimentalOptionsLeft();
     }
@@ -2555,7 +2615,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                                 + INTERACTION_OPTION_TEXT_RIGHT_PADDING);
             }
         }
-        int maxAvailableWidth = Math.max(INTERACTION_OPTION_WIDTH, this.width - interactionContainerRightWithOptionOverlap() - 4);
+        int maxAvailableWidth = Math.max(INTERACTION_OPTION_WIDTH, this.width - interactionOptionStackLeft() - 4);
         return Math.min(desiredWidth, maxAvailableWidth);
     }
 
@@ -2566,8 +2626,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return (index + 1) + ". " + this.options.get(index).label();
     }
 
-    private int interactionContainerRightWithOptionOverlap() {
-        return interactionContainerLeft() + INTERACTION_CONTAINER_WIDTH - 1;
+    private int interactionOptionStackLeft() {
+        return interactionContainerLeft() + INTERACTION_CONTAINER_WIDTH + INTERACTION_OPTION_CONTAINER_GAP;
     }
 
     private void ensureSelectedVisible() {

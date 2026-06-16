@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.dialogue.DialogueTextEffects;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.util.LinkedHashSet;
@@ -20,6 +21,7 @@ import net.minecraft.world.item.Items;
 
 public final class VillagerCurrencyResources {
     private static final String CURRENCY_ROOT = "currency";
+    private static final int DEFAULT_TEXT_COLOR = 0xFF55FF55;
     public static final TagKey<Item> CURRENCY_TAG = TagKey.create(Registries.ITEM, VillagerRetaliation.id("currency"));
     private static final ResourceLocation DEFAULT_ICON_SPRITE = ResourceLocation.withDefaultNamespace("item/emerald");
     private static final CurrencyDefinition DEFAULT_CURRENCY = new CurrencyDefinition(
@@ -29,7 +31,8 @@ public final class VillagerCurrencyResources {
             "emerald",
             "emeralds",
             "Emeralds",
-            DEFAULT_ICON_SPRITE
+            DEFAULT_ICON_SPRITE,
+            DEFAULT_TEXT_COLOR
     );
 
     private static volatile CachedCurrency cachedCurrency = CachedCurrency.empty();
@@ -71,7 +74,7 @@ public final class VillagerCurrencyResources {
 
     public static Text text(MinecraftServer server) {
         CurrencyDefinition currency = load(server);
-        return new Text(currency.name(), currency.pluralName(), currency.walletLabel(), currency.iconSprite());
+        return new Text(currency.name(), currency.pluralName(), currency.walletLabel(), currency.iconSprite(), currency.textColor());
     }
 
     private static CurrencyDefinition load(MinecraftServer server) {
@@ -132,6 +135,7 @@ public final class VillagerCurrencyResources {
         String pluralName = fallback(DatapackJsonReader.readString(root, "plural_name"), name + "s");
         String walletLabel = fallback(DatapackJsonReader.readString(root, "wallet_label"), titleCase(pluralName));
         ResourceLocation iconSprite = readIconSprite(root).orElseGet(() -> itemSprite(item.get()));
+        int textColor = readTextColor(root).orElse(DEFAULT_TEXT_COLOR);
         return Optional.of(new CurrencyDefinition(
                 item.get(),
                 Set.copyOf(acceptedItems),
@@ -139,8 +143,19 @@ public final class VillagerCurrencyResources {
                 name,
                 pluralName,
                 walletLabel,
-                iconSprite
+                iconSprite,
+                textColor
         ));
+    }
+
+    private static Optional<Integer> readTextColor(JsonObject root) {
+        for (String key : new String[]{"text_color", "wallet_text_color", "wallet_color", "color"}) {
+            Integer rgb = DialogueTextEffects.parseColor(DatapackJsonReader.readString(root, key));
+            if (rgb != null) {
+                return Optional.of(0xFF000000 | rgb);
+            }
+        }
+        return Optional.empty();
     }
 
     private static Optional<ResourceLocation> readIconSprite(JsonObject root) {
@@ -214,7 +229,8 @@ public final class VillagerCurrencyResources {
             String name,
             String pluralName,
             String walletLabel,
-            ResourceLocation iconSprite) {
+            ResourceLocation iconSprite,
+            int textColor) {
         private boolean matches(ItemStack stack) {
             return this.acceptedItems.stream().anyMatch(stack::is)
                     || this.acceptedTags.stream().anyMatch(stack::is);
@@ -236,6 +252,6 @@ public final class VillagerCurrencyResources {
         }
     }
 
-    public record Text(String name, String pluralName, String walletLabel, ResourceLocation iconSprite) {
+    public record Text(String name, String pluralName, String walletLabel, ResourceLocation iconSprite, int textColor) {
     }
 }

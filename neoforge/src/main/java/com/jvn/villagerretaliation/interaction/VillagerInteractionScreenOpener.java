@@ -162,6 +162,7 @@ public final class VillagerInteractionScreenOpener {
                 currencyText.pluralName(),
                 currencyText.walletLabel(),
                 currencyText.iconSprite(),
+                currencyText.textColor(),
                 forceCameraTowardsVillager,
                 HiredVillagerRoles.availableRoles(level, villager),
                 HiredVillagerContractService.activeRole(level, villager),
