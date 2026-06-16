@@ -16,6 +16,7 @@ final class VillagerInteractionOptionList {
     private static final int PIXEL_OPTION_SLICE_RIGHT = 4;
     private static final int PIXEL_OPTION_SLICE_TOP = 4;
     private static final int PIXEL_OPTION_SLICE_BOTTOM = 4;
+    private static final float PIXEL_OPTION_EDGE_MIN_SCALE = 0.92F;
 
     private VillagerInteractionOptionList() {
     }
@@ -175,37 +176,59 @@ final class VillagerInteractionOptionList {
             if (y + rowHeight < top || y > viewportBottom) {
                 continue;
             }
-            renderPixelOption(context, graphics, index, hovered, left, Mth.floor(y), rowHeight);
+            renderPixelOption(context, graphics, index, hovered, left, y, rowHeight, top, viewportBottom);
         }
         graphics.disableScissor();
         renderPixelScrollArrows(context, graphics, left, top, viewportBottom);
     }
 
-    private static void renderPixelOption(Context context, GuiGraphics graphics, int index, int hovered, int left, int top, int rowHeight) {
+    private static void renderPixelOption(Context context, GuiGraphics graphics, int index, int hovered, int left, float top, int rowHeight, int viewportTop, int viewportBottom) {
+        int drawTop = Mth.floor(top);
         boolean selected = index == context.selectedOption();
         boolean isHovered = hovered == index;
         boolean keyboardFocused = selected && context.pixelOptionKeyboardFocusVisible();
         boolean active = isHovered || keyboardFocused;
         ResourceLocation texture = context.pixelOptionTexture(keyboardFocused, isHovered);
-        blitPixelOptionButton(graphics, texture, left, top, context.optionWidth(), rowHeight);
+        boolean clipped = isClipped(drawTop, drawTop + rowHeight, viewportTop, viewportBottom);
+        float scale = clipped ? pixelEdgeScale(drawTop, drawTop + rowHeight, viewportTop, viewportBottom) : 1.0F;
 
-        int textLeft = left + context.optionTextInset();
-        int textWidth = Math.max(1, context.optionWidth() - context.optionTextInset() - context.pixelOptionTextRightPadding());
-        List<String> lines = pixelOptionLabelLines(context, index);
-        int textColor = context.pixelOptionTextColor(keyboardFocused, isHovered || active);
-        for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
-            graphics.drawString(
-                    context.font(),
-                    fitPlainText(context.font(), lines.get(lineIndex), textWidth),
-                    textLeft,
-                    top + context.pixelOptionTextTop() + lineIndex * context.pixelOptionLineStep(),
-                    textColor,
-                    false
-            );
+        graphics.pose().pushPose();
+        applyPixelOptionEdgeScale(graphics, left, drawTop, context.optionWidth(), rowHeight, scale);
+        try {
+            blitPixelOptionButton(graphics, texture, left, drawTop, context.optionWidth(), rowHeight);
+
+            int textLeft = left + context.optionTextInset();
+            int textWidth = Math.max(1, context.optionWidth() - context.optionTextInset() - context.pixelOptionTextRightPadding());
+            List<String> lines = pixelOptionLabelLines(context, index);
+            int textColor = context.pixelOptionTextColor(keyboardFocused, isHovered || active);
+            for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+                int lineTop = drawTop + context.pixelOptionTextTop() + lineIndex * context.pixelOptionLineStep();
+                graphics.drawString(
+                        context.font(),
+                        fitPlainText(context.font(), lines.get(lineIndex), textWidth),
+                        textLeft,
+                        lineTop,
+                        textColor,
+                        false
+                );
+            }
+            if (active) {
+                renderPixelSelectionArrow(context, graphics, left, drawTop, rowHeight);
+            }
+        } finally {
+            graphics.pose().popPose();
         }
-        if (active) {
-            renderPixelSelectionArrow(context, graphics, left, top, rowHeight);
+    }
+
+    private static void applyPixelOptionEdgeScale(GuiGraphics graphics, int left, int top, int width, int height, float scale) {
+        if (scale >= 0.999F) {
+            return;
         }
+        float pivotX = left + width * 0.5F;
+        float pivotY = top + height * 0.5F;
+        graphics.pose().translate(pivotX, pivotY, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.pose().translate(-pivotX, -pivotY, 0.0F);
     }
 
     private static void renderPixelSelectionArrow(Context context, GuiGraphics graphics, int left, int top, int rowHeight) {
@@ -229,6 +252,18 @@ final class VillagerInteractionOptionList {
                 arrowWidth,
                 arrowHeight
         );
+    }
+
+    private static boolean isClipped(float elementTop, float elementBottom, int viewportTop, int viewportBottom) {
+        return elementTop < viewportTop || elementBottom > viewportBottom;
+    }
+
+    private static float pixelEdgeScale(float elementTop, float elementBottom, int viewportTop, int viewportBottom) {
+        float visibleTop = Math.max(elementTop, viewportTop);
+        float visibleBottom = Math.min(elementBottom, viewportBottom);
+        float height = Math.max(1.0F, elementBottom - elementTop);
+        float visibleFraction = Mth.clamp((visibleBottom - visibleTop) / height, 0.0F, 1.0F);
+        return Mth.lerp(visibleFraction, PIXEL_OPTION_EDGE_MIN_SCALE, 1.0F);
     }
 
     private static void renderPixelScrollArrows(Context context, GuiGraphics graphics, int left, int top, int viewportBottom) {
