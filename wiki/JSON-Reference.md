@@ -205,6 +205,8 @@ Use `mood` conditions for current villager mood gates. Active quests can evaluat
 }
 ```
 
+Legacy equipment flags such as `requires_villager_armed`, `requires_villager_unarmed`, `requires_witness_armed`, and `requires_witness_unarmed` are live-context gates for dialogue, notification, loot, gift, forced-dialogue, and pacify resources. They are not quest conditions and are not evaluated from saved active quest state.
+
 ### Quest Facts
 
 Use `quest_fact` conditions for durable story flags, branch choices, and counters written by quest or dialogue actions.

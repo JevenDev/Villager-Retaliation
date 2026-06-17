@@ -696,6 +696,7 @@ for (const [kind, relativeRoot] of Object.entries(roots)) {
       continue;
     }
     checkPlaceholders(file, data);
+    checkEquipmentPredicateFlags(file, data);
     if (kind === "dialogue") {
       checkDialogue(file, data);
     } else if (kind === "dialogueTrees") {
@@ -827,6 +828,39 @@ function checkDialogue(file, data) {
       }
     }
     checkConditions(file, line, `lines[${index}]`);
+  }
+}
+
+function checkEquipmentPredicateFlags(file, value, location = "root") {
+  if (Array.isArray(value)) {
+    value.forEach((child, index) => checkEquipmentPredicateFlags(file, child, `${location}[${index}]`));
+    return;
+  }
+  if (!value || typeof value !== "object") {
+    return;
+  }
+
+  checkEquipmentPredicateSubjectFlags(file, value, location, "villager");
+  checkEquipmentPredicateSubjectFlags(file, value, location, "witness");
+
+  for (const [key, child] of Object.entries(value)) {
+    if (child && typeof child === "object") {
+      checkEquipmentPredicateFlags(file, child, `${location}.${key}`);
+    }
+  }
+}
+
+function checkEquipmentPredicateSubjectFlags(file, entry, location, subject) {
+  const armedKeys = [`requires_${subject}_armed`, `${subject}_armed`];
+  const unarmedKeys = [`requires_${subject}_unarmed`, `${subject}_unarmed`];
+  for (const key of [...armedKeys, ...unarmedKeys]) {
+    checkOptionalBoolean(file, entry, location, key);
+  }
+
+  const requiresArmed = armedKeys.some((key) => entry[key] === true);
+  const requiresUnarmed = unarmedKeys.some((key) => entry[key] === true);
+  if (requiresArmed && requiresUnarmed) {
+    errors.push(`${relative(file)}: ${location} requires ${subject} to be both armed and unarmed.`);
   }
 }
 
