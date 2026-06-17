@@ -283,6 +283,26 @@ const questStates = new Set([
   "unavailable",
   "not_completed"
 ]);
+const savedQuestStates = new Set([
+  "not_started",
+  "locked",
+  "active",
+  "started",
+  "completed",
+  "complete",
+  "abandoned",
+  "dropped",
+  "expired",
+  "timed_out",
+  "time_out",
+  "consumed",
+  "removed",
+  "removed_forever",
+  "branch_locked",
+  "branch_blocked",
+  "blocked_branch",
+  "not_completed"
+]);
 const questDialogueTreeLifecycleStates = new Map([
   ["offer", new Set(["available", "not_started", "locked"])],
   ["reminder", new Set(["in_progress", "active", "started"])],
@@ -3117,8 +3137,23 @@ function warnLiveOnlyQuestCondition(file, condition, location, usage) {
   if (isSavedQuestMemoryCondition(condition)) {
     return;
   }
+  if (type === "quest") {
+    warnLiveOnlyQuestStateAliases(file, condition, location, usage);
+  }
   if (questLiveOnlyConditionTypes.has(type)) {
     warnings.push(`${relative(file)}: ${location} uses live-only ${type} condition in ${usage}; if the quest issuer is unloaded, evaluation stays unknown until that villager is loaded.`);
+  }
+}
+
+function warnLiveOnlyQuestStateAliases(file, condition, location, usage) {
+  for (const state of readValues(condition, ["state", "states"])) {
+    if (typeof state !== "string" || !state.trim()) {
+      continue;
+    }
+    const normalized = normalizedString(state);
+    if (questStates.has(normalized) && !savedQuestStates.has(normalized)) {
+      warnings.push(`${relative(file)}: ${location} uses live-only quest state "${state}" in ${usage}; if the quest issuer is unloaded, saved-data evaluation stays unknown until that villager is loaded.`);
+    }
   }
 }
 
