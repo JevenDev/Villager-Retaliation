@@ -14,7 +14,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -56,10 +55,8 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final String PENDING_TREE_SAPLING_ITEM_TAG = "PendingLoggingTreeSaplingItem";
     private static final String PENDING_TREE_STRIP_LOGS_TAG = "PendingLoggingTreeStripLogs";
     private static final String PENDING_TREE_LOGS_CUT_TAG = "PendingLoggingTreeLogsCut";
-    private static final int MAX_TREE_LOGS_PER_HARVEST = 96;
+    private static final int MAX_TREE_LOGS_PER_HARVEST = 256;
     private static final int MAX_TREE_LOGS_PER_HARVEST_TICK = 10;
-    private static final int MAX_TREE_HORIZONTAL_DISTANCE = 8;
-    private static final int MAX_TREE_VERTICAL_DISTANCE = 24;
     private static final int MAX_TREE_HORIZONTAL_DISTANCE = 12;
     private static final int MAX_TREE_VERTICAL_DISTANCE = 48;
     private static final int MAX_TREE_LEAF_BRIDGE_POSITIONS = 1536;
@@ -77,6 +74,14 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final int MAX_PLANNED_TREE_TARGETS = 12;
     private static final int MAX_PLANNED_ACCESS_LEAF_TARGETS = 8;
     private static final int MAX_PLANNED_SAPLING_TARGETS = 8;
+    private static final String TREE_OBJECTIVE = "tree";
+    private static final String TREE_ROUTE_OBJECTIVE = "tree_route";
+    private static final String SINGLE_TREE_OBJECTIVE = "single_tree";
+    private static final String GROVE_OBJECTIVE = "grove";
+    private static final String ACCESS_LEAF_OBJECTIVE = "tree_access_leaf";
+    private static final String ACCESS_LEAF_ROUTE_OBJECTIVE = "tree_access_leaf_route";
+    private static final String SAPLING_ROUTE_OBJECTIVE = "sapling_route";
+    private static final String SINGLE_SAPLING_OBJECTIVE = "single_sapling";
     private static final int MAX_TREE_LEAVES_PER_HARVEST = 384;
     private static final double DECAY_DROP_PICKUP_REACH_SQR = 2.25D;
     private static final int GROVE_LINK_RADIUS = 6;
@@ -193,22 +198,30 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return activeAccessLeafResult;
         }
 
-        WorkResult decayDropResult = collectDecayDrops(level, villager, context);
-        if (decayDropResult != null) {
-            return decayDropResult;
+        setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
+        if (hasSaplingPlan(context)) {
+            WorkResult bonemealResult = tryBonemealSapling(level, villager, context);
+            if (bonemealResult != null) {
+                return bonemealResult;
+            }
         }
 
-        setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
         HiredPathTarget target = findTreeLog(level, villager, context);
         if (target == null) {
+            if (!hasSaplingPlan(context)) {
+                WorkResult bonemealResult = tryBonemealSapling(level, villager, context);
+                if (bonemealResult != null) {
+                    return bonemealResult;
+                }
+            }
+            WorkResult decayDropResult = collectDecayDrops(level, villager, context);
+            if (decayDropResult != null) {
+                return decayDropResult;
+            }
             clearActiveBreakingTarget(level, context, villager);
             if (isTreeScanInProgress(context)) {
                 setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
                 return WorkResult.progressed("interaction.work.logging.searching_scan");
-            }
-            WorkResult bonemealResult = tryBonemealSapling(level, villager, context);
-            if (bonemealResult != null) {
-                return bonemealResult;
             }
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
             if (depositResult == DepositResult.MOVING) {
@@ -579,7 +592,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                         && context.isLoaded(level, target.blockPos())
                         && !isTemporarilyAvoidedTarget(level, villager, target.blockPos())
                         && isTreeLog(level, target.blockPos(), filters),
-                candidateFilter -> plannedTarget(level, villager, context, candidateFilter, MAX_PLANNED_TREE_TARGETS),
+                candidateFilter -> plannedTreeTarget(level, villager, context, candidateFilter),
                 pos -> context.isInsideWorkArea(pos)
                         && context.isLoaded(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos)
@@ -589,6 +602,50 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK,
                 candidates -> rebuildTreeObjective(level, villager, context, candidates, filters),
                 TREE_SEARCH_MESSAGES);
+    }
+
+    private HiredPathTarget plannedTreeTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Predicate<BlockPos> validator) {
+        if (!hasTreePlan(context)) {
+            return null;
+        }
+        return plannedTarget(level, villager, context, validator, MAX_PLANNED_TREE_TARGETS);
+    }
+
+    private HiredPathTarget plannedSaplingTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Predicate<BlockPos> validator) {
+        if (!hasSaplingPlan(context)) {
+            return null;
+        }
+        return plannedTarget(level, villager, context, validator, MAX_PLANNED_SAPLING_TARGETS);
+    }
+
+    private static boolean hasTreePlan(HiredWorkContext context) {
+        return hasPlanObjective(context, TREE_OBJECTIVE, TREE_ROUTE_OBJECTIVE, SINGLE_TREE_OBJECTIVE, GROVE_OBJECTIVE);
+    }
+
+    private static boolean hasAccessLeafPlan(HiredWorkContext context) {
+        return hasPlanObjective(context, ACCESS_LEAF_OBJECTIVE, ACCESS_LEAF_ROUTE_OBJECTIVE);
+    }
+
+    private static boolean hasSaplingPlan(HiredWorkContext context) {
+        return hasPlanObjective(context, SAPLING_ROUTE_OBJECTIVE, SINGLE_SAPLING_OBJECTIVE);
+    }
+
+    private static boolean hasPlanObjective(HiredWorkContext context, String... objectives) {
+        String objective = HiredWorkPlan.objectiveType(context);
+        for (String expected : objectives) {
+            if (expected.equals(objective)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isTreeScanInProgress(HiredWorkContext context) {
@@ -799,7 +856,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         List<BlockPos> ordered = HiredWorkPlan.routeOrder(villager.blockPosition(), candidates, MAX_PLANNED_ACCESS_LEAF_TARGETS);
         HiredWorkPlan.replaceWithObjective(
                 context,
-                ordered.size() > 1 ? "tree_access_leaf_route" : "tree_access_leaf",
+                ordered.size() > 1 ? ACCESS_LEAF_ROUTE_OBJECTIVE : ACCESS_LEAF_OBJECTIVE,
                 ordered.isEmpty() ? null : ordered.getFirst(),
                 ordered,
                 MAX_PLANNED_ACCESS_LEAF_TARGETS);
@@ -818,6 +875,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             Predicate<BlockPos> validator) {
+        if (!hasAccessLeafPlan(context)) {
+            return null;
+        }
         Predicate<BlockPos> safeValidator = validator == null ? ignored -> true : validator;
         HiredWorkPlan.retainMatching(context, safeValidator, MAX_PLANNED_ACCESS_LEAF_TARGETS);
         for (BlockPos planned : HiredWorkPlan.targets(context)) {
@@ -927,12 +987,18 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static void clearTreeTargetSearch(HiredWorkContext context) {
         HiredWorkAreaScan.clearCursor(context, TREE_SCAN_CURSOR_TAG);
         HiredWorkAreaScan.clearCursor(context, ACCESS_LEAF_SCAN_CURSOR_TAG);
+        HiredWorkAreaScan.clearCursor(context, SAPLING_SCAN_CURSOR_TAG);
         wakeTreeTargetSearch(context);
+        wakeSaplingTargetSearch(context);
     }
 
     private static void wakeTreeTargetSearch(HiredWorkContext context) {
         context.state().remove(NEXT_TREE_SCAN_GAME_TIME_TAG);
         context.state().remove(NEXT_ACCESS_LEAF_SCAN_GAME_TIME_TAG);
+    }
+
+    private static void wakeSaplingTargetSearch(HiredWorkContext context) {
+        context.state().remove(NEXT_SAPLING_SCAN_GAME_TIME_TAG);
     }
 
     private WorkResult collectOptionalLeafTool(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -1062,9 +1128,13 @@ public final class LoggingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
             return WorkResult.idle("interaction.work.logging.sapling_changed");
         }
-        HiredWorkPlan.removeTarget(context, target.blockPos());
+        if (isBonemealableSapling(level, target.blockPos())) {
+            prioritizeSaplingPlan(context, target.blockPos());
+        } else {
+            HiredWorkPlan.removeTarget(context, target.blockPos());
+            wakeTreeTargetSearch(context);
+        }
         clearActiveBreakingTarget(level, context, villager);
-        HiredPathMemory.rememberRecent(level, target.blockPos());
         setTaskState(context, HiredWorkerTaskState.IDLE);
         return WorkResult.progressed("interaction.work.logging.bonemealing_sapling");
     }
@@ -1078,7 +1148,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                         && context.isLoaded(level, target.blockPos())
                         && !isTemporarilyAvoidedTarget(level, villager, target.blockPos())
                         && isBonemealableSapling(level, target.blockPos()),
-                candidateFilter -> plannedTarget(level, villager, context, candidateFilter, MAX_PLANNED_SAPLING_TARGETS),
+                candidateFilter -> plannedSaplingTarget(level, villager, context, candidateFilter),
                 pos -> context.isInsideWorkArea(pos)
                         && context.isLoaded(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos)
@@ -1098,18 +1168,35 @@ public final class LoggingWorker extends AbstractBlockWorker {
         List<BlockPos> ordered = HiredWorkPlan.routeOrder(villager.blockPosition(), candidates, MAX_PLANNED_SAPLING_TARGETS);
         HiredWorkPlan.replaceWithObjective(
                 context,
-                ordered.size() > 1 ? "sapling_route" : "single_sapling",
+                ordered.size() > 1 ? SAPLING_ROUTE_OBJECTIVE : SINGLE_SAPLING_OBJECTIVE,
                 ordered.isEmpty() ? null : ordered.getFirst(),
                 ordered,
                 MAX_PLANNED_SAPLING_TARGETS);
-        return plannedTarget(
+        return plannedSaplingTarget(
                 level,
                 villager,
                 context,
                 pos -> context.isInsideWorkArea(pos)
                         && context.isLoaded(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos)
-                        && isBonemealableSapling(level, pos),
+                        && isBonemealableSapling(level, pos));
+    }
+
+    private static void prioritizeSaplingPlan(HiredWorkContext context, BlockPos target) {
+        List<BlockPos> targets = new ArrayList<>();
+        targets.add(target.immutable());
+        if (hasSaplingPlan(context)) {
+            for (BlockPos planned : HiredWorkPlan.targets(context)) {
+                if (!planned.equals(target)) {
+                    targets.add(planned);
+                }
+            }
+        }
+        HiredWorkPlan.replaceWithObjective(
+                context,
+                targets.size() > 1 ? SAPLING_ROUTE_OBJECTIVE : SINGLE_SAPLING_OBJECTIVE,
+                target,
+                targets,
                 MAX_PLANNED_SAPLING_TARGETS);
     }
 
@@ -1194,19 +1281,18 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (!grove.isEmpty()) {
             HiredWorkPlan.replaceWithObjective(
                     context,
-                    grove.size() > 1 ? "grove" : "tree",
+                    grove.size() > 1 ? GROVE_OBJECTIVE : TREE_OBJECTIVE,
                     grove.getFirst(),
                     grove,
                     MAX_PLANNED_TREE_TARGETS);
-            HiredPathTarget target = plannedTarget(
+            HiredPathTarget target = plannedTreeTarget(
                     level,
                     villager,
                     context,
                     pos -> context.isInsideWorkArea(pos)
                             && context.isLoaded(level, pos)
                             && !isTemporarilyAvoidedTarget(level, villager, pos)
-                            && isTreeLog(level, pos, filters),
-                    MAX_PLANNED_TREE_TARGETS);
+                            && isTreeLog(level, pos, filters));
             if (target != null) {
                 return target;
             }
@@ -1215,19 +1301,18 @@ public final class LoggingWorker extends AbstractBlockWorker {
         List<BlockPos> ordered = HiredWorkPlan.routeOrder(villager.blockPosition(), candidates, MAX_PLANNED_TREE_TARGETS);
         HiredWorkPlan.replaceWithObjective(
                 context,
-                ordered.size() > 1 ? "tree_route" : "single_tree",
+                ordered.size() > 1 ? TREE_ROUTE_OBJECTIVE : SINGLE_TREE_OBJECTIVE,
                 ordered.isEmpty() ? null : ordered.getFirst(),
                 ordered,
                 MAX_PLANNED_TREE_TARGETS);
-        return plannedTarget(
+        return plannedTreeTarget(
                 level,
                 villager,
                 context,
                 pos -> context.isInsideWorkArea(pos)
                         && context.isLoaded(level, pos)
                         && !isTemporarilyAvoidedTarget(level, villager, pos)
-                        && isTreeLog(level, pos, filters),
-                MAX_PLANNED_TREE_TARGETS);
+                        && isTreeLog(level, pos, filters));
     }
 
     private static List<BlockPos> bestGrovePlan(
@@ -1312,7 +1397,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         ItemStack leafTool = harvestLeaves
                 ? bestLeafTool(context)
                 : ItemStack.EMPTY;
-        List<BlockPos> leaves = harvestLeaves
+        List<BlockPos> leaves = harvestLeaves && !leafTool.isEmpty()
                 ? naturalTreeLeaves(level, logs)
                 : List.of();
         ItemStack sapling = HiredLoggingOptions.plantSaplings(context.state())
@@ -1355,7 +1440,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
         restoreLoggingAxe(context, level, pendingTreeOrigin(context));
         ItemStack sapling = pendingSapling(context);
         if (!sapling.isEmpty()) {
-            plantSaplings(level, context, villager, pendingPositions(context, PENDING_TREE_SAPLINGS_TAG), sapling);
+            List<BlockPos> planted = plantSaplings(level, context, villager, pendingPositions(context, PENDING_TREE_SAPLINGS_TAG), sapling);
+            if (!planted.isEmpty()) {
+                wakeSaplingTargetSearch(context);
+            }
         }
         int logsCut = context.state().getInt(PENDING_TREE_LOGS_CUT_TAG);
         return logsCut <= 0 ? TreeHarvestResult.TARGET_CHANGED : TreeHarvestResult.completed(logsCut);
@@ -1449,15 +1537,13 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 drops.addAll(Block.getDrops(dropState == null ? state : dropState, level, log, level.getBlockEntity(log), villager, axe));
             }
         }
-        if (!leaves.isEmpty()) {
-            for (BlockPos leaf : leaves) {
-                if (!context.isInsideWorkArea(leaf) || !context.isLoaded(level, leaf)) {
-                    continue;
-                }
-                BlockState state = level.getBlockState(leaf);
-                if (isNaturalLeaf(state)) {
-                    drops.addAll(Block.getDrops(state, level, leaf, level.getBlockEntity(leaf), villager, leafTool));
-                }
+        for (BlockPos leaf : leaves) {
+            if (!context.isInsideWorkArea(leaf) || !context.isLoaded(level, leaf)) {
+                continue;
+            }
+            BlockState state = level.getBlockState(leaf);
+            if (isNaturalLeaf(state)) {
+                drops.addAll(Block.getDrops(state, level, leaf, level.getBlockEntity(leaf), villager, leafTool));
             }
         }
         return drops;
@@ -1876,28 +1962,31 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return positions;
     }
 
-    private static void plantSaplings(
+    private static List<BlockPos> plantSaplings(
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
             List<BlockPos> positions,
             ItemStack sapling) {
         if (!(sapling.getItem() instanceof BlockItem blockItem)) {
-            return;
+            return List.of();
         }
         BlockState saplingState = blockItem.getBlock().defaultBlockState();
+        List<BlockPos> planted = new ArrayList<>();
         for (BlockPos pos : positions) {
             if (!canPlaceSapling(level, context, pos, saplingState)) {
                 continue;
             }
             if (!consumeSapling(villager, context, sapling)) {
-                return;
+                return planted;
             }
             facePlacedSapling(villager, pos);
             villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
             level.setBlock(pos, saplingState, Block.UPDATE_ALL);
             HiredPathMemory.rememberRecent(level, pos);
+            planted.add(pos.immutable());
         }
+        return planted;
     }
 
     private static void facePlacedSapling(Villager villager, BlockPos pos) {
