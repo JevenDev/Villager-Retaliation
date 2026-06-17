@@ -242,6 +242,20 @@ Variables and counters use `key` plus `value`, `min`, or `max`:
 }
 ```
 
+Quest stages are shorthand for `scope: "quest"`, `key: "stage"`, and a stage value:
+
+```json
+{
+  "conditions": [
+    {
+      "type": "quest_stage",
+      "quest": "my_pack:old_road",
+      "stage": "warned_guard"
+    }
+  ]
+}
+```
+
 Use `all_of`, `any_of`, and `not` around `quest_fact` conditions for larger branch logic.
 
 ## Shared Actions
@@ -273,6 +287,7 @@ Common action types:
 | `set_tag` | `tag` or `set_tag`, optional `scope`, optional `quest` |
 | `clear_tag` | `tag` or `clear_tag`, optional `scope`, optional `quest` |
 | `set_variable` | `key` or `variable`, `value`, optional `scope`, optional `quest` |
+| `set_stage` | `stage`, optional `quest`; stores quest-scoped branch state |
 | `counter` | `key` or `counter`, optional `amount`, `by`, or `delta`, optional `scope`, optional `quest` |
 
 Quest facts default to `quest` scope when the action has a quest id or is inside a quest-owned trigger. Otherwise they default to `player` scope.
@@ -292,6 +307,11 @@ Quest facts default to `quest` scope when the action has a quest id or is inside
       "quest": "my_pack:old_road",
       "key": "route",
       "value": "river"
+    },
+    {
+      "type": "set_stage",
+      "quest": "my_pack:old_road",
+      "stage": "warned_guard"
     },
     {
       "type": "counter",

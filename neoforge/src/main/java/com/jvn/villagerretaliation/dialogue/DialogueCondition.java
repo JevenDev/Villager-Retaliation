@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -114,7 +115,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             case "skill" -> readSkill(location, context, condition);
             case "villager_level", "trade_level" -> readVillagerLevel(location, context, condition);
             case "quest" -> readQuest(location, context, condition, defaultQuestId);
-            case "quest_fact", "quest_tag", "quest_variable", "quest_counter", "fact" -> readQuestFact(location, context, condition, defaultQuestId);
+            case "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "fact", "stage" -> readQuestFact(location, context, condition, defaultQuestId);
             case "weather" -> readWeather(condition);
             case "time", "time_of_day" -> readTime(condition);
             default -> {
@@ -360,11 +361,17 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
                 firstNonBlank(
                         readString(condition, "variable"),
                         firstNonBlank(readString(condition, "counter"), readString(condition, "fact"))));
-        Set<String> values = readRawStringSet(condition, "value", "values");
+        Set<String> stageValues = readRawStringSet(condition, "stage", "stages");
+        if (key.isBlank() && !stageValues.isEmpty()) {
+            key = "stage";
+        }
+        LinkedHashSet<String> rawValues = new LinkedHashSet<>(readRawStringSet(condition, "value", "values"));
+        rawValues.addAll(stageValues);
+        Set<String> values = Set.copyOf(rawValues);
         Integer min = readNullableInt(condition, "min");
         Integer max = readNullableInt(condition, "max");
         if (tags.isEmpty() && key.isBlank()) {
-            warnInvalid(location, context, "quest_fact condition must define tag, tags, key, variable, or counter.");
+            warnInvalid(location, context, "quest_fact condition must define tag, tags, key, variable, counter, stage, or stages.");
             return Optional.empty();
         }
         if (scope == QuestFactScope.QUEST && questId == null) {

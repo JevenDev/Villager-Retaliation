@@ -102,7 +102,9 @@ const conditionTypes = new Set([
   "quest_tag",
   "quest_variable",
   "quest_counter",
+  "quest_stage",
   "fact",
+  "stage",
   "weather",
   "time",
   "time_of_day"
@@ -123,6 +125,8 @@ const questFactConditionKeys = new Set([
   "fact",
   "value",
   "values",
+  "stage",
+  "stages",
   "min",
   "max"
 ]);
@@ -164,7 +168,9 @@ const conditionKeys = {
   quest_tag: questFactConditionKeys,
   quest_variable: questFactConditionKeys,
   quest_counter: questFactConditionKeys,
+  quest_stage: questFactConditionKeys,
   fact: questFactConditionKeys,
+  stage: questFactConditionKeys,
   weather: new Set(["type", "state", "states", "weather", "weathers"]),
   time: new Set(["type", "value", "values", "time", "times"]),
   time_of_day: new Set(["type", "value", "values", "time", "times"])
@@ -347,6 +353,7 @@ const dialogueTreeActionKeys = new Set([
   "variable",
   "key",
   "value",
+  "stage",
   "fact",
   "counter",
   "increment_counter",
@@ -1540,11 +1547,12 @@ function checkQuestFactAction(file, action, location, type, defaultQuestId = "")
   } else if (type === "set_variable") {
     checkStringList(file, action, location, ["variable", "key", "fact"], "quest fact key");
     checkOptionalString(file, action, location, "value");
-    if (readValues(action, ["variable", "key", "fact"]).length === 0) {
-      errors.push(`${relative(file)}: ${location} must define variable, key, or fact for a set_variable action.`);
+    checkOptionalString(file, action, location, "stage");
+    if (readValues(action, ["variable", "key", "fact"]).length === 0 && !Object.hasOwn(action, "stage")) {
+      errors.push(`${relative(file)}: ${location} must define variable, key, fact, or stage for a set_variable action.`);
     }
-    if (!Object.hasOwn(action, "value")) {
-      errors.push(`${relative(file)}: ${location}.value is required for a set_variable action.`);
+    if (!Object.hasOwn(action, "value") && !Object.hasOwn(action, "stage")) {
+      errors.push(`${relative(file)}: ${location}.value or ${location}.stage is required for a set_variable action.`);
     }
   } else if (type === "counter") {
     checkStringList(file, action, location, ["counter", "increment_counter", "key", "fact"], "quest fact counter");
@@ -1846,7 +1854,7 @@ function checkCondition(file, condition, location, defaultQuestId = "") {
         });
       }
     }
-  } else if (type === "quest_fact" || type === "quest_tag" || type === "quest_variable" || type === "quest_counter" || type === "fact") {
+  } else if (type === "quest_fact" || type === "quest_tag" || type === "quest_variable" || type === "quest_counter" || type === "quest_stage" || type === "fact" || type === "stage") {
     checkQuestFactCondition(file, condition, location, defaultQuestId);
   } else if (type === "weather") {
     checkStringValues(file, condition, location, ["state", "states", "weather", "weathers"], weatherStates, "weather state", { requireAny: true });
@@ -1860,7 +1868,7 @@ function checkQuestFactCondition(file, condition, location, defaultQuestId = "")
   checkStringValues(file, condition, location, ["scope"], questFactScopes, "quest fact scope");
   checkStringList(file, condition, location, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");
   checkStringList(file, condition, location, ["key", "variable", "counter", "fact"], "quest fact key");
-  checkStringList(file, condition, location, ["value", "values"], "quest fact value");
+  checkStringList(file, condition, location, ["value", "values", "stage", "stages"], "quest fact value");
   checkOptionalInteger(file, condition, location, "min");
   checkOptionalInteger(file, condition, location, "max");
 
@@ -1875,8 +1883,8 @@ function checkQuestFactCondition(file, condition, location, defaultQuestId = "")
       });
     }
   }
-  if (readValues(condition, ["tag", "tags", "fact_tag", "quest_tag", "key", "variable", "counter", "fact"]).length === 0) {
-    errors.push(`${relative(file)}: ${location} must define tag, tags, fact_tag, quest_tag, key, variable, counter, or fact.`);
+  if (readValues(condition, ["tag", "tags", "fact_tag", "quest_tag", "key", "variable", "counter", "fact", "stage", "stages"]).length === 0) {
+    errors.push(`${relative(file)}: ${location} must define tag, tags, fact_tag, quest_tag, key, variable, counter, fact, stage, or stages.`);
   }
 }
 
@@ -2060,7 +2068,7 @@ function canonicalActionType(value) {
   if (["loot", "loot_table"].includes(normalized)) return "loot";
   if (["set_tag", "quest_tag", "add_tag", "tag"].includes(normalized)) return "set_tag";
   if (["clear_tag", "remove_tag", "unset_tag"].includes(normalized)) return "clear_tag";
-  if (["set_variable", "variable", "set_fact", "fact"].includes(normalized)) return "set_variable";
+  if (["set_variable", "variable", "set_fact", "fact", "set_stage", "quest_stage", "stage"].includes(normalized)) return "set_variable";
   if (["counter", "increment_counter", "add_counter"].includes(normalized)) return "counter";
   return "";
 }
@@ -2080,7 +2088,7 @@ function actionType(action, defaultQuestId = "") {
   if (Object.hasOwn(action, "clear_tag")) {
     return "clear_tag";
   }
-  if (Object.hasOwn(action, "variable") || (Object.hasOwn(action, "key") && Object.hasOwn(action, "value"))) {
+  if (Object.hasOwn(action, "variable") || (Object.hasOwn(action, "key") && Object.hasOwn(action, "value")) || Object.hasOwn(action, "stage")) {
     return "set_variable";
   }
   if (Object.hasOwn(action, "counter") || Object.hasOwn(action, "increment_counter")) {

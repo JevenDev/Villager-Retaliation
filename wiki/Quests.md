@@ -282,6 +282,20 @@ This dialogue-tree branch stores a chosen route:
 }
 ```
 
+Quest stages are shorthand for the quest-scoped variable `stage`. Use them for Skyrim-style branch gates inside a questline:
+
+```json
+{
+  "actions": [
+    {
+      "type": "set_stage",
+      "quest": "my_pack:old_road",
+      "stage": "warned_guard"
+    }
+  ]
+}
+```
+
 Later dialogue or quest availability can require that branch:
 
 ```json
@@ -293,6 +307,20 @@ Later dialogue or quest availability can require that branch:
       "quest": "my_pack:old_road",
       "key": "route",
       "value": "river"
+    }
+  ]
+}
+```
+
+The same branch can be written with the stage alias:
+
+```json
+{
+  "conditions": [
+    {
+      "type": "quest_stage",
+      "quest": "my_pack:old_road",
+      "stage": "warned_guard"
     }
   ]
 }

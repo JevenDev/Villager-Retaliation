@@ -102,6 +102,7 @@ public record VillagerActionDefinition(
                 || entry.has("fact_tag")
                 || entry.has("quest_tag")
                 || entry.has("variable")
+                || entry.has("stage")
                 || entry.has("counter")
                 || entry.has("increment_counter")
                 || entry.has("experience")
@@ -190,6 +191,9 @@ public record VillagerActionDefinition(
             return Kind.CLEAR_TAG;
         }
         if (entry.has("variable") || (entry.has("key") && entry.has("value"))) {
+            return Kind.SET_VARIABLE;
+        }
+        if (entry.has("stage")) {
             return Kind.SET_VARIABLE;
         }
         if (entry.has("counter") || entry.has("increment_counter")) {
@@ -344,11 +348,14 @@ public record VillagerActionDefinition(
 
     private static String readFactKey(JsonObject entry, Kind kind) {
         return switch (kind) {
-            case SET_VARIABLE -> firstNonBlank(
-                    DatapackJsonReader.readString(entry, "variable"),
-                    firstNonBlank(
-                            DatapackJsonReader.readString(entry, "key"),
-                            DatapackJsonReader.readString(entry, "fact")));
+            case SET_VARIABLE -> {
+                String key = firstNonBlank(
+                        DatapackJsonReader.readString(entry, "variable"),
+                        firstNonBlank(
+                                DatapackJsonReader.readString(entry, "key"),
+                                DatapackJsonReader.readString(entry, "fact")));
+                yield key.isBlank() && entry.has("stage") ? "stage" : key;
+            }
             case COUNTER -> firstNonBlank(
                     DatapackJsonReader.readString(entry, "counter"),
                     firstNonBlank(
@@ -362,7 +369,9 @@ public record VillagerActionDefinition(
 
     private static String readFactValue(JsonObject entry, Kind kind) {
         return kind == Kind.SET_VARIABLE
-                ? DatapackJsonReader.readString(entry, "value")
+                ? firstNonBlank(
+                        DatapackJsonReader.readString(entry, "value"),
+                        DatapackJsonReader.readString(entry, "stage"))
                 : "";
     }
 
@@ -465,7 +474,7 @@ public record VillagerActionDefinition(
                 case "loot", "loot_table" -> LOOT;
                 case "set_tag", "quest_tag", "add_tag", "tag" -> SET_TAG;
                 case "clear_tag", "remove_tag", "unset_tag" -> CLEAR_TAG;
-                case "set_variable", "variable", "set_fact", "fact" -> SET_VARIABLE;
+                case "set_variable", "variable", "set_fact", "fact", "set_stage", "quest_stage", "stage" -> SET_VARIABLE;
                 case "counter", "increment_counter", "add_counter" -> COUNTER;
                 default -> NONE;
             };
