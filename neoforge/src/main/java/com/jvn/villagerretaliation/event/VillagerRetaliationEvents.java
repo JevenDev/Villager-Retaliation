@@ -110,6 +110,18 @@ public final class VillagerRetaliationEvents {
         }
     }
 
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            VillagerQuestService.clearRuntimeState(player);
+        }
+    }
+
+    public static void onPlayerClone(PlayerEvent.Clone event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            VillagerQuestService.clearRuntimeState(player);
+        }
+    }
+
     public static void onServerStopping(ServerStoppingEvent event) {
         VillagerDataWarmup.clearCaches();
         VillagerRetaliationVillagerBrainUtil.clearRuntimeState();

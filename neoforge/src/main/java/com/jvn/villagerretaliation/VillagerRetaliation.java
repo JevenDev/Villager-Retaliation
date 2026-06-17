@@ -69,6 +69,8 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onEntityJoinLevel)
                 .listener(VillagerSocialGraphService::onEntityJoinLevel)
                 .listener(VillagerRetaliationEvents::onPlayerStartTracking)
+                .listener(VillagerRetaliationEvents::onPlayerLoggedOut)
+                .listener(VillagerRetaliationEvents::onPlayerClone)
                 .listener(VillagerRetaliationEvents::onEntityInteract)
                 .listener(VillagerRetaliationEvents::onEntityInteractSpecific)
                 .listener(VillagerRetaliationEvents::onRightClickBlock)
