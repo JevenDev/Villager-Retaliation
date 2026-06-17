@@ -476,6 +476,29 @@ const questGiftObjectiveTypes = new Set(["gift", "give_gift", "gift_given"]);
 const questReputationObjectiveTypes = new Set(["reputation", "rep", "reputation_level", "trust"]);
 const questChoiceObjectiveTypes = new Set(["choice", "dialogue_choice", "branch_choice", "quest_choice"]);
 const questFactObjectiveTypes = new Set(["fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"]);
+const questTrackerStepKeys = new Set([
+  "inactive",
+  "proof",
+  "travel",
+  "hunt",
+  "break",
+  "build",
+  "interact",
+  "event",
+  "trade",
+  "gift",
+  "reputation",
+  "choice",
+  "fact",
+  "return",
+  "abandoned",
+  "abandoned_cooldown",
+  "expired",
+  "completed",
+  "branch_locked",
+  "consumed",
+  "not_started"
+]);
 const questGiftReactions = new Set(["loved", "liked", "neutral", "disliked", "hated"]);
 const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "stage", "stage_changed", "stage_entered", "stage_set", "completed", "abandoned", "expired"]);
 const questAbandonmentModes = new Set(["remove_forever", "allow_repickup", "cooldown"]);
@@ -1065,7 +1088,7 @@ function checkQuest(file, data) {
   const stageIds = questStageIds(data.stages);
   checkQuestObjectives(file, data.objectives, "objectives", defaultQuestId);
   checkQuestRules(file, data.rules, "rules", defaultQuestId);
-  checkQuestTracker(file, data.tracker, "tracker");
+  checkQuestTracker(file, data.tracker, "tracker", objectiveIds);
   checkQuestStages(file, data.stages, "stages", defaultQuestId, objectiveIds);
   checkQuestTriggers(file, data.triggers, "triggers", defaultQuestId, stageIds);
   checkQuestRewards(file, data.rewards, "rewards");
@@ -1568,7 +1591,7 @@ function checkQuestExpiration(file, expiration, location, defaultQuestId = "") {
   checkOptionalString(file, expiration, location, "notification_text_key");
 }
 
-function checkQuestTracker(file, tracker, location) {
+function checkQuestTracker(file, tracker, location, objectiveIds = new Set()) {
   if (tracker === undefined) {
     return;
   }
@@ -1586,6 +1609,9 @@ function checkQuestTracker(file, tracker, location) {
     } else {
       for (const [stepId, step] of Object.entries(tracker.steps)) {
         const stepLocation = `${location}.steps.${stepId}`;
+        if (!objectiveIds.has(stepId) && !questTrackerStepKeys.has(stepId)) {
+          warnings.push(`${relative(file)}: ${stepLocation} is not a quest objective id or runtime tracker step key; it may never be selected.`);
+        }
         if (!step || typeof step !== "object" || Array.isArray(step)) {
           errors.push(`${relative(file)}: ${stepLocation} must be an object.`);
           continue;
