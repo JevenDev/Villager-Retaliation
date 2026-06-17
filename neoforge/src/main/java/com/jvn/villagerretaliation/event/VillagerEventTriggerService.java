@@ -187,7 +187,7 @@ public final class VillagerEventTriggerService {
                         ran = true;
                     }
                 }
-                case FORCED_DIALOGUE, QUEST, REPUTATION, GOSSIP, LOOT, NONE -> {
+                case FORCED_DIALOGUE, QUEST, REPUTATION, GOSSIP, LOOT, SET_TAG, CLEAR_TAG, SET_VARIABLE, COUNTER, NONE -> {
                 }
             }
         }

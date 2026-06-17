@@ -3,7 +3,9 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
@@ -24,7 +26,8 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
-        DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.Weather, DialogueCondition.Time {
+        DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact,
+        DialogueCondition.Weather, DialogueCondition.Time {
 
     boolean matches(DialogueContext context);
 
@@ -111,6 +114,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             case "skill" -> readSkill(location, context, condition);
             case "villager_level", "trade_level" -> readVillagerLevel(location, context, condition);
             case "quest" -> readQuest(location, context, condition, defaultQuestId);
+            case "quest_fact", "quest_tag", "quest_variable", "quest_counter", "fact" -> readQuestFact(location, context, condition, defaultQuestId);
             case "weather" -> readWeather(condition);
             case "time", "time_of_day" -> readTime(condition);
             default -> {
@@ -341,6 +345,51 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         return Optional.of(new Quest(questId, states));
     }
 
+    private static Optional<DialogueCondition> readQuestFact(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = readQuestReference(location, context, condition, defaultQuestId);
+        QuestFactScope scope = QuestFactScope.bySerializedName(
+                readString(condition, "scope"),
+                questId == null ? QuestFactScope.PLAYER : QuestFactScope.QUEST);
+        Set<ResourceLocation> tags = readResourceLocationSet(location, context, condition, "tag", "tags", "fact_tag", "quest_tag");
+        String key = firstNonBlank(
+                readString(condition, "key"),
+                firstNonBlank(
+                        readString(condition, "variable"),
+                        firstNonBlank(readString(condition, "counter"), readString(condition, "fact"))));
+        Set<String> values = readRawStringSet(condition, "value", "values");
+        Integer min = readNullableInt(condition, "min");
+        Integer max = readNullableInt(condition, "max");
+        if (tags.isEmpty() && key.isBlank()) {
+            warnInvalid(location, context, "quest_fact condition must define tag, tags, key, variable, or counter.");
+            return Optional.empty();
+        }
+        if (scope == QuestFactScope.QUEST && questId == null) {
+            warnInvalid(location, context, "quest_fact condition with quest scope must define quest or have a default quest.");
+            return Optional.empty();
+        }
+        return Optional.of(new QuestFact(scope, questId, tags, key, values, min, max));
+    }
+
+    private static ResourceLocation readQuestReference(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = defaultQuestId;
+        for (String key : List.of("quest", "quest_id")) {
+            String value = readString(condition, key);
+            if (!value.isBlank()) {
+                questId = QuestIds.parse(value, location);
+                break;
+            }
+        }
+        return questId;
+    }
+
     private static Optional<DialogueCondition> readWeather(JsonObject condition) {
         EnumSet<DialogueContext.WeatherState> states = EnumSet.noneOf(DialogueContext.WeatherState.class);
         for (String value : readStringList(condition, "state")) {
@@ -426,6 +475,41 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             }
         }
         return Set.copyOf(values);
+    }
+
+    private static Set<String> readRawStringSet(JsonObject entry, String... keys) {
+        java.util.LinkedHashSet<String> values = new java.util.LinkedHashSet<>();
+        for (String key : keys) {
+            for (String value : readStringList(entry, key)) {
+                if (!value.isBlank()) {
+                    values.add(value);
+                }
+            }
+        }
+        return Set.copyOf(values);
+    }
+
+    private static Set<ResourceLocation> readResourceLocationSet(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            String... keys) {
+        java.util.LinkedHashSet<ResourceLocation> values = new java.util.LinkedHashSet<>();
+        for (String key : keys) {
+            for (String value : readStringList(entry, key)) {
+                ResourceLocation tagId = ResourceLocation.tryParse(value);
+                if (tagId == null) {
+                    warnInvalid(location, context, "quest fact tag \"" + value + "\" is not a valid resource location.");
+                } else {
+                    values.add(tagId);
+                }
+            }
+        }
+        return Set.copyOf(values);
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        return first == null || first.isBlank() ? second : first;
     }
 
     private static Set<String> readBiomeKeys(JsonObject entry, String... keys) {
@@ -821,6 +905,47 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         @Override
         public boolean matches(DialogueContext context) {
             return VillagerQuestService.matchesState(context, this.questId, this.states);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 8;
+        }
+    }
+
+    record QuestFact(
+            QuestFactScope scope,
+            ResourceLocation questId,
+            Set<ResourceLocation> tags,
+            String key,
+            Set<String> values,
+            Integer min,
+            Integer max) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            String scopeKey = this.scope.scopeKey(context, this.questId);
+            if (scopeKey.isBlank()) {
+                return false;
+            }
+            VillagerQuestFacts facts = VillagerQuestFacts.get(context.level());
+            if (!this.tags.isEmpty() && this.tags.stream().noneMatch(tag -> facts.hasTag(scopeKey, tag))) {
+                return false;
+            }
+            if (this.key == null || this.key.isBlank()) {
+                return !this.tags.isEmpty();
+            }
+            Optional<String> variable = facts.variable(scopeKey, this.key);
+            if (!this.values.isEmpty() && variable.stream().noneMatch(this.values::contains)) {
+                return false;
+            }
+            int counter = facts.counter(scopeKey, this.key);
+            if (this.min != null && counter < this.min) {
+                return false;
+            }
+            if (this.max != null && counter > this.max) {
+                return false;
+            }
+            return !this.values.isEmpty() || this.min != null || this.max != null || variable.isPresent() || counter != 0;
         }
 
         @Override

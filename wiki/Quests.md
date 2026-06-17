@@ -174,6 +174,64 @@ Quest dialogue stages are `start`, `reminder`, `turn_in`, `already_completed`, `
 }
 ```
 
+## Example: Quest Facts For Branches
+
+Quest facts are durable tags, variables, and counters that dialogue, triggers, and later quests can read with `quest_fact` conditions. Use them for branch choices, story locks, and persistent consequences.
+
+This trigger writes a quest-scoped tag when the quest starts:
+
+```json
+{
+  "id": "my_pack:old_road",
+  "triggers": [
+    {
+      "id": "remember_offer_seen",
+      "event": "started",
+      "actions": [
+        {
+          "type": "set_tag",
+          "tag": "my_pack:old_road_started"
+        }
+      ]
+    }
+  ]
+}
+```
+
+This dialogue-tree branch stores a chosen route:
+
+```json
+{
+  "actions": [
+    {
+      "type": "set_variable",
+      "scope": "quest",
+      "quest": "my_pack:old_road",
+      "key": "route",
+      "value": "river"
+    }
+  ]
+}
+```
+
+Later dialogue or quest availability can require that branch:
+
+```json
+{
+  "conditions": [
+    {
+      "type": "quest_fact",
+      "scope": "quest",
+      "quest": "my_pack:old_road",
+      "key": "route",
+      "value": "river"
+    }
+  ]
+}
+```
+
+Use `scope: "world"` for shared save-wide consequences, `scope: "player"` for player story flags, `scope: "village"` for local outcomes, and `scope: "villager"` for villager-specific secrets or promises.
+
 ## Replacing Or Removing Built-Ins
 
 At the top of any quest file:

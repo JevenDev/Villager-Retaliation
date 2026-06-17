@@ -193,6 +193,116 @@ Keep that tag aligned with your currency item so crafting recipes, payment boxes
 
 Use conditions when the older one-off helper flags start to pile up.
 
+### Quest Facts
+
+Use `quest_fact` conditions for durable story flags, branch choices, and counters written by quest or dialogue actions.
+
+```json
+{
+  "conditions": [
+    {
+      "type": "quest_fact",
+      "scope": "quest",
+      "quest": "my_pack:old_road",
+      "tag": "my_pack:warned_the_guard"
+    }
+  ]
+}
+```
+
+Scopes:
+
+| Scope | Meaning |
+| --- | --- |
+| `player` | Stored for the current player across the world |
+| `world` | Stored once for the whole save |
+| `quest` | Stored for the current player and a quest id |
+| `villager` | Stored on the current villager id |
+| `village` | Stored on the resolved village area, or the current villager position fallback |
+
+Variables and counters use `key` plus `value`, `min`, or `max`:
+
+```json
+{
+  "conditions": [
+    {
+      "type": "quest_fact",
+      "scope": "quest",
+      "quest": "my_pack:old_road",
+      "key": "route",
+      "value": "river"
+    },
+    {
+      "type": "quest_fact",
+      "scope": "player",
+      "counter": "raiders_defeated",
+      "min": 5
+    }
+  ]
+}
+```
+
+Use `all_of`, `any_of`, and `not` around `quest_fact` conditions for larger branch logic.
+
+## Shared Actions
+
+Dialogue trees, quest triggers, and villager event triggers use the same `actions` shape for most state changes.
+
+```json
+{
+  "actions": [
+    { "type": "quest", "quest": "my_pack:old_road", "action": "start" },
+    { "type": "notification", "trigger": "quest.updated", "text": "Quest updated: {quest}" }
+  ]
+}
+```
+
+Common action types:
+
+| Type | Important fields |
+| --- | --- |
+| `quest` | `quest` or `quest_id`, `action`: `start`, `remind`, `turn_in`, or `abandon` |
+| `notification` | `trigger`, `text` |
+| `forced_dialogue` | `forced_dialogue` |
+| `experience` | `amount` or `experience` |
+| `reputation` | `amount` or `reputation` |
+| `gossip` | `amount`, `gossip`, or `gossip_reputation` |
+| `memory` | `memory_event` |
+| `loot` | `loot_table` |
+| `tracker` | `flash_tracker` |
+| `set_tag` | `tag` or `set_tag`, optional `scope`, optional `quest` |
+| `clear_tag` | `tag` or `clear_tag`, optional `scope`, optional `quest` |
+| `set_variable` | `key` or `variable`, `value`, optional `scope`, optional `quest` |
+| `counter` | `key` or `counter`, optional `amount`, `by`, or `delta`, optional `scope`, optional `quest` |
+
+Quest facts default to `quest` scope when the action has a quest id or is inside a quest-owned trigger. Otherwise they default to `player` scope.
+
+```json
+{
+  "actions": [
+    {
+      "type": "set_tag",
+      "scope": "quest",
+      "quest": "my_pack:old_road",
+      "tag": "my_pack:warned_the_guard"
+    },
+    {
+      "type": "set_variable",
+      "scope": "quest",
+      "quest": "my_pack:old_road",
+      "key": "route",
+      "value": "river"
+    },
+    {
+      "type": "counter",
+      "scope": "player",
+      "counter": "raiders_defeated",
+      "amount": 1
+    }
+  ]
+}
+```
+
 ## Weights and Priority
 
 - `weight` changes the random odds between otherwise equivalent matches.

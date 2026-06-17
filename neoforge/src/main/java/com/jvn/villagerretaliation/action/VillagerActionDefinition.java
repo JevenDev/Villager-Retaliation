@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.action;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -24,6 +25,10 @@ public record VillagerActionDefinition(
         String text,
         String forcedDialogue,
         boolean flashTracker,
+        QuestFactScope factScope,
+        ResourceLocation factTag,
+        String factKey,
+        String factValue,
         Map<String, List<String>> linesByStatus) {
     public VillagerActionDefinition {
         kind = kind == null ? Kind.NONE : kind;
@@ -31,6 +36,9 @@ public record VillagerActionDefinition(
         notificationTrigger = notificationTrigger == null ? "" : notificationTrigger;
         text = text == null ? "" : text;
         forcedDialogue = forcedDialogue == null ? "" : forcedDialogue;
+        factScope = factScope == null ? QuestFactScope.PLAYER : factScope;
+        factKey = factKey == null ? "" : factKey;
+        factValue = factValue == null ? "" : factValue;
         linesByStatus = linesByStatus == null ? Map.of() : copyLines(linesByStatus);
     }
 
@@ -89,6 +97,13 @@ public record VillagerActionDefinition(
                 || entry.has("quest")
                 || entry.has("quest_id")
                 || entry.has("action")
+                || entry.has("set_tag")
+                || entry.has("clear_tag")
+                || entry.has("fact_tag")
+                || entry.has("quest_tag")
+                || entry.has("variable")
+                || entry.has("counter")
+                || entry.has("increment_counter")
                 || entry.has("experience")
                 || entry.has("reputation")
                 || entry.has("gossip")
@@ -110,7 +125,7 @@ public record VillagerActionDefinition(
 
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
-        if (questId == null && kind == Kind.QUEST && !hasExplicitQuestId) {
+        if (questId == null && (kind == Kind.QUEST || kind.isQuestFact()) && !hasExplicitQuestId) {
             questId = defaultQuestId;
         }
         QuestAction questAction = QuestAction.bySerializedName(
@@ -124,8 +139,25 @@ public record VillagerActionDefinition(
         String text = DatapackJsonReader.readString(entry, "text");
         String forcedDialogue = DatapackJsonReader.readString(entry, "forced_dialogue");
         boolean flashTracker = DatapackJsonReader.readBoolean(entry, "flash_tracker", true);
+        QuestFactScope factScope = readFactScope(entry, kind, questId);
+        ResourceLocation factTag = readFactTag(location, context, entry, kind);
+        String factKey = readFactKey(entry, kind);
+        String factValue = readFactValue(entry, kind);
 
-        if (!hasRequiredFields(location, context, kind, questId, questAction, memoryTag, lootTable, notificationTrigger, text, forcedDialogue)) {
+        if (!hasRequiredFields(
+                location,
+                context,
+                kind,
+                questId,
+                questAction,
+                memoryTag,
+                lootTable,
+                notificationTrigger,
+                text,
+                forcedDialogue,
+                factTag,
+                factKey,
+                factValue)) {
             return java.util.Optional.empty();
         }
         return java.util.Optional.of(new VillagerActionDefinition(
@@ -139,6 +171,10 @@ public record VillagerActionDefinition(
                 text,
                 forcedDialogue,
                 flashTracker,
+                factScope,
+                factTag,
+                factKey,
+                factValue,
                 readLinesByStatus(entry)));
     }
 
@@ -152,6 +188,18 @@ public record VillagerActionDefinition(
         }
         if (defaultQuestId != null && entry.has("action")) {
             return Kind.QUEST;
+        }
+        if (entry.has("set_tag") || entry.has("fact_tag") || entry.has("quest_tag")) {
+            return Kind.SET_TAG;
+        }
+        if (entry.has("clear_tag")) {
+            return Kind.CLEAR_TAG;
+        }
+        if (entry.has("variable") || (entry.has("key") && entry.has("value"))) {
+            return Kind.SET_VARIABLE;
+        }
+        if (entry.has("counter") || entry.has("increment_counter")) {
+            return Kind.COUNTER;
         }
         if (entry.has("forced_dialogue")) {
             return Kind.FORCED_DIALOGUE;
@@ -196,6 +244,13 @@ public record VillagerActionDefinition(
                     entry,
                     "gossip",
                     DatapackJsonReader.readInt(entry, "gossip_reputation", 0));
+            case COUNTER -> {
+                Integer by = DatapackJsonReader.readNullableInt(entry, "by");
+                if (by == null) {
+                    by = DatapackJsonReader.readNullableInt(entry, "delta");
+                }
+                yield by == null ? 1 : by;
+            }
             default -> 0;
         };
     }
@@ -220,13 +275,19 @@ public record VillagerActionDefinition(
             ResourceLocation lootTable,
             String notificationTrigger,
             String text,
-            String forcedDialogue) {
+            String forcedDialogue,
+            ResourceLocation factTag,
+            String factKey,
+            String factValue) {
         boolean valid = switch (kind) {
             case QUEST -> questId != null && questAction != QuestAction.NONE;
             case MEMORY -> memoryTag != null;
             case LOOT -> lootTable != null;
             case FORCED_DIALOGUE -> !forcedDialogue.isBlank();
             case NOTIFICATION -> !notificationTrigger.isBlank() || !text.isBlank();
+            case SET_TAG, CLEAR_TAG -> factTag != null;
+            case SET_VARIABLE -> !factKey.isBlank() && !factValue.isBlank();
+            case COUNTER -> !factKey.isBlank();
             case TRACKER, EXPERIENCE, REPUTATION, GOSSIP -> true;
             case NONE -> false;
         };
@@ -246,6 +307,63 @@ public record VillagerActionDefinition(
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "memory action uses invalid tag \"" + value + "\".");
         }
         return tagId;
+    }
+
+    private static QuestFactScope readFactScope(JsonObject entry, Kind kind, ResourceLocation questId) {
+        QuestFactScope fallback = kind.isQuestFact() && questId != null ? QuestFactScope.QUEST : QuestFactScope.PLAYER;
+        return QuestFactScope.bySerializedName(DatapackJsonReader.readString(entry, "scope", "fact_scope"), fallback);
+    }
+
+    private static ResourceLocation readFactTag(ResourceLocation location, String context, JsonObject entry, Kind kind) {
+        String value = switch (kind) {
+            case SET_TAG -> firstNonBlank(
+                    DatapackJsonReader.readString(entry, "set_tag"),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(entry, "fact_tag"),
+                            firstNonBlank(
+                                    DatapackJsonReader.readString(entry, "quest_tag"),
+                                    DatapackJsonReader.readString(entry, "tag"))));
+            case CLEAR_TAG -> firstNonBlank(
+                    DatapackJsonReader.readString(entry, "clear_tag"),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(entry, "fact_tag"),
+                            firstNonBlank(
+                                    DatapackJsonReader.readString(entry, "quest_tag"),
+                                    DatapackJsonReader.readString(entry, "tag"))));
+            default -> "";
+        };
+        if (value.isBlank()) {
+            return null;
+        }
+        ResourceLocation tagId = ResourceLocation.tryParse(value);
+        if (tagId == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "quest fact tag \"" + value + "\" is not a valid resource location.");
+        }
+        return tagId;
+    }
+
+    private static String readFactKey(JsonObject entry, Kind kind) {
+        return switch (kind) {
+            case SET_VARIABLE -> firstNonBlank(
+                    DatapackJsonReader.readString(entry, "variable"),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(entry, "key"),
+                            DatapackJsonReader.readString(entry, "fact")));
+            case COUNTER -> firstNonBlank(
+                    DatapackJsonReader.readString(entry, "counter"),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(entry, "increment_counter"),
+                            firstNonBlank(
+                                    DatapackJsonReader.readString(entry, "key"),
+                                    DatapackJsonReader.readString(entry, "fact"))));
+            default -> "";
+        };
+    }
+
+    private static String readFactValue(JsonObject entry, Kind kind) {
+        return kind == Kind.SET_VARIABLE
+                ? DatapackJsonReader.readString(entry, "value")
+                : "";
     }
 
     private static Map<String, List<String>> readLinesByStatus(JsonObject entry) {
@@ -317,7 +435,11 @@ public record VillagerActionDefinition(
         REPUTATION("reputation"),
         GOSSIP("gossip"),
         MEMORY("memory"),
-        LOOT("loot");
+        LOOT("loot"),
+        SET_TAG("set_tag"),
+        CLEAR_TAG("clear_tag"),
+        SET_VARIABLE("set_variable"),
+        COUNTER("counter");
 
         private final String serializedName;
 
@@ -341,8 +463,16 @@ public record VillagerActionDefinition(
                 case "gossip", "gossip_reputation" -> GOSSIP;
                 case "memory", "memory_event" -> MEMORY;
                 case "loot", "loot_table" -> LOOT;
+                case "set_tag", "quest_tag", "add_tag", "tag" -> SET_TAG;
+                case "clear_tag", "remove_tag", "unset_tag" -> CLEAR_TAG;
+                case "set_variable", "variable", "set_fact", "fact" -> SET_VARIABLE;
+                case "counter", "increment_counter", "add_counter" -> COUNTER;
                 default -> NONE;
             };
+        }
+
+        public boolean isQuestFact() {
+            return this == SET_TAG || this == CLEAR_TAG || this == SET_VARIABLE || this == COUNTER;
         }
     }
 
