@@ -130,6 +130,74 @@ Quest dialogue stages are `start`, `reminder`, `turn_in`, `already_completed`, `
 }
 ```
 
+## Example: Coordinate Quest
+
+Use `location_visit` when the quest should complete after the player reaches a specific coordinate or region. This check is cheap and runs with the normal quest progress tick.
+
+```json
+{
+  "id": "my_pack:old_milestone",
+  "display": {
+    "title": "Old Milestone",
+    "description": "Find the road marker beyond the river."
+  },
+  "objectives": [
+    {
+      "id": "reach_marker",
+      "type": "location_visit",
+      "dimension": "minecraft:overworld",
+      "x": 1840,
+      "y": 72,
+      "z": -420,
+      "radius": 12,
+      "tracker": {
+        "text": "Find the old milestone near {objective_target_x}, {objective_target_z}.",
+        "complete_text": "You found the old milestone."
+      }
+    }
+  ]
+}
+```
+
+`pos: [x, y, z]` is also accepted instead of separate `x`, `y`, and `z` fields.
+
+## Example: Mob Kill Quest
+
+Use `mob_kill` for event-driven kill counters. The counter updates from the living-death event, so it does not scan nearby mobs every tick.
+
+```json
+{
+  "id": "my_pack:clear_raiders",
+  "display": {
+    "title": "Clear The Road",
+    "description": "Defeat the raiders harassing the old road."
+  },
+  "objectives": [
+    {
+      "id": "clear_raiders",
+      "type": "mob_kill",
+      "entities": ["#minecraft:raiders"],
+      "count": 5,
+      "tracker": {
+        "text": "Defeat raiders: {objective_progress_count}/{objective_count}",
+        "complete_text": "The road is clear."
+      }
+    }
+  ]
+}
+```
+
+Mob selectors:
+
+| Field | Meaning |
+| --- | --- |
+| `entity` | One entity type id, such as `minecraft:zombie` |
+| `entities` | One or more entity type ids or `#tag` selectors |
+| `entity_tag` | One entity type tag id |
+| `entity_tags` | One or more entity type tag ids |
+
+Add `dimension`, `x`/`y`/`z`, and `radius` to restrict kills to a region.
+
 ## Example: Tracker Text
 
 ```json

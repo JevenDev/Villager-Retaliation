@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -152,10 +153,14 @@ public record QuestDefinition(
             boolean optional,
             ResourceLocation structure,
             ResourceKey<Level> dimension,
+            BlockPos location,
+            int radius,
             List<String> pieces,
             int searchRadius,
             int discoveryRadius,
             ResourceLocation item,
+            Set<ResourceLocation> entityTypes,
+            Set<ResourceLocation> entityTags,
             int count,
             boolean consume,
             ItemRequirements itemRequirements,
@@ -165,9 +170,13 @@ public record QuestDefinition(
         public Objective {
             id = id == null || id.isBlank() ? "objective" : id;
             type = type == null ? ObjectiveType.CONDITION : type;
+            location = location == null ? null : location.immutable();
+            radius = Math.max(1, radius);
             pieces = pieces == null ? List.of() : List.copyOf(pieces);
             searchRadius = Math.max(1, searchRadius);
             discoveryRadius = Math.max(1, discoveryRadius);
+            entityTypes = entityTypes == null ? Set.of() : Set.copyOf(entityTypes);
+            entityTags = entityTags == null ? Set.of() : Set.copyOf(entityTags);
             count = Math.max(1, count);
             itemRequirements = itemRequirements == null ? ItemRequirements.EMPTY : itemRequirements;
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
@@ -265,14 +274,18 @@ public record QuestDefinition(
 
     public enum ObjectiveType {
         STRUCTURE_VISIT,
+        LOCATION_VISIT,
         ITEM_CHECK,
+        MOB_KILL,
         CONDITION;
 
         public static ObjectiveType bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
             return switch (normalized) {
                 case "structure_visit" -> STRUCTURE_VISIT;
+                case "location_visit", "coordinate", "coordinates", "coords", "region_visit" -> LOCATION_VISIT;
                 case "item_check" -> ITEM_CHECK;
+                case "mob_kill", "entity_kill", "kill" -> MOB_KILL;
                 case "condition" -> CONDITION;
                 default -> null;
             };

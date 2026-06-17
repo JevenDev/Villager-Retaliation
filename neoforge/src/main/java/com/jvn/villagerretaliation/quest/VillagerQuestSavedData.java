@@ -40,6 +40,9 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_TARGET_POS = "TargetPos";
     private static final String TAG_TARGET_OBJECTIVE = "TargetObjective";
     private static final String TAG_COMPLETED_OBJECTIVES = "CompletedObjectives";
+    private static final String TAG_OBJECTIVE_COUNTERS = "ObjectiveCounters";
+    private static final String TAG_OBJECTIVE = "Objective";
+    private static final String TAG_COUNT = "Count";
     private static final String TAG_START_COUNT = "StartCount";
     private static final String TAG_COMPLETION_COUNT = "CompletionCount";
     private static final String TAG_ABANDON_COUNT = "AbandonCount";
@@ -247,6 +250,7 @@ public class VillagerQuestSavedData extends SavedData {
         private BlockPos targetPos;
         private String targetObjectiveId = "";
         private final java.util.Set<String> completedObjectives = new java.util.HashSet<>();
+        private final Map<String, Integer> objectiveCounters = new HashMap<>();
         private int startCount;
         private int completionCount;
         private int abandonCount;
@@ -278,6 +282,20 @@ public class VillagerQuestSavedData extends SavedData {
                     String objectiveId = rawObjective.getAsString();
                     if (!objectiveId.isBlank()) {
                         progress.completedObjectives.add(objectiveId);
+                    }
+                }
+            }
+            if (tag.contains(TAG_OBJECTIVE_COUNTERS, Tag.TAG_LIST)) {
+                ListTag countersTag = tag.getList(TAG_OBJECTIVE_COUNTERS, Tag.TAG_COMPOUND);
+                for (Tag rawCounter : countersTag) {
+                    if (!(rawCounter instanceof CompoundTag counterTag)
+                            || !counterTag.contains(TAG_OBJECTIVE, Tag.TAG_STRING)
+                            || !counterTag.contains(TAG_COUNT, Tag.TAG_INT)) {
+                        continue;
+                    }
+                    String objectiveId = counterTag.getString(TAG_OBJECTIVE);
+                    if (!objectiveId.isBlank()) {
+                        progress.objectiveCounters.put(objectiveId, counterTag.getInt(TAG_COUNT));
                     }
                 }
             }
@@ -347,6 +365,19 @@ public class VillagerQuestSavedData extends SavedData {
                     objectivesTag.add(net.minecraft.nbt.StringTag.valueOf(objectiveId));
                 }
                 tag.put(TAG_COMPLETED_OBJECTIVES, objectivesTag);
+            }
+            if (!this.objectiveCounters.isEmpty()) {
+                ListTag countersTag = new ListTag();
+                for (Map.Entry<String, Integer> entry : this.objectiveCounters.entrySet()) {
+                    if (entry.getKey().isBlank() || entry.getValue() <= 0) {
+                        continue;
+                    }
+                    CompoundTag counterTag = new CompoundTag();
+                    counterTag.putString(TAG_OBJECTIVE, entry.getKey());
+                    counterTag.putInt(TAG_COUNT, entry.getValue());
+                    countersTag.add(counterTag);
+                }
+                tag.put(TAG_OBJECTIVE_COUNTERS, countersTag);
             }
             if (!this.triggerTimes.isEmpty()) {
                 CompoundTag triggerTimesTag = new CompoundTag();
@@ -459,6 +490,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.consumedReason = "";
             this.triggerTimes.clear();
             this.completedObjectives.clear();
+            this.objectiveCounters.clear();
             this.startCount++;
         }
 
@@ -501,6 +533,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.targetPos = null;
             this.targetObjectiveId = "";
             this.completedObjectives.clear();
+            this.objectiveCounters.clear();
             this.consumedReason = consume ? "abandonment" : "";
         }
 
@@ -513,6 +546,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.targetPos = null;
             this.targetObjectiveId = "";
             this.completedObjectives.clear();
+            this.objectiveCounters.clear();
             this.consumedReason = consume ? "expiration" : "";
         }
 
@@ -541,6 +575,22 @@ public class VillagerQuestSavedData extends SavedData {
 
         public boolean objectiveComplete(String objectiveId) {
             return objectiveId != null && this.completedObjectives.contains(objectiveId);
+        }
+
+        public int objectiveCounter(String objectiveId) {
+            if (objectiveId == null || objectiveId.isBlank()) {
+                return 0;
+            }
+            return this.objectiveCounters.getOrDefault(objectiveId, 0);
+        }
+
+        public int addObjectiveCounter(String objectiveId, int amount) {
+            if (objectiveId == null || objectiveId.isBlank() || amount == 0) {
+                return objectiveCounter(objectiveId);
+            }
+            int next = Math.max(0, this.objectiveCounters.getOrDefault(objectiveId, 0) + amount);
+            this.objectiveCounters.put(objectiveId, next);
+            return next;
         }
 
         public long lastTriggerGameTime(String triggerId) {

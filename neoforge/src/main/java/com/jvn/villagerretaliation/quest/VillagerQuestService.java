@@ -33,6 +33,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.Tag;
@@ -41,8 +42,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -975,6 +979,34 @@ public final class VillagerQuestService {
         return changed;
     }
 
+    private static boolean hasMobKillObjective(QuestDefinition definition) {
+        return definition.objectives().stream()
+                .anyMatch(objective -> objective.type() == QuestDefinition.ObjectiveType.MOB_KILL);
+    }
+
+    private static boolean updateMobKillProgress(
+            ServerLevel level,
+            ServerPlayer player,
+            LivingEntity killed,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        boolean changed = false;
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            if (objective.type() != QuestDefinition.ObjectiveType.MOB_KILL || progress.objectiveComplete(objective.id())) {
+                continue;
+            }
+            if (!matchesMobKillObjective(level, player, killed, objective)) {
+                continue;
+            }
+            int count = progress.addObjectiveCounter(objective.id(), 1);
+            changed = true;
+            if (count >= objective.count()) {
+                progress.markObjectiveComplete(objective.id());
+            }
+        }
+        return changed;
+    }
+
     private static boolean requiredObjectivesComplete(
             ServerPlayer player,
             DialogueContext context,
@@ -1008,9 +1040,52 @@ public final class VillagerQuestService {
         }
         return switch (objective.type()) {
             case STRUCTURE_VISIT -> VillagerQuestTargets.isAtObjectiveTarget(level, player.blockPosition(), objective, progress);
+            case LOCATION_VISIT -> isAtLocationObjective(level, player.blockPosition(), objective);
             case ITEM_CHECK -> hasItemCount(player, objective);
+            case MOB_KILL -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
+    }
+
+    private static boolean isAtLocationObjective(ServerLevel level, BlockPos playerPos, QuestDefinition.Objective objective) {
+        if (objective.location() == null) {
+            return false;
+        }
+        if (objective.dimension() != null && level.dimension() != objective.dimension()) {
+            return false;
+        }
+        double radius = Math.max(1, objective.radius());
+        return playerPos.distSqr(objective.location()) <= radius * radius;
+    }
+
+    private static boolean matchesMobKillObjective(
+            ServerLevel level,
+            ServerPlayer player,
+            LivingEntity killed,
+            QuestDefinition.Objective objective) {
+        if (objective.dimension() != null && level.dimension() != objective.dimension()) {
+            return false;
+        }
+        if (objective.location() != null) {
+            double radius = Math.max(1, objective.radius());
+            if (killed.blockPosition().distSqr(objective.location()) > radius * radius) {
+                return false;
+            }
+        }
+        if (objective.entityTypes().isEmpty() && objective.entityTags().isEmpty()) {
+            return false;
+        }
+        ResourceLocation killedType = BuiltInRegistries.ENTITY_TYPE.getKey(killed.getType());
+        if (killedType != null && objective.entityTypes().contains(killedType)) {
+            return true;
+        }
+        for (ResourceLocation tagId : objective.entityTags()) {
+            TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, tagId);
+            if (killed.getType().is(tag)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Optional<QuestDefinition.Objective> firstIncompleteRequiredObjective(
@@ -1732,8 +1807,9 @@ public final class VillagerQuestService {
                     return objective.id();
                 }
                 return switch (objective.type()) {
-                    case STRUCTURE_VISIT -> "travel";
+                    case STRUCTURE_VISIT, LOCATION_VISIT -> "travel";
                     case ITEM_CHECK -> "proof";
+                    case MOB_KILL -> "hunt";
                     case CONDITION -> "inactive";
                 };
             }
@@ -1745,6 +1821,7 @@ public final class VillagerQuestService {
         return switch (stepKey) {
             case "inactive" -> "Return when this quest's conditions are right again.";
             case "proof" -> "Obtain {proof_item} for this quest.";
+            case "hunt" -> "Defeat {objective_count} {objective_entity}.";
             case "return" -> "Return to {issuer}.";
             case "abandoned" -> "Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} to pick this back up.";
             case "abandoned_cooldown" -> "Available later. Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z}.";
@@ -1981,6 +2058,9 @@ public final class VillagerQuestService {
             values.put("objective_item", questItemName(definition, progress));
             values.put("objective_item_id", "");
             values.put("objective_count", "");
+            values.put("objective_progress_count", "0");
+            values.put("objective_entity", "");
+            values.put("objective_radius", "");
             values.put("objective_complete", "no");
             values.put("objective_progress", "0");
             values.put("objective_target_x", "unknown");
@@ -1996,6 +2076,9 @@ public final class VillagerQuestService {
         values.put("objective_item", objective.item() == null ? questItemName(definition, progress) : itemName(objective.item()));
         values.put("objective_item_id", objective.item() == null ? "" : objective.item().toString());
         values.put("objective_count", Integer.toString(objective.count()));
+        values.put("objective_progress_count", Integer.toString(progress == null ? 0 : progress.objectiveCounter(objective.id())));
+        values.put("objective_entity", objectiveEntityName(objective));
+        values.put("objective_radius", Integer.toString(objective.radius()));
         boolean complete = progress != null && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective);
         values.put("objective_complete", complete ? "yes" : "no");
         values.put("objective_progress", String.format(Locale.ROOT, "%.2f", objectiveProgress(player, definition, progress, objective)));
@@ -2004,6 +2087,9 @@ public final class VillagerQuestService {
                 && objective.id().equals(progress.targetObjectiveId())
                 ? progress.targetPos()
                 : null;
+        if (targetPos == null && objective.location() != null) {
+            targetPos = objective.location();
+        }
         if (targetPos == null) {
             values.put("objective_target_x", "unknown");
             values.put("objective_target_y", "unknown");
@@ -2031,7 +2117,10 @@ public final class VillagerQuestService {
             case ITEM_CHECK -> objective.item() == null
                     ? 0.0F
                     : Mth.clamp((float) itemCount(player, objective) / (float) objective.count(), 0.0F, 1.0F);
-            case STRUCTURE_VISIT, CONDITION -> progress != null
+            case MOB_KILL -> progress == null
+                    ? 0.0F
+                    : Mth.clamp((float) progress.objectiveCounter(objective.id()) / (float) objective.count(), 0.0F, 1.0F);
+            case STRUCTURE_VISIT, LOCATION_VISIT, CONDITION -> progress != null
                     && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective)
                     ? 1.0F
                     : 0.0F;
@@ -2109,6 +2198,51 @@ public final class VillagerQuestService {
         }
     }
 
+    public static void onEntityKilled(LivingEntity killed, Entity attacker) {
+        if (killed == null || !(killed.level() instanceof ServerLevel level)) {
+            return;
+        }
+        ServerPlayer player = attacker instanceof ServerPlayer serverPlayer
+                ? serverPlayer
+                : killed.getKillCredit() instanceof ServerPlayer serverPlayer
+                        ? serverPlayer
+                        : null;
+        if (player == null || player.level() != level) {
+            return;
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        boolean changed = false;
+        boolean progressNotice = false;
+        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
+            QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
+            if (definition == null || !hasMobKillObjective(definition)) {
+                continue;
+            }
+            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            if (!activeConditionsMetForPlayer(player, definition, progress)) {
+                continue;
+            }
+            boolean questProgressChanged = updateMobKillProgress(level, player, killed, definition, progress);
+            if (!questProgressChanged) {
+                continue;
+            }
+            changed = true;
+            progressNotice = true;
+            sendQuestProgressNotification(
+                    player,
+                    definition,
+                    progress,
+                    "quest.updated",
+                    "Quest updated: {quest}");
+            changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
+        }
+        if (changed) {
+            data.setDirty();
+            sendTrackerSync(player, progressNotice);
+        }
+    }
+
     private static String questItemName(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
         if (definition.target().hasProofItem()) {
             return itemName(definition.target().proofItem());
@@ -2135,6 +2269,22 @@ public final class VillagerQuestService {
         return BuiltInRegistries.ITEM.getOptional(itemId)
                 .map(item -> new ItemStack(item).getHoverName().getString())
                 .orElseGet(() -> VillagerInteractionTextUtil.resourcePathName(itemId));
+    }
+
+    private static String objectiveEntityName(QuestDefinition.Objective objective) {
+        if (objective == null || objective.type() != QuestDefinition.ObjectiveType.MOB_KILL) {
+            return "";
+        }
+        if (!objective.entityTypes().isEmpty()) {
+            ResourceLocation entityType = objective.entityTypes().iterator().next();
+            return BuiltInRegistries.ENTITY_TYPE.getOptional(entityType)
+                    .map(type -> type.getDescription().getString())
+                    .orElseGet(() -> VillagerInteractionTextUtil.resourcePathName(entityType));
+        }
+        if (!objective.entityTags().isEmpty()) {
+            return VillagerInteractionTextUtil.resourcePathName(objective.entityTags().iterator().next());
+        }
+        return "mobs";
     }
 
     private static String issuerSummary(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {

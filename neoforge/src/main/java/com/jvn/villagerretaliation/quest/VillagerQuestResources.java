@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ByteTag;
 import net.minecraft.nbt.CompoundTag;
@@ -303,14 +304,24 @@ public final class VillagerQuestResources {
 
         ResourceLocation structure = DatapackJsonReader.readResourceLocation(entry, "structure").orElse(null);
         ResourceKey<Level> dimension = readDimension(entry);
+        BlockPos objectiveLocation = readLocation(entry);
         ResourceLocation item = DatapackJsonReader.readResourceLocation(entry, "item").orElse(null);
+        EntitySelectors entitySelectors = readEntitySelectors(location, context, entry);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
         if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "structure_visit objective must define structure.");
             return Optional.empty();
         }
+        if (type == QuestDefinition.ObjectiveType.LOCATION_VISIT && objectiveLocation == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "location_visit objective must define x, y, and z.");
+            return Optional.empty();
+        }
         if (type == QuestDefinition.ObjectiveType.ITEM_CHECK && item == null) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "item_check objective must define item.");
+            return Optional.empty();
+        }
+        if (type == QuestDefinition.ObjectiveType.MOB_KILL && entitySelectors.isEmpty()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "mob_kill objective must define entity, entities, entity_tag, or entity_tags.");
             return Optional.empty();
         }
         if (type == QuestDefinition.ObjectiveType.CONDITION && conditions.isEmpty()) {
@@ -324,15 +335,87 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readBoolean(entry, "optional", false),
                 structure,
                 dimension,
+                objectiveLocation,
+                DatapackJsonReader.readInt(entry, "radius", 8),
                 DatapackJsonReader.readStringList(entry, "pieces"),
                 DatapackJsonReader.readInt(entry, "search_radius", DEFAULT_STRUCTURE_SEARCH_RADIUS),
                 DatapackJsonReader.readInt(entry, "discovery_radius", DEFAULT_DISCOVERY_RADIUS),
                 item,
+                entitySelectors.entityTypes(),
+                entitySelectors.entityTags(),
                 DatapackJsonReader.readInt(entry, "count", 1),
                 DatapackJsonReader.readBoolean(entry, "consume", true),
                 readObjectiveItemRequirements(entry),
                 conditions,
                 readObjectiveTracker(entry)));
+    }
+
+    private static BlockPos readLocation(JsonObject entry) {
+        Integer x = DatapackJsonReader.readNullableInt(entry, "x");
+        Integer y = DatapackJsonReader.readNullableInt(entry, "y");
+        Integer z = DatapackJsonReader.readNullableInt(entry, "z");
+        if (x == null || y == null || z == null) {
+            JsonElement pos = entry.get("pos");
+            if (pos != null && pos.isJsonArray() && pos.getAsJsonArray().size() >= 3) {
+                x = DatapackJsonReader.readInt(pos.getAsJsonArray().get(0), Integer.MIN_VALUE);
+                y = DatapackJsonReader.readInt(pos.getAsJsonArray().get(1), Integer.MIN_VALUE);
+                z = DatapackJsonReader.readInt(pos.getAsJsonArray().get(2), Integer.MIN_VALUE);
+                if (x == Integer.MIN_VALUE || y == Integer.MIN_VALUE || z == Integer.MIN_VALUE) {
+                    return null;
+                }
+            }
+        }
+        return x == null || y == null || z == null ? null : new BlockPos(x, y, z);
+    }
+
+    private static EntitySelectors readEntitySelectors(ResourceLocation location, String context, JsonObject entry) {
+        Set<ResourceLocation> entityTypes = new LinkedHashSet<>();
+        Set<ResourceLocation> entityTags = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(entry, "entity", "entities")) {
+            readEntitySelector(location, context, value, entityTypes, entityTags);
+        }
+        for (String value : DatapackJsonReader.readStringList(entry, "entity_tag", "entity_tags")) {
+            readEntityTag(location, context, value, entityTags);
+        }
+        return new EntitySelectors(Set.copyOf(entityTypes), Set.copyOf(entityTags));
+    }
+
+    private static void readEntitySelector(
+            ResourceLocation location,
+            String context,
+            String value,
+            Set<ResourceLocation> entityTypes,
+            Set<ResourceLocation> entityTags) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        if (value.startsWith("#")) {
+            readEntityTag(location, context, value.substring(1), entityTags);
+            return;
+        }
+        ResourceLocation entityType = ResourceLocation.tryParse(value);
+        if (entityType == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "mob_kill entity \"" + value + "\" is not a valid resource location.");
+            return;
+        }
+        entityTypes.add(entityType);
+    }
+
+    private static void readEntityTag(
+            ResourceLocation location,
+            String context,
+            String value,
+            Set<ResourceLocation> entityTags) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        String normalized = value.startsWith("#") ? value.substring(1) : value;
+        ResourceLocation tag = ResourceLocation.tryParse(normalized);
+        if (tag == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "mob_kill entity tag \"" + value + "\" is not a valid resource location.");
+            return;
+        }
+        entityTags.add(tag);
     }
 
     private static QuestDefinition.ItemRequirements readObjectiveItemRequirements(JsonObject entry) {
@@ -827,6 +910,12 @@ public final class VillagerQuestResources {
 
     private static String firstNonBlank(String first, String second) {
         return first == null || first.isBlank() ? second : first;
+    }
+
+    private record EntitySelectors(Set<ResourceLocation> entityTypes, Set<ResourceLocation> entityTags) {
+        private boolean isEmpty() {
+            return this.entityTypes.isEmpty() && this.entityTags.isEmpty();
+        }
     }
 
     private record CachedQuests(MinecraftServer server, Map<ResourceLocation, QuestDefinition> quests) {

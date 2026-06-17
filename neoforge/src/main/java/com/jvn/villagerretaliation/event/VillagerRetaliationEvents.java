@@ -206,6 +206,7 @@ public final class VillagerRetaliationEvents {
         }
         VillagerRetaliationHandler.onLivingDeath(event);
         WanderingTraderRetaliationHandler.onLivingDeath(event);
+        VillagerQuestService.onEntityKilled(event.getEntity(), event.getSource().getEntity());
         rememberVillageDeathEvent(event);
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.endForVillager(villager, true);
