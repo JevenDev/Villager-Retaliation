@@ -3641,6 +3641,9 @@ function indexDialogueTree(file, data) {
     entryStarts: new Map(entries
       .filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry) && stringValue(entry.id))
       .map((entry) => [stringValue(entry.id), stringValue(entry.start)])),
+    entryConditions: new Map(entries
+      .filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry) && stringValue(entry.id))
+      .map((entry) => [stringValue(entry.id), entry.conditions])),
     nodeById,
     metadataQuest: dialogueTreeDefaultQuestId(file, data),
     metadataQuestline: stringValue(metadataObject(data).questline),
@@ -3806,6 +3809,7 @@ function validateCrossReferences() {
       }
     }
     warnDialogueTreeLinkLifecycleActions(link, tree);
+    warnDialogueTreeLinkLifecycleStateGates(link, tree);
 
     if (link.metadataQuest && tree.metadataQuest && tree.metadataQuest !== link.metadataQuest) {
       errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree points to "${link.treeId}" but its metadata.quest is "${tree.metadataQuest}" instead of "${link.metadataQuest}".`);
@@ -3832,6 +3836,25 @@ function warnDialogueTreeLinkLifecycleActions(link, tree) {
     }
     if (!hasReachableQuestAction(tree.nodeById, start, expectedActions, targetQuestId)) {
       warnings.push(`${relative(link.file)}: ${link.location}.${field} points to "${entryId}" in "${link.treeId}", but no reachable ${lifecycleActionDescription(field)} quest action for "${targetQuestId}" was found.`);
+    }
+  }
+}
+
+function warnDialogueTreeLinkLifecycleStateGates(link, tree) {
+  const targetQuestId = link.metadataQuest || link.questId;
+  if (!targetQuestId) {
+    return;
+  }
+  for (const [field, entryId] of [["offer", link.offer], ["reminder", link.reminder], ["turn_in", link.turnIn]]) {
+    if (!entryId || !tree.entryIds.has(entryId)) {
+      continue;
+    }
+    const expectedStates = questDialogueTreeLifecycleStates.get(field);
+    if (!expectedStates) {
+      continue;
+    }
+    if (!conditionListHasQuestState(tree.entryConditions.get(entryId), expectedStates, targetQuestId)) {
+      warnings.push(`${relative(link.file)}: ${link.location}.${field} points to "${entryId}" in "${link.treeId}", but that entry lacks a matching ${lifecycleActionDescription(field)} quest state condition for "${targetQuestId}".`);
     }
   }
 }
