@@ -3682,8 +3682,30 @@ function indexQuest(file, data) {
     parent: stringValue(data.parent),
     questline: stringValue(data.questline),
     pathQuestline: questPathQuestline(file),
-    stageIds: questStageIds(data.stages)
+    stageIds: questStageIds(data.stages),
+    requiresDialogueTree: questHasLifecycleDialogue(data)
   });
+}
+
+function questHasLifecycleDialogue(data) {
+  if (!data || data.remove === true || (data.replace === true && isControlOnly(data, ["replace", "metadata"]))) {
+    return false;
+  }
+  const dialogue = data.dialogue;
+  if (!dialogue || typeof dialogue !== "object" || Array.isArray(dialogue)) {
+    return false;
+  }
+  return readValues(dialogue, [
+    "start",
+    "start_key",
+    "start_keys",
+    "reminder",
+    "reminder_key",
+    "reminder_keys",
+    "turn_in",
+    "turn_in_key",
+    "turn_in_keys"
+  ]).length > 0;
 }
 
 function indexDialogueTree(file, data) {
@@ -3850,6 +3872,7 @@ function validateCrossReferences() {
   validateQuestParentGraph();
   validateQuestlineFolders();
   validateDialogueTreeQuestlineMetadata();
+  validateQuestDialogueTreeCoverage();
   validateForcedDialogueQuestModules();
   validateDialogueMessageKeyReferences();
   validateForcedDialogueMessageKeyReferences();
@@ -4113,6 +4136,15 @@ function validateDialogueTreeQuestlineMetadata() {
     if (quest && quest.questline && tree.pathQuestline && tree.pathQuestline !== quest.questline) {
       errors.push(`${tree.file}: quest dialogue tree folder "${tree.pathQuestline}" does not match quest "${tree.metadataQuest}" questline "${quest.questline}".`);
     }
+  }
+}
+
+function validateQuestDialogueTreeCoverage() {
+  for (const [questId, quest] of questDefinitions) {
+    if (!quest.requiresDialogueTree || dialogueTreeDefinitions.has(questId)) {
+      continue;
+    }
+    warnings.push(`${quest.file}: quest defines lifecycle dialogue but has no matching quest dialogue tree "${questId}".`);
   }
 }
 
