@@ -762,6 +762,7 @@ const lootTableDefinitions = new Set();
 const notificationTriggerDefinitions = new Set();
 const forcedDialogueQuestModules = [];
 const pendingQuestReferences = [];
+const pendingQuestStageReferences = [];
 const pendingDialogueTreeLinks = [];
 const pendingForcedDialogueReferences = [];
 const pendingDialogueMessageKeyReferences = [];
@@ -1286,6 +1287,15 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
         });
       }
     }
+    collectQuestStageReferences(
+      file,
+      objectiveLocation,
+      objective,
+      ["quest", "quest_id"],
+      ["stage", "stages"],
+      defaultQuestId,
+      "fact objective"
+    );
 
     if (type === "structure_visit" && !stringValue(objective.structure)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.structure is required for a structure_visit objective.`);
@@ -2629,6 +2639,26 @@ function checkQuestFactAction(file, action, location, type, defaultQuestId = "")
     if (!Object.hasOwn(action, "value") && !Object.hasOwn(action, "stage")) {
       errors.push(`${relative(file)}: ${location}.value or ${location}.stage is required for a set_variable action.`);
     }
+    const explicitType = normalizedString(action.type);
+    const factKeys = readValues(action, ["variable", "key", "fact"])
+      .filter((value) => typeof value === "string")
+      .map(normalizedString);
+    const stageKeys = [];
+    if (Object.hasOwn(action, "stage")) {
+      stageKeys.push("stage");
+    }
+    if (["set_stage", "quest_stage", "stage"].includes(explicitType) || factKeys.includes("stage")) {
+      stageKeys.push("value");
+    }
+    collectQuestStageReferences(
+      file,
+      location,
+      action,
+      ["quest", "quest_id", "id"],
+      stageKeys,
+      defaultQuestId,
+      "quest fact action"
+    );
   } else if (type === "counter") {
     checkStringList(file, action, location, ["counter", "increment_counter", "key", "fact"], "quest fact counter");
     checkOptionalInteger(file, action, location, "amount");
@@ -3193,6 +3223,20 @@ function checkQuestFactCondition(file, condition, location, defaultQuestId = "")
       });
     }
   }
+  const type = normalizedString(condition.type);
+  const stageKeys = ["stage", "stages"];
+  if (type === "stage" || type === "quest_stage") {
+    stageKeys.push("value", "values");
+  }
+  collectQuestStageReferences(
+    file,
+    location,
+    condition,
+    ["quest", "quest_id"],
+    stageKeys,
+    defaultQuestId,
+    "quest fact condition"
+  );
   if (readValues(condition, ["tag", "tags", "fact_tag", "quest_tag", "key", "variable", "counter", "fact", "stage", "stages"]).length === 0) {
     errors.push(`${relative(file)}: ${location} must define tag, tags, fact_tag, quest_tag, key, variable, counter, fact, stage, or stages.`);
   }
@@ -3371,6 +3415,29 @@ function readValues(entry, keys) {
     }
   }
   return values;
+}
+
+function collectQuestStageReferences(file, location, entry, questKeys, stageKeys, defaultQuestId = "", reason = "quest stage reference") {
+  if (!stageKeys || stageKeys.length === 0) {
+    return;
+  }
+  const stageIds = readValues(entry, [...new Set(stageKeys)])
+    .filter((value) => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (stageIds.length === 0) {
+    return;
+  }
+  const explicitQuestIds = readValues(entry, questKeys)
+    .filter((value) => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const questIds = explicitQuestIds.length === 0 && defaultQuestId ? [defaultQuestId] : explicitQuestIds;
+  for (const questId of questIds) {
+    for (const stageId of stageIds) {
+      pendingQuestStageReferences.push({ file, location, questId, stageId, reason });
+    }
+  }
 }
 
 function hasStringValues(entry, keys) {
@@ -3614,7 +3681,8 @@ function indexQuest(file, data) {
     file: relative(file),
     parent: stringValue(data.parent),
     questline: stringValue(data.questline),
-    pathQuestline: questPathQuestline(file)
+    pathQuestline: questPathQuestline(file),
+    stageIds: questStageIds(data.stages)
   });
 }
 
@@ -3775,6 +3843,7 @@ function validateCrossReferences() {
     }
   }
 
+  validateQuestStageReferences();
   validateQuestParentGraph();
   validateQuestlineFolders();
   validateDialogueTreeQuestlineMetadata();
@@ -3942,6 +4011,34 @@ function validateQuestParentGraph() {
   const reportedCycles = new Set();
   for (const questId of questDefinitions.keys()) {
     visitQuestParentChain(questId, [], state, reportedCycles);
+  }
+}
+
+function validateQuestStageReferences() {
+  const reported = new Set();
+  for (const reference of pendingQuestStageReferences) {
+    const quest = questDefinitions.get(reference.questId);
+    if (!quest) {
+      continue;
+    }
+    if (quest.stageIds.size === 0) {
+      continue;
+    }
+    if (quest.stageIds.has(reference.stageId)) {
+      continue;
+    }
+    const key = [
+      relative(reference.file),
+      reference.location,
+      reference.questId,
+      reference.stageId,
+      reference.reason
+    ].join("\u0000");
+    if (reported.has(key)) {
+      continue;
+    }
+    reported.add(key);
+    warnings.push(`${relative(reference.file)}: ${reference.location} references stage "${reference.stageId}" on quest "${reference.questId}" from ${reference.reason}, but that quest does not define that stage.`);
   }
 }
 
