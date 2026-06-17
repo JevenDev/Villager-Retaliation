@@ -2253,6 +2253,9 @@ function checkUnreachableDialogueTreeNodes(file, nodes, entries, nodeIds) {
     .map((node) => [node.id, node]));
   const pending = [];
   for (const entry of entries) {
+    if (!structurallySelectableDialogueTreeEntry(entry)) {
+      continue;
+    }
     const start = stringValue(entry?.start);
     if (start && nodeIds.has(start)) {
       pending.push(start);
@@ -2271,10 +2274,13 @@ function checkUnreachableDialogueTreeNodes(file, nodes, entries, nodeIds) {
     reachable.add(nodeId);
     const node = nodeById.get(nodeId);
     const rawNode = node?.raw ?? node;
-    if (!rawNode || !Array.isArray(rawNode.responses)) {
+    if (!rawNode || !dialogueTreeNodeCanOfferResponses(rawNode)) {
       continue;
     }
     for (const response of rawNode.responses) {
+      if (!structurallySelectableDialogueTreeResponse(response)) {
+        continue;
+      }
       const next = stringValue(response?.next);
       if (next && nodeIds.has(next) && !reachable.has(next)) {
         pending.push(next);
@@ -2315,6 +2321,25 @@ function warnQuestDialogueTreeLifecycleEntryCoverage(file, entries, defaultQuest
       warnings.push(`${relative(file)}: quest dialogue tree is missing lifecycle entry "${entryId}".`);
     }
   }
+}
+
+function structurallySelectableDialogueTreeEntry(entry) {
+  return entry
+    && typeof entry === "object"
+    && !Array.isArray(entry)
+    && stringValue(entry.label)
+    && !(entry.show_for_adults === false && entry.show_for_babies === false);
+}
+
+function structurallySelectableDialogueTreeResponse(response) {
+  return response
+    && typeof response === "object"
+    && !Array.isArray(response)
+    && stringValue(response.label);
+}
+
+function dialogueTreeNodeCanOfferResponses(node) {
+  return node?.end !== true && Array.isArray(node?.responses);
 }
 
 function conditionListHasQuestState(conditions, expectedStates, defaultQuestId) {
@@ -2386,10 +2411,13 @@ function hasReachableQuestAction(nodeById, startNodeId, expectedActions, default
     if (actionsIncludeQuestLifecycleAction(rawNode.actions, expectedActions, defaultQuestId)) {
       return true;
     }
-    if (!Array.isArray(rawNode.responses)) {
+    if (!dialogueTreeNodeCanOfferResponses(rawNode)) {
       continue;
     }
     for (const response of rawNode.responses) {
+      if (!structurallySelectableDialogueTreeResponse(response)) {
+        continue;
+      }
       if (actionsIncludeQuestLifecycleAction(response?.actions, expectedActions, defaultQuestId)) {
         return true;
       }
