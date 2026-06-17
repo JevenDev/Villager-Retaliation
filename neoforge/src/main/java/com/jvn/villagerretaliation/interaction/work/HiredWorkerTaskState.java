@@ -55,16 +55,42 @@ public enum HiredWorkerTaskState {
         return this == MOVING_TO_STORAGE || this == DEPOSITING || this == WAITING_FOR_MATERIALS || this == PAUSED_STORAGE_FULL;
     }
 
+    public boolean isWaitingState() {
+        return switch (this) {
+            case IDLE, AWAITING_INSTRUCTION, NO_WORK_AREA, WAITING_FOR_MATERIALS,
+                    PAUSED_FULL_INVENTORY, PAUSED_STORAGE_FULL, PAUSED_NO_STORAGE,
+                    PAUSED_MISSING_TOOL, FAILED_COOLDOWN -> true;
+            default -> false;
+        };
+    }
+
     public static HiredWorkerTaskState byId(String value) {
         if (value == null || value.isBlank()) {
             return IDLE;
         }
         String normalized = value.trim().toLowerCase(Locale.ROOT);
+        HiredWorkerTaskState alias = alias(normalized);
+        if (alias != null) {
+            return alias;
+        }
         for (HiredWorkerTaskState state : values()) {
             if (state.id.equals(normalized) || state.name().equalsIgnoreCase(normalized)) {
                 return state;
             }
         }
         return IDLE;
+    }
+
+    private static HiredWorkerTaskState alias(String value) {
+        return switch (value) {
+            case "finding_work", "finding_target" -> SELECTING_TARGET;
+            case "depositing_output", "storage_depositing" -> DEPOSITING;
+            case "needs_tool", "missing_tool" -> PAUSED_MISSING_TOOL;
+            case "needs_food" -> WAITING_FOR_MATERIALS;
+            case "storage_full" -> PAUSED_STORAGE_FULL;
+            case "target_unreachable", "unreachable_target" -> FAILED_COOLDOWN;
+            case "waiting_for_instruction", "waiting_instruction" -> AWAITING_INSTRUCTION;
+            default -> null;
+        };
     }
 }

@@ -47,6 +47,9 @@ final class MiningBlockRules {
     }
 
     static Integer currentExcavationLayer(ServerLevel level, HiredWorkContext context) {
+        if (MiningWorkerState.hasFreshExcavationLayerCache(level, context)) {
+            return MiningWorkerState.cachedExcavationLayer(context);
+        }
         Integer layerY = null;
         for (BlockPos rawPos : context.workAreaPositions()) {
             BlockPos pos = rawPos.immutable();
@@ -56,6 +59,7 @@ final class MiningBlockRules {
                 layerY = pos.getY();
             }
         }
+        MiningWorkerState.rememberExcavationLayer(level, context, layerY);
         return layerY;
     }
 

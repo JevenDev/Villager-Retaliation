@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.block.PaymentBoxBlockEntity;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignmentResult;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,9 @@ public final class AssignedStorageService {
     public static final String TOOL_PURPOSE = "tool";
     public static final String PAYMENT_PURPOSE = "payment";
     private static final double STORAGE_INTERACTION_REACH_SQR = 25.0D;
+    private static final long STORAGE_RETRY_COOLDOWN_TICKS = 20L * 15L;
+    private static final long STORAGE_FULL_COOLDOWN_TICKS = 20L * 45L;
+    private static final Map<StorageFailureKey, StorageFailure> STORAGE_FAILURES = new HashMap<>();
 
     private AssignedStorageService() {
     }
@@ -46,6 +50,10 @@ public final class AssignedStorageService {
 
     public static boolean hasLoadedAssignedPaymentStorage(ServerLevel level, Villager villager) {
         return !livePaymentContainerCandidates(level, villager).isEmpty();
+    }
+
+    public static boolean hasLiveAssignedOutputStorage(ServerLevel level, Villager villager) {
+        return !liveOutputContainerCandidates(level, villager).isEmpty();
     }
 
     public static List<AssignedContainerRecord> assignedStorage(ServerLevel level, Villager villager) {
@@ -194,6 +202,29 @@ public final class AssignedStorageService {
         VillagerInventoryOverflowService.closeContainerFeedbackNow(level, storagePos);
     }
 
+    public static void rememberOutputStorageFull(ServerLevel level, Villager villager, BlockPos storagePos) {
+        rememberStorageFailure(level, villager, storagePos, StorageUse.OUTPUT, "full", STORAGE_FULL_COOLDOWN_TICKS);
+    }
+
+    public static void rememberOutputStorageFailure(ServerLevel level, Villager villager, BlockPos storagePos, String reason) {
+        rememberStorageFailure(level, villager, storagePos, StorageUse.OUTPUT, reason, STORAGE_RETRY_COOLDOWN_TICKS);
+    }
+
+    public static void rememberToolStorageFailure(ServerLevel level, Villager villager, BlockPos storagePos, String reason) {
+        rememberStorageFailure(level, villager, storagePos, StorageUse.TOOL, reason, STORAGE_RETRY_COOLDOWN_TICKS);
+    }
+
+    public static void clearStorageFailure(ServerLevel level, Villager villager, BlockPos storagePos) {
+        if (level == null || villager == null || storagePos == null) {
+            return;
+        }
+        UUID villagerId = villager.getUUID();
+        STORAGE_FAILURES.keySet().removeIf(key ->
+                key.villagerId().equals(villagerId)
+                        && key.dimension().equals(level.dimension())
+                        && key.pos().equals(storagePos));
+    }
+
     public static boolean canInteractWithAssignedStorage(Villager villager) {
         return canInteractWithAssignedStorage(villager, ignored -> true);
     }
@@ -275,6 +306,7 @@ public final class AssignedStorageService {
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
                 .filter(candidate -> candidate.anyPositionMatches(safeFilter))
+                .filter(candidate -> !isStorageRecentlyFailed(level, villager, candidate, use))
                 .min((first, second) -> Double.compare(
                         first.distanceToSqr(villagerPos),
                         second.distanceToSqr(villagerPos)))
@@ -291,6 +323,7 @@ public final class AssignedStorageService {
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
                 .filter(candidate -> candidate.anyPositionMatches(safeFilter))
+                .filter(candidate -> !isStorageRecentlyFailed(level, villager, candidate, use))
                 .sorted((first, second) -> Double.compare(
                         first.distanceToSqr(villagerPos),
                         second.distanceToSqr(villagerPos)))
@@ -376,6 +409,7 @@ public final class AssignedStorageService {
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
                 .filter(candidate -> candidate.anyPositionMatches(safeFilter))
+                .filter(candidate -> !isStorageRecentlyFailed(level, villager, candidate, use))
                 .filter(candidate -> containerHasItem(candidate.container(), safePredicate))
                 .min((first, second) -> Double.compare(
                         first.distanceToSqr(villagerPos),
@@ -395,6 +429,7 @@ public final class AssignedStorageService {
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
                 .filter(candidate -> candidate.anyPositionMatches(safeFilter))
+                .filter(candidate -> !isStorageRecentlyFailed(level, villager, candidate, use))
                 .filter(candidate -> containerHasItem(candidate.container(), safePredicate))
                 .sorted((first, second) -> Double.compare(
                         first.distanceToSqr(villagerPos),
@@ -484,7 +519,7 @@ public final class AssignedStorageService {
             boolean used = false;
             for (int slot = 0; slot < container.getContainerSize() && remaining > 0; slot++) {
                 ItemStack stack = container.getItem(slot);
-                if (stack.isEmpty() || !predicate.test(stack)) {
+                if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
                 int removed = Math.min(remaining, stack.getCount());
@@ -848,7 +883,6 @@ public final class AssignedStorageService {
                 continue;
             }
             if (targetLevel != level) {
-                data.updateValidation(record, "wrong_dimension");
                 continue;
             }
             if (!level.hasChunkAt(record.pos())) {
@@ -857,11 +891,11 @@ public final class AssignedStorageService {
             }
             BlockEntity blockEntity = level.getBlockEntity(record.pos());
             if (!(blockEntity instanceof Container container)) {
-                data.updateValidation(record, "missing_container");
+                data.removeAssignedAt(record.dimension(), record.pos());
                 continue;
             }
             if (!isValidContainerForPurpose(level, record.pos(), record.purpose())) {
-                data.updateValidation(record, "wrong_purpose");
+                data.removeAssignedAt(record.dimension(), record.pos());
                 continue;
             }
             data.updateValidation(record, "valid");
@@ -899,7 +933,9 @@ public final class AssignedStorageService {
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         List<VillagerInventoryOverflowService.ContainerCandidate> containers = new ArrayList<>();
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveOutputContainerCandidates(level, villager)) {
-            if (candidate.anyPositionMatches(safeFilter) && candidate.isInInteractionRange(villager)) {
+            if (candidate.anyPositionMatches(safeFilter)
+                    && !isStorageRecentlyFailed(level, villager, candidate, StorageUse.OUTPUT)
+                    && candidate.isInInteractionRange(villager)) {
                 containers.add(candidate);
             }
         }
@@ -951,12 +987,88 @@ public final class AssignedStorageService {
         };
     }
 
+    private static void rememberStorageFailure(
+            ServerLevel level,
+            Villager villager,
+            BlockPos storagePos,
+            StorageUse use,
+            String reason,
+            long cooldownTicks) {
+        if (level == null || villager == null || storagePos == null || use == null) {
+            return;
+        }
+        StorageFailureKey key = new StorageFailureKey(villager.getUUID(), level.dimension(), storagePos.immutable(), use);
+        STORAGE_FAILURES.put(key, new StorageFailure(
+                reason == null || reason.isBlank() ? "failed" : reason,
+                level.getGameTime() + Math.max(1L, cooldownTicks)));
+    }
+
+    private static boolean isStorageRecentlyFailed(
+            ServerLevel level,
+            Villager villager,
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            StorageUse use) {
+        if (level == null || villager == null || candidate == null || use == null) {
+            return false;
+        }
+        expireStorageFailures(level);
+        for (BlockPos storagePos : candidate.positions()) {
+            if (isStorageRecentlyFailed(level, villager, storagePos, use)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isStorageRecentlyFailed(ServerLevel level, Villager villager, BlockPos storagePos, StorageUse use) {
+        long now = level.getGameTime();
+        for (StorageUse failureUse : StorageUse.values()) {
+            if (!storageFailureApplies(failureUse, use)) {
+                continue;
+            }
+            StorageFailureKey key = new StorageFailureKey(villager.getUUID(), level.dimension(), storagePos.immutable(), failureUse);
+            StorageFailure failure = STORAGE_FAILURES.get(key);
+            if (failure == null) {
+                continue;
+            }
+            if (failure.expiresGameTime() <= now) {
+                STORAGE_FAILURES.remove(key);
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean storageFailureApplies(StorageUse failureUse, StorageUse requestedUse) {
+        if (failureUse == requestedUse) {
+            return true;
+        }
+        if (failureUse == StorageUse.ANY_NON_PAYMENT) {
+            return requestedUse != StorageUse.PAYMENT;
+        }
+        return requestedUse == StorageUse.ANY_NON_PAYMENT && failureUse != StorageUse.PAYMENT;
+    }
+
+    private static void expireStorageFailures(ServerLevel level) {
+        long now = level.getGameTime();
+        STORAGE_FAILURES.entrySet().removeIf(entry ->
+                entry.getKey().dimension().equals(level.dimension())
+                        && entry.getValue().expiresGameTime() <= now);
+    }
+
     private enum StorageUse {
         INPUT,
         OUTPUT,
         TOOL,
         ANY_NON_PAYMENT,
         PAYMENT
+    }
+
+    private record StorageFailureKey(UUID villagerId, ResourceKey<Level> dimension, BlockPos pos, StorageUse use) {
+    }
+
+    private record StorageFailure(String reason, long expiresGameTime) {
     }
 
     public record StoragePosition(ResourceKey<Level> dimension, BlockPos pos) {

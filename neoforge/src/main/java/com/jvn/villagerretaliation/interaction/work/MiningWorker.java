@@ -203,6 +203,9 @@ public final class MiningWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
             return WorkResult.idle("interaction.work.mining.output_full_blocked");
         }
+        if (mode.excavatesArea()) {
+            MiningWorkerState.clearExcavationLayerCache(context);
+        }
         HiredOreBlockTracker.onBlockBroken(level, target.blockPos());
         HiredWorkPlan.removeTarget(context, target.blockPos());
 

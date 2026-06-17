@@ -13,8 +13,12 @@ final class MiningWorkerState {
     private static final String MINING_ANCHOR_POS_TAG = "MiningAnchorPos";
     private static final String MINING_ANCHOR_EXPIRES_GAME_TIME_TAG = "MiningAnchorExpiresGameTime";
     private static final String LAST_BREAK_PROGRESS_GAME_TIME_TAG = "LastMiningBreakProgressGameTime";
+    private static final String CURRENT_EXCAVATION_LAYER_PRESENT_TAG = "CurrentExcavationLayerPresent";
+    private static final String CURRENT_EXCAVATION_LAYER_Y_TAG = "CurrentExcavationLayerY";
+    private static final String CURRENT_EXCAVATION_LAYER_EXPIRES_GAME_TIME_TAG = "CurrentExcavationLayerExpiresGameTime";
     private static final int MINING_POCKET_RADIUS = 6;
     private static final long MINING_ANCHOR_TICKS = 20L * 90L;
+    private static final long EXCAVATION_LAYER_CACHE_TICKS = 20L;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
 
     private MiningWorkerState() {
@@ -70,6 +74,34 @@ final class MiningWorkerState {
                 : context.state().getLong(LAST_BREAK_PROGRESS_GAME_TIME_TAG);
         context.state().putLong(LAST_BREAK_PROGRESS_GAME_TIME_TAG, now);
         return (int) Math.clamp(now - previous, 1L, 200L);
+    }
+
+    static boolean hasFreshExcavationLayerCache(ServerLevel level, HiredWorkContext context) {
+        return context.state().contains(CURRENT_EXCAVATION_LAYER_PRESENT_TAG)
+                && context.state().getLong(CURRENT_EXCAVATION_LAYER_EXPIRES_GAME_TIME_TAG) > level.getGameTime();
+    }
+
+    static Integer cachedExcavationLayer(HiredWorkContext context) {
+        if (!context.state().getBoolean(CURRENT_EXCAVATION_LAYER_PRESENT_TAG)) {
+            return null;
+        }
+        return context.state().getInt(CURRENT_EXCAVATION_LAYER_Y_TAG);
+    }
+
+    static void rememberExcavationLayer(ServerLevel level, HiredWorkContext context, Integer layerY) {
+        context.state().putBoolean(CURRENT_EXCAVATION_LAYER_PRESENT_TAG, layerY != null);
+        if (layerY == null) {
+            context.state().remove(CURRENT_EXCAVATION_LAYER_Y_TAG);
+        } else {
+            context.state().putInt(CURRENT_EXCAVATION_LAYER_Y_TAG, layerY);
+        }
+        context.state().putLong(CURRENT_EXCAVATION_LAYER_EXPIRES_GAME_TIME_TAG, level.getGameTime() + EXCAVATION_LAYER_CACHE_TICKS);
+    }
+
+    static void clearExcavationLayerCache(HiredWorkContext context) {
+        context.state().remove(CURRENT_EXCAVATION_LAYER_PRESENT_TAG);
+        context.state().remove(CURRENT_EXCAVATION_LAYER_Y_TAG);
+        context.state().remove(CURRENT_EXCAVATION_LAYER_EXPIRES_GAME_TIME_TAG);
     }
 
     static boolean isExcavationScanInProgress(HiredWorkContext context, HiredMiningMode mode) {

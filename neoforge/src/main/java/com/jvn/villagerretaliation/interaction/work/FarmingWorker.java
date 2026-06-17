@@ -292,6 +292,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return WorkResult.progressed("interaction.work.farming.collecting_hoe");
         }
         if (result == HiredStorageNavigationGoal.Result.FAILED) {
+            AssignedStorageService.rememberToolStorageFailure(level, villager, storage, "farming_hoe_storage_unreachable");
             HiredWorkerBrain.setFailure(context, "farming_hoe_storage_unreachable", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
             return WorkResult.idle("interaction.work.farming.hoe_unreachable");
@@ -307,6 +308,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
             return WorkResult.idle("interaction.work.farming.hoe_inventory_full");
         }
+        AssignedStorageService.clearStorageFailure(level, villager, storage);
         HiredStorageNavigationGoal.clearStorageTarget(context);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());

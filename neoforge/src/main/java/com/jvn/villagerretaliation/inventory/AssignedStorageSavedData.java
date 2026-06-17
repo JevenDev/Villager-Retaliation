@@ -169,6 +169,10 @@ public final class AssignedStorageSavedData extends SavedData {
     }
 
     public void updateValidation(AssignedContainerRecord record, String validationStatus) {
+        String safeValidationStatus = validationStatus == null || validationStatus.isBlank() ? "unknown" : validationStatus;
+        if (record.validationStatus().equals(safeValidationStatus)) {
+            return;
+        }
         AssignedContainerRecord updated = new AssignedContainerRecord(
                 record.dimension(),
                 record.pos(),
@@ -176,7 +180,7 @@ public final class AssignedStorageSavedData extends SavedData {
                 record.hirerId(),
                 record.purpose(),
                 record.priority(),
-                validationStatus == null || validationStatus.isBlank() ? "unknown" : validationStatus
+                safeValidationStatus
         );
         put(updated);
         setDirty();
