@@ -28,6 +28,7 @@ import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.village.VillageRegistrySavedData;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
@@ -96,6 +97,7 @@ public final class VillagerRetaliationCommands {
                         .then(literal("datapack")
                                 .then(literal("diagnostics")
                                         .executes(VillagerRetaliationCommands::showDatapackDiagnostics)))
+                        .then(villageDebugCommands())
                         .then(hiredDebugCommands())
                         .then(questDebugCommands())
                         .then(literal("profile")
@@ -243,6 +245,60 @@ public final class VillagerRetaliationCommands {
                                         .executes(context -> setHiredDebugPreviews(context, false, HiredDebugPreviewService.DEFAULT_RADIUS))))
                         .then(targetArgument()
                                 .executes(VillagerRetaliationCommands::debugHiredWork)));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> villageDebugCommands() {
+        return literal("village")
+                .then(literal("registry")
+                        .then(literal("inspect")
+                                .executes(context -> inspectVillageRegistry(context, 10))
+                                .then(argument("limit", IntegerArgumentType.integer(1, 50))
+                                        .executes(context -> inspectVillageRegistry(
+                                                context,
+                                                IntegerArgumentType.getInteger(context, "limit")))))
+                        .then(literal("prune_older_than")
+                                .then(argument("ticks", IntegerArgumentType.integer(0))
+                                        .executes(context -> pruneVillageRegistry(
+                                                context,
+                                                IntegerArgumentType.getInteger(context, "ticks"))))));
+    }
+
+    private static int inspectVillageRegistry(CommandContext<CommandSourceStack> context, int limit) {
+        CommandSourceStack source = context.getSource();
+        ServerLevel level = source.getLevel();
+        VillageRegistrySavedData registry = VillageRegistrySavedData.get(level);
+        long gameTime = level.getGameTime();
+        List<VillageRegistrySavedData.EntrySnapshot> entries = registry.entries()
+                .stream()
+                .sorted(Comparator.comparingLong((VillageRegistrySavedData.EntrySnapshot entry) -> entry.ageTicks(gameTime))
+                        .reversed())
+                .limit(limit)
+                .toList();
+        source.sendSuccess(() -> Component.literal("Village registry: " + registry.size()
+                + " entries. Showing " + entries.size() + "."), false);
+        entries.forEach(entry -> source.sendSuccess(() -> Component.literal(villageRegistryLine(entry, gameTime)), false));
+        return registry.size();
+    }
+
+    private static int pruneVillageRegistry(CommandContext<CommandSourceStack> context, int olderThanTicks) {
+        CommandSourceStack source = context.getSource();
+        ServerLevel level = source.getLevel();
+        VillageRegistrySavedData registry = VillageRegistrySavedData.get(level);
+        long cutoffGameTime = Math.max(0L, level.getGameTime() - olderThanTicks);
+        int removed = registry.pruneNotSeenSince(cutoffGameTime);
+        source.sendSuccess(() -> Component.literal("Pruned " + removed
+                + " village registry entries not seen in the last " + olderThanTicks
+                + " ticks. Remaining: " + registry.size() + "."), true);
+        return removed;
+    }
+
+    private static String villageRegistryLine(VillageRegistrySavedData.EntrySnapshot entry, long gameTime) {
+        BlockPos center = entry.center();
+        return entry.key()
+                + " | " + entry.dimension()
+                + " | " + center.getX() + " " + center.getY() + " " + center.getZ()
+                + " | lastSeen=" + entry.lastSeenGameTime()
+                + " | ageTicks=" + entry.ageTicks(gameTime);
     }
 
     private static int toggleHiredDebugPreviews(CommandContext<CommandSourceStack> context, double radius) {

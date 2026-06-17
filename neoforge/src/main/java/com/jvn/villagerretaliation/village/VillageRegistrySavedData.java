@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.village;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -79,6 +80,27 @@ public class VillageRegistrySavedData extends SavedData {
         return key;
     }
 
+    public List<EntrySnapshot> entries() {
+        return this.entriesByKey.values()
+                .stream()
+                .map(EntrySnapshot::from)
+                .toList();
+    }
+
+    public int size() {
+        return this.entriesByKey.size();
+    }
+
+    public int pruneNotSeenSince(long minimumLastSeenGameTime) {
+        int before = this.entriesByKey.size();
+        this.entriesByKey.entrySet().removeIf(entry -> entry.getValue().lastSeenGameTime() < minimumLastSeenGameTime);
+        int removed = before - this.entriesByKey.size();
+        if (removed > 0) {
+            setDirty();
+        }
+        return removed;
+    }
+
     private Entry nearest(ResourceLocation dimension, BlockPos center) {
         Entry nearest = null;
         long nearestDistance = Long.MAX_VALUE;
@@ -139,6 +161,16 @@ public class VillageRegistrySavedData extends SavedData {
             return tag.contains(TAG_X, Tag.TAG_INT)
                     && tag.contains(TAG_Y, Tag.TAG_INT)
                     && tag.contains(TAG_Z, Tag.TAG_INT);
+        }
+    }
+
+    public record EntrySnapshot(String key, ResourceLocation dimension, BlockPos center, long lastSeenGameTime) {
+        private static EntrySnapshot from(Entry entry) {
+            return new EntrySnapshot(entry.key(), entry.dimension(), entry.center(), entry.lastSeenGameTime());
+        }
+
+        public long ageTicks(long gameTime) {
+            return Math.max(0L, gameTime - this.lastSeenGameTime);
         }
     }
 }
