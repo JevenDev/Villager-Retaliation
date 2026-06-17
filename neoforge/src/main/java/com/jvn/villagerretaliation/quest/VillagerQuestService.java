@@ -568,7 +568,10 @@ public final class VillagerQuestService {
                 continue;
             }
             boolean questProgressChanged = false;
-            if (definition.target().hasProofItem() && hasRequiredProof(player, definition) && progress.markHasProof()) {
+            if (!progress.hasProof()
+                    && definition.target().hasProofItem()
+                    && hasRequiredProof(player, definition)
+                    && progress.markHasProof()) {
                 changed = true;
                 progressNotice = true;
                 questProgressChanged = true;
@@ -4763,6 +4766,7 @@ public final class VillagerQuestService {
             case LOCATION_VISIT -> debugAddLocation(parts, objective);
             case ITEM_CHECK -> {
                 parts.add("item=" + debugResource(objective.item()));
+                parts.add("current=" + itemCount(player, objective));
                 parts.add("count=" + objective.count());
                 parts.add("consume=" + objective.consume());
                 parts.add("enchantments=" + objective.itemRequirements().enchantments().size());
