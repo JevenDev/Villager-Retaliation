@@ -168,6 +168,8 @@ public record QuestDefinition(
             ResourceLocation item,
             Set<ResourceLocation> entityTypes,
             Set<ResourceLocation> entityTags,
+            Set<ResourceLocation> blockTypes,
+            Set<ResourceLocation> blockTags,
             int count,
             boolean consume,
             ItemRequirements itemRequirements,
@@ -184,6 +186,8 @@ public record QuestDefinition(
             discoveryRadius = Math.max(1, discoveryRadius);
             entityTypes = entityTypes == null ? Set.of() : Set.copyOf(entityTypes);
             entityTags = entityTags == null ? Set.of() : Set.copyOf(entityTags);
+            blockTypes = blockTypes == null ? Set.of() : Set.copyOf(blockTypes);
+            blockTags = blockTags == null ? Set.of() : Set.copyOf(blockTags);
             count = Math.max(1, count);
             itemRequirements = itemRequirements == null ? ItemRequirements.EMPTY : itemRequirements;
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
@@ -284,6 +288,8 @@ public record QuestDefinition(
         LOCATION_VISIT,
         ITEM_CHECK,
         MOB_KILL,
+        BLOCK_BREAK,
+        BLOCK_PLACE,
         CONDITION;
 
         public static ObjectiveType bySerializedName(String value) {
@@ -293,6 +299,8 @@ public record QuestDefinition(
                 case "location_visit", "coordinate", "coordinates", "coords", "region_visit" -> LOCATION_VISIT;
                 case "item_check" -> ITEM_CHECK;
                 case "mob_kill", "entity_kill", "kill" -> MOB_KILL;
+                case "block_break", "break_block", "mine_block", "mine" -> BLOCK_BREAK;
+                case "block_place", "place_block", "place" -> BLOCK_PLACE;
                 case "condition" -> CONDITION;
                 default -> null;
             };

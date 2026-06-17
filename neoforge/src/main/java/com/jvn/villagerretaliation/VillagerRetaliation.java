@@ -74,6 +74,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onRightClickBlock)
                 .listener(VillagerRetaliationEvents::onLeftClickBlock)
                 .listener(VillagerRetaliationEvents::onBlockBreak)
+                .listener(VillagerRetaliationEvents::onBlockPlace)
                 .listener(HiredOreBlockTracker::onBlockPlace)
                 .listener(HiredOreBlockTracker::onFluidPlaceBlock)
                 .listener(HiredOreBlockTracker::onChunkUnload)

@@ -56,6 +56,8 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerQuestService {
@@ -1289,6 +1291,33 @@ public final class VillagerQuestService {
         return changed;
     }
 
+    private static boolean updateBlockEventProgress(
+            ServerLevel level,
+            ServerPlayer player,
+            BlockPos pos,
+            BlockState state,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.ObjectiveType type) {
+        boolean changed = false;
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            if (objective.type() != type || progress.objectiveComplete(objective.id())) {
+                continue;
+            }
+            if (!matchesBlockObjective(level, pos, state, objective)) {
+                continue;
+            }
+            int count = progress.addObjectiveCounter(objective.id(), 1);
+            changed = true;
+            if (count >= objective.count()) {
+                if (progress.markObjectiveComplete(objective.id())) {
+                    markQuestObjectiveFact(level, player, definition, objective);
+                }
+            }
+        }
+        return changed;
+    }
+
     private static boolean requiredObjectivesComplete(
             ServerPlayer player,
             DialogueContext context,
@@ -1325,6 +1354,7 @@ public final class VillagerQuestService {
             case LOCATION_VISIT -> isAtLocationObjective(level, player.blockPosition(), objective);
             case ITEM_CHECK -> hasItemCount(player, objective);
             case MOB_KILL -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
+            case BLOCK_BREAK, BLOCK_PLACE -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
     }
@@ -1364,6 +1394,39 @@ public final class VillagerQuestService {
         for (ResourceLocation tagId : objective.entityTags()) {
             TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, tagId);
             if (killed.getType().is(tag)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesBlockObjective(
+            ServerLevel level,
+            BlockPos pos,
+            BlockState state,
+            QuestDefinition.Objective objective) {
+        if (state == null || state.isAir()) {
+            return false;
+        }
+        if (objective.dimension() != null && level.dimension() != objective.dimension()) {
+            return false;
+        }
+        if (objective.location() != null) {
+            double radius = Math.max(1, objective.radius());
+            if (pos.distSqr(objective.location()) > radius * radius) {
+                return false;
+            }
+        }
+        if (objective.blockTypes().isEmpty() && objective.blockTags().isEmpty()) {
+            return false;
+        }
+        ResourceLocation blockType = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        if (blockType != null && objective.blockTypes().contains(blockType)) {
+            return true;
+        }
+        for (ResourceLocation tagId : objective.blockTags()) {
+            TagKey<Block> tag = TagKey.create(Registries.BLOCK, tagId);
+            if (state.is(tag)) {
                 return true;
             }
         }
@@ -2094,6 +2157,8 @@ public final class VillagerQuestService {
                     case STRUCTURE_VISIT, LOCATION_VISIT -> "travel";
                     case ITEM_CHECK -> "proof";
                     case MOB_KILL -> "hunt";
+                    case BLOCK_BREAK -> "break";
+                    case BLOCK_PLACE -> "build";
                     case CONDITION -> "inactive";
                 };
             }
@@ -2106,6 +2171,8 @@ public final class VillagerQuestService {
             case "inactive" -> "Return when this quest's conditions are right again.";
             case "proof" -> "Obtain {proof_item} for this quest.";
             case "hunt" -> "Defeat {objective_count} {objective_entity}.";
+            case "break" -> "Break {objective_count} {objective_block}.";
+            case "build" -> "Place {objective_count} {objective_block}.";
             case "return" -> "Return to {issuer}.";
             case "abandoned" -> "Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} to pick this back up.";
             case "abandoned_cooldown" -> "Available later. Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z}.";
@@ -2345,6 +2412,8 @@ public final class VillagerQuestService {
             values.put("objective_count", "");
             values.put("objective_progress_count", "0");
             values.put("objective_entity", "");
+            values.put("objective_block", "");
+            values.put("objective_block_id", "");
             values.put("objective_radius", "");
             values.put("objective_complete", "no");
             values.put("objective_progress", "0");
@@ -2363,6 +2432,8 @@ public final class VillagerQuestService {
         values.put("objective_count", Integer.toString(objective.count()));
         values.put("objective_progress_count", Integer.toString(progress == null ? 0 : progress.objectiveCounter(objective.id())));
         values.put("objective_entity", objectiveEntityName(objective));
+        values.put("objective_block", objectiveBlockName(objective));
+        values.put("objective_block_id", objectiveBlockId(objective));
         values.put("objective_radius", Integer.toString(objective.radius()));
         boolean complete = progress != null && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective);
         values.put("objective_complete", complete ? "yes" : "no");
@@ -2402,7 +2473,7 @@ public final class VillagerQuestService {
             case ITEM_CHECK -> objective.item() == null
                     ? 0.0F
                     : Mth.clamp((float) itemCount(player, objective) / (float) objective.count(), 0.0F, 1.0F);
-            case MOB_KILL -> progress == null
+            case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE -> progress == null
                     ? 0.0F
                     : Mth.clamp((float) progress.objectiveCounter(objective.id()) / (float) objective.count(), 0.0F, 1.0F);
             case STRUCTURE_VISIT, LOCATION_VISIT, CONDITION -> progress != null
@@ -2533,6 +2604,62 @@ public final class VillagerQuestService {
         }
     }
 
+    public static void onBlockBroken(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state) {
+        onBlockEvent(level, player, pos, state, QuestDefinition.ObjectiveType.BLOCK_BREAK);
+    }
+
+    public static void onBlockPlaced(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state) {
+        onBlockEvent(level, player, pos, state, QuestDefinition.ObjectiveType.BLOCK_PLACE);
+    }
+
+    private static void onBlockEvent(
+            ServerLevel level,
+            ServerPlayer player,
+            BlockPos pos,
+            BlockState state,
+            QuestDefinition.ObjectiveType type) {
+        if (level == null || player == null || pos == null || state == null || player.level() != level) {
+            return;
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        boolean changed = false;
+        boolean progressNotice = false;
+        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
+            boolean hasObjectives = type == QuestDefinition.ObjectiveType.BLOCK_BREAK
+                    ? VillagerQuestResources.hasBlockBreakObjectives(level.getServer(), entry.getKey())
+                    : VillagerQuestResources.hasBlockPlaceObjectives(level.getServer(), entry.getKey());
+            if (!hasObjectives) {
+                continue;
+            }
+            QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
+            if (definition == null) {
+                continue;
+            }
+            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            if (!activeConditionsMetForPlayer(player, definition, progress)) {
+                continue;
+            }
+            boolean questProgressChanged = updateBlockEventProgress(level, player, pos, state, definition, progress, type);
+            if (!questProgressChanged) {
+                continue;
+            }
+            changed = true;
+            progressNotice = true;
+            sendQuestProgressNotification(
+                    player,
+                    definition,
+                    progress,
+                    "quest.updated",
+                    "Quest updated: {quest}");
+            changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
+        }
+        if (changed) {
+            data.setDirty();
+            sendTrackerSync(player, progressNotice);
+        }
+    }
+
     private static String questItemName(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
         if (definition.target().hasProofItem()) {
             return itemName(definition.target().proofItem());
@@ -2575,6 +2702,39 @@ public final class VillagerQuestService {
             return VillagerInteractionTextUtil.resourcePathName(objective.entityTags().iterator().next());
         }
         return "mobs";
+    }
+
+    private static String objectiveBlockName(QuestDefinition.Objective objective) {
+        if (objective == null
+                || (objective.type() != QuestDefinition.ObjectiveType.BLOCK_BREAK
+                && objective.type() != QuestDefinition.ObjectiveType.BLOCK_PLACE)) {
+            return "";
+        }
+        if (!objective.blockTypes().isEmpty()) {
+            ResourceLocation blockType = objective.blockTypes().iterator().next();
+            return BuiltInRegistries.BLOCK.getOptional(blockType)
+                    .map(block -> block.getName().getString())
+                    .orElseGet(() -> VillagerInteractionTextUtil.resourcePathName(blockType));
+        }
+        if (!objective.blockTags().isEmpty()) {
+            return VillagerInteractionTextUtil.resourcePathName(objective.blockTags().iterator().next());
+        }
+        return "blocks";
+    }
+
+    private static String objectiveBlockId(QuestDefinition.Objective objective) {
+        if (objective == null
+                || (objective.type() != QuestDefinition.ObjectiveType.BLOCK_BREAK
+                && objective.type() != QuestDefinition.ObjectiveType.BLOCK_PLACE)) {
+            return "";
+        }
+        if (!objective.blockTypes().isEmpty()) {
+            return objective.blockTypes().iterator().next().toString();
+        }
+        if (!objective.blockTags().isEmpty()) {
+            return "#" + objective.blockTags().iterator().next();
+        }
+        return "";
     }
 
     private static String issuerSummary(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {

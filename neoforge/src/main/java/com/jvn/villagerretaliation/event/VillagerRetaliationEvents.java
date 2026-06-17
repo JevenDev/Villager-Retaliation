@@ -493,10 +493,21 @@ public final class VillagerRetaliationEvents {
             VillagerInteractionService.handleSleepingVillagerBedBroken(level, serverPlayer, event.getPos());
         }
         if (!event.isCanceled() && event.getLevel() instanceof ServerLevel level) {
+            if (event.getPlayer() instanceof ServerPlayer serverPlayer) {
+                VillagerQuestService.onBlockBroken(level, serverPlayer, event.getPos(), event.getState());
+            }
             HiredOreBlockTracker.onBlockBreak(event);
             AssignedStorageService.removeAssignedContainer(level, event.getPos());
         }
         ForcedDialogueService.onContainerBreak(event);
+    }
+
+    public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        if (!event.isCanceled()
+                && event.getLevel() instanceof ServerLevel level
+                && event.getEntity() instanceof ServerPlayer serverPlayer) {
+            VillagerQuestService.onBlockPlaced(level, serverPlayer, event.getPos(), event.getPlacedBlock());
+        }
     }
 
     private static void tryGiveHighReputationGift(Villager villager, Player player, InteractionHand hand) {

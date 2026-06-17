@@ -274,6 +274,43 @@ Mob selectors:
 
 Add `dimension`, `x`/`y`/`z`, and `radius` to restrict kills to a region.
 
+## Example: Block Event Quest
+
+Use `block_break` and `block_place` for event-driven block counters. These update from block break/place events and do not scan the world.
+
+```json
+{
+  "id": "my_pack:repair_the_bridge",
+  "objectives": [
+    {
+      "id": "place_planks",
+      "type": "block_place",
+      "blocks": ["#minecraft:planks"],
+      "count": 8,
+      "x": 120,
+      "y": 64,
+      "z": -30,
+      "radius": 10,
+      "tracker": {
+        "text": "Place planks at the bridge: {objective_progress_count}/{objective_count}",
+        "complete_text": "The bridge has fresh planks."
+      }
+    }
+  ]
+}
+```
+
+Block selectors:
+
+| Field | Meaning |
+| --- | --- |
+| `block` | One block id, such as `minecraft:oak_planks` |
+| `blocks` | One or more block ids or `#tag` selectors |
+| `block_tag` | One block tag id |
+| `block_tags` | One or more block tag ids |
+
+Add `dimension`, `x`/`y`/`z`, and `radius` to restrict break/place credit to a region. Tracker placeholders include `{objective_block}` and `{objective_block_id}`.
+
 ## Example: Tracker Text
 
 ```json
