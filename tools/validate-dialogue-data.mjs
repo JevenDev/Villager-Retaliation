@@ -176,6 +176,12 @@ const conditionKeys = {
   time_of_day: new Set(["type", "value", "values", "time", "times"])
 };
 
+const questLiveOnlyConditionTypes = new Set([
+  "memory",
+  "recruitment_memory",
+  "villager_age"
+]);
+
 const dialogueMetadataKeys = new Set([
   "metadata"
 ]);
@@ -1050,6 +1056,14 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkOptionalBoolean(file, objective, objectiveLocation, "consume");
     checkQuestObjectiveItemRequirements(file, objective, objectiveLocation);
     checkConditions(file, objective, objectiveLocation, defaultQuestId);
+    if (type === "condition") {
+      warnLiveOnlyQuestConditions(
+        file,
+        objective.conditions,
+        `${objectiveLocation}.conditions`,
+        "quest condition objective"
+      );
+    }
     checkQuestObjectiveTracker(file, objective.tracker, `${objectiveLocation}.tracker`);
     for (const questId of readValues(objective, ["quest", "quest_id"])) {
       if (typeof questId === "string" && questId.trim()) {
@@ -1292,6 +1306,7 @@ function checkQuestActive(file, active, location, defaultQuestId = "") {
   }
   checkUnknownObjectKeys(file, active, location, new Set(["conditions", "hide_when_unmet", "pause_progress_when_unmet"]));
   checkConditions(file, active, location, defaultQuestId);
+  warnLiveOnlyQuestConditions(file, active.conditions, `${location}.conditions`, "quest active gate");
   checkOptionalBoolean(file, active, location, "hide_when_unmet");
   checkOptionalBoolean(file, active, location, "pause_progress_when_unmet");
 }
@@ -1321,6 +1336,7 @@ function checkQuestExpiration(file, expiration, location, defaultQuestId = "") {
     checkOptionalInteger(file, expiration, location, key, { min: 0 });
   }
   checkConditions(file, expiration, location, defaultQuestId);
+  warnLiveOnlyQuestConditions(file, expiration.conditions, `${location}.conditions`, "quest expiration gate");
   for (const key of ["consume", "allow_repickup", "notify"]) {
     checkOptionalBoolean(file, expiration, location, key);
   }
@@ -1464,6 +1480,7 @@ function checkQuestStagePredicate(file, predicate, location, defaultQuestId = ""
   if (Object.hasOwn(predicate, "conditions")) {
     checkUnknownObjectKeys(file, predicate, location, new Set(["conditions"]));
     checkConditions(file, predicate, location, defaultQuestId);
+    warnLiveOnlyQuestConditions(file, predicate.conditions, `${location}.conditions`, "quest stage complete_when predicate");
     return;
   }
 
@@ -1473,6 +1490,7 @@ function checkQuestStagePredicate(file, predicate, location, defaultQuestId = ""
   }
 
   checkCondition(file, predicate, location, defaultQuestId);
+  warnLiveOnlyQuestCondition(file, predicate, location, "quest stage complete_when predicate");
 }
 
 function looksLikeQuestFactStagePredicate(predicate) {
@@ -2244,6 +2262,32 @@ function checkConditions(file, entry, location, defaultQuestId = "") {
     return;
   }
   entry.conditions.forEach((condition, index) => checkCondition(file, condition, `${location}.conditions[${index}]`, defaultQuestId));
+}
+
+function warnLiveOnlyQuestConditions(file, conditions, location, usage) {
+  if (!Array.isArray(conditions)) {
+    return;
+  }
+  conditions.forEach((condition, index) => warnLiveOnlyQuestCondition(file, condition, `${location}[${index}]`, usage));
+}
+
+function warnLiveOnlyQuestCondition(file, condition, location, usage) {
+  if (!condition || typeof condition !== "object" || Array.isArray(condition)) {
+    return;
+  }
+
+  const type = normalizedString(condition.type);
+  if (["all", "all_of", "and", "any", "any_of", "or"].includes(type)) {
+    warnLiveOnlyQuestConditions(file, condition.conditions, `${location}.conditions`, usage);
+    return;
+  }
+  if (type === "not") {
+    warnLiveOnlyQuestCondition(file, condition.condition, `${location}.condition`, usage);
+    return;
+  }
+  if (questLiveOnlyConditionTypes.has(type)) {
+    warnings.push(`${relative(file)}: ${location} uses live-only ${type} condition in ${usage}; if the quest issuer is unloaded, evaluation stays unknown until that villager is loaded.`);
+  }
 }
 
 function checkCondition(file, condition, location, defaultQuestId = "") {
