@@ -21,7 +21,7 @@ public final class VillageScopeKeys {
             return "";
         }
         return VillageMembership.resolve(level, villager)
-                .map(area -> forPosition(level.dimension(), area.centerBlock()))
+                .map(area -> forArea(level, area))
                 .or(() -> VillagerSocialGraphService.knownVillage(level, villager.getUUID())
                         .map(VillageScopeKeys::fromSavedSocialKey)
                         .filter(key -> !key.isBlank()))
@@ -33,13 +33,20 @@ public final class VillageScopeKeys {
             return "";
         }
         return VillageMembership.resolve(level, villager)
-                .map(area -> forPosition(level.dimension(), area.centerBlock()))
+                .map(area -> forArea(level, area))
                 .or(() -> villager == null
                         ? Optional.empty()
                         : VillagerSocialGraphService.knownVillage(level, villager.getUUID())
                                 .map(VillageScopeKeys::fromSavedSocialKey)
                                 .filter(key -> !key.isBlank()))
                 .orElseGet(() -> forPosition(level.dimension(), fallbackPos));
+    }
+
+    public static String forArea(ServerLevel level, VillageMembership.VillageArea area) {
+        if (level == null || area == null) {
+            return "";
+        }
+        return VillageRegistrySavedData.get(level).keyFor(level, area.centerBlock());
     }
 
     public static String forPosition(ResourceKey<Level> dimension, BlockPos pos) {

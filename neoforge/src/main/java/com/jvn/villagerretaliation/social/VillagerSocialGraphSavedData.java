@@ -1387,7 +1387,7 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
         private static String resolveVillageKey(ServerLevel level, Villager villager) {
             return VillageMembership.resolve(level, villager)
-                    .map(area -> VillageScopeKeys.forPosition(level.dimension(), area.centerBlock()))
+                    .map(area -> VillageScopeKeys.forArea(level, area))
                     .orElse("");
         }
 
