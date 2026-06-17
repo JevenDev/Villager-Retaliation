@@ -1952,6 +1952,7 @@ function checkDialogueTree(file, data) {
       errors.push(`${relative(file)}: ${location}.responses must be an array.`);
     }
   }
+  checkUnreachableDialogueTreeNodes(file, nodes, entries, nodeIds);
 }
 
 function dialogueTreeNodes(nodes) {
@@ -1964,6 +1965,47 @@ function dialogueTreeNodes(nodes) {
   return Object.entries(nodes)
     .filter(([, node]) => node && typeof node === "object" && !Array.isArray(node))
     .map(([id, node]) => ({ ...node, id: node.id ?? id, location: `nodes.${id}` }));
+}
+
+function checkUnreachableDialogueTreeNodes(file, nodes, entries, nodeIds) {
+  const nodeById = new Map(nodes
+    .filter((node) => typeof node.id === "string" && node.id.trim())
+    .map((node) => [node.id, node]));
+  const pending = [];
+  for (const entry of entries) {
+    const start = stringValue(entry?.start);
+    if (start && nodeIds.has(start)) {
+      pending.push(start);
+    }
+  }
+  if (pending.length === 0) {
+    return;
+  }
+
+  const reachable = new Set();
+  while (pending.length > 0) {
+    const nodeId = pending.pop();
+    if (reachable.has(nodeId)) {
+      continue;
+    }
+    reachable.add(nodeId);
+    const node = nodeById.get(nodeId);
+    if (!node || !Array.isArray(node.responses)) {
+      continue;
+    }
+    for (const response of node.responses) {
+      const next = stringValue(response?.next);
+      if (next && nodeIds.has(next) && !reachable.has(next)) {
+        pending.push(next);
+      }
+    }
+  }
+
+  for (const node of nodes) {
+    if (typeof node.id === "string" && node.id.trim() && !reachable.has(node.id)) {
+      warnings.push(`${relative(file)}: ${node.location} is not reachable from any dialogue tree entry start.`);
+    }
+  }
 }
 
 function checkDialogueTreeActions(file, actions, location, defaultQuestId = "", options = {}) {
