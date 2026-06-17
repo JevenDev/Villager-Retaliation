@@ -2062,8 +2062,110 @@ public final class VillagerQuestService {
                         : ConditionMatch.UNMET;
             }
             case RECRUITMENT_MEMORY -> recruitmentMemoryPresentWithoutLiveContext(player, level, progress);
-            case EVENT_TAG -> ConditionMatch.UNKNOWN;
+            case EVENT_TAG -> eventTagMemoryStateWithoutLiveContext(player, level, progress, memory, villagerId);
         };
+    }
+
+    private static ConditionMatch eventTagMemoryStateWithoutLiveContext(
+            ServerPlayer player,
+            ServerLevel fallbackLevel,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.Memory memory,
+            UUID villagerId) {
+        if (memory.tags().isEmpty()) {
+            return ConditionMatch.UNKNOWN;
+        }
+        Optional<BlockPos> queryPos = savedVillageMemoryQueryPos(progress);
+        if (queryPos.isEmpty()) {
+            return ConditionMatch.UNKNOWN;
+        }
+        ServerLevel memoryLevel = savedVillageMemoryLevel(fallbackLevel, progress);
+        if (memoryLevel == null) {
+            return ConditionMatch.UNKNOWN;
+        }
+        UUID playerId = player.getUUID();
+        for (VillageEventMemory.MemoryEvent event : VillageEventMemory.recentNear(memoryLevel, queryPos.get())) {
+            if (!memory.tags().contains(event.tagId())) {
+                continue;
+            }
+            if (memory.currentPlayerOnly() && !playerId.equals(event.playerId())) {
+                continue;
+            }
+            if (memory.source() == DialogueCondition.MemorySource.THIS_VILLAGER && !villagerId.equals(event.sourceId())) {
+                continue;
+            }
+            if (memory.source() == DialogueCondition.MemorySource.OTHER_VILLAGER && villagerId.equals(event.sourceId())) {
+                continue;
+            }
+            return ConditionMatch.MET;
+        }
+        return ConditionMatch.UNMET;
+    }
+
+    private static Optional<BlockPos> savedVillageMemoryQueryPos(VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null) {
+            return Optional.empty();
+        }
+        Optional<BlockPos> villagePos = villageScopePos(progress.issuerVillageKey());
+        return villagePos.isPresent() ? villagePos : Optional.ofNullable(progress.issuerPos());
+    }
+
+    private static ServerLevel savedVillageMemoryLevel(
+            ServerLevel fallbackLevel,
+            VillagerQuestSavedData.QuestProgress progress) {
+        ResourceKey<Level> dimension = progress == null
+                ? null
+                : villageScopeDimension(progress.issuerVillageKey()).orElse(progress.issuerDimension());
+        if (dimension == null || dimension.equals(fallbackLevel.dimension())) {
+            return fallbackLevel;
+        }
+        return fallbackLevel.getServer().getLevel(dimension);
+    }
+
+    private static Optional<ResourceKey<Level>> villageScopeDimension(String scopeKey) {
+        String dimension = villageScopeDimensionText(scopeKey);
+        if (dimension.isBlank()) {
+            return Optional.empty();
+        }
+        ResourceLocation dimensionId = ResourceLocation.tryParse(dimension);
+        return dimensionId == null
+                ? Optional.empty()
+                : Optional.of(ResourceKey.create(Registries.DIMENSION, dimensionId));
+    }
+
+    private static Optional<BlockPos> villageScopePos(String scopeKey) {
+        String pos = villageScopePosText(scopeKey);
+        if (pos.isBlank()) {
+            return Optional.empty();
+        }
+        String[] parts = pos.split(",");
+        if (parts.length != 3) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(new BlockPos(
+                    Integer.parseInt(parts[0]),
+                    Integer.parseInt(parts[1]),
+                    Integer.parseInt(parts[2])));
+        } catch (NumberFormatException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private static String villageScopeDimensionText(String scopeKey) {
+        if (scopeKey == null || !scopeKey.startsWith("village:")) {
+            return "";
+        }
+        int separator = scopeKey.lastIndexOf(':');
+        return separator <= "village:".length() ? "" : scopeKey.substring("village:".length(), separator);
+    }
+
+    private static String villageScopePosText(String scopeKey) {
+        if (scopeKey == null || !scopeKey.startsWith("village:")) {
+            return "";
+        }
+        int separator = scopeKey.lastIndexOf(':');
+        return separator < 0 || separator >= scopeKey.length() - 1 ? "" : scopeKey.substring(separator + 1);
     }
 
     private static ConditionMatch recruitmentMemoryPresentWithoutLiveContext(

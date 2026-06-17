@@ -2341,12 +2341,23 @@ function warnLiveOnlyQuestCondition(file, condition, location, usage) {
     warnLiveOnlyQuestCondition(file, condition.condition, `${location}.condition`, usage);
     return;
   }
-  if (type === "memory" && questSavedMemoryKinds.has(normalizedString(condition.kind))) {
+  if (isSavedQuestMemoryCondition(condition)) {
     return;
   }
   if (questLiveOnlyConditionTypes.has(type)) {
     warnings.push(`${relative(file)}: ${location} uses live-only ${type} condition in ${usage}; if the quest issuer is unloaded, evaluation stays unknown until that villager is loaded.`);
   }
+}
+
+function isSavedQuestMemoryCondition(condition) {
+  if (normalizedString(condition.type) !== "memory") {
+    return false;
+  }
+  if (questSavedMemoryKinds.has(normalizedString(condition.kind))) {
+    return true;
+  }
+  return readValues(condition, ["tag", "tags"])
+    .some((tag) => typeof tag === "string" && tag.trim());
 }
 
 function checkCondition(file, condition, location, defaultQuestId = "") {
