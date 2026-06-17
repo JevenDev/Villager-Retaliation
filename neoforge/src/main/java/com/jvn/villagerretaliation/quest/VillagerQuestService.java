@@ -119,7 +119,18 @@ public final class VillagerQuestService {
     private record StageBranchOptionKey(ResourceLocation questId, String branchId) {
     }
 
-    private record InventoryItemCountCache(int changeCount, Map<ResourceLocation, Integer> counts) {
+    private record InventoryItemCountCache(
+            int changeCount,
+            Map<ResourceLocation, Integer> counts,
+            Map<InventoryObjectiveCountKey, Integer> objectiveCounts) {
+    }
+
+    private record InventoryObjectiveCountKey(
+            ResourceLocation itemId,
+            QuestDefinition.ItemRequirements requirements) {
+        private static InventoryObjectiveCountKey of(QuestDefinition.Objective objective) {
+            return new InventoryObjectiveCountKey(objective.item(), objective.itemRequirements());
+        }
     }
 
     public static void clearRuntimeState() {
@@ -2316,8 +2327,15 @@ public final class VillagerQuestService {
         if (hasSimpleItemRequirements(objective.itemRequirements())) {
             return itemCount(player, objective.item());
         }
+        InventoryItemCountCache cache = cachedInventoryCache(player);
+        InventoryObjectiveCountKey cacheKey = InventoryObjectiveCountKey.of(objective);
+        Integer cached = cache.objectiveCounts().get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
         Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
         if (item.isEmpty()) {
+            cache.objectiveCounts().put(cacheKey, 0);
             return 0;
         }
         int total = 0;
@@ -2331,22 +2349,28 @@ public final class VillagerQuestService {
                 total += stack.getCount();
             }
         }
+        cache.objectiveCounts().put(cacheKey, total);
         return total;
     }
 
     private static Map<ResourceLocation, Integer> cachedInventoryItemCounts(ServerPlayer player) {
+        return cachedInventoryCache(player).counts();
+    }
+
+    private static InventoryItemCountCache cachedInventoryCache(ServerPlayer player) {
         int changeCount = player.getInventory().getTimesChanged();
         InventoryItemCountCache cache = INVENTORY_ITEM_COUNT_CACHES.get(player.getUUID());
         if (cache != null && cache.changeCount() == changeCount) {
-            return cache.counts();
+            return cache;
         }
 
         Map<ResourceLocation, Integer> counts = new HashMap<>();
         addInventoryItemCounts(counts, player.getInventory().items);
         addInventoryItemCounts(counts, player.getInventory().offhand);
         Map<ResourceLocation, Integer> immutableCounts = Map.copyOf(counts);
-        INVENTORY_ITEM_COUNT_CACHES.put(player.getUUID(), new InventoryItemCountCache(changeCount, immutableCounts));
-        return immutableCounts;
+        InventoryItemCountCache updated = new InventoryItemCountCache(changeCount, immutableCounts, new HashMap<>());
+        INVENTORY_ITEM_COUNT_CACHES.put(player.getUUID(), updated);
+        return updated;
     }
 
     private static void addInventoryItemCounts(Map<ResourceLocation, Integer> counts, Iterable<ItemStack> stacks) {
