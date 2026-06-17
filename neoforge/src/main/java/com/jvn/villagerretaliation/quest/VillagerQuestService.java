@@ -125,17 +125,85 @@ public final class VillagerQuestService {
     private record StageBranchOptionKey(ResourceLocation questId, String branchId) {
     }
 
-    private record InventoryItemCountCache(
-            int changeCount,
-            Map<ResourceLocation, Integer> counts,
-            Map<InventoryObjectiveCountKey, Integer> objectiveCounts) {
-    }
-
     private record InventoryObjectiveCountKey(
             ResourceLocation itemId,
             QuestDefinition.ItemRequirements requirements) {
         private static InventoryObjectiveCountKey of(QuestDefinition.Objective objective) {
             return new InventoryObjectiveCountKey(objective.item(), objective.itemRequirements());
+        }
+    }
+
+    private static final class InventoryItemCountCache {
+        private final int changeCount;
+        private final Map<ResourceLocation, Integer> counts;
+        private final Map<InventoryObjectiveCountKey, Integer> objectiveCounts;
+        private final long rebuiltGameTime;
+        private final int simpleScanSlots;
+        private int simpleLookups;
+        private int exactLookups;
+        private int exactCacheMisses;
+        private int exactScanSlots;
+
+        private InventoryItemCountCache(
+                int changeCount,
+                Map<ResourceLocation, Integer> counts,
+                Map<InventoryObjectiveCountKey, Integer> objectiveCounts,
+                long rebuiltGameTime,
+                int simpleScanSlots) {
+            this.changeCount = changeCount;
+            this.counts = counts;
+            this.objectiveCounts = objectiveCounts;
+            this.rebuiltGameTime = rebuiltGameTime;
+            this.simpleScanSlots = simpleScanSlots;
+        }
+
+        private int changeCount() {
+            return this.changeCount;
+        }
+
+        private Map<ResourceLocation, Integer> counts() {
+            return this.counts;
+        }
+
+        private Map<InventoryObjectiveCountKey, Integer> objectiveCounts() {
+            return this.objectiveCounts;
+        }
+
+        private long rebuiltGameTime() {
+            return this.rebuiltGameTime;
+        }
+
+        private int simpleScanSlots() {
+            return this.simpleScanSlots;
+        }
+
+        private int simpleLookups() {
+            return this.simpleLookups;
+        }
+
+        private int exactLookups() {
+            return this.exactLookups;
+        }
+
+        private int exactCacheMisses() {
+            return this.exactCacheMisses;
+        }
+
+        private int exactScanSlots() {
+            return this.exactScanSlots;
+        }
+
+        private void recordSimpleLookup() {
+            this.simpleLookups++;
+        }
+
+        private void recordExactLookup() {
+            this.exactLookups++;
+        }
+
+        private void recordExactCacheMiss(int scannedSlots) {
+            this.exactCacheMisses++;
+            this.exactScanSlots += scannedSlots;
         }
     }
 
@@ -2570,7 +2638,9 @@ public final class VillagerQuestService {
         if (itemId == null) {
             return 0;
         }
-        return cachedInventoryItemCounts(player).getOrDefault(itemId, 0);
+        InventoryItemCountCache cache = cachedInventoryCache(player);
+        cache.recordSimpleLookup();
+        return cache.counts().getOrDefault(itemId, 0);
     }
 
     private static int itemCount(ServerPlayer player, QuestDefinition.Objective objective) {
@@ -2581,6 +2651,7 @@ public final class VillagerQuestService {
             return itemCount(player, objective.item());
         }
         InventoryItemCountCache cache = cachedInventoryCache(player);
+        cache.recordExactLookup();
         InventoryObjectiveCountKey cacheKey = InventoryObjectiveCountKey.of(objective);
         Integer cached = cache.objectiveCounts().get(cacheKey);
         if (cached != null) {
@@ -2589,25 +2660,26 @@ public final class VillagerQuestService {
         Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
         if (item.isEmpty()) {
             cache.objectiveCounts().put(cacheKey, 0);
+            cache.recordExactCacheMiss(0);
             return 0;
         }
         int total = 0;
+        int scannedSlots = 0;
         for (ItemStack stack : player.getInventory().items) {
+            scannedSlots++;
             if (matchesObjectiveItem(stack, objective, item.get())) {
                 total += stack.getCount();
             }
         }
         for (ItemStack stack : player.getInventory().offhand) {
+            scannedSlots++;
             if (matchesObjectiveItem(stack, objective, item.get())) {
                 total += stack.getCount();
             }
         }
         cache.objectiveCounts().put(cacheKey, total);
+        cache.recordExactCacheMiss(scannedSlots);
         return total;
-    }
-
-    private static Map<ResourceLocation, Integer> cachedInventoryItemCounts(ServerPlayer player) {
-        return cachedInventoryCache(player).counts();
     }
 
     private static InventoryItemCountCache cachedInventoryCache(ServerPlayer player) {
@@ -2618,16 +2690,24 @@ public final class VillagerQuestService {
         }
 
         Map<ResourceLocation, Integer> counts = new HashMap<>();
-        addInventoryItemCounts(counts, player.getInventory().items);
-        addInventoryItemCounts(counts, player.getInventory().offhand);
+        int scannedSlots = 0;
+        scannedSlots += addInventoryItemCounts(counts, player.getInventory().items);
+        scannedSlots += addInventoryItemCounts(counts, player.getInventory().offhand);
         Map<ResourceLocation, Integer> immutableCounts = Map.copyOf(counts);
-        InventoryItemCountCache updated = new InventoryItemCountCache(changeCount, immutableCounts, new HashMap<>());
+        InventoryItemCountCache updated = new InventoryItemCountCache(
+                changeCount,
+                immutableCounts,
+                new HashMap<>(),
+                player.level().getGameTime(),
+                scannedSlots);
         INVENTORY_ITEM_COUNT_CACHES.put(player.getUUID(), updated);
         return updated;
     }
 
-    private static void addInventoryItemCounts(Map<ResourceLocation, Integer> counts, Iterable<ItemStack> stacks) {
+    private static int addInventoryItemCounts(Map<ResourceLocation, Integer> counts, Iterable<ItemStack> stacks) {
+        int scannedSlots = 0;
         for (ItemStack stack : stacks) {
+            scannedSlots++;
             if (stack.isEmpty()) {
                 continue;
             }
@@ -2636,6 +2716,7 @@ public final class VillagerQuestService {
                 counts.merge(itemId, stack.getCount(), Integer::sum);
             }
         }
+        return scannedSlots;
     }
 
     private static boolean hasSimpleItemRequirements(QuestDefinition.ItemRequirements requirements) {
@@ -5105,6 +5186,7 @@ public final class VillagerQuestService {
         int changeCount = player.getInventory().getTimesChanged();
         InventoryItemCountCache cache = INVENTORY_ITEM_COUNT_CACHES.get(player.getUUID());
         boolean warm = cache != null && cache.changeCount() == changeCount;
+        long gameTime = player.level().getGameTime();
         List<String> parts = new ArrayList<>();
         parts.add("inventory_cache");
         parts.add("state=" + (warm ? "warm" : "cold"));
@@ -5115,6 +5197,12 @@ public final class VillagerQuestService {
         if (warm) {
             parts.add("simple_item_entries=" + cache.counts().size());
             parts.add("exact_objective_entries=" + cache.objectiveCounts().size());
+            parts.add("rebuilt_age_ticks=" + Math.max(0L, gameTime - cache.rebuiltGameTime()));
+            parts.add("simple_scan_slots=" + cache.simpleScanSlots());
+            parts.add("simple_lookups=" + cache.simpleLookups());
+            parts.add("exact_lookups=" + cache.exactLookups());
+            parts.add("exact_cache_misses=" + cache.exactCacheMisses());
+            parts.add("exact_scan_slots=" + cache.exactScanSlots());
         }
         return String.join(" ", parts);
     }
