@@ -35,7 +35,7 @@ import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
-import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -1082,7 +1082,7 @@ public final class VillagerQuestService {
                 context.villager().getVillagerData().getLevel(),
                 context.level().dimension(),
                 context.villager().blockPosition(),
-                liveVillageScopeKey(context.level(), context.villager()));
+                VillageScopeKeys.forVillager(context.level(), context.villager()));
         if (target != null && !target.objectiveId().isBlank()) {
             started.setTarget(context.villager().getUUID(), target.dimension(), target.pos(), target.objectiveId());
         }
@@ -2112,7 +2112,7 @@ public final class VillagerQuestService {
         if (progress == null) {
             return Optional.empty();
         }
-        Optional<BlockPos> villagePos = villageScopePos(progress.issuerVillageKey());
+        Optional<BlockPos> villagePos = VillageScopeKeys.pos(progress.issuerVillageKey());
         return villagePos.isPresent() ? villagePos : Optional.ofNullable(progress.issuerPos());
     }
 
@@ -2121,57 +2121,11 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         ResourceKey<Level> dimension = progress == null
                 ? null
-                : villageScopeDimension(progress.issuerVillageKey()).orElse(progress.issuerDimension());
+                : VillageScopeKeys.dimension(progress.issuerVillageKey()).orElse(progress.issuerDimension());
         if (dimension == null || dimension.equals(fallbackLevel.dimension())) {
             return fallbackLevel;
         }
         return fallbackLevel.getServer().getLevel(dimension);
-    }
-
-    private static Optional<ResourceKey<Level>> villageScopeDimension(String scopeKey) {
-        String dimension = villageScopeDimensionText(scopeKey);
-        if (dimension.isBlank()) {
-            return Optional.empty();
-        }
-        ResourceLocation dimensionId = ResourceLocation.tryParse(dimension);
-        return dimensionId == null
-                ? Optional.empty()
-                : Optional.of(ResourceKey.create(Registries.DIMENSION, dimensionId));
-    }
-
-    private static Optional<BlockPos> villageScopePos(String scopeKey) {
-        String pos = villageScopePosText(scopeKey);
-        if (pos.isBlank()) {
-            return Optional.empty();
-        }
-        String[] parts = pos.split(",");
-        if (parts.length != 3) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(new BlockPos(
-                    Integer.parseInt(parts[0]),
-                    Integer.parseInt(parts[1]),
-                    Integer.parseInt(parts[2])));
-        } catch (NumberFormatException ignored) {
-            return Optional.empty();
-        }
-    }
-
-    private static String villageScopeDimensionText(String scopeKey) {
-        if (scopeKey == null || !scopeKey.startsWith("village:")) {
-            return "";
-        }
-        int separator = scopeKey.lastIndexOf(':');
-        return separator <= "village:".length() ? "" : scopeKey.substring("village:".length(), separator);
-    }
-
-    private static String villageScopePosText(String scopeKey) {
-        if (scopeKey == null || !scopeKey.startsWith("village:")) {
-            return "";
-        }
-        int separator = scopeKey.lastIndexOf(':');
-        return separator < 0 || separator >= scopeKey.length() - 1 ? "" : scopeKey.substring(separator + 1);
     }
 
     private static ConditionMatch recruitmentMemoryPresentWithoutLiveContext(
@@ -3140,7 +3094,7 @@ public final class VillagerQuestService {
         }
         Villager villager = startedVillager(level, progress);
         if (villager != null && villager.isAlive()) {
-            return liveVillageScopeKey(level, villager);
+            return VillageScopeKeys.forVillager(level, villager);
         }
         if (progress.issuerPos() == null) {
             return "";
@@ -3148,35 +3102,7 @@ public final class VillagerQuestService {
         ResourceKey<Level> issuerDimension = progress.issuerDimension() == null
                 ? level.dimension()
                 : progress.issuerDimension();
-        return "village:" + issuerDimension.location() + ":" + factPosKey(progress.issuerPos());
-    }
-
-    private static String liveVillageScopeKey(ServerLevel level, Villager villager) {
-        String dimension = level.dimension().location().toString();
-        return VillageMembership.resolve(level, villager)
-                .map(area -> "village:" + dimension + ":" + factPosKey(area.centerBlock()))
-                .or(() -> VillagerSocialGraphService.knownVillage(level, villager.getUUID())
-                        .map(VillagerQuestService::savedSocialVillageScopeKey)
-                        .filter(key -> !key.isBlank()))
-                .orElseGet(() -> "village:" + dimension + ":" + factPosKey(villager.blockPosition()));
-    }
-
-    private static String savedSocialVillageScopeKey(String savedVillageKey) {
-        if (savedVillageKey == null || savedVillageKey.isBlank()) {
-            return "";
-        }
-        if (savedVillageKey.startsWith("village:")) {
-            return savedVillageKey;
-        }
-        int separator = savedVillageKey.indexOf('@');
-        if (separator <= 0 || separator >= savedVillageKey.length() - 1) {
-            return "";
-        }
-        return "village:" + savedVillageKey.substring(0, separator) + ":" + savedVillageKey.substring(separator + 1);
-    }
-
-    private static String factPosKey(BlockPos pos) {
-        return pos.getX() + "," + pos.getY() + "," + pos.getZ();
+        return VillageScopeKeys.forPosition(issuerDimension, progress.issuerPos());
     }
 
     private static Optional<QuestDefinition.Objective> firstIncompleteRequiredObjective(

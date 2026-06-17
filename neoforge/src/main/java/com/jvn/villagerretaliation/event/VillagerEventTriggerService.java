@@ -13,14 +13,13 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
-import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -221,13 +220,7 @@ public final class VillagerEventTriggerService {
     }
 
     private static String villageScopeKey(ServerLevel level, Villager villager, VillageEventMemory.MemoryEvent event) {
-        return VillageMembership.resolve(level, villager)
-                .map(area -> "village:" + level.dimension().location() + ":" + posKey(area.centerBlock()))
-                .orElseGet(() -> "village:" + level.dimension().location() + ":" + posKey(event.pos()));
-    }
-
-    private static String posKey(BlockPos pos) {
-        return pos.getX() + "," + pos.getY() + "," + pos.getZ();
+        return VillageScopeKeys.forResolvedVillageOrPosition(level, villager, event.pos());
     }
 
     private record CooldownKey(ResourceLocation triggerId, String scopeKey) {

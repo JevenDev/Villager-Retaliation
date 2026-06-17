@@ -1,10 +1,8 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
-import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import java.util.Locale;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
 public enum QuestFactScope {
@@ -30,7 +28,6 @@ public enum QuestFactScope {
         if (context == null) {
             return "";
         }
-        String dimension = context.level().dimension().location().toString();
         return switch (this) {
             case PLAYER -> "player:" + context.player().getUUID();
             case WORLD -> "world";
@@ -38,34 +35,7 @@ public enum QuestFactScope {
                     ? ""
                     : "quest:" + context.player().getUUID() + ":" + questId;
             case VILLAGER -> "villager:" + context.villager().getUUID();
-            case VILLAGE -> villageScopeKey(context, dimension);
+            case VILLAGE -> VillageScopeKeys.forVillager(context.level(), context.villager());
         };
-    }
-
-    private static String villageScopeKey(DialogueContext context, String dimension) {
-        return VillageMembership.resolve(context.level(), context.villager())
-                .map(area -> "village:" + dimension + ":" + posKey(area.centerBlock()))
-                .or(() -> VillagerSocialGraphService.knownVillage(context.level(), context.villager().getUUID())
-                        .map(QuestFactScope::savedVillageScopeKey)
-                        .filter(key -> !key.isBlank()))
-                .orElseGet(() -> "village:" + dimension + ":" + posKey(context.villager().blockPosition()));
-    }
-
-    private static String savedVillageScopeKey(String savedVillageKey) {
-        if (savedVillageKey == null || savedVillageKey.isBlank()) {
-            return "";
-        }
-        if (savedVillageKey.startsWith("village:")) {
-            return savedVillageKey;
-        }
-        int separator = savedVillageKey.indexOf('@');
-        if (separator <= 0 || separator >= savedVillageKey.length() - 1) {
-            return "";
-        }
-        return "village:" + savedVillageKey.substring(0, separator) + ":" + savedVillageKey.substring(separator + 1);
-    }
-
-    private static String posKey(BlockPos pos) {
-        return pos.getX() + "," + pos.getY() + "," + pos.getZ();
     }
 }
