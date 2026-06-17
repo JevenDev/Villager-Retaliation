@@ -446,6 +446,26 @@ const dialogueTreeEntryKeys = new Set([
 ]);
 const dialogueTreeNodeKeys = new Set(["id", "lines", "text", "metadata", "actions", "conditions", "responses", "end"]);
 const dialogueTreeResponseKeys = new Set(["id", "label", "metadata", "next", "request", "lines", "text", "actions", "conditions", "end", "order"]);
+const dialogueRequestTypes = new Set([
+  "greeting",
+  "question",
+  "gift_preferences",
+  "gift_advice_followup",
+  "map_report",
+  "story_hint_report",
+  "combat_survival_report",
+  "gear_report",
+  "recruitment_followup",
+  "cured_recognition",
+  "village_event_report",
+  "apology",
+  "village_defense_report",
+  "story",
+  "share_story",
+  "joke",
+  "insult"
+]);
+const dialogueDispositions = new Set(["friendly", "respectful", "neutral", "cautious", "rude", "hostile", "fearful"]);
 const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove", "block", "lock", "consume", "close", "close_branch", "branch_lock"]);
 const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use", "memory_event", "village_event", "village_memory", "memory", "event", "trade", "villager_trade", "trading", "merchant_trade", "gift", "give_gift", "gift_given", "reputation", "rep", "reputation_level", "trust", "choice", "dialogue_choice", "branch_choice", "quest_choice", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
 const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "coordinates", "coords", "region_visit"]);
@@ -2076,6 +2096,7 @@ function checkDialogueTree(file, data) {
       continue;
     }
     checkUnknownObjectKeys(file, entry, `entries[${index}]`, dialogueTreeEntryKeys);
+    checkDialogueTreeEntryFields(file, entry, `entries[${index}]`);
     checkDialogueMetadata(file, entry, `entries[${index}]`);
     checkConditions(file, entry, `entries[${index}]`, stringValue(metadataObject(entry).quest) || defaultQuestId);
     checkStringList(file, entry, `entries[${index}]`, ["professions"], "profession id");
@@ -2109,6 +2130,7 @@ function checkDialogueTree(file, data) {
     const rawNode = node.raw ?? node;
     const nodeQuestId = stringValue(metadataObject(rawNode).quest) || defaultQuestId;
     checkUnknownObjectKeys(file, rawNode, location, dialogueTreeNodeKeys);
+    checkDialogueTreeNodeFields(file, rawNode, location);
     checkDialogueMetadata(file, rawNode, location);
     checkConditions(file, rawNode, location, nodeQuestId);
     checkDialogueTreeActions(file, rawNode.actions, `${location}.actions`, nodeQuestId);
@@ -2121,6 +2143,7 @@ function checkDialogueTree(file, data) {
           continue;
         }
         checkUnknownObjectKeys(file, response, responseLocation, dialogueTreeResponseKeys);
+        checkDialogueTreeResponseFields(file, response, responseLocation);
         checkDialogueMetadata(file, response, responseLocation);
         const responseQuestId = stringValue(metadataObject(response).quest) || nodeQuestId;
         checkConditions(file, response, responseLocation, responseQuestId);
@@ -2135,6 +2158,36 @@ function checkDialogueTree(file, data) {
   }
   checkUnreachableDialogueTreeNodes(file, nodes, entries, nodeIds);
   warnQuestDialogueTreeLifecycleActionReachability(file, entries, nodeById, defaultQuestId);
+}
+
+function checkDialogueTreeEntryFields(file, entry, location) {
+  checkOptionalString(file, entry, location, "id");
+  checkOptionalString(file, entry, location, "label");
+  checkOptionalString(file, entry, location, "start");
+  checkStringValues(file, entry, location, ["request"], dialogueRequestTypes, "dialogue request type");
+  checkStringValues(file, entry, location, ["disposition", "dispositions"], dialogueDispositions, "dialogue disposition");
+  for (const key of ["show_for_adults", "show_for_babies", "force_camera_towards_villager"]) {
+    checkOptionalBoolean(file, entry, location, key);
+  }
+  checkOptionalInteger(file, entry, location, "order");
+}
+
+function checkDialogueTreeNodeFields(file, node, location) {
+  checkOptionalString(file, node, location, "id");
+  checkStringList(file, node, location, ["lines"], "dialogue tree node line");
+  checkOptionalString(file, node, location, "text");
+  checkOptionalBoolean(file, node, location, "end");
+}
+
+function checkDialogueTreeResponseFields(file, response, location) {
+  checkOptionalString(file, response, location, "id");
+  checkOptionalString(file, response, location, "label");
+  checkOptionalString(file, response, location, "next");
+  checkStringValues(file, response, location, ["request"], dialogueRequestTypes, "dialogue request type");
+  checkStringList(file, response, location, ["lines"], "dialogue tree response line");
+  checkOptionalString(file, response, location, "text");
+  checkOptionalBoolean(file, response, location, "end");
+  checkOptionalInteger(file, response, location, "order");
 }
 
 function checkDialogueTreeDisplay(file, display, location) {
