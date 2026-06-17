@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,7 +45,7 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_STRUCTURE_SEARCH_RADIUS = 256;
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
-    private static volatile CachedQuests cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Map.of());
+    private static volatile CachedQuests cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Map.of(), Map.of());
 
     private VillagerQuestResources() {
     }
@@ -54,7 +55,7 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Map.of());
+        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Map.of(), Map.of());
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
@@ -79,6 +80,16 @@ public final class VillagerQuestResources {
         return loadCache(server).exclusiveGroupQuestIds().getOrDefault(group, Set.of());
     }
 
+    public static boolean hasQuestTrigger(
+            MinecraftServer server,
+            ResourceLocation id,
+            QuestDefinition.TriggerEvent event) {
+        if (id == null || event == null) {
+            return false;
+        }
+        return loadCache(server).triggerEventQuestIds().getOrDefault(event, Set.of()).contains(id);
+    }
+
     private static CachedQuests loadCache(MinecraftServer server) {
         CachedQuests current = cachedQuests;
         if (current.server() == server) {
@@ -96,7 +107,8 @@ public final class VillagerQuestResources {
                     server,
                     quests,
                     mobKillQuestIds(quests),
-                    exclusiveGroupQuestIds(quests));
+                    exclusiveGroupQuestIds(quests),
+                    triggerEventQuestIds(quests));
             cachedQuests = loaded;
             return loaded;
         }
@@ -125,6 +137,24 @@ public final class VillagerQuestResources {
 
         Map<ResourceLocation, Set<ResourceLocation>> frozen = new LinkedHashMap<>();
         for (Map.Entry<ResourceLocation, Set<ResourceLocation>> entry : groups.entrySet()) {
+            frozen.put(entry.getKey(), Set.copyOf(entry.getValue()));
+        }
+        return Map.copyOf(frozen);
+    }
+
+    private static Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds(
+            Map<ResourceLocation, QuestDefinition> quests) {
+        Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> idsByEvent =
+                new EnumMap<>(QuestDefinition.TriggerEvent.class);
+        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
+            for (QuestDefinition.Trigger trigger : entry.getValue().triggers()) {
+                idsByEvent.computeIfAbsent(trigger.event(), ignored -> new LinkedHashSet<>()).add(entry.getKey());
+            }
+        }
+
+        Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> frozen =
+                new EnumMap<>(QuestDefinition.TriggerEvent.class);
+        for (Map.Entry<QuestDefinition.TriggerEvent, Set<ResourceLocation>> entry : idsByEvent.entrySet()) {
             frozen.put(entry.getKey(), Set.copyOf(entry.getValue()));
         }
         return Map.copyOf(frozen);
@@ -1037,6 +1067,7 @@ public final class VillagerQuestResources {
             MinecraftServer server,
             Map<ResourceLocation, QuestDefinition> quests,
             Set<ResourceLocation> mobKillQuestIds,
-            Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds) {
+            Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
+            Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds) {
     }
 }

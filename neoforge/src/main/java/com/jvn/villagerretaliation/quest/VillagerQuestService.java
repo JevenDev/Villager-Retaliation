@@ -1624,7 +1624,8 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.TriggerEvent event) {
-        if (!(player.level() instanceof ServerLevel level) || definition.triggers().isEmpty()) {
+        if (!(player.level() instanceof ServerLevel level)
+                || !VillagerQuestResources.hasQuestTrigger(level.getServer(), definition.id(), event)) {
             return false;
         }
         Villager villager = startedVillager(level, progress);
@@ -1640,7 +1641,8 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.TriggerEvent event) {
-        if (definition.triggers().isEmpty() || progress == null) {
+        if (progress == null
+                || !VillagerQuestResources.hasQuestTrigger(context.level().getServer(), definition.id(), event)) {
             return false;
         }
 
