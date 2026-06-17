@@ -838,6 +838,10 @@ public final class VillagerQuestService {
         for (QuestDefinition.Objective objective : definition.objectives()) {
             lines.add(debugObjectiveLine(player, level, definition, progress, context, objective));
         }
+        String inventoryCacheLine = debugInventoryCacheLine(player, definition);
+        if (!inventoryCacheLine.isBlank()) {
+            lines.add(inventoryCacheLine);
+        }
         return new DebugInspectResult(true, lines, "");
     }
 
@@ -5079,6 +5083,40 @@ public final class VillagerQuestService {
             parts.add("location=" + debugPos(objective.location()));
             parts.add("radius=" + objective.radius());
         }
+    }
+
+    private static String debugInventoryCacheLine(ServerPlayer player, QuestDefinition definition) {
+        int itemObjectives = 0;
+        int exactItemObjectives = 0;
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK) {
+                continue;
+            }
+            itemObjectives++;
+            if (!hasSimpleItemRequirements(objective.itemRequirements())) {
+                exactItemObjectives++;
+            }
+        }
+        boolean proofItem = definition.target().hasProofItem();
+        if (itemObjectives == 0 && !proofItem) {
+            return "";
+        }
+
+        int changeCount = player.getInventory().getTimesChanged();
+        InventoryItemCountCache cache = INVENTORY_ITEM_COUNT_CACHES.get(player.getUUID());
+        boolean warm = cache != null && cache.changeCount() == changeCount;
+        List<String> parts = new ArrayList<>();
+        parts.add("inventory_cache");
+        parts.add("state=" + (warm ? "warm" : "cold"));
+        parts.add("change_count=" + changeCount);
+        parts.add("item_objectives=" + itemObjectives);
+        parts.add("exact_item_objectives=" + exactItemObjectives);
+        parts.add("proof_item=" + proofItem);
+        if (warm) {
+            parts.add("simple_item_entries=" + cache.counts().size());
+            parts.add("exact_objective_entries=" + cache.objectiveCounts().size());
+        }
+        return String.join(" ", parts);
     }
 
     private static String debugResource(ResourceLocation id) {
