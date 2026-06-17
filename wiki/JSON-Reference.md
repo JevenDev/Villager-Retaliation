@@ -308,7 +308,7 @@ Common action types:
 
 | Type | Important fields |
 | --- | --- |
-| `quest` | `quest` or `quest_id`, `action`: `start`, `remind`, `turn_in`, or `abandon` |
+| `quest` | `quest` or `quest_id`, `action`: `start`, `remind`, `turn_in`, `abandon`, or `block` |
 | `notification` | `trigger`, `text` |
 | `forced_dialogue` | `forced_dialogue` |
 | `experience` | `amount` or `experience` |
@@ -324,6 +324,16 @@ Common action types:
 | `counter` | `key` or `counter`, optional `amount`, `by`, or `delta`, optional `scope`, optional `quest` |
 
 Quest facts default to `quest` scope when the action has a quest id or is inside a quest-owned trigger. Otherwise they default to `player` scope.
+
+Use `action: "block"` when a dialogue choice or trigger should close a path immediately. The target quest becomes `branch_locked` and receives `villagerretaliation:quest_branch_locked`.
+
+```json
+{
+  "type": "quest",
+  "quest": "my_pack:smuggle_the_relic",
+  "action": "block"
+}
+```
 
 ```json
 {

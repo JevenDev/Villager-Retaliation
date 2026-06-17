@@ -167,6 +167,20 @@ Use explicit lock lists for named consequences outside the group:
 
 Locked quests are consumed with state `branch_locked` and receive the quest-scoped tag `villagerretaliation:quest_branch_locked`. Their quest fact variables include `state: "branch_locked"`, `blocked_by`, `blocked_on`, and `exclusive_group` when a group caused the lock.
 
+Dialogue and trigger actions can also close a path directly:
+
+```json
+{
+  "actions": [
+    {
+      "type": "quest",
+      "quest": "my_pack:smuggle_the_relic",
+      "action": "block"
+    }
+  ]
+}
+```
+
 ## Example: Structure Quest
 
 ```json

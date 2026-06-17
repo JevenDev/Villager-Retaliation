@@ -139,6 +139,7 @@ public final class VillagerQuestService {
             case REMIND -> remindQuest(context, definition);
             case TURN_IN -> turnInQuest(context, definition);
             case ABANDON -> abandonQuest(context, definition);
+            case BLOCK -> blockQuest(context, definition);
             case NONE -> result("none", "quest_no_action", "", Map.of());
         });
     }
@@ -152,6 +153,7 @@ public final class VillagerQuestService {
             case REMIND -> VillagerActionDefinition.QuestAction.REMIND;
             case TURN_IN -> VillagerActionDefinition.QuestAction.TURN_IN;
             case ABANDON -> VillagerActionDefinition.QuestAction.ABANDON;
+            case BLOCK -> VillagerActionDefinition.QuestAction.BLOCK;
             case NONE -> VillagerActionDefinition.QuestAction.NONE;
         };
     }
@@ -640,6 +642,46 @@ public final class VillagerQuestService {
                 replacements(context, definition, progress));
     }
 
+    private static QuestActionOutcome blockQuest(DialogueContext context, QuestDefinition definition) {
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
+        VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
+        if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.COMPLETED) {
+            return result(
+                    "already_completed",
+                    lineId(definition, "already_completed"),
+                    resolveQuestText(
+                            context,
+                            definition.dialogue().selectAlreadyCompletedText(context.random()),
+                            replacements(context, definition, progress)),
+                    replacements(context, definition, progress));
+        }
+        if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.CONSUMED) {
+            String status = branchLocked(progress) ? "branch_locked" : "consumed";
+            return result(
+                    status,
+                    lineId(definition, status),
+                    startBlockedLine(context, definition, progress),
+                    replacements(context, definition, progress));
+        }
+
+        VillagerQuestSavedData.QuestProgress locked =
+                progress == null ? data.getOrCreate(context.player().getUUID(), definition.id()) : progress;
+        locked.consume(BRANCH_LOCK_CONSUMED_REASON);
+        markQuestBranchLockedFact(context.level(), context.player(), definition, null, null, null);
+        data.setDirty();
+        clearTrackedQuestIf(data, context.player(), definition.id());
+        sendTrackerSync(context.player(), true);
+        return result(
+                "branch_locked",
+                lineId(definition, "branch_locked"),
+                resolveGlobalText(
+                        context.player(),
+                        "quest.dialogue.branch_locked",
+                        "That path has closed because of another choice.",
+                        replacements(context, definition, locked)),
+                replacements(context, definition, locked));
+    }
+
     private static boolean canStart(
             DialogueContext context,
             QuestDefinition definition,
@@ -861,8 +903,10 @@ public final class VillagerQuestService {
             return;
         }
         VillagerQuestFacts facts = VillagerQuestFacts.get(level);
-        facts.setVariable(scopeKey, "blocked_by", source.id().toString());
-        facts.setVariable(scopeKey, "blocked_on", event.serializedName());
+        if (source != null) {
+            facts.setVariable(scopeKey, "blocked_by", source.id().toString());
+        }
+        facts.setVariable(scopeKey, "blocked_on", event == null ? "action" : event.serializedName());
         if (exclusiveGroup != null) {
             facts.setVariable(scopeKey, "exclusive_group", exclusiveGroup.toString());
         }
