@@ -1526,7 +1526,7 @@ public final class VillagerQuestService {
             case LOCATION_VISIT -> isAtLocationObjective(level, player.blockPosition(), objective);
             case ITEM_CHECK -> hasItemCount(player, objective);
             case MOB_KILL -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
-            case BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT, TRADE, GIFT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
+            case BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
@@ -2490,6 +2490,7 @@ public final class VillagerQuestService {
                     case MOB_KILL -> "hunt";
                     case BLOCK_BREAK -> "break";
                     case BLOCK_PLACE -> "build";
+                    case BLOCK_INTERACT -> "interact";
                     case MEMORY_EVENT -> "event";
                     case TRADE -> "trade";
                     case GIFT -> "gift";
@@ -2508,6 +2509,7 @@ public final class VillagerQuestService {
             case "hunt" -> "Defeat {objective_count} {objective_entity}.";
             case "break" -> "Break {objective_count} {objective_block}.";
             case "build" -> "Place {objective_count} {objective_block}.";
+            case "interact" -> "Use {objective_count} {objective_block}.";
             case "event" -> "Wait for {objective_memory}.";
             case "trade" -> "Complete trades: {objective_progress_count}/{objective_count}.";
             case "gift" -> "Give {objective_count} {objective_item}.";
@@ -2830,7 +2832,7 @@ public final class VillagerQuestService {
             case ITEM_CHECK -> objective.item() == null
                     ? 0.0F
                     : Mth.clamp((float) itemCount(player, objective) / (float) objective.count(), 0.0F, 1.0F);
-            case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT, TRADE, GIFT -> progress == null
+            case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> progress == null
                     ? 0.0F
                     : Mth.clamp((float) progress.objectiveCounter(objective.id()) / (float) objective.count(), 0.0F, 1.0F);
             case STRUCTURE_VISIT, LOCATION_VISIT, FACT, CONDITION -> progress != null
@@ -2973,6 +2975,10 @@ public final class VillagerQuestService {
 
     public static void onBlockPlaced(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state) {
         onBlockEvent(level, player, pos, state, QuestDefinition.ObjectiveType.BLOCK_PLACE);
+    }
+
+    public static void onBlockInteracted(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state) {
+        onBlockEvent(level, player, pos, state, QuestDefinition.ObjectiveType.BLOCK_INTERACT);
     }
 
     public static void onMemoryEvent(ServerLevel level, VillageEventMemory.MemoryEvent event) {
@@ -3234,7 +3240,8 @@ public final class VillagerQuestService {
     private static String objectiveBlockName(QuestDefinition.Objective objective) {
         if (objective == null
                 || (objective.type() != QuestDefinition.ObjectiveType.BLOCK_BREAK
-                && objective.type() != QuestDefinition.ObjectiveType.BLOCK_PLACE)) {
+                && objective.type() != QuestDefinition.ObjectiveType.BLOCK_PLACE
+                && objective.type() != QuestDefinition.ObjectiveType.BLOCK_INTERACT)) {
             return "";
         }
         if (!objective.blockTypes().isEmpty()) {
@@ -3252,7 +3259,8 @@ public final class VillagerQuestService {
     private static String objectiveBlockId(QuestDefinition.Objective objective) {
         if (objective == null
                 || (objective.type() != QuestDefinition.ObjectiveType.BLOCK_BREAK
-                && objective.type() != QuestDefinition.ObjectiveType.BLOCK_PLACE)) {
+                && objective.type() != QuestDefinition.ObjectiveType.BLOCK_PLACE
+                && objective.type() != QuestDefinition.ObjectiveType.BLOCK_INTERACT)) {
             return "";
         }
         if (!objective.blockTypes().isEmpty()) {
@@ -3528,7 +3536,7 @@ public final class VillagerQuestService {
                 parts.add("entity_tags=" + debugResourceSet(objective.entityTags()));
                 debugAddLocation(parts, objective);
             }
-            case BLOCK_BREAK, BLOCK_PLACE -> {
+            case BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT -> {
                 debugAddCounter(parts, counter, objective.count());
                 parts.add("blocks=" + debugResourceSet(objective.blockTypes()));
                 parts.add("block_tags=" + debugResourceSet(objective.blockTags()));

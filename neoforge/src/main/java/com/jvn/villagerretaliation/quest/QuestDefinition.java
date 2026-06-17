@@ -305,6 +305,7 @@ public record QuestDefinition(
         MOB_KILL,
         BLOCK_BREAK,
         BLOCK_PLACE,
+        BLOCK_INTERACT,
         MEMORY_EVENT,
         TRADE,
         GIFT,
@@ -320,6 +321,7 @@ public record QuestDefinition(
                 case "mob_kill", "entity_kill", "kill" -> MOB_KILL;
                 case "block_break", "break_block", "mine_block", "mine" -> BLOCK_BREAK;
                 case "block_place", "place_block", "place" -> BLOCK_PLACE;
+                case "block_interact", "interact_block", "right_click_block", "use_block", "block_use" -> BLOCK_INTERACT;
                 case "memory_event", "village_event", "village_memory", "memory", "event" -> MEMORY_EVENT;
                 case "trade", "villager_trade", "trading", "merchant_trade" -> TRADE;
                 case "gift", "give_gift", "gift_given" -> GIFT;

@@ -46,7 +46,7 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
     private static volatile CachedQuests cachedQuests =
-            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
 
     private VillagerQuestResources() {
     }
@@ -56,7 +56,7 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
@@ -82,6 +82,10 @@ public final class VillagerQuestResources {
         return id != null && loadCache(server).blockPlaceQuestIds().contains(id);
     }
 
+    public static boolean hasBlockInteractObjectives(MinecraftServer server, ResourceLocation id) {
+        return id != null && loadCache(server).blockInteractQuestIds().contains(id);
+    }
+
     public static Set<ResourceLocation> memoryEventQuestIds(MinecraftServer server, ResourceLocation memoryTag) {
         if (memoryTag == null) {
             return Set.of();
@@ -105,6 +109,7 @@ public final class VillagerQuestResources {
             case MOB_KILL -> cache.mobKillQuestIds();
             case BLOCK_BREAK -> cache.blockBreakQuestIds();
             case BLOCK_PLACE -> cache.blockPlaceQuestIds();
+            case BLOCK_INTERACT -> cache.blockInteractQuestIds();
             case FACT -> cache.factQuestIds();
             case TRADE -> cache.tradeQuestIds();
             case GIFT -> cache.giftQuestIds();
@@ -148,6 +153,7 @@ public final class VillagerQuestResources {
                     mobKillQuestIds(quests),
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_BREAK),
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_PLACE),
+                    blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_INTERACT),
                     objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
                     objectiveQuestIds(quests, QuestDefinition.ObjectiveType.TRADE),
                     objectiveQuestIds(quests, QuestDefinition.ObjectiveType.GIFT),
@@ -488,7 +494,9 @@ public final class VillagerQuestResources {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "mob_kill objective must define entity, entities, entity_tag, or entity_tags.");
             return Optional.empty();
         }
-        if ((type == QuestDefinition.ObjectiveType.BLOCK_BREAK || type == QuestDefinition.ObjectiveType.BLOCK_PLACE)
+        if ((type == QuestDefinition.ObjectiveType.BLOCK_BREAK
+                || type == QuestDefinition.ObjectiveType.BLOCK_PLACE
+                || type == QuestDefinition.ObjectiveType.BLOCK_INTERACT)
                 && blockSelectors.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, type.name().toLowerCase(Locale.ROOT) + " objective must define block, blocks, block_tag, or block_tags.");
             return Optional.empty();
@@ -1336,6 +1344,7 @@ public final class VillagerQuestResources {
             Set<ResourceLocation> mobKillQuestIds,
             Set<ResourceLocation> blockBreakQuestIds,
             Set<ResourceLocation> blockPlaceQuestIds,
+            Set<ResourceLocation> blockInteractQuestIds,
             Set<ResourceLocation> factQuestIds,
             Set<ResourceLocation> tradeQuestIds,
             Set<ResourceLocation> giftQuestIds,

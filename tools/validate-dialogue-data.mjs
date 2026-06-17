@@ -366,10 +366,10 @@ const dialogueTreeActionKeys = new Set([
   "lines"
 ]);
 const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove", "block", "lock", "consume", "close", "close_branch", "branch_lock"]);
-const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "memory_event", "village_event", "village_memory", "memory", "event", "trade", "villager_trade", "trading", "merchant_trade", "gift", "give_gift", "gift_given", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
+const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use", "memory_event", "village_event", "village_memory", "memory", "event", "trade", "villager_trade", "trading", "merchant_trade", "gift", "give_gift", "gift_given", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
 const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "coordinates", "coords", "region_visit"]);
 const questMobKillObjectiveTypes = new Set(["mob_kill", "entity_kill", "kill"]);
-const questBlockObjectiveTypes = new Set(["block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place"]);
+const questBlockObjectiveTypes = new Set(["block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use"]);
 const questMemoryObjectiveTypes = new Set(["memory_event", "village_event", "village_memory", "memory", "event"]);
 const questGiftObjectiveTypes = new Set(["gift", "give_gift", "gift_given"]);
 const questFactObjectiveTypes = new Set(["fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"]);

@@ -75,6 +75,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -458,6 +459,13 @@ public final class VillagerRetaliationEvents {
                 event.setCancellationResult(sleepingResult);
                 return;
             }
+        }
+
+        if (!event.isCanceled()
+                && event.getEntity() instanceof ServerPlayer serverPlayer
+                && event.getLevel() instanceof ServerLevel level) {
+            BlockState state = level.getBlockState(event.getPos());
+            VillagerQuestService.onBlockInteracted(level, serverPlayer, event.getPos(), state);
         }
 
         ForcedDialogueService.rememberPotentialContainerOpen(event);

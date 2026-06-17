@@ -282,7 +282,7 @@ Add `dimension`, `x`/`y`/`z`, and `radius` to restrict kills to a region.
 
 ## Example: Block Event Quest
 
-Use `block_break` and `block_place` for event-driven block counters. These update from block break/place events and do not scan the world.
+Use `block_break`, `block_place`, and `block_interact` for event-driven block counters. These update from break, place, and right-click block events and do not scan the world.
 
 ```json
 {
@@ -306,6 +306,30 @@ Use `block_break` and `block_place` for event-driven block counters. These updat
 }
 ```
 
+Use `block_interact` for shrine, bell, lectern, button, door, or workstation beats:
+
+```json
+{
+  "id": "my_pack:ring_the_old_bell",
+  "objectives": [
+    {
+      "id": "ring_bell",
+      "type": "block_interact",
+      "block": "minecraft:bell",
+      "count": 1,
+      "x": 120,
+      "y": 65,
+      "z": -34,
+      "radius": 4,
+      "tracker": {
+        "text": "Ring the bell at the old bridge.",
+        "complete_text": "The old bell answered."
+      }
+    }
+  ]
+}
+```
+
 Block selectors:
 
 | Field | Meaning |
@@ -315,7 +339,7 @@ Block selectors:
 | `block_tag` | One block tag id |
 | `block_tags` | One or more block tag ids |
 
-Add `dimension`, `x`/`y`/`z`, and `radius` to restrict break/place credit to a region. Tracker placeholders include `{objective_block}` and `{objective_block_id}`.
+Add `dimension`, `x`/`y`/`z`, and `radius` to restrict break/place/use credit to a region. Tracker placeholders include `{objective_block}` and `{objective_block_id}`.
 
 ## Example: Village Memory Event Quest
 
