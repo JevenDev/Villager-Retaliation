@@ -2132,6 +2132,7 @@ function checkDialogueTree(file, data) {
     const nodeQuestId = stringValue(metadataObject(rawNode).quest) || defaultQuestId;
     checkUnknownObjectKeys(file, rawNode, location, dialogueTreeNodeKeys);
     checkDialogueTreeNodeFields(file, rawNode, location);
+    warnTerminalDialogueTreeNode(file, rawNode, location);
     checkDialogueMetadata(file, rawNode, location);
     checkConditions(file, rawNode, location, nodeQuestId);
     checkDialogueTreeActions(file, rawNode.actions, `${location}.actions`, nodeQuestId);
@@ -2146,6 +2147,7 @@ function checkDialogueTree(file, data) {
         checkUnknownObjectKeys(file, response, responseLocation, dialogueTreeResponseKeys);
         checkDialogueTreeResponseFields(file, response, responseLocation);
         warnInvisibleDialogueTreeResponse(file, response, responseLocation);
+        warnDialogueTreeResponseFlow(file, response, responseLocation);
         checkDialogueMetadata(file, response, responseLocation);
         const responseQuestId = stringValue(metadataObject(response).quest) || nodeQuestId;
         checkConditions(file, response, responseLocation, responseQuestId);
@@ -2204,6 +2206,18 @@ function warnInvisibleDialogueTreeEntry(file, entry, location) {
 function warnInvisibleDialogueTreeResponse(file, response, location) {
   if (response.label === undefined) {
     warnings.push(`${relative(file)}: ${location}.label is missing; dialogue tree response will not appear as an active option.`);
+  }
+}
+
+function warnTerminalDialogueTreeNode(file, node, location) {
+  if (node.end === true && Array.isArray(node.responses) && node.responses.length > 0) {
+    warnings.push(`${relative(file)}: ${location} is marked end=true; authored responses will never be offered.`);
+  }
+}
+
+function warnDialogueTreeResponseFlow(file, response, location) {
+  if (response.end === true && stringValue(response.next)) {
+    warnings.push(`${relative(file)}: ${location}.end is ignored because next continues to "${stringValue(response.next)}".`);
   }
 }
 
