@@ -1527,6 +1527,7 @@ function checkQuestRules(file, rules, location, defaultQuestId = "") {
   checkStringValues(file, rules, location, ["abandonment"], questAbandonmentModes, "quest abandonment mode");
   checkOptionalString(file, rules, location, "exclusive_group");
   checkOptionalString(file, rules, location, "branch_group");
+  checkResourceIdValues(file, rules, location, ["exclusive_group", "branch_group"], "quest branch exclusive group");
   checkStringValues(file, rules, location, ["exclusive_on", "exclusive_lock_on"], questBranchLockEvents, "quest branch lock event");
   checkQuestReferenceList(
     file,
@@ -1563,6 +1564,7 @@ function checkQuestBranching(file, branch, location) {
   ]));
   checkOptionalString(file, branch, location, "exclusive_group");
   checkOptionalString(file, branch, location, "group");
+  checkResourceIdValues(file, branch, location, ["exclusive_group", "group"], "quest branch exclusive group");
   checkStringValues(file, branch, location, ["exclusive_on", "lock_on"], questBranchLockEvents, "quest branch lock event");
   checkQuestReferenceList(
     file,
@@ -3372,6 +3374,18 @@ function checkStringList(file, entry, location, keys, label) {
         errors.push(`${relative(file)}: ${location}.${key}[${index}] must be a nonblank string ${label}.`);
       }
     });
+  }
+}
+
+function checkResourceIdValues(file, entry, location, keys, label) {
+  for (const value of readValues(entry, keys)) {
+    if (typeof value !== "string" || !value.trim()) {
+      continue;
+    }
+    const parsed = parseResourceId(value);
+    if (!parsed || !parsed.valid) {
+      errors.push(`${relative(file)}: ${location} has invalid ${label} "${value}".`);
+    }
   }
 }
 
