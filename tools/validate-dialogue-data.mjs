@@ -282,6 +282,11 @@ const questStates = new Set([
   "unavailable",
   "not_completed"
 ]);
+const questDialogueTreeLifecycleStates = new Map([
+  ["offer", new Set(["available", "not_started", "locked"])],
+  ["reminder", new Set(["in_progress", "active", "started"])],
+  ["turn_in", new Set(["ready", "turn_in", "turnin", "completeable", "completable"])]
+]);
 const memoryKinds = new Set([
   "recent_broken_bed",
   "recent_direct_hit",
@@ -1945,6 +1950,7 @@ function checkDialogueTree(file, data) {
     checkDialogueMetadata(file, entry, `entries[${index}]`);
     checkConditions(file, entry, `entries[${index}]`, stringValue(metadataObject(entry).quest) || defaultQuestId);
     checkStringList(file, entry, `entries[${index}]`, ["professions"], "profession id");
+    warnQuestDialogueTreeLifecycleEntryState(file, entry, `entries[${index}]`, defaultQuestId);
   }
 
   const nodes = dialogueTreeNodes(data.nodes);
@@ -2045,6 +2051,51 @@ function checkUnreachableDialogueTreeNodes(file, nodes, entries, nodeIds) {
       warnings.push(`${relative(file)}: ${node.location} is not reachable from any dialogue tree entry start.`);
     }
   }
+}
+
+function warnQuestDialogueTreeLifecycleEntryState(file, entry, location, defaultQuestId) {
+  if (!defaultQuestId || !isQuestDialogueTreeFile(file)) {
+    return;
+  }
+  const expectedStates = questDialogueTreeLifecycleStates.get(stringValue(entry?.id));
+  if (!expectedStates) {
+    return;
+  }
+  if (!conditionListHasQuestState(entry.conditions, expectedStates, defaultQuestId)) {
+    warnings.push(`${relative(file)}: ${location} has lifecycle entry id "${entry.id}" without a matching quest state condition.`);
+  }
+}
+
+function conditionListHasQuestState(conditions, expectedStates, defaultQuestId) {
+  if (!Array.isArray(conditions)) {
+    return false;
+  }
+  return conditions.some((condition) => conditionHasQuestState(condition, expectedStates, defaultQuestId));
+}
+
+function conditionHasQuestState(condition, expectedStates, defaultQuestId) {
+  if (!condition || typeof condition !== "object" || Array.isArray(condition)) {
+    return false;
+  }
+  const type = normalizedString(condition.type);
+  if (["all", "all_of", "and", "any", "any_of", "or"].includes(type)) {
+    return conditionListHasQuestState(condition.conditions, expectedStates, defaultQuestId);
+  }
+  if (type === "not") {
+    return false;
+  }
+  if (type !== "quest") {
+    return false;
+  }
+
+  const questIds = readValues(condition, ["quest", "quest_id", "id"])
+    .filter((value) => typeof value === "string" && value.trim())
+    .map((value) => value.trim());
+  if (questIds.length > 0 && !questIds.includes(defaultQuestId)) {
+    return false;
+  }
+  return readValues(condition, ["state", "states"])
+    .some((state) => typeof state === "string" && expectedStates.has(normalizedString(state)));
 }
 
 function checkDialogueTreeActions(file, actions, location, defaultQuestId = "", options = {}) {
