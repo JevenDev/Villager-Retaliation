@@ -9,9 +9,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.CollisionGetter;
+import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.BlockHitResult;
@@ -342,6 +344,9 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     private static boolean isPassableForApproach(CollisionGetter level, BlockPos pos, BlockState state) {
+        if (state.getFluidState().is(FluidTags.LAVA) || state.getBlock() instanceof BaseFireBlock) {
+            return false;
+        }
         return state.isAir()
                 || state.liquid()
                 || state.getCollisionShape(level, pos, CollisionContext.empty()).isEmpty();

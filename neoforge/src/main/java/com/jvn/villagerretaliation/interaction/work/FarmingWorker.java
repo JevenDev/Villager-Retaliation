@@ -172,9 +172,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 harvestResult = storeFarmOutputDrops(level, context, villager, targetPos, tool);
             }
             if (harvestResult == FarmHarvestResult.COMPLETED) {
-                HiredWorkPlan.removeTarget(context, targetPos);
-                clearActiveBreakingTarget(level, context, villager);
-                return WorkResult.completed("interaction.work.farming.completed_output");
+                return completedFarmTarget(
+                        level,
+                        villager,
+                        context,
+                        targetPos,
+                        "interaction.work.farming.completed_output");
             }
             if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
                 return targetChanged(level, villager, context, targetPos);
@@ -196,10 +199,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
             return targetChanged(level, villager, context, targetPos);
         }
-        HiredWorkPlan.removeTarget(context, targetPos);
-        clearActiveBreakingTarget(level, context, villager);
-        setTaskState(context, HiredWorkerTaskState.IDLE);
-        return WorkResult.completed("interaction.work.farming.completed_output");
+        return completedFarmTarget(
+                level,
+                villager,
+                context,
+                targetPos,
+                "interaction.work.farming.completed_output");
     }
 
     private WorkResult harvestCropNow(
@@ -218,9 +223,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 harvestResult = storeCropDrops(level, context, villager, target, tool);
             }
             if (harvestResult == FarmHarvestResult.COMPLETED) {
-                HiredWorkPlan.removeTarget(context, target);
-                clearActiveBreakingTarget(level, context, villager);
-                return WorkResult.completed("interaction.work.farming.completed_crop");
+                return completedFarmTarget(
+                        level,
+                        villager,
+                        context,
+                        target,
+                        "interaction.work.farming.completed_crop");
             }
             if (harvestResult == FarmHarvestResult.MISSING_PLANTING_ITEM) {
                 HiredWorkerBrain.setFailure(context, "missing_planting_item", level.getGameTime() + 100L);
@@ -252,10 +260,28 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
             return targetChanged(level, villager, context, target);
         }
+        return completedFarmTarget(
+                level,
+                villager,
+                context,
+                target,
+                "interaction.work.farming.completed_crop");
+    }
+
+    private WorkResult completedFarmTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos target,
+            String statusKey) {
         HiredWorkPlan.removeTarget(context, target);
         clearActiveBreakingTarget(level, context, villager);
+        if (HiredWorkPlan.size(context) > 0) {
+            setTaskState(context, HiredWorkerTaskState.FINDING_CHAIN_TARGET, target);
+            return WorkResult.skilledProgress(statusKey);
+        }
         setTaskState(context, HiredWorkerTaskState.IDLE);
-        return WorkResult.completed("interaction.work.farming.completed_crop");
+        return WorkResult.completed(statusKey);
     }
 
     private WorkResult targetChanged(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos target) {
