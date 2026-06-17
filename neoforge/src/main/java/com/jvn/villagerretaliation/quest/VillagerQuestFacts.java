@@ -147,6 +147,52 @@ public class VillagerQuestFacts extends SavedData {
         return bucket == null ? 0 : bucket.counters.getOrDefault(key, 0);
     }
 
+    public ScopeMergeResult mergeScope(String sourceScopeKey, String targetScopeKey) {
+        sourceScopeKey = sourceScopeKey == null ? "" : sourceScopeKey.trim();
+        targetScopeKey = targetScopeKey == null ? "" : targetScopeKey.trim();
+        if (sourceScopeKey.isBlank() || targetScopeKey.isBlank() || sourceScopeKey.equals(targetScopeKey)) {
+            return ScopeMergeResult.empty();
+        }
+
+        FactBucket source = this.factsByScope.remove(sourceScopeKey);
+        if (source == null) {
+            return ScopeMergeResult.empty();
+        }
+        if (source.isEmpty()) {
+            setDirty();
+            return new ScopeMergeResult(true, 0, 0, 0, 0);
+        }
+
+        FactBucket target = bucket(targetScopeKey);
+        int tagsAdded = 0;
+        for (ResourceLocation tag : source.tags) {
+            if (target.tags.add(tag)) {
+                tagsAdded++;
+            }
+        }
+
+        int variablesAdded = 0;
+        int variableConflicts = 0;
+        for (Map.Entry<String, String> entry : source.variables.entrySet()) {
+            if (!target.variables.containsKey(entry.getKey())) {
+                target.variables.put(entry.getKey(), entry.getValue());
+                variablesAdded++;
+            } else if (!target.variables.get(entry.getKey()).equals(entry.getValue())) {
+                variableConflicts++;
+            }
+        }
+
+        int countersMerged = 0;
+        for (Map.Entry<String, Integer> entry : source.counters.entrySet()) {
+            target.counters.merge(entry.getKey(), entry.getValue(), Integer::sum);
+            countersMerged++;
+        }
+
+        removeEmptyBucket(targetScopeKey, target);
+        setDirty();
+        return new ScopeMergeResult(true, tagsAdded, variablesAdded, variableConflicts, countersMerged);
+    }
+
     private FactBucket bucket(String scopeKey) {
         return this.factsByScope.computeIfAbsent(scopeKey, ignored -> new FactBucket());
     }
@@ -159,6 +205,17 @@ public class VillagerQuestFacts extends SavedData {
 
     public static String normalizeKey(String key) {
         return key == null ? "" : key.trim();
+    }
+
+    public record ScopeMergeResult(
+            boolean changed,
+            int tagsAdded,
+            int variablesAdded,
+            int variableConflicts,
+            int countersMerged) {
+        private static ScopeMergeResult empty() {
+            return new ScopeMergeResult(false, 0, 0, 0, 0);
+        }
     }
 
     private static final class FactBucket {

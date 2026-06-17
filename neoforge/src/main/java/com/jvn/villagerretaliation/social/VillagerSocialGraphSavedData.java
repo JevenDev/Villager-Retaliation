@@ -170,6 +170,25 @@ public class VillagerSocialGraphSavedData extends SavedData {
         return profile == null || profile.village().isBlank() ? Optional.empty() : Optional.of(profile.village());
     }
 
+    public int replaceVillageKey(String sourceKey, String targetKey) {
+        sourceKey = sourceKey == null ? "" : sourceKey.trim();
+        targetKey = targetKey == null ? "" : targetKey.trim();
+        if (sourceKey.isBlank() || targetKey.isBlank() || sourceKey.equals(targetKey)) {
+            return 0;
+        }
+
+        int changed = 0;
+        for (VillagerProfile profile : this.profiles.values()) {
+            if (profile.replaceVillageKey(sourceKey, targetKey)) {
+                changed++;
+            }
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public void markDead(ServerLevel level, Villager villager, String deathCause) {
         VillagerProfile profile = ensureProfile(level, villager);
         boolean changed = profile.markDead(level, deathCause);
@@ -1354,6 +1373,14 @@ public class VillagerSocialGraphSavedData extends SavedData {
                 return false;
             }
             this.village = safeValue;
+            return true;
+        }
+
+        private boolean replaceVillageKey(String sourceKey, String targetKey) {
+            if (!this.village.equals(sourceKey)) {
+                return false;
+            }
+            this.village = targetKey;
             return true;
         }
 

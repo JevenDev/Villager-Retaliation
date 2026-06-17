@@ -74,6 +74,13 @@ public final class VillageScopeKeys {
         return PREFIX + savedVillageKey.substring(0, separator) + ":" + savedVillageKey.substring(separator + 1);
     }
 
+    public static boolean isVillageKey(String scopeKey) {
+        return scopeKey != null
+                && scopeKey.startsWith(PREFIX)
+                && dimension(scopeKey).isPresent()
+                && pos(scopeKey).isPresent();
+    }
+
     public static Optional<ResourceKey<Level>> dimension(String scopeKey) {
         String dimension = dimensionText(scopeKey);
         if (dimension.isBlank()) {

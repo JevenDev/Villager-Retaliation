@@ -213,6 +213,27 @@ public class VillagerQuestSavedData extends SavedData {
         return true;
     }
 
+    public int replaceIssuerVillageKey(String sourceKey, String targetKey) {
+        sourceKey = sourceKey == null ? "" : sourceKey.trim();
+        targetKey = targetKey == null ? "" : targetKey.trim();
+        if (sourceKey.isBlank() || targetKey.isBlank() || sourceKey.equals(targetKey)) {
+            return 0;
+        }
+
+        int changed = 0;
+        for (Map<ResourceLocation, QuestProgress> playerEntries : this.entries.values()) {
+            for (QuestProgress progress : playerEntries.values()) {
+                if (progress.replaceIssuerVillageKey(sourceKey, targetKey)) {
+                    changed++;
+                }
+            }
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public enum QuestState {
         NOT_STARTED,
         ACTIVE,
@@ -553,6 +574,14 @@ public class VillagerQuestSavedData extends SavedData {
             this.issuerDimension = dimension;
             this.issuerPos = pos == null ? null : pos.immutable();
             this.issuerVillageKey = villageKey == null ? "" : villageKey;
+        }
+
+        private boolean replaceIssuerVillageKey(String sourceKey, String targetKey) {
+            if (!this.issuerVillageKey.equals(sourceKey)) {
+                return false;
+            }
+            this.issuerVillageKey = targetKey;
+            return true;
         }
 
         public void setTarget(UUID villagerId, ResourceKey<Level> dimension, BlockPos pos, String objectiveId) {

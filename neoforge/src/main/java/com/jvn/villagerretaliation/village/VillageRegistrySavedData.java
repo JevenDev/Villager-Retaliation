@@ -8,6 +8,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
@@ -101,6 +102,32 @@ public class VillageRegistrySavedData extends SavedData {
         return removed;
     }
 
+    public MergeResult mergeKey(String sourceKey, String targetKey) {
+        sourceKey = sourceKey == null ? "" : sourceKey.trim();
+        targetKey = targetKey == null ? "" : targetKey.trim();
+        if (sourceKey.isBlank() || targetKey.isBlank() || sourceKey.equals(targetKey)) {
+            return new MergeResult(false, false, this.entriesByKey.containsKey(targetKey), false, false);
+        }
+
+        Entry source = this.entriesByKey.remove(sourceKey);
+        Entry target = this.entriesByKey.get(targetKey);
+        if (source == null) {
+            return new MergeResult(false, false, target != null, false, false);
+        }
+
+        boolean createdTarget = false;
+        boolean updatedTargetLastSeen = false;
+        if (target == null) {
+            this.entriesByKey.put(targetKey, source.withKey(targetKey));
+            createdTarget = true;
+        } else if (source.lastSeenGameTime() > target.lastSeenGameTime()) {
+            this.entriesByKey.put(targetKey, target.withLastSeenGameTime(source.lastSeenGameTime()));
+            updatedTargetLastSeen = true;
+        }
+        setDirty();
+        return new MergeResult(true, true, target != null, createdTarget, updatedTargetLastSeen);
+    }
+
     private Entry nearest(ResourceLocation dimension, BlockPos center) {
         Entry nearest = null;
         long nearestDistance = Long.MAX_VALUE;
@@ -150,6 +177,21 @@ public class VillageRegistrySavedData extends SavedData {
             return new Entry(this.key, this.dimension, center.immutable(), gameTime);
         }
 
+        private Entry withKey(String key) {
+            String safeKey = key == null ? "" : key;
+            ResourceLocation dimension = VillageScopeKeys.dimension(safeKey)
+                    .map(ResourceKey::location)
+                    .orElse(this.dimension);
+            BlockPos center = VillageScopeKeys.pos(safeKey)
+                    .orElse(this.center)
+                    .immutable();
+            return new Entry(safeKey, dimension, center, this.lastSeenGameTime);
+        }
+
+        private Entry withLastSeenGameTime(long gameTime) {
+            return new Entry(this.key, this.dimension, this.center, gameTime);
+        }
+
         private long distanceSquared(BlockPos pos) {
             long dx = this.center.getX() - pos.getX();
             long dy = this.center.getY() - pos.getY();
@@ -172,5 +214,13 @@ public class VillageRegistrySavedData extends SavedData {
         public long ageTicks(long gameTime) {
             return Math.max(0L, gameTime - this.lastSeenGameTime);
         }
+    }
+
+    public record MergeResult(
+            boolean changed,
+            boolean sourceFound,
+            boolean targetFound,
+            boolean targetCreated,
+            boolean targetLastSeenUpdated) {
     }
 }

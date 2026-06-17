@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.event.VillagerEventTriggerSavedData;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -18,7 +19,9 @@ import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
@@ -29,6 +32,7 @@ import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.village.VillageRegistrySavedData;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
@@ -260,7 +264,17 @@ public final class VillagerRetaliationCommands {
                                 .then(argument("ticks", IntegerArgumentType.integer(0))
                                         .executes(context -> pruneVillageRegistry(
                                                 context,
-                                                IntegerArgumentType.getInteger(context, "ticks"))))));
+                                                IntegerArgumentType.getInteger(context, "ticks")))))
+                        .then(literal("merge")
+                                .then(argument("source_key", StringArgumentType.string())
+                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                villageRegistryKeySuggestions(context.getSource()),
+                                                builder))
+                                        .then(argument("target_key", StringArgumentType.string())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                        villageRegistryKeySuggestions(context.getSource()),
+                                                        builder))
+                                                .executes(VillagerRetaliationCommands::mergeVillageRegistryKeys)))));
     }
 
     private static int inspectVillageRegistry(CommandContext<CommandSourceStack> context, int limit) {
@@ -290,6 +304,60 @@ public final class VillagerRetaliationCommands {
                 + " village registry entries not seen in the last " + olderThanTicks
                 + " ticks. Remaining: " + registry.size() + "."), true);
         return removed;
+    }
+
+    private static int mergeVillageRegistryKeys(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        ServerLevel level = source.getLevel();
+        String sourceKey = unquote(StringArgumentType.getString(context, "source_key"));
+        String targetKey = unquote(StringArgumentType.getString(context, "target_key"));
+        if (!VillageScopeKeys.isVillageKey(sourceKey)) {
+            source.sendFailure(Component.literal("Source village key is invalid: " + sourceKey));
+            return 0;
+        }
+        if (!VillageScopeKeys.isVillageKey(targetKey)) {
+            source.sendFailure(Component.literal("Target village key is invalid: " + targetKey));
+            return 0;
+        }
+        if (sourceKey.equals(targetKey)) {
+            source.sendFailure(Component.literal("Source and target village keys are the same."));
+            return 0;
+        }
+
+        VillageRegistrySavedData.MergeResult registryResult =
+                VillageRegistrySavedData.get(level).mergeKey(sourceKey, targetKey);
+        VillagerQuestFacts.ScopeMergeResult factsResult =
+                VillagerQuestFacts.get(level).mergeScope(sourceKey, targetKey);
+        int progressUpdated = VillagerQuestSavedData.get(level).replaceIssuerVillageKey(sourceKey, targetKey);
+        VillagerEventTriggerSavedData.CooldownMergeResult cooldownResult =
+                VillagerEventTriggerSavedData.get(level).mergeScopeKey(sourceKey, targetKey);
+        int socialProfilesUpdated = VillagerSocialGraphSavedData.get(level).replaceVillageKey(sourceKey, targetKey);
+
+        int changed = (registryResult.changed() ? 1 : 0)
+                + (factsResult.changed() ? 1 : 0)
+                + progressUpdated
+                + (cooldownResult.changed() ? 1 : 0)
+                + socialProfilesUpdated;
+        source.sendSuccess(() -> Component.literal("Merged village key " + sourceKey + " into " + targetKey
+                + ": registry_changed=" + registryResult.changed()
+                + " registry_source_found=" + registryResult.sourceFound()
+                + " registry_target_created=" + registryResult.targetCreated()
+                + " fact_tags_added=" + factsResult.tagsAdded()
+                + " fact_variables_added=" + factsResult.variablesAdded()
+                + " fact_variable_conflicts=" + factsResult.variableConflicts()
+                + " fact_counters_merged=" + factsResult.countersMerged()
+                + " quest_progress_updated=" + progressUpdated
+                + " cooldowns_moved=" + cooldownResult.moved()
+                + " cooldowns_merged=" + cooldownResult.merged()
+                + " social_profiles_updated=" + socialProfilesUpdated + "."), true);
+        return changed;
+    }
+
+    private static Iterable<String> villageRegistryKeySuggestions(CommandSourceStack source) {
+        return VillageRegistrySavedData.get(source.getLevel()).entries()
+                .stream()
+                .map(VillageRegistrySavedData.EntrySnapshot::key)
+                .toList();
     }
 
     private static String villageRegistryLine(VillageRegistrySavedData.EntrySnapshot entry, long gameTime) {
