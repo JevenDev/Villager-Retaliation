@@ -366,12 +366,13 @@ const dialogueTreeActionKeys = new Set([
   "lines"
 ]);
 const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove", "block", "lock", "consume", "close", "close_branch", "branch_lock"]);
-const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use", "memory_event", "village_event", "village_memory", "memory", "event", "trade", "villager_trade", "trading", "merchant_trade", "gift", "give_gift", "gift_given", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
+const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use", "memory_event", "village_event", "village_memory", "memory", "event", "trade", "villager_trade", "trading", "merchant_trade", "gift", "give_gift", "gift_given", "reputation", "rep", "reputation_level", "trust", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
 const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "coordinates", "coords", "region_visit"]);
 const questMobKillObjectiveTypes = new Set(["mob_kill", "entity_kill", "kill"]);
 const questBlockObjectiveTypes = new Set(["block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use"]);
 const questMemoryObjectiveTypes = new Set(["memory_event", "village_event", "village_memory", "memory", "event"]);
 const questGiftObjectiveTypes = new Set(["gift", "give_gift", "gift_given"]);
+const questReputationObjectiveTypes = new Set(["reputation", "rep", "reputation_level", "trust"]);
 const questFactObjectiveTypes = new Set(["fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"]);
 const questGiftReactions = new Set(["loved", "liked", "neutral", "disliked", "hated"]);
 const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "stage", "stage_changed", "stage_entered", "stage_set", "completed", "abandoned", "expired"]);
@@ -503,6 +504,10 @@ const knownPlaceholders = new Set([
   "objective_memory",
   "objective_memory_id",
   "objective_gift_reaction",
+  "objective_reputation",
+  "objective_reputation_level",
+  "objective_reputation_min",
+  "objective_reputation_max",
   "objective_fact",
   "objective_fact_id",
   "objective_fact_key",
@@ -965,6 +970,10 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "reactions",
       "gift_reaction",
       "gift_reactions",
+      "level",
+      "levels",
+      "reputation_level",
+      "reputation_levels",
       "quest",
       "quest_id",
       "scope",
@@ -981,7 +990,9 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "stage",
       "stages",
       "min",
+      "min_reputation",
       "max",
+      "max_reputation",
       "count",
       "consume",
       "enchantment",
@@ -1017,13 +1028,16 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkStringList(file, objective, objectiveLocation, ["block_tag", "block_tags"], "block tag id");
     checkStringList(file, objective, objectiveLocation, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"], "village memory tag id");
     checkStringValues(file, objective, objectiveLocation, ["reaction", "reactions", "gift_reaction", "gift_reactions"], questGiftReactions, "gift reaction");
+    checkStringValues(file, objective, objectiveLocation, ["level", "levels", "reputation_level", "reputation_levels"], reputationLevels, "reputation level");
     checkStringList(file, objective, objectiveLocation, ["quest", "quest_id"], "quest id");
     checkStringValues(file, objective, objectiveLocation, ["scope"], questFactScopes, "quest fact scope");
     checkStringList(file, objective, objectiveLocation, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");
     checkStringList(file, objective, objectiveLocation, ["key", "variable", "counter", "fact"], "quest fact key");
     checkStringList(file, objective, objectiveLocation, ["value", "values", "stage", "stages"], "quest fact value");
     checkOptionalInteger(file, objective, objectiveLocation, "min");
+    checkOptionalInteger(file, objective, objectiveLocation, "min_reputation");
     checkOptionalInteger(file, objective, objectiveLocation, "max");
+    checkOptionalInteger(file, objective, objectiveLocation, "max_reputation");
     checkOptionalInteger(file, objective, objectiveLocation, "count", { min: 1 });
     checkOptionalBoolean(file, objective, objectiveLocation, "consume");
     checkQuestObjectiveItemRequirements(file, objective, objectiveLocation);
@@ -1060,6 +1074,9 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     }
     if (questFactObjectiveTypes.has(type) && readValues(objective, ["tag", "tags", "fact_tag", "quest_tag", "key", "variable", "counter", "fact", "stage", "stages"]).length === 0) {
       errors.push(`${relative(file)}: ${objectiveLocation} must define tag, tags, key, variable, counter, stage, or stages for a fact objective.`);
+    }
+    if (questReputationObjectiveTypes.has(type) && readValues(objective, ["level", "levels", "reputation_level", "reputation_levels", "min", "min_reputation", "max", "max_reputation"]).length === 0) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must define level, levels, min_reputation, max_reputation, min, or max for a reputation objective.`);
     }
     if (type === "condition" && (!Array.isArray(objective.conditions) || objective.conditions.length === 0)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.conditions is required for a condition objective.`);

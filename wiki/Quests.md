@@ -469,6 +469,43 @@ Gift objective fields:
 
 Gift objectives also support the same item detail filters as `item_check`, such as `enchantments`, durability bounds, and `custom_data`. Tracker placeholders include `{objective_item}`, `{objective_item_id}`, and `{objective_gift_reaction}`.
 
+## Example: Reputation Quest
+
+Use `reputation` when a quest should complete after the player reaches a trust threshold with the quest giver. Reputation objectives read saved reputation for the started quest giver UUID, so they can complete even when that villager is not currently loaded.
+
+```json
+{
+  "id": "my_pack:earn_the_guard_captains_trust",
+  "display": {
+    "title": "Earn The Captain's Trust",
+    "description": "Build enough trust to hear the guarded story."
+  },
+  "objectives": [
+    {
+      "id": "become_trusted",
+      "type": "reputation",
+      "level": "trusted",
+      "min_reputation": 35,
+      "tracker": {
+        "text": "Earn the captain's trust: {objective_reputation}/{objective_reputation_min}",
+        "complete_text": "The captain trusts you enough to speak."
+      }
+    }
+  ]
+}
+```
+
+Reputation objective fields:
+
+| Field | Meaning |
+| --- | --- |
+| `level`, `levels` | One or more reputation tiers: `royalty`, `revered`, `respected`, `trusted`, `neutral`, `suspicious`, `hostile`, `despised`, or `feared` |
+| `reputation_level`, `reputation_levels` | Aliases for `level` / `levels` |
+| `min`, `min_reputation` | Minimum saved reputation value |
+| `max`, `max_reputation` | Maximum saved reputation value |
+
+Tracker placeholders include `{objective_reputation}`, `{objective_reputation_level}`, `{objective_reputation_min}`, and `{objective_reputation_max}`.
+
 ## Example: Fact Objective
 
 Use `fact` when a quest should wait for durable story state written by a dialogue choice, quest trigger, forced dialogue, or another quest. Fact objectives use the same vocabulary as `quest_fact` conditions: `scope`, `tag`, `key`, `variable`, `counter`, `stage`, `value`, `min`, and `max`.

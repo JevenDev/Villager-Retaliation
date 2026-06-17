@@ -19,6 +19,8 @@ import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
@@ -1527,6 +1529,7 @@ public final class VillagerQuestService {
             case ITEM_CHECK -> hasItemCount(player, objective);
             case MOB_KILL -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
+            case REPUTATION -> progress != null && matchesReputationObjective(level, player, progress, objective);
             case FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
@@ -1651,6 +1654,37 @@ public final class VillagerQuestService {
         }
         Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
         return item.isPresent() && matchesObjectiveItem(offer.getResult(), objective, item.get());
+    }
+
+    private static boolean matchesReputationObjective(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Objective objective) {
+        if (level == null || player == null || progress == null || progress.startedVillagerId() == null) {
+            return false;
+        }
+        int reputation = reputationForObjective(level, player, progress);
+        VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(reputation);
+        if (!objective.reputationLevels().isEmpty() && !objective.reputationLevels().contains(reputationLevel)) {
+            return false;
+        }
+        if (objective.minReputation() != null && reputation < objective.minReputation()) {
+            return false;
+        }
+        return objective.maxReputation() == null || reputation <= objective.maxReputation();
+    }
+
+    private static int reputationForObjective(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (level == null || player == null || progress == null || progress.startedVillagerId() == null) {
+            return 0;
+        }
+        VillagerReputationSavedData.ReputationEntry entry = VillagerReputationSavedData.get(level)
+                .get(progress.startedVillagerId(), player.getUUID());
+        return entry == null ? 0 : entry.reputation();
     }
 
     private static boolean matchesGiftObjective(
@@ -2494,6 +2528,7 @@ public final class VillagerQuestService {
                     case MEMORY_EVENT -> "event";
                     case TRADE -> "trade";
                     case GIFT -> "gift";
+                    case REPUTATION -> "reputation";
                     case FACT -> "fact";
                     case CONDITION -> "inactive";
                 };
@@ -2513,6 +2548,7 @@ public final class VillagerQuestService {
             case "event" -> "Wait for {objective_memory}.";
             case "trade" -> "Complete trades: {objective_progress_count}/{objective_count}.";
             case "gift" -> "Give {objective_count} {objective_item}.";
+            case "reputation" -> "Reach {objective_reputation_level} reputation with {issuer}.";
             case "fact" -> "Resolve {objective_fact}.";
             case "return" -> "Return to {issuer}.";
             case "abandoned" -> "Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} to pick this back up.";
@@ -2760,6 +2796,10 @@ public final class VillagerQuestService {
             values.put("objective_memory", "");
             values.put("objective_memory_id", "");
             values.put("objective_gift_reaction", "");
+            values.put("objective_reputation", "0");
+            values.put("objective_reputation_level", "");
+            values.put("objective_reputation_min", "");
+            values.put("objective_reputation_max", "");
             values.put("objective_fact", "");
             values.put("objective_fact_id", "");
             values.put("objective_fact_key", "");
@@ -2788,6 +2828,10 @@ public final class VillagerQuestService {
         values.put("objective_memory", objectiveMemoryName(objective));
         values.put("objective_memory_id", objectiveMemoryId(objective));
         values.put("objective_gift_reaction", objectiveGiftReaction(objective));
+        values.put("objective_reputation", Integer.toString(reputationForObjective(player.serverLevel(), player, progress)));
+        values.put("objective_reputation_level", objectiveReputationLevel(objective));
+        values.put("objective_reputation_min", objective.minReputation() == null ? "" : objective.minReputation().toString());
+        values.put("objective_reputation_max", objective.maxReputation() == null ? "" : objective.maxReputation().toString());
         values.put("objective_fact", objectiveFactName(objective));
         values.put("objective_fact_id", objectiveFactId(objective));
         values.put("objective_fact_key", objective.factKey());
@@ -2835,7 +2879,7 @@ public final class VillagerQuestService {
             case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> progress == null
                     ? 0.0F
                     : Mth.clamp((float) progress.objectiveCounter(objective.id()) / (float) objective.count(), 0.0F, 1.0F);
-            case STRUCTURE_VISIT, LOCATION_VISIT, FACT, CONDITION -> progress != null
+            case STRUCTURE_VISIT, LOCATION_VISIT, REPUTATION, FACT, CONDITION -> progress != null
                     && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective)
                     ? 1.0F
                     : 0.0F;
@@ -3296,6 +3340,15 @@ public final class VillagerQuestService {
         return objective.giftReactions().isEmpty() ? "" : objective.giftReactions().iterator().next();
     }
 
+    private static String objectiveReputationLevel(QuestDefinition.Objective objective) {
+        if (objective == null || objective.type() != QuestDefinition.ObjectiveType.REPUTATION) {
+            return "";
+        }
+        return objective.reputationLevels().isEmpty()
+                ? "required"
+                : objective.reputationLevels().iterator().next().name().toLowerCase(Locale.ROOT);
+    }
+
     private static String objectiveFactName(QuestDefinition.Objective objective) {
         if (objective == null || objective.type() != QuestDefinition.ObjectiveType.FACT) {
             return "";
@@ -3557,6 +3610,12 @@ public final class VillagerQuestService {
                 parts.add("item=" + debugResource(objective.item()));
                 parts.add("reactions=" + debugStringSet(objective.giftReactions()));
             }
+            case REPUTATION -> {
+                parts.add("current=" + reputationForObjective(level, player, progress));
+                parts.add("levels=" + debugEnumSet(objective.reputationLevels()));
+                parts.add("min=" + (objective.minReputation() == null ? "none" : objective.minReputation()));
+                parts.add("max=" + (objective.maxReputation() == null ? "none" : objective.maxReputation()));
+            }
             case FACT -> {
                 parts.add("scope=" + debugEnum(objective.factScope()));
                 parts.add("quest=" + debugResource(objective.factQuestId() == null ? definition.id() : objective.factQuestId()));
@@ -3600,6 +3659,17 @@ public final class VillagerQuestService {
 
     private static String debugEnum(Enum<?> value) {
         return value == null ? "none" : value.name().toLowerCase(Locale.ROOT);
+    }
+
+    private static String debugEnumSet(Set<? extends Enum<?>> values) {
+        if (values == null || values.isEmpty()) {
+            return "[]";
+        }
+        return values.stream()
+                .map(VillagerQuestService::debugEnum)
+                .sorted()
+                .toList()
+                .toString();
     }
 
     private static String debugResourceSet(Set<ResourceLocation> values) {

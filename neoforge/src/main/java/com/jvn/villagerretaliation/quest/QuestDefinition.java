@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import java.util.List;
@@ -172,6 +173,9 @@ public record QuestDefinition(
             Set<ResourceLocation> blockTags,
             Set<ResourceLocation> memoryTags,
             Set<String> giftReactions,
+            Set<VillagerReputationLevel> reputationLevels,
+            Integer minReputation,
+            Integer maxReputation,
             QuestFactScope factScope,
             ResourceLocation factQuestId,
             Set<ResourceLocation> factTags,
@@ -199,6 +203,7 @@ public record QuestDefinition(
             blockTags = blockTags == null ? Set.of() : Set.copyOf(blockTags);
             memoryTags = memoryTags == null ? Set.of() : Set.copyOf(memoryTags);
             giftReactions = giftReactions == null ? Set.of() : Set.copyOf(giftReactions);
+            reputationLevels = reputationLevels == null ? Set.of() : Set.copyOf(reputationLevels);
             factScope = factScope == null ? QuestFactScope.PLAYER : factScope;
             factTags = factTags == null ? Set.of() : Set.copyOf(factTags);
             factKey = factKey == null ? "" : factKey;
@@ -309,6 +314,7 @@ public record QuestDefinition(
         MEMORY_EVENT,
         TRADE,
         GIFT,
+        REPUTATION,
         FACT,
         CONDITION;
 
@@ -325,6 +331,7 @@ public record QuestDefinition(
                 case "memory_event", "village_event", "village_memory", "memory", "event" -> MEMORY_EVENT;
                 case "trade", "villager_trade", "trading", "merchant_trade" -> TRADE;
                 case "gift", "give_gift", "gift_given" -> GIFT;
+                case "reputation", "rep", "reputation_level", "trust" -> REPUTATION;
                 case "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage" -> FACT;
                 case "condition" -> CONDITION;
                 default -> null;

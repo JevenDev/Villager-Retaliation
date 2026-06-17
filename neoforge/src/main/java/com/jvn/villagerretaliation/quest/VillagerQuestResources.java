@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
@@ -113,7 +114,7 @@ public final class VillagerQuestResources {
             case FACT -> cache.factQuestIds();
             case TRADE -> cache.tradeQuestIds();
             case GIFT -> cache.giftQuestIds();
-            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, MEMORY_EVENT, CONDITION -> Set.of();
+            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, MEMORY_EVENT, REPUTATION, CONDITION -> Set.of();
         };
     }
 
@@ -476,6 +477,7 @@ public final class VillagerQuestResources {
         BlockSelectors blockSelectors = readBlockSelectors(location, context, entry);
         MemoryEventSelectors memoryEventSelectors = readMemoryEventSelectors(location, context, entry);
         Set<String> giftReactions = readGiftReactions(location, context, entry);
+        ReputationObjective reputationObjective = readReputationObjective(location, context, entry);
         FactObjective factObjective = readFactObjective(location, context, entry, defaultQuestId);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
         if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
@@ -509,6 +511,10 @@ public final class VillagerQuestResources {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective must define tag, tags, key, variable, counter, stage, or stages.");
             return Optional.empty();
         }
+        if (type == QuestDefinition.ObjectiveType.REPUTATION && reputationObjective.isEmpty()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "reputation objective must define level, levels, min_reputation, max_reputation, min, or max.");
+            return Optional.empty();
+        }
         if (type == QuestDefinition.ObjectiveType.CONDITION && conditions.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "condition objective must define conditions.");
             return Optional.empty();
@@ -532,6 +538,9 @@ public final class VillagerQuestResources {
                 blockSelectors.blockTags(),
                 memoryEventSelectors.memoryTags(),
                 giftReactions,
+                reputationObjective.levels(),
+                reputationObjective.min(),
+                reputationObjective.max(),
                 factObjective.scope(),
                 factObjective.questId(),
                 factObjective.tags(),
@@ -636,6 +645,46 @@ public final class VillagerQuestResources {
             }
         }
         return Set.copyOf(reactions);
+    }
+
+    private static ReputationObjective readReputationObjective(ResourceLocation location, String context, JsonObject entry) {
+        Set<VillagerReputationLevel> levels = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(
+                entry,
+                "level",
+                "levels",
+                "reputation_level",
+                "reputation_levels")) {
+            readReputationLevel(value).ifPresentOrElse(
+                    levels::add,
+                    () -> DatapackDiagnostics.warnInvalidDialogueCondition(
+                            location,
+                            context,
+                            "reputation level \"" + value + "\" must be royalty, revered, respected, trusted, neutral, suspicious, hostile, despised, or feared."));
+        }
+        Integer min = DatapackJsonReader.readNullableInt(entry, "min_reputation");
+        if (min == null) {
+            min = DatapackJsonReader.readNullableInt(entry, "min");
+        }
+        Integer max = DatapackJsonReader.readNullableInt(entry, "max_reputation");
+        if (max == null) {
+            max = DatapackJsonReader.readNullableInt(entry, "max");
+        }
+        return new ReputationObjective(Set.copyOf(levels), min, max);
+    }
+
+    private static Optional<VillagerReputationLevel> readReputationLevel(String value) {
+        String normalized = value == null
+                ? ""
+                : value.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+        if (normalized.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(VillagerReputationLevel.valueOf(normalized));
+        } catch (IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
     }
 
     private static FactObjective readFactObjective(
@@ -1322,6 +1371,15 @@ public final class VillagerQuestResources {
     private record MemoryEventSelectors(Set<ResourceLocation> memoryTags) {
         private boolean isEmpty() {
             return this.memoryTags.isEmpty();
+        }
+    }
+
+    private record ReputationObjective(
+            Set<VillagerReputationLevel> levels,
+            Integer min,
+            Integer max) {
+        private boolean isEmpty() {
+            return this.levels.isEmpty() && this.min == null && this.max == null;
         }
     }
 
