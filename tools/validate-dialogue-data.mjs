@@ -1313,6 +1313,8 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkStringList(file, objective, objectiveLocation, ["entity_tag", "entity_tags"], "entity tag id");
     checkStringList(file, objective, objectiveLocation, ["block", "blocks"], "block id or #block tag");
     checkStringList(file, objective, objectiveLocation, ["block_tag", "block_tags"], "block tag id");
+    checkResourceSelectorValues(file, objective, objectiveLocation, ["entity", "entities", "entity_tag", "entity_tags"], "quest objective entity selector");
+    checkResourceSelectorValues(file, objective, objectiveLocation, ["block", "blocks", "block_tag", "block_tags"], "quest objective block selector");
     checkStringList(file, objective, objectiveLocation, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"], "village memory tag id");
     checkMemoryTagReferences(file, objective, objectiveLocation, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"], "memory_event objective");
     checkStringValues(file, objective, objectiveLocation, ["reaction", "reactions", "gift_reaction", "gift_reactions"], questGiftReactions, "gift reaction");
@@ -3391,6 +3393,19 @@ function checkResourceIdValues(file, entry, location, keys, label) {
       continue;
     }
     const parsed = parseResourceId(value);
+    if (!parsed || !parsed.valid) {
+      errors.push(`${relative(file)}: ${location} has invalid ${label} "${value}".`);
+    }
+  }
+}
+
+function checkResourceSelectorValues(file, entry, location, keys, label) {
+  for (const value of readValues(entry, keys)) {
+    if (typeof value !== "string" || !value.trim()) {
+      continue;
+    }
+    const raw = value.trim();
+    const parsed = parseResourceId(raw.startsWith("#") ? raw.slice(1) : raw);
     if (!parsed || !parsed.valid) {
       errors.push(`${relative(file)}: ${location} has invalid ${label} "${value}".`);
     }
