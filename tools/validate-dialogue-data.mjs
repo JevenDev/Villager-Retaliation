@@ -182,6 +182,22 @@ const questLiveOnlyConditionTypes = new Set([
   "villager_age"
 ]);
 
+const questLiveContextActionTypes = new Set([
+  "quest",
+  "reputation",
+  "gossip",
+  "memory",
+  "loot",
+  "notification",
+  "forced_dialogue"
+]);
+
+const questTriggerEventsThatMayLackLiveIssuer = new Set([
+  "player_tick",
+  "proximity",
+  "progress"
+]);
+
 const dialogueMetadataKeys = new Set([
   "metadata"
 ]);
@@ -1415,8 +1431,12 @@ function checkQuestStages(file, stages, location, defaultQuestId = "", objective
     checkOptionalString(file, stage, stageLocation, "next");
     checkOptionalString(file, stage, stageLocation, "next_stage");
     checkStageReferences(file, readValues(stage, ["next", "next_stage"]), stageIds, stageLocation);
-    checkDialogueTreeActions(file, stage.entry_actions, `${stageLocation}.entry_actions`, defaultQuestId);
-    checkDialogueTreeActions(file, stage.exit_actions, `${stageLocation}.exit_actions`, defaultQuestId);
+    checkDialogueTreeActions(file, stage.entry_actions, `${stageLocation}.entry_actions`, defaultQuestId, {
+      liveContextWarningUsage: "quest stage entry action"
+    });
+    checkDialogueTreeActions(file, stage.exit_actions, `${stageLocation}.exit_actions`, defaultQuestId, {
+      liveContextWarningUsage: "quest stage exit action"
+    });
     checkQuestStageBranches(file, stage.branches, `${stageLocation}.branches`, defaultQuestId, stageIds);
   }
   checkUnreachableQuestStages(file, stages, location, stageIds);
@@ -1701,7 +1721,9 @@ function checkQuestTriggers(file, triggers, location, defaultQuestId = "") {
     const event = normalizedString(trigger.event);
     checkConditions(file, trigger, triggerLocation, defaultQuestId);
     checkStringList(file, trigger, triggerLocation, ["stage", "stages"], "quest trigger stage");
-    checkDialogueTreeActions(file, trigger.actions, `${triggerLocation}.actions`, defaultQuestId);
+    checkDialogueTreeActions(file, trigger.actions, `${triggerLocation}.actions`, defaultQuestId, {
+      liveContextWarningUsage: questTriggerEventsThatMayLackLiveIssuer.has(event) ? "quest trigger action" : ""
+    });
     for (const key of ["cooldown_ticks", "cooldown_seconds", "cooldown_days"]) {
       checkOptionalInteger(file, trigger, triggerLocation, key, { min: 0 });
     }
@@ -1918,7 +1940,7 @@ function dialogueTreeNodes(nodes) {
     .map(([id, node]) => ({ ...node, id: node.id ?? id, location: `nodes.${id}` }));
 }
 
-function checkDialogueTreeActions(file, actions, location, defaultQuestId = "") {
+function checkDialogueTreeActions(file, actions, location, defaultQuestId = "", options = {}) {
   if (actions === undefined) {
     return;
   }
@@ -1941,6 +1963,7 @@ function checkDialogueTreeActions(file, actions, location, defaultQuestId = "") 
     if (!dialogueTreeActionTypes.has(type)) {
       errors.push(`${relative(file)}: ${actionLocation}.type must be one of ${[...dialogueTreeActionTypes].join(", ")}.`);
     }
+    warnLiveContextQuestAction(file, actionLocation, type, options.liveContextWarningUsage);
     if (type === "quest") {
       checkStringList(file, action, actionLocation, ["quest", "quest_id", "id"], "quest id");
       checkStringValues(file, action, actionLocation, ["action"], dialogueTreeQuestActions, "quest action", { requireAny: true });
@@ -1979,6 +2002,13 @@ function checkDialogueTreeActions(file, actions, location, defaultQuestId = "") 
       errors.push(`${relative(file)}: ${actionLocation}.lines must be an object keyed by action status.`);
     }
   }
+}
+
+function warnLiveContextQuestAction(file, location, type, usage) {
+  if (!usage || !questLiveContextActionTypes.has(type)) {
+    return;
+  }
+  warnings.push(`${relative(file)}: ${location} uses ${type} in ${usage}; this action needs live issuer context and will wait if the quest issuer is unloaded.`);
 }
 
 function checkForcedDialogue(file, data) {
