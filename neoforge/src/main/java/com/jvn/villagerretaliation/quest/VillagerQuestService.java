@@ -2761,12 +2761,18 @@ public final class VillagerQuestService {
         if (player == null || player.level() != level) {
             return;
         }
+        Set<ResourceLocation> candidateQuestIds = VillagerQuestResources.questIdsWithObjective(
+                level.getServer(),
+                QuestDefinition.ObjectiveType.MOB_KILL);
+        if (candidateQuestIds.isEmpty()) {
+            return;
+        }
 
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         boolean changed = false;
         boolean progressNotice = false;
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
-            if (!VillagerQuestResources.hasMobKillObjectives(level.getServer(), entry.getKey())) {
+            if (!candidateQuestIds.contains(entry.getKey())) {
                 continue;
             }
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
@@ -2869,11 +2875,18 @@ public final class VillagerQuestService {
             return;
         }
 
+        Set<ResourceLocation> candidateQuestIds = VillagerQuestResources.questIdsWithObjective(
+                level.getServer(),
+                QuestDefinition.ObjectiveType.GIFT);
+        if (candidateQuestIds.isEmpty()) {
+            return;
+        }
+
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         boolean changed = false;
         boolean progressNotice = false;
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
-            if (!VillagerQuestResources.hasGiftObjectives(level.getServer(), entry.getKey())) {
+            if (!candidateQuestIds.contains(entry.getKey())) {
                 continue;
             }
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
@@ -2914,14 +2927,16 @@ public final class VillagerQuestService {
             return;
         }
 
+        Set<ResourceLocation> candidateQuestIds = VillagerQuestResources.questIdsWithObjective(level.getServer(), type);
+        if (candidateQuestIds.isEmpty()) {
+            return;
+        }
+
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         boolean changed = false;
         boolean progressNotice = false;
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
-            boolean hasObjectives = type == QuestDefinition.ObjectiveType.BLOCK_BREAK
-                    ? VillagerQuestResources.hasBlockBreakObjectives(level.getServer(), entry.getKey())
-                    : VillagerQuestResources.hasBlockPlaceObjectives(level.getServer(), entry.getKey());
-            if (!hasObjectives) {
+            if (!candidateQuestIds.contains(entry.getKey())) {
                 continue;
             }
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);

@@ -97,6 +97,20 @@ public final class VillagerQuestResources {
         return id != null && loadCache(server).giftQuestIds().contains(id);
     }
 
+    public static Set<ResourceLocation> questIdsWithObjective(
+            MinecraftServer server,
+            QuestDefinition.ObjectiveType type) {
+        CachedQuests cache = loadCache(server);
+        return switch (type) {
+            case MOB_KILL -> cache.mobKillQuestIds();
+            case BLOCK_BREAK -> cache.blockBreakQuestIds();
+            case BLOCK_PLACE -> cache.blockPlaceQuestIds();
+            case FACT -> cache.factQuestIds();
+            case GIFT -> cache.giftQuestIds();
+            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, MEMORY_EVENT, CONDITION -> Set.of();
+        };
+    }
+
     public static Set<ResourceLocation> exclusiveGroupQuestIds(MinecraftServer server, ResourceLocation group) {
         if (group == null) {
             return Set.of();
