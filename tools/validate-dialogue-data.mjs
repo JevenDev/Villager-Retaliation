@@ -1322,6 +1322,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkStringList(file, objective, objectiveLocation, ["quest", "quest_id"], "quest id");
     checkStringValues(file, objective, objectiveLocation, ["scope"], questFactScopes, "quest fact scope");
     checkStringList(file, objective, objectiveLocation, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");
+    checkResourceIdValues(file, objective, objectiveLocation, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");
     checkStringList(file, objective, objectiveLocation, ["key", "variable", "counter", "fact"], "quest fact key");
     checkStringList(file, objective, objectiveLocation, ["value", "values", "stage", "stages", "choice", "choices"], "quest fact value");
     checkOptionalInteger(file, objective, objectiveLocation, "min");
@@ -2692,11 +2693,13 @@ function checkQuestFactAction(file, action, location, type, defaultQuestId = "")
 
   if (type === "set_tag") {
     checkStringList(file, action, location, ["set_tag", "fact_tag", "quest_tag", "tag"], "quest fact tag");
+    checkResourceIdValues(file, action, location, ["set_tag", "fact_tag", "quest_tag", "tag"], "quest fact tag");
     if (readValues(action, ["set_tag", "fact_tag", "quest_tag", "tag"]).length === 0) {
       errors.push(`${relative(file)}: ${location} must define set_tag, fact_tag, quest_tag, or tag for a set_tag action.`);
     }
   } else if (type === "clear_tag") {
     checkStringList(file, action, location, ["clear_tag", "fact_tag", "quest_tag", "tag"], "quest fact tag");
+    checkResourceIdValues(file, action, location, ["clear_tag", "fact_tag", "quest_tag", "tag"], "quest fact tag");
     if (readValues(action, ["clear_tag", "fact_tag", "quest_tag", "tag"]).length === 0) {
       errors.push(`${relative(file)}: ${location} must define clear_tag, fact_tag, quest_tag, or tag for a clear_tag action.`);
     }
@@ -3288,6 +3291,7 @@ function checkQuestFactCondition(file, condition, location, defaultQuestId = "")
   checkStringList(file, condition, location, ["quest", "quest_id"], "quest id");
   checkStringValues(file, condition, location, ["scope"], questFactScopes, "quest fact scope");
   checkStringList(file, condition, location, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");
+  checkResourceIdValues(file, condition, location, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");
   checkStringList(file, condition, location, ["key", "variable", "counter", "fact"], "quest fact key");
   checkStringList(file, condition, location, ["value", "values", "stage", "stages"], "quest fact value");
   checkOptionalInteger(file, condition, location, "min");
