@@ -3004,12 +3004,12 @@ public final class VillagerQuestService {
     }
 
     private static String factVillageScopeKey(ServerLevel level, VillagerQuestSavedData.QuestProgress progress) {
+        if (!progress.issuerVillageKey().isBlank()) {
+            return progress.issuerVillageKey();
+        }
         Villager villager = startedVillager(level, progress);
         if (villager != null && villager.isAlive()) {
             return liveVillageScopeKey(level, villager);
-        }
-        if (!progress.issuerVillageKey().isBlank()) {
-            return progress.issuerVillageKey();
         }
         if (progress.issuerPos() == null) {
             return "";
@@ -3024,7 +3024,24 @@ public final class VillagerQuestService {
         String dimension = level.dimension().location().toString();
         return VillageMembership.resolve(level, villager)
                 .map(area -> "village:" + dimension + ":" + factPosKey(area.centerBlock()))
+                .or(() -> VillagerSocialGraphService.knownVillage(level, villager.getUUID())
+                        .map(VillagerQuestService::savedSocialVillageScopeKey)
+                        .filter(key -> !key.isBlank()))
                 .orElseGet(() -> "village:" + dimension + ":" + factPosKey(villager.blockPosition()));
+    }
+
+    private static String savedSocialVillageScopeKey(String savedVillageKey) {
+        if (savedVillageKey == null || savedVillageKey.isBlank()) {
+            return "";
+        }
+        if (savedVillageKey.startsWith("village:")) {
+            return savedVillageKey;
+        }
+        int separator = savedVillageKey.indexOf('@');
+        if (separator <= 0 || separator >= savedVillageKey.length() - 1) {
+            return "";
+        }
+        return "village:" + savedVillageKey.substring(0, separator) + ":" + savedVillageKey.substring(separator + 1);
     }
 
     private static String factPosKey(BlockPos pos) {

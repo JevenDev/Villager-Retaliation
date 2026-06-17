@@ -173,6 +173,13 @@ public final class VillagerSocialGraphService {
         return VillagerSocialGraphSavedData.get(level).knownBaby(villagerId);
     }
 
+    public static Optional<String> knownVillage(ServerLevel level, UUID villagerId) {
+        if (villagerId == null || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return Optional.empty();
+        }
+        return VillagerSocialGraphSavedData.get(level).knownVillage(villagerId);
+    }
+
     private static String deathCause(DamageSource source) {
         Entity attacker = source.getEntity();
         String cause = source.getMsgId();

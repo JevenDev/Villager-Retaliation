@@ -164,6 +164,11 @@ public class VillagerSocialGraphSavedData extends SavedData {
         return profile == null ? Optional.empty() : Optional.of(profile.baby());
     }
 
+    public Optional<String> knownVillage(UUID villagerId) {
+        VillagerProfile profile = villagerId == null ? null : this.profiles.get(villagerId);
+        return profile == null || profile.village().isBlank() ? Optional.empty() : Optional.of(profile.village());
+    }
+
     public void markDead(ServerLevel level, Villager villager, String deathCause) {
         VillagerProfile profile = ensureProfile(level, villager);
         boolean changed = profile.markDead(level, deathCause);
@@ -1209,7 +1214,10 @@ public class VillagerSocialGraphSavedData extends SavedData {
             changed |= setBaby(villager.isBaby());
             changed |= setAlive(villager.isAlive());
             changed |= setDimension(nextDimension);
-            changed |= setVillage(nextVillage);
+            // Preserve the last resolved village when membership lookup is temporarily unavailable.
+            if (!nextVillage.isBlank() || this.village.isBlank()) {
+                changed |= setVillage(nextVillage);
+            }
             changed |= setLastSeenGameTime(level.getGameTime());
             changed |= setLastKnownPosition(nextPos);
             if (villager.isAlive()) {
@@ -1281,6 +1289,10 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
         public boolean baby() {
             return this.baby;
+        }
+
+        public String village() {
+            return this.village;
         }
 
         private boolean setName(String value) {
