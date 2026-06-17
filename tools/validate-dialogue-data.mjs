@@ -2097,6 +2097,7 @@ function checkDialogueTree(file, data) {
     }
     checkUnknownObjectKeys(file, entry, `entries[${index}]`, dialogueTreeEntryKeys);
     checkDialogueTreeEntryFields(file, entry, `entries[${index}]`);
+    warnInvisibleDialogueTreeEntry(file, entry, `entries[${index}]`);
     checkDialogueMetadata(file, entry, `entries[${index}]`);
     checkConditions(file, entry, `entries[${index}]`, stringValue(metadataObject(entry).quest) || defaultQuestId);
     checkStringList(file, entry, `entries[${index}]`, ["professions"], "profession id");
@@ -2144,6 +2145,7 @@ function checkDialogueTree(file, data) {
         }
         checkUnknownObjectKeys(file, response, responseLocation, dialogueTreeResponseKeys);
         checkDialogueTreeResponseFields(file, response, responseLocation);
+        warnInvisibleDialogueTreeResponse(file, response, responseLocation);
         checkDialogueMetadata(file, response, responseLocation);
         const responseQuestId = stringValue(metadataObject(response).quest) || nodeQuestId;
         checkConditions(file, response, responseLocation, responseQuestId);
@@ -2188,6 +2190,21 @@ function checkDialogueTreeResponseFields(file, response, location) {
   checkOptionalString(file, response, location, "text");
   checkOptionalBoolean(file, response, location, "end");
   checkOptionalInteger(file, response, location, "order");
+}
+
+function warnInvisibleDialogueTreeEntry(file, entry, location) {
+  if (entry.label === undefined) {
+    warnings.push(`${relative(file)}: ${location}.label is missing; dialogue tree entry will not appear as a player option.`);
+  }
+  if (entry.show_for_adults === false && entry.show_for_babies === false) {
+    warnings.push(`${relative(file)}: ${location} disables both adult and baby audiences and can never match.`);
+  }
+}
+
+function warnInvisibleDialogueTreeResponse(file, response, location) {
+  if (response.label === undefined) {
+    warnings.push(`${relative(file)}: ${location}.label is missing; dialogue tree response will not appear as an active option.`);
+  }
 }
 
 function checkDialogueTreeDisplay(file, display, location) {
