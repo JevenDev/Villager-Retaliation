@@ -1403,6 +1403,7 @@ function checkQuestStages(file, stages, location, defaultQuestId = "", objective
     checkDialogueTreeActions(file, stage.exit_actions, `${stageLocation}.exit_actions`, defaultQuestId);
     checkQuestStageBranches(file, stage.branches, `${stageLocation}.branches`, defaultQuestId, stageIds);
   }
+  checkUnreachableQuestStages(file, stages, location, stageIds);
 }
 
 function questObjectiveIds(objectives) {
@@ -1528,11 +1529,17 @@ function checkQuestStageBranches(file, branches, location, defaultQuestId = "", 
     checkConditions(file, branch, branchLocation, defaultQuestId);
     checkDialogueTreeActions(file, branch.actions, `${branchLocation}.actions`, defaultQuestId);
     checkStageReferences(file, readValues(branch, ["next", "next_stage"]), stageIds, branchLocation);
-    checkQuestStageBranchBlockers(file, branch.blocked_by, `${branchLocation}.blocked_by`, defaultQuestId);
+    checkQuestStageBranchBlockers(
+      file,
+      branch.blocked_by,
+      `${branchLocation}.blocked_by`,
+      defaultQuestId,
+      Boolean(stringValue(branch.label) || stringValue(branch.label_key))
+    );
   }
 }
 
-function checkQuestStageBranchBlockers(file, blockers, location, defaultQuestId = "") {
+function checkQuestStageBranchBlockers(file, blockers, location, defaultQuestId = "", visibleBranch = false) {
   if (blockers === undefined) {
     return;
   }
@@ -1550,7 +1557,69 @@ function checkQuestStageBranchBlockers(file, blockers, location, defaultQuestId 
     checkConditions(file, blocker, blockerLocation, defaultQuestId);
     checkOptionalString(file, blocker, blockerLocation, "reason");
     checkOptionalString(file, blocker, blockerLocation, "reason_key");
+    if (
+      visibleBranch
+      && Array.isArray(blocker.conditions)
+      && blocker.conditions.length > 0
+      && !stringValue(blocker.reason)
+      && !stringValue(blocker.reason_key)
+    ) {
+      warnings.push(`${relative(file)}: ${blockerLocation} blocks a visible quest stage branch without reason or reason_key.`);
+    }
   }
+}
+
+function checkUnreachableQuestStages(file, stages, location, stageIds) {
+  if (stageIds.size === 0) {
+    return;
+  }
+  const initialStage = stageIds.has("started") ? "started" : [...stageIds][0];
+  const reachable = new Set();
+  const pending = [initialStage];
+  while (pending.length > 0) {
+    const stageId = pending.pop();
+    if (reachable.has(stageId)) {
+      continue;
+    }
+    reachable.add(stageId);
+    const stage = stages[stageId];
+    if (!stage || typeof stage !== "object" || Array.isArray(stage)) {
+      continue;
+    }
+    for (const nextStage of stageNextReferences(stage)) {
+      if (stageIds.has(nextStage) && !reachable.has(nextStage)) {
+        pending.push(nextStage);
+      }
+    }
+  }
+
+  for (const stageId of stageIds) {
+    if (!reachable.has(stageId)) {
+      warnings.push(`${relative(file)}: ${location}.${stageId} is not reachable from initial quest stage "${initialStage}".`);
+    }
+  }
+}
+
+function stageNextReferences(stage) {
+  const refs = [];
+  for (const value of readValues(stage, ["next", "next_stage"])) {
+    if (typeof value === "string" && value.trim()) {
+      refs.push(value.trim());
+    }
+  }
+  if (Array.isArray(stage.branches)) {
+    for (const branch of stage.branches) {
+      if (!branch || typeof branch !== "object" || Array.isArray(branch)) {
+        continue;
+      }
+      for (const value of readValues(branch, ["next", "next_stage"])) {
+        if (typeof value === "string" && value.trim()) {
+          refs.push(value.trim());
+        }
+      }
+    }
+  }
+  return refs;
 }
 
 function checkStageObjectiveReferences(file, refs, objectiveIds, location) {
