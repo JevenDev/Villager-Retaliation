@@ -1,4 +1,82 @@
 {
+  "id": "villagerretaliation:watch_arrows",
+  "display": {
+    "description": "Bring arrows so the village watch can answer trouble before it reaches the doors.",
+    "title": "Watch Arrows",
+    "title_key": "quest.village_defense.watch_arrows.title",
+    "description_key": "quest.village_defense.watch_arrows.description"
+  },
+  "tags": [
+    "group.village_defense"
+  ],
+  "offer": {
+    "min_villager_level": "apprentice",
+    "professions": [
+      "minecraft:fletcher"
+    ],
+    "skills": {
+      "archery": {
+        "min": 10
+      },
+      "guarding": {
+        "min": 6
+      }
+    }
+  },
+  "objectives": [
+    {
+      "count": 16,
+      "id": "bring_arrows",
+      "item": "minecraft:arrow",
+      "tracker": {
+        "complete_text": "The watch arrows are bundled.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 16 arrows for the village watch.",
+        "text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.text",
+        "complete_text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.complete_text"
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 2,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Watch Arrows"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 16 arrows for the village watch.",
+        "text_key": "quest.village_defense.watch_arrows.tracker.proof.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the arrow.",
+        "text_key": "quest.village_defense.watch_arrows.tracker.return.text"
+      }
+    },
+    "title": "Watch Arrows",
+    "title_key": "quest.village_defense.watch_arrows.tracker.title"
+  },
+  "rewards": {
+    "experience": 90,
+    "gossip_reputation": 4,
+    "loot_table": "villagerretaliation:quest/watch_arrows",
+    "memory_event": "player_completed_quest",
+    "reputation": 7
+  },
   "dialogue": {
     "already_completed": [
       "Watch Arrows is already settled."
@@ -36,81 +114,5 @@
     "missing_target_key": "quest.village_defense.watch_arrows.dialogue.missing_target",
     "missing_proof_key": "quest.village_defense.watch_arrows.dialogue.missing_proof",
     "locate_failed_key": "quest.village_defense.watch_arrows.dialogue.locate_failed"
-  },
-  "display": {
-    "description": "Bring arrows so the village watch can answer trouble before it reaches the doors.",
-    "title": "Watch Arrows",
-    "title_key": "quest.village_defense.watch_arrows.title",
-    "description_key": "quest.village_defense.watch_arrows.description"
-  },
-  "id": "villagerretaliation:watch_arrows",
-  "objectives": [
-    {
-      "count": 16,
-      "id": "bring_arrows",
-      "item": "minecraft:arrow",
-      "tracker": {
-        "complete_text": "The watch arrows are bundled.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 16 arrows for the village watch.",
-        "text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.text",
-        "complete_text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "offer": {
-    "min_villager_level": "apprentice",
-    "professions": [
-      "minecraft:fletcher"
-    ],
-    "skills": {
-      "archery": {
-        "min": 10
-      },
-      "guarding": {
-        "min": 6
-      }
-    }
-  },
-  "questline": "village_defense",
-  "rewards": {
-    "experience": 90,
-    "gossip_reputation": 4,
-    "loot_table": "villagerretaliation:quest/watch_arrows",
-    "memory_event": "player_completed_quest",
-    "reputation": 7
-  },
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 2,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
-    "max_starts": 0,
-    "repeatable": true
-  },
-  "tracker": {
-    "metadata": {
-      "source": "Watch Arrows"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 16 arrows for the village watch.",
-        "text_key": "quest.village_defense.watch_arrows.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the arrow.",
-        "text_key": "quest.village_defense.watch_arrows.tracker.return.text"
-      }
-    },
-    "title": "Watch Arrows",
-    "title_key": "quest.village_defense.watch_arrows.tracker.title"
   }
 }

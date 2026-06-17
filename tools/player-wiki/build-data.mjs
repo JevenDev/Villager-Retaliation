@@ -53,6 +53,22 @@ function titleCase(value = "") {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function uniqueStrings(values) {
+  return [...new Set(firstArray(values)
+    .map((value) => String(value || "").trim())
+    .filter(Boolean))];
+}
+
+function groupFromTags(tags = []) {
+  for (const tag of tags) {
+    const value = String(tag || "").trim();
+    if (value.startsWith("group.")) return value.slice("group.".length);
+    if (value.startsWith("group:")) return value.slice("group:".length);
+    if (value.startsWith("group/")) return value.slice("group/".length);
+  }
+  return "";
+}
+
 function itemName(value = "") {
   if (!value) return "None";
   if (Array.isArray(value)) return value.map(itemName).join(" or ");
@@ -77,6 +93,15 @@ function itemStackText(stack = {}) {
 
 function firstArray(value) {
   return Array.isArray(value) ? value : value == null ? [] : [value];
+}
+
+function groupBy(items, key) {
+  return items.reduce((groups, item) => {
+    const group = item[key] || "Other";
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(item);
+    return groups;
+  }, {});
 }
 
 function lootEntries(lootTableId) {
@@ -147,6 +172,21 @@ function questRequirements(quest) {
   };
 }
 
+function questConditionRefs(conditions) {
+  const refs = [];
+  for (const condition of firstArray(conditions)) {
+    if (!condition || typeof condition !== "object") continue;
+    const type = String(condition.type || "").toLowerCase();
+    if ((type === "quest_fact" || type === "quest_stage" || type === "quest_tag" || type === "quest_variable" || type === "quest_counter")
+        && condition.quest) {
+      refs.push(condition.quest);
+    }
+    refs.push(...questConditionRefs(condition.conditions));
+    refs.push(...questConditionRefs(condition.condition));
+  }
+  return [...new Set(refs)];
+}
+
 function questObjectiveText(quest) {
   const proof = quest.target?.proof_item ? [`Proof: ${itemName(quest.target.proof_item)}`] : [];
   const objectives = firstArray(quest.objectives).map((objective) => `${objective.count || 1} ${itemName(objective.item || objective.items || objective.tag || objective.tags)}`);
@@ -171,20 +211,43 @@ function questRules(quest) {
 
 function buildQuests() {
   const questRoot = path.join(dataDir, "quests");
-  return walkJson(questRoot).map((file) => {
+  const quests = walkJson(questRoot).map((file) => {
     const quest = readJson(file);
     const rel = path.relative(questRoot, file);
-    const questline = quest.questline || rel.split(path.sep)[0];
+    const moduleGroup = rel.split(path.sep)[0] || "";
+    const tags = uniqueStrings([ ...firstArray(quest.tag), ...firstArray(quest.tags) ]);
+    const questline = quest.questline || "";
+    const group = groupFromTags(tags) || moduleGroup;
     const treePath = path.join(dataDir, "dialogue_trees", "en_us", "quests", rel);
     const tree = fs.existsSync(treePath) ? readJson(treePath) : null;
     const rewards = quest.rewards || {};
+    const rules = quest.rules || {};
+    const prerequisiteIds = [
+      quest.parent || "",
+      ...questConditionRefs(quest.offer?.conditions)
+    ].filter(Boolean);
     return {
       id: quest.id,
       slug: idTail(quest.id),
       title: quest.display?.title || titleCase(quest.id),
       description: quest.display?.description || "",
       questline,
-      questlineLabel: titleCase(questline),
+      questlineLabel: questline ? titleCase(questline) : "",
+      group,
+      groupLabel: titleCase(group),
+      tags,
+      relationKey: questline ? `questline:${questline}` : `group:${group}`,
+      parent: quest.parent || "",
+      parentSlug: quest.parent ? idTail(quest.parent) : "",
+      prerequisites: [...new Set(prerequisiteIds)].map((id) => ({
+        id,
+        slug: idTail(id)
+      })),
+      branchGroup: rules.exclusive_group || rules.branch?.exclusive_group || "",
+      branchChoices: Object.values(quest.stages || {}).flatMap((stage) => firstArray(stage.branches).map((branch) => ({
+        id: branch.id || "",
+        label: branch.label || titleCase(branch.id || "")
+      }))).filter((branch) => branch.id || branch.label),
       requirements: questRequirements(quest),
       target: quest.target ? {
         structure: quest.target.structure ? titleCase(quest.target.structure) : "",
@@ -204,7 +267,51 @@ function buildQuests() {
       rules: questRules(quest),
       dialogue: questDialogue(tree)
     };
-  }).sort((a, b) => a.questlineLabel.localeCompare(b.questlineLabel) || a.title.localeCompare(b.title));
+  });
+
+  const byId = new Map(quests.map((quest) => [quest.id, quest]));
+  const childMap = new Map();
+  for (const quest of quests) {
+    if (!quest.parent || !byId.has(quest.parent)) continue;
+    if (!childMap.has(quest.parent)) childMap.set(quest.parent, []);
+    childMap.get(quest.parent).push(quest);
+  }
+
+  const orderById = new Map();
+  const relationGroups = groupBy(quests, "relationKey");
+  for (const groupQuests of Object.values(relationGroups)) {
+    let order = 0;
+    const seen = new Set();
+    const visit = (quest) => {
+      if (!quest || seen.has(quest.id)) return;
+      seen.add(quest.id);
+      orderById.set(quest.id, order++);
+      const children = (childMap.get(quest.id) || [])
+        .filter((child) => child.relationKey === quest.relationKey)
+        .sort((a, b) => a.title.localeCompare(b.title));
+      children.forEach(visit);
+    };
+    const roots = groupQuests
+      .filter((quest) => !quest.parent || !byId.has(quest.parent) || byId.get(quest.parent).relationKey !== quest.relationKey)
+      .sort((a, b) => a.title.localeCompare(b.title));
+    roots.forEach(visit);
+    groupQuests
+      .filter((quest) => !seen.has(quest.id))
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .forEach(visit);
+  }
+
+  return quests
+    .map((quest) => ({
+      ...quest,
+      questlineOrder: orderById.get(quest.id) ?? 0
+    }))
+    .sort((a, b) => (
+      a.groupLabel.localeCompare(b.groupLabel)
+      || a.questlineLabel.localeCompare(b.questlineLabel)
+      || a.questlineOrder - b.questlineOrder
+      || a.title.localeCompare(b.title)
+    ));
 }
 
 function buildGifts() {

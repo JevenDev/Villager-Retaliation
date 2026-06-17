@@ -1,4 +1,83 @@
 {
+  "id": "villagerretaliation:feather_fletching",
+  "display": {
+    "description": "Bring feathers so arrows and message shafts can be finished in proper batches.",
+    "title": "Feather Fletching",
+    "title_key": "quest.village_supply.feather_fletching.title",
+    "description_key": "quest.village_supply.feather_fletching.description"
+  },
+  "tags": [
+    "group.village_supply"
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:fletcher",
+      "minecraft:shepherd"
+    ],
+    "skills": {
+      "archery": {
+        "min": 4
+      },
+      "animal_handling": {
+        "min": 5
+      }
+    }
+  },
+  "objectives": [
+    {
+      "count": 16,
+      "id": "bring_feathers",
+      "item": "minecraft:feather",
+      "tracker": {
+        "complete_text": "The fletching bundle is ready.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 16 feathers for the fletching bench.",
+        "text_key": "quest.village_supply.feather_fletching.objective.bring_feathers.text",
+        "complete_text_key": "quest.village_supply.feather_fletching.objective.bring_feathers.complete_text"
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Feather Fletching"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 16 feathers for the fletching bench.",
+        "text_key": "quest.village_supply.feather_fletching.tracker.proof.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the feathers.",
+        "text_key": "quest.village_supply.feather_fletching.tracker.return.text"
+      }
+    },
+    "title": "Feather Fletching",
+    "title_key": "quest.village_supply.feather_fletching.tracker.title"
+  },
+  "rewards": {
+    "experience": 55,
+    "gossip_reputation": 2,
+    "loot_table": "villagerretaliation:quest/feather_fletching",
+    "memory_event": "player_completed_quest",
+    "reputation": 4
+  },
   "dialogue": {
     "already_completed": [
       "Feather Fletching is already settled."
@@ -36,82 +115,5 @@
     "missing_target_key": "quest.village_supply.feather_fletching.dialogue.missing_target",
     "missing_proof_key": "quest.village_supply.feather_fletching.dialogue.missing_proof",
     "locate_failed_key": "quest.village_supply.feather_fletching.dialogue.locate_failed"
-  },
-  "display": {
-    "description": "Bring feathers so arrows and message shafts can be finished in proper batches.",
-    "title": "Feather Fletching",
-    "title_key": "quest.village_supply.feather_fletching.title",
-    "description_key": "quest.village_supply.feather_fletching.description"
-  },
-  "id": "villagerretaliation:feather_fletching",
-  "objectives": [
-    {
-      "count": 16,
-      "id": "bring_feathers",
-      "item": "minecraft:feather",
-      "tracker": {
-        "complete_text": "The fletching bundle is ready.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 16 feathers for the fletching bench.",
-        "text_key": "quest.village_supply.feather_fletching.objective.bring_feathers.text",
-        "complete_text_key": "quest.village_supply.feather_fletching.objective.bring_feathers.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "offer": {
-    "min_villager_level": "novice",
-    "professions": [
-      "minecraft:fletcher",
-      "minecraft:shepherd"
-    ],
-    "skills": {
-      "archery": {
-        "min": 4
-      },
-      "animal_handling": {
-        "min": 5
-      }
-    }
-  },
-  "questline": "village_supply",
-  "rewards": {
-    "experience": 55,
-    "gossip_reputation": 2,
-    "loot_table": "villagerretaliation:quest/feather_fletching",
-    "memory_event": "player_completed_quest",
-    "reputation": 4
-  },
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 1,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
-    "max_starts": 0,
-    "repeatable": true
-  },
-  "tracker": {
-    "metadata": {
-      "source": "Feather Fletching"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 16 feathers for the fletching bench.",
-        "text_key": "quest.village_supply.feather_fletching.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the feathers.",
-        "text_key": "quest.village_supply.feather_fletching.tracker.return.text"
-      }
-    },
-    "title": "Feather Fletching",
-    "title_key": "quest.village_supply.feather_fletching.tracker.title"
   }
 }

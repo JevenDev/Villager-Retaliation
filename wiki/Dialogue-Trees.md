@@ -6,10 +6,10 @@ Dialogue trees are for authored scenes with branching responses. Use them when a
 
 ```text
 data/<namespace>/dialogue_trees/<locale>/<tree>.json
-data/<namespace>/dialogue_trees/<locale>/quests/<questline>/<quest>.json
+data/<namespace>/dialogue_trees/<locale>/quests/<module>/<quest>.json
 ```
 
-Use the `quests/` path for quest-owned scenes.
+Use the `quests/` path for quest-owned scenes. The module folder keeps related files together; the quest JSON decides whether the quest has a `questline` or only a `group.*` tag.
 
 ## Minimal Tree
 

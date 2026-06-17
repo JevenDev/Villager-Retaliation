@@ -1,0 +1,224 @@
+{
+  "id": "villagerretaliation:end_city_margin",
+  "display": {
+    "title": "End City Margin",
+    "description": "Cartographer scene for the final atlas quest."
+  },
+  "entries": [
+    {
+      "id": "offer",
+      "label": "End City Margin",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "available"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "id": "reminder",
+      "label": "About The End City Margin",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "in_progress"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "id": "turn_in",
+      "label": "About The End City Margin",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "ready"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "nodes": {
+    "offer": {
+      "lines": [
+        "There is one margin left. The atlas wants the outer islands, where maps become suggestions."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "Mark the End City",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "start",
+          "lines": {
+            "started": [
+              "The End City mark sits near {target_x}, {target_z}. Bring 2 shulker shells and 16 chorus fruit if the islands let you return."
+            ],
+            "locate_failed": [
+              "The outer islands are too far for the atlas to catch today."
+            ],
+            "unavailable": [
+              "The atlas needs the Stronghold bearing before the End margin."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "active_menu": {
+      "lines": [
+        "The final margin is open. Even the page looks nervous."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me where",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "leave",
+          "label": "Never mind",
+          "next": "leave",
+          "order": 100
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "remind",
+          "lines": {
+            "reminder": [
+              "End City near {target_x}, {target_z}. Bring 2 shulker shells and 16 chorus fruit."
+            ],
+            "unavailable": [
+              "The End margin is not active."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "You carried the atlas beyond the world and came back. Let me see the final margin."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Finish the atlas",
+          "next": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "label": "Not yet",
+          "next": "leave"
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "The Cartographer's Atlas is complete. It began with paper and ended past the edge of the world. That is a fine road."
+            ],
+            "missing_target": [
+              "Reach the End City first. The margin needs the place, not only the shell."
+            ],
+            "missing_objectives": [
+              "The final margin still needs shulker shells and chorus fruit."
+            ],
+            "missing_proof": [
+              "Bring shulker shells before I bind the atlas."
+            ],
+            "unavailable": [
+              "The final margin is not ready to bind."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Fold away the End margin?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "leave"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will close the final margin for now."
+            ],
+            "abandoned_cooldown": [
+              "I will close the final margin until the page feels less distant."
+            ],
+            "unavailable": [
+              "There is no End margin to close."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "lines": [
+        "The outer islands will still be strange tomorrow."
+      ],
+      "end": true
+    },
+    "leave": {
+      "lines": [
+        "Bring the last road home."
+      ],
+      "end": true
+    }
+  }
+}

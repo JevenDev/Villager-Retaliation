@@ -1,4 +1,103 @@
 {
+  "id": "villagerretaliation:nether_wart_warranty",
+  "display": {
+    "description": "Reach a Nether Fortress and return with Nether Wart and a Blaze Rod.",
+    "title": "Nether Wart Warranty",
+    "title_key": "quest.dangerous_commissions.nether_wart_warranty.title",
+    "description_key": "quest.dangerous_commissions.nether_wart_warranty.description"
+  },
+  "tags": [
+    "group.dangerous_commissions"
+  ],
+  "offer": {
+    "min_villager_level": "expert",
+    "professions": [
+      "minecraft:cleric"
+    ],
+    "skills": {
+      "medicine": {
+        "min": 55
+      },
+      "survival": {
+        "min": 35
+      }
+    }
+  },
+  "target": {
+    "discovery_radius": 160,
+    "proof_item": "minecraft:nether_wart",
+    "search_radius": 256,
+    "structure": "minecraft:fortress"
+  },
+  "objectives": [
+    {
+      "count": 1,
+      "id": "bring_blaze_rod",
+      "item": "minecraft:blaze_rod",
+      "tracker": {
+        "complete_text": "The blaze rod proves the route.",
+        "progress": 0.82,
+        "show_progress": true,
+        "text": "Bring 1 blaze rod so the cleric knows the fortress was real.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.text",
+        "complete_text_key": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.complete_text"
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 2,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Nether Wart Warranty"
+    },
+    "steps": {
+      "bring_blaze_rod": {
+        "progress": 0.82,
+        "show_progress": true,
+        "text": "Bring 1 blaze rod with the nether wart.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.bring_blaze_rod.text"
+      },
+      "proof": {
+        "progress": 0.66,
+        "show_progress": true,
+        "text": "Collect nether wart and a blaze rod.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.proof.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the Nether proof.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.return.text"
+      },
+      "travel": {
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        },
+        "progress": 0.25,
+        "show_progress": true,
+        "text": "Find the fortress near {target_x}, {target_z}.",
+        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.travel.text"
+      }
+    },
+    "title": "Nether Wart Warranty",
+    "title_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.title"
+  },
+  "rewards": {
+    "experience": 340,
+    "gossip_reputation": 10,
+    "loot_table": "villagerretaliation:quest/nether_wart_warranty",
+    "memory_event": "player_completed_quest",
+    "reputation": 20
+  },
   "dialogue": {
     "already_completed": [
       "Nether Wart Warranty is already settled."
@@ -36,102 +135,5 @@
     "missing_target_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_target",
     "missing_proof_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.missing_proof",
     "locate_failed_key": "quest.dangerous_commissions.nether_wart_warranty.dialogue.locate_failed"
-  },
-  "display": {
-    "description": "Reach a Nether Fortress and return with Nether Wart and a Blaze Rod.",
-    "title": "Nether Wart Warranty",
-    "title_key": "quest.dangerous_commissions.nether_wart_warranty.title",
-    "description_key": "quest.dangerous_commissions.nether_wart_warranty.description"
-  },
-  "id": "villagerretaliation:nether_wart_warranty",
-  "objectives": [
-    {
-      "count": 1,
-      "id": "bring_blaze_rod",
-      "item": "minecraft:blaze_rod",
-      "tracker": {
-        "complete_text": "The blaze rod proves the route.",
-        "progress": 0.82,
-        "show_progress": true,
-        "text": "Bring 1 blaze rod so the cleric knows the fortress was real.",
-        "text_key": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.text",
-        "complete_text_key": "quest.dangerous_commissions.nether_wart_warranty.objective.bring_blaze_rod.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "offer": {
-    "min_villager_level": "expert",
-    "professions": [
-      "minecraft:cleric"
-    ],
-    "skills": {
-      "medicine": {
-        "min": 55
-      },
-      "survival": {
-        "min": 35
-      }
-    }
-  },
-  "questline": "dangerous_commissions",
-  "rewards": {
-    "experience": 340,
-    "gossip_reputation": 10,
-    "loot_table": "villagerretaliation:quest/nether_wart_warranty",
-    "memory_event": "player_completed_quest",
-    "reputation": 20
-  },
-  "rules": {
-    "abandonment": "cooldown",
-    "abandonment_cooldown_days": 2,
-    "consume_on_completion": true,
-    "cross_villager_compatible": false,
-    "locked_to_villager": true,
-    "max_completions": 1,
-    "max_starts": 0,
-    "repeatable": false
-  },
-  "target": {
-    "discovery_radius": 160,
-    "proof_item": "minecraft:nether_wart",
-    "search_radius": 256,
-    "structure": "minecraft:fortress"
-  },
-  "tracker": {
-    "metadata": {
-      "source": "Nether Wart Warranty"
-    },
-    "steps": {
-      "bring_blaze_rod": {
-        "progress": 0.82,
-        "show_progress": true,
-        "text": "Bring 1 blaze rod with the nether wart.",
-        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.bring_blaze_rod.text"
-      },
-      "proof": {
-        "progress": 0.66,
-        "show_progress": true,
-        "text": "Collect nether wart and a blaze rod.",
-        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the Nether proof.",
-        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.return.text"
-      },
-      "travel": {
-        "metadata": {
-          "hint": "{distance} blocks {direction}"
-        },
-        "progress": 0.25,
-        "show_progress": true,
-        "text": "Find the fortress near {target_x}, {target_z}.",
-        "text_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.travel.text"
-      }
-    },
-    "title": "Nether Wart Warranty",
-    "title_key": "quest.dangerous_commissions.nether_wart_warranty.tracker.title"
   }
 }

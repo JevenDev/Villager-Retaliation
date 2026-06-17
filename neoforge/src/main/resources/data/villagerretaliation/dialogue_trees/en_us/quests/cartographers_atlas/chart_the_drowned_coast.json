@@ -1,0 +1,224 @@
+{
+  "id": "villagerretaliation:chart_the_drowned_coast",
+  "display": {
+    "title": "Chart The Drowned Coast",
+    "description": "Cartographer scene for the coast branch."
+  },
+  "entries": [
+    {
+      "id": "offer",
+      "label": "Chart The Drowned Coast",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "available"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "id": "reminder",
+      "label": "About The Drowned Coast",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "in_progress"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "id": "turn_in",
+      "label": "About The Drowned Coast",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "ready"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "nodes": {
+    "offer": {
+      "lines": [
+        "The coast route is yours. The atlas has found drowned stone beneath open water."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "Give me the bearing",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "start",
+          "lines": {
+            "started": [
+              "The Ocean Monument lies near {target_x}, {target_z}, about {distance} blocks {direction}. Bring prismarine and survive the guardians."
+            ],
+            "locate_failed": [
+              "The sea will not give me a clean bearing today."
+            ],
+            "unavailable": [
+              "The atlas has not chosen the coast with you."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "active_menu": {
+      "lines": [
+        "The coast mark is still wet on the page."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me where",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "leave",
+          "label": "Never mind",
+          "next": "leave",
+          "order": 100
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "remind",
+          "lines": {
+            "reminder": [
+              "Ocean Monument near {target_x}, {target_z}. Bring 8 prismarine shards after you reach it and clear enough guardians."
+            ],
+            "unavailable": [
+              "That coast route is not active."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "You smell like salt and old stone. Show me what the sea gave up."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Hand over the coast survey",
+          "next": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "label": "Not yet",
+          "next": "leave"
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "The drowned coast is charted. The atlas has learned how the sea keeps ruins."
+            ],
+            "missing_target": [
+              "Reach the monument itself before I trust the prismarine."
+            ],
+            "missing_objectives": [
+              "The coast page still needs its guardian count and prismarine."
+            ],
+            "missing_proof": [
+              "Bring prismarine proof before I close the coast page."
+            ],
+            "unavailable": [
+              "This coast page is not ready to close."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Fold away the drowned coast?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "leave"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will dry the coast page and leave it folded."
+            ],
+            "abandoned_cooldown": [
+              "I will dry the coast page for now. Ask again once the ink settles."
+            ],
+            "unavailable": [
+              "There is no coast page to fold."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "lines": [
+        "The sea keeps the mark for now."
+      ],
+      "end": true
+    },
+    "leave": {
+      "lines": [
+        "Keep the map above water."
+      ],
+      "end": true
+    }
+  }
+}

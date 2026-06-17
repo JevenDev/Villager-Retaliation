@@ -1,4 +1,104 @@
 {
+  "id": "villagerretaliation:end_city_survey",
+  "display": {
+    "description": "Reach an End City and bring back a Shulker Shell with a Chorus Flower sample.",
+    "title": "End City Survey",
+    "title_key": "quest.lost_civilization.end_city_survey.title",
+    "description_key": "quest.lost_civilization.end_city_survey.description"
+  },
+  "tags": [
+    "group.lost_civilization"
+  ],
+  "offer": {
+    "min_villager_level": "master",
+    "professions": [
+      "minecraft:cartographer",
+      "minecraft:librarian"
+    ],
+    "skills": {
+      "cartography": {
+        "min": 80
+      },
+      "scholarship": {
+        "min": 65
+      }
+    }
+  },
+  "target": {
+    "discovery_radius": 192,
+    "proof_item": "minecraft:shulker_shell",
+    "search_radius": 384,
+    "structure": "minecraft:end_city"
+  },
+  "objectives": [
+    {
+      "count": 1,
+      "id": "bring_chorus_flower",
+      "item": "minecraft:chorus_flower",
+      "tracker": {
+        "complete_text": "The Chorus Flower sample is intact.",
+        "progress": 0.88,
+        "show_progress": true,
+        "text": "Bring 1 Chorus Flower as a living sample.",
+        "text_key": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.text",
+        "complete_text_key": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.complete_text"
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 3,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "metadata": {
+      "source": "End City Survey"
+    },
+    "steps": {
+      "bring_chorus_flower": {
+        "progress": 0.88,
+        "show_progress": true,
+        "text": "Keep 1 Chorus Flower sample intact.",
+        "text_key": "quest.lost_civilization.end_city_survey.tracker.bring_chorus_flower.text"
+      },
+      "proof": {
+        "progress": 0.66,
+        "show_progress": true,
+        "text": "Bring a Shulker Shell and 1 Chorus Flower.",
+        "text_key": "quest.lost_civilization.end_city_survey.tracker.proof.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with proof from the End City.",
+        "text_key": "quest.lost_civilization.end_city_survey.tracker.return.text"
+      },
+      "travel": {
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        },
+        "progress": 0.25,
+        "show_progress": true,
+        "text": "Reach the End City near {target_x}, {target_z}.",
+        "text_key": "quest.lost_civilization.end_city_survey.tracker.travel.text"
+      }
+    },
+    "title": "End City Survey",
+    "title_key": "quest.lost_civilization.end_city_survey.tracker.title"
+  },
+  "rewards": {
+    "experience": 720,
+    "gossip_reputation": 20,
+    "loot_table": "villagerretaliation:quest/end_city_survey",
+    "memory_event": "player_completed_quest",
+    "reputation": 36
+  },
   "dialogue": {
     "already_completed": [
       "End City Survey is already settled."
@@ -36,103 +136,5 @@
     "missing_target_key": "quest.lost_civilization.end_city_survey.dialogue.missing_target",
     "missing_proof_key": "quest.lost_civilization.end_city_survey.dialogue.missing_proof",
     "locate_failed_key": "quest.lost_civilization.end_city_survey.dialogue.locate_failed"
-  },
-  "display": {
-    "description": "Reach an End City and bring back a Shulker Shell with a Chorus Flower sample.",
-    "title": "End City Survey",
-    "title_key": "quest.lost_civilization.end_city_survey.title",
-    "description_key": "quest.lost_civilization.end_city_survey.description"
-  },
-  "id": "villagerretaliation:end_city_survey",
-  "objectives": [
-    {
-      "count": 1,
-      "id": "bring_chorus_flower",
-      "item": "minecraft:chorus_flower",
-      "tracker": {
-        "complete_text": "The Chorus Flower sample is intact.",
-        "progress": 0.88,
-        "show_progress": true,
-        "text": "Bring 1 Chorus Flower as a living sample.",
-        "text_key": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.text",
-        "complete_text_key": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "offer": {
-    "min_villager_level": "master",
-    "professions": [
-      "minecraft:cartographer",
-      "minecraft:librarian"
-    ],
-    "skills": {
-      "cartography": {
-        "min": 80
-      },
-      "scholarship": {
-        "min": 65
-      }
-    }
-  },
-  "questline": "lost_civilization",
-  "rewards": {
-    "experience": 720,
-    "gossip_reputation": 20,
-    "loot_table": "villagerretaliation:quest/end_city_survey",
-    "memory_event": "player_completed_quest",
-    "reputation": 36
-  },
-  "rules": {
-    "abandonment": "cooldown",
-    "abandonment_cooldown_days": 3,
-    "consume_on_completion": true,
-    "cross_villager_compatible": false,
-    "locked_to_villager": true,
-    "max_completions": 1,
-    "max_starts": 0,
-    "repeatable": false
-  },
-  "target": {
-    "discovery_radius": 192,
-    "proof_item": "minecraft:shulker_shell",
-    "search_radius": 384,
-    "structure": "minecraft:end_city"
-  },
-  "tracker": {
-    "metadata": {
-      "source": "End City Survey"
-    },
-    "steps": {
-      "bring_chorus_flower": {
-        "progress": 0.88,
-        "show_progress": true,
-        "text": "Keep 1 Chorus Flower sample intact.",
-        "text_key": "quest.lost_civilization.end_city_survey.tracker.bring_chorus_flower.text"
-      },
-      "proof": {
-        "progress": 0.66,
-        "show_progress": true,
-        "text": "Bring a Shulker Shell and 1 Chorus Flower.",
-        "text_key": "quest.lost_civilization.end_city_survey.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with proof from the End City.",
-        "text_key": "quest.lost_civilization.end_city_survey.tracker.return.text"
-      },
-      "travel": {
-        "metadata": {
-          "hint": "{distance} blocks {direction}"
-        },
-        "progress": 0.25,
-        "show_progress": true,
-        "text": "Reach the End City near {target_x}, {target_z}.",
-        "text_key": "quest.lost_civilization.end_city_survey.tracker.travel.text"
-      }
-    },
-    "title": "End City Survey",
-    "title_key": "quest.lost_civilization.end_city_survey.tracker.title"
   }
 }

@@ -1,0 +1,146 @@
+{
+  "id": "villagerretaliation:end_city_margin",
+  "display": {
+    "title": "End City Margin",
+    "description": "Carry the atlas into the End, survey an End City, and return with shulker proof."
+  },
+  "questline": "cartographers_atlas",
+  "tags": [
+    "group.exploration"
+  ],
+  "parent": "villagerretaliation:eye_of_the_last_room",
+  "offer": {
+    "min_villager_level": "master",
+    "professions": [
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "cartography": {
+        "min": 72
+      }
+    }
+  },
+  "target": {
+    "structure": "minecraft:end_city",
+    "dimension": "minecraft:the_end",
+    "search_radius": 1024,
+    "discovery_radius": 192,
+    "proof_item": "minecraft:shulker_shell"
+  },
+  "objectives": [
+    {
+      "id": "bring_shulker_shells",
+      "type": "item_check",
+      "item": "minecraft:shulker_shell",
+      "count": 2,
+      "tracker": {
+        "text": "Bring 2 shulker shells from the End City.",
+        "complete_text": "The shulker shells are ready for the atlas cover.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    },
+    {
+      "id": "bring_chorus_fruit",
+      "type": "item_check",
+      "item": "minecraft:chorus_fruit",
+      "count": 16,
+      "tracker": {
+        "text": "Bring 16 chorus fruit from the outer islands.",
+        "complete_text": "The chorus fruit proves the outer road.",
+        "show_progress": true,
+        "progress": 0.9
+      }
+    }
+  ],
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "title": "End City Margin",
+    "metadata": {
+      "source": "Cartographer's Atlas"
+    },
+    "steps": {
+      "travel": {
+        "text": "Reach the End City near {target_x}, {target_z} in {target_dimension}.",
+        "show_progress": true,
+        "progress": 0.25,
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        }
+      },
+      "proof": {
+        "text": "Bring shulker shells and chorus fruit from the outer islands.",
+        "show_progress": true,
+        "progress": 0.85
+      },
+      "return": {
+        "text": "Return to the cartographer with the finished atlas margin.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  },
+  "triggers": [
+    {
+      "id": "atlas_finished",
+      "event": "completed",
+      "actions": [
+        {
+          "type": "set_tag",
+          "scope": "player",
+          "tag": "villagerretaliation:cartographers_atlas_finished"
+        },
+        {
+          "type": "notification",
+          "trigger": "quest.completed",
+          "text": "The Cartographer's Atlas is complete."
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "experience": 900,
+    "gossip_reputation": 18,
+    "loot_table": "villagerretaliation:quest/end_city_margin",
+    "memory_event": "player_completed_quest",
+    "reputation": 38
+  },
+  "dialogue": {
+    "start": [
+      "The last blank margin waits in the End. Find the city near {target_x}, {target_z}, and bring back shulker shells with chorus fruit."
+    ],
+    "reminder": [
+      "End City near {target_x}, {target_z}. Bring 2 shulker shells and 16 chorus fruit. The atlas is close to becoming whole."
+    ],
+    "turn_in": [
+      "There it is: village road, ruin road, sea or dark roof, fire road, last room, outer island. A whole atlas, and you walked it into truth."
+    ],
+    "already_completed": [
+      "The End City margin is already complete."
+    ],
+    "unavailable": [
+      "The atlas needs the Stronghold bearing before the End margin can be drawn."
+    ],
+    "inactive": [
+      "The End margin is not open right now."
+    ],
+    "missing_target": [
+      "The shells need the End City bearing behind them."
+    ],
+    "missing_proof": [
+      "Bring shulker shells before I bind the final margin."
+    ],
+    "locate_failed": [
+      "The End City mark is too far for the atlas to catch from here."
+    ]
+  }
+}

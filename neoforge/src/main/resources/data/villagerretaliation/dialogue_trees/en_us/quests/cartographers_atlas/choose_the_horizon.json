@@ -1,0 +1,215 @@
+{
+  "id": "villagerretaliation:choose_the_horizon",
+  "display": {
+    "title": "Choose The Horizon",
+    "description": "Cartographer scene for the atlas branch choice."
+  },
+  "entries": [
+    {
+      "id": "offer",
+      "label": "Choose The Horizon",
+      "request": "question",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "available"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "id": "reminder",
+      "label": "About The Horizon",
+      "request": "question",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "in_progress"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "id": "turn_in",
+      "label": "About The Horizon",
+      "request": "question",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "ready"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "nodes": {
+    "offer": {
+      "lines": [
+        "The atlas forks. One route follows drowned stone under the sea. The other follows a roof so dark birds avoid it."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "Open the atlas",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "start",
+          "lines": {
+            "started": [
+              "The branch page is open. Choose the drowned coast or the dark roof road from my notes."
+            ],
+            "unavailable": [
+              "The atlas cannot fork yet."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "active_menu": {
+      "lines": [
+        "Pick the coast if you want guardians and prismarine. Pick the dark roof if you want illagers and stolen books. The branch options should be in my notes."
+      ],
+      "responses": [
+        {
+          "id": "remind",
+          "label": "Repeat the branch",
+          "next": "reminder_details",
+          "order": 80
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "leave",
+          "label": "I will choose",
+          "next": "leave",
+          "order": 100
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "remind",
+          "lines": {
+            "reminder": [
+              "Choose the drowned coast for ocean ruins, or the dark roof road for woodland mansions. The atlas will follow one branch."
+            ],
+            "unavailable": [
+              "The branch page is not active right now."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "The route is chosen. Let me fix the ink before it changes its mind."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Set the route",
+          "next": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "label": "Not yet",
+          "next": "leave"
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "Done. The atlas will follow the road you chose."
+            ],
+            "missing_objectives": [
+              "Choose a route from the branch notes before I set the ink."
+            ],
+            "missing_proof": [
+              "Choose a route first."
+            ],
+            "unavailable": [
+              "The branch page is not ready to close."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Close the branch page for now?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "leave"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will close the fork for now. It can reopen if you still want the atlas."
+            ],
+            "unavailable": [
+              "There is no branch page to close."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "lines": [
+        "Then the horizon keeps both secrets."
+      ],
+      "end": true
+    },
+    "leave": {
+      "lines": [
+        "Choose with both eyes open."
+      ],
+      "end": true
+    }
+  }
+}

@@ -1,4 +1,84 @@
 {
+  "id": "villagerretaliation:torch_bundle",
+  "display": {
+    "description": "Bring torches so storehouses, pens, and work corners stay usable after dusk.",
+    "title": "Torch Bundle",
+    "title_key": "quest.village_supply.torch_bundle.title",
+    "description_key": "quest.village_supply.torch_bundle.description"
+  },
+  "tags": [
+    "group.village_supply"
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:mason",
+      "minecraft:toolsmith",
+      "minecraft:cleric"
+    ],
+    "skills": {
+      "crafting": {
+        "min": 6
+      },
+      "mining": {
+        "min": 4
+      }
+    }
+  },
+  "objectives": [
+    {
+      "count": 16,
+      "id": "bring_torches",
+      "item": "minecraft:torch",
+      "tracker": {
+        "complete_text": "The torch rack is stocked and ready.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 16 torches for the watch rack.",
+        "text_key": "quest.village_supply.torch_bundle.objective.bring_torches.text",
+        "complete_text_key": "quest.village_supply.torch_bundle.objective.bring_torches.complete_text"
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Torch Bundle"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 16 torches for the watch rack.",
+        "text_key": "quest.village_supply.torch_bundle.tracker.proof.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the torches.",
+        "text_key": "quest.village_supply.torch_bundle.tracker.return.text"
+      }
+    },
+    "title": "Torch Bundle",
+    "title_key": "quest.village_supply.torch_bundle.tracker.title"
+  },
+  "rewards": {
+    "experience": 50,
+    "gossip_reputation": 2,
+    "loot_table": "villagerretaliation:quest/torch_bundle",
+    "memory_event": "player_completed_quest",
+    "reputation": 4
+  },
   "dialogue": {
     "already_completed": [
       "Torch Bundle is already settled."
@@ -36,83 +116,5 @@
     "missing_target_key": "quest.village_supply.torch_bundle.dialogue.missing_target",
     "missing_proof_key": "quest.village_supply.torch_bundle.dialogue.missing_proof",
     "locate_failed_key": "quest.village_supply.torch_bundle.dialogue.locate_failed"
-  },
-  "display": {
-    "description": "Bring torches so storehouses, pens, and work corners stay usable after dusk.",
-    "title": "Torch Bundle",
-    "title_key": "quest.village_supply.torch_bundle.title",
-    "description_key": "quest.village_supply.torch_bundle.description"
-  },
-  "id": "villagerretaliation:torch_bundle",
-  "objectives": [
-    {
-      "count": 16,
-      "id": "bring_torches",
-      "item": "minecraft:torch",
-      "tracker": {
-        "complete_text": "The torch rack is stocked and ready.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 16 torches for the watch rack.",
-        "text_key": "quest.village_supply.torch_bundle.objective.bring_torches.text",
-        "complete_text_key": "quest.village_supply.torch_bundle.objective.bring_torches.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "offer": {
-    "min_villager_level": "novice",
-    "professions": [
-      "minecraft:mason",
-      "minecraft:toolsmith",
-      "minecraft:cleric"
-    ],
-    "skills": {
-      "crafting": {
-        "min": 6
-      },
-      "mining": {
-        "min": 4
-      }
-    }
-  },
-  "questline": "village_supply",
-  "rewards": {
-    "experience": 50,
-    "gossip_reputation": 2,
-    "loot_table": "villagerretaliation:quest/torch_bundle",
-    "memory_event": "player_completed_quest",
-    "reputation": 4
-  },
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 1,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
-    "max_starts": 0,
-    "repeatable": true
-  },
-  "tracker": {
-    "metadata": {
-      "source": "Torch Bundle"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 16 torches for the watch rack.",
-        "text_key": "quest.village_supply.torch_bundle.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the torches.",
-        "text_key": "quest.village_supply.torch_bundle.tracker.return.text"
-      }
-    },
-    "title": "Torch Bundle",
-    "title_key": "quest.village_supply.torch_bundle.tracker.title"
   }
 }

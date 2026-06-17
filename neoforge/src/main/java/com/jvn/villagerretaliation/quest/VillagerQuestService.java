@@ -857,6 +857,7 @@ public final class VillagerQuestService {
         List<String> lines = new ArrayList<>();
         lines.add("Quest " + definition.id() + " | " + definition.title());
         lines.add("identity questline=" + blankAs(definition.questline(), "none")
+                + " tags=" + debugStringSet(definition.tags())
                 + " parent=" + debugParentState(data, player, definition.parent())
                 + " objectives=" + definition.objectives().size()
                 + " triggers=" + definition.triggers().size());

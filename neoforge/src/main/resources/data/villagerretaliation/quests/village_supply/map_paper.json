@@ -1,4 +1,80 @@
 {
+  "id": "villagerretaliation:map_paper",
+  "display": {
+    "description": "Bring paper so village records, maps, and warnings can stay current.",
+    "title": "Map Paper",
+    "title_key": "quest.village_supply.map_paper.title",
+    "description_key": "quest.village_supply.map_paper.description"
+  },
+  "tags": [
+    "group.village_supply"
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:librarian",
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "scholarship": {
+        "min": 6
+      }
+    }
+  },
+  "objectives": [
+    {
+      "count": 24,
+      "id": "bring_paper",
+      "item": "minecraft:paper",
+      "tracker": {
+        "complete_text": "The paper stack is ready.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 24 paper for village notes and maps.",
+        "text_key": "quest.village_supply.map_paper.objective.bring_paper.text",
+        "complete_text_key": "quest.village_supply.map_paper.objective.bring_paper.complete_text"
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Map Paper"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 24 paper for village notes and maps.",
+        "text_key": "quest.village_supply.map_paper.tracker.proof.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the paper.",
+        "text_key": "quest.village_supply.map_paper.tracker.return.text"
+      }
+    },
+    "title": "Map Paper",
+    "title_key": "quest.village_supply.map_paper.tracker.title"
+  },
+  "rewards": {
+    "experience": 55,
+    "gossip_reputation": 2,
+    "loot_table": "villagerretaliation:quest/map_paper",
+    "memory_event": "player_completed_quest",
+    "reputation": 4
+  },
   "dialogue": {
     "already_completed": [
       "Map Paper is already settled."
@@ -36,79 +112,5 @@
     "missing_target_key": "quest.village_supply.map_paper.dialogue.missing_target",
     "missing_proof_key": "quest.village_supply.map_paper.dialogue.missing_proof",
     "locate_failed_key": "quest.village_supply.map_paper.dialogue.locate_failed"
-  },
-  "display": {
-    "description": "Bring paper so village records, maps, and warnings can stay current.",
-    "title": "Map Paper",
-    "title_key": "quest.village_supply.map_paper.title",
-    "description_key": "quest.village_supply.map_paper.description"
-  },
-  "id": "villagerretaliation:map_paper",
-  "objectives": [
-    {
-      "count": 24,
-      "id": "bring_paper",
-      "item": "minecraft:paper",
-      "tracker": {
-        "complete_text": "The paper stack is ready.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 24 paper for village notes and maps.",
-        "text_key": "quest.village_supply.map_paper.objective.bring_paper.text",
-        "complete_text_key": "quest.village_supply.map_paper.objective.bring_paper.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "offer": {
-    "min_villager_level": "novice",
-    "professions": [
-      "minecraft:librarian",
-      "minecraft:cartographer"
-    ],
-    "skills": {
-      "scholarship": {
-        "min": 6
-      }
-    }
-  },
-  "questline": "village_supply",
-  "rewards": {
-    "experience": 55,
-    "gossip_reputation": 2,
-    "loot_table": "villagerretaliation:quest/map_paper",
-    "memory_event": "player_completed_quest",
-    "reputation": 4
-  },
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 1,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
-    "max_starts": 0,
-    "repeatable": true
-  },
-  "tracker": {
-    "metadata": {
-      "source": "Map Paper"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 24 paper for village notes and maps.",
-        "text_key": "quest.village_supply.map_paper.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the paper.",
-        "text_key": "quest.village_supply.map_paper.tracker.return.text"
-      }
-    },
-    "title": "Map Paper",
-    "title_key": "quest.village_supply.map_paper.tracker.title"
   }
 }

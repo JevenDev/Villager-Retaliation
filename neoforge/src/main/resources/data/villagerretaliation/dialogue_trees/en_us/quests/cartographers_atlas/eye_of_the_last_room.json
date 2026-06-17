@@ -1,0 +1,224 @@
+{
+  "id": "villagerretaliation:eye_of_the_last_room",
+  "display": {
+    "title": "Eye Of The Last Room",
+    "description": "Cartographer scene for the Stronghold stage."
+  },
+  "entries": [
+    {
+      "id": "offer",
+      "label": "Eye Of The Last Room",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "available"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "id": "reminder",
+      "label": "About The Last Room",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "in_progress"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "id": "turn_in",
+      "label": "About The Last Room",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "ready"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "nodes": {
+    "offer": {
+      "lines": [
+        "The atlas has one Overworld secret left: a room built around an eye that points away from home."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "Mark the Stronghold",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "start",
+          "lines": {
+            "started": [
+              "The Stronghold bearing sits near {target_x}, {target_z}, about {distance} blocks {direction}. Bring an Eye of Ender and 4 ender pearls."
+            ],
+            "locate_failed": [
+              "The eye refuses to settle on the page today."
+            ],
+            "unavailable": [
+              "The atlas needs the Nether meridian first."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "active_menu": {
+      "lines": [
+        "The last-room bearing is still open."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me where",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "leave",
+          "label": "Never mind",
+          "next": "leave",
+          "order": 100
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "remind",
+          "lines": {
+            "reminder": [
+              "Stronghold near {target_x}, {target_z}. Bring an Eye of Ender and 4 ender pearls after you reach it."
+            ],
+            "unavailable": [
+              "The last-room bearing is not active."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "The atlas feels heavier. Show me the eye."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Hand over the Stronghold notes",
+          "next": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "label": "Not yet",
+          "next": "leave"
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "The last room is inked. The atlas has found the door at the edge of the world."
+            ],
+            "missing_target": [
+              "Reach the Stronghold first. The eye alone is not the bearing."
+            ],
+            "missing_objectives": [
+              "The last-room page still needs ender pearls."
+            ],
+            "missing_proof": [
+              "Bring an Eye of Ender before I close this page."
+            ],
+            "unavailable": [
+              "This bearing is not ready to close."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Fold away the last-room bearing?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "leave"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will fold the eye away for now."
+            ],
+            "abandoned_cooldown": [
+              "I will fold the eye away until the page stops staring."
+            ],
+            "unavailable": [
+              "There is no last-room bearing to fold."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "lines": [
+        "Some doors are polite enough to wait."
+      ],
+      "end": true
+    },
+    "leave": {
+      "lines": [
+        "Follow the eye carefully."
+      ],
+      "end": true
+    }
+  }
+}

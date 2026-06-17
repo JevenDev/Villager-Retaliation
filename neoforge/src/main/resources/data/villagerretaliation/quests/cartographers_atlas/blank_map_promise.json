@@ -1,0 +1,136 @@
+{
+  "id": "villagerretaliation:blank_map_promise",
+  "display": {
+    "title": "Blank Map Promise",
+    "description": "Help a cartographer prepare the paper, compass, and ink needed for a long atlas."
+  },
+  "questline": "cartographers_atlas",
+  "tags": [
+    "group.exploration"
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "cartography": {
+        "min": 6
+      }
+    }
+  },
+  "objectives": [
+    {
+      "id": "bring_paper",
+      "type": "item_check",
+      "item": "minecraft:paper",
+      "count": 24,
+      "tracker": {
+        "text": "Bring 24 paper for the atlas folio.",
+        "complete_text": "The paper stack is ready.",
+        "show_progress": true,
+        "progress": 0.35
+      }
+    },
+    {
+      "id": "bring_compass",
+      "type": "item_check",
+      "item": "minecraft:compass",
+      "count": 1,
+      "tracker": {
+        "text": "Bring 1 compass for the first bearing.",
+        "complete_text": "The compass is set beside the maps.",
+        "show_progress": true,
+        "progress": 0.7
+      }
+    },
+    {
+      "id": "bring_ink",
+      "type": "item_check",
+      "item": "minecraft:ink_sac",
+      "count": 3,
+      "tracker": {
+        "text": "Bring 3 ink sacs for clean labels.",
+        "complete_text": "The ink is dark enough for road names.",
+        "show_progress": true,
+        "progress": 0.85
+      }
+    }
+  ],
+  "rules": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "title": "Blank Map Promise",
+    "metadata": {
+      "source": "Cartographer's Atlas"
+    },
+    "steps": {
+      "proof": {
+        "text": "Bring paper, a compass, and ink to the cartographer.",
+        "show_progress": true,
+        "progress": 0.7
+      },
+      "return": {
+        "text": "Return to the cartographer with the atlas supplies.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  },
+  "triggers": [
+    {
+      "id": "atlas_started",
+      "event": "started",
+      "actions": [
+        {
+          "type": "set_tag",
+          "scope": "player",
+          "tag": "villagerretaliation:cartographers_atlas_started"
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "experience": 90,
+    "gossip_reputation": 3,
+    "loot_table": "villagerretaliation:quest/blank_map_promise",
+    "memory_event": "player_completed_quest",
+    "reputation": 7
+  },
+  "dialogue": {
+    "start": [
+      "Bring paper, a compass, and ink. If the atlas begins clean, the roads may stay honest."
+    ],
+    "reminder": [
+      "The atlas still needs paper, one compass, and ink. Every great map starts as a fussy shopping list."
+    ],
+    "turn_in": [
+      "Good. Blank pages, true needle, black ink. Now we can ask the world where it has been hiding."
+    ],
+    "already_completed": [
+      "The atlas has its first pages."
+    ],
+    "unavailable": [
+      "I am not ready to begin that atlas with you yet."
+    ],
+    "inactive": [
+      "The atlas desk is closed for now."
+    ],
+    "missing_target": [
+      "The atlas supplies are still short."
+    ],
+    "missing_proof": [
+      "Bring the full set of supplies before I bind the first folio."
+    ],
+    "locate_failed": [
+      "The map table is not ready today."
+    ]
+  }
+}

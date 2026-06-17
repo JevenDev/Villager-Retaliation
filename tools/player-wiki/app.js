@@ -160,6 +160,10 @@ function questUrl(slug) {
   return `#/quest/${slug}`;
 }
 
+function questlineUrl(id) {
+  return `#/questline/${encodeURIComponent(String(id || ""))}`;
+}
+
 function advancementUrl(id) {
   return `#/advancement/${encodeURIComponent(String(id || ""))}`;
 }
@@ -199,6 +203,7 @@ function currentRoute() {
   if (!hash) return { type: "page", id: "home" };
   const [type, ...rest] = hash.split("/");
   if (type === "quest") return { type: "quest", id: rest.join("/") };
+  if (type === "questline") return { type: "questline", id: decodeURIComponent(rest.join("/")) };
   if (type === "advancement") return { type: "advancement", id: decodeURIComponent(rest.join("/")) };
   if (type === "search") return { type: "search", id: "search" };
   if (type === "page") return { type: "page", id: rest[0] || "home" };
@@ -229,13 +234,36 @@ function renderIcons() {
 
 function questIcon(quest) {
   const icons = {
+    cartographers_atlas: "map",
+    exploration: "map",
     dangerous_commissions: "skull",
     lost_civilization: "landmark",
     old_roads: "signpost",
     village_defense: "shield-alert",
     village_supply: "wheat"
   };
-  return icons[quest.questline] || "scroll-text";
+  return icons[quest.questline] || icons[quest.group] || "scroll-text";
+}
+
+function questlineSummaries() {
+  const byId = new Map();
+  for (const quest of DATA.quests) {
+    if (!quest.questline) continue;
+    if (!byId.has(quest.questline)) {
+      byId.set(quest.questline, {
+        id: quest.questline,
+        label: quest.questlineLabel || titleCase(quest.questline),
+        quests: []
+      });
+    }
+    byId.get(quest.questline).quests.push(quest);
+  }
+  return [...byId.values()].map((line) => ({
+    ...line,
+    quests: line.quests
+      .slice()
+      .sort((a, b) => (a.questlineOrder ?? 0) - (b.questlineOrder ?? 0) || a.title.localeCompare(b.title))
+  })).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function questRewardPreview(quest) {
@@ -263,6 +291,9 @@ function resultIcon(type) {
 
 function renderNav() {
   const route = currentRoute();
+  const currentQuest = route.type === "quest"
+    ? DATA.quests.find((item) => item.slug === route.id)
+    : null;
   const navPages = PAGES.filter((page) => page.id !== "quests");
   const byGroup = groupBy(navPages, "group");
   const groups = Object.entries(byGroup).map(([group, pages]) => `
@@ -283,6 +314,12 @@ function renderNav() {
       <span>${escapeHtml(quest.title)}</span>
     </a>
   `).join("");
+  const questlineLinks = questlineSummaries().map((line) => `
+    <a class="nav-link nav-link-small ${route.type === "questline" && route.id === line.id ? "is-active" : ""}" href="${questlineUrl(line.id)}">
+      ${icon("map")}
+      <span>${escapeHtml(line.label)}</span>
+    </a>
+  `).join("");
 
   els.nav.innerHTML = `${groups}
     <div class="nav-group">
@@ -291,6 +328,12 @@ function renderNav() {
         ${icon("list")}
         <span>All quests</span>
       </a>
+      ${questlineLinks ? `
+        <details class="nav-disclosure" ${route.type === "questline" || currentQuest?.questline ? "open" : ""}>
+          <summary>${icon("chevron-right", "disclosure-icon")}<span>Questlines</span></summary>
+          <div class="nav-disclosure-list">${questlineLinks}</div>
+        </details>
+      ` : ""}
       <details class="nav-disclosure" ${route.type === "quest" ? "open" : ""}>
         <summary>${icon("chevron-right", "disclosure-icon")}<span>Individual quests</span></summary>
         <div class="nav-disclosure-list">${questLinks}</div>
@@ -306,7 +349,16 @@ function render() {
     if (quest) renderDocument(quest.title, quest.description, renderQuestDetail(quest), {
       icon: questIcon(quest),
       parent: "Quest Walkthroughs",
-      section: quest.questlineLabel
+      section: quest.questlineLabel || quest.groupLabel
+    });
+    return;
+  }
+  if (route.type === "questline") {
+    const summary = questlineSummaries().find((line) => line.id === route.id) || questlineSummaries()[0];
+    if (summary) renderDocument(summary.label, `${summary.quests.length} connected quests in this progression.`, renderQuestlineDetail(summary), {
+      icon: "map",
+      parent: "Quest Walkthroughs",
+      section: "Questlines"
     });
     return;
   }
@@ -415,12 +467,14 @@ function pillList(items) {
 }
 
 function renderHome() {
-  const questlines = new Set(DATA.quests.map((quest) => quest.questline)).size;
+  const questlines = new Set(DATA.quests.map((quest) => quest.questline).filter(Boolean)).size;
+  const questGroups = new Set(DATA.quests.map((quest) => quest.group).filter(Boolean)).size;
   const reputationTiers = Array.isArray(DATA.reputation) ? DATA.reputation.length : 0;
   return `
     ${statGrid([
       { value: plural(DATA.quests.length, "quest"), label: "Built-in walkthroughs", icon: "scroll-text" },
       { value: plural(questlines, "questline"), label: "Questlines", icon: "map" },
+      { value: plural(questGroups, "quest group"), label: "Browsable quest tags", icon: "tags" },
       { value: plural(reputationTiers, "reputation tier"), label: "Relationship levels", icon: "shield" },
       { value: plural(DATA.advancements.length, "advancement"), label: "Reputation tab entries", icon: "trophy" },
       { value: "20K+ Dialogue lines", label: "Estimated total", icon: "message-square-text" },
@@ -473,9 +527,9 @@ function questCard(quest) {
   const experienceReward = rewards.experience ?? "0";
   const rewardPreview = questRewardPreview(quest);
   return `
-    <a class="quest-card" href="${questUrl(quest.slug)}" data-questline="${escapeHtml(quest.questline)}">
+    <a class="quest-card" href="${questUrl(quest.slug)}" data-questline="${escapeHtml(quest.questline)}" data-group="${escapeHtml(quest.group)}">
       ${icon(questIcon(quest))}
-      <span class="card-kicker">${escapeHtml(quest.questlineLabel)}</span>
+      <span class="card-kicker">${escapeHtml(quest.questlineLabel || quest.groupLabel)}</span>
       <strong>${escapeHtml(quest.title)}</strong>
       <span>${escapeHtml(quest.description)}</span>
       <p>${escapeHtml(goal)}</p>
@@ -490,7 +544,7 @@ function questCard(quest) {
 }
 
 function renderQuests() {
-  const byQuestline = groupBy(DATA.quests, "questlineLabel");
+  const byGroup = groupBy(DATA.quests, "groupLabel");
   return `
     <section class="quest-guide" aria-label="How to use quest walkthroughs">
       <div class="quest-guide-card feature-card">
@@ -515,13 +569,127 @@ function renderQuests() {
         </div>
       </div>
     </section>
-    ${Object.entries(byQuestline).map(([questline, quests]) => countedSection(questline, plural(quests.length, "quest"), `
+    ${Object.entries(byGroup).map(([group, quests]) => countedSection(group, plural(quests.length, "quest"), `
       <div class="card-grid two">${quests.map(questCard).join("")}</div>
     `)).join("")}
   `;
 }
 
+function questRelationInfo(quest) {
+  const relationKey = quest.relationKey || (quest.questline ? `questline:${quest.questline}` : `group:${quest.group}`);
+  const related = DATA.quests
+    .filter((item) => (item.relationKey || (item.questline ? `questline:${item.questline}` : `group:${item.group}`)) === relationKey)
+    .sort((a, b) => (a.questlineOrder ?? 0) - (b.questlineOrder ?? 0) || a.title.localeCompare(b.title));
+  const isQuestline = Boolean(quest.questline);
+  return {
+    related,
+    isQuestline,
+    label: isQuestline ? "Questline" : "Quest Group"
+  };
+}
+
+function questlinePanel(quest) {
+  const relation = questRelationInfo(quest);
+  const related = relation.related;
+  if (related.length <= 1) return "";
+
+  const byId = new Map(DATA.quests.map((item) => [item.id, item]));
+  const branchGroups = new Set(related.map((item) => item.branchGroup).filter(Boolean));
+  const summary = [
+    plural(related.length, "quest"),
+    branchGroups.size ? plural(branchGroups.size, "branch group") : ""
+  ].filter(Boolean).join(" • ");
+
+  return section(relation.label, `
+    <div class="questline-panel">
+      <div class="questline-summary">
+        ${icon(questIcon(quest))}
+        <div>
+          <strong>${escapeHtml(quest.questlineLabel || quest.groupLabel)}</strong>
+          <span>${escapeHtml(summary)}</span>
+        </div>
+      </div>
+      <ol class="questline-list">
+        ${related.map((item, index) => {
+          const prerequisites = (item.prerequisites || [])
+            .map((prerequisite) => byId.get(prerequisite.id))
+            .filter(Boolean);
+          const requirementText = prerequisites.length
+            ? `Requires ${prerequisites.map((prerequisite) => prerequisite.title).join(prerequisites.length > 1 ? " or " : "")}`
+            : relation.isQuestline && index === 0 ? "Starts this questline" : "Group entry quest";
+          const meta = [
+            item.id === quest.id ? "Current quest" : "",
+            requirementText,
+            item.branchGroup ? "Branch path" : "",
+            item.branchChoices?.length ? `Choices: ${item.branchChoices.map((choice) => choice.label).join(", ")}` : ""
+          ].filter(Boolean);
+          return `
+            <li class="${item.id === quest.id ? "is-current" : ""}">
+              <span class="questline-index">${index + 1}</span>
+              <div class="questline-copy">
+                <a href="${questUrl(item.slug)}" ${item.id === quest.id ? `aria-current="page"` : ""}>${escapeHtml(item.title)}</a>
+                <span>${escapeHtml(meta.join(" • "))}</span>
+              </div>
+            </li>
+          `;
+        }).join("")}
+      </ol>
+    </div>
+  `);
+}
+
+function renderQuestlineDetail(summary) {
+  const quests = summary.quests || [];
+  const byId = new Map(DATA.quests.map((item) => [item.id, item]));
+  const branchGroups = new Set(quests.map((quest) => quest.branchGroup).filter(Boolean));
+  return `
+    ${statGrid([
+      { value: plural(quests.length, "quest"), label: "Connected quests", icon: "scroll-text" },
+      { value: branchGroups.size ? plural(branchGroups.size, "branch group") : "Linear path", label: "Progression shape", icon: "git-branch" }
+    ])}
+    ${section("Questline", `
+      <div class="questline-panel">
+        <div class="questline-summary">
+          ${icon("map")}
+          <div>
+            <strong>${escapeHtml(summary.label)}</strong>
+            <span>${escapeHtml(plural(quests.length, "quest"))}</span>
+          </div>
+        </div>
+        <ol class="questline-list">
+          ${quests.map((quest, index) => {
+            const prerequisites = (quest.prerequisites || [])
+              .map((prerequisite) => byId.get(prerequisite.id))
+              .filter(Boolean);
+            const requirementText = prerequisites.length
+              ? `Requires ${prerequisites.map((prerequisite) => prerequisite.title).join(prerequisites.length > 1 ? " or " : "")}`
+              : index === 0 ? "Starts this questline" : "No prerequisite quest";
+            const meta = [
+              requirementText,
+              quest.branchGroup ? "Branch path" : "",
+              quest.branchChoices?.length ? `Choices: ${quest.branchChoices.map((choice) => choice.label).join(", ")}` : ""
+            ].filter(Boolean);
+            return `
+              <li>
+                <span class="questline-index">${index + 1}</span>
+                <div class="questline-copy">
+                  <a href="${questUrl(quest.slug)}">${escapeHtml(quest.title)}</a>
+                  <span>${escapeHtml(meta.join(" • "))}</span>
+                </div>
+              </li>
+            `;
+          }).join("")}
+        </ol>
+      </div>
+    `)}
+    ${section("Quests", `
+      <div class="card-grid two">${quests.map(questCard).join("")}</div>
+    `)}
+  `;
+}
+
 function renderQuestDetail(quest) {
+  const relation = questRelationInfo(quest);
   const target = quest.target;
   const totalLootWeight = quest.rewards.loot.reduce((sum, loot) => sum + (Number(loot.weight) || 0), 0);
   const minLootWeight = quest.rewards.loot.reduce((min, loot) => {
@@ -574,11 +742,13 @@ function renderQuestDetail(quest) {
     </section>
 
     ${statGrid([
-      { value: quest.questlineLabel, label: "Questline", icon: questIcon(quest) },
+      { value: quest.questlineLabel || quest.groupLabel, label: relation.label, icon: questIcon(quest) },
       { value: quest.requirements.minLevel, label: "Minimum villager level", icon: "badge-check" },
       { value: `${quest.rewards.reputation} rep`, label: "Direct reputation reward", icon: "heart-handshake" },
       { value: `${quest.rewards.experience} XP`, label: "Experience reward", icon: "sparkles" }
     ])}
+
+    ${questlinePanel(quest)}
 
     ${section("Before You Start", `
       <div class="info-grid info-grid-before">
@@ -1047,9 +1217,9 @@ function searchIndex() {
   const questResults = DATA.quests.map((quest) => ({
     type: "Quest",
     title: quest.title,
-    description: `${quest.questlineLabel} - ${quest.description}`,
+    description: `${quest.questlineLabel || quest.groupLabel} - ${quest.description}`,
     url: questUrl(quest.slug),
-    haystack: `${quest.title} ${quest.description} ${quest.questlineLabel} ${quest.objectives.join(" ")} ${quest.requirements.professions.join(" ")} ${quest.requirements.skills.map((skill) => skill.skill).join(" ")}`.toLowerCase()
+    haystack: `${quest.title} ${quest.description} ${quest.questlineLabel} ${quest.groupLabel} ${(quest.tags || []).join(" ")} ${quest.objectives.join(" ")} ${quest.requirements.professions.join(" ")} ${quest.requirements.skills.map((skill) => skill.skill).join(" ")}`.toLowerCase()
   }));
   const advancements = Array.isArray(DATA.advancements) ? DATA.advancements : [];
   const advancementResults = advancements.map((advancement) => ({

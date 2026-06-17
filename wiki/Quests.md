@@ -6,10 +6,10 @@ Quest JSON defines who can offer a quest, what the player must do, how the quest
 
 ```text
 data/<namespace>/quests/<quest>.json
-data/<namespace>/quests/<questline>/<quest>.json
+data/<namespace>/quests/<module>/<quest>.json
 ```
 
-For new packs, prefer the questline folder layout.
+For new packs, prefer the module folder layout. The folder is for file organization; it does not automatically make the quests a questline.
 
 ## Minimal Fetch Quest
 
@@ -20,7 +20,7 @@ For new packs, prefer the questline folder layout.
     "title": "Bread Delivery",
     "description": "Bring 16 bread to the village stores."
   },
-  "questline": "village_supply",
+  "tags": ["group.village_supply"],
   "offer": {
     "professions": ["minecraft:farmer"],
     "min_villager_level": "novice"
@@ -51,12 +51,35 @@ For new packs, prefer the questline folder layout.
 | --- | --- |
 | `display` | Title and description shown to players |
 | `offer` | Which villagers can offer it |
+| `tags` | Optional authoring and browsing tags, such as `group.village_supply` |
+| `questline` | Optional connected progression id for quests that share a real chain |
 | `target` | Optional world target such as a structure search |
 | `objectives` | What the player must actually complete |
 | `rewards` | XP, reputation, gossip, loot, memory events |
 | `rules` | Repeat limits, abandonment, cooldowns, locking |
 | `tracker` | Optional custom quest tracker text |
 | `triggers` | Event-based reactions while the quest exists |
+
+## Questline Vs Group Tags
+
+Use `questline` only when quests are part of a connected progression, usually through `parent`, prerequisite conditions, stages, or branches. Use `tags` for broad browsing buckets:
+
+```json
+{
+  "id": "my_pack:road_ledger",
+  "tags": ["group.old_roads"]
+}
+```
+
+A connected questline can also have a group tag:
+
+```json
+{
+  "id": "my_pack:first_map",
+  "questline": "cartographers_atlas",
+  "tags": ["group.exploration"]
+}
+```
 
 ## Locale-Friendly Text
 

@@ -901,6 +901,99 @@ code {
   font-size: 14px;
 }
 
+.questline-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel);
+  padding: 12px;
+}
+
+.questline-summary {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.questline-summary .inline-icon {
+  color: var(--warn);
+  margin-top: 2px;
+}
+
+.questline-summary strong {
+  display: block;
+  color: #ffffff;
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.questline-summary span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.questline-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.questline-list li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel-2);
+  padding: 9px 10px;
+}
+
+.questline-list li.is-current {
+  border-color: rgba(215, 170, 76, 0.65);
+  background: #302b26;
+}
+
+.questline-index {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.questline-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.questline-copy a {
+  color: #ffffff;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.questline-copy a:hover {
+  color: #f4d98e;
+}
+
+.questline-copy span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .section-heading-row {
   display: flex;
   align-items: baseline;

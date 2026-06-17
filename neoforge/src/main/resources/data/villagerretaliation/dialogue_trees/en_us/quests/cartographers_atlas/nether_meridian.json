@@ -1,0 +1,224 @@
+{
+  "id": "villagerretaliation:nether_meridian",
+  "display": {
+    "title": "Nether Meridian",
+    "description": "Cartographer scene for the Nether stage of the atlas."
+  },
+  "entries": [
+    {
+      "id": "offer",
+      "label": "Nether Meridian",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "available"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "offer"
+    },
+    {
+      "id": "reminder",
+      "label": "About The Nether Meridian",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "in_progress"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "active_menu"
+    },
+    {
+      "id": "turn_in",
+      "label": "About The Nether Meridian",
+      "request": "story",
+      "order": -24,
+      "conditions": [
+        {
+          "type": "quest",
+          "state": "ready"
+        }
+      ],
+      "show_for_babies": false,
+      "start": "turn_in"
+    }
+  ],
+  "nodes": {
+    "offer": {
+      "lines": [
+        "Your atlas has crossed enough Overworld roads. It is time to see whether a map can survive fire."
+      ],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "Mark the Nether",
+          "next": "start_quest"
+        },
+        {
+          "id": "decline",
+          "label": "Another time",
+          "next": "decline"
+        }
+      ]
+    },
+    "start_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "start",
+          "lines": {
+            "started": [
+              "The fortress bearing sits near {target_x}, {target_z}. Bring 3 blaze rods and 8 Nether Wart."
+            ],
+            "locate_failed": [
+              "The Nether mark burned through the copy. I cannot send you today."
+            ],
+            "unavailable": [
+              "The atlas needs an Overworld branch completed first."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "active_menu": {
+      "lines": [
+        "The Nether meridian is open. The page smells terrible, which is probably accurate."
+      ],
+      "responses": [
+        {
+          "id": "details",
+          "label": "Remind me where",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "leave",
+          "label": "Never mind",
+          "next": "leave",
+          "order": 100
+        }
+      ]
+    },
+    "reminder_details": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "remind",
+          "lines": {
+            "reminder": [
+              "Nether Fortress near {target_x}, {target_z}. Bring 3 blaze rods and 8 Nether Wart."
+            ],
+            "unavailable": [
+              "The Nether meridian is not active."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "turn_in": {
+      "lines": [
+        "You brought back a line from the Nether. Let me see how badly the compass lied."
+      ],
+      "responses": [
+        {
+          "id": "complete",
+          "label": "Hand over the meridian notes",
+          "next": "complete_quest"
+        },
+        {
+          "id": "leave",
+          "label": "Not yet",
+          "next": "leave"
+        }
+      ]
+    },
+    "complete_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "turn_in",
+          "lines": {
+            "completed": [
+              "The Nether meridian is drawn. That line should not exist, which makes it very valuable."
+            ],
+            "missing_target": [
+              "Reach the fortress first. The supplies need the bearing."
+            ],
+            "missing_objectives": [
+              "The meridian still needs blaze rods and Nether Wart."
+            ],
+            "missing_proof": [
+              "Bring blaze rods before I close the meridian."
+            ],
+            "unavailable": [
+              "This meridian is not ready to close."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "abandon_confirm": {
+      "lines": [
+        "Fold away the Nether meridian?"
+      ],
+      "responses": [
+        {
+          "id": "confirm",
+          "label": "Abandon quest",
+          "next": "abandon_quest"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the quest",
+          "next": "leave"
+        }
+      ]
+    },
+    "abandon_quest": {
+      "actions": [
+        {
+          "type": "quest",
+          "action": "abandon",
+          "lines": {
+            "abandoned": [
+              "I will fold the Nether page before it smokes again."
+            ],
+            "abandoned_cooldown": [
+              "I will fold the Nether page until the desk stops smelling like sulfur."
+            ],
+            "unavailable": [
+              "There is no Nether page to fold."
+            ]
+          }
+        }
+      ],
+      "end": true
+    },
+    "decline": {
+      "lines": [
+        "Reasonable. Fire is a rude geography."
+      ],
+      "end": true
+    },
+    "leave": {
+      "lines": [
+        "Do not let the map catch."
+      ],
+      "end": true
+    }
+  }
+}

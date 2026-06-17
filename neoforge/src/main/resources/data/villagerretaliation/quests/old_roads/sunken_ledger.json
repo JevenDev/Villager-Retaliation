@@ -1,4 +1,104 @@
 {
+  "id": "villagerretaliation:sunken_ledger",
+  "display": {
+    "description": "Search a shipwreck and return with a compass and paper before the route is forgotten.",
+    "title": "Sunken Ledger",
+    "title_key": "quest.old_roads.sunken_ledger.title",
+    "description_key": "quest.old_roads.sunken_ledger.description"
+  },
+  "tags": [
+    "group.old_roads"
+  ],
+  "offer": {
+    "min_villager_level": "journeyman",
+    "professions": [
+      "minecraft:fisherman",
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "cartography": {
+        "min": 20
+      },
+      "fishing": {
+        "min": 30
+      }
+    }
+  },
+  "target": {
+    "discovery_radius": 128,
+    "proof_item": "minecraft:compass",
+    "search_radius": 192,
+    "structure": "minecraft:shipwreck"
+  },
+  "objectives": [
+    {
+      "count": 8,
+      "id": "bring_paper",
+      "item": "minecraft:paper",
+      "tracker": {
+        "complete_text": "The blank pages are dry and ready.",
+        "progress": 0.74,
+        "show_progress": true,
+        "text": "Bring 8 paper to copy the damaged ledger.",
+        "text_key": "quest.old_roads.sunken_ledger.objective.bring_paper.text",
+        "complete_text_key": "quest.old_roads.sunken_ledger.objective.bring_paper.complete_text"
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_seconds": 1200,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Sunken Ledger"
+    },
+    "steps": {
+      "bring_paper": {
+        "progress": 0.74,
+        "show_progress": true,
+        "text": "Collect 8 paper for a clean copy.",
+        "text_key": "quest.old_roads.sunken_ledger.tracker.bring_paper.text"
+      },
+      "proof": {
+        "progress": 0.66,
+        "show_progress": true,
+        "text": "Bring a compass and 8 paper.",
+        "text_key": "quest.old_roads.sunken_ledger.tracker.proof.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the compass and paper.",
+        "text_key": "quest.old_roads.sunken_ledger.tracker.return.text"
+      },
+      "travel": {
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        },
+        "progress": 0.25,
+        "show_progress": true,
+        "text": "Reach the shipwreck near {target_x}, {target_z}.",
+        "text_key": "quest.old_roads.sunken_ledger.tracker.travel.text"
+      }
+    },
+    "title": "Sunken Ledger",
+    "title_key": "quest.old_roads.sunken_ledger.tracker.title"
+  },
+  "rewards": {
+    "experience": 180,
+    "gossip_reputation": 5,
+    "loot_table": "villagerretaliation:quest/sunken_ledger",
+    "memory_event": "player_completed_quest",
+    "reputation": 12
+  },
   "dialogue": {
     "already_completed": [
       "Sunken Ledger is already settled."
@@ -36,103 +136,5 @@
     "missing_target_key": "quest.old_roads.sunken_ledger.dialogue.missing_target",
     "missing_proof_key": "quest.old_roads.sunken_ledger.dialogue.missing_proof",
     "locate_failed_key": "quest.old_roads.sunken_ledger.dialogue.locate_failed"
-  },
-  "display": {
-    "description": "Search a shipwreck and return with a compass and paper before the route is forgotten.",
-    "title": "Sunken Ledger",
-    "title_key": "quest.old_roads.sunken_ledger.title",
-    "description_key": "quest.old_roads.sunken_ledger.description"
-  },
-  "id": "villagerretaliation:sunken_ledger",
-  "objectives": [
-    {
-      "count": 8,
-      "id": "bring_paper",
-      "item": "minecraft:paper",
-      "tracker": {
-        "complete_text": "The blank pages are dry and ready.",
-        "progress": 0.74,
-        "show_progress": true,
-        "text": "Bring 8 paper to copy the damaged ledger.",
-        "text_key": "quest.old_roads.sunken_ledger.objective.bring_paper.text",
-        "complete_text_key": "quest.old_roads.sunken_ledger.objective.bring_paper.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "offer": {
-    "min_villager_level": "journeyman",
-    "professions": [
-      "minecraft:fisherman",
-      "minecraft:cartographer"
-    ],
-    "skills": {
-      "cartography": {
-        "min": 20
-      },
-      "fishing": {
-        "min": 30
-      }
-    }
-  },
-  "questline": "old_roads",
-  "rewards": {
-    "experience": 180,
-    "gossip_reputation": 5,
-    "loot_table": "villagerretaliation:quest/sunken_ledger",
-    "memory_event": "player_completed_quest",
-    "reputation": 12
-  },
-  "rules": {
-    "abandonment": "cooldown",
-    "abandonment_cooldown_seconds": 1200,
-    "consume_on_completion": true,
-    "cross_villager_compatible": false,
-    "locked_to_villager": true,
-    "max_completions": 1,
-    "max_starts": 0,
-    "repeatable": false
-  },
-  "target": {
-    "discovery_radius": 128,
-    "proof_item": "minecraft:compass",
-    "search_radius": 192,
-    "structure": "minecraft:shipwreck"
-  },
-  "tracker": {
-    "metadata": {
-      "source": "Sunken Ledger"
-    },
-    "steps": {
-      "bring_paper": {
-        "progress": 0.74,
-        "show_progress": true,
-        "text": "Collect 8 paper for a clean copy.",
-        "text_key": "quest.old_roads.sunken_ledger.tracker.bring_paper.text"
-      },
-      "proof": {
-        "progress": 0.66,
-        "show_progress": true,
-        "text": "Bring a compass and 8 paper.",
-        "text_key": "quest.old_roads.sunken_ledger.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the compass and paper.",
-        "text_key": "quest.old_roads.sunken_ledger.tracker.return.text"
-      },
-      "travel": {
-        "metadata": {
-          "hint": "{distance} blocks {direction}"
-        },
-        "progress": 0.25,
-        "show_progress": true,
-        "text": "Reach the shipwreck near {target_x}, {target_z}.",
-        "text_key": "quest.old_roads.sunken_ledger.tracker.travel.text"
-      }
-    },
-    "title": "Sunken Ledger",
-    "title_key": "quest.old_roads.sunken_ledger.tracker.title"
   }
 }

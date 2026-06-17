@@ -1,0 +1,164 @@
+{
+  "id": "villagerretaliation:choose_the_horizon",
+  "display": {
+    "title": "Choose The Horizon",
+    "description": "Choose whether the atlas follows the coast or the dark roof road."
+  },
+  "questline": "cartographers_atlas",
+  "tags": [
+    "group.exploration"
+  ],
+  "parent": "villagerretaliation:first_far_marker",
+  "offer": {
+    "min_villager_level": "apprentice",
+    "professions": [
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "cartography": {
+        "min": 20
+      }
+    }
+  },
+  "objectives": [
+    {
+      "id": "choose_route",
+      "type": "choice",
+      "choices": [
+        "coast",
+        "dark_roof"
+      ],
+      "tracker": {
+        "text": "Choose the next atlas route with the cartographer.",
+        "complete_text": "Route chosen: {objective_choice_value}.",
+        "show_progress": true,
+        "progress": 0.9
+      }
+    }
+  ],
+  "rules": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": false,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "title": "Choose The Horizon",
+    "metadata": {
+      "source": "Cartographer's Atlas"
+    },
+    "steps": {
+      "proof": {
+        "text": "Pick the atlas route from the cartographer's branch options.",
+        "show_progress": true,
+        "progress": 0.7
+      },
+      "return": {
+        "text": "Return to the cartographer after choosing the route.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  },
+  "stages": {
+    "started": {
+      "branches": [
+        {
+          "id": "coast",
+          "label": "Chart the drowned coast",
+          "actions": [
+            {
+              "type": "set_variable",
+              "scope": "quest",
+              "key": "choice",
+              "value": "coast"
+            },
+            {
+              "type": "set_stage",
+              "stage": "coast_chosen"
+            },
+            {
+              "type": "set_tag",
+              "scope": "player",
+              "tag": "villagerretaliation:atlas_coast_route"
+            },
+            {
+              "type": "notification",
+              "trigger": "quest.updated",
+              "text": "Atlas route chosen: drowned coast."
+            }
+          ],
+          "next": "coast_chosen"
+        },
+        {
+          "id": "dark_roof",
+          "label": "Chart the dark roof road",
+          "actions": [
+            {
+              "type": "set_variable",
+              "scope": "quest",
+              "key": "choice",
+              "value": "dark_roof"
+            },
+            {
+              "type": "set_stage",
+              "stage": "dark_roof_chosen"
+            },
+            {
+              "type": "set_tag",
+              "scope": "player",
+              "tag": "villagerretaliation:atlas_dark_roof_route"
+            },
+            {
+              "type": "notification",
+              "trigger": "quest.updated",
+              "text": "Atlas route chosen: dark roof road."
+            }
+          ],
+          "next": "dark_roof_chosen"
+        }
+      ]
+    },
+    "coast_chosen": {},
+    "dark_roof_chosen": {}
+  },
+  "rewards": {
+    "experience": 80,
+    "gossip_reputation": 2,
+    "loot_table": "villagerretaliation:quest/choose_the_horizon",
+    "memory_event": "player_completed_quest",
+    "reputation": 5
+  },
+  "dialogue": {
+    "start": [
+      "The atlas forks here. Speak with me again and choose whether we follow drowned stone or the dark roof road."
+    ],
+    "reminder": [
+      "The branch is still open. Choose the coast if you want sea-stone and guardians, or the dark roof if you want woodland danger."
+    ],
+    "turn_in": [
+      "Good. A chosen road is already half a map."
+    ],
+    "already_completed": [
+      "The atlas already knows which horizon you chose."
+    ],
+    "unavailable": [
+      "You need the first far marker before the atlas can fork."
+    ],
+    "inactive": [
+      "The atlas is not asking for a branch right now."
+    ],
+    "missing_target": [
+      "Choose a route before we close this page."
+    ],
+    "missing_proof": [
+      "Choose the route from my branch notes first."
+    ],
+    "locate_failed": [
+      "The route choice cannot be posted right now."
+    ]
+  }
+}

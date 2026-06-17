@@ -684,6 +684,7 @@ const knownPlaceholders = new Set([
   "objective_target_x",
   "objective_target_y",
   "objective_target_z",
+  "objective_target_dimension",
   "objective_type",
   "offer_slot",
   "option",
@@ -769,6 +770,7 @@ const knownPlaceholders = new Set([
   "target_name",
   "tool",
   "target_type",
+  "target_dimension",
   "target_x",
   "target_z",
   "tested_villager",
@@ -1085,6 +1087,9 @@ function checkQuest(file, data) {
     "metadata",
     "links",
     "questline",
+    "group",
+    "tag",
+    "tags",
     "parent",
     "offer",
     "target",
@@ -1100,6 +1105,8 @@ function checkQuest(file, data) {
   checkOptionalBoolean(file, data, "root", "replace");
   checkOptionalBoolean(file, data, "root", "remove");
   checkOptionalString(file, data, "root", "id");
+  checkOptionalString(file, data, "root", "group");
+  checkStringList(file, data, "root", ["tag", "tags"], "quest tag");
   checkResourceIdValues(file, data, "root", ["id", "parent"], "quest resource id");
   checkOptionalString(file, data, "root", "message_prefix");
   checkOptionalString(file, data, "root", "text_prefix");

@@ -1,4 +1,83 @@
 {
+  "id": "villagerretaliation:egg_baskets",
+  "display": {
+    "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
+    "title": "Egg Baskets",
+    "title_key": "quest.village_supply.egg_baskets.title",
+    "description_key": "quest.village_supply.egg_baskets.description"
+  },
+  "tags": [
+    "group.village_supply"
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:farmer",
+      "minecraft:butcher"
+    ],
+    "skills": {
+      "animal_handling": {
+        "min": 5
+      },
+      "cooking": {
+        "min": 4
+      }
+    }
+  },
+  "objectives": [
+    {
+      "count": 12,
+      "id": "bring_eggs",
+      "item": "minecraft:egg",
+      "tracker": {
+        "complete_text": "The egg baskets are full and ready.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 12 eggs for the kitchen baskets.",
+        "text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.text",
+        "complete_text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.complete_text"
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Egg Baskets"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 12 eggs for the kitchen baskets.",
+        "text_key": "quest.village_supply.egg_baskets.tracker.proof.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the eggs.",
+        "text_key": "quest.village_supply.egg_baskets.tracker.return.text"
+      }
+    },
+    "title": "Egg Baskets",
+    "title_key": "quest.village_supply.egg_baskets.tracker.title"
+  },
+  "rewards": {
+    "experience": 45,
+    "gossip_reputation": 2,
+    "loot_table": "villagerretaliation:quest/egg_baskets",
+    "memory_event": "player_completed_quest",
+    "reputation": 4
+  },
   "dialogue": {
     "already_completed": [
       "Egg Baskets is already settled."
@@ -36,82 +115,5 @@
     "missing_target_key": "quest.village_supply.egg_baskets.dialogue.missing_target",
     "missing_proof_key": "quest.village_supply.egg_baskets.dialogue.missing_proof",
     "locate_failed_key": "quest.village_supply.egg_baskets.dialogue.locate_failed"
-  },
-  "display": {
-    "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
-    "title": "Egg Baskets",
-    "title_key": "quest.village_supply.egg_baskets.title",
-    "description_key": "quest.village_supply.egg_baskets.description"
-  },
-  "id": "villagerretaliation:egg_baskets",
-  "objectives": [
-    {
-      "count": 12,
-      "id": "bring_eggs",
-      "item": "minecraft:egg",
-      "tracker": {
-        "complete_text": "The egg baskets are full and ready.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 eggs for the kitchen baskets.",
-        "text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.text",
-        "complete_text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "offer": {
-    "min_villager_level": "novice",
-    "professions": [
-      "minecraft:farmer",
-      "minecraft:butcher"
-    ],
-    "skills": {
-      "animal_handling": {
-        "min": 5
-      },
-      "cooking": {
-        "min": 4
-      }
-    }
-  },
-  "questline": "village_supply",
-  "rewards": {
-    "experience": 45,
-    "gossip_reputation": 2,
-    "loot_table": "villagerretaliation:quest/egg_baskets",
-    "memory_event": "player_completed_quest",
-    "reputation": 4
-  },
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 1,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
-    "max_starts": 0,
-    "repeatable": true
-  },
-  "tracker": {
-    "metadata": {
-      "source": "Egg Baskets"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 eggs for the kitchen baskets.",
-        "text_key": "quest.village_supply.egg_baskets.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the eggs.",
-        "text_key": "quest.village_supply.egg_baskets.tracker.return.text"
-      }
-    },
-    "title": "Egg Baskets",
-    "title_key": "quest.village_supply.egg_baskets.tracker.title"
   }
 }

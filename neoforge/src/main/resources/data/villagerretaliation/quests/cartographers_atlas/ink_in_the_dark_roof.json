@@ -1,0 +1,141 @@
+{
+  "id": "villagerretaliation:ink_in_the_dark_roof",
+  "display": {
+    "title": "Ink In The Dark Roof",
+    "description": "Follow the dark roof branch to a Woodland Mansion and return with dangerous proof."
+  },
+  "questline": "cartographers_atlas",
+  "tags": [
+    "group.exploration"
+  ],
+  "parent": "villagerretaliation:choose_the_horizon",
+  "offer": {
+    "min_villager_level": "journeyman",
+    "professions": [
+      "minecraft:cartographer"
+    ],
+    "conditions": [
+      {
+        "type": "quest_fact",
+        "scope": "quest",
+        "quest": "villagerretaliation:choose_the_horizon",
+        "key": "choice",
+        "value": "dark_roof"
+      }
+    ],
+    "skills": {
+      "cartography": {
+        "min": 28
+      }
+    }
+  },
+  "target": {
+    "structure": "minecraft:woodland_mansion",
+    "search_radius": 768,
+    "discovery_radius": 160,
+    "proof_item": "minecraft:totem_of_undying"
+  },
+  "objectives": [
+    {
+      "id": "defeat_illagers",
+      "type": "mob_kill",
+      "entities": [
+        "minecraft:vindicator",
+        "minecraft:evoker"
+      ],
+      "count": 4,
+      "tracker": {
+        "text": "Defeat mansion illagers: {objective_progress_count}/{objective_count}.",
+        "complete_text": "The dark roof has been answered.",
+        "show_progress": true,
+        "progress": 0.65
+      }
+    },
+    {
+      "id": "bring_books",
+      "type": "item_check",
+      "item": "minecraft:book",
+      "count": 12,
+      "tracker": {
+        "text": "Bring 12 books recovered from the mansion halls.",
+        "complete_text": "The recovered books are bundled.",
+        "show_progress": true,
+        "progress": 0.85
+      }
+    }
+  ],
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "exclusive_group": "villagerretaliation:cartographers_atlas_branch",
+    "exclusive_on": "started",
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "title": "Ink In The Dark Roof",
+    "metadata": {
+      "source": "Cartographer's Atlas"
+    },
+    "steps": {
+      "travel": {
+        "text": "Reach the Woodland Mansion near {target_x}, {target_z}.",
+        "show_progress": true,
+        "progress": 0.25,
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        }
+      },
+      "proof": {
+        "text": "Bring a Totem of Undying and recovered books from the mansion.",
+        "show_progress": true,
+        "progress": 0.85
+      },
+      "return": {
+        "text": "Return to the cartographer with the dark roof survey.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  },
+  "rewards": {
+    "experience": 330,
+    "gossip_reputation": 8,
+    "loot_table": "villagerretaliation:quest/ink_in_the_dark_roof",
+    "memory_event": "player_completed_quest",
+    "reputation": 17
+  },
+  "dialogue": {
+    "start": [
+      "The dark roof mark is {distance} blocks {direction}, near {target_x}, {target_z}. Bring back books and a totem if the house lets you leave."
+    ],
+    "reminder": [
+      "Woodland Mansion near {target_x}, {target_z}. The atlas needs books from the halls and a totem as proof."
+    ],
+    "turn_in": [
+      "The page smells like dust and bad magic. Perfectly useful, then."
+    ],
+    "already_completed": [
+      "The dark roof road is already charted."
+    ],
+    "unavailable": [
+      "The atlas did not choose the dark roof with you."
+    ],
+    "inactive": [
+      "The dark roof page is not open right now."
+    ],
+    "missing_target": [
+      "Those items need the mansion's shadow behind them before I can trust the page."
+    ],
+    "missing_proof": [
+      "Bring a totem from the mansion before I ink the page."
+    ],
+    "locate_failed": [
+      "The dark roof will not show itself on this table today."
+    ]
+  }
+}

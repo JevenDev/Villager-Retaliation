@@ -346,6 +346,7 @@ public final class VillagerQuestResources {
                 titleKey,
                 descriptionKey,
                 DatapackJsonReader.readString(root, "questline"),
+                readQuestTags(root),
                 parent,
                 readOffer(location, root, id),
                 readTarget(root),
@@ -359,6 +360,15 @@ public final class VillagerQuestResources {
                 DialogueEntryMetadata.read(location, "quest", "quest", root),
                 readLinks(root)
         );
+    }
+
+    private static Set<String> readQuestTags(JsonObject root) {
+        Set<String> tags = new LinkedHashSet<>(DatapackJsonReader.readStringList(root, "tag", "tags"));
+        String group = DatapackJsonReader.readString(root, "group");
+        if (!group.isBlank()) {
+            tags.add("group." + group);
+        }
+        return Set.copyOf(tags);
     }
 
     private static QuestDefinition.Offer readOffer(ResourceLocation location, JsonObject root, ResourceLocation defaultQuestId) {

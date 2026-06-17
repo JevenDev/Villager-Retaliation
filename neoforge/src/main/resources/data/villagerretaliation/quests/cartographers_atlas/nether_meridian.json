@@ -1,0 +1,146 @@
+{
+  "id": "villagerretaliation:nether_meridian",
+  "display": {
+    "title": "Nether Meridian",
+    "description": "Carry the atlas beyond the Overworld and chart a Nether Fortress bearing."
+  },
+  "questline": "cartographers_atlas",
+  "tags": [
+    "group.exploration"
+  ],
+  "offer": {
+    "min_villager_level": "expert",
+    "professions": [
+      "minecraft:cartographer"
+    ],
+    "conditions": [
+      {
+        "type": "any_of",
+        "conditions": [
+          {
+            "type": "quest_fact",
+            "scope": "quest",
+            "quest": "villagerretaliation:chart_the_drowned_coast",
+            "tag": "villagerretaliation:quest_completed"
+          },
+          {
+            "type": "quest_fact",
+            "scope": "quest",
+            "quest": "villagerretaliation:ink_in_the_dark_roof",
+            "tag": "villagerretaliation:quest_completed"
+          }
+        ]
+      }
+    ],
+    "skills": {
+      "cartography": {
+        "min": 42
+      }
+    }
+  },
+  "target": {
+    "structure": "minecraft:fortress",
+    "dimension": "minecraft:the_nether",
+    "search_radius": 320,
+    "discovery_radius": 128,
+    "proof_item": "minecraft:blaze_rod"
+  },
+  "objectives": [
+    {
+      "id": "bring_blaze_rods",
+      "type": "item_check",
+      "item": "minecraft:blaze_rod",
+      "count": 3,
+      "tracker": {
+        "text": "Bring 3 blaze rods for heat-proof bearings.",
+        "complete_text": "The blaze rods are ready for the meridian.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    },
+    {
+      "id": "bring_nether_wart",
+      "type": "item_check",
+      "item": "minecraft:nether_wart",
+      "count": 8,
+      "tracker": {
+        "text": "Bring 8 Nether Wart from the fortress route.",
+        "complete_text": "The Nether Wart is sealed for study.",
+        "show_progress": true,
+        "progress": 0.9
+      }
+    }
+  ],
+  "rules": {
+    "abandonment": "cooldown",
+    "abandonment_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "title": "Nether Meridian",
+    "metadata": {
+      "source": "Cartographer's Atlas"
+    },
+    "steps": {
+      "travel": {
+        "text": "Reach the Nether Fortress near {target_x}, {target_z} in {target_dimension}.",
+        "show_progress": true,
+        "progress": 0.25,
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        }
+      },
+      "proof": {
+        "text": "Bring blaze rods and Nether Wart from the fortress route.",
+        "show_progress": true,
+        "progress": 0.85
+      },
+      "return": {
+        "text": "Return to the cartographer with the Nether meridian.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  },
+  "rewards": {
+    "experience": 460,
+    "gossip_reputation": 10,
+    "loot_table": "villagerretaliation:quest/nether_meridian",
+    "memory_event": "player_completed_quest",
+    "reputation": 22
+  },
+  "dialogue": {
+    "start": [
+      "The atlas survived the Overworld. Now it needs a meridian from the Nether, near {target_x}, {target_z}. Bring blaze rods and Nether Wart."
+    ],
+    "reminder": [
+      "Nether Fortress near {target_x}, {target_z}. Bring 3 blaze rods and 8 Nether Wart without letting the map burn."
+    ],
+    "turn_in": [
+      "The ink warped, but the line held. We have a road through heat now."
+    ],
+    "already_completed": [
+      "The Nether meridian is already drawn."
+    ],
+    "unavailable": [
+      "The atlas needs one Overworld branch finished before it can survive the Nether."
+    ],
+    "inactive": [
+      "The Nether page is not open right now."
+    ],
+    "missing_target": [
+      "The supplies need a fortress bearing behind them."
+    ],
+    "missing_proof": [
+      "Bring blaze rods from the fortress route before I trust the meridian."
+    ],
+    "locate_failed": [
+      "The Nether mark refuses to settle from here."
+    ]
+  }
+}

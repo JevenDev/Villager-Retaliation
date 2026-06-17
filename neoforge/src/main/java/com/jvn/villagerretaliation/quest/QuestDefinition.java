@@ -27,6 +27,7 @@ public record QuestDefinition(
         String titleKey,
         String descriptionKey,
         String questline,
+        Set<String> tags,
         ResourceLocation parent,
         Offer offer,
         Target target,
@@ -46,6 +47,12 @@ public record QuestDefinition(
         titleKey = titleKey == null ? "" : titleKey;
         descriptionKey = descriptionKey == null ? "" : descriptionKey;
         questline = questline == null ? "" : questline;
+        tags = tags == null
+                ? Set.of()
+                : tags.stream()
+                        .filter(tag -> tag != null && !tag.isBlank())
+                        .map(String::trim)
+                        .collect(java.util.stream.Collectors.toUnmodifiableSet());
         offer = offer == null ? Offer.any() : offer;
         target = target == null ? Target.EMPTY : target;
         objectives = objectives == null ? List.of() : List.copyOf(objectives);

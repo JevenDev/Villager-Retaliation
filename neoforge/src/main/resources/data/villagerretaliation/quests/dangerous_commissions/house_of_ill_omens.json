@@ -1,50 +1,36 @@
 {
-  "dialogue": {
-    "already_completed": [
-      "House of Ill Omens is already settled."
-    ],
-    "inactive": [
-      "The conditions for this quest are not right at the moment."
-    ],
-    "locate_failed": [
-      "The mansion is beyond my reach today. The woods are keeping their mouth shut."
-    ],
-    "missing_proof": [
-      "Bring the Totem. Nothing else carries enough of that house on it."
-    ],
-    "missing_target": [
-      "The totem needs the mansion behind it. I need the place confirmed."
-    ],
-    "reminder": [
-      "Woodland Mansion near {target_x}, {target_z}. Bring down the evoker, bring the Totem, then 12 emeralds for the informants."
-    ],
-    "start": [
-      "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Defeat its evoker, bring a Totem of Undying, and set aside 12 emeralds for informants."
-    ],
-    "turn_in": [
-      "A Totem of Undying. That is not proof of safety, but it is proof the village has a shield with a name."
-    ],
-    "unavailable": [
-      "This is not a request for someone the village only half trusts."
-    ],
-    "start_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.start",
-    "reminder_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.reminder",
-    "turn_in_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.turn_in",
-    "already_completed_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.already_completed",
-    "unavailable_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.unavailable",
-    "inactive_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.inactive",
-    "missing_target_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_target",
-    "missing_proof_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_proof",
-    "locate_failed_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.locate_failed"
-  },
+  "id": "villagerretaliation:house_of_ill_omens",
   "display": {
     "description": "Enter a Woodland Mansion, defeat an evoker, and return with a Totem of Undying.",
     "title": "House of Ill Omens",
     "title_key": "quest.dangerous_commissions.house_of_ill_omens.title",
     "description_key": "quest.dangerous_commissions.house_of_ill_omens.description"
   },
-  "id": "villagerretaliation:house_of_ill_omens",
+  "tags": [
+    "group.dangerous_commissions"
+  ],
   "parent": "villagerretaliation:trial_chamber_recall",
+  "offer": {
+    "min_villager_level": "master",
+    "professions": [
+      "minecraft:leatherworker",
+      "minecraft:cleric"
+    ],
+    "skills": {
+      "guarding": {
+        "min": 70
+      },
+      "survival": {
+        "min": 55
+      }
+    }
+  },
+  "target": {
+    "discovery_radius": 192,
+    "proof_item": "minecraft:totem_of_undying",
+    "search_radius": 384,
+    "structure": "minecraft:woodland_mansion"
+  },
   "objectives": [
     {
       "count": 1,
@@ -75,29 +61,6 @@
       "type": "item_check"
     }
   ],
-  "offer": {
-    "min_villager_level": "master",
-    "professions": [
-      "minecraft:leatherworker",
-      "minecraft:cleric"
-    ],
-    "skills": {
-      "guarding": {
-        "min": 70
-      },
-      "survival": {
-        "min": 55
-      }
-    }
-  },
-  "questline": "dangerous_commissions",
-  "rewards": {
-    "experience": 520,
-    "gossip_reputation": 15,
-    "loot_table": "villagerretaliation:quest/house_of_ill_omens",
-    "memory_event": "player_completed_quest",
-    "reputation": 28
-  },
   "rules": {
     "abandonment": "cooldown",
     "abandonment_cooldown_days": 3,
@@ -107,12 +70,6 @@
     "max_completions": 1,
     "max_starts": 0,
     "repeatable": false
-  },
-  "target": {
-    "discovery_radius": 192,
-    "proof_item": "minecraft:totem_of_undying",
-    "search_radius": 384,
-    "structure": "minecraft:woodland_mansion"
   },
   "tracker": {
     "metadata": {
@@ -172,5 +129,50 @@
         }
       ]
     }
-  ]
+  ],
+  "rewards": {
+    "experience": 520,
+    "gossip_reputation": 15,
+    "loot_table": "villagerretaliation:quest/house_of_ill_omens",
+    "memory_event": "player_completed_quest",
+    "reputation": 28
+  },
+  "dialogue": {
+    "already_completed": [
+      "House of Ill Omens is already settled."
+    ],
+    "inactive": [
+      "The conditions for this quest are not right at the moment."
+    ],
+    "locate_failed": [
+      "The mansion is beyond my reach today. The woods are keeping their mouth shut."
+    ],
+    "missing_proof": [
+      "Bring the Totem. Nothing else carries enough of that house on it."
+    ],
+    "missing_target": [
+      "The totem needs the mansion behind it. I need the place confirmed."
+    ],
+    "reminder": [
+      "Woodland Mansion near {target_x}, {target_z}. Bring down the evoker, bring the Totem, then 12 emeralds for the informants."
+    ],
+    "start": [
+      "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Defeat its evoker, bring a Totem of Undying, and set aside 12 emeralds for informants."
+    ],
+    "turn_in": [
+      "A Totem of Undying. That is not proof of safety, but it is proof the village has a shield with a name."
+    ],
+    "unavailable": [
+      "This is not a request for someone the village only half trusts."
+    ],
+    "start_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.start",
+    "reminder_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.reminder",
+    "turn_in_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.turn_in",
+    "already_completed_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.already_completed",
+    "unavailable_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.unavailable",
+    "inactive_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.inactive",
+    "missing_target_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_target",
+    "missing_proof_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.missing_proof",
+    "locate_failed_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.locate_failed"
+  }
 }

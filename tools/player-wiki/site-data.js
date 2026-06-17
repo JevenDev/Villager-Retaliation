@@ -53,8 +53,19 @@ window.VR_WIKI_DATA = {
       "slug": "gilded_debt",
       "title": "Gilded Debt",
       "description": "Reach a Bastion Remnant and bring back Gilded Blackstone for a risky settlement.",
-      "questline": "dangerous_commissions",
-      "questlineLabel": "Dangerous Commissions",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "dangerous_commissions",
+      "groupLabel": "Dangerous Commissions",
+      "tags": [
+        "group.dangerous_commissions"
+      ],
+      "relationKey": "group:dangerous_commissions",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Master",
         "professions": [
@@ -173,142 +184,27 @@ window.VR_WIKI_DATA = {
           "Gilded Blackstone is the proof. Without it, this is only an expensive apology.",
           "The settlement still needs one gold block."
         ]
-      }
-    },
-    {
-      "id": "villagerretaliation:house_of_ill_omens",
-      "slug": "house_of_ill_omens",
-      "title": "House of Ill Omens",
-      "description": "Enter a Woodland Mansion and return with a Totem of Undying.",
-      "questline": "dangerous_commissions",
-      "questlineLabel": "Dangerous Commissions",
-      "requirements": {
-        "minLevel": "Master",
-        "professions": [
-          "Leatherworker",
-          "Cleric"
-        ],
-        "skills": [
-          {
-            "skill": "Guarding",
-            "min": 70,
-            "max": null
-          },
-          {
-            "skill": "Survival",
-            "min": 55,
-            "max": null
-          }
-        ]
       },
-      "target": {
-        "structure": "Woodland Mansion",
-        "proofItem": "Totem Of Undying",
-        "searchRadius": 384,
-        "discoveryRadius": 192
-      },
-      "objectives": [
-        "Proof: Totem Of Undying",
-        "12 Emerald"
-      ],
-      "steps": [
-        {
-          "id": "travel",
-          "label": "Travel",
-          "text": "Enter the Woodland Mansion near {target_x}, {target_z}.",
-          "progress": 0.25,
-          "hint": "{distance} blocks {direction}"
-        },
-        {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Bring a Totem of Undying and 12 emeralds.",
-          "progress": 0.66,
-          "hint": ""
-        },
-        {
-          "id": "bring_emeralds",
-          "label": "Bring Emeralds",
-          "text": "Set aside 12 emeralds for informants.",
-          "progress": 0.86,
-          "hint": ""
-        },
-        {
-          "id": "return",
-          "label": "Return",
-          "text": "Return to the quest giver with the mansion proof.",
-          "progress": 1,
-          "hint": ""
-        }
-      ],
-      "rewards": {
-        "experience": 520,
-        "reputation": 28,
-        "gossipReputation": 15,
-        "lootTable": "villagerretaliation:quest/house_of_ill_omens",
-        "loot": [
-          {
-            "item": "Emerald",
-            "count": "44-62",
-            "weight": 1,
-            "note": ""
-          },
-          {
-            "item": "Diamond",
-            "count": "5-9",
-            "weight": 2,
-            "note": ""
-          },
-          {
-            "item": "Experience Bottle",
-            "count": "24-40",
-            "weight": 2,
-            "note": ""
-          },
-          {
-            "item": "Emerald Block",
-            "count": "3-8",
-            "weight": 1,
-            "note": ""
-          }
-        ]
-      },
-      "rules": [
-        "One-time",
-        "Locked to the quest giver",
-        "Turn-in items are consumed on completion",
-        "3 day abandonment cooldown"
-      ],
-      "dialogue": {
-        "offer": [
-          "There is a house in the woods where bad ideas learned carpentry. I want its power counted, not ignored.",
-          "A mansion has been named in too many frightened reports. Bring a Totem of Undying and money for those who pointed us there."
-        ],
-        "accept": "I will enter the mansion",
-        "decline": "Another time",
-        "started": [
-          "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Bring a Totem of Undying and 12 emeralds for informants."
-        ],
-        "reminder": [
-          "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to pay the informants who helped us."
-        ],
-        "completed": [
-          "A Totem of Undying. That is not proof of safety, but it is proof the village has a shield with a name."
-        ],
-        "missing": [
-          "The totem needs the mansion behind it. I need the place confirmed.",
-          "Bring the Totem. Nothing else carries enough of that house on it.",
-          "The informants still need 12 emeralds."
-        ]
-      }
+      "questlineOrder": 0
     },
     {
       "id": "villagerretaliation:nether_wart_warranty",
       "slug": "nether_wart_warranty",
       "title": "Nether Wart Warranty",
       "description": "Reach a Nether Fortress and return with Nether Wart and a Blaze Rod.",
-      "questline": "dangerous_commissions",
-      "questlineLabel": "Dangerous Commissions",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "dangerous_commissions",
+      "groupLabel": "Dangerous Commissions",
+      "tags": [
+        "group.dangerous_commissions"
+      ],
+      "relationKey": "group:dangerous_commissions",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Expert",
         "professions": [
@@ -432,15 +328,27 @@ window.VR_WIKI_DATA = {
           "Bring Nether Wart. The whole request is written around it.",
           "The notes also require one Blaze Rod."
         ]
-      }
+      },
+      "questlineOrder": 1
     },
     {
       "id": "villagerretaliation:trial_chamber_recall",
       "slug": "trial_chamber_recall",
       "title": "Trial Chamber Recall",
       "description": "Survey a Trial Chamber and return with a Trial Key and Breeze Rod.",
-      "questline": "dangerous_commissions",
-      "questlineLabel": "Dangerous Commissions",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "dangerous_commissions",
+      "groupLabel": "Dangerous Commissions",
+      "tags": [
+        "group.dangerous_commissions"
+      ],
+      "relationKey": "group:dangerous_commissions",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Expert",
         "professions": [
@@ -566,15 +474,1178 @@ window.VR_WIKI_DATA = {
           "Bring a Trial Key. It is the chamber admitting you were there.",
           "I also need one Breeze Rod for the recall."
         ]
-      }
+      },
+      "questlineOrder": 2
+    },
+    {
+      "id": "villagerretaliation:house_of_ill_omens",
+      "slug": "house_of_ill_omens",
+      "title": "House of Ill Omens",
+      "description": "Enter a Woodland Mansion, defeat an evoker, and return with a Totem of Undying.",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "dangerous_commissions",
+      "groupLabel": "Dangerous Commissions",
+      "tags": [
+        "group.dangerous_commissions"
+      ],
+      "relationKey": "group:dangerous_commissions",
+      "parent": "villagerretaliation:trial_chamber_recall",
+      "parentSlug": "trial_chamber_recall",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:trial_chamber_recall",
+          "slug": "trial_chamber_recall"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Master",
+        "professions": [
+          "Leatherworker",
+          "Cleric"
+        ],
+        "skills": [
+          {
+            "skill": "Guarding",
+            "min": 70,
+            "max": null
+          },
+          {
+            "skill": "Survival",
+            "min": 55,
+            "max": null
+          }
+        ]
+      },
+      "target": {
+        "structure": "Woodland Mansion",
+        "proofItem": "Totem Of Undying",
+        "searchRadius": 384,
+        "discoveryRadius": 192
+      },
+      "objectives": [
+        "Proof: Totem Of Undying",
+        "1 None",
+        "12 Emerald"
+      ],
+      "steps": [
+        {
+          "id": "travel",
+          "label": "Travel",
+          "text": "Enter the Woodland Mansion near {target_x}, {target_z}.",
+          "progress": 0.25,
+          "hint": "{distance} blocks {direction}"
+        },
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring a Totem of Undying after entering the mansion.",
+          "progress": 0.66,
+          "hint": ""
+        },
+        {
+          "id": "defeat_evoker",
+          "label": "Defeat Evoker",
+          "text": "Defeat the mansion's evoker.",
+          "progress": 0.72,
+          "hint": ""
+        },
+        {
+          "id": "bring_emeralds",
+          "label": "Bring Emeralds",
+          "text": "Set aside 12 emeralds for informants after the evoker falls.",
+          "progress": 0.86,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the mansion proof.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 520,
+        "reputation": 28,
+        "gossipReputation": 15,
+        "lootTable": "villagerretaliation:quest/house_of_ill_omens",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "44-62",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Diamond",
+            "count": "5-9",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "24-40",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Emerald Block",
+            "count": "3-8",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "3 day abandonment cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "There is a house in the woods where bad ideas learned carpentry. I want its power counted, not ignored.",
+          "A mansion has been named in too many frightened reports. Bring down its evoker, bring a Totem of Undying, and pay the people who pointed us there."
+        ],
+        "accept": "I will enter the mansion",
+        "decline": "Another time",
+        "started": [
+          "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Defeat its evoker, bring a Totem of Undying, and set aside 12 emeralds for informants."
+        ],
+        "reminder": [
+          "Woodland Mansion near {target_x}, {target_z}. Bring down the evoker, bring the Totem, then 12 emeralds for the informants."
+        ],
+        "completed": [
+          "A Totem of Undying. That is not proof of safety, but it is proof the village has a shield with a name."
+        ],
+        "missing": [
+          "The totem needs the mansion behind it. I need the place confirmed.",
+          "Bring the Totem. Nothing else carries enough of that house on it.",
+          "The evoker must fall, and the informants still need 12 emeralds."
+        ]
+      },
+      "questlineOrder": 3
+    },
+    {
+      "id": "villagerretaliation:blank_map_promise",
+      "slug": "blank_map_promise",
+      "title": "Blank Map Promise",
+      "description": "Help a cartographer prepare the paper, compass, and ink needed for a long atlas.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 6,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "24 Paper",
+        "1 Compass",
+        "3 Ink Sac"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring paper, a compass, and ink to the cartographer.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the cartographer with the atlas supplies.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 90,
+        "reputation": 7,
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/blank_map_promise",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Map",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Paper",
+            "count": "6-12",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "I want to start an atlas that can survive more than one village. I need clean paper, a compass, and ink before I trust the first page."
+        ],
+        "accept": "I can gather that",
+        "decline": "Another time",
+        "started": [
+          "Good. Bring 24 paper, 1 compass, and 3 ink sacs. Small supplies, long road."
+        ],
+        "reminder": [
+          "Bring 24 paper, 1 compass, and 3 ink sacs. The tracker will keep the count honest."
+        ],
+        "completed": [
+          "The first folio is bound. The atlas can begin."
+        ],
+        "missing": [
+          "Bring the full supply bundle before I bind the page.",
+          "The folio is still short. Check the tracker for the missing supplies."
+        ]
+      },
+      "questlineOrder": 0
+    },
+    {
+      "id": "villagerretaliation:first_far_marker",
+      "slug": "first_far_marker",
+      "title": "First Far Marker",
+      "description": "Follow the cartographer's first atlas mark to Trail Ruins and return with field notes.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "villagerretaliation:blank_map_promise",
+      "parentSlug": "blank_map_promise",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:blank_map_promise",
+          "slug": "blank_map_promise"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 14,
+            "max": null
+          }
+        ]
+      },
+      "target": {
+        "structure": "Trail Ruins",
+        "proofItem": "Brush",
+        "searchRadius": 192,
+        "discoveryRadius": 96
+      },
+      "objectives": [
+        "Proof: Brush",
+        "8 Copper Ingot"
+      ],
+      "steps": [
+        {
+          "id": "travel",
+          "label": "Travel",
+          "text": "Reach the Trail Ruins near {target_x}, {target_z}.",
+          "progress": 0.25,
+          "hint": "{distance} blocks {direction}"
+        },
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring a brush and 8 copper ingots back from the survey.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the cartographer with the brush and copper.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 150,
+        "reputation": 10,
+        "gossipReputation": 4,
+        "lootTable": "villagerretaliation:quest/first_far_marker",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "8-14",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Filled Map",
+            "count": "1",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "2-5",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "The first folio found an old road under the ink. Trail Ruins, if the table is reading true."
+        ],
+        "accept": "Mark the route",
+        "decline": "Another time",
+        "started": [
+          "The ruins sit about {distance} blocks {direction}, near {target_x}, {target_z}. Bring a brush and 8 copper ingots after you reach them."
+        ],
+        "reminder": [
+          "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Bring a brush and 8 copper ingots."
+        ],
+        "completed": [
+          "The first far marker is inked. Now the atlas has a spine."
+        ],
+        "missing": [
+          "Reach the Trail Ruins first. A brush without dust is just a tool.",
+          "Bring the brush and copper before I mark the route.",
+          "The route still needs its copper marker plates."
+        ]
+      },
+      "questlineOrder": 1
+    },
+    {
+      "id": "villagerretaliation:choose_the_horizon",
+      "slug": "choose_the_horizon",
+      "title": "Choose The Horizon",
+      "description": "Choose whether the atlas follows the coast or the dark roof road.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "villagerretaliation:first_far_marker",
+      "parentSlug": "first_far_marker",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:first_far_marker",
+          "slug": "first_far_marker"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [
+        {
+          "id": "coast",
+          "label": "Chart the drowned coast"
+        },
+        {
+          "id": "dark_roof",
+          "label": "Chart the dark roof road"
+        }
+      ],
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 20,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "1 None"
+      ],
+      "steps": [
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Pick the atlas route from the cartographer's branch options.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the cartographer after choosing the route.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 80,
+        "reputation": 5,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/choose_the_horizon",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "6-10",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Compass",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are not consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "The atlas forks. One route follows drowned stone under the sea. The other follows a roof so dark birds avoid it."
+        ],
+        "accept": "Open the atlas",
+        "decline": "Another time",
+        "started": [
+          "The branch page is open. Choose the drowned coast or the dark roof road from my notes."
+        ],
+        "reminder": [
+          "Choose the drowned coast for ocean ruins, or the dark roof road for woodland mansions. The atlas will follow one branch."
+        ],
+        "completed": [
+          "Done. The atlas will follow the road you chose."
+        ],
+        "missing": [
+          "Choose a route first.",
+          "Choose a route from the branch notes before I set the ink."
+        ]
+      },
+      "questlineOrder": 2
+    },
+    {
+      "id": "villagerretaliation:chart_the_drowned_coast",
+      "slug": "chart_the_drowned_coast",
+      "title": "Chart The Drowned Coast",
+      "description": "Follow the coast branch to an Ocean Monument and return with prismarine proof.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "villagerretaliation:choose_the_horizon",
+      "parentSlug": "choose_the_horizon",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:choose_the_horizon",
+          "slug": "choose_the_horizon"
+        }
+      ],
+      "branchGroup": "villagerretaliation:cartographers_atlas_branch",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Journeyman",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 28,
+            "max": null
+          }
+        ]
+      },
+      "target": {
+        "structure": "Ocean Monument",
+        "proofItem": "Prismarine Shard",
+        "searchRadius": 384,
+        "discoveryRadius": 128
+      },
+      "objectives": [
+        "Proof: Prismarine Shard",
+        "3 None",
+        "8 Prismarine Shard"
+      ],
+      "steps": [
+        {
+          "id": "travel",
+          "label": "Travel",
+          "text": "Reach the Ocean Monument near {target_x}, {target_z}.",
+          "progress": 0.25,
+          "hint": "{distance} blocks {direction}"
+        },
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring prismarine proof from the drowned coast.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the cartographer with the coast survey.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 290,
+        "reputation": 16,
+        "gossipReputation": 7,
+        "lootTable": "villagerretaliation:quest/chart_the_drowned_coast",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "18-28",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Heart Of The Sea",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Nautilus Shell",
+            "count": "2-5",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Sea Lantern",
+            "count": "4-8",
+            "weight": 2,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day abandonment cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The coast route is yours. The atlas has found drowned stone beneath open water."
+        ],
+        "accept": "Give me the bearing",
+        "decline": "Another time",
+        "started": [
+          "The Ocean Monument lies near {target_x}, {target_z}, about {distance} blocks {direction}. Bring prismarine and survive the guardians."
+        ],
+        "reminder": [
+          "Ocean Monument near {target_x}, {target_z}. Bring 8 prismarine shards after you reach it and clear enough guardians."
+        ],
+        "completed": [
+          "The drowned coast is charted. The atlas has learned how the sea keeps ruins."
+        ],
+        "missing": [
+          "Reach the monument itself before I trust the prismarine.",
+          "Bring prismarine proof before I close the coast page.",
+          "The coast page still needs its guardian count and prismarine."
+        ]
+      },
+      "questlineOrder": 3
+    },
+    {
+      "id": "villagerretaliation:ink_in_the_dark_roof",
+      "slug": "ink_in_the_dark_roof",
+      "title": "Ink In The Dark Roof",
+      "description": "Follow the dark roof branch to a Woodland Mansion and return with dangerous proof.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "villagerretaliation:choose_the_horizon",
+      "parentSlug": "choose_the_horizon",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:choose_the_horizon",
+          "slug": "choose_the_horizon"
+        }
+      ],
+      "branchGroup": "villagerretaliation:cartographers_atlas_branch",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Journeyman",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 28,
+            "max": null
+          }
+        ]
+      },
+      "target": {
+        "structure": "Woodland Mansion",
+        "proofItem": "Totem Of Undying",
+        "searchRadius": 768,
+        "discoveryRadius": 160
+      },
+      "objectives": [
+        "Proof: Totem Of Undying",
+        "4 None",
+        "12 Book"
+      ],
+      "steps": [
+        {
+          "id": "travel",
+          "label": "Travel",
+          "text": "Reach the Woodland Mansion near {target_x}, {target_z}.",
+          "progress": 0.25,
+          "hint": "{distance} blocks {direction}"
+        },
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring a Totem of Undying and recovered books from the mansion.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the cartographer with the dark roof survey.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 330,
+        "reputation": 17,
+        "gossipReputation": 8,
+        "lootTable": "villagerretaliation:quest/ink_in_the_dark_roof",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "20-32",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "8-16",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Book",
+            "count": "1",
+            "weight": 1,
+            "note": "Enchanted with Protection 3"
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day abandonment cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The dark roof route is yours. The atlas has found a house that thinks it is a fortress."
+        ],
+        "accept": "Give me the bearing",
+        "decline": "Another time",
+        "started": [
+          "The Woodland Mansion lies near {target_x}, {target_z}, about {distance} blocks {direction}. Bring books and a totem if the halls let you leave."
+        ],
+        "reminder": [
+          "Woodland Mansion near {target_x}, {target_z}. Bring 12 books and a Totem of Undying after you reach it."
+        ],
+        "completed": [
+          "The dark roof road is charted. I will not ask why some of the books are whispering."
+        ],
+        "missing": [
+          "The books need the mansion's shadow behind them.",
+          "Bring a Totem of Undying before I close the dark roof page.",
+          "The dark roof page still needs its illager count and recovered books."
+        ]
+      },
+      "questlineOrder": 4
+    },
+    {
+      "id": "villagerretaliation:nether_meridian",
+      "slug": "nether_meridian",
+      "title": "Nether Meridian",
+      "description": "Carry the atlas beyond the Overworld and chart a Nether Fortress bearing.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:chart_the_drowned_coast",
+          "slug": "chart_the_drowned_coast"
+        },
+        {
+          "id": "villagerretaliation:ink_in_the_dark_roof",
+          "slug": "ink_in_the_dark_roof"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Expert",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 42,
+            "max": null
+          }
+        ]
+      },
+      "target": {
+        "structure": "Fortress",
+        "proofItem": "Blaze Rod",
+        "searchRadius": 320,
+        "discoveryRadius": 128
+      },
+      "objectives": [
+        "Proof: Blaze Rod",
+        "3 Blaze Rod",
+        "8 Nether Wart"
+      ],
+      "steps": [
+        {
+          "id": "travel",
+          "label": "Travel",
+          "text": "Reach the Nether Fortress near {target_x}, {target_z} in {target_dimension}.",
+          "progress": 0.25,
+          "hint": "{distance} blocks {direction}"
+        },
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring blaze rods and Nether Wart from the fortress route.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the cartographer with the Nether meridian.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 460,
+        "reputation": 22,
+        "gossipReputation": 10,
+        "lootTable": "villagerretaliation:quest/nether_meridian",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "28-42",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Gold Ingot",
+            "count": "12-24",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Magma Cream",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "12-20",
+            "weight": 2,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day abandonment cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "Your atlas has crossed enough Overworld roads. It is time to see whether a map can survive fire."
+        ],
+        "accept": "Mark the Nether",
+        "decline": "Another time",
+        "started": [
+          "The fortress bearing sits near {target_x}, {target_z}. Bring 3 blaze rods and 8 Nether Wart."
+        ],
+        "reminder": [
+          "Nether Fortress near {target_x}, {target_z}. Bring 3 blaze rods and 8 Nether Wart."
+        ],
+        "completed": [
+          "The Nether meridian is drawn. That line should not exist, which makes it very valuable."
+        ],
+        "missing": [
+          "Reach the fortress first. The supplies need the bearing.",
+          "Bring blaze rods before I close the meridian.",
+          "The meridian still needs blaze rods and Nether Wart."
+        ]
+      },
+      "questlineOrder": 5
+    },
+    {
+      "id": "villagerretaliation:eye_of_the_last_room",
+      "slug": "eye_of_the_last_room",
+      "title": "Eye Of The Last Room",
+      "description": "Use the completed atlas to find a Stronghold and return with End-bound proof.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "villagerretaliation:nether_meridian",
+      "parentSlug": "nether_meridian",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:nether_meridian",
+          "slug": "nether_meridian"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Master",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 58,
+            "max": null
+          }
+        ]
+      },
+      "target": {
+        "structure": "Stronghold",
+        "proofItem": "Ender Eye",
+        "searchRadius": 1024,
+        "discoveryRadius": 192
+      },
+      "objectives": [
+        "Proof: Ender Eye",
+        "4 Ender Pearl"
+      ],
+      "steps": [
+        {
+          "id": "travel",
+          "label": "Travel",
+          "text": "Reach the Stronghold near {target_x}, {target_z}.",
+          "progress": 0.25,
+          "hint": "{distance} blocks {direction}"
+        },
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring an Eye of Ender and 4 ender pearls from the stronghold route.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the cartographer with the stronghold bearing.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 620,
+        "reputation": 28,
+        "gossipReputation": 12,
+        "lootTable": "villagerretaliation:quest/eye_of_the_last_room",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "36-54",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Ender Eye",
+            "count": "2-4",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Diamond",
+            "count": "2-5",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "18-28",
+            "weight": 2,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day abandonment cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "The atlas has one Overworld secret left: a room built around an eye that points away from home."
+        ],
+        "accept": "Mark the Stronghold",
+        "decline": "Another time",
+        "started": [
+          "The Stronghold bearing sits near {target_x}, {target_z}, about {distance} blocks {direction}. Bring an Eye of Ender and 4 ender pearls."
+        ],
+        "reminder": [
+          "Stronghold near {target_x}, {target_z}. Bring an Eye of Ender and 4 ender pearls after you reach it."
+        ],
+        "completed": [
+          "The last room is inked. The atlas has found the door at the edge of the world."
+        ],
+        "missing": [
+          "Reach the Stronghold first. The eye alone is not the bearing.",
+          "Bring an Eye of Ender before I close this page.",
+          "The last-room page still needs ender pearls."
+        ]
+      },
+      "questlineOrder": 6
+    },
+    {
+      "id": "villagerretaliation:end_city_margin",
+      "slug": "end_city_margin",
+      "title": "End City Margin",
+      "description": "Carry the atlas into the End, survey an End City, and return with shulker proof.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "villagerretaliation:eye_of_the_last_room",
+      "parentSlug": "eye_of_the_last_room",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:eye_of_the_last_room",
+          "slug": "eye_of_the_last_room"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Master",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 72,
+            "max": null
+          }
+        ]
+      },
+      "target": {
+        "structure": "End City",
+        "proofItem": "Shulker Shell",
+        "searchRadius": 1024,
+        "discoveryRadius": 192
+      },
+      "objectives": [
+        "Proof: Shulker Shell",
+        "2 Shulker Shell",
+        "16 Chorus Fruit"
+      ],
+      "steps": [
+        {
+          "id": "travel",
+          "label": "Travel",
+          "text": "Reach the End City near {target_x}, {target_z} in {target_dimension}.",
+          "progress": 0.25,
+          "hint": "{distance} blocks {direction}"
+        },
+        {
+          "id": "proof",
+          "label": "Proof",
+          "text": "Bring shulker shells and chorus fruit from the outer islands.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the cartographer with the finished atlas margin.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 900,
+        "reputation": 38,
+        "gossipReputation": 18,
+        "lootTable": "villagerretaliation:quest/end_city_margin",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "48-72",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Elytra",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Shulker Shell",
+            "count": "2-4",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Diamond",
+            "count": "4-8",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "24-40",
+            "weight": 2,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day abandonment cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "There is one margin left. The atlas wants the outer islands, where maps become suggestions."
+        ],
+        "accept": "Mark the End City",
+        "decline": "Another time",
+        "started": [
+          "The End City mark sits near {target_x}, {target_z}. Bring 2 shulker shells and 16 chorus fruit if the islands let you return."
+        ],
+        "reminder": [
+          "End City near {target_x}, {target_z}. Bring 2 shulker shells and 16 chorus fruit."
+        ],
+        "completed": [
+          "The Cartographer's Atlas is complete. It began with paper and ended past the edge of the world. That is a fine road."
+        ],
+        "missing": [
+          "Reach the End City first. The margin needs the place, not only the shell.",
+          "Bring shulker shells before I bind the atlas.",
+          "The final margin still needs shulker shells and chorus fruit."
+        ]
+      },
+      "questlineOrder": 7
     },
     {
       "id": "villagerretaliation:end_city_survey",
       "slug": "end_city_survey",
       "title": "End City Survey",
       "description": "Reach an End City and bring back a Shulker Shell with a Chorus Flower sample.",
-      "questline": "lost_civilization",
-      "questlineLabel": "Lost Civilization",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "lost_civilization",
+      "groupLabel": "Lost Civilization",
+      "tags": [
+        "group.lost_civilization"
+      ],
+      "relationKey": "group:lost_civilization",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Master",
         "professions": [
@@ -693,15 +1764,27 @@ window.VR_WIKI_DATA = {
           "Bring a Shulker Shell. The city has to leave a hard signature.",
           "I also need one Chorus Flower, intact if possible."
         ]
-      }
+      },
+      "questlineOrder": 0
     },
     {
       "id": "villagerretaliation:tales_of_a_lost_civilization",
       "slug": "tales_of_a_lost_civilization",
       "title": "Tales of a Lost Civilization",
       "description": "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard.",
-      "questline": "lost_civilization",
-      "questlineLabel": "Lost Civilization",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "lost_civilization",
+      "groupLabel": "Lost Civilization",
+      "tags": [
+        "group.lost_civilization"
+      ],
+      "relationKey": "group:lost_civilization",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Journeyman",
         "professions": [
@@ -820,15 +1903,27 @@ window.VR_WIKI_DATA = {
           "You saw the place, then. Bring me {proof_item}, and I can call the tale complete.",
           "The journey needs a token. Find {proof_item} in those depths and bring it back."
         ]
-      }
+      },
+      "questlineOrder": 1
     },
     {
       "id": "villagerretaliation:sunken_ledger",
       "slug": "sunken_ledger",
       "title": "Sunken Ledger",
       "description": "Search a shipwreck and return with a compass and paper before the route is forgotten.",
-      "questline": "old_roads",
-      "questlineLabel": "Old Roads",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "old_roads",
+      "groupLabel": "Old Roads",
+      "tags": [
+        "group.old_roads"
+      ],
+      "relationKey": "group:old_roads",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Journeyman",
         "professions": [
@@ -947,15 +2042,27 @@ window.VR_WIKI_DATA = {
           "Bring me a compass from the wreck. Direction is the point of this errand.",
           "I still need 8 paper to copy the ledger cleanly."
         ]
-      }
+      },
+      "questlineOrder": 0
     },
     {
       "id": "villagerretaliation:the_broken_milestone",
       "slug": "the_broken_milestone",
       "title": "The Broken Milestone",
       "description": "Find nearby Trail Ruins and bring a brush and stone to restore the road marker.",
-      "questline": "old_roads",
-      "questlineLabel": "Old Roads",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "old_roads",
+      "groupLabel": "Old Roads",
+      "tags": [
+        "group.old_roads"
+      ],
+      "relationKey": "group:old_roads",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Apprentice",
         "professions": [
@@ -1073,15 +2180,27 @@ window.VR_WIKI_DATA = {
           "Bring a brush from the work. A clean story needs its dust on it.",
           "The repair still needs 12 smooth stone."
         ]
-      }
+      },
+      "questlineOrder": 1
     },
     {
       "id": "villagerretaliation:fletchers_countermark",
       "slug": "fletchers_countermark",
       "title": "Fletcher's Countermark",
       "description": "Scout a Pillager Outpost and return with a crossbow as proof of the threat.",
-      "questline": "village_defense",
-      "questlineLabel": "Village Defense",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_defense",
+      "groupLabel": "Village Defense",
+      "tags": [
+        "group.village_defense"
+      ],
+      "relationKey": "group:village_defense",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Journeyman",
         "professions": [
@@ -1199,15 +2318,27 @@ window.VR_WIKI_DATA = {
           "Bring a crossbow from the threat. I want weight, not rumor.",
           "The watch still needs 24 arrows."
         ]
-      }
+      },
+      "questlineOrder": 0
     },
     {
       "id": "villagerretaliation:watch_arrows",
       "slug": "watch_arrows",
       "title": "Watch Arrows",
       "description": "Bring arrows so the village watch can answer trouble before it reaches the doors.",
-      "questline": "village_defense",
-      "questlineLabel": "Village Defense",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_defense",
+      "groupLabel": "Village Defense",
+      "tags": [
+        "group.village_defense"
+      ],
+      "relationKey": "group:village_defense",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Apprentice",
         "professions": [
@@ -1306,15 +2437,146 @@ window.VR_WIKI_DATA = {
           "Watch Arrows still needs the arrows in your pack before I can close it.",
           "Watch Arrows is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 1
+    },
+    {
+      "id": "villagerretaliation:standing_watch",
+      "slug": "standing_watch",
+      "title": "Standing Watch",
+      "description": "Stand watch and help defend the village from a real threat.",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_defense",
+      "groupLabel": "Village Defense",
+      "tags": [
+        "group.village_defense"
+      ],
+      "relationKey": "group:village_defense",
+      "parent": "villagerretaliation:watch_arrows",
+      "parentSlug": "watch_arrows",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:watch_arrows",
+          "slug": "watch_arrows"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Fletcher",
+          "Weaponsmith",
+          "Armorer"
+        ],
+        "skills": [
+          {
+            "skill": "Guarding",
+            "min": 10,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "1 None"
+      ],
+      "steps": [
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver after defending the village.",
+          "progress": 1,
+          "hint": ""
+        },
+        {
+          "id": "event",
+          "label": "Event",
+          "text": "Defend the village from a real threat.",
+          "progress": 0.85,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 140,
+        "reputation": 12,
+        "gossipReputation": 6,
+        "lootTable": "villagerretaliation:quest/standing_watch",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "10-18",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Arrow",
+            "count": "4-8",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Iron Ingot",
+            "count": "2-4",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Shield",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Can be completed with another valid villager",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "Arrows help. Nerves help more.",
+          "Stand watch with us, and if danger comes, answer it before it reaches the doors."
+        ],
+        "accept": "I will stand watch",
+        "decline": "Another time",
+        "started": [
+          "Standing Watch is yours now. Stay close enough to answer if danger reaches the village."
+        ],
+        "reminder": [
+          "Stay near the village. If danger comes, answer it before it reaches the doors."
+        ],
+        "completed": [
+          "Standing Watch is complete. The village saw you answer trouble, and that matters."
+        ],
+        "missing": [
+          "The village still needs to see you answer a real threat.",
+          "Words do not hold a gate. Stand with us when danger reaches the village.",
+          "The village has not seen you defend it yet."
+        ]
+      },
+      "questlineOrder": 2
     },
     {
       "id": "villagerretaliation:beetroot_bundle",
       "slug": "beetroot_bundle",
       "title": "Beetroot Bundle",
       "description": "Bring beetroot for stews, pickling jars, and simple sickroom meals.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -1414,15 +2676,27 @@ window.VR_WIKI_DATA = {
           "Beetroot Bundle still needs the beetroot in your pack before I can close it.",
           "Beetroot Bundle is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 0
     },
     {
       "id": "villagerretaliation:berry_picking",
       "slug": "berry_picking",
       "title": "Berry Picking",
       "description": "Bring sweet berries for quick meals and traveling pouches.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -1517,15 +2791,27 @@ window.VR_WIKI_DATA = {
           "Berry Picking still needs the sweet berries in your pack before I can close it.",
           "Berry Picking is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 1
     },
     {
       "id": "villagerretaliation:bottle_stock",
       "slug": "bottle_stock",
       "title": "Bottle Stock",
       "description": "Bring glass bottles for tonics, inks, and careful measuring.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -1625,15 +2911,27 @@ window.VR_WIKI_DATA = {
           "Bottle Stock still needs the glass bottles in your pack before I can close it.",
           "Bottle Stock is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 2
     },
     {
       "id": "villagerretaliation:bread_delivery",
       "slug": "bread_delivery",
       "title": "Bread Delivery",
       "description": "Bring bread so the village can stretch its stores through a hard night.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -1727,15 +3025,27 @@ window.VR_WIKI_DATA = {
           "Bread Delivery still needs the bread in your pack before I can close it.",
           "Bread Delivery is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 3
     },
     {
       "id": "villagerretaliation:clay_repairs",
       "slug": "clay_repairs",
       "title": "Clay Repairs",
       "description": "Bring clay for small repairs around wells, ovens, and cracked walls.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -1829,15 +3139,27 @@ window.VR_WIKI_DATA = {
           "Clay Repairs still needs the clay in your pack before I can close it.",
           "Clay Repairs is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 4
     },
     {
       "id": "villagerretaliation:egg_baskets",
       "slug": "egg_baskets",
       "title": "Egg Baskets",
       "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -1937,15 +3259,27 @@ window.VR_WIKI_DATA = {
           "Egg Baskets still needs the eggs in your pack before I can close it.",
           "Egg Baskets is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 5
     },
     {
       "id": "villagerretaliation:feather_fletching",
       "slug": "feather_fletching",
       "title": "Feather Fletching",
       "description": "Bring feathers so arrows and message shafts can be finished in proper batches.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -2045,15 +3379,27 @@ window.VR_WIKI_DATA = {
           "Feather Fletching still needs the feathers in your pack before I can close it.",
           "Feather Fletching is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 6
     },
     {
       "id": "villagerretaliation:fresh_cod",
       "slug": "fresh_cod",
       "title": "Fresh Cod",
       "description": "Bring cod for a simple village supper.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -2153,15 +3499,27 @@ window.VR_WIKI_DATA = {
           "Fresh Cod still needs the cod in your pack before I can close it.",
           "Fresh Cod is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 7
     },
     {
       "id": "villagerretaliation:ink_supply",
       "slug": "ink_supply",
       "title": "Ink Supply",
       "description": "Bring ink so ledgers, maps, and warning notices remain legible.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Apprentice",
         "professions": [
@@ -2261,15 +3619,27 @@ window.VR_WIKI_DATA = {
           "Ink Supply still needs the ink sacs in your pack before I can close it.",
           "Ink Supply is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 8
     },
     {
       "id": "villagerretaliation:kiln_fuel",
       "slug": "kiln_fuel",
       "title": "Kiln Fuel",
       "description": "Bring coal to keep the kiln and forge work moving.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Apprentice",
         "professions": [
@@ -2366,15 +3736,27 @@ window.VR_WIKI_DATA = {
           "Kiln Fuel still needs the coal in your pack before I can close it.",
           "Kiln Fuel is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 9
     },
     {
       "id": "villagerretaliation:leather_repairs",
       "slug": "leather_repairs",
       "title": "Leather Repairs",
       "description": "Bring leather for tool loops, armor straps, and pack repairs.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Apprentice",
         "professions": [
@@ -2474,15 +3856,27 @@ window.VR_WIKI_DATA = {
           "Leather Repairs still needs the leather in your pack before I can close it.",
           "Leather Repairs is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 10
     },
     {
       "id": "villagerretaliation:map_paper",
       "slug": "map_paper",
       "title": "Map Paper",
       "description": "Bring paper so village records, maps, and warnings can stay current.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -2577,15 +3971,27 @@ window.VR_WIKI_DATA = {
           "Map Paper still needs the paper in your pack before I can close it.",
           "Map Paper is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 11
     },
     {
       "id": "villagerretaliation:seed_stockpile",
       "slug": "seed_stockpile",
       "title": "Seed Stockpile",
       "description": "Bring seed grain so the village can replant without touching winter stores.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -2679,15 +4085,27 @@ window.VR_WIKI_DATA = {
           "Seed Stockpile still needs the wheat seeds in your pack before I can close it.",
           "Seed Stockpile is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 12
     },
     {
       "id": "villagerretaliation:torch_bundle",
       "slug": "torch_bundle",
       "title": "Torch Bundle",
       "description": "Bring torches so storehouses, pens, and work corners stay usable after dusk.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -2788,15 +4206,27 @@ window.VR_WIKI_DATA = {
           "Torch Bundle still needs the torches in your pack before I can close it.",
           "Torch Bundle is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 13
     },
     {
       "id": "villagerretaliation:village_lanterns",
       "slug": "village_lanterns",
       "title": "Village Lanterns",
       "description": "Bring lanterns before the watch loses the edges of the village to darkness.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Apprentice",
         "professions": [
@@ -2892,15 +4322,27 @@ window.VR_WIKI_DATA = {
           "Village Lanterns still needs the lanterns in your pack before I can close it.",
           "Village Lanterns is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 14
     },
     {
       "id": "villagerretaliation:wool_blankets",
       "slug": "wool_blankets",
       "title": "Wool Blankets",
       "description": "Bring wool for clean bedding and warm wraps.",
-      "questline": "village_supply",
-      "questlineLabel": "Village Supply",
+      "questline": "",
+      "questlineLabel": "",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "group:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
       "requirements": {
         "minLevel": "Novice",
         "professions": [
@@ -3000,7 +4442,8 @@ window.VR_WIKI_DATA = {
           "Wool Blankets still needs the white wool in your pack before I can close it.",
           "Wool Blankets is still short. The tracker has the exact count."
         ]
-      }
+      },
+      "questlineOrder": 15
     }
   ],
   "gifts": {
@@ -6327,11 +7770,11 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 26011,
+    "dialogueLinesEstimate": 28838,
     "dialogueLineBreakdown": {
-      "dialogue": 25550,
+      "dialogue": 28320,
       "forcedDialogue": 220,
-      "dialogueTrees": 241
+      "dialogueTrees": 298
     }
   }
 };

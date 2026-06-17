@@ -5,10 +5,10 @@ The cleanest beta.12 quest authoring style is module-based. One quest or story b
 ## Recommended Module Layout
 
 ```text
-data/<namespace>/quests/<questline>/<quest>.json
-data/<namespace>/dialogue_trees/<locale>/quests/<questline>/<quest>.json
-data/<namespace>/dialogue/<locale>/quests/<questline>/<quest>/...
-data/<namespace>/forced_dialogue/quests/<questline>/<quest>.json
+data/<namespace>/quests/<module>/<quest>.json
+data/<namespace>/dialogue_trees/<locale>/quests/<module>/<quest>.json
+data/<namespace>/dialogue/<locale>/quests/<module>/<quest>/...
+data/<namespace>/forced_dialogue/quests/<module>/<quest>.json
 ```
 
 Only create the files the module actually needs.
@@ -38,9 +38,11 @@ Use the quest file for quest state:
 ```json
 {
   "id": "my_pack:road_ledger",
-  "questline": "old_roads"
+  "tags": ["group.old_roads"]
 }
 ```
+
+Add `questline` only when this quest is part of a connected progression. Use `tags` for broad quest groups.
 
 Use the dialogue tree for the player-facing scene:
 

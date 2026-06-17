@@ -1,0 +1,114 @@
+{
+  "id": "villagerretaliation:first_far_marker",
+  "display": {
+    "title": "First Far Marker",
+    "description": "Follow the cartographer's first atlas mark to Trail Ruins and return with field notes."
+  },
+  "questline": "cartographers_atlas",
+  "tags": [
+    "group.exploration"
+  ],
+  "parent": "villagerretaliation:blank_map_promise",
+  "offer": {
+    "min_villager_level": "apprentice",
+    "professions": [
+      "minecraft:cartographer"
+    ],
+    "skills": {
+      "cartography": {
+        "min": 14
+      }
+    }
+  },
+  "target": {
+    "structure": "minecraft:trail_ruins",
+    "search_radius": 192,
+    "discovery_radius": 96,
+    "proof_item": "minecraft:brush"
+  },
+  "objectives": [
+    {
+      "id": "bring_copper",
+      "type": "item_check",
+      "item": "minecraft:copper_ingot",
+      "count": 8,
+      "tracker": {
+        "text": "Bring 8 copper ingots for marker plates.",
+        "complete_text": "The copper marker plates are ready.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    }
+  ],
+  "rules": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "title": "First Far Marker",
+    "metadata": {
+      "source": "Cartographer's Atlas"
+    },
+    "steps": {
+      "travel": {
+        "text": "Reach the Trail Ruins near {target_x}, {target_z}.",
+        "show_progress": true,
+        "progress": 0.25,
+        "metadata": {
+          "hint": "{distance} blocks {direction}"
+        }
+      },
+      "proof": {
+        "text": "Bring a brush and 8 copper ingots back from the survey.",
+        "show_progress": true,
+        "progress": 0.75
+      },
+      "return": {
+        "text": "Return to the cartographer with the brush and copper.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  },
+  "rewards": {
+    "experience": 150,
+    "gossip_reputation": 4,
+    "loot_table": "villagerretaliation:quest/first_far_marker",
+    "memory_event": "player_completed_quest",
+    "reputation": 10
+  },
+  "dialogue": {
+    "start": [
+      "The first mark sits {distance} blocks {direction}, near {target_x}, {target_z}. Reach the Trail Ruins and bring a brush with copper for the marker plates."
+    ],
+    "reminder": [
+      "Trail Ruins near {target_x}, {target_z}. Bring a brush and 8 copper ingots so the atlas can stop guessing."
+    ],
+    "turn_in": [
+      "There. The first mark has weight now. A route is different once someone has stood at both ends."
+    ],
+    "already_completed": [
+      "The first far marker is already inked."
+    ],
+    "unavailable": [
+      "This route needs a steadier apprentice of the map table."
+    ],
+    "inactive": [
+      "The marker route is not open right now."
+    ],
+    "missing_target": [
+      "The copper helps, but I need you to stand at the ruins before I trust the bearing."
+    ],
+    "missing_proof": [
+      "Bring the brush from the fieldwork before we mark the atlas."
+    ],
+    "locate_failed": [
+      "The atlas cannot find a Trail Ruins mark from here today."
+    ]
+  }
+}

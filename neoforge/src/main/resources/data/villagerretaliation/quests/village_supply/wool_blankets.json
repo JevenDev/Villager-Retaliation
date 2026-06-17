@@ -1,4 +1,83 @@
 {
+  "id": "villagerretaliation:wool_blankets",
+  "display": {
+    "description": "Bring wool for clean bedding and warm wraps.",
+    "title": "Wool Blankets",
+    "title_key": "quest.village_supply.wool_blankets.title",
+    "description_key": "quest.village_supply.wool_blankets.description"
+  },
+  "tags": [
+    "group.village_supply"
+  ],
+  "offer": {
+    "min_villager_level": "novice",
+    "professions": [
+      "minecraft:shepherd",
+      "minecraft:cleric"
+    ],
+    "skills": {
+      "animal_handling": {
+        "min": 6
+      },
+      "medicine": {
+        "min": 4
+      }
+    }
+  },
+  "objectives": [
+    {
+      "count": 12,
+      "id": "bring_wool",
+      "item": "minecraft:white_wool",
+      "tracker": {
+        "complete_text": "The wool bundles are clean and ready.",
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 12 white wool for sickbeds.",
+        "text_key": "quest.village_supply.wool_blankets.objective.bring_wool.text",
+        "complete_text_key": "quest.village_supply.wool_blankets.objective.bring_wool.complete_text"
+      },
+      "type": "item_check"
+    }
+  ],
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_cooldown_days": 1,
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": true,
+    "max_completions": 0,
+    "max_starts": 0,
+    "repeatable": true
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Wool Blankets"
+    },
+    "steps": {
+      "proof": {
+        "progress": 0.7,
+        "show_progress": true,
+        "text": "Bring 12 white wool for sickbeds.",
+        "text_key": "quest.village_supply.wool_blankets.tracker.proof.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver with the white wool.",
+        "text_key": "quest.village_supply.wool_blankets.tracker.return.text"
+      }
+    },
+    "title": "Wool Blankets",
+    "title_key": "quest.village_supply.wool_blankets.tracker.title"
+  },
+  "rewards": {
+    "experience": 60,
+    "gossip_reputation": 3,
+    "loot_table": "villagerretaliation:quest/wool_blankets",
+    "memory_event": "player_completed_quest",
+    "reputation": 5
+  },
   "dialogue": {
     "already_completed": [
       "Wool Blankets is already settled."
@@ -36,82 +115,5 @@
     "missing_target_key": "quest.village_supply.wool_blankets.dialogue.missing_target",
     "missing_proof_key": "quest.village_supply.wool_blankets.dialogue.missing_proof",
     "locate_failed_key": "quest.village_supply.wool_blankets.dialogue.locate_failed"
-  },
-  "display": {
-    "description": "Bring wool for clean bedding and warm wraps.",
-    "title": "Wool Blankets",
-    "title_key": "quest.village_supply.wool_blankets.title",
-    "description_key": "quest.village_supply.wool_blankets.description"
-  },
-  "id": "villagerretaliation:wool_blankets",
-  "objectives": [
-    {
-      "count": 12,
-      "id": "bring_wool",
-      "item": "minecraft:white_wool",
-      "tracker": {
-        "complete_text": "The wool bundles are clean and ready.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 white wool for sickbeds.",
-        "text_key": "quest.village_supply.wool_blankets.objective.bring_wool.text",
-        "complete_text_key": "quest.village_supply.wool_blankets.objective.bring_wool.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "offer": {
-    "min_villager_level": "novice",
-    "professions": [
-      "minecraft:shepherd",
-      "minecraft:cleric"
-    ],
-    "skills": {
-      "animal_handling": {
-        "min": 6
-      },
-      "medicine": {
-        "min": 4
-      }
-    }
-  },
-  "questline": "village_supply",
-  "rewards": {
-    "experience": 60,
-    "gossip_reputation": 3,
-    "loot_table": "villagerretaliation:quest/wool_blankets",
-    "memory_event": "player_completed_quest",
-    "reputation": 5
-  },
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 1,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
-    "max_starts": 0,
-    "repeatable": true
-  },
-  "tracker": {
-    "metadata": {
-      "source": "Wool Blankets"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 white wool for sickbeds.",
-        "text_key": "quest.village_supply.wool_blankets.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the white wool.",
-        "text_key": "quest.village_supply.wool_blankets.tracker.return.text"
-      }
-    },
-    "title": "Wool Blankets",
-    "title_key": "quest.village_supply.wool_blankets.tracker.title"
   }
 }
