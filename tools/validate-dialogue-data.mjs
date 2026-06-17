@@ -700,6 +700,7 @@ const pendingQuestReferences = [];
 const pendingDialogueTreeLinks = [];
 const pendingForcedDialogueReferences = [];
 const pendingDialogueMessageKeyReferences = [];
+const pendingForcedDialogueMessageKeyReferences = [];
 const dialogueIdScopes = {
   options: new Map(),
   lines: new Map(),
@@ -2252,18 +2253,27 @@ function checkForcedDialogue(file, data) {
     return;
   }
   const defaultQuestId = stringValue(metadataObject(data).quest);
+  const rootMessagePrefix = readForcedDialogueMessagePrefix(data);
   const entries = entriesFor(data);
   checkIds(file, entries, "forced dialogue entry");
   for (const [entryIndex, entry] of entries.entries()) {
     if (Object.hasOwn(entry, "event") && !Object.hasOwn(entry, "trigger")) {
       warnings.push(`${relative(file)}: entries[${entryIndex}].event is a legacy alias for trigger; prefer trigger in new data.`);
     }
-    checkForcedDialogueEntryText(file, entry, `entries[${entryIndex}]`);
+    const entryId = stringValue(entry?.id) || forcedDialogueFallbackEntryId(file, entryIndex);
+    const entryMessagePrefix = readForcedDialogueMessagePrefix(entry, childMessagePrefix(rootMessagePrefix, entryId));
+    checkForcedDialogueEntryText(file, entry, `entries[${entryIndex}]`, entryMessagePrefix);
     checkDialogueMetadata(file, entry, `entries[${entryIndex}]`);
     const entryQuestId = stringValue(metadataObject(entry).quest) || defaultQuestId;
-    checkForcedDialogueOptions(file, entry.options, `entries[${entryIndex}].options`, entryQuestId);
-    checkForcedDialogueOptions(file, entry.leave_options, `entries[${entryIndex}].leave_options`, entryQuestId);
-    checkForcedDialogueOption(file, entry.leave_option, `entries[${entryIndex}].leave_option`, entryQuestId);
+    checkForcedDialogueOptions(file, entry.options, `entries[${entryIndex}].options`, entryQuestId, entryMessagePrefix);
+    checkForcedDialogueOptions(file, entry.leave_options, `entries[${entryIndex}].leave_options`, entryQuestId, entryMessagePrefix, "leave");
+    checkForcedDialogueOption(
+      file,
+      entry.leave_option,
+      `entries[${entryIndex}].leave_option`,
+      entryQuestId,
+      readForcedDialogueMessagePrefix(entry.leave_option, childMessagePrefix(entryMessagePrefix, "leave"))
+    );
   }
 }
 
@@ -2311,7 +2321,7 @@ function checkQuestFactAction(file, action, location, type, defaultQuestId = "")
   }
 }
 
-function checkForcedDialogueEntryText(file, entry, location) {
+function checkForcedDialogueEntryText(file, entry, location, messagePrefix = "") {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
     return;
   }
@@ -2320,18 +2330,31 @@ function checkForcedDialogueEntryText(file, entry, location) {
   checkOptionalString(file, entry, location, "text_prefix");
   checkStringList(file, entry, location, ["line", "lines"], "forced dialogue line");
   checkStringList(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");
+  collectForcedDialogueMessageKeys(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");
+  if (!hasStringValues(entry, ["line_key", "line_keys", "text_key", "text_keys"]) && messagePrefix && hasStringValues(entry, ["line", "lines"])) {
+    collectForcedDialogueMessageKey(file, `${location}.message_prefix`, `${messagePrefix}.line`, "derived forced dialogue line key");
+  }
 }
 
-function checkForcedDialogueOptions(file, options, location, defaultQuestId = "") {
+function checkForcedDialogueOptions(file, options, location, defaultQuestId = "", messagePrefix = "", kind = "option") {
   if (!Array.isArray(options)) {
     return;
   }
   for (const [index, option] of options.entries()) {
-    checkForcedDialogueOption(file, option, `${location}[${index}]`, defaultQuestId);
+    const optionPrefix = kind === "leave"
+      ? childMessagePrefix(messagePrefix, `leave.${index}`)
+      : childMessagePrefix(childMessagePrefix(messagePrefix, "option"), stringValue(option?.id));
+    checkForcedDialogueOption(
+      file,
+      option,
+      `${location}[${index}]`,
+      defaultQuestId,
+      readForcedDialogueMessagePrefix(option, optionPrefix)
+    );
   }
 }
 
-function checkForcedDialogueOption(file, option, location, defaultQuestId = "") {
+function checkForcedDialogueOption(file, option, location, defaultQuestId = "", messagePrefix = "") {
   if (!option || typeof option !== "object" || Array.isArray(option)) {
     return;
   }
@@ -2340,20 +2363,35 @@ function checkForcedDialogueOption(file, option, location, defaultQuestId = "") 
   checkOptionalString(file, option, location, "label_key");
   checkStringList(file, option, location, ["response", "responses"], "forced dialogue response");
   checkStringList(file, option, location, ["response_key", "response_keys"], "forced dialogue response key");
-  checkForcedDialogueResultText(file, option.take_items, `${location}.take_items`);
-  checkForcedDialogueResultText(file, option.payment, `${location}.payment`);
-  checkForcedDialogueResultText(file, option.take_stolen_items, `${location}.take_stolen_items`);
-  checkForcedDialogueResultText(file, option.return_stolen_items, `${location}.return_stolen_items`);
+  collectForcedDialogueMessageKey(file, `${location}.label_key`, stringValue(option.label_key), "forced dialogue option label key");
+  if (!stringValue(option.label_key) && messagePrefix && hasStringValues(option, ["label"])) {
+    collectForcedDialogueMessageKey(file, `${location}.message_prefix`, `${messagePrefix}.label`, "derived forced dialogue option label key");
+  }
+  collectForcedDialogueMessageKeys(file, option, location, ["response_key", "response_keys"], "forced dialogue response key");
+  if (!hasStringValues(option, ["response_key", "response_keys"]) && messagePrefix && hasStringValues(option, ["response", "responses"])) {
+    collectForcedDialogueMessageKey(file, `${location}.message_prefix`, childMessagePrefix(messagePrefix, "response"), "derived forced dialogue response key");
+  }
+  checkForcedDialogueResultText(file, option.take_items, `${location}.take_items`, childMessagePrefix(messagePrefix, "take_items"));
+  checkForcedDialogueResultText(file, option.payment, `${location}.payment`, childMessagePrefix(messagePrefix, "take_items"));
+  checkForcedDialogueResultText(file, option.take_stolen_items, `${location}.take_stolen_items`, childMessagePrefix(messagePrefix, "take_stolen_items"));
+  checkForcedDialogueResultText(file, option.return_stolen_items, `${location}.return_stolen_items`, childMessagePrefix(messagePrefix, "take_stolen_items"));
   checkConditions(file, option, location, defaultQuestId);
   if (option.follow_up && typeof option.follow_up === "object" && !Array.isArray(option.follow_up)) {
-    checkForcedDialogueEntryText(file, option.follow_up, `${location}.follow_up`);
-    checkForcedDialogueOptions(file, option.follow_up.options, `${location}.follow_up.options`, defaultQuestId);
-    checkForcedDialogueOptions(file, option.follow_up.leave_options, `${location}.follow_up.leave_options`, defaultQuestId);
-    checkForcedDialogueOption(file, option.follow_up.leave_option, `${location}.follow_up.leave_option`, defaultQuestId);
+    const followUpPrefix = readForcedDialogueMessagePrefix(option.follow_up, childMessagePrefix(messagePrefix, "follow_up"));
+    checkForcedDialogueEntryText(file, option.follow_up, `${location}.follow_up`, followUpPrefix);
+    checkForcedDialogueOptions(file, option.follow_up.options, `${location}.follow_up.options`, defaultQuestId, followUpPrefix);
+    checkForcedDialogueOptions(file, option.follow_up.leave_options, `${location}.follow_up.leave_options`, defaultQuestId, followUpPrefix, "leave");
+    checkForcedDialogueOption(
+      file,
+      option.follow_up.leave_option,
+      `${location}.follow_up.leave_option`,
+      defaultQuestId,
+      readForcedDialogueMessagePrefix(option.follow_up.leave_option, childMessagePrefix(followUpPrefix, "leave"))
+    );
   }
 }
 
-function checkForcedDialogueResultText(file, value, location) {
+function checkForcedDialogueResultText(file, value, location, messagePrefix = "") {
   if (value === undefined || value === true || value === false) {
     return;
   }
@@ -2365,6 +2403,42 @@ function checkForcedDialogueResultText(file, value, location) {
   checkStringList(file, value, location, ["failure_response", "failure_responses"], "forced dialogue failure response");
   checkStringList(file, value, location, ["success_response_key", "success_response_keys"], "forced dialogue success response key");
   checkStringList(file, value, location, ["failure_response_key", "failure_response_keys"], "forced dialogue failure response key");
+  collectForcedDialogueMessageKeys(file, value, location, ["success_response_key", "success_response_keys"], "forced dialogue success response key");
+  collectForcedDialogueMessageKeys(file, value, location, ["failure_response_key", "failure_response_keys"], "forced dialogue failure response key");
+  if (!hasStringValues(value, ["success_response_key", "success_response_keys"]) && messagePrefix && hasStringValues(value, ["success_response", "success_responses"])) {
+    collectForcedDialogueMessageKey(file, `${location}.message_prefix`, childMessagePrefix(messagePrefix, "success"), "derived forced dialogue success response key");
+  }
+  if (!hasStringValues(value, ["failure_response_key", "failure_response_keys"]) && messagePrefix && hasStringValues(value, ["failure_response", "failure_responses"])) {
+    collectForcedDialogueMessageKey(file, `${location}.message_prefix`, childMessagePrefix(messagePrefix, "failure"), "derived forced dialogue failure response key");
+  }
+}
+
+function collectForcedDialogueMessageKeys(file, entry, location, keys, reason) {
+  for (const key of keys) {
+    collectForcedDialogueMessageKey(file, `${location}.${key}`, entry?.[key], reason);
+  }
+}
+
+function collectForcedDialogueMessageKey(file, location, value, reason) {
+  if (typeof value === "string") {
+    const key = value.trim();
+    if (key) {
+      pendingForcedDialogueMessageKeyReferences.push({ file, location, key, reason });
+    }
+    return;
+  }
+  if (!Array.isArray(value)) {
+    return;
+  }
+  value.forEach((child, index) => {
+    if (typeof child !== "string") {
+      return;
+    }
+    const key = child.trim();
+    if (key) {
+      pendingForcedDialogueMessageKeyReferences.push({ file, location: `${location}[${index}]`, key, reason });
+    }
+  });
 }
 
 function dialogueSectionsFor(file, data) {
@@ -2858,6 +2932,41 @@ function readValues(entry, keys) {
   return values;
 }
 
+function hasStringValues(entry, keys) {
+  return readValues(entry ?? {}, keys).some((value) => typeof value === "string" && value.trim());
+}
+
+function readForcedDialogueMessagePrefix(entry, fallback = "") {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+    return fallback;
+  }
+  return stringValue(entry.message_prefix) || stringValue(entry.text_prefix) || fallback;
+}
+
+function childMessagePrefix(parent, child) {
+  if (!parent) {
+    return "";
+  }
+  const part = messageKeyPart(child);
+  return part ? `${parent}.${part}` : parent;
+}
+
+function messageKeyPart(value) {
+  return stringValue(value)
+    .toLowerCase()
+    .replaceAll(":", ".")
+    .replaceAll("/", ".")
+    .replace(/[^a-z0-9_.-]+/g, "_")
+    .replace(/^[._-]+|[._-]+$/g, "");
+}
+
+function forcedDialogueFallbackEntryId(file, index) {
+  const id = resourceIdForFile(file, roots.forcedDialogue)
+    .replace(/^villagerretaliation:/, "")
+    .replaceAll("/", "_");
+  return `${id}_${index}`;
+}
+
 function normalizedString(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
@@ -3156,6 +3265,7 @@ function validateCrossReferences() {
   validateDialogueTreeQuestlineMetadata();
   validateForcedDialogueQuestModules();
   validateDialogueMessageKeyReferences();
+  validateForcedDialogueMessageKeyReferences();
 
   for (const reference of pendingForcedDialogueReferences) {
     if (!forcedDialogueDefinitions.has(reference.id)) {
@@ -3186,6 +3296,14 @@ function validateDialogueMessageKeyReferences() {
   for (const reference of pendingDialogueMessageKeyReferences) {
     if (!dialogueMessageKeys.has(reference.key)) {
       errors.push(`${relative(reference.file)}: ${reference.location} references missing dialogue message key "${reference.key}".`);
+    }
+  }
+}
+
+function validateForcedDialogueMessageKeyReferences() {
+  for (const reference of pendingForcedDialogueMessageKeyReferences) {
+    if (!dialogueMessageKeys.has(reference.key)) {
+      warnings.push(`${relative(reference.file)}: ${reference.location} references missing dialogue message key "${reference.key}" from ${reference.reason}; forced dialogue will use inline fallback text if present.`);
     }
   }
 }
