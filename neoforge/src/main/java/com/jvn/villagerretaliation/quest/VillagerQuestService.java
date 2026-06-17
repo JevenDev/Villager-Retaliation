@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
@@ -1678,6 +1679,10 @@ public final class VillagerQuestService {
         if (condition instanceof DialogueCondition.Reputation reputation) {
             return reputationStateWithoutLiveContext(player, level, progress, reputation);
         }
+        if (condition instanceof DialogueCondition.Memory memory
+                && memory.kind() == DialogueCondition.MemoryKind.RECRUITMENT_MEMORY) {
+            return recruitmentMemoryPresentWithoutLiveContext(player, level, progress);
+        }
         if (condition instanceof DialogueCondition.SocialAttribute socialAttribute) {
             return socialAttributeStateWithoutLiveContext(level, progress, socialAttribute);
         }
@@ -1689,6 +1694,9 @@ public final class VillagerQuestService {
         }
         if (condition instanceof DialogueCondition.Relationship relationship) {
             return relationshipStateWithoutLiveContext(level, progress, relationship);
+        }
+        if (condition instanceof DialogueCondition.RecruitmentMemory recruitmentMemory) {
+            return recruitmentMemoryStateWithoutLiveContext(player, level, progress, recruitmentMemory);
         }
         if (condition instanceof DialogueCondition.VillagerLevel villagerLevel) {
             return villagerLevelStateWithoutLiveContext(progress, villagerLevel);
@@ -1959,6 +1967,86 @@ public final class VillagerQuestService {
             case "widowed", "widowed_partner" -> snapshot.hasWidowedPartner();
             default -> false;
         };
+    }
+
+    private static ConditionMatch recruitmentMemoryStateWithoutLiveContext(
+            ServerPlayer player,
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.RecruitmentMemory recruitmentMemory) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        if (villagerId == null) {
+            return ConditionMatch.UNKNOWN;
+        }
+        VillagerInteractionTracker.RecruitmentMemory savedMemory =
+                savedRecruitmentMemory(player, level, villagerId).orElse(null);
+        if (savedMemory == null) {
+            return ConditionMatch.UNMET;
+        }
+        if (!recruitmentMemory.scenarios().isEmpty()
+                && recruitmentMemory.scenarios().stream().noneMatch(scenario -> savedRecruitmentScenarioMatches(savedMemory, scenario))) {
+            return ConditionMatch.UNMET;
+        }
+        if (!recruitmentMemory.biomeKeys().isEmpty()
+                && !recruitmentMemory.biomeKeys().contains(savedRecruitmentBiomeKey(savedMemory))) {
+            return ConditionMatch.UNMET;
+        }
+        if (recruitmentMemory.minFollowDistance() != null
+                && savedMemory.distanceBlocks() < recruitmentMemory.minFollowDistance()) {
+            return ConditionMatch.UNMET;
+        }
+        if (recruitmentMemory.boatTrip() != null
+                && savedMemory.boatTrip() != recruitmentMemory.boatTrip()) {
+            return ConditionMatch.UNMET;
+        }
+        if (recruitmentMemory.oceanCrossing() != null
+                && savedMemory.oceanCrossing() != recruitmentMemory.oceanCrossing()) {
+            return ConditionMatch.UNMET;
+        }
+        boolean swimTrip = savedMemory.oceanCrossing() && !savedMemory.boatTrip();
+        if (recruitmentMemory.swimTrip() != null && swimTrip != recruitmentMemory.swimTrip()) {
+            return ConditionMatch.UNMET;
+        }
+        if (recruitmentMemory.excludesOceanCrossing() != null
+                && recruitmentMemory.excludesOceanCrossing()
+                && savedMemory.oceanCrossing()) {
+            return ConditionMatch.UNMET;
+        }
+        return ConditionMatch.MET;
+    }
+
+    private static ConditionMatch recruitmentMemoryPresentWithoutLiveContext(
+            ServerPlayer player,
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        if (villagerId == null) {
+            return ConditionMatch.UNKNOWN;
+        }
+        return savedRecruitmentMemory(player, level, villagerId).isPresent()
+                ? ConditionMatch.MET
+                : ConditionMatch.UNMET;
+    }
+
+    private static Optional<VillagerInteractionTracker.RecruitmentMemory> savedRecruitmentMemory(
+            ServerPlayer player,
+            ServerLevel level,
+            UUID villagerId) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .recruitmentMemory(villagerId, player.getUUID()));
+    }
+
+    private static boolean savedRecruitmentScenarioMatches(
+            VillagerInteractionTracker.RecruitmentMemory memory,
+            String scenario) {
+        return memory.scenario() != null && scenario != null && memory.scenario().equalsIgnoreCase(scenario);
+    }
+
+    private static String savedRecruitmentBiomeKey(VillagerInteractionTracker.RecruitmentMemory memory) {
+        if (memory.biomeName() == null || memory.biomeName().isBlank()) {
+            return "";
+        }
+        return memory.biomeName().toLowerCase(Locale.ROOT).replace(' ', '_');
     }
 
     private static ConditionMatch villagerLevelStateWithoutLiveContext(

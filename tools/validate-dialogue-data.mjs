@@ -178,7 +178,6 @@ const conditionKeys = {
 
 const questLiveOnlyConditionTypes = new Set([
   "memory",
-  "recruitment_memory",
   "villager_age"
 ]);
 
@@ -2313,6 +2312,9 @@ function warnLiveOnlyQuestCondition(file, condition, location, usage) {
   }
   if (type === "not") {
     warnLiveOnlyQuestCondition(file, condition.condition, `${location}.condition`, usage);
+    return;
+  }
+  if (type === "memory" && normalizedString(condition.kind) === "recruitment_memory") {
     return;
   }
   if (questLiveOnlyConditionTypes.has(type)) {
