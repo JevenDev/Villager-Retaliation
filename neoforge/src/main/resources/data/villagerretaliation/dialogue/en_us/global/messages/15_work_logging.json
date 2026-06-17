@@ -157,6 +157,13 @@
       "id": "global.messages.15_work_logging.messages.interaction.work.logging.working_target.020"
     },
     {
+      "key": "interaction.work.logging.clearing_access_leaf",
+      "lines": [
+        "I am clearing leaves from my way to the trunk."
+      ],
+      "id": "global.messages.15_work_logging.messages.interaction.work.logging.clearing_access_leaf.025"
+    },
+    {
       "key": "interaction.work.logging.completed",
       "lines": [
         "I finished felling the tree and gathered {logs} logs."

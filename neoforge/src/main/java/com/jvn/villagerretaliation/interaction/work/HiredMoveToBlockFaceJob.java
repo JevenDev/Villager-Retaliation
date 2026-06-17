@@ -27,9 +27,12 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     private static final int FACE_APPROACH_RADIUS = 1;
     private static final int MAX_APPROACHES_TO_PATHFIND = 32;
     private static final int MAX_REACHABLE_APPROACHES_TO_COMPARE = 5;
+    private static final int MAX_TRANSPARENT_LOS_STEPS = 48;
+    private static final double TRANSPARENT_LOS_STEP = 0.25D;
     private static final double FACE_INSET = 0.01D;
     private final Iterable<BlockPos> candidatePositions;
     private final Predicate<BlockPos> approachFilter;
+    private final Predicate<BlockState> sightTransparent;
 
     HiredMoveToBlockFaceJob(ServerLevel level, Villager villager, Iterable<BlockPos> candidatePositions, int maxCandidates) {
         this(level, villager, candidatePositions, maxCandidates, ignored -> true);
@@ -41,9 +44,20 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             Iterable<BlockPos> candidatePositions,
             int maxCandidates,
             Predicate<BlockPos> approachFilter) {
+        this(level, villager, candidatePositions, maxCandidates, approachFilter, ignored -> false);
+    }
+
+    HiredMoveToBlockFaceJob(
+            ServerLevel level,
+            Villager villager,
+            Iterable<BlockPos> candidatePositions,
+            int maxCandidates,
+            Predicate<BlockPos> approachFilter,
+            Predicate<BlockState> sightTransparent) {
         super(level, villager, maxCandidates);
         this.candidatePositions = candidatePositions;
         this.approachFilter = approachFilter == null ? ignored -> true : approachFilter;
+        this.sightTransparent = sightTransparent == null ? ignored -> false : sightTransparent;
     }
 
     @Override
@@ -74,7 +88,8 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 continue;
             }
             BlockState exposedState = this.level.getBlockState(exposedNeighbor);
-            if (!isPassableForApproach(this.level, exposedNeighbor, exposedState)) {
+            if (!isPassableForApproach(this.level, exposedNeighbor, exposedState)
+                    && !this.sightTransparent.test(exposedState)) {
                 continue;
             }
             Vec3 hit = faceHitPosition(target, direction);
@@ -91,7 +106,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                         approach.getX() + 0.5D,
                         approach.getY() + this.villager.getEyeHeight(),
                         approach.getZ() + 0.5D);
-                if (!hasLineOfSightToBlock(this.level, this.villager, eye, target, hit)
+                if (!hasLineOfSightToBlock(this.level, this.villager, eye, target, hit, this.sightTransparent)
                         || eye.distanceToSqr(hit) > MAX_REACH_SQR
                         || approach.getCenter().distanceToSqr(hit) > BODY_REACH_SQR) {
                     continue;
@@ -134,12 +149,12 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         if (!isLoaded(this.level, target) || !this.approachFilter.test(currentPos)) {
             return null;
         }
-        Vec3 hit = visibleHitPosition(this.level, this.villager, this.villager.getEyePosition(), target);
+        Vec3 hit = visibleHitPosition(this.level, this.villager, this.villager.getEyePosition(), target, this.sightTransparent);
         if (hit == null) {
             return null;
         }
         HiredPathTarget pathTarget = new HiredPathTarget(target.immutable(), currentPos, hit);
-        return canReachFromCurrentPosition(this.level, this.villager, pathTarget) ? pathTarget : null;
+        return canReachFromCurrentPosition(this.level, this.villager, pathTarget, this.sightTransparent) ? pathTarget : null;
     }
 
     private double approachScore(BlockPos approach, Vec3 hitPos, BlockPos target) {
@@ -156,7 +171,15 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     static boolean canReachFromCurrentPosition(ServerLevel level, Villager villager, HiredPathTarget target) {
-        Vec3 currentHit = visibleHitPosition(level, villager, villager.getEyePosition(), target.blockPos());
+        return canReachFromCurrentPosition(level, villager, target, ignored -> false);
+    }
+
+    static boolean canReachFromCurrentPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredPathTarget target,
+            Predicate<BlockState> sightTransparent) {
+        Vec3 currentHit = visibleHitPosition(level, villager, villager.getEyePosition(), target.blockPos(), sightTransparent);
         if (currentHit != null) {
             return villager.getEyePosition().distanceToSqr(currentHit) <= MAX_REACH_SQR
                     && villager.position().distanceToSqr(currentHit) <= BODY_REACH_SQR;
@@ -164,7 +187,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         return isLoaded(level, target.blockPos())
                 && isLoaded(level, target.approachPos())
                 && isCloseEnough(villager, target)
-                && hasLineOfSightToBlock(level, villager, villager.getEyePosition(), target.blockPos(), target.hitPos());
+                && hasLineOfSightToBlock(level, villager, villager.getEyePosition(), target.blockPos(), target.hitPos(), sightTransparent);
     }
 
     static boolean isCloseEnough(Villager villager, HiredPathTarget target) {
@@ -220,9 +243,19 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     static Vec3 visibleHitPosition(ServerLevel level, Villager villager, Vec3 start, BlockPos target) {
+        return visibleHitPosition(level, villager, start, target, ignored -> false);
+    }
+
+    static Vec3 visibleHitPosition(
+            ServerLevel level,
+            Villager villager,
+            Vec3 start,
+            BlockPos target,
+            Predicate<BlockState> sightTransparent) {
         if (!isLoaded(level, target)) {
             return null;
         }
+        Predicate<BlockState> transparent = sightTransparent == null ? ignored -> false : sightTransparent;
         Vec3 bestHit = null;
         double bestDistance = Double.MAX_VALUE;
         for (Direction direction : Direction.values()) {
@@ -231,11 +264,12 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 continue;
             }
             BlockState neighborState = level.getBlockState(neighbor);
-            if (!isPassableForApproach(level, neighbor, neighborState)) {
+            if (!isPassableForApproach(level, neighbor, neighborState)
+                    && !transparent.test(neighborState)) {
                 continue;
             }
             Vec3 hit = faceHitPosition(target, direction);
-            if (!hasLineOfSightToBlock(level, villager, start, target, hit)) {
+            if (!hasLineOfSightToBlock(level, villager, start, target, hit, transparent)) {
                 continue;
             }
             double distance = start.distanceToSqr(hit);
@@ -248,21 +282,50 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     }
 
     static boolean hasLineOfSightToBlock(ServerLevel level, Villager villager, Vec3 start, BlockPos target, Vec3 hitPos) {
+        return hasLineOfSightToBlock(level, villager, start, target, hitPos, ignored -> false);
+    }
+
+    static boolean hasLineOfSightToBlock(
+            ServerLevel level,
+            Villager villager,
+            Vec3 start,
+            BlockPos target,
+            Vec3 hitPos,
+            Predicate<BlockState> sightTransparent) {
         if (!isLoaded(level, target)) {
             return false;
         }
+        Predicate<BlockState> transparent = sightTransparent == null ? ignored -> false : sightTransparent;
         ClipContext.Block blockMode = level.getBlockState(target)
                 .getCollisionShape(level, target, CollisionContext.empty())
                 .isEmpty()
                 ? ClipContext.Block.OUTLINE
                 : ClipContext.Block.COLLIDER;
-        BlockHitResult hit = level.clip(new ClipContext(
-                start,
-                hitPos,
-                blockMode,
-                ClipContext.Fluid.NONE,
-                villager));
-        return hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(target);
+        Vec3 currentStart = start;
+        Vec3 ray = hitPos.subtract(start);
+        Vec3 step = ray.lengthSqr() <= 0.000001D ? Vec3.ZERO : ray.normalize().scale(TRANSPARENT_LOS_STEP);
+        for (int i = 0; i < MAX_TRANSPARENT_LOS_STEPS; i++) {
+            BlockHitResult hit = level.clip(new ClipContext(
+                    currentStart,
+                    hitPos,
+                    blockMode,
+                    ClipContext.Fluid.NONE,
+                    villager));
+            if (hit.getType() != HitResult.Type.BLOCK) {
+                return false;
+            }
+            if (hit.getBlockPos().equals(target)) {
+                return true;
+            }
+            if (!isLoaded(level, hit.getBlockPos()) || !transparent.test(level.getBlockState(hit.getBlockPos()))) {
+                return false;
+            }
+            currentStart = hit.getLocation().add(step);
+            if (currentStart.distanceToSqr(hitPos) <= 0.0001D) {
+                return false;
+            }
+        }
+        return false;
     }
 
     static boolean isValidApproachPosition(ServerLevel level, BlockPos pos) {

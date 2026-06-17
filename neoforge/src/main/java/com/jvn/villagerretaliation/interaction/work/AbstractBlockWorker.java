@@ -212,7 +212,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
                 target.approachPos().getX() + 0.5D,
                 target.approachPos().getY() + villager.getEyeHeight(),
                 target.approachPos().getZ() + 0.5D);
-        if (!HiredMoveToBlockFaceJob.hasLineOfSightToBlock(level, villager, approachEye, target.blockPos(), target.hitPos())) {
+        if (!hasLineOfSightToBlock(level, villager, approachEye, target.blockPos(), target.hitPos())) {
             return null;
         }
         return target;

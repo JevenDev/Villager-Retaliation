@@ -31,18 +31,11 @@ neoForge {
     runs {
         client {
             client()
-            systemProperty 'neoforge.enabledGameTestNamespaces', rootProject.mod_id
         }
 
         server {
             server()
             programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', rootProject.mod_id
-        }
-
-        gameTestServer {
-            type = 'gameTestServer'
-            systemProperty 'neoforge.enabledGameTestNamespaces', rootProject.mod_id
         }
 
         data {
@@ -74,6 +67,7 @@ dependencies {
     annotationProcessor "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
 
     if (rootProject.enable_toucanlib.toBoolean()) {
+        runtimeOnly "dev.architectury:architectury-neoforge:${rootProject.architectury_version}"
         if (rootProject.useLocalToucanLib.toBoolean()) {
             implementation "com.jvn.toucanlib:toucanlib-neoforge-${rootProject.minecraft_version}:${rootProject.toucanlib_version}"
         } else {

@@ -56,7 +56,6 @@ final class HiredTargetSearch {
                 HiredWorkerBrain.setLastTargetScanResult(context, messages.partialScanPrefix() + scan.visitedPositions());
             }
         } else {
-            HiredWorkAreaScan.clearCursor(context, scanCursorTag);
             context.state().remove(nextScanGameTimeTag);
             HiredWorkerBrain.setLastTargetScanResult(context, messages.targetFound());
         }

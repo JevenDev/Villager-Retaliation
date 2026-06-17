@@ -8,8 +8,10 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.Worker
 import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.BuilderBuildPhase;
 import com.jvn.villagerretaliation.interaction.work.BuilderTaskState;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.LoggingWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.network.ClipboardWorkforceSyncPayload;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -95,6 +97,7 @@ public final class ClipboardWorkforceService {
                 String diagnostic = workerDiagnostic(
                         role,
                         brain,
+                        session.context(),
                         session.state(),
                         inventoryFull,
                         noStorage,
@@ -325,6 +328,7 @@ public final class ClipboardWorkforceService {
     private static String workerDiagnostic(
             HiredVillagerRole role,
             HiredWorkerBrain.Snapshot brain,
+            HiredWorkContext context,
             CompoundTag state,
             boolean inventoryFull,
             boolean noStorage,
@@ -341,6 +345,9 @@ public final class ClipboardWorkforceService {
                     missingMaterials,
                     materialStorageUnreachable,
                     materialInventoryFull);
+        }
+        if (role == HiredVillagerRole.LOGGING) {
+            return loggingDiagnostic(brain, context, inventoryFull, noStorage);
         }
         if (role != HiredVillagerRole.BUILDER) {
             return "";
@@ -425,6 +432,52 @@ public final class ClipboardWorkforceService {
         }
         if (reason.contains("placement_failed")) {
             return "The next construction block failed to place; check collision, support, or protection at the target.";
+        }
+        return "";
+    }
+
+    private static String loggingDiagnostic(
+            HiredWorkerBrain.Snapshot brain,
+            HiredWorkContext context,
+            boolean inventoryFull,
+            boolean noStorage) {
+        String reason = lower(brain.failureReason());
+        String scan = lower(brain.lastTargetScanResult());
+        String summary = LoggingWorker.debugSummary(context);
+        if (reason.contains("missing_axe")) {
+            return "Logger needs an axe before it can cut trees.";
+        }
+        if (reason.contains("tool_storage_unreachable")) {
+            return "Logger cannot path to assigned tool storage for an axe.";
+        }
+        if (reason.contains("tool_inventory_full")) {
+            return "Logger found a tool in storage, but its job inventory has no tool slot free.";
+        }
+        if (reason.contains("pending_tree_unreachable")) {
+            return limitDiagnostic("Logger has a tree harvest queued but cannot path back to the remaining blocks. " + summary);
+        }
+        if (reason.contains("access_leaf_unreachable") || reason.contains("access_leaf_blocked") || reason.contains("leaf_blocked_target")) {
+            return limitDiagnostic("Logger is clearing leaves toward a tree but cannot reach the next blocking leaf. " + summary);
+        }
+        if (reason.contains("target_changed")) {
+            return "Logger's selected tree changed before it could finish; it will choose another target shortly.";
+        }
+        if (reason.contains("decay_drop_unreachable")) {
+            return "Logger found tree drops on the ground but cannot path to them.";
+        }
+        if (inventoryFull) {
+            return noStorage
+                    ? "Logger inventory is full and no assigned output storage is available."
+                    : "Logger inventory is full and it is trying to deposit timber.";
+        }
+        if (scan.contains("tree_access_leaf")) {
+            return limitDiagnostic("Logger is looking for reachable leaves to clear a path to a tree. " + summary);
+        }
+        if (scan.contains("tree_scan_full_no_reachable_targets") || scan.contains("tree_scan_cooldown")) {
+            return limitDiagnostic("Logger did not find a reachable valid tree in the assigned area. " + summary);
+        }
+        if (summary.contains("pending logs=")) {
+            return limitDiagnostic(summary);
         }
         return "";
     }

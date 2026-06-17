@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.LoggingWorker;
 import com.jvn.villagerretaliation.interaction.work.MiningWorker;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -728,6 +729,9 @@ public final class HiredVillagerWorkService {
         lines.add("Plan: objective=" + HiredWorkPlan.objectiveType(session.context())
                 + ", anchor=" + HiredWorkerBrain.formatPos(HiredWorkPlan.objectiveAnchor(session.context()))
                 + ", queuedTargets=" + HiredWorkPlan.size(session.context()));
+        if (session.role() == HiredVillagerRole.LOGGING) {
+            lines.add(LoggingWorker.debugSummary(session.context()));
+        }
         lines.add("Failure: reason=" + valueOrNone(snapshot.failureReason())
                 + ", retryCooldown=" + snapshot.retryCooldownTicks()
                 + ", lastScan=" + valueOrNone(snapshot.lastTargetScanResult()));
