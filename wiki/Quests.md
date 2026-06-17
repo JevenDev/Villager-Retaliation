@@ -105,6 +105,41 @@ Supported quest text keys:
 
 Quest dialogue stages are `start`, `reminder`, `turn_in`, `already_completed`, `unavailable`, `inactive`, `missing_target`, `missing_proof`, and `locate_failed`.
 
+## Availability And Story Locks
+
+Use `parent` for a linear quest chain. A quest with `parent` can only be offered after the current player has completed that parent quest.
+
+```json
+{
+  "id": "my_pack:chapter_two",
+  "parent": "my_pack:chapter_one"
+}
+```
+
+Use `offer.conditions` for branch-specific availability, world-state locks, or optional story consequences. These conditions are checked before the quest can be started:
+
+```json
+{
+  "offer": {
+    "professions": ["minecraft:cartographer"],
+    "conditions": [
+      {
+        "type": "quest_stage",
+        "quest": "my_pack:old_road",
+        "stage": "warned_guard"
+      },
+      {
+        "type": "quest_fact",
+        "scope": "world",
+        "tag": "my_pack:bridge_repaired"
+      }
+    ]
+  }
+}
+```
+
+Use `rules.active.conditions` when an already accepted quest should pause or hide until the world is right again.
+
 ## Example: Structure Quest
 
 ```json

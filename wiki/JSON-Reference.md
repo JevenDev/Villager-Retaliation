@@ -258,6 +258,25 @@ Quest stages are shorthand for `scope: "quest"`, `key: "stage"`, and a stage val
 
 Use `all_of`, `any_of`, and `not` around `quest_fact` conditions for larger branch logic.
 
+Quest offers can use the same condition shape:
+
+```json
+{
+  "parent": "my_pack:first_chapter",
+  "offer": {
+    "conditions": [
+      {
+        "type": "quest_fact",
+        "scope": "world",
+        "tag": "my_pack:bridge_repaired"
+      }
+    ]
+  }
+}
+```
+
+`parent` gates a quest behind a completed parent quest for the current player. `offer.conditions` gates whether the quest can be offered at all. `rules.active.conditions` controls whether an already active quest can currently progress.
+
 ## Shared Actions
 
 Dialogue trees, quest triggers, and villager event triggers use the same `actions` shape for most state changes.

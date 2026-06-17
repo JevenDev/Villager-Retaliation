@@ -198,7 +198,7 @@ public final class VillagerQuestResources {
                 descriptionKey,
                 DatapackJsonReader.readString(root, "questline"),
                 parent,
-                readOffer(location, root),
+                readOffer(location, root, id),
                 readTarget(root),
                 readObjectives(location, root, id),
                 readRules(location, root, id),
@@ -211,7 +211,7 @@ public final class VillagerQuestResources {
         );
     }
 
-    private static QuestDefinition.Offer readOffer(ResourceLocation location, JsonObject root) {
+    private static QuestDefinition.Offer readOffer(ResourceLocation location, JsonObject root, ResourceLocation defaultQuestId) {
         JsonObject offer = DatapackJsonReader.readObject(root, "offer");
         if (offer == null) {
             return QuestDefinition.Offer.any();
@@ -231,7 +231,8 @@ public final class VillagerQuestResources {
         return new QuestDefinition.Offer(
                 professions,
                 minLevel,
-                readSkillRequirements(offer)
+                readSkillRequirements(offer),
+                DialogueCondition.readList(location, "quest offer", offer, defaultQuestId)
         );
     }
 

@@ -649,6 +649,9 @@ public final class VillagerQuestService {
         if (!bypassOfferRequirements && !definition.offer().matches(context)) {
             return false;
         }
+        if (!parentCompleted(context, definition)) {
+            return false;
+        }
         if (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED) {
             return withinStartLimit(definition, progress) && withinCompletionLimit(context, definition, progress);
         }
@@ -682,6 +685,22 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         int maxStarts = definition.rules().maxStarts();
         return maxStarts <= 0 || progress == null || progress.startCount() < maxStarts;
+    }
+
+    private static boolean parentCompleted(DialogueContext context, QuestDefinition definition) {
+        if (definition.parent() == null) {
+            return true;
+        }
+        if (context == null) {
+            return false;
+        }
+        QuestDefinition parent = VillagerQuestResources.quest(context.level().getServer(), definition.parent()).orElse(null);
+        if (parent == null) {
+            return false;
+        }
+        VillagerQuestSavedData.QuestProgress parentProgress =
+                VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), parent.id());
+        return matchesState(context, parent, parentProgress, "completed");
     }
 
     private static boolean withinCompletionLimit(
@@ -880,7 +899,10 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
         if (progress == null) {
-            return withinCompletionLimit(context, definition, null) ? "unavailable" : "already_completed";
+            if (!withinCompletionLimit(context, definition, null)) {
+                return "already_completed";
+            }
+            return parentCompleted(context, definition) ? "unavailable" : "parent_locked";
         }
         if (progress.state() == VillagerQuestSavedData.QuestState.CONSUMED) {
             return "consumed";
@@ -891,6 +913,9 @@ public final class VillagerQuestService {
         if (!withinCompletionLimit(context, definition, progress)
                 || (progress.completionCount() > 0 && !definition.rules().repeatable())) {
             return "already_completed";
+        }
+        if (!parentCompleted(context, definition)) {
+            return "parent_locked";
         }
         if (!withinStartLimit(definition, progress)) {
             return "start_limit";
@@ -923,6 +948,13 @@ public final class VillagerQuestService {
             return resolveQuestText(
                     context,
                     definition.dialogue().selectAlreadyCompletedText(context.random()),
+                    replacements(context, definition, progress));
+        }
+        if (!parentCompleted(context, definition)) {
+            return resolveGlobalText(
+                    context.player(),
+                    "quest.dialogue.parent_locked",
+                    "Another chapter needs to be settled before this opens.",
                     replacements(context, definition, progress));
         }
         if (progress != null

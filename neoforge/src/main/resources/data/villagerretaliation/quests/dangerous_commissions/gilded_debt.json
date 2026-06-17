@@ -61,6 +61,13 @@
     }
   ],
   "offer": {
+    "conditions": [
+      {
+        "scope": "world",
+        "tag": "villagerretaliation:mansion_cleansed",
+        "type": "quest_fact"
+      }
+    ],
     "min_villager_level": "master",
     "professions": [
       "minecraft:armorer",

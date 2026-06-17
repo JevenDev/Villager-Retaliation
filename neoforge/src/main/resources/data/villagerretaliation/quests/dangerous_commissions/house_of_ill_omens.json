@@ -44,6 +44,7 @@
     "description_key": "quest.dangerous_commissions.house_of_ill_omens.description"
   },
   "id": "villagerretaliation:house_of_ill_omens",
+  "parent": "villagerretaliation:trial_chamber_recall",
   "objectives": [
     {
       "count": 1,

@@ -802,9 +802,20 @@ function checkQuest(file, data) {
   }
   const defaultQuestId = questIdForFile(file, data);
   checkQuestMetadataConsistency(file, data, "root", defaultQuestId);
+  checkOptionalString(file, data, "root", "parent");
+  for (const parentId of readValues(data, ["parent"])) {
+    if (typeof parentId === "string" && parentId.trim()) {
+      pendingQuestReferences.push({
+        file,
+        location: "root.parent",
+        id: parentId.trim(),
+        reason: "quest parent"
+      });
+    }
+  }
   checkDisplayObject(file, data.display, "display");
   checkQuestLinks(file, data, "links");
-  checkQuestOffer(file, data.offer, "offer");
+  checkQuestOffer(file, data.offer, "offer", defaultQuestId);
   checkQuestTarget(file, data.target, "target");
   checkQuestObjectives(file, data.objectives, "objectives", defaultQuestId);
   checkQuestRules(file, data.rules, "rules", defaultQuestId);
@@ -830,7 +841,7 @@ function checkDisplayObject(file, display, location) {
   checkOptionalString(file, display, location, "description_key");
 }
 
-function checkQuestOffer(file, offer, location) {
+function checkQuestOffer(file, offer, location, defaultQuestId = "") {
   if (offer === undefined) {
     return;
   }
@@ -838,9 +849,10 @@ function checkQuestOffer(file, offer, location) {
     errors.push(`${relative(file)}: ${location} must be an object.`);
     return;
   }
-  checkUnknownObjectKeys(file, offer, location, new Set(["professions", "min_villager_level", "skills"]));
+  checkUnknownObjectKeys(file, offer, location, new Set(["professions", "min_villager_level", "skills", "conditions"]));
   checkStringList(file, offer, location, ["professions"], "profession id");
   checkStringValues(file, offer, location, ["min_villager_level"], villagerLevels, "villager trade level");
+  checkConditions(file, offer, location, defaultQuestId);
   if (offer.skills !== undefined) {
     if (!offer.skills || typeof offer.skills !== "object" || Array.isArray(offer.skills)) {
       errors.push(`${relative(file)}: ${location}.skills must be an object keyed by skill id.`);

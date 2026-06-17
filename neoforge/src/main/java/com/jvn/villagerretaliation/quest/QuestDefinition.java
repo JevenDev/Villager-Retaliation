@@ -84,16 +84,18 @@ public record QuestDefinition(
     public record Offer(
             Set<VillagerProfession> professions,
             int minVillagerLevel,
-            Map<VillagerSkill, Integer> minSkills
+            Map<VillagerSkill, Integer> minSkills,
+            List<DialogueCondition> conditions
     ) {
         public static Offer any() {
-            return new Offer(Set.of(), 1, Map.of());
+            return new Offer(Set.of(), 1, Map.of(), List.of());
         }
 
         public Offer {
             professions = professions == null ? Set.of() : Set.copyOf(professions);
             minVillagerLevel = Math.max(1, Math.min(5, minVillagerLevel));
             minSkills = minSkills == null ? Map.of() : Map.copyOf(minSkills);
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
         }
 
         public boolean matches(DialogueContext context) {
@@ -105,6 +107,11 @@ public record QuestDefinition(
             }
             for (Map.Entry<VillagerSkill, Integer> entry : this.minSkills.entrySet()) {
                 if (context.skillValue(entry.getKey()) < VillagerSkillSet.clamp(entry.getValue())) {
+                    return false;
+                }
+            }
+            for (DialogueCondition condition : this.conditions) {
+                if (!condition.matches(context)) {
                     return false;
                 }
             }
