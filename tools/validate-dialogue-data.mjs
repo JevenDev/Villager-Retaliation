@@ -3628,11 +3628,20 @@ function indexDialogueTree(file, data) {
     errors.push(`${relative(file)}: duplicate dialogue tree id "${treeId}" also defined in ${previous.file}.`);
     return;
   }
+  const entries = Array.isArray(data?.entries) ? data.entries : [];
+  const nodes = dialogueTreeNodes(data?.nodes);
+  const nodeById = new Map(nodes
+    .filter((node) => typeof node.id === "string" && node.id.trim())
+    .map((node) => [node.id, node]));
   dialogueTreeDefinitions.set(treeId, {
     file: relative(file),
-    entryIds: new Set((Array.isArray(data?.entries) ? data.entries : [])
+    entryIds: new Set(entries
       .filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry) && stringValue(entry.id))
       .map((entry) => stringValue(entry.id))),
+    entryStarts: new Map(entries
+      .filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry) && stringValue(entry.id))
+      .map((entry) => [stringValue(entry.id), stringValue(entry.start)])),
+    nodeById,
     metadataQuest: dialogueTreeDefaultQuestId(file, data),
     metadataQuestline: stringValue(metadataObject(data).questline),
     pathQuestline: dialogueTreePathQuestline(file)
@@ -3796,9 +3805,33 @@ function validateCrossReferences() {
         errors.push(`${relative(link.file)}: ${link.location}.${field} points to missing dialogue tree entry id "${entryId}" in "${link.treeId}".`);
       }
     }
+    warnDialogueTreeLinkLifecycleActions(link, tree);
 
     if (link.metadataQuest && tree.metadataQuest && tree.metadataQuest !== link.metadataQuest) {
       errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree points to "${link.treeId}" but its metadata.quest is "${tree.metadataQuest}" instead of "${link.metadataQuest}".`);
+    }
+  }
+}
+
+function warnDialogueTreeLinkLifecycleActions(link, tree) {
+  const targetQuestId = link.metadataQuest || link.questId;
+  if (!targetQuestId) {
+    return;
+  }
+  for (const [field, entryId] of [["offer", link.offer], ["reminder", link.reminder], ["turn_in", link.turnIn]]) {
+    if (!entryId || !tree.entryIds.has(entryId)) {
+      continue;
+    }
+    const expectedActions = questDialogueTreeLifecycleActions.get(field);
+    if (!expectedActions) {
+      continue;
+    }
+    const start = tree.entryStarts.get(entryId);
+    if (!start || !tree.nodeById.has(start)) {
+      continue;
+    }
+    if (!hasReachableQuestAction(tree.nodeById, start, expectedActions, targetQuestId)) {
+      warnings.push(`${relative(link.file)}: ${link.location}.${field} points to "${entryId}" in "${link.treeId}", but no reachable ${lifecycleActionDescription(field)} quest action for "${targetQuestId}" was found.`);
     }
   }
 }
