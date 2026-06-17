@@ -100,6 +100,7 @@ public final class VillagerQuestService {
     private static final ThreadLocal<Boolean> DISPATCHING_STAGE_TRIGGERS =
             ThreadLocal.withInitial(() -> false);
     private static final Map<UUID, TrackerSyncState> LAST_TRACKER_SYNCS = new HashMap<>();
+    private static final Map<UUID, InventoryItemCountCache> INVENTORY_ITEM_COUNT_CACHES = new HashMap<>();
 
     private VillagerQuestService() {
     }
@@ -113,13 +114,18 @@ public final class VillagerQuestService {
     private record StageBranchOptionKey(ResourceLocation questId, String branchId) {
     }
 
+    private record InventoryItemCountCache(int changeCount, Map<ResourceLocation, Integer> counts) {
+    }
+
     public static void clearRuntimeState() {
         LAST_TRACKER_SYNCS.clear();
+        INVENTORY_ITEM_COUNT_CACHES.clear();
     }
 
     public static void clearRuntimeState(ServerPlayer player) {
         if (player != null) {
             LAST_TRACKER_SYNCS.remove(player.getUUID());
+            INVENTORY_ITEM_COUNT_CACHES.remove(player.getUUID());
         }
     }
 
@@ -2099,27 +2105,15 @@ public final class VillagerQuestService {
         if (itemId == null) {
             return 0;
         }
-        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
-        if (item.isEmpty()) {
-            return 0;
-        }
-        int total = 0;
-        for (ItemStack stack : player.getInventory().items) {
-            if (stack.is(item.get())) {
-                total += stack.getCount();
-            }
-        }
-        for (ItemStack stack : player.getInventory().offhand) {
-            if (stack.is(item.get())) {
-                total += stack.getCount();
-            }
-        }
-        return total;
+        return cachedInventoryItemCounts(player).getOrDefault(itemId, 0);
     }
 
     private static int itemCount(ServerPlayer player, QuestDefinition.Objective objective) {
         if (objective.item() == null) {
             return 0;
+        }
+        if (hasSimpleItemRequirements(objective.itemRequirements())) {
+            return itemCount(player, objective.item());
         }
         Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
         if (item.isEmpty()) {
@@ -2137,6 +2131,43 @@ public final class VillagerQuestService {
             }
         }
         return total;
+    }
+
+    private static Map<ResourceLocation, Integer> cachedInventoryItemCounts(ServerPlayer player) {
+        int changeCount = player.getInventory().getTimesChanged();
+        InventoryItemCountCache cache = INVENTORY_ITEM_COUNT_CACHES.get(player.getUUID());
+        if (cache != null && cache.changeCount() == changeCount) {
+            return cache.counts();
+        }
+
+        Map<ResourceLocation, Integer> counts = new HashMap<>();
+        addInventoryItemCounts(counts, player.getInventory().items);
+        addInventoryItemCounts(counts, player.getInventory().offhand);
+        Map<ResourceLocation, Integer> immutableCounts = Map.copyOf(counts);
+        INVENTORY_ITEM_COUNT_CACHES.put(player.getUUID(), new InventoryItemCountCache(changeCount, immutableCounts));
+        return immutableCounts;
+    }
+
+    private static void addInventoryItemCounts(Map<ResourceLocation, Integer> counts, Iterable<ItemStack> stacks) {
+        for (ItemStack stack : stacks) {
+            if (stack.isEmpty()) {
+                continue;
+            }
+            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+            if (itemId != null) {
+                counts.merge(itemId, stack.getCount(), Integer::sum);
+            }
+        }
+    }
+
+    private static boolean hasSimpleItemRequirements(QuestDefinition.ItemRequirements requirements) {
+        return requirements == null
+                || (requirements.enchantments().isEmpty()
+                && requirements.minDurability().isEmpty()
+                && requirements.maxDurability().isEmpty()
+                && requirements.minDurabilityPercent().isEmpty()
+                && requirements.maxDurabilityPercent().isEmpty()
+                && !requirements.hasCustomData());
     }
 
     private static boolean updateObjectiveProgress(
