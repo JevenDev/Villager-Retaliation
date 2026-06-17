@@ -34,6 +34,11 @@ public final class VillageScopeKeys {
         }
         return VillageMembership.resolve(level, villager)
                 .map(area -> forPosition(level.dimension(), area.centerBlock()))
+                .or(() -> villager == null
+                        ? Optional.empty()
+                        : VillagerSocialGraphService.knownVillage(level, villager.getUUID())
+                                .map(VillageScopeKeys::fromSavedSocialKey)
+                                .filter(key -> !key.isBlank()))
                 .orElseGet(() -> forPosition(level.dimension(), fallbackPos));
     }
 
