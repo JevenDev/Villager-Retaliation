@@ -413,6 +413,7 @@ const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "g
 const questFactScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "quest", "quest_progress", "player_quest", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const questCompletionScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const questBranchLockEvents = new Set(["started", "start", "accepted", "begin", "begun", "completed", "complete", "turn_in", "turnin", "finish", "finished"]);
+const forcedDialogueTriggers = new Set(["container_theft", "container_opened", "container_broken", "retaliation_started", "low_guts_rally", "player_item_proximity", "trade_refresh", "quest"]);
 const dialogueTreeActionKeys = new Set([
   "type",
   "quest",
@@ -2659,20 +2660,33 @@ function checkForcedDialogue(file, data) {
   const entries = entriesFor(data);
   checkIds(file, entries, "forced dialogue entry");
   for (const [entryIndex, entry] of entries.entries()) {
+    const entryLocation = `entries[${entryIndex}]`;
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      errors.push(`${relative(file)}: ${entryLocation} must be an object.`);
+      continue;
+    }
+    checkOptionalString(file, entry, entryLocation, "trigger");
+    checkOptionalString(file, entry, entryLocation, "event");
+    const trigger = stringValue(entry.trigger) || stringValue(entry.event);
+    if (!trigger) {
+      errors.push(`${relative(file)}: ${entryLocation}.trigger is required for a forced dialogue entry.`);
+    } else if (!forcedDialogueTriggers.has(normalizedString(trigger))) {
+      errors.push(`${relative(file)}: ${entryLocation}.trigger has unsupported forced dialogue trigger "${trigger}".`);
+    }
     if (Object.hasOwn(entry, "event") && !Object.hasOwn(entry, "trigger")) {
       warnings.push(`${relative(file)}: entries[${entryIndex}].event is a legacy alias for trigger; prefer trigger in new data.`);
     }
     const entryId = stringValue(entry?.id) || forcedDialogueFallbackEntryId(file, entryIndex);
     const entryMessagePrefix = readForcedDialogueMessagePrefix(entry, childMessagePrefix(rootMessagePrefix, entryId));
-    checkForcedDialogueEntryText(file, entry, `entries[${entryIndex}]`, entryMessagePrefix);
-    checkDialogueMetadata(file, entry, `entries[${entryIndex}]`);
+    checkForcedDialogueEntryText(file, entry, entryLocation, entryMessagePrefix);
+    checkDialogueMetadata(file, entry, entryLocation);
     const entryQuestId = stringValue(metadataObject(entry).quest) || defaultQuestId;
-    checkForcedDialogueOptions(file, entry.options, `entries[${entryIndex}].options`, entryQuestId, entryMessagePrefix);
-    checkForcedDialogueOptions(file, entry.leave_options, `entries[${entryIndex}].leave_options`, entryQuestId, entryMessagePrefix, "leave");
+    checkForcedDialogueOptions(file, entry.options, `${entryLocation}.options`, entryQuestId, entryMessagePrefix);
+    checkForcedDialogueOptions(file, entry.leave_options, `${entryLocation}.leave_options`, entryQuestId, entryMessagePrefix, "leave");
     checkForcedDialogueOption(
       file,
       entry.leave_option,
-      `entries[${entryIndex}].leave_option`,
+      `${entryLocation}.leave_option`,
       entryQuestId,
       readForcedDialogueMessagePrefix(entry.leave_option, childMessagePrefix(entryMessagePrefix, "leave"))
     );
