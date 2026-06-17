@@ -1518,7 +1518,7 @@ public final class VillagerInteractionService {
                 : "interaction.auto_payment.disabled");
     }
 
-    private static boolean canManageAssignedStorage(ServerLevel level, Villager villager, ServerPlayer player) {
+    public static boolean canManageAssignedStorage(ServerLevel level, Villager villager, ServerPlayer player) {
         return HiredVillagerContractService.isHiredBy(level, villager, player)
                 || VillagerInventoryAccess.canAccess(level, villager, player);
     }

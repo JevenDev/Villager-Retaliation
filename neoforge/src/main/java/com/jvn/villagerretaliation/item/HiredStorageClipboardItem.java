@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaDraftPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
@@ -119,7 +120,7 @@ public final class HiredStorageClipboardItem extends Item {
             List<StoragePosition> selected = selectedContainers(stack);
             if (!selected.isEmpty()) {
                 if (!HiredVillagerContractService.isHiredBy(level, villager, serverPlayer)) {
-                    serverPlayer.displayClientMessage(Component.literal("Hire this villager before assigning payment storage."), true);
+                    VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.payment_storage.requires_hire");
                     return InteractionResult.SUCCESS;
                 }
                 AssignSummary summary = AssignedStorageService.assign(serverPlayer, villager, selected, AssignedStorageService.PAYMENT_PURPOSE);
@@ -128,6 +129,10 @@ public final class HiredStorageClipboardItem extends Item {
                     HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
                 }
                 displayAssignmentSummary(serverPlayer, summary);
+                return InteractionResult.SUCCESS;
+            }
+            if (!HiredVillagerContractService.isHiredBy(level, villager, serverPlayer)) {
+                VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.payment_storage.requires_hire");
                 return InteractionResult.SUCCESS;
             }
             List<AssignedContainerRecord> assigned = AssignedStorageService.assignedPaymentStorage(level, villager);
@@ -142,6 +147,10 @@ public final class HiredStorageClipboardItem extends Item {
 
         List<StoragePosition> selected = selectedContainers(stack);
         if (!selected.isEmpty()) {
+            if (!VillagerInteractionService.canManageAssignedStorage(level, villager, serverPlayer)) {
+                VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.storage.assign_requires_access");
+                return InteractionResult.SUCCESS;
+            }
             AssignSummary summary = AssignedStorageService.assign(serverPlayer, villager, selected, clipboardMode.storagePurpose());
             if (summary.assigned() > 0) {
                 clearSelection(stack);
@@ -152,9 +161,17 @@ public final class HiredStorageClipboardItem extends Item {
 
         if (AssignedStorageService.hasAssignedStorage(level, villager)) {
             if (serverPlayer.isShiftKeyDown()) {
+                if (!VillagerInteractionService.canManageAssignedStorage(level, villager, serverPlayer)) {
+                    VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.storage.remove_requires_access");
+                    return InteractionResult.SUCCESS;
+                }
                 int removed = AssignedStorageService.removeAssignedStorage(level, villager);
                 serverPlayer.displayClientMessage(Component.literal("Removed " + removed + " assigned container" + (removed == 1 ? "" : "s") + "."), true);
             } else {
+                if (!VillagerInteractionService.canManageAssignedStorage(level, villager, serverPlayer)) {
+                    VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.storage.inspect_requires_access");
+                    return InteractionResult.SUCCESS;
+                }
                 List<AssignedContainerRecord> assigned = AssignedStorageService.assignedStorage(level, villager);
                 sendAssignedStorageOutlines(serverPlayer, assigned);
                 int count = assigned.size();

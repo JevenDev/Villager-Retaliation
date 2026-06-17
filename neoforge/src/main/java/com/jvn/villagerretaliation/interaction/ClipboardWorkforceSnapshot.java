@@ -70,6 +70,7 @@ public record ClipboardWorkforceSnapshot(
         NO_WORK_AREA,
         NO_TARGETS,
         NO_STORAGE,
+        STORAGE_FULL,
         INVENTORY_FULL,
         MISSING_TOOLS,
         UNPAID,
@@ -84,6 +85,7 @@ public record ClipboardWorkforceSnapshot(
     public enum WarningType {
         NO_WORK_AREA,
         NO_STORAGE,
+        STORAGE_FULL,
         INVENTORY_FULL,
         MISSING_TOOLS,
         UNPAID,

@@ -64,6 +64,7 @@ public final class ClipboardWorkforceService {
                 int storageCount = AssignedStorageService.assignedStorage(level, villager).size();
                 int paymentStorageCount = AssignedStorageService.assignedPaymentStorage(level, villager).size();
                 boolean storageAssigned = storageCount > 0;
+                boolean storageFull = brain.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL;
                 boolean inventoryFull = brain.taskState() == HiredWorkerTaskState.PAUSED_FULL_INVENTORY
                         || !session.inventory().hasOutputSpace();
                 boolean noStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE || !storageAssigned;
@@ -83,6 +84,7 @@ public final class ClipboardWorkforceService {
                 WorkerStatus status = status(
                         role,
                         brain.taskState(),
+                        storageFull,
                         inventoryFull,
                         noStorage,
                         noWorkArea,
@@ -116,6 +118,7 @@ public final class ClipboardWorkforceService {
                     idle++;
                 }
                 addWarning(warningCounts, WarningType.NO_STORAGE, role, noStorage);
+                addWarning(warningCounts, WarningType.STORAGE_FULL, role, storageFull);
                 addWarning(warningCounts, WarningType.INVENTORY_FULL, role, inventoryFull && !materialInventoryFull);
                 addWarning(warningCounts, WarningType.NO_WORK_AREA, role, noWorkArea);
                 addWarning(warningCounts, WarningType.NO_TARGETS, role, noTargets);
@@ -180,15 +183,13 @@ public final class ClipboardWorkforceService {
         if (!enabled) {
             return false;
         }
-        return switch (state) {
-            case IDLE, AWAITING_INSTRUCTION, NO_WORK_AREA, FAILED_COOLDOWN, WAITING_FOR_MATERIALS, PAUSED_FULL_INVENTORY, PAUSED_STORAGE_FULL, PAUSED_NO_STORAGE, PAUSED_MISSING_TOOL -> false;
-            default -> true;
-        };
+        return !state.isWaitingState();
     }
 
     private static WorkerStatus status(
             HiredVillagerRole role,
             HiredWorkerTaskState taskState,
+            boolean storageFull,
             boolean inventoryFull,
             boolean noStorage,
             boolean noWorkArea,
@@ -211,6 +212,9 @@ public final class ClipboardWorkforceService {
         }
         if (materialInventoryFull) {
             return WorkerStatus.MATERIAL_INVENTORY_FULL;
+        }
+        if (storageFull) {
+            return WorkerStatus.STORAGE_FULL;
         }
         if (inventoryFull) {
             return WorkerStatus.INVENTORY_FULL;
@@ -236,7 +240,7 @@ public final class ClipboardWorkforceService {
         return switch (taskState) {
             case MOVING_TO_TARGET, RETURNING_TO_WORK_AREA -> WorkerStatus.PATHING;
             case SELECTING_TARGET, FINDING_CHAIN_TARGET, VALIDATING_TARGET -> activeWorkStatus(role);
-            case MOVING_TO_STORAGE, DEPOSITING, PAUSED_STORAGE_FULL -> WorkerStatus.DEPOSITING;
+            case MOVING_TO_STORAGE, DEPOSITING -> WorkerStatus.DEPOSITING;
             case WAITING_FOR_MATERIALS -> WorkerStatus.WAITING;
             case WORKING, COLLECTING_OUTPUT -> activeWorkStatus(role);
             case IDLE, AWAITING_INSTRUCTION, FAILED_COOLDOWN, PAUSED_MISSING_TOOL -> WorkerStatus.WAITING;

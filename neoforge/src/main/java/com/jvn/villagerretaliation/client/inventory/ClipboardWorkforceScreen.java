@@ -912,6 +912,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                 || worker.noTargets()
                 || worker.tooFar()
                 || worker.missingTools()
+                || worker.status() == ClipboardWorkforceSnapshot.WorkerStatus.STORAGE_FULL
                 || worker.status() == ClipboardWorkforceSnapshot.WorkerStatus.MISSING_MATERIALS
                 || worker.status() == ClipboardWorkforceSnapshot.WorkerStatus.MATERIAL_STORAGE_UNREACHABLE
                 || worker.status() == ClipboardWorkforceSnapshot.WorkerStatus.MATERIAL_INVENTORY_FULL
