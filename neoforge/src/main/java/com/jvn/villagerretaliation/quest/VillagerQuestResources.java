@@ -114,7 +114,7 @@ public final class VillagerQuestResources {
             case FACT -> cache.factQuestIds();
             case TRADE -> cache.tradeQuestIds();
             case GIFT -> cache.giftQuestIds();
-            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, MEMORY_EVENT, REPUTATION, CONDITION -> Set.of();
+            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, MEMORY_EVENT, REPUTATION, CHOICE, CONDITION -> Set.of();
         };
     }
 
@@ -515,6 +515,10 @@ public final class VillagerQuestResources {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "reputation objective must define level, levels, min_reputation, max_reputation, min, or max.");
             return Optional.empty();
         }
+        if (type == QuestDefinition.ObjectiveType.CHOICE && factObjective.isEmpty()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "choice objective must define choice, choices, value, values, or a fact key.");
+            return Optional.empty();
+        }
         if (type == QuestDefinition.ObjectiveType.CONDITION && conditions.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "condition objective must define conditions.");
             return Optional.empty();
@@ -727,7 +731,12 @@ public final class VillagerQuestResources {
             key = "stage";
         }
         Set<String> values = new LinkedHashSet<>(DatapackJsonReader.readStringList(entry, "value", "values"));
+        Set<String> choiceValues = new LinkedHashSet<>(DatapackJsonReader.readStringList(entry, "choice", "choices"));
+        if (key.isBlank() && !choiceValues.isEmpty()) {
+            key = "choice";
+        }
         values.addAll(stageValues);
+        values.addAll(choiceValues);
 
         if (scope == QuestFactScope.QUEST && questId == null) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective with quest scope must define quest or have a default quest.");

@@ -315,6 +315,7 @@ public record QuestDefinition(
         TRADE,
         GIFT,
         REPUTATION,
+        CHOICE,
         FACT,
         CONDITION;
 
@@ -332,6 +333,7 @@ public record QuestDefinition(
                 case "trade", "villager_trade", "trading", "merchant_trade" -> TRADE;
                 case "gift", "give_gift", "gift_given" -> GIFT;
                 case "reputation", "rep", "reputation_level", "trust" -> REPUTATION;
+                case "choice", "dialogue_choice", "branch_choice", "quest_choice" -> CHOICE;
                 case "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage" -> FACT;
                 case "condition" -> CONDITION;
                 default -> null;

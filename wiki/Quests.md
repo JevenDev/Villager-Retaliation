@@ -506,6 +506,52 @@ Reputation objective fields:
 
 Tracker placeholders include `{objective_reputation}`, `{objective_reputation_level}`, `{objective_reputation_min}`, and `{objective_reputation_max}`.
 
+## Example: Choice Objective
+
+Use `choice` when a quest should wait for a dialogue branch or trigger to record the player's decision. Choice objectives are shorthand for a quest-scoped fact variable named `choice`.
+
+```json
+{
+  "id": "my_pack:choose_supply_route",
+  "display": {
+    "title": "Choose A Supply Route",
+    "description": "Pick how the village will move supplies."
+  },
+  "objectives": [
+    {
+      "id": "choose_route",
+      "type": "choice",
+      "choices": ["river_route", "ridge_route"],
+      "tracker": {
+        "text": "Choose a supply route.",
+        "complete_text": "Route chosen: {objective_choice_value}."
+      }
+    }
+  ]
+}
+```
+
+Record the choice from dialogue or quest triggers with a quest-scoped variable action:
+
+```json
+{
+  "type": "set_variable",
+  "scope": "quest",
+  "key": "choice",
+  "value": "river_route"
+}
+```
+
+Choice objective fields:
+
+| Field | Meaning |
+| --- | --- |
+| `choice`, `choices` | Accepted choice values for the quest-scoped `choice` variable |
+| `value`, `values` | Aliases for accepted choice values |
+| `key`, `variable`, `fact` | Optional custom variable key instead of `choice` |
+
+Tracker placeholders include `{objective_choice}`, `{objective_choice_key}`, and `{objective_choice_value}`.
+
 ## Example: Fact Objective
 
 Use `fact` when a quest should wait for durable story state written by a dialogue choice, quest trigger, forced dialogue, or another quest. Fact objectives use the same vocabulary as `quest_fact` conditions: `scope`, `tag`, `key`, `variable`, `counter`, `stage`, `value`, `min`, and `max`.

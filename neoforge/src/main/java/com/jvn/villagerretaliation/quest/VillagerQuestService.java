@@ -1530,7 +1530,7 @@ public final class VillagerQuestService {
             case MOB_KILL -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case REPUTATION -> progress != null && matchesReputationObjective(level, player, progress, objective);
-            case FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
+            case CHOICE, FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
     }
@@ -2529,6 +2529,7 @@ public final class VillagerQuestService {
                     case TRADE -> "trade";
                     case GIFT -> "gift";
                     case REPUTATION -> "reputation";
+                    case CHOICE -> "choice";
                     case FACT -> "fact";
                     case CONDITION -> "inactive";
                 };
@@ -2549,6 +2550,7 @@ public final class VillagerQuestService {
             case "trade" -> "Complete trades: {objective_progress_count}/{objective_count}.";
             case "gift" -> "Give {objective_count} {objective_item}.";
             case "reputation" -> "Reach {objective_reputation_level} reputation with {issuer}.";
+            case "choice" -> "Make a choice for this quest.";
             case "fact" -> "Resolve {objective_fact}.";
             case "return" -> "Return to {issuer}.";
             case "abandoned" -> "Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} to pick this back up.";
@@ -2800,6 +2802,9 @@ public final class VillagerQuestService {
             values.put("objective_reputation_level", "");
             values.put("objective_reputation_min", "");
             values.put("objective_reputation_max", "");
+            values.put("objective_choice", "");
+            values.put("objective_choice_key", "");
+            values.put("objective_choice_value", "");
             values.put("objective_fact", "");
             values.put("objective_fact_id", "");
             values.put("objective_fact_key", "");
@@ -2832,6 +2837,9 @@ public final class VillagerQuestService {
         values.put("objective_reputation_level", objectiveReputationLevel(objective));
         values.put("objective_reputation_min", objective.minReputation() == null ? "" : objective.minReputation().toString());
         values.put("objective_reputation_max", objective.maxReputation() == null ? "" : objective.maxReputation().toString());
+        values.put("objective_choice", objectiveChoiceValue(objective));
+        values.put("objective_choice_key", objective.type() == QuestDefinition.ObjectiveType.CHOICE ? objective.factKey() : "");
+        values.put("objective_choice_value", objectiveChoiceValue(objective));
         values.put("objective_fact", objectiveFactName(objective));
         values.put("objective_fact_id", objectiveFactId(objective));
         values.put("objective_fact_key", objective.factKey());
@@ -2879,7 +2887,7 @@ public final class VillagerQuestService {
             case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> progress == null
                     ? 0.0F
                     : Mth.clamp((float) progress.objectiveCounter(objective.id()) / (float) objective.count(), 0.0F, 1.0F);
-            case STRUCTURE_VISIT, LOCATION_VISIT, REPUTATION, FACT, CONDITION -> progress != null
+            case STRUCTURE_VISIT, LOCATION_VISIT, REPUTATION, CHOICE, FACT, CONDITION -> progress != null
                     && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective)
                     ? 1.0F
                     : 0.0F;
@@ -3349,6 +3357,13 @@ public final class VillagerQuestService {
                 : objective.reputationLevels().iterator().next().name().toLowerCase(Locale.ROOT);
     }
 
+    private static String objectiveChoiceValue(QuestDefinition.Objective objective) {
+        if (objective == null || objective.type() != QuestDefinition.ObjectiveType.CHOICE) {
+            return "";
+        }
+        return objective.factValues().isEmpty() ? "" : objective.factValues().iterator().next();
+    }
+
     private static String objectiveFactName(QuestDefinition.Objective objective) {
         if (objective == null || objective.type() != QuestDefinition.ObjectiveType.FACT) {
             return "";
@@ -3615,6 +3630,15 @@ public final class VillagerQuestService {
                 parts.add("levels=" + debugEnumSet(objective.reputationLevels()));
                 parts.add("min=" + (objective.minReputation() == null ? "none" : objective.minReputation()));
                 parts.add("max=" + (objective.maxReputation() == null ? "none" : objective.maxReputation()));
+            }
+            case CHOICE -> {
+                parts.add("scope=" + debugEnum(objective.factScope()));
+                parts.add("quest=" + debugResource(objective.factQuestId() == null ? definition.id() : objective.factQuestId()));
+                parts.add("key=" + blankAs(objective.factKey(), "none"));
+                parts.add("choices=" + debugStringSet(objective.factValues()));
+                if (progress != null) {
+                    parts.add("scope_key=" + blankAs(factObjectiveScopeKey(level, player, definition, progress, objective), "unresolved"));
+                }
             }
             case FACT -> {
                 parts.add("scope=" + debugEnum(objective.factScope()));

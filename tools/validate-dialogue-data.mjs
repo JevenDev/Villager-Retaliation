@@ -366,13 +366,14 @@ const dialogueTreeActionKeys = new Set([
   "lines"
 ]);
 const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove", "block", "lock", "consume", "close", "close_branch", "branch_lock"]);
-const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use", "memory_event", "village_event", "village_memory", "memory", "event", "trade", "villager_trade", "trading", "merchant_trade", "gift", "give_gift", "gift_given", "reputation", "rep", "reputation_level", "trust", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
+const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use", "memory_event", "village_event", "village_memory", "memory", "event", "trade", "villager_trade", "trading", "merchant_trade", "gift", "give_gift", "gift_given", "reputation", "rep", "reputation_level", "trust", "choice", "dialogue_choice", "branch_choice", "quest_choice", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
 const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "coordinates", "coords", "region_visit"]);
 const questMobKillObjectiveTypes = new Set(["mob_kill", "entity_kill", "kill"]);
 const questBlockObjectiveTypes = new Set(["block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use"]);
 const questMemoryObjectiveTypes = new Set(["memory_event", "village_event", "village_memory", "memory", "event"]);
 const questGiftObjectiveTypes = new Set(["gift", "give_gift", "gift_given"]);
 const questReputationObjectiveTypes = new Set(["reputation", "rep", "reputation_level", "trust"]);
+const questChoiceObjectiveTypes = new Set(["choice", "dialogue_choice", "branch_choice", "quest_choice"]);
 const questFactObjectiveTypes = new Set(["fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"]);
 const questGiftReactions = new Set(["loved", "liked", "neutral", "disliked", "hated"]);
 const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "stage", "stage_changed", "stage_entered", "stage_set", "completed", "abandoned", "expired"]);
@@ -508,6 +509,9 @@ const knownPlaceholders = new Set([
   "objective_reputation_level",
   "objective_reputation_min",
   "objective_reputation_max",
+  "objective_choice",
+  "objective_choice_key",
+  "objective_choice_value",
   "objective_fact",
   "objective_fact_id",
   "objective_fact_key",
@@ -987,6 +991,8 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "fact",
       "value",
       "values",
+      "choice",
+      "choices",
       "stage",
       "stages",
       "min",
@@ -1033,7 +1039,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkStringValues(file, objective, objectiveLocation, ["scope"], questFactScopes, "quest fact scope");
     checkStringList(file, objective, objectiveLocation, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");
     checkStringList(file, objective, objectiveLocation, ["key", "variable", "counter", "fact"], "quest fact key");
-    checkStringList(file, objective, objectiveLocation, ["value", "values", "stage", "stages"], "quest fact value");
+    checkStringList(file, objective, objectiveLocation, ["value", "values", "stage", "stages", "choice", "choices"], "quest fact value");
     checkOptionalInteger(file, objective, objectiveLocation, "min");
     checkOptionalInteger(file, objective, objectiveLocation, "min_reputation");
     checkOptionalInteger(file, objective, objectiveLocation, "max");
@@ -1074,6 +1080,9 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     }
     if (questFactObjectiveTypes.has(type) && readValues(objective, ["tag", "tags", "fact_tag", "quest_tag", "key", "variable", "counter", "fact", "stage", "stages"]).length === 0) {
       errors.push(`${relative(file)}: ${objectiveLocation} must define tag, tags, key, variable, counter, stage, or stages for a fact objective.`);
+    }
+    if (questChoiceObjectiveTypes.has(type) && readValues(objective, ["choice", "choices", "value", "values", "key", "variable", "fact"]).length === 0) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must define choice, choices, value, values, key, variable, or fact for a choice objective.`);
     }
     if (questReputationObjectiveTypes.has(type) && readValues(objective, ["level", "levels", "reputation_level", "reputation_levels", "min", "min_reputation", "max", "max_reputation"]).length === 0) {
       errors.push(`${relative(file)}: ${objectiveLocation} must define level, levels, min_reputation, max_reputation, min, or max for a reputation objective.`);
