@@ -775,7 +775,20 @@ Quests can also declare automatic stages at the top level. The first declared st
               "value": "guard"
             }
           ],
-          "next": "guard_warned"
+          "next": "guard_warned",
+          "blocked_by": [
+            {
+              "conditions": [
+                {
+                  "type": "quest_fact",
+                  "scope": "quest",
+                  "key": "route",
+                  "value": "raiders"
+                }
+              ],
+              "reason": "You already promised the raiders you would stay quiet."
+            }
+          ]
         }
       ]
     },
@@ -784,7 +797,7 @@ Quests can also declare automatic stages at the top level. The first declared st
 }
 ```
 
-`complete_when` accepts an objective id string, an array of objective ids, a condition object, or `{ "conditions": [...] }`. Stage and branch `next` values must name another declared stage. Branches are metadata for quest-aware dialogue and tools: use their `conditions`, `blocked_by`, and `actions` to keep branch requirements and consequences beside the stage they belong to.
+`complete_when` accepts an objective id string, an array of objective ids, a condition object, or `{ "conditions": [...] }`. Stage and branch `next` values must name another declared stage. Branches with `label` or `label_key` auto-render as dialogue options while their stage is current. Selecting an available branch records branch facts, runs its `actions`, and advances to `next` when set. If a `blocked_by` entry matches, selecting the option returns `reason` or `reason_key` instead of running the branch.
 
 Use `scope: "world"` for shared save-wide consequences, `scope: "player"` for player story flags, `scope: "village"` for local outcomes, and `scope: "villager"` for villager-specific secrets or promises.
 

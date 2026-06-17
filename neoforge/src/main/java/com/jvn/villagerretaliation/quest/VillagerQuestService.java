@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
+import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
@@ -27,7 +28,9 @@ import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -87,7 +90,13 @@ public final class VillagerQuestService {
             ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_objective_completed");
     private static final ResourceLocation QUEST_BRANCH_LOCKED_FACT =
             ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_branch_locked");
+    private static final ResourceLocation QUEST_BRANCH_SELECTED_FACT =
+            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_branch_selected");
+    private static final ResourceLocation QUEST_BRANCH_BLOCKED_FACT =
+            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_branch_blocked");
     private static final String BRANCH_LOCK_CONSUMED_REASON = "branch_lock";
+    private static final String STAGE_BRANCH_OPTION_PREFIX = "vr_stage_branch:";
+    private static final int STAGE_BRANCH_OPTION_ORDER = 900;
     private static final ThreadLocal<Boolean> DISPATCHING_STAGE_TRIGGERS =
             ThreadLocal.withInitial(() -> false);
     private static final Map<UUID, TrackerSyncState> LAST_TRACKER_SYNCS = new HashMap<>();
@@ -99,6 +108,9 @@ public final class VillagerQuestService {
         MET,
         UNMET,
         UNKNOWN
+    }
+
+    private record StageBranchOptionKey(ResourceLocation questId, String branchId) {
     }
 
     public static void clearRuntimeState() {
@@ -130,9 +142,53 @@ public final class VillagerQuestService {
         return false;
     }
 
+    public static List<DialogueOptionDefinition> stageBranchOptions(DialogueContext context) {
+        if (context == null) {
+            return List.of();
+        }
+        List<DialogueOptionDefinition> options = new ArrayList<>();
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
+        int order = STAGE_BRANCH_OPTION_ORDER;
+        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(context.player().getUUID())) {
+            QuestDefinition definition = VillagerQuestResources.quest(context.level().getServer(), entry.getKey()).orElse(null);
+            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            if (definition == null
+                    || definition.stages().isEmpty()
+                    || !matchesVillagerLock(context, definition, progress)
+                    || !activeConditionsMet(context, definition)) {
+                continue;
+            }
+            QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
+            if (stage == null || stage.branches().isEmpty()) {
+                continue;
+            }
+            for (QuestDefinition.StageBranch branch : stage.branches()) {
+                if (!shouldShowStageBranchOption(context, branch)) {
+                    continue;
+                }
+                String label = stageBranchLabel(context, definition, progress, branch);
+                if (label.isBlank()) {
+                    continue;
+                }
+                options.add(DialogueOptionDefinition.simple(
+                        stageBranchOptionId(definition.id(), branch.id()),
+                        label,
+                        DialogueRequestType.QUESTION,
+                        order++));
+            }
+        }
+        return List.copyOf(options);
+    }
+
     public static Optional<VillagerDialogueService.DialogueResult> handleDialogueOption(
             DialogueContext context,
             DialogueOptionDefinition option) {
+        Optional<VillagerDialogueService.DialogueResult> branchResult =
+                handleStageBranchOption(context, option.id());
+        if (branchResult.isPresent()) {
+            return branchResult;
+        }
+
         DialogueQuestAction questAction = option.questAction();
         if (questAction.isEmpty()) {
             return Optional.empty();
@@ -140,6 +196,266 @@ public final class VillagerQuestService {
 
         return performAction(context, questAction.questId(), questAction.action())
                 .map(QuestActionOutcome::dialogueResult);
+    }
+
+    private static Optional<VillagerDialogueService.DialogueResult> handleStageBranchOption(
+            DialogueContext context,
+            String optionId) {
+        Optional<StageBranchOptionKey> key = parseStageBranchOptionId(optionId);
+        if (key.isEmpty()) {
+            return Optional.empty();
+        }
+
+        QuestDefinition definition = VillagerQuestResources.quest(context.level().getServer(), key.get().questId()).orElse(null);
+        if (definition == null) {
+            return Optional.of(result(
+                    "missing",
+                    "quest_stage_branch_missing",
+                    "That choice is no longer available.",
+                    Map.of()).dialogueResult());
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
+        VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
+        if (progress == null
+                || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                || !matchesVillagerLock(context, definition, progress)) {
+            return Optional.of(stageBranchUnavailableResult(context, definition, progress).dialogueResult());
+        }
+
+        QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
+        QuestDefinition.StageBranch branch = stage == null
+                ? null
+                : stage.branches().stream()
+                        .filter(candidate -> candidate.id().equals(key.get().branchId()))
+                        .findFirst()
+                        .orElse(null);
+        if (branch == null) {
+            return Optional.of(stageBranchUnavailableResult(context, definition, progress).dialogueResult());
+        }
+
+        Map<String, String> replacements = stageBranchReplacements(context, definition, progress, branch);
+        QuestDefinition.StageBranchBlocker blocker = matchingStageBranchBlocker(context, branch).orElse(null);
+        if (blocker != null) {
+            recordStageBranchFact(context, definition, progress, branch, QUEST_BRANCH_BLOCKED_FACT, "blocked");
+            return Optional.of(result(
+                    "blocked",
+                    "quest_stage_branch_blocked_" + branch.id(),
+                    stageBranchBlockerText(context, definition, progress, branch, blocker),
+                    replacements).dialogueResult());
+        }
+        if (!stageBranchConditionsMet(context, branch)) {
+            return Optional.of(result(
+                    "unavailable",
+                    "quest_stage_branch_unavailable_" + branch.id(),
+                    resolveQuestBranchMessage(
+                            context,
+                            "quest.stage_branch.unavailable",
+                            "That choice is not available right now.",
+                            replacements),
+                    replacements).dialogueResult());
+        }
+
+        recordStageBranchFact(context, definition, progress, branch, QUEST_BRANCH_SELECTED_FACT, "selected");
+        boolean changed = runStageActions(context, definition, progress, branch.actions());
+        if (!branch.next().isBlank() && definition.stages().containsKey(branch.next())) {
+            changed |= changeQuestStage(context, definition, progress, branch.next(), true, true);
+        }
+        changed |= advanceStageIfComplete(context, definition, progress);
+        if (changed) {
+            data.setDirty();
+        }
+        sendTrackerSync(context.player(), true);
+        return Optional.of(result(
+                "selected",
+                "quest_stage_branch_selected_" + branch.id(),
+                resolveQuestBranchMessage(
+                        context,
+                        "quest.stage_branch.selected",
+                        "Choice recorded: {branch_label}",
+                        stageBranchReplacements(context, definition, progress, branch)),
+                stageBranchReplacements(context, definition, progress, branch)).dialogueResult());
+    }
+
+    private static QuestActionOutcome stageBranchUnavailableResult(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        Map<String, String> replacements = definition == null || progress == null
+                ? Map.of()
+                : replacements(context, definition, progress);
+        return result(
+                "unavailable",
+                "quest_stage_branch_unavailable",
+                resolveQuestBranchMessage(
+                        context,
+                        "quest.stage_branch.unavailable",
+                        "That choice is not available right now.",
+                        replacements),
+                replacements);
+    }
+
+    private static boolean shouldShowStageBranchOption(DialogueContext context, QuestDefinition.StageBranch branch) {
+        return stageBranchConditionsMet(context, branch)
+                || matchingStageBranchBlocker(context, branch)
+                        .map(blocker -> !blocker.reason().isBlank() || !blocker.reasonKey().isBlank())
+                        .orElse(false);
+    }
+
+    private static boolean stageBranchConditionsMet(DialogueContext context, QuestDefinition.StageBranch branch) {
+        for (DialogueCondition condition : branch.conditions()) {
+            if (!condition.matches(context)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Optional<QuestDefinition.StageBranchBlocker> matchingStageBranchBlocker(
+            DialogueContext context,
+            QuestDefinition.StageBranch branch) {
+        for (QuestDefinition.StageBranchBlocker blocker : branch.blockedBy()) {
+            if (!blocker.conditions().isEmpty() && conditionsMatch(context, blocker.conditions())) {
+                return Optional.of(blocker);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean conditionsMatch(DialogueContext context, List<DialogueCondition> conditions) {
+        for (DialogueCondition condition : conditions) {
+            if (!condition.matches(context)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static String stageBranchLabel(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.StageBranch branch) {
+        Map<String, String> replacements = stageBranchReplacements(context, definition, progress, branch);
+        if (!branch.labelKey().isBlank()) {
+            return VillagerDialogueResources.message(context, branch.labelKey(), replacements)
+                    .orElseGet(() -> stageBranchFallbackLabel(branch, replacements));
+        }
+        return stageBranchFallbackLabel(branch, replacements);
+    }
+
+    private static String stageBranchFallbackLabel(
+            QuestDefinition.StageBranch branch,
+            Map<String, String> replacements) {
+        if (!branch.label().isBlank()) {
+            return VillagerDialogueResources.resolveTemplate(branch.label(), replacements);
+        }
+        return branch.id().replace('_', ' ');
+    }
+
+    private static String stageBranchBlockerText(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.StageBranch branch,
+            QuestDefinition.StageBranchBlocker blocker) {
+        Map<String, String> replacements = stageBranchReplacements(context, definition, progress, branch);
+        if (!blocker.reasonKey().isBlank()) {
+            return VillagerDialogueResources.message(context, blocker.reasonKey(), replacements)
+                    .orElseGet(() -> stageBranchFallbackBlockerText(context, blocker, replacements));
+        }
+        return stageBranchFallbackBlockerText(context, blocker, replacements);
+    }
+
+    private static String stageBranchFallbackBlockerText(
+            DialogueContext context,
+            QuestDefinition.StageBranchBlocker blocker,
+            Map<String, String> replacements) {
+        if (!blocker.reason().isBlank()) {
+            return VillagerDialogueResources.resolveTemplate(blocker.reason(), replacements);
+        }
+        return resolveQuestBranchMessage(
+                context,
+                "quest.stage_branch.blocked",
+                "That choice is blocked right now.",
+                replacements);
+    }
+
+    private static Map<String, String> stageBranchReplacements(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.StageBranch branch) {
+        Map<String, String> replacements = new LinkedHashMap<>(replacements(context, definition, progress));
+        replacements.put("branch", branch.id());
+        replacements.put("branch_id", branch.id());
+        replacements.put("branch_label", stageBranchFallbackLabel(branch, replacements));
+        replacements.put("branch_stage", progress == null ? "" : progress.currentStage());
+        replacements.put("branch_next_stage", branch.next());
+        return Map.copyOf(replacements);
+    }
+
+    private static String resolveQuestBranchMessage(
+            DialogueContext context,
+            String key,
+            String fallback,
+            Map<String, String> replacements) {
+        return VillagerDialogueResources.message(context, key, replacements)
+                .orElseGet(() -> VillagerDialogueResources.resolveTemplate(fallback, replacements));
+    }
+
+    private static void recordStageBranchFact(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.StageBranch branch,
+            ResourceLocation tag,
+            String status) {
+        String scopeKey = playerQuestScopeKey(context.player(), definition);
+        if (scopeKey.isBlank()) {
+            return;
+        }
+        VillagerQuestFacts facts = VillagerQuestFacts.get(context.level());
+        facts.setTag(scopeKey, tag);
+        facts.setVariable(scopeKey, "branch", branch.id());
+        facts.setVariable(scopeKey, "branch_status", status);
+        facts.setVariable(scopeKey, "branch_stage", progress == null ? "" : progress.currentStage());
+        facts.setVariable(scopeKey, "branch_next_stage", branch.next());
+    }
+
+    private static String stageBranchOptionId(ResourceLocation questId, String branchId) {
+        return STAGE_BRANCH_OPTION_PREFIX + encodeOptionPart(questId.toString()) + ":" + encodeOptionPart(branchId);
+    }
+
+    private static Optional<StageBranchOptionKey> parseStageBranchOptionId(String optionId) {
+        if (optionId == null || !optionId.startsWith(STAGE_BRANCH_OPTION_PREFIX)) {
+            return Optional.empty();
+        }
+        String payload = optionId.substring(STAGE_BRANCH_OPTION_PREFIX.length());
+        int separator = payload.indexOf(':');
+        if (separator <= 0 || separator >= payload.length() - 1) {
+            return Optional.empty();
+        }
+        ResourceLocation questId = ResourceLocation.tryParse(decodeOptionPart(payload.substring(0, separator)));
+        String branchId = decodeOptionPart(payload.substring(separator + 1));
+        if (questId == null || branchId.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(new StageBranchOptionKey(questId, branchId));
+    }
+
+    private static String encodeOptionPart(String value) {
+        return Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString((value == null ? "" : value).getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String decodeOptionPart(String value) {
+        try {
+            return new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ignored) {
+            return "";
+        }
     }
 
     public static Optional<QuestActionOutcome> performAction(

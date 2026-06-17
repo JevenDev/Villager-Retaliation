@@ -1529,6 +1529,13 @@ function checkQuestStageBranches(file, branches, location, defaultQuestId = "", 
     checkConditions(file, branch, branchLocation, defaultQuestId);
     checkDialogueTreeActions(file, branch.actions, `${branchLocation}.actions`, defaultQuestId);
     checkStageReferences(file, readValues(branch, ["next", "next_stage"]), stageIds, branchLocation);
+    if (
+      (Array.isArray(branch.actions) || readValues(branch, ["next", "next_stage"]).length > 0)
+      && !stringValue(branch.label)
+      && !stringValue(branch.label_key)
+    ) {
+      warnings.push(`${relative(file)}: ${branchLocation} has actions or next stage but no label or label_key for auto-rendered branch dialogue.`);
+    }
     checkQuestStageBranchBlockers(
       file,
       branch.blocked_by,
