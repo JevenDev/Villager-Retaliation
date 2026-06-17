@@ -300,6 +300,33 @@ Later dialogue or quest availability can require that branch:
 
 Use `scope: "world"` for shared save-wide consequences, `scope: "player"` for player story flags, `scope: "village"` for local outcomes, and `scope: "villager"` for villager-specific secrets or promises.
 
+### Automatic Quest Facts
+
+Every quest also writes common quest-scoped facts for the current player:
+
+| Fact | When it is written |
+| --- | --- |
+| `villagerretaliation:quest_started` | The quest starts |
+| `villagerretaliation:quest_completed` | The quest is turned in |
+| `villagerretaliation:quest_abandoned` | The quest is abandoned |
+| `villagerretaliation:quest_expired` | The quest expires |
+| `villagerretaliation:quest_objective_completed` | An objective completes |
+
+The quest-scoped variable `state` is set to `started`, `completed`, `abandoned`, or `expired`. Objective completion also sets `last_objective` and increments `objective_completed:<objective_id>`.
+
+```json
+{
+  "conditions": [
+    {
+      "type": "quest_fact",
+      "scope": "quest",
+      "quest": "my_pack:old_road",
+      "tag": "villagerretaliation:quest_completed"
+    }
+  ]
+}
+```
+
 ## Example: Once Per World Or Village
 
 By default, completion limits are per player. Add `completion_scope` when a quest should be globally settled after enough completions happen in a wider scope.

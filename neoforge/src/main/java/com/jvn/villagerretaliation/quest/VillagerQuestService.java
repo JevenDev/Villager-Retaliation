@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionExecutor;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
@@ -60,6 +61,16 @@ public final class VillagerQuestService {
     private static final int QUEST_PROGRESS_SCAN_INTERVAL_TICKS = 20;
     private static final int APPROXIMATE_COORDINATE_STEP = 50;
     private static final long QUEST_STORY_HINT_TICKS = 20L * 60L * 60L * 6L;
+    private static final ResourceLocation QUEST_STARTED_FACT =
+            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_started");
+    private static final ResourceLocation QUEST_COMPLETED_FACT =
+            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_completed");
+    private static final ResourceLocation QUEST_ABANDONED_FACT =
+            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_abandoned");
+    private static final ResourceLocation QUEST_EXPIRED_FACT =
+            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_expired");
+    private static final ResourceLocation QUEST_OBJECTIVE_COMPLETED_FACT =
+            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_objective_completed");
 
     private VillagerQuestService() {
     }
@@ -431,6 +442,7 @@ public final class VillagerQuestService {
         if (definition.target().hasProofItem() && hasRequiredProof(context.player(), definition)) {
             started.markHasProof();
         }
+        markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_STARTED_FACT, "started");
         data.setDirty();
         data.setTrackedQuest(context.player().getUUID(), definition.id());
         if (target != null) {
@@ -554,6 +566,7 @@ public final class VillagerQuestService {
 
         progress.markHasProof();
         progress.complete(context.level().getGameTime(), definition.rules().consumeOnCompletion());
+        markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_COMPLETED_FACT, "completed");
         recordScopedCompletion(context, definition);
         data.setDirty();
         clearTrackedQuestIf(data, context.player(), definition.id());
@@ -591,6 +604,7 @@ public final class VillagerQuestService {
         boolean consume = definition.rules().consumeOnAbandonment()
                 || definition.rules().abandonment() == QuestDefinition.AbandonmentMode.REMOVE_FOREVER;
         progress.abandon(context.level().getGameTime(), consume);
+        markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_ABANDONED_FACT, "abandoned");
         data.setDirty();
         clearTrackedQuestIf(data, context.player(), definition.id());
         sendQuestNotification(context, "quest.abandoned", definition, progress, "Quest abandoned: {quest}");
@@ -725,6 +739,42 @@ public final class VillagerQuestService {
         return "completion:" + definition.id();
     }
 
+    private static void markQuestLifecycleFact(
+            ServerLevel level,
+            ServerPlayer player,
+            QuestDefinition definition,
+            ResourceLocation tag,
+            String state) {
+        String scopeKey = playerQuestScopeKey(player, definition);
+        if (scopeKey.isBlank()) {
+            return;
+        }
+        VillagerQuestFacts facts = VillagerQuestFacts.get(level);
+        facts.setTag(scopeKey, tag);
+        facts.setVariable(scopeKey, "state", state);
+    }
+
+    private static void markQuestObjectiveFact(
+            ServerLevel level,
+            ServerPlayer player,
+            QuestDefinition definition,
+            QuestDefinition.Objective objective) {
+        String scopeKey = playerQuestScopeKey(player, definition);
+        if (scopeKey.isBlank()) {
+            return;
+        }
+        VillagerQuestFacts facts = VillagerQuestFacts.get(level);
+        facts.setTag(scopeKey, QUEST_OBJECTIVE_COMPLETED_FACT);
+        facts.setVariable(scopeKey, "last_objective", objective.id());
+        facts.addCounter(scopeKey, "objective_completed:" + objective.id(), 1);
+    }
+
+    private static String playerQuestScopeKey(ServerPlayer player, QuestDefinition definition) {
+        return player == null || definition == null
+                ? ""
+                : "quest:" + player.getUUID() + ":" + definition.id();
+    }
+
     private static boolean cooldownElapsed(long gameTime, long eventTime, long cooldownTicks) {
         return cooldownTicks <= 0L || eventTime <= 0L || gameTime - eventTime >= cooldownTicks;
     }
@@ -813,6 +863,9 @@ public final class VillagerQuestService {
         }
 
         progress.expire(gameTime, expiration.consume());
+        if (player.level() instanceof ServerLevel level) {
+            markQuestLifecycleFact(level, player, definition, QUEST_EXPIRED_FACT, "expired");
+        }
         if (expiration.sendNotification()) {
             sendQuestExpiredNotification(player, context, definition, progress);
         }
@@ -1023,7 +1076,11 @@ public final class VillagerQuestService {
                 continue;
             }
             if (objectiveComplete(player, context, level, definition, progress, objective)) {
-                changed |= progress.markObjectiveComplete(objective.id());
+                boolean newlyComplete = progress.markObjectiveComplete(objective.id());
+                changed |= newlyComplete;
+                if (newlyComplete) {
+                    markQuestObjectiveFact(level, player, definition, objective);
+                }
                 if (objective.id().equals(progress.targetObjectiveId())) {
                     progress.setTarget(progress.startedVillagerId(), progress.targetDimension(), null, "");
                 }
@@ -1058,7 +1115,9 @@ public final class VillagerQuestService {
             int count = progress.addObjectiveCounter(objective.id(), 1);
             changed = true;
             if (count >= objective.count()) {
-                progress.markObjectiveComplete(objective.id());
+                if (progress.markObjectiveComplete(objective.id())) {
+                    markQuestObjectiveFact(level, player, definition, objective);
+                }
             }
         }
         return changed;
