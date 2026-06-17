@@ -548,6 +548,7 @@ public record QuestDefinition(
             TriggerEvent event,
             List<DialogueCondition> conditions,
             List<VillagerActionDefinition> actions,
+            Set<String> stages,
             long cooldownTicks,
             double radius,
             boolean repeatable
@@ -559,6 +560,7 @@ public record QuestDefinition(
             event = event == null ? TriggerEvent.PLAYER_TICK : event;
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
             actions = actions == null ? List.of() : List.copyOf(actions);
+            stages = stages == null ? Set.of() : Set.copyOf(stages);
             cooldownTicks = Math.max(0L, cooldownTicks);
             radius = Double.isFinite(radius) && radius > 0.0D ? radius : DEFAULT_RADIUS;
         }
@@ -569,6 +571,7 @@ public record QuestDefinition(
         PROXIMITY,
         STARTED,
         PROGRESS,
+        STAGE_CHANGED,
         COMPLETED,
         ABANDONED,
         EXPIRED;
@@ -580,6 +583,7 @@ public record QuestDefinition(
                 case "proximity" -> PROXIMITY;
                 case "started" -> STARTED;
                 case "progress" -> PROGRESS;
+                case "stage", "stage_changed", "stage_entered", "stage_set" -> STAGE_CHANGED;
                 case "completed" -> COMPLETED;
                 case "abandoned" -> ABANDONED;
                 case "expired" -> EXPIRED;

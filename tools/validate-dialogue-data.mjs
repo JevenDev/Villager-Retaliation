@@ -374,7 +374,7 @@ const questMemoryObjectiveTypes = new Set(["memory_event", "village_event", "vil
 const questGiftObjectiveTypes = new Set(["gift", "give_gift", "gift_given"]);
 const questFactObjectiveTypes = new Set(["fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"]);
 const questGiftReactions = new Set(["loved", "liked", "neutral", "disliked", "hated"]);
-const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "completed", "abandoned", "expired"]);
+const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "stage", "stage_changed", "stage_entered", "stage_set", "completed", "abandoned", "expired"]);
 const questAbandonmentModes = new Set(["remove_forever", "allow_repickup", "cooldown"]);
 const questDialogueStages = [
   "start",
@@ -1359,11 +1359,14 @@ function checkQuestTriggers(file, triggers, location, defaultQuestId = "") {
       "cooldown_seconds",
       "cooldown_days",
       "radius",
+      "stage",
+      "stages",
       "repeatable"
     ]));
     checkStringValues(file, trigger, triggerLocation, ["event"], questTriggerEvents, "quest trigger event", { requireAny: true });
     const event = normalizedString(trigger.event);
     checkConditions(file, trigger, triggerLocation, defaultQuestId);
+    checkStringList(file, trigger, triggerLocation, ["stage", "stages"], "quest trigger stage");
     checkDialogueTreeActions(file, trigger.actions, `${triggerLocation}.actions`, defaultQuestId);
     for (const key of ["cooldown_ticks", "cooldown_seconds", "cooldown_days"]) {
       checkOptionalInteger(file, trigger, triggerLocation, key, { min: 0 });

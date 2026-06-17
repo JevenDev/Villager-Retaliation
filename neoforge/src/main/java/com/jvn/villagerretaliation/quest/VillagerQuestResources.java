@@ -1122,10 +1122,22 @@ public final class VillagerQuestResources {
                 event,
                 DialogueCondition.readList(location, "quest trigger \"" + id + "\"", trigger, defaultQuestId),
                 actions,
+                readTriggerStages(trigger),
                 DatapackJsonReader.readDurationTicks(trigger, "cooldown", defaultTriggerCooldown(event)),
                 DatapackJsonReader.readDouble(trigger, "radius", 10.0D),
                 repeatable
         ));
+    }
+
+    private static Set<String> readTriggerStages(JsonObject trigger) {
+        Set<String> stages = new LinkedHashSet<>();
+        for (String stage : DatapackJsonReader.readStringList(trigger, "stage", "stages")) {
+            String normalized = stage == null ? "" : stage.trim();
+            if (!normalized.isBlank()) {
+                stages.add(normalized);
+            }
+        }
+        return Set.copyOf(stages);
     }
 
     private static boolean defaultTriggerRepeatable(List<VillagerActionDefinition> actions) {

@@ -80,6 +80,8 @@ public final class VillagerQuestService {
     private static final ResourceLocation QUEST_BRANCH_LOCKED_FACT =
             ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_branch_locked");
     private static final String BRANCH_LOCK_CONSUMED_REASON = "branch_lock";
+    private static final ThreadLocal<Boolean> DISPATCHING_STAGE_TRIGGERS =
+            ThreadLocal.withInitial(() -> false);
 
     private VillagerQuestService() {
     }
@@ -475,6 +477,8 @@ public final class VillagerQuestService {
             return false;
         }
         data.setDirty();
+        VillagerQuestResources.quest(context.level().getServer(), questId)
+                .ifPresent(definition -> dispatchStageChangedTriggers(context, definition, progress));
         return true;
     }
 
@@ -1979,6 +1983,21 @@ public final class VillagerQuestService {
         return dirty;
     }
 
+    private static boolean dispatchStageChangedTriggers(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (DISPATCHING_STAGE_TRIGGERS.get()) {
+            return false;
+        }
+        DISPATCHING_STAGE_TRIGGERS.set(true);
+        try {
+            return dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.STAGE_CHANGED);
+        } finally {
+            DISPATCHING_STAGE_TRIGGERS.set(false);
+        }
+    }
+
     private static void markContinuousTriggersUsed(
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition definition,
@@ -1999,6 +2018,9 @@ public final class VillagerQuestService {
             if (context.player().distanceToSqr(context.villager()) > radius * radius) {
                 return false;
             }
+        }
+        if (!trigger.stages().isEmpty() && !trigger.stages().contains(progress.currentStage())) {
+            return false;
         }
         long lastTriggered = progress.lastTriggerGameTime(trigger.id());
         if (!trigger.repeatable() && lastTriggered > 0L) {

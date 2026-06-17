@@ -593,6 +593,28 @@ Use `scope: "world"` for shared save-wide consequences, `scope: "player"` for pl
 
 Tracker text and quest dialogue can use `{quest_stage}` or `{current_stage}` to show the saved progress stage. Lifecycle events also write stage values: `started`, `completed`, `abandoned`, `expired`, and `branch_locked`. A custom `set_stage` action can replace those with a pack-defined stage such as `warned_guard`, `archive_saved`, or `raiders_spared`.
 
+Stage changes can fire quest triggers. Use `event: "stage_changed"` and an optional `stage` or `stages` filter for entry actions:
+
+```json
+{
+  "triggers": [
+    {
+      "id": "warned_guard_followup",
+      "event": "stage_changed",
+      "stage": "warned_guard",
+      "actions": [
+        {
+          "type": "forced_dialogue",
+          "forced_dialogue": "my_pack.quest.old_road.guard_warning"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Stage triggers do not recursively trigger more stage triggers in the same action chain. A stage entry action can still set a later stage, but that second stage change will not immediately run another nested `stage_changed` trigger.
+
 ### Automatic Quest Facts
 
 Every quest also writes common quest-scoped facts for the current player:
