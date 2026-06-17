@@ -10,6 +10,7 @@ const roots = {
   dialogue: "neoforge/src/main/resources/data/villagerretaliation/dialogue/en_us",
   dialogueTrees: "neoforge/src/main/resources/data/villagerretaliation/dialogue_trees/en_us",
   forcedDialogue: "neoforge/src/main/resources/data/villagerretaliation/forced_dialogue",
+  lootTables: "neoforge/src/main/resources/data/villagerretaliation/loot_table",
   notifications: "neoforge/src/main/resources/data/villagerretaliation/notifications/en_us",
   quests: "neoforge/src/main/resources/data/villagerretaliation/quests"
 };
@@ -695,12 +696,14 @@ const questDefinitions = new Map();
 const dialogueTreeDefinitions = new Map();
 const forcedDialogueDefinitions = new Map();
 const dialogueMessageKeys = new Map();
+const lootTableDefinitions = new Set();
 const forcedDialogueQuestModules = [];
 const pendingQuestReferences = [];
 const pendingDialogueTreeLinks = [];
 const pendingForcedDialogueReferences = [];
 const pendingDialogueMessageKeyReferences = [];
 const pendingForcedDialogueMessageKeyReferences = [];
+const pendingLootTableReferences = [];
 const dialogueIdScopes = {
   options: new Map(),
   lines: new Map(),
@@ -726,6 +729,8 @@ for (const [kind, relativeRoot] of Object.entries(roots)) {
     } else if (kind === "forcedDialogue") {
       indexForcedDialogue(file, data);
       checkForcedDialogue(file, data);
+    } else if (kind === "lootTables") {
+      indexLootTable(file);
     } else if (kind === "notifications") {
       checkIds(file, data.notifications ?? [], "notification");
     } else if (kind === "quests") {
@@ -1895,6 +1900,7 @@ function checkQuestRewards(file, rewards, location) {
   }
   checkOptionalString(file, rewards, location, "loot_table");
   checkOptionalString(file, rewards, location, "memory_event");
+  collectLootTableReferences(file, rewards, location, ["loot_table"], "quest rewards");
 }
 
 function checkQuestLinks(file, data, location) {
@@ -2215,6 +2221,13 @@ function checkDialogueTreeActions(file, actions, location, defaultQuestId = "", 
     if (isQuestFactActionType(type)) {
       checkQuestFactAction(file, action, actionLocation, type, defaultQuestId);
     }
+    if (type === "loot") {
+      checkOptionalString(file, action, actionLocation, "loot_table");
+      if (!hasStringValues(action, ["loot_table"])) {
+        errors.push(`${relative(file)}: ${actionLocation}.loot_table is required for a loot action.`);
+      }
+      collectLootTableReferences(file, action, actionLocation, ["loot_table"], "dialogue or trigger loot action");
+    }
     if (type === "forced_dialogue") {
       checkStringList(file, action, actionLocation, ["forced_dialogue"], "forced dialogue id");
       for (const forcedDialogueId of readValues(action, ["forced_dialogue"])) {
@@ -2330,6 +2343,9 @@ function checkForcedDialogueEntryText(file, entry, location, messagePrefix = "")
   checkOptionalString(file, entry, location, "text_prefix");
   checkStringList(file, entry, location, ["line", "lines"], "forced dialogue line");
   checkStringList(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");
+  checkOptionalString(file, entry, location, "loot_table");
+  checkStringList(file, entry, location, ["loot_tables"], "forced dialogue loot table id");
+  collectLootTableReferences(file, entry, location, ["loot_table", "loot_tables"], "forced dialogue loot-table filter");
   collectForcedDialogueMessageKeys(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");
   if (!hasStringValues(entry, ["line_key", "line_keys", "text_key", "text_keys"]) && messagePrefix && hasStringValues(entry, ["line", "lines"])) {
     collectForcedDialogueMessageKey(file, `${location}.message_prefix`, `${messagePrefix}.line`, "derived forced dialogue line key");
@@ -2437,6 +2453,34 @@ function collectForcedDialogueMessageKey(file, location, value, reason) {
     const key = child.trim();
     if (key) {
       pendingForcedDialogueMessageKeyReferences.push({ file, location: `${location}[${index}]`, key, reason });
+    }
+  });
+}
+
+function collectLootTableReferences(file, entry, location, keys, reason) {
+  for (const key of keys) {
+    collectLootTableReference(file, `${location}.${key}`, entry?.[key], reason);
+  }
+}
+
+function collectLootTableReference(file, location, value, reason) {
+  if (typeof value === "string") {
+    const id = value.trim();
+    if (id) {
+      pendingLootTableReferences.push({ file, location, id, reason });
+    }
+    return;
+  }
+  if (!Array.isArray(value)) {
+    return;
+  }
+  value.forEach((child, index) => {
+    if (typeof child !== "string") {
+      return;
+    }
+    const id = child.trim();
+    if (id) {
+      pendingLootTableReferences.push({ file, location: `${location}[${index}]`, id, reason });
     }
   });
 }
@@ -2973,6 +3017,25 @@ function forcedDialogueSourceIdForFile(file) {
   return relativePath ? `villagerretaliation:${relativePath}` : "";
 }
 
+function parseResourceId(value) {
+  const id = stringValue(value);
+  if (!id) {
+    return null;
+  }
+  if (!/^([a-z0-9_.-]+:)?[a-z0-9/._-]+$/.test(id)) {
+    return { id, valid: false, namespace: "", path: "" };
+  }
+  const separator = id.indexOf(":");
+  if (separator < 0) {
+    return { id, valid: true, namespace: "", path: id };
+  }
+  const namespace = id.slice(0, separator);
+  const resourcePath = id.slice(separator + 1);
+  return namespace && resourcePath
+    ? { id, valid: true, namespace, path: resourcePath }
+    : { id, valid: false, namespace, path: resourcePath };
+}
+
 function normalizedString(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
@@ -3219,6 +3282,13 @@ function registerForcedDialogueDefinition(file, id, trigger, requireUnique) {
   });
 }
 
+function indexLootTable(file) {
+  const id = resourceIdForFile(file, roots.lootTables);
+  if (id) {
+    lootTableDefinitions.add(id);
+  }
+}
+
 function forcedDialogueQuestModule(file) {
   const relativePath = path.relative(path.join(root, roots.forcedDialogue), file).replaceAll(path.sep, "/");
   const parts = relativePath.split("/");
@@ -3288,6 +3358,7 @@ function validateCrossReferences() {
   validateForcedDialogueQuestModules();
   validateDialogueMessageKeyReferences();
   validateForcedDialogueMessageKeyReferences();
+  validateLootTableReferences();
 
   for (const reference of pendingForcedDialogueReferences) {
     const definition = forcedDialogueDefinitions.get(reference.id);
@@ -3332,6 +3403,19 @@ function validateForcedDialogueMessageKeyReferences() {
   for (const reference of pendingForcedDialogueMessageKeyReferences) {
     if (!dialogueMessageKeys.has(reference.key)) {
       warnings.push(`${relative(reference.file)}: ${reference.location} references missing dialogue message key "${reference.key}" from ${reference.reason}; forced dialogue will use inline fallback text if present.`);
+    }
+  }
+}
+
+function validateLootTableReferences() {
+  for (const reference of pendingLootTableReferences) {
+    const id = parseResourceId(reference.id);
+    if (!id || !id.valid) {
+      errors.push(`${relative(reference.file)}: ${reference.location} references invalid loot table id "${reference.id}" from ${reference.reason}.`);
+      continue;
+    }
+    if (id.namespace === "villagerretaliation" && !lootTableDefinitions.has(id.id)) {
+      errors.push(`${relative(reference.file)}: ${reference.location} references missing built-in loot table "${id.id}" from ${reference.reason}.`);
     }
   }
 }
