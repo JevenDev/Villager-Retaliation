@@ -44,7 +44,7 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_STRUCTURE_SEARCH_RADIUS = 256;
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
-    private static volatile CachedQuests cachedQuests = new CachedQuests(null, Map.of(), Set.of());
+    private static volatile CachedQuests cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Map.of());
 
     private VillagerQuestResources() {
     }
@@ -54,7 +54,7 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of(), Set.of());
+        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Map.of());
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
@@ -72,6 +72,13 @@ public final class VillagerQuestResources {
         return id != null && loadCache(server).mobKillQuestIds().contains(id);
     }
 
+    public static Set<ResourceLocation> exclusiveGroupQuestIds(MinecraftServer server, ResourceLocation group) {
+        if (group == null) {
+            return Set.of();
+        }
+        return loadCache(server).exclusiveGroupQuestIds().getOrDefault(group, Set.of());
+    }
+
     private static CachedQuests loadCache(MinecraftServer server) {
         CachedQuests current = cachedQuests;
         if (current.server() == server) {
@@ -85,7 +92,11 @@ public final class VillagerQuestResources {
             }
 
             Map<ResourceLocation, QuestDefinition> quests = read(server);
-            CachedQuests loaded = new CachedQuests(server, quests, mobKillQuestIds(quests));
+            CachedQuests loaded = new CachedQuests(
+                    server,
+                    quests,
+                    mobKillQuestIds(quests),
+                    exclusiveGroupQuestIds(quests));
             cachedQuests = loaded;
             return loaded;
         }
@@ -101,6 +112,22 @@ public final class VillagerQuestResources {
             }
         }
         return Set.copyOf(ids);
+    }
+
+    private static Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds(Map<ResourceLocation, QuestDefinition> quests) {
+        Map<ResourceLocation, Set<ResourceLocation>> groups = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
+            ResourceLocation group = entry.getValue().rules().branching().exclusiveGroup();
+            if (group != null) {
+                groups.computeIfAbsent(group, ignored -> new LinkedHashSet<>()).add(entry.getKey());
+            }
+        }
+
+        Map<ResourceLocation, Set<ResourceLocation>> frozen = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, Set<ResourceLocation>> entry : groups.entrySet()) {
+            frozen.put(entry.getKey(), Set.copyOf(entry.getValue()));
+        }
+        return Map.copyOf(frozen);
     }
 
     private static Map<ResourceLocation, QuestDefinition> read(MinecraftServer server) {
@@ -648,8 +675,50 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readBoolean(rules, "consume_on_completion", false),
                 DatapackJsonReader.readBoolean(rules, "consume_on_abandonment", false),
                 readActiveState(location, rules, defaultQuestId),
-                readExpiration(location, rules, defaultQuestId)
+                readExpiration(location, rules, defaultQuestId),
+                readBranching(rules)
         );
+    }
+
+    private static QuestDefinition.Branching readBranching(JsonObject rules) {
+        JsonObject branch = DatapackJsonReader.readObject(rules, "branch");
+        ResourceLocation exclusiveGroup = firstResourceLocation(branch, "exclusive_group", "group");
+        if (exclusiveGroup == null) {
+            exclusiveGroup = firstResourceLocation(rules, "exclusive_group", "branch_group");
+        }
+        QuestDefinition.BranchLockEvent exclusiveOn = QuestDefinition.BranchLockEvent.bySerializedName(firstNonBlank(
+                firstString(branch, "exclusive_on", "lock_on"),
+                firstString(rules, "exclusive_on", "exclusive_lock_on")));
+
+        Set<ResourceLocation> blocksOnStart = new LinkedHashSet<>();
+        blocksOnStart.addAll(DatapackJsonReader.readResourceLocations(rules, "blocks_on_start", "lock_on_start"));
+        if (branch != null) {
+            blocksOnStart.addAll(DatapackJsonReader.readResourceLocations(branch, "blocks_on_start", "lock_on_start"));
+        }
+
+        Set<ResourceLocation> blocksOnCompletion = new LinkedHashSet<>();
+        blocksOnCompletion.addAll(DatapackJsonReader.readResourceLocations(
+                rules,
+                "blocks",
+                "blocks_on_completion",
+                "blocks_on_complete",
+                "lock_on_completion",
+                "lock_on_complete"));
+        if (branch != null) {
+            blocksOnCompletion.addAll(DatapackJsonReader.readResourceLocations(
+                    branch,
+                    "blocks",
+                    "blocks_on_completion",
+                    "blocks_on_complete",
+                    "lock_on_completion",
+                    "lock_on_complete"));
+        }
+
+        return new QuestDefinition.Branching(
+                exclusiveGroup,
+                exclusiveOn,
+                Set.copyOf(blocksOnStart),
+                Set.copyOf(blocksOnCompletion));
     }
 
     private static QuestDefinition.ActiveState readActiveState(
@@ -932,6 +1001,32 @@ public final class VillagerQuestResources {
         return first == null || first.isBlank() ? second : first;
     }
 
+    private static String firstString(JsonObject object, String... keys) {
+        if (object == null) {
+            return "";
+        }
+        for (String key : keys) {
+            String value = DatapackJsonReader.readString(object, key);
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
+    }
+
+    private static ResourceLocation firstResourceLocation(JsonObject object, String... keys) {
+        if (object == null) {
+            return null;
+        }
+        for (String key : keys) {
+            ResourceLocation location = DatapackJsonReader.readResourceLocation(object, key).orElse(null);
+            if (location != null) {
+                return location;
+            }
+        }
+        return null;
+    }
+
     private record EntitySelectors(Set<ResourceLocation> entityTypes, Set<ResourceLocation> entityTags) {
         private boolean isEmpty() {
             return this.entityTypes.isEmpty() && this.entityTags.isEmpty();
@@ -941,6 +1036,7 @@ public final class VillagerQuestResources {
     private record CachedQuests(
             MinecraftServer server,
             Map<ResourceLocation, QuestDefinition> quests,
-            Set<ResourceLocation> mobKillQuestIds) {
+            Set<ResourceLocation> mobKillQuestIds,
+            Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds) {
     }
 }

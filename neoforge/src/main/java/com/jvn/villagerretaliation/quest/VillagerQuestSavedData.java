@@ -550,6 +550,18 @@ public class VillagerQuestSavedData extends SavedData {
             this.consumedReason = consume ? "expiration" : "";
         }
 
+        public void consume(String reason) {
+            this.state = QuestState.CONSUMED;
+            this.visitedTarget = false;
+            this.hasProof = false;
+            this.targetDimension = null;
+            this.targetPos = null;
+            this.targetObjectiveId = "";
+            this.completedObjectives.clear();
+            this.objectiveCounters.clear();
+            this.consumedReason = reason == null ? "" : reason;
+        }
+
         public boolean markVisitedTarget() {
             if (this.visitedTarget) {
                 return false;

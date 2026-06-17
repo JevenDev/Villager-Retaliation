@@ -312,7 +312,8 @@ public record QuestDefinition(
             boolean consumeOnCompletion,
             boolean consumeOnAbandonment,
             ActiveState activeState,
-            Expiration expiration
+            Expiration expiration,
+            Branching branching
     ) {
         public static final Rules DEFAULT = new Rules(
                 false,
@@ -327,7 +328,8 @@ public record QuestDefinition(
                 false,
                 false,
                 ActiveState.DEFAULT,
-                Expiration.DEFAULT
+                Expiration.DEFAULT,
+                Branching.DEFAULT
         );
 
         public Rules {
@@ -339,6 +341,50 @@ public record QuestDefinition(
             abandonmentCooldownTicks = Math.max(0L, abandonmentCooldownTicks);
             activeState = activeState == null ? ActiveState.DEFAULT : activeState;
             expiration = expiration == null ? Expiration.DEFAULT : expiration;
+            branching = branching == null ? Branching.DEFAULT : branching;
+        }
+    }
+
+    public record Branching(
+            ResourceLocation exclusiveGroup,
+            BranchLockEvent exclusiveOn,
+            Set<ResourceLocation> blocksOnStart,
+            Set<ResourceLocation> blocksOnCompletion
+    ) {
+        public static final Branching DEFAULT = new Branching(null, BranchLockEvent.STARTED, Set.of(), Set.of());
+
+        public Branching {
+            exclusiveOn = exclusiveOn == null ? BranchLockEvent.STARTED : exclusiveOn;
+            blocksOnStart = blocksOnStart == null ? Set.of() : Set.copyOf(blocksOnStart);
+            blocksOnCompletion = blocksOnCompletion == null ? Set.of() : Set.copyOf(blocksOnCompletion);
+        }
+
+        public Set<ResourceLocation> blocksFor(BranchLockEvent event) {
+            return event == BranchLockEvent.STARTED ? this.blocksOnStart : this.blocksOnCompletion;
+        }
+    }
+
+    public enum BranchLockEvent {
+        STARTED("started"),
+        COMPLETED("completed");
+
+        private final String serializedName;
+
+        BranchLockEvent(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        public String serializedName() {
+            return this.serializedName;
+        }
+
+        public static BranchLockEvent bySerializedName(String value) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+            return switch (normalized) {
+                case "start", "started", "accepted", "begin", "begun" -> STARTED;
+                case "complete", "completed", "turn_in", "turnin", "finish", "finished" -> COMPLETED;
+                default -> STARTED;
+            };
         }
     }
 

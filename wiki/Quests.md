@@ -140,6 +140,33 @@ Use `offer.conditions` for branch-specific availability, world-state locks, or o
 
 Use `rules.active.conditions` when an already accepted quest should pause or hide until the world is right again.
 
+Use branch locks when one path should close another path. Quests in the same `exclusive_group` lock their siblings when the configured `exclusive_on` event fires:
+
+```json
+{
+  "id": "my_pack:join_the_wardens",
+  "rules": {
+    "exclusive_group": "my_pack:faction_choice",
+    "exclusive_on": "started"
+  }
+}
+```
+
+Use explicit lock lists for named consequences outside the group:
+
+```json
+{
+  "rules": {
+    "blocks_on_completion": [
+      "my_pack:warn_the_raiders",
+      "my_pack:smuggle_the_relic"
+    ]
+  }
+}
+```
+
+Locked quests are consumed with state `branch_locked` and receive the quest-scoped tag `villagerretaliation:quest_branch_locked`. Their quest fact variables include `state: "branch_locked"`, `blocked_by`, `blocked_on`, and `exclusive_group` when a group caused the lock.
+
 ## Example: Structure Quest
 
 ```json

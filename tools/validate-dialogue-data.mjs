@@ -244,6 +244,9 @@ const questStates = new Set([
   "consumed",
   "removed",
   "removed_forever",
+  "branch_locked",
+  "branch_blocked",
+  "blocked_branch",
   "unavailable",
   "not_completed"
 ]);
@@ -327,6 +330,7 @@ const timesOfDay = new Set(["morning", "afternoon", "evening", "night"]);
 const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "gossip", "memory", "loot", "notification", "tracker", "forced_dialogue", "set_tag", "clear_tag", "set_variable", "counter"]);
 const questFactScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "quest", "quest_progress", "player_quest", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const questCompletionScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "villager", "issuer", "quest_giver", "village", "settlement"]);
+const questBranchLockEvents = new Set(["started", "start", "accepted", "begin", "begun", "completed", "complete", "turn_in", "turnin", "finish", "finished"]);
 const dialogueTreeActionKeys = new Set([
   "type",
   "quest",
@@ -1100,7 +1104,19 @@ function checkQuestRules(file, rules, location, defaultQuestId = "") {
     "consume_on_completion",
     "consume_on_abandonment",
     "active",
-    "expiration"
+    "expiration",
+    "exclusive_group",
+    "branch_group",
+    "exclusive_on",
+    "exclusive_lock_on",
+    "blocks",
+    "blocks_on_start",
+    "blocks_on_completion",
+    "blocks_on_complete",
+    "lock_on_start",
+    "lock_on_completion",
+    "lock_on_complete",
+    "branch"
   ]));
   for (const key of ["repeatable", "locked_to_villager", "cross_villager_compatible", "consume_on_completion", "consume_on_abandonment"]) {
     checkOptionalBoolean(file, rules, location, key);
@@ -1110,8 +1126,52 @@ function checkQuestRules(file, rules, location, defaultQuestId = "") {
   }
   checkStringValues(file, rules, location, ["completion_scope", "scope"], questCompletionScopes, "quest completion scope");
   checkStringValues(file, rules, location, ["abandonment"], questAbandonmentModes, "quest abandonment mode");
+  checkOptionalString(file, rules, location, "exclusive_group");
+  checkOptionalString(file, rules, location, "branch_group");
+  checkStringValues(file, rules, location, ["exclusive_on", "exclusive_lock_on"], questBranchLockEvents, "quest branch lock event");
+  checkQuestReferenceList(
+    file,
+    rules,
+    location,
+    ["blocks", "blocks_on_start", "blocks_on_completion", "blocks_on_complete", "lock_on_start", "lock_on_completion", "lock_on_complete"],
+    "quest branch lock"
+  );
+  checkQuestBranching(file, rules.branch, `${location}.branch`);
   checkQuestActive(file, rules.active, `${location}.active`, defaultQuestId);
   checkQuestExpiration(file, rules.expiration, `${location}.expiration`, defaultQuestId);
+}
+
+function checkQuestBranching(file, branch, location) {
+  if (branch === undefined) {
+    return;
+  }
+  if (!branch || typeof branch !== "object" || Array.isArray(branch)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, branch, location, new Set([
+    "exclusive_group",
+    "group",
+    "exclusive_on",
+    "lock_on",
+    "blocks",
+    "blocks_on_start",
+    "blocks_on_completion",
+    "blocks_on_complete",
+    "lock_on_start",
+    "lock_on_completion",
+    "lock_on_complete"
+  ]));
+  checkOptionalString(file, branch, location, "exclusive_group");
+  checkOptionalString(file, branch, location, "group");
+  checkStringValues(file, branch, location, ["exclusive_on", "lock_on"], questBranchLockEvents, "quest branch lock event");
+  checkQuestReferenceList(
+    file,
+    branch,
+    location,
+    ["blocks", "blocks_on_start", "blocks_on_completion", "blocks_on_complete", "lock_on_start", "lock_on_completion", "lock_on_complete"],
+    "quest branch lock"
+  );
 }
 
 function checkQuestActive(file, active, location, defaultQuestId = "") {
@@ -1964,6 +2024,20 @@ function checkStringList(file, entry, location, keys, label) {
         errors.push(`${relative(file)}: ${location}.${key}[${index}] must be a nonblank string ${label}.`);
       }
     });
+  }
+}
+
+function checkQuestReferenceList(file, entry, location, keys, reason) {
+  checkStringList(file, entry, location, keys, "quest id");
+  for (const questId of readValues(entry, keys)) {
+    if (typeof questId === "string" && questId.trim()) {
+      pendingQuestReferences.push({
+        file,
+        location,
+        id: questId.trim(),
+        reason
+      });
+    }
   }
 }
 

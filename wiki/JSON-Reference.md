@@ -277,6 +277,20 @@ Quest offers can use the same condition shape:
 
 `parent` gates a quest behind a completed parent quest for the current player. `offer.conditions` gates whether the quest can be offered at all. `rules.active.conditions` controls whether an already active quest can currently progress.
 
+Branch locks close unchosen paths:
+
+```json
+{
+  "rules": {
+    "exclusive_group": "my_pack:faction_choice",
+    "exclusive_on": "started",
+    "blocks_on_completion": ["my_pack:other_outcome"]
+  }
+}
+```
+
+`exclusive_group` makes sibling quests in the same group mutually exclusive. `exclusive_on` accepts `started` or `completed`. `blocks_on_start`, `blocks_on_completion`, and `blocks` explicitly consume named quests. A locked quest matches quest state `branch_locked` and gets the quest-scoped tag `villagerretaliation:quest_branch_locked` plus variables `blocked_by`, `blocked_on`, and `exclusive_group`.
+
 ## Shared Actions
 
 Dialogue trees, quest triggers, and villager event triggers use the same `actions` shape for most state changes.
