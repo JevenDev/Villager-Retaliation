@@ -363,6 +363,61 @@ Useful built-in memory tags include `baby_born`, `iron_golem_defeated_mob`, `thu
 
 Memory objectives only count new player-associated memory writes while the quest is active. Use quest fact tags or variables for permanent history gates, such as unlocking a branch after an event that may have happened earlier.
 
+## Example: Fact Objective
+
+Use `fact` when a quest should wait for durable story state written by a dialogue choice, quest trigger, forced dialogue, or another quest. Fact objectives use the same vocabulary as `quest_fact` conditions: `scope`, `tag`, `key`, `variable`, `counter`, `stage`, `value`, `min`, and `max`.
+
+```json
+{
+  "id": "my_pack:choose_a_route",
+  "display": {
+    "title": "Choose A Route",
+    "description": "Choose how the village will move supplies."
+  },
+  "objectives": [
+    {
+      "id": "choose_route",
+      "type": "fact",
+      "scope": "quest",
+      "stage": ["river_route", "ridge_route"],
+      "tracker": {
+        "text": "Choose a supply route.",
+        "complete_text": "The route is chosen: {objective_fact_value}."
+      }
+    }
+  ]
+}
+```
+
+Common fact objective shapes:
+
+```json
+{ "type": "fact", "scope": "player", "tag": "my_pack:village_defender" }
+```
+
+```json
+{ "type": "fact", "scope": "world", "counter": "old_roads.relics_found", "min": 3 }
+```
+
+```json
+{ "type": "quest_stage", "quest": "my_pack:trial_path", "stage": "accused_the_guard" }
+```
+
+Fact objective fields:
+
+| Field | Meaning |
+| --- | --- |
+| `scope` | `player`, `world`, `quest`, `villager`, or `village`; defaults to `quest` inside quest files |
+| `quest` / `quest_id` | Quest id to read when `scope` is `quest`; defaults to the current quest |
+| `tag`, `tags`, `fact_tag`, `quest_tag` | Durable fact tags to require |
+| `key`, `variable`, `fact` | Variable key to require |
+| `counter` | Counter key to test with `min` / `max` |
+| `stage`, `stages` | Shorthand for variable key `stage` with one or more accepted values |
+| `value`, `values` | Accepted variable values |
+| `min`, `max` | Counter bounds |
+
+Tracker placeholders include `{objective_fact}`, `{objective_fact_id}`, `{objective_fact_key}`, `{objective_fact_value}`, and `{objective_fact_scope}`.
+
 ## Example: Tracker Text
 
 ```json

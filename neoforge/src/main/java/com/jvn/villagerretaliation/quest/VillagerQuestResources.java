@@ -46,7 +46,7 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
     private static volatile CachedQuests cachedQuests =
-            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
 
     private VillagerQuestResources() {
     }
@@ -56,7 +56,7 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
@@ -87,6 +87,10 @@ public final class VillagerQuestResources {
             return Set.of();
         }
         return loadCache(server).memoryEventQuestIds().getOrDefault(memoryTag, Set.of());
+    }
+
+    public static boolean hasFactObjectives(MinecraftServer server, ResourceLocation id) {
+        return id != null && loadCache(server).factQuestIds().contains(id);
     }
 
     public static Set<ResourceLocation> exclusiveGroupQuestIds(MinecraftServer server, ResourceLocation group) {
@@ -125,6 +129,7 @@ public final class VillagerQuestResources {
                     mobKillQuestIds(quests),
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_BREAK),
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_PLACE),
+                    objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
                     memoryEventQuestIds(quests),
                     exclusiveGroupQuestIds(quests),
                     triggerEventQuestIds(quests));
@@ -146,6 +151,12 @@ public final class VillagerQuestResources {
     }
 
     private static Set<ResourceLocation> blockObjectiveQuestIds(
+            Map<ResourceLocation, QuestDefinition> quests,
+            QuestDefinition.ObjectiveType type) {
+        return objectiveQuestIds(quests, type);
+    }
+
+    private static Set<ResourceLocation> objectiveQuestIds(
             Map<ResourceLocation, QuestDefinition> quests,
             QuestDefinition.ObjectiveType type) {
         Set<ResourceLocation> ids = new LinkedHashSet<>();
@@ -437,6 +448,7 @@ public final class VillagerQuestResources {
         EntitySelectors entitySelectors = readEntitySelectors(location, context, entry);
         BlockSelectors blockSelectors = readBlockSelectors(location, context, entry);
         MemoryEventSelectors memoryEventSelectors = readMemoryEventSelectors(location, context, entry);
+        FactObjective factObjective = readFactObjective(location, context, entry, defaultQuestId);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
         if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "structure_visit objective must define structure.");
@@ -463,6 +475,10 @@ public final class VillagerQuestResources {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "memory_event objective must define memory, memory_event, memory_tags, event, or events.");
             return Optional.empty();
         }
+        if (type == QuestDefinition.ObjectiveType.FACT && factObjective.isEmpty()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective must define tag, tags, key, variable, counter, stage, or stages.");
+            return Optional.empty();
+        }
         if (type == QuestDefinition.ObjectiveType.CONDITION && conditions.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "condition objective must define conditions.");
             return Optional.empty();
@@ -485,6 +501,13 @@ public final class VillagerQuestResources {
                 blockSelectors.blockTypes(),
                 blockSelectors.blockTags(),
                 memoryEventSelectors.memoryTags(),
+                factObjective.scope(),
+                factObjective.questId(),
+                factObjective.tags(),
+                factObjective.key(),
+                factObjective.values(),
+                factObjective.min(),
+                factObjective.max(),
                 DatapackJsonReader.readInt(entry, "count", 1),
                 DatapackJsonReader.readBoolean(entry, "consume", true),
                 readObjectiveItemRequirements(entry),
@@ -566,6 +589,61 @@ public final class VillagerQuestResources {
             }
         }
         return new MemoryEventSelectors(Set.copyOf(memoryTags));
+    }
+
+    private static FactObjective readFactObjective(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = defaultQuestId;
+        String questValue = firstNonBlank(
+                DatapackJsonReader.readString(entry, "quest"),
+                DatapackJsonReader.readString(entry, "quest_id"));
+        if (!questValue.isBlank()) {
+            questId = QuestIds.parse(questValue, location);
+            if (questId == null) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective quest \"" + questValue + "\" is not a valid quest id.");
+            }
+        }
+        QuestFactScope fallbackScope = questId == null ? QuestFactScope.PLAYER : QuestFactScope.QUEST;
+        QuestFactScope scope = QuestFactScope.bySerializedName(DatapackJsonReader.readString(entry, "scope"), fallbackScope);
+
+        Set<ResourceLocation> tags = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(entry, "tag", "tags", "fact_tag", "quest_tag")) {
+            ResourceLocation tag = ResourceLocation.tryParse(value);
+            if (tag == null) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective tag \"" + value + "\" is not a valid resource location.");
+            } else {
+                tags.add(tag);
+            }
+        }
+
+        String key = firstNonBlank(
+                DatapackJsonReader.readString(entry, "key"),
+                firstNonBlank(
+                        DatapackJsonReader.readString(entry, "variable"),
+                        firstNonBlank(
+                                DatapackJsonReader.readString(entry, "counter"),
+                                DatapackJsonReader.readString(entry, "fact"))));
+        Set<String> stageValues = new LinkedHashSet<>(DatapackJsonReader.readStringList(entry, "stage", "stages"));
+        if (key.isBlank() && !stageValues.isEmpty()) {
+            key = "stage";
+        }
+        Set<String> values = new LinkedHashSet<>(DatapackJsonReader.readStringList(entry, "value", "values"));
+        values.addAll(stageValues);
+
+        if (scope == QuestFactScope.QUEST && questId == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective with quest scope must define quest or have a default quest.");
+        }
+        return new FactObjective(
+                scope,
+                questId,
+                Set.copyOf(tags),
+                key,
+                Set.copyOf(values),
+                DatapackJsonReader.readNullableInt(entry, "min"),
+                DatapackJsonReader.readNullableInt(entry, "max"));
     }
 
     private static void readEntitySelector(
@@ -1188,12 +1266,26 @@ public final class VillagerQuestResources {
         }
     }
 
+    private record FactObjective(
+            QuestFactScope scope,
+            ResourceLocation questId,
+            Set<ResourceLocation> tags,
+            String key,
+            Set<String> values,
+            Integer min,
+            Integer max) {
+        private boolean isEmpty() {
+            return this.tags.isEmpty() && (this.key == null || this.key.isBlank());
+        }
+    }
+
     private record CachedQuests(
             MinecraftServer server,
             Map<ResourceLocation, QuestDefinition> quests,
             Set<ResourceLocation> mobKillQuestIds,
             Set<ResourceLocation> blockBreakQuestIds,
             Set<ResourceLocation> blockPlaceQuestIds,
+            Set<ResourceLocation> factQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
             Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds) {

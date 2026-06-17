@@ -22,6 +22,7 @@ import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -1381,6 +1382,7 @@ public final class VillagerQuestService {
             case ITEM_CHECK -> hasItemCount(player, objective);
             case MOB_KILL -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
+            case FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
     }
@@ -1480,6 +1482,81 @@ public final class VillagerQuestService {
             }
         }
         return objective.memoryTags().contains(event.tagId());
+    }
+
+    private static boolean matchesFactObjective(
+            ServerLevel level,
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Objective objective) {
+        String scopeKey = factObjectiveScopeKey(level, player, definition, progress, objective);
+        if (scopeKey.isBlank()) {
+            return false;
+        }
+        VillagerQuestFacts facts = VillagerQuestFacts.get(level);
+        if (!objective.factTags().isEmpty()
+                && objective.factTags().stream().noneMatch(tag -> facts.hasTag(scopeKey, tag))) {
+            return false;
+        }
+        String key = objective.factKey();
+        if (key == null || key.isBlank()) {
+            return !objective.factTags().isEmpty();
+        }
+        Optional<String> variable = facts.variable(scopeKey, key);
+        if (!objective.factValues().isEmpty() && variable.stream().noneMatch(objective.factValues()::contains)) {
+            return false;
+        }
+        int counter = facts.counter(scopeKey, key);
+        if (objective.factMin() != null && counter < objective.factMin()) {
+            return false;
+        }
+        if (objective.factMax() != null && counter > objective.factMax()) {
+            return false;
+        }
+        return !objective.factValues().isEmpty()
+                || objective.factMin() != null
+                || objective.factMax() != null
+                || variable.isPresent()
+                || counter != 0;
+    }
+
+    private static String factObjectiveScopeKey(
+            ServerLevel level,
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Objective objective) {
+        QuestFactScope scope = objective.factScope();
+        ResourceLocation questId = objective.factQuestId() == null ? definition.id() : objective.factQuestId();
+        return switch (scope) {
+            case PLAYER -> "player:" + player.getUUID();
+            case WORLD -> "world";
+            case QUEST -> questId == null ? "" : "quest:" + player.getUUID() + ":" + questId;
+            case VILLAGER -> progress.startedVillagerId() == null ? "" : "villager:" + progress.startedVillagerId();
+            case VILLAGE -> factVillageScopeKey(level, progress);
+        };
+    }
+
+    private static String factVillageScopeKey(ServerLevel level, VillagerQuestSavedData.QuestProgress progress) {
+        Villager villager = startedVillager(level, progress);
+        String dimension = level.dimension().location().toString();
+        if (villager != null && villager.isAlive()) {
+            return VillageMembership.resolve(level, villager)
+                    .map(area -> "village:" + dimension + ":" + factPosKey(area.centerBlock()))
+                    .orElseGet(() -> "village:" + dimension + ":" + factPosKey(villager.blockPosition()));
+        }
+        if (progress.issuerPos() == null) {
+            return "";
+        }
+        ResourceKey<Level> issuerDimension = progress.issuerDimension() == null
+                ? level.dimension()
+                : progress.issuerDimension();
+        return "village:" + issuerDimension.location() + ":" + factPosKey(progress.issuerPos());
+    }
+
+    private static String factPosKey(BlockPos pos) {
+        return pos.getX() + "," + pos.getY() + "," + pos.getZ();
     }
 
     private static Optional<QuestDefinition.Objective> firstIncompleteRequiredObjective(
@@ -2209,6 +2286,7 @@ public final class VillagerQuestService {
                     case BLOCK_BREAK -> "break";
                     case BLOCK_PLACE -> "build";
                     case MEMORY_EVENT -> "event";
+                    case FACT -> "fact";
                     case CONDITION -> "inactive";
                 };
             }
@@ -2224,6 +2302,7 @@ public final class VillagerQuestService {
             case "break" -> "Break {objective_count} {objective_block}.";
             case "build" -> "Place {objective_count} {objective_block}.";
             case "event" -> "Wait for {objective_memory}.";
+            case "fact" -> "Resolve {objective_fact}.";
             case "return" -> "Return to {issuer}.";
             case "abandoned" -> "Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} to pick this back up.";
             case "abandoned_cooldown" -> "Available later. Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z}.";
@@ -2467,6 +2546,11 @@ public final class VillagerQuestService {
             values.put("objective_block_id", "");
             values.put("objective_memory", "");
             values.put("objective_memory_id", "");
+            values.put("objective_fact", "");
+            values.put("objective_fact_id", "");
+            values.put("objective_fact_key", "");
+            values.put("objective_fact_value", "");
+            values.put("objective_fact_scope", "");
             values.put("objective_radius", "");
             values.put("objective_complete", "no");
             values.put("objective_progress", "0");
@@ -2489,6 +2573,11 @@ public final class VillagerQuestService {
         values.put("objective_block_id", objectiveBlockId(objective));
         values.put("objective_memory", objectiveMemoryName(objective));
         values.put("objective_memory_id", objectiveMemoryId(objective));
+        values.put("objective_fact", objectiveFactName(objective));
+        values.put("objective_fact_id", objectiveFactId(objective));
+        values.put("objective_fact_key", objective.factKey());
+        values.put("objective_fact_value", objectiveFactValue(objective));
+        values.put("objective_fact_scope", objective.factScope().name().toLowerCase(Locale.ROOT));
         values.put("objective_radius", Integer.toString(objective.radius()));
         boolean complete = progress != null && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective);
         values.put("objective_complete", complete ? "yes" : "no");
@@ -2531,7 +2620,7 @@ public final class VillagerQuestService {
             case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT -> progress == null
                     ? 0.0F
                     : Mth.clamp((float) progress.objectiveCounter(objective.id()) / (float) objective.count(), 0.0F, 1.0F);
-            case STRUCTURE_VISIT, LOCATION_VISIT, CONDITION -> progress != null
+            case STRUCTURE_VISIT, LOCATION_VISIT, FACT, CONDITION -> progress != null
                     && objectiveComplete(player, null, player.serverLevel(), definition, progress, objective)
                     ? 1.0F
                     : 0.0F;
@@ -2855,6 +2944,48 @@ public final class VillagerQuestService {
             return "";
         }
         return objective.memoryTags().isEmpty() ? "" : objective.memoryTags().iterator().next().toString();
+    }
+
+    private static String objectiveFactName(QuestDefinition.Objective objective) {
+        if (objective == null || objective.type() != QuestDefinition.ObjectiveType.FACT) {
+            return "";
+        }
+        if (!objective.factTags().isEmpty()) {
+            return VillagerInteractionTextUtil.resourcePathName(objective.factTags().iterator().next());
+        }
+        if (!objective.factKey().isBlank()) {
+            return objective.factKey().replace('_', ' ').replace('.', ' ');
+        }
+        return "fact";
+    }
+
+    private static String objectiveFactId(QuestDefinition.Objective objective) {
+        if (objective == null || objective.type() != QuestDefinition.ObjectiveType.FACT) {
+            return "";
+        }
+        if (!objective.factTags().isEmpty()) {
+            return objective.factTags().iterator().next().toString();
+        }
+        return objective.factKey();
+    }
+
+    private static String objectiveFactValue(QuestDefinition.Objective objective) {
+        if (objective == null || objective.type() != QuestDefinition.ObjectiveType.FACT) {
+            return "";
+        }
+        if (!objective.factValues().isEmpty()) {
+            return objective.factValues().iterator().next();
+        }
+        if (objective.factMin() != null && objective.factMax() != null) {
+            return objective.factMin() + "-" + objective.factMax();
+        }
+        if (objective.factMin() != null) {
+            return ">=" + objective.factMin();
+        }
+        if (objective.factMax() != null) {
+            return "<=" + objective.factMax();
+        }
+        return "";
     }
 
     private static String issuerSummary(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {

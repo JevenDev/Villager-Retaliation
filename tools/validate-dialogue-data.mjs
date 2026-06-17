@@ -366,11 +366,12 @@ const dialogueTreeActionKeys = new Set([
   "lines"
 ]);
 const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove", "block", "lock", "consume", "close", "close_branch", "branch_lock"]);
-const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "memory_event", "village_event", "village_memory", "memory", "event", "condition"]);
+const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "memory_event", "village_event", "village_memory", "memory", "event", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
 const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "coordinates", "coords", "region_visit"]);
 const questMobKillObjectiveTypes = new Set(["mob_kill", "entity_kill", "kill"]);
 const questBlockObjectiveTypes = new Set(["block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place"]);
 const questMemoryObjectiveTypes = new Set(["memory_event", "village_event", "village_memory", "memory", "event"]);
+const questFactObjectiveTypes = new Set(["fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"]);
 const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "completed", "abandoned", "expired"]);
 const questAbandonmentModes = new Set(["remove_forever", "allow_repickup", "cooldown"]);
 const questDialogueStages = [
@@ -498,6 +499,11 @@ const knownPlaceholders = new Set([
   "objective_block_id",
   "objective_memory",
   "objective_memory_id",
+  "objective_fact",
+  "objective_fact_id",
+  "objective_fact_key",
+  "objective_fact_scope",
+  "objective_fact_value",
   "objective_id",
   "objective_item",
   "objective_item_id",
@@ -950,6 +956,23 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "memory_tags",
       "event",
       "events",
+      "quest",
+      "quest_id",
+      "scope",
+      "tag",
+      "tags",
+      "fact_tag",
+      "quest_tag",
+      "key",
+      "variable",
+      "counter",
+      "fact",
+      "value",
+      "values",
+      "stage",
+      "stages",
+      "min",
+      "max",
       "count",
       "consume",
       "enchantment",
@@ -984,11 +1007,28 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkStringList(file, objective, objectiveLocation, ["block", "blocks"], "block id or #block tag");
     checkStringList(file, objective, objectiveLocation, ["block_tag", "block_tags"], "block tag id");
     checkStringList(file, objective, objectiveLocation, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"], "village memory tag id");
+    checkStringList(file, objective, objectiveLocation, ["quest", "quest_id"], "quest id");
+    checkStringValues(file, objective, objectiveLocation, ["scope"], questFactScopes, "quest fact scope");
+    checkStringList(file, objective, objectiveLocation, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");
+    checkStringList(file, objective, objectiveLocation, ["key", "variable", "counter", "fact"], "quest fact key");
+    checkStringList(file, objective, objectiveLocation, ["value", "values", "stage", "stages"], "quest fact value");
+    checkOptionalInteger(file, objective, objectiveLocation, "min");
+    checkOptionalInteger(file, objective, objectiveLocation, "max");
     checkOptionalInteger(file, objective, objectiveLocation, "count", { min: 1 });
     checkOptionalBoolean(file, objective, objectiveLocation, "consume");
     checkQuestObjectiveItemRequirements(file, objective, objectiveLocation);
     checkConditions(file, objective, objectiveLocation, defaultQuestId);
     checkQuestObjectiveTracker(file, objective.tracker, `${objectiveLocation}.tracker`);
+    for (const questId of readValues(objective, ["quest", "quest_id"])) {
+      if (typeof questId === "string" && questId.trim()) {
+        pendingQuestReferences.push({
+          file,
+          location: objectiveLocation,
+          id: questId.trim(),
+          reason: "fact objective"
+        });
+      }
+    }
 
     if (type === "structure_visit" && !stringValue(objective.structure)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.structure is required for a structure_visit objective.`);
@@ -1007,6 +1047,9 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     }
     if (questMemoryObjectiveTypes.has(type) && readValues(objective, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"]).length === 0) {
       errors.push(`${relative(file)}: ${objectiveLocation} must define memory, memory_event, memory_tags, event, or events for a memory_event objective.`);
+    }
+    if (questFactObjectiveTypes.has(type) && readValues(objective, ["tag", "tags", "fact_tag", "quest_tag", "key", "variable", "counter", "fact", "stage", "stages"]).length === 0) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must define tag, tags, key, variable, counter, stage, or stages for a fact objective.`);
     }
     if (type === "condition" && (!Array.isArray(objective.conditions) || objective.conditions.length === 0)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.conditions is required for a condition objective.`);

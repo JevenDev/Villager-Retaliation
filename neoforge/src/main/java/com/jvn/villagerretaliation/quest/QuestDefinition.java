@@ -171,6 +171,13 @@ public record QuestDefinition(
             Set<ResourceLocation> blockTypes,
             Set<ResourceLocation> blockTags,
             Set<ResourceLocation> memoryTags,
+            QuestFactScope factScope,
+            ResourceLocation factQuestId,
+            Set<ResourceLocation> factTags,
+            String factKey,
+            Set<String> factValues,
+            Integer factMin,
+            Integer factMax,
             int count,
             boolean consume,
             ItemRequirements itemRequirements,
@@ -190,6 +197,10 @@ public record QuestDefinition(
             blockTypes = blockTypes == null ? Set.of() : Set.copyOf(blockTypes);
             blockTags = blockTags == null ? Set.of() : Set.copyOf(blockTags);
             memoryTags = memoryTags == null ? Set.of() : Set.copyOf(memoryTags);
+            factScope = factScope == null ? QuestFactScope.PLAYER : factScope;
+            factTags = factTags == null ? Set.of() : Set.copyOf(factTags);
+            factKey = factKey == null ? "" : factKey;
+            factValues = factValues == null ? Set.of() : Set.copyOf(factValues);
             count = Math.max(1, count);
             itemRequirements = itemRequirements == null ? ItemRequirements.EMPTY : itemRequirements;
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
@@ -293,6 +304,7 @@ public record QuestDefinition(
         BLOCK_BREAK,
         BLOCK_PLACE,
         MEMORY_EVENT,
+        FACT,
         CONDITION;
 
         public static ObjectiveType bySerializedName(String value) {
@@ -305,6 +317,7 @@ public record QuestDefinition(
                 case "block_break", "break_block", "mine_block", "mine" -> BLOCK_BREAK;
                 case "block_place", "place_block", "place" -> BLOCK_PLACE;
                 case "memory_event", "village_event", "village_memory", "memory", "event" -> MEMORY_EVENT;
+                case "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage" -> FACT;
                 case "condition" -> CONDITION;
                 default -> null;
             };
