@@ -42,6 +42,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -64,6 +65,9 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 public final class VillagerRetaliationCommands {
     private static final double DEFAULT_DEBUG_PROVIDER_RADIUS = 64.0D;
     private static final double MAX_DEBUG_PROVIDER_RADIUS = 256.0D;
+    private static final int DEFAULT_VILLAGE_REGISTRY_MERGE_RADIUS = 96;
+    private static final int MAX_VILLAGE_REGISTRY_MERGE_RADIUS = 512;
+    private static final int DEFAULT_VILLAGE_REGISTRY_MERGE_LIMIT = 10;
 
     private VillagerRetaliationCommands() {
     }
@@ -265,6 +269,23 @@ public final class VillagerRetaliationCommands {
                                         .executes(context -> pruneVillageRegistry(
                                                 context,
                                                 IntegerArgumentType.getInteger(context, "ticks")))))
+                        .then(literal("suggest_merges")
+                                .executes(context -> suggestVillageRegistryMerges(
+                                        context,
+                                        DEFAULT_VILLAGE_REGISTRY_MERGE_RADIUS,
+                                        DEFAULT_VILLAGE_REGISTRY_MERGE_LIMIT))
+                                .then(argument("radius", IntegerArgumentType.integer(
+                                                1,
+                                                MAX_VILLAGE_REGISTRY_MERGE_RADIUS))
+                                        .executes(context -> suggestVillageRegistryMerges(
+                                                context,
+                                                IntegerArgumentType.getInteger(context, "radius"),
+                                                DEFAULT_VILLAGE_REGISTRY_MERGE_LIMIT))
+                                        .then(argument("limit", IntegerArgumentType.integer(1, 50))
+                                                .executes(context -> suggestVillageRegistryMerges(
+                                                        context,
+                                                        IntegerArgumentType.getInteger(context, "radius"),
+                                                        IntegerArgumentType.getInteger(context, "limit"))))))
                         .then(literal("merge")
                                 .then(argument("source_key", StringArgumentType.string())
                                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(
@@ -304,6 +325,86 @@ public final class VillagerRetaliationCommands {
                 + " village registry entries not seen in the last " + olderThanTicks
                 + " ticks. Remaining: " + registry.size() + "."), true);
         return removed;
+    }
+
+    private static int suggestVillageRegistryMerges(CommandContext<CommandSourceStack> context, int radius, int limit) {
+        CommandSourceStack source = context.getSource();
+        List<VillageRegistrySavedData.EntrySnapshot> entries = VillageRegistrySavedData.get(source.getLevel()).entries();
+        long radiusSquared = (long) radius * radius;
+        List<VillageRegistryMergeCandidate> candidates = villageRegistryMergeCandidates(entries, radiusSquared)
+                .stream()
+                .sorted(Comparator.comparingLong(VillageRegistryMergeCandidate::distanceSquared)
+                        .thenComparing(candidate -> candidate.source().key())
+                        .thenComparing(candidate -> candidate.target().key()))
+                .toList();
+        List<VillageRegistryMergeCandidate> shown = candidates.stream()
+                .limit(limit)
+                .toList();
+        source.sendSuccess(() -> Component.literal("Village registry merge suggestions within "
+                + radius + " blocks: " + candidates.size()
+                + " candidate pairs. Showing " + shown.size()
+                + ". Suggested direction is older source -> newer target."), false);
+        shown.forEach(candidate -> source.sendSuccess(
+                () -> Component.literal(villageRegistryMergeCandidateLine(candidate)),
+                false));
+        return candidates.size();
+    }
+
+    private static List<VillageRegistryMergeCandidate> villageRegistryMergeCandidates(
+            List<VillageRegistrySavedData.EntrySnapshot> entries,
+            long radiusSquared) {
+        List<VillageRegistryMergeCandidate> candidates = new ArrayList<>();
+        for (int leftIndex = 0; leftIndex < entries.size(); leftIndex++) {
+            VillageRegistrySavedData.EntrySnapshot left = entries.get(leftIndex);
+            for (int rightIndex = leftIndex + 1; rightIndex < entries.size(); rightIndex++) {
+                VillageRegistrySavedData.EntrySnapshot right = entries.get(rightIndex);
+                if (!left.dimension().equals(right.dimension())) {
+                    continue;
+                }
+                long distanceSquared = villageRegistryDistanceSquared(left.center(), right.center());
+                if (distanceSquared > radiusSquared) {
+                    continue;
+                }
+                candidates.add(villageRegistryMergeCandidate(left, right, distanceSquared));
+            }
+        }
+        return candidates;
+    }
+
+    private static VillageRegistryMergeCandidate villageRegistryMergeCandidate(
+            VillageRegistrySavedData.EntrySnapshot left,
+            VillageRegistrySavedData.EntrySnapshot right,
+            long distanceSquared) {
+        if (left.lastSeenGameTime() > right.lastSeenGameTime()) {
+            return new VillageRegistryMergeCandidate(right, left, distanceSquared);
+        }
+        if (right.lastSeenGameTime() > left.lastSeenGameTime()) {
+            return new VillageRegistryMergeCandidate(left, right, distanceSquared);
+        }
+        return left.key().compareTo(right.key()) <= 0
+                ? new VillageRegistryMergeCandidate(right, left, distanceSquared)
+                : new VillageRegistryMergeCandidate(left, right, distanceSquared);
+    }
+
+    private static long villageRegistryDistanceSquared(BlockPos left, BlockPos right) {
+        long dx = left.getX() - right.getX();
+        long dy = left.getY() - right.getY();
+        long dz = left.getZ() - right.getZ();
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    private static String villageRegistryMergeCandidateLine(VillageRegistryMergeCandidate candidate) {
+        VillageRegistrySavedData.EntrySnapshot source = candidate.source();
+        VillageRegistrySavedData.EntrySnapshot target = candidate.target();
+        long distance = Math.round(Math.sqrt(candidate.distanceSquared()));
+        return "source=" + source.key()
+                + " -> target=" + target.key()
+                + " | dimension=" + source.dimension()
+                + " | distance~=" + distance
+                + " | sourceLastSeen=" + source.lastSeenGameTime()
+                + " | targetLastSeen=" + target.lastSeenGameTime()
+                + " | command=/villagerretaliation village registry merge \""
+                + source.key() + "\" \"" + target.key() + "\"";
     }
 
     private static int mergeVillageRegistryKeys(CommandContext<CommandSourceStack> context) {
@@ -367,6 +468,12 @@ public final class VillagerRetaliationCommands {
                 + " | " + center.getX() + " " + center.getY() + " " + center.getZ()
                 + " | lastSeen=" + entry.lastSeenGameTime()
                 + " | ageTicks=" + entry.ageTicks(gameTime);
+    }
+
+    private record VillageRegistryMergeCandidate(
+            VillageRegistrySavedData.EntrySnapshot source,
+            VillageRegistrySavedData.EntrySnapshot target,
+            long distanceSquared) {
     }
 
     private static int toggleHiredDebugPreviews(CommandContext<CommandSourceStack> context, double radius) {
