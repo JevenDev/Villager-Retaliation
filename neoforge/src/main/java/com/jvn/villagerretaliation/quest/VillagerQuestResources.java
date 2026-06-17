@@ -352,6 +352,7 @@ public final class VillagerQuestResources {
                 readObjectives(location, root, id),
                 readRules(location, root, id),
                 readTracker(root),
+                readStages(location, root, id),
                 readTriggers(location, root, id),
                 readRewards(root),
                 readDialogue(root),
@@ -1142,6 +1143,243 @@ public final class VillagerQuestResources {
             }
         }
         return Map.copyOf(values);
+    }
+
+    private static Map<String, QuestDefinition.Stage> readStages(
+            ResourceLocation location,
+            JsonObject root,
+            ResourceLocation defaultQuestId) {
+        JsonElement element = root.get("stages");
+        if (element == null || element.isJsonNull()) {
+            return Map.of();
+        }
+        if (!element.isJsonObject()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest stages", "stages must be an object keyed by stage id.");
+            return Map.of();
+        }
+
+        Map<String, QuestDefinition.Stage> stages = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
+            String stageId = entry.getKey() == null ? "" : entry.getKey().trim();
+            if (stageId.isBlank()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest stages", "stage id must not be blank.");
+                continue;
+            }
+            if (!entry.getValue().isJsonObject()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest stage \"" + stageId + "\"", "stage must be an object.");
+                continue;
+            }
+            if (stages.containsKey(stageId)) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "quest stage \"" + stageId + "\"", "duplicate stage id; later duplicate is ignored.");
+                continue;
+            }
+            stages.put(stageId, readStage(location, stageId, entry.getValue().getAsJsonObject(), defaultQuestId));
+        }
+        return java.util.Collections.unmodifiableMap(stages);
+    }
+
+    private static QuestDefinition.Stage readStage(
+            ResourceLocation location,
+            String stageId,
+            JsonObject stage,
+            ResourceLocation defaultQuestId) {
+        String context = "quest stage \"" + stageId + "\"";
+        return new QuestDefinition.Stage(
+                stageId,
+                DatapackJsonReader.readStringList(stage, "objective", "objectives"),
+                readStagePredicates(location, context + ".complete_when", stage.get("complete_when"), defaultQuestId),
+                firstNonBlank(
+                        DatapackJsonReader.readString(stage, "next"),
+                        DatapackJsonReader.readString(stage, "next_stage")),
+                readActionsFromKey(location, context + ".entry_actions", stage, "entry_actions", defaultQuestId),
+                readActionsFromKey(location, context + ".exit_actions", stage, "exit_actions", defaultQuestId),
+                readStageBranches(location, context, stage.get("branches"), defaultQuestId));
+    }
+
+    private static List<VillagerActionDefinition> readActionsFromKey(
+            ResourceLocation location,
+            String context,
+            JsonObject source,
+            String key,
+            ResourceLocation defaultQuestId) {
+        JsonElement actions = source.get(key);
+        if (actions == null || actions.isJsonNull()) {
+            return List.of();
+        }
+        if (!actions.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, key + " must be an array of actions.");
+            return List.of();
+        }
+        JsonObject wrapper = new JsonObject();
+        wrapper.add("actions", actions);
+        return VillagerActionDefinition.readList(location, context, wrapper, defaultQuestId);
+    }
+
+    private static List<QuestDefinition.StagePredicate> readStagePredicates(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        List<QuestDefinition.StagePredicate> predicates = new ArrayList<>();
+        if (element.isJsonPrimitive() || element.isJsonObject()) {
+            predicates.addAll(readStagePredicate(location, context, element, defaultQuestId));
+            return List.copyOf(predicates);
+        }
+        if (!element.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "complete_when must be a string, object, or array.");
+            return List.of();
+        }
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            predicates.addAll(readStagePredicate(location, context + "[" + index + "]", child, defaultQuestId));
+            index++;
+        }
+        return List.copyOf(predicates);
+    }
+
+    private static List<QuestDefinition.StagePredicate> readStagePredicate(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (element.isJsonPrimitive()) {
+            String objectiveId = element.getAsString().trim();
+            return objectiveId.isBlank()
+                    ? List.of()
+                    : List.of(new QuestDefinition.StagePredicate(objectiveId, List.of()));
+        }
+        if (!element.isJsonObject()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "stage predicate must be a string or object.");
+            return List.of();
+        }
+
+        JsonObject predicate = element.getAsJsonObject();
+        String type = DatapackJsonReader.readString(predicate, "type").trim().toLowerCase(Locale.ROOT);
+        List<String> objectiveIds = new ArrayList<>();
+        String objectiveId = firstNonBlank(
+                DatapackJsonReader.readString(predicate, "objective"),
+                DatapackJsonReader.readString(predicate, "objective_id"));
+        if (objectiveId.isBlank() && ("objective".equals(type) || "objectives".equals(type))) {
+            objectiveId = DatapackJsonReader.readString(predicate, "id");
+        }
+        if (!objectiveId.isBlank()) {
+            objectiveIds.add(objectiveId);
+        }
+        objectiveIds.addAll(DatapackJsonReader.readStringList(predicate, "objectives"));
+        if (!objectiveIds.isEmpty()) {
+            return objectiveIds.stream()
+                    .filter(id -> id != null && !id.isBlank())
+                    .map(id -> new QuestDefinition.StagePredicate(id.trim(), List.<DialogueCondition>of()))
+                    .toList();
+        }
+
+        JsonObject condition = predicate;
+        if (type.isBlank() && looksLikeQuestFactPredicate(predicate)) {
+            condition = predicate.deepCopy();
+            condition.addProperty("type", "quest_fact");
+        }
+        if (condition.has("conditions")) {
+            List<DialogueCondition> conditions = DialogueCondition.readList(location, context, condition, defaultQuestId);
+            return conditions.isEmpty() ? List.of() : List.of(new QuestDefinition.StagePredicate("", conditions));
+        }
+        com.google.gson.JsonArray conditionsArray = new com.google.gson.JsonArray();
+        conditionsArray.add(condition);
+        JsonObject wrapper = new JsonObject();
+        wrapper.add("conditions", conditionsArray);
+        List<DialogueCondition> conditions = DialogueCondition.readList(location, context, wrapper, defaultQuestId);
+        return conditions.isEmpty() ? List.of() : List.of(new QuestDefinition.StagePredicate("", conditions));
+    }
+
+    private static boolean looksLikeQuestFactPredicate(JsonObject predicate) {
+        return predicate.has("tag")
+                || predicate.has("tags")
+                || predicate.has("fact_tag")
+                || predicate.has("quest_tag")
+                || predicate.has("key")
+                || predicate.has("variable")
+                || predicate.has("counter")
+                || predicate.has("fact")
+                || predicate.has("stage")
+                || predicate.has("stages");
+    }
+
+    private static List<QuestDefinition.StageBranch> readStageBranches(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".branches", "branches must be an array.");
+            return List.of();
+        }
+        List<QuestDefinition.StageBranch> branches = new ArrayList<>();
+        Set<String> ids = new LinkedHashSet<>();
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (!child.isJsonObject()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".branches[" + index + "]", "branch must be an object.");
+                index++;
+                continue;
+            }
+            JsonObject branch = child.getAsJsonObject();
+            String id = firstNonBlank(DatapackJsonReader.readString(branch, "id"), "branch_" + index);
+            if (!ids.add(id)) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".branches[" + index + "]", "duplicate branch id; later duplicate is ignored.");
+                index++;
+                continue;
+            }
+            branches.add(new QuestDefinition.StageBranch(
+                    id,
+                    DatapackJsonReader.readString(branch, "label"),
+                    DatapackJsonReader.readString(branch, "label_key"),
+                    DialogueCondition.readList(location, context + ".branches[" + id + "]", branch, defaultQuestId),
+                    readActionsFromKey(location, context + ".branches[" + id + "].actions", branch, "actions", defaultQuestId),
+                    firstNonBlank(
+                            DatapackJsonReader.readString(branch, "next"),
+                            DatapackJsonReader.readString(branch, "next_stage")),
+                    readStageBranchBlockers(location, context + ".branches[" + id + "]", branch.get("blocked_by"), defaultQuestId)));
+            index++;
+        }
+        return List.copyOf(branches);
+    }
+
+    private static List<QuestDefinition.StageBranchBlocker> readStageBranchBlockers(
+            ResourceLocation location,
+            String context,
+            JsonElement element,
+            ResourceLocation defaultQuestId) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".blocked_by", "blocked_by must be an array.");
+            return List.of();
+        }
+        List<QuestDefinition.StageBranchBlocker> blockers = new ArrayList<>();
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (!child.isJsonObject()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context + ".blocked_by[" + index + "]", "blocked_by entry must be an object.");
+                index++;
+                continue;
+            }
+            JsonObject blocker = child.getAsJsonObject();
+            blockers.add(new QuestDefinition.StageBranchBlocker(
+                    DialogueCondition.readList(location, context + ".blocked_by[" + index + "]", blocker, defaultQuestId),
+                    DatapackJsonReader.readString(blocker, "reason"),
+                    DatapackJsonReader.readString(blocker, "reason_key")));
+            index++;
+        }
+        return List.copyOf(blockers);
     }
 
     private static List<QuestDefinition.Trigger> readTriggers(

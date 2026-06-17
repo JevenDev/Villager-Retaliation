@@ -817,6 +817,7 @@ function checkQuest(file, data) {
     "objectives",
     "rules",
     "tracker",
+    "stages",
     "triggers",
     "rewards",
     "dialogue"
@@ -850,6 +851,7 @@ function checkQuest(file, data) {
   checkQuestObjectives(file, data.objectives, "objectives", defaultQuestId);
   checkQuestRules(file, data.rules, "rules", defaultQuestId);
   checkQuestTracker(file, data.tracker, "tracker");
+  checkQuestStages(file, data.stages, "stages", defaultQuestId, questObjectiveIds(data.objectives));
   checkQuestTriggers(file, data.triggers, "triggers", defaultQuestId);
   checkQuestRewards(file, data.rewards, "rewards");
   checkQuestDialogue(file, data.dialogue, "dialogue");
@@ -1357,6 +1359,218 @@ function checkQuestTracker(file, tracker, location) {
         checkOptionalNumber(file, step, stepLocation, "progress", { min: 0, max: 1 });
         checkStringMap(file, step.metadata, `${stepLocation}.metadata`);
       }
+    }
+  }
+}
+
+function checkQuestStages(file, stages, location, defaultQuestId = "", objectiveIds = new Set()) {
+  if (stages === undefined) {
+    return;
+  }
+  if (!stages || typeof stages !== "object" || Array.isArray(stages)) {
+    errors.push(`${relative(file)}: ${location} must be an object keyed by stage id.`);
+    return;
+  }
+
+  const stageIds = new Set(Object.keys(stages).filter((stageId) => stageId.trim()));
+  for (const [stageId, stage] of Object.entries(stages)) {
+    const stageLocation = `${location}.${stageId}`;
+    if (!stageId.trim()) {
+      errors.push(`${relative(file)}: ${stageLocation} stage id must not be blank.`);
+      continue;
+    }
+    if (!stage || typeof stage !== "object" || Array.isArray(stage)) {
+      errors.push(`${relative(file)}: ${stageLocation} must be an object.`);
+      continue;
+    }
+    checkUnknownObjectKeys(file, stage, stageLocation, new Set([
+      "objective",
+      "objectives",
+      "complete_when",
+      "next",
+      "next_stage",
+      "entry_actions",
+      "exit_actions",
+      "branches"
+    ]));
+    checkStringList(file, stage, stageLocation, ["objective", "objectives"], "quest objective id");
+    checkStageObjectiveReferences(file, readValues(stage, ["objective", "objectives"]), objectiveIds, stageLocation);
+    checkQuestStagePredicates(file, stage.complete_when, `${stageLocation}.complete_when`, defaultQuestId, objectiveIds);
+    checkOptionalString(file, stage, stageLocation, "next");
+    checkOptionalString(file, stage, stageLocation, "next_stage");
+    checkStageReferences(file, readValues(stage, ["next", "next_stage"]), stageIds, stageLocation);
+    checkDialogueTreeActions(file, stage.entry_actions, `${stageLocation}.entry_actions`, defaultQuestId);
+    checkDialogueTreeActions(file, stage.exit_actions, `${stageLocation}.exit_actions`, defaultQuestId);
+    checkQuestStageBranches(file, stage.branches, `${stageLocation}.branches`, defaultQuestId, stageIds);
+  }
+}
+
+function questObjectiveIds(objectives) {
+  if (!Array.isArray(objectives)) {
+    return new Set();
+  }
+  return new Set(objectives
+    .filter((objective) => objective && typeof objective === "object" && !Array.isArray(objective))
+    .map((objective) => stringValue(objective.id))
+    .filter(Boolean));
+}
+
+function checkQuestStagePredicates(file, predicates, location, defaultQuestId = "", objectiveIds = new Set()) {
+  if (predicates === undefined) {
+    return;
+  }
+  if (typeof predicates === "string") {
+    checkStageObjectiveReferences(file, [predicates], objectiveIds, location);
+    return;
+  }
+  if (predicates && typeof predicates === "object" && !Array.isArray(predicates)) {
+    checkQuestStagePredicate(file, predicates, location, defaultQuestId, objectiveIds);
+    return;
+  }
+  if (!Array.isArray(predicates)) {
+    errors.push(`${relative(file)}: ${location} must be a string, object, or array.`);
+    return;
+  }
+  predicates.forEach((predicate, index) => {
+    checkQuestStagePredicate(file, predicate, `${location}[${index}]`, defaultQuestId, objectiveIds);
+  });
+}
+
+function checkQuestStagePredicate(file, predicate, location, defaultQuestId = "", objectiveIds = new Set()) {
+  if (typeof predicate === "string") {
+    checkStageObjectiveReferences(file, [predicate], objectiveIds, location);
+    return;
+  }
+  if (!predicate || typeof predicate !== "object" || Array.isArray(predicate)) {
+    errors.push(`${relative(file)}: ${location} must be a stage predicate object or objective id string.`);
+    return;
+  }
+
+  const type = normalizedString(predicate.type);
+  const objectiveRefs = readValues(predicate, ["objective", "objective_id", "objectives"]);
+  const idRef = (type === "objective" || type === "objectives") ? readValues(predicate, ["id"]) : [];
+  if (objectiveRefs.length > 0 || idRef.length > 0 || type === "objective" || type === "objectives") {
+    checkUnknownObjectKeys(file, predicate, location, new Set(["type", "objective", "objective_id", "objectives", "id"]));
+    checkStringList(file, predicate, location, ["objective", "objective_id", "objectives", "id"], "quest objective id");
+    const refs = [...objectiveRefs, ...idRef];
+    if (refs.length === 0) {
+      errors.push(`${relative(file)}: ${location} must define objective, objective_id, objectives, or id.`);
+    }
+    checkStageObjectiveReferences(file, refs, objectiveIds, location);
+    return;
+  }
+
+  if (Object.hasOwn(predicate, "conditions")) {
+    checkUnknownObjectKeys(file, predicate, location, new Set(["conditions"]));
+    checkConditions(file, predicate, location, defaultQuestId);
+    return;
+  }
+
+  if (!type && looksLikeQuestFactStagePredicate(predicate)) {
+    checkCondition(file, { ...predicate, type: "quest_fact" }, location, defaultQuestId);
+    return;
+  }
+
+  checkCondition(file, predicate, location, defaultQuestId);
+}
+
+function looksLikeQuestFactStagePredicate(predicate) {
+  return [
+    "tag",
+    "tags",
+    "fact_tag",
+    "quest_tag",
+    "key",
+    "variable",
+    "counter",
+    "fact",
+    "stage",
+    "stages"
+  ].some((key) => Object.hasOwn(predicate, key));
+}
+
+function checkQuestStageBranches(file, branches, location, defaultQuestId = "", stageIds = new Set()) {
+  if (branches === undefined) {
+    return;
+  }
+  if (!Array.isArray(branches)) {
+    errors.push(`${relative(file)}: ${location} must be an array.`);
+    return;
+  }
+
+  const branchIds = new Map();
+  for (const [index, branch] of branches.entries()) {
+    const branchLocation = `${location}[${index}]`;
+    if (!branch || typeof branch !== "object" || Array.isArray(branch)) {
+      errors.push(`${relative(file)}: ${branchLocation} must be an object.`);
+      continue;
+    }
+    checkUnknownObjectKeys(file, branch, branchLocation, new Set([
+      "id",
+      "label",
+      "label_key",
+      "conditions",
+      "actions",
+      "next",
+      "next_stage",
+      "blocked_by"
+    ]));
+    checkOptionalString(file, branch, branchLocation, "id");
+    checkOptionalString(file, branch, branchLocation, "label");
+    checkOptionalString(file, branch, branchLocation, "label_key");
+    checkOptionalString(file, branch, branchLocation, "next");
+    checkOptionalString(file, branch, branchLocation, "next_stage");
+    const branchId = stringValue(branch.id) || `branch_${index}`;
+    if (branchIds.has(branchId)) {
+      errors.push(`${relative(file)}: duplicate quest stage branch id "${branchId}" at ${branchIds.get(branchId)} and ${branchLocation}.`);
+    }
+    branchIds.set(branchId, branchLocation);
+    checkConditions(file, branch, branchLocation, defaultQuestId);
+    checkDialogueTreeActions(file, branch.actions, `${branchLocation}.actions`, defaultQuestId);
+    checkStageReferences(file, readValues(branch, ["next", "next_stage"]), stageIds, branchLocation);
+    checkQuestStageBranchBlockers(file, branch.blocked_by, `${branchLocation}.blocked_by`, defaultQuestId);
+  }
+}
+
+function checkQuestStageBranchBlockers(file, blockers, location, defaultQuestId = "") {
+  if (blockers === undefined) {
+    return;
+  }
+  if (!Array.isArray(blockers)) {
+    errors.push(`${relative(file)}: ${location} must be an array.`);
+    return;
+  }
+  for (const [index, blocker] of blockers.entries()) {
+    const blockerLocation = `${location}[${index}]`;
+    if (!blocker || typeof blocker !== "object" || Array.isArray(blocker)) {
+      errors.push(`${relative(file)}: ${blockerLocation} must be an object.`);
+      continue;
+    }
+    checkUnknownObjectKeys(file, blocker, blockerLocation, new Set(["conditions", "reason", "reason_key"]));
+    checkConditions(file, blocker, blockerLocation, defaultQuestId);
+    checkOptionalString(file, blocker, blockerLocation, "reason");
+    checkOptionalString(file, blocker, blockerLocation, "reason_key");
+  }
+}
+
+function checkStageObjectiveReferences(file, refs, objectiveIds, location) {
+  for (const ref of refs) {
+    if (typeof ref !== "string" || !ref.trim()) {
+      continue;
+    }
+    if (!objectiveIds.has(ref.trim())) {
+      errors.push(`${relative(file)}: ${location} references unknown quest objective "${ref}".`);
+    }
+  }
+}
+
+function checkStageReferences(file, refs, stageIds, location) {
+  for (const ref of refs) {
+    if (typeof ref !== "string" || !ref.trim()) {
+      continue;
+    }
+    if (!stageIds.has(ref.trim())) {
+      errors.push(`${relative(file)}: ${location} references unknown quest stage "${ref}".`);
     }
   }
 }

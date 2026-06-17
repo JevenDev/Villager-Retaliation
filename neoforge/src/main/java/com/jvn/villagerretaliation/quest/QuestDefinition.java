@@ -33,6 +33,7 @@ public record QuestDefinition(
         List<Objective> objectives,
         Rules rules,
         Tracker tracker,
+        Map<String, Stage> stages,
         List<Trigger> triggers,
         Rewards rewards,
         Dialogue dialogue,
@@ -50,6 +51,7 @@ public record QuestDefinition(
         objectives = objectives == null ? List.of() : List.copyOf(objectives);
         rules = rules == null ? Rules.DEFAULT : rules;
         tracker = tracker == null ? Tracker.EMPTY : tracker;
+        stages = stages == null ? Map.of() : java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(stages));
         triggers = triggers == null ? List.of() : List.copyOf(triggers);
         rewards = rewards == null ? Rewards.EMPTY : rewards;
         dialogue = dialogue == null ? Dialogue.EMPTY : dialogue;
@@ -556,6 +558,80 @@ public record QuestDefinition(
             textKey = textKey == null ? "" : textKey;
             progress = Math.max(-1.0F, Math.min(1.0F, progress));
             metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
+        }
+    }
+
+    public record Stage(
+            String id,
+            List<String> objectives,
+            List<StagePredicate> completeWhen,
+            String next,
+            List<VillagerActionDefinition> entryActions,
+            List<VillagerActionDefinition> exitActions,
+            List<StageBranch> branches
+    ) {
+        public Stage {
+            id = id == null ? "" : id.trim();
+            objectives = objectives == null ? List.of() : List.copyOf(objectives);
+            completeWhen = completeWhen == null ? List.of() : List.copyOf(completeWhen);
+            next = next == null ? "" : next.trim();
+            entryActions = entryActions == null ? List.of() : List.copyOf(entryActions);
+            exitActions = exitActions == null ? List.of() : List.copyOf(exitActions);
+            branches = branches == null ? List.of() : List.copyOf(branches);
+        }
+
+        public boolean hasEntryActions() {
+            return !this.entryActions.isEmpty();
+        }
+
+        public boolean hasExitActions() {
+            return !this.exitActions.isEmpty();
+        }
+    }
+
+    public record StagePredicate(
+            String objective,
+            List<DialogueCondition> conditions
+    ) {
+        public StagePredicate {
+            objective = objective == null ? "" : objective.trim();
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
+        }
+
+        public boolean isEmpty() {
+            return this.objective.isBlank() && this.conditions.isEmpty();
+        }
+    }
+
+    public record StageBranch(
+            String id,
+            String label,
+            String labelKey,
+            List<DialogueCondition> conditions,
+            List<VillagerActionDefinition> actions,
+            String next,
+            List<StageBranchBlocker> blockedBy
+    ) {
+        public StageBranch {
+            id = id == null ? "" : id.trim();
+            label = label == null ? "" : label;
+            labelKey = labelKey == null ? "" : labelKey;
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
+            actions = actions == null ? List.of() : List.copyOf(actions);
+            next = next == null ? "" : next.trim();
+            blockedBy = blockedBy == null ? List.of() : List.copyOf(blockedBy);
+        }
+    }
+
+    public record StageBranchBlocker(
+            List<DialogueCondition> conditions,
+            String reason,
+            String reasonKey
+    ) {
+        public StageBranchBlocker {
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
+            reason = reason == null ? "" : reason;
+            reasonKey = reasonKey == null ? "" : reasonKey;
         }
     }
 

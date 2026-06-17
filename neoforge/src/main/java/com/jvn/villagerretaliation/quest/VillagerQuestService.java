@@ -72,6 +72,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class VillagerQuestService {
     private static final int QUEST_PROGRESS_SCAN_INTERVAL_TICKS = 20;
     private static final int QUEST_TRACKER_HEARTBEAT_TICKS = 20 * 30;
+    private static final int MAX_STAGE_ADVANCES_PER_CHECK = 8;
     private static final int APPROXIMATE_COORDINATE_STEP = 50;
     private static final long QUEST_STORY_HINT_TICKS = 20L * 60L * 60L * 6L;
     private static final ResourceLocation QUEST_STARTED_FACT =
@@ -257,6 +258,11 @@ public final class VillagerQuestService {
                         progress,
                         "quest.updated",
                         "Quest updated: {quest}");
+            }
+            if (questContext != null && advanceStageIfComplete(questContext, definition, progress)) {
+                changed = true;
+                progressNotice = true;
+                questProgressChanged = true;
             }
             if (questProgressChanged) {
                 changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
@@ -491,13 +497,182 @@ public final class VillagerQuestService {
         if (progress == null) {
             return false;
         }
-        if (!progress.setCurrentStage(stage)) {
+        QuestDefinition definition = VillagerQuestResources.quest(context.level().getServer(), questId).orElse(null);
+        if (definition == null) {
             return false;
         }
-        data.setDirty();
-        VillagerQuestResources.quest(context.level().getServer(), questId)
-                .ifPresent(definition -> dispatchStageChangedTriggers(context, definition, progress));
+        boolean changed = changeQuestStage(context, definition, progress, stage, true, true);
+        if (changed) {
+            data.setDirty();
+            advanceStageIfComplete(context, definition, progress);
+        }
+        return changed;
+    }
+
+    private static void initializeQuestStage(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        String initialStage = initialStage(definition);
+        if (initialStage.isBlank()) {
+            return;
+        }
+        progress.setCurrentStage(initialStage);
+        syncQuestStageFact(context, definition, progress.currentStage());
+        QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
+        if (stage != null) {
+            runStageActions(context, definition, progress, stage.entryActions());
+        }
+        advanceStageIfComplete(context, definition, progress);
+    }
+
+    private static String initialStage(QuestDefinition definition) {
+        if (definition == null || definition.stages().isEmpty()) {
+            return "";
+        }
+        if (definition.stages().containsKey("started")) {
+            return "started";
+        }
+        return definition.stages().keySet().iterator().next();
+    }
+
+    private static boolean changeQuestStage(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            String stage,
+            boolean runExitActions,
+            boolean runEntryActions) {
+        String nextStage = stage == null ? "" : stage.trim();
+        if (context == null
+                || definition == null
+                || progress == null
+                || nextStage.isBlank()
+                || progress.currentStage().equals(nextStage)) {
+            return false;
+        }
+
+        QuestDefinition.Stage previous = definition.stages().get(progress.currentStage());
+        if (runExitActions && previous != null) {
+            runStageActions(context, definition, progress, previous.exitActions());
+        }
+        if (!progress.setCurrentStage(nextStage)) {
+            return false;
+        }
+        syncQuestStageFact(context, definition, nextStage);
+        dispatchStageChangedTriggers(context, definition, progress);
+
+        QuestDefinition.Stage current = definition.stages().get(nextStage);
+        if (runEntryActions && current != null) {
+            runStageActions(context, definition, progress, current.entryActions());
+        }
+        sendTrackerSync(context.player(), true);
         return true;
+    }
+
+    private static void syncQuestStageFact(
+            DialogueContext context,
+            QuestDefinition definition,
+            String stage) {
+        String scopeKey = playerQuestScopeKey(context.player(), definition);
+        if (!scopeKey.isBlank()) {
+            VillagerQuestFacts.get(context.level()).setVariable(scopeKey, "stage", stage);
+        }
+    }
+
+    private static boolean advanceStageIfComplete(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (context == null || definition == null || progress == null || definition.stages().isEmpty()) {
+            return false;
+        }
+        boolean changed = false;
+        for (int i = 0; i < MAX_STAGE_ADVANCES_PER_CHECK; i++) {
+            QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
+            if (stage == null
+                    || stage.next().isBlank()
+                    || stage.completeWhen().isEmpty()
+                    || !definition.stages().containsKey(stage.next())
+                    || !stagePredicatesMet(context, definition, progress, stage)) {
+                break;
+            }
+            if (!changeQuestStage(context, definition, progress, stage.next(), true, true)) {
+                break;
+            }
+            changed = true;
+        }
+        return changed;
+    }
+
+    private static boolean advanceStageAfterEvent(
+            ServerLevel level,
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return contextForStartedVillager(level, player, progress)
+                .map(context -> advanceStageIfComplete(context, definition, progress))
+                .orElse(false);
+    }
+
+    private static boolean stagePredicatesMet(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Stage stage) {
+        for (QuestDefinition.StagePredicate predicate : stage.completeWhen()) {
+            if (!stagePredicateMet(context, definition, progress, predicate)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean stagePredicateMet(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.StagePredicate predicate) {
+        if (predicate == null || predicate.isEmpty()) {
+            return false;
+        }
+        if (!predicate.objective().isBlank()) {
+            QuestDefinition.Objective objective = definition.objectives().stream()
+                    .filter(candidate -> candidate.id().equals(predicate.objective()))
+                    .findFirst()
+                    .orElse(null);
+            if (objective == null
+                    || !objectiveComplete(context.player(), context, context.level(), definition, progress, objective)) {
+                return false;
+            }
+        }
+        for (DialogueCondition condition : predicate.conditions()) {
+            if (!condition.matches(context)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean runStageActions(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            List<VillagerActionDefinition> actions) {
+        if (actions == null || actions.isEmpty()) {
+            return false;
+        }
+        boolean ranAction = false;
+        Map<String, String> replacements = new LinkedHashMap<>(replacements(context, definition, progress));
+        for (VillagerActionDefinition action : actions) {
+            VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
+            replacements.putAll(result.replacements());
+            if (result.flashTracker()) {
+                sendTrackerSync(context.player(), true);
+            }
+            ranAction |= result.ran();
+        }
+        return ranAction;
     }
 
     private static QuestActionOutcome startQuest(DialogueContext context, QuestDefinition definition) {
@@ -561,6 +736,7 @@ public final class VillagerQuestService {
             started.markHasProof();
         }
         markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_STARTED_FACT, "started");
+        initializeQuestStage(context, definition, started);
         lockBranchQuests(context, definition, QuestDefinition.BranchLockEvent.STARTED);
         data.setDirty();
         data.setTrackedQuest(context.player().getUUID(), definition.id());
@@ -3125,6 +3301,7 @@ public final class VillagerQuestService {
             if (!questProgressChanged) {
                 continue;
             }
+            questProgressChanged |= advanceStageAfterEvent(level, player, definition, progress);
             changed = true;
             progressNotice = true;
             sendQuestProgressNotification(
@@ -3185,6 +3362,7 @@ public final class VillagerQuestService {
             if (!questProgressChanged) {
                 continue;
             }
+            questProgressChanged |= advanceStageAfterEvent(level, player, definition, progress);
             changed = true;
             progressNotice = true;
             sendQuestProgressNotification(
@@ -3243,6 +3421,7 @@ public final class VillagerQuestService {
             if (!questProgressChanged) {
                 continue;
             }
+            questProgressChanged |= advanceStageAfterEvent(level, player, definition, progress);
             changed = true;
             progressNotice = true;
             sendQuestProgressNotification(
@@ -3299,6 +3478,7 @@ public final class VillagerQuestService {
             if (!questProgressChanged) {
                 continue;
             }
+            questProgressChanged |= advanceStageAfterEvent(level, player, definition, progress);
             changed = true;
             progressNotice = true;
             sendQuestProgressNotification(
@@ -3349,6 +3529,7 @@ public final class VillagerQuestService {
             if (!questProgressChanged) {
                 continue;
             }
+            questProgressChanged |= advanceStageAfterEvent(level, player, definition, progress);
             changed = true;
             progressNotice = true;
             sendQuestProgressNotification(

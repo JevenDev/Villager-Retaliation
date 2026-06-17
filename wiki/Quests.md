@@ -735,6 +735,57 @@ The same branch can be written with the stage alias:
 }
 ```
 
+Quests can also declare automatic stages at the top level. The first declared stage starts when the quest starts, unless a `started` stage exists. Each stage can run `entry_actions`, wait for `complete_when`, advance to `next`, and run `exit_actions` during the transition:
+
+```json
+{
+  "stages": {
+    "started": {
+      "entry_actions": [
+        {
+          "type": "notification",
+          "text": "The watch wants proof before it moves."
+        }
+      ],
+      "complete_when": "find_proof",
+      "next": "proof_found"
+    },
+    "proof_found": {
+      "entry_actions": [
+        {
+          "type": "set_stage",
+          "stage": "proof_found"
+        }
+      ],
+      "branches": [
+        {
+          "id": "warn_guard",
+          "label": "Warn the guard.",
+          "conditions": [
+            {
+              "type": "quest_stage",
+              "stage": "proof_found"
+            }
+          ],
+          "actions": [
+            {
+              "type": "set_variable",
+              "scope": "quest",
+              "key": "route",
+              "value": "guard"
+            }
+          ],
+          "next": "guard_warned"
+        }
+      ]
+    },
+    "guard_warned": {}
+  }
+}
+```
+
+`complete_when` accepts an objective id string, an array of objective ids, a condition object, or `{ "conditions": [...] }`. Stage and branch `next` values must name another declared stage. Branches are metadata for quest-aware dialogue and tools: use their `conditions`, `blocked_by`, and `actions` to keep branch requirements and consequences beside the stage they belong to.
+
 Use `scope: "world"` for shared save-wide consequences, `scope: "player"` for player story flags, `scope: "village"` for local outcomes, and `scope: "villager"` for villager-specific secrets or promises.
 
 Tracker text and quest dialogue can use `{quest_stage}` or `{current_stage}` to show the saved progress stage. Lifecycle events also write stage values: `started`, `completed`, `abandoned`, `expired`, and `branch_locked`. A custom `set_stage` action can replace those with a pack-defined stage such as `warned_guard`, `archive_saved`, or `raiders_spared`.
