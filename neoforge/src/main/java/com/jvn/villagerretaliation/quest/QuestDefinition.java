@@ -432,6 +432,7 @@ public record QuestDefinition(
 
     public enum CompletionScope {
         PLAYER,
+        PLAYER_WORLD,
         WORLD,
         VILLAGE,
         VILLAGER;
@@ -439,6 +440,8 @@ public record QuestDefinition(
         public static CompletionScope bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
             return switch (normalized) {
+                case "player_world", "player_in_world", "per_player_world" -> PLAYER_WORLD;
+                case "player", "per_player" -> PLAYER;
                 case "world", "global", "server" -> WORLD;
                 case "village", "settlement" -> VILLAGE;
                 case "villager", "issuer", "quest_giver" -> VILLAGER;

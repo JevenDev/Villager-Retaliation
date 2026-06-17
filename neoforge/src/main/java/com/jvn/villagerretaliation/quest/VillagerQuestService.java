@@ -29,6 +29,7 @@ import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -69,6 +71,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerQuestService {
     private static final int QUEST_PROGRESS_SCAN_INTERVAL_TICKS = 20;
+    private static final int QUEST_TRACKER_HEARTBEAT_TICKS = 20 * 30;
     private static final int APPROXIMATE_COORDINATE_STEP = 50;
     private static final long QUEST_STORY_HINT_TICKS = 20L * 60L * 60L * 6L;
     private static final ResourceLocation QUEST_STARTED_FACT =
@@ -86,8 +89,19 @@ public final class VillagerQuestService {
     private static final String BRANCH_LOCK_CONSUMED_REASON = "branch_lock";
     private static final ThreadLocal<Boolean> DISPATCHING_STAGE_TRIGGERS =
             ThreadLocal.withInitial(() -> false);
+    private static final Map<UUID, TrackerSyncState> LAST_TRACKER_SYNCS = new HashMap<>();
 
     private VillagerQuestService() {
+    }
+
+    public static void clearRuntimeState() {
+        LAST_TRACKER_SYNCS.clear();
+    }
+
+    public static void clearRuntimeState(ServerPlayer player) {
+        if (player != null) {
+            LAST_TRACKER_SYNCS.remove(player.getUUID());
+        }
     }
 
     public static boolean matchesState(DialogueContext context, ResourceLocation questId, Set<String> states) {
@@ -317,7 +331,7 @@ public final class VillagerQuestService {
         ResourceLocation questId = ResourceLocation.tryParse(questIdText);
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         if (questId == null || !canTrackQuest(level, player, questId)) {
-            sendTrackerSync(player, false);
+            sendTrackerSync(player, false, true);
             return;
         }
 
@@ -330,7 +344,7 @@ public final class VillagerQuestService {
             }
             case TOGGLE -> data.toggleTrackedQuest(player.getUUID(), questId);
         }
-        sendTrackerSync(player, false);
+        sendTrackerSync(player, false, true);
     }
 
     public static DebugStartResult debugStartQuest(ServerPlayer player, Villager provider, ResourceLocation questId, boolean force) {
@@ -857,7 +871,7 @@ public final class VillagerQuestService {
         if (maxCompletions <= 0) {
             return true;
         }
-        if (definition.rules().completionScope() == QuestDefinition.CompletionScope.PLAYER) {
+        if (isPlayerCompletionScope(definition.rules().completionScope())) {
             return progress == null || progress.completionCount() < maxCompletions;
         }
         return scopedCompletionCount(context, definition) < maxCompletions;
@@ -867,7 +881,7 @@ public final class VillagerQuestService {
         if (context == null || definition == null) {
             return 0;
         }
-        if (definition.rules().completionScope() == QuestDefinition.CompletionScope.PLAYER) {
+        if (isPlayerCompletionScope(definition.rules().completionScope())) {
             VillagerQuestSavedData.QuestProgress progress =
                     VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), definition.id());
             return progress == null ? 0 : progress.completionCount();
@@ -881,7 +895,7 @@ public final class VillagerQuestService {
     private static void recordScopedCompletion(DialogueContext context, QuestDefinition definition) {
         if (context == null
                 || definition == null
-                || definition.rules().completionScope() == QuestDefinition.CompletionScope.PLAYER) {
+                || isPlayerCompletionScope(definition.rules().completionScope())) {
             return;
         }
         String scopeKey = completionScopeKey(context, definition);
@@ -892,7 +906,7 @@ public final class VillagerQuestService {
 
     private static String completionScopeKey(DialogueContext context, QuestDefinition definition) {
         QuestFactScope factScope = switch (definition.rules().completionScope()) {
-            case PLAYER -> QuestFactScope.PLAYER;
+            case PLAYER, PLAYER_WORLD -> QuestFactScope.PLAYER;
             case WORLD -> QuestFactScope.WORLD;
             case VILLAGE -> QuestFactScope.VILLAGE;
             case VILLAGER -> QuestFactScope.VILLAGER;
@@ -902,6 +916,12 @@ public final class VillagerQuestService {
 
     private static String completionCounterKey(QuestDefinition definition) {
         return "completion:" + definition.id();
+    }
+
+    private static boolean isPlayerCompletionScope(QuestDefinition.CompletionScope scope) {
+        return scope == null
+                || scope == QuestDefinition.CompletionScope.PLAYER
+                || scope == QuestDefinition.CompletionScope.PLAYER_WORLD;
     }
 
     private static void markQuestLifecycleFact(
@@ -1123,19 +1143,18 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         if (progress == null) {
             if (!withinCompletionLimit(context, definition, null)) {
-                return "already_completed";
+                return isPlayerCompletionScope(definition.rules().completionScope()) ? "already_completed" : "completion_scope";
             }
             return parentCompleted(context, definition) ? "unavailable" : "parent_locked";
         }
         if (progress.state() == VillagerQuestSavedData.QuestState.CONSUMED) {
             return branchLocked(progress) ? "branch_locked" : "consumed";
         }
+        if (crossVillagerLocked(context, definition, progress)) {
+            return "locked_to_villager";
+        }
         if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
             return "active";
-        }
-        if (!withinCompletionLimit(context, definition, progress)
-                || (progress.completionCount() > 0 && !definition.rules().repeatable())) {
-            return "already_completed";
         }
         if (!parentCompleted(context, definition)) {
             return "parent_locked";
@@ -1154,9 +1173,14 @@ public final class VillagerQuestService {
         if (progress.state() == VillagerQuestSavedData.QuestState.EXPIRED) {
             return "expired";
         }
-        if (progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
-                && definition.rules().completionCooldownTicks() > 0L) {
+        if (completionCooldownActive(context, definition, progress)) {
             return "completion_cooldown";
+        }
+        if (!withinCompletionLimit(context, definition, progress)) {
+            return isPlayerCompletionScope(definition.rules().completionScope()) ? "already_completed" : "completion_scope";
+        }
+        if (progress.completionCount() > 0 && !definition.rules().repeatable()) {
+            return "already_completed";
         }
         return "unavailable";
     }
@@ -1165,19 +1189,18 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        if ((progress != null && progress.completionCount() > 0)
-                || (definition.rules().completionScope() != QuestDefinition.CompletionScope.PLAYER
-                && scopedCompletionCount(context, definition) > 0)) {
-            return resolveQuestText(
-                    context,
-                    definition.dialogue().selectAlreadyCompletedText(context.random()),
-                    replacements(context, definition, progress));
-        }
         if (branchLocked(progress)) {
             return resolveGlobalText(
                     context.player(),
                     "quest.dialogue.branch_locked",
                     "That path has closed because of another choice.",
+                    replacements(context, definition, progress));
+        }
+        if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.CONSUMED) {
+            return resolveGlobalText(
+                    context.player(),
+                    "quest.dialogue.consumed",
+                    "That path is no longer available.",
                     replacements(context, definition, progress));
         }
         if (!parentCompleted(context, definition)) {
@@ -1187,14 +1210,18 @@ public final class VillagerQuestService {
                     "Another chapter needs to be settled before this opens.",
                     replacements(context, definition, progress));
         }
-        if (progress != null
-                && progress.startedVillagerId() != null
-                && !definition.rules().crossVillagerCompatible()
-                && !progress.startedVillagerId().equals(context.villager().getUUID())) {
+        if (crossVillagerLocked(context, definition, progress)) {
             return resolveGlobalText(
                     context.player(),
                     "quest.dialogue.locked_to_villager",
                     "That quest belongs to {issuer}.",
+                    replacements(context, definition, progress));
+        }
+        if (progress != null && !withinStartLimit(definition, progress)) {
+            return resolveGlobalText(
+                    context.player(),
+                    "quest.dialogue.start_limit",
+                    "That path cannot be started again.",
                     replacements(context, definition, progress));
         }
         if (progress != null
@@ -1207,10 +1234,59 @@ public final class VillagerQuestService {
                     "Give that path a little time, then return to {issuer}.",
                     replacements(context, definition, progress));
         }
+        if (completionCooldownActive(context, definition, progress)) {
+            return resolveGlobalText(
+                    context.player(),
+                    "quest.dialogue.completion_cooldown",
+                    "That matter needs time before it can be revisited.",
+                    replacements(context, definition, progress));
+        }
+        if (!withinCompletionLimit(context, definition, progress)
+                && !isPlayerCompletionScope(definition.rules().completionScope())) {
+            return resolveGlobalText(
+                    context.player(),
+                    "quest.dialogue.completion_scope",
+                    "Someone has already settled this matter.",
+                    replacements(context, definition, progress));
+        }
+        if ((progress != null && progress.completionCount() > 0)
+                || (!isPlayerCompletionScope(definition.rules().completionScope())
+                && scopedCompletionCount(context, definition) > 0)
+                || !withinCompletionLimit(context, definition, progress)) {
+            return resolveQuestText(
+                    context,
+                    definition.dialogue().selectAlreadyCompletedText(context.random()),
+                    replacements(context, definition, progress));
+        }
         return resolveQuestText(
                 context,
                 definition.dialogue().selectUnavailableText(context.random()),
                 replacements(context, definition, progress));
+    }
+
+    private static boolean crossVillagerLocked(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return context != null
+                && progress != null
+                && progress.startedVillagerId() != null
+                && !definition.rules().crossVillagerCompatible()
+                && !progress.startedVillagerId().equals(context.villager().getUUID());
+    }
+
+    private static boolean completionCooldownActive(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return context != null
+                && progress != null
+                && progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
+                && definition.rules().completionCooldownTicks() > 0L
+                && !cooldownElapsed(
+                        context.level().getGameTime(),
+                        progress.completedGameTime(),
+                        definition.rules().completionCooldownTicks());
     }
 
     private static boolean matchesState(
@@ -1220,7 +1296,7 @@ public final class VillagerQuestService {
             String state) {
         String normalized = state == null ? "" : state.trim().toLowerCase(Locale.ROOT);
         boolean completed = progress != null && progress.completionCount() > 0;
-        if (!completed && definition.rules().completionScope() != QuestDefinition.CompletionScope.PLAYER) {
+        if (!completed && !isPlayerCompletionScope(definition.rules().completionScope())) {
             completed = scopedCompletionCount(context, definition) > 0;
         }
         boolean rawActive = progress != null
@@ -2250,6 +2326,10 @@ public final class VillagerQuestService {
     }
 
     private static void sendTrackerSync(ServerPlayer player, boolean flash) {
+        sendTrackerSync(player, flash, false);
+    }
+
+    private static void sendTrackerSync(ServerPlayer player, boolean flash, boolean force) {
         if (!(player.level() instanceof ServerLevel level)) {
             return;
         }
@@ -2284,10 +2364,50 @@ public final class VillagerQuestService {
                 entries.add(trackerEntry(player, definition, entry.getValue(), activeConditionsMet));
             }
         }
+        String signature = trackerSyncSignature(entries, trackedQuestId);
+        long gameTime = level.getGameTime();
+        TrackerSyncState previous = LAST_TRACKER_SYNCS.get(player.getUUID());
+        boolean heartbeatDue = previous == null
+                || gameTime < previous.gameTime()
+                || gameTime - previous.gameTime() >= QUEST_TRACKER_HEARTBEAT_TICKS;
+        if (!force
+                && !flash
+                && previous != null
+                && previous.signature().equals(signature)
+                && !heartbeatDue) {
+            return;
+        }
         PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(
                 entries,
                 trackedQuestId == null ? "" : trackedQuestId.toString(),
                 flash));
+        LAST_TRACKER_SYNCS.put(player.getUUID(), new TrackerSyncState(signature, gameTime));
+    }
+
+    private static String trackerSyncSignature(
+            List<QuestTrackerSyncPayload.Entry> entries,
+            ResourceLocation trackedQuestId) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(trackedQuestId == null ? "" : trackedQuestId.toString()).append('\n');
+        for (QuestTrackerSyncPayload.Entry entry : entries) {
+            builder.append(entry.questId()).append('|')
+                    .append(entry.title()).append('|')
+                    .append(entry.objective()).append('|')
+                    .append(entry.metadata()).append('|')
+                    .append(entry.progress()).append('|')
+                    .append(entry.showProgress()).append('|')
+                    .append(entry.state()).append('|')
+                    .append(entry.status()).append('|')
+                    .append(entry.issuer()).append('|')
+                    .append(entry.issuerLocation()).append('|');
+            for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
+                builder.append(item.itemId()).append(',')
+                        .append(item.label()).append(',')
+                        .append(item.count()).append(';');
+            }
+            builder.append('\n');
+        }
+        return builder.toString();
     }
 
     private static boolean shouldSyncTrackerEntry(
@@ -3765,6 +3885,9 @@ public final class VillagerQuestService {
         public VillagerDialogueService.DialogueResult dialogueResult() {
             return new VillagerDialogueService.DialogueResult(this.lineId, this.text);
         }
+    }
+
+    private record TrackerSyncState(String signature, long gameTime) {
     }
 
     private enum ItemHandInResult {

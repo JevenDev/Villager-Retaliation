@@ -105,6 +105,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            VillagerQuestService.clearRuntimeState(player);
             VillagerReputationNetworking.sendServerConfig(player);
         }
     }
@@ -125,6 +126,7 @@ public final class VillagerRetaliationEvents {
         VillagerSocialGraphService.clearRuntimeState();
         ForcedDialogueService.clearRuntimeState();
         DialogueTreeService.clearRuntimeState();
+        VillagerQuestService.clearRuntimeState();
         HiredDebugPreviewService.clearRuntimeState();
     }
 

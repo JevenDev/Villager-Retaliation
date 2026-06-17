@@ -812,11 +812,12 @@ Completion scopes:
 | Scope | Meaning |
 | --- | --- |
 | `player` | Default. Completion count is stored on that player's quest progress. |
+| `player_world` | Explicit per-player-in-this-world behavior; useful when a pack wants the default semantics to be obvious. |
 | `world` | One shared completion count for the whole save. |
 | `village` | One shared completion count for the resolved village area. |
 | `villager` | One shared completion count for the issuing villager. |
 
-Use `world` for unique story chapters, `village` for local village crises, and `villager` for personal favor chains.
+Use `player_world` when the default needs to be explicit, `world` for unique story chapters, `village` for local village crises, and `villager` for personal favor chains.
 
 ## Replacing Or Removing Built-Ins
 
