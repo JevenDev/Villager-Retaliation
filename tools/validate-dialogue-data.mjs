@@ -975,6 +975,9 @@ function checkDialogue(file, data) {
         errors.push(`${relative(file)}: lines[${index}] uses legacy migrated field "${field}"; use conditions instead for built-in data.`);
       }
     }
+    checkResourceIdValues(file, line, `lines[${index}]`, ["retaliation_target_entity_types", "retaliation_target_entities"], "retaliation target entity id");
+    checkResourceIdValues(file, line, `lines[${index}]`, ["story_structure", "story_structures"], "story structure id");
+    checkResourceIdValues(file, line, `lines[${index}]`, ["story_biome", "story_biomes"], "story biome id");
     checkConditions(file, line, `lines[${index}]`);
   }
 }
@@ -2748,6 +2751,10 @@ function checkForcedDialogueEntryText(file, entry, location, messagePrefix = "")
   checkStringList(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");
   checkOptionalString(file, entry, location, "loot_table");
   checkStringList(file, entry, location, ["loot_tables"], "forced dialogue loot table id");
+  checkResourceIdValues(file, entry, location, ["loot_table", "loot_tables"], "forced dialogue loot table id");
+  checkOptionalString(file, entry, location, "target_entity_type");
+  checkStringList(file, entry, location, ["target_entity_types", "target_entities"], "forced dialogue target entity id");
+  checkResourceIdValues(file, entry, location, ["target_entity_type", "target_entity_types", "target_entities"], "forced dialogue target entity id");
   collectLootTableReferences(file, entry, location, ["loot_table", "loot_tables"], "forced dialogue loot-table filter");
   collectForcedDialogueMessageKeys(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");
   if (!hasStringValues(entry, ["line_key", "line_keys", "text_key", "text_keys"]) && messagePrefix && hasStringValues(entry, ["line", "lines"])) {
