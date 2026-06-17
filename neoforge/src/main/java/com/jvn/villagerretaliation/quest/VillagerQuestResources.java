@@ -445,10 +445,20 @@ public final class VillagerQuestResources {
         }
 
         List<QuestDefinition.Objective> objectives = new ArrayList<>();
+        Set<String> objectiveIds = new LinkedHashSet<>();
         int index = 0;
         for (JsonElement child : element.getAsJsonArray()) {
             if (child.isJsonObject()) {
-                readObjective(location, child.getAsJsonObject(), index, defaultQuestId).ifPresent(objectives::add);
+                readObjective(location, child.getAsJsonObject(), index, defaultQuestId).ifPresent(objective -> {
+                    if (!objectiveIds.add(objective.id())) {
+                        DatapackDiagnostics.warnInvalidDialogueCondition(
+                                location,
+                                "quest objective \"" + objective.id() + "\"",
+                                "duplicate objective id; later duplicate is ignored.");
+                        return;
+                    }
+                    objectives.add(objective);
+                });
             }
             index++;
         }
@@ -1147,10 +1157,20 @@ public final class VillagerQuestResources {
         }
 
         List<QuestDefinition.Trigger> triggers = new ArrayList<>();
+        Set<String> triggerIds = new LinkedHashSet<>();
         int index = 0;
         for (JsonElement child : element.getAsJsonArray()) {
             if (child.isJsonObject()) {
-                readTrigger(location, child.getAsJsonObject(), index, defaultQuestId).ifPresent(triggers::add);
+                readTrigger(location, child.getAsJsonObject(), index, defaultQuestId).ifPresent(trigger -> {
+                    if (!triggerIds.add(trigger.id())) {
+                        DatapackDiagnostics.warnInvalidDialogueCondition(
+                                location,
+                                "quest trigger \"" + trigger.id() + "\"",
+                                "duplicate trigger id; later duplicate is ignored.");
+                        return;
+                    }
+                    triggers.add(trigger);
+                });
             }
             index++;
         }
