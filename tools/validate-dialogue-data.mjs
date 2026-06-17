@@ -105,6 +105,8 @@ const conditionTypes = new Set([
   "quest_stage",
   "fact",
   "stage",
+  "mood",
+  "villager_mood",
   "weather",
   "time",
   "time_of_day"
@@ -171,6 +173,8 @@ const conditionKeys = {
   quest_stage: questFactConditionKeys,
   fact: questFactConditionKeys,
   stage: questFactConditionKeys,
+  mood: new Set(["type", "mood", "moods", "state", "states", "min", "min_intensity", "min_mood_intensity", "max", "max_intensity", "max_mood_intensity"]),
+  villager_mood: new Set(["type", "mood", "moods", "state", "states", "min", "min_intensity", "min_mood_intensity", "max", "max_intensity", "max_mood_intensity"]),
   weather: new Set(["type", "state", "states", "weather", "weathers"]),
   time: new Set(["type", "value", "values", "time", "times"]),
   time_of_day: new Set(["type", "value", "values", "time", "times"])
@@ -353,6 +357,7 @@ const relationshipStates = new Set([
   "widowed_partner"
 ]);
 const recruitmentScenarios = new Set(["betrayed", "injured", "left_behind"]);
+const moodStates = new Set(["neutral", "content", "grateful", "afraid", "angry", "suspicious", "grieving", "protective", "hopeful", "stressed", "proud", "lonely"]);
 const weatherStates = new Set(["clear", "rain", "thunder"]);
 const timesOfDay = new Set(["morning", "afternoon", "evening", "night"]);
 const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "gossip", "memory", "loot", "notification", "tracker", "forced_dialogue", "set_tag", "clear_tag", "set_variable", "counter"]);
@@ -2483,6 +2488,14 @@ function checkCondition(file, condition, location, defaultQuestId = "") {
     }
   } else if (type === "quest_fact" || type === "quest_tag" || type === "quest_variable" || type === "quest_counter" || type === "quest_stage" || type === "fact" || type === "stage") {
     checkQuestFactCondition(file, condition, location, defaultQuestId);
+  } else if (type === "mood" || type === "villager_mood") {
+    checkStringValues(file, condition, location, ["mood", "moods", "state", "states"], moodStates, "villager mood", { requireAny: true });
+    checkOptionalInteger(file, condition, location, "min", { min: 0, max: 100 });
+    checkOptionalInteger(file, condition, location, "min_intensity", { min: 0, max: 100 });
+    checkOptionalInteger(file, condition, location, "min_mood_intensity", { min: 0, max: 100 });
+    checkOptionalInteger(file, condition, location, "max", { min: 0, max: 100 });
+    checkOptionalInteger(file, condition, location, "max_intensity", { min: 0, max: 100 });
+    checkOptionalInteger(file, condition, location, "max_mood_intensity", { min: 0, max: 100 });
   } else if (type === "weather") {
     checkStringValues(file, condition, location, ["state", "states", "weather", "weathers"], weatherStates, "weather state", { requireAny: true });
   } else if (type === "time" || type === "time_of_day") {

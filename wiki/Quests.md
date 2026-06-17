@@ -138,7 +138,19 @@ Use `offer.conditions` for branch-specific availability, world-state locks, or o
 }
 ```
 
-Use `rules.active.conditions` when an already accepted quest should pause or hide until the world is right again.
+Use `rules.active.conditions` when an already accepted quest should pause or hide until the world is right again. Saved-state conditions, including villager mood, can still evaluate after the issuing villager unloads:
+
+```json
+{
+  "rules": {
+    "active": {
+      "conditions": [
+        { "type": "mood", "mood": "grateful", "min_mood_intensity": 25 }
+      ]
+    }
+  }
+}
+```
 
 Use branch locks when one path should close another path. Quests in the same `exclusive_group` lock their siblings when the configured `exclusive_on` event fires:
 

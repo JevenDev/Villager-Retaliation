@@ -193,6 +193,18 @@ Keep that tag aligned with your currency item so crafting recipes, payment boxes
 
 Use conditions when the older one-off helper flags start to pile up.
 
+### Mood Conditions
+
+Use `mood` conditions for current villager mood gates. Active quests can evaluate these from saved villager mood state when the issuing villager is unloaded.
+
+```json
+{
+  "conditions": [
+    { "type": "mood", "mood": "protective", "min_mood_intensity": 30 }
+  ]
+}
+```
+
 ### Quest Facts
 
 Use `quest_fact` conditions for durable story flags, branch choices, and counters written by quest or dialogue actions.

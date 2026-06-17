@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestIds;
@@ -28,7 +29,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
         DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact,
-        DialogueCondition.Weather, DialogueCondition.Time {
+        DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time {
 
     boolean matches(DialogueContext context);
 
@@ -116,6 +117,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             case "villager_level", "trade_level" -> readVillagerLevel(location, context, condition);
             case "quest" -> readQuest(location, context, condition, defaultQuestId);
             case "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "fact", "stage" -> readQuestFact(location, context, condition, defaultQuestId);
+            case "mood", "villager_mood" -> readMood(location, context, condition);
             case "weather" -> readWeather(condition);
             case "time", "time_of_day" -> readTime(condition);
             default -> {
@@ -379,6 +381,41 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             return Optional.empty();
         }
         return Optional.of(new QuestFact(scope, questId, tags, key, values, min, max));
+    }
+
+    private static Optional<DialogueCondition> readMood(ResourceLocation location, String context, JsonObject condition) {
+        EnumSet<VillagerMood> moods = EnumSet.noneOf(VillagerMood.class);
+        for (String value : readStringList(condition, "mood")) {
+            readEnum(value, VillagerMood.class).ifPresent(moods::add);
+        }
+        for (String value : readStringList(condition, "moods")) {
+            readEnum(value, VillagerMood.class).ifPresent(moods::add);
+        }
+        for (String value : readStringList(condition, "state")) {
+            readEnum(value, VillagerMood.class).ifPresent(moods::add);
+        }
+        for (String value : readStringList(condition, "states")) {
+            readEnum(value, VillagerMood.class).ifPresent(moods::add);
+        }
+        if (moods.isEmpty()) {
+            warnInvalid(location, context, "mood condition must define mood, moods, state, or states.");
+            return Optional.empty();
+        }
+        Integer min = readNullableInt(condition, "min");
+        if (min == null) {
+            min = readNullableInt(condition, "min_intensity");
+        }
+        if (min == null) {
+            min = readNullableInt(condition, "min_mood_intensity");
+        }
+        Integer max = readNullableInt(condition, "max");
+        if (max == null) {
+            max = readNullableInt(condition, "max_intensity");
+        }
+        if (max == null) {
+            max = readNullableInt(condition, "max_mood_intensity");
+        }
+        return Optional.of(new Mood(Set.copyOf(moods), min, max));
     }
 
     private static ResourceLocation readQuestReference(
@@ -958,6 +995,25 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         @Override
         public int specificityScore() {
             return 8;
+        }
+    }
+
+    record Mood(Set<VillagerMood> moods, Integer minIntensity, Integer maxIntensity) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            if (!this.moods.isEmpty() && !this.moods.contains(context.primaryMood())) {
+                return false;
+            }
+            int intensity = context.moodIntensity();
+            if (this.minIntensity != null && intensity < this.minIntensity) {
+                return false;
+            }
+            return this.maxIntensity == null || intensity <= this.maxIntensity;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 4;
         }
     }
 

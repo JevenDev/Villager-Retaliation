@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionExecutor;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
@@ -16,6 +17,8 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.mood.VillagerMoodSavedData;
+import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -1708,6 +1711,9 @@ public final class VillagerQuestService {
         if (condition instanceof DialogueCondition.VillagerLevel villagerLevel) {
             return villagerLevelStateWithoutLiveContext(progress, villagerLevel);
         }
+        if (condition instanceof DialogueCondition.Mood mood) {
+            return moodStateWithoutLiveContext(level, progress, mood);
+        }
         if (condition instanceof DialogueCondition.Weather weather) {
             return weather.states().contains(savedWeatherState(level, player, progress))
                     ? ConditionMatch.MET
@@ -2238,6 +2244,29 @@ public final class VillagerQuestService {
             return ConditionMatch.UNMET;
         }
         if (villagerLevel.maxLevel() != null && level > villagerLevel.maxLevel()) {
+            return ConditionMatch.UNMET;
+        }
+        return ConditionMatch.MET;
+    }
+
+    private static ConditionMatch moodStateWithoutLiveContext(
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.Mood mood) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        if (villagerId == null) {
+            return ConditionMatch.UNKNOWN;
+        }
+        VillagerMoodState state = VillagerRetaliationConfig.ENABLE_VILLAGER_MOODS.get()
+                ? VillagerMoodSavedData.get(level).get(villagerId).withEffectiveDecay(level.getGameTime())
+                : VillagerMoodState.DEFAULT;
+        if (!mood.moods().isEmpty() && !mood.moods().contains(state.primaryMood())) {
+            return ConditionMatch.UNMET;
+        }
+        if (mood.minIntensity() != null && state.intensity() < mood.minIntensity()) {
+            return ConditionMatch.UNMET;
+        }
+        if (mood.maxIntensity() != null && state.intensity() > mood.maxIntensity()) {
             return ConditionMatch.UNMET;
         }
         return ConditionMatch.MET;
