@@ -427,6 +427,18 @@ const questDialogueStages = [
   "missing_proof",
   "locate_failed"
 ];
+const questTextReferenceKeys = new Set([
+  "title_key",
+  "description_key",
+  "text_key",
+  "text_keys",
+  "complete_text_key",
+  "notification_text_key",
+  "label_key",
+  "reason_key",
+  ...questDialogueStages.map((key) => `${key}_key`),
+  ...questDialogueStages.map((key) => `${key}_keys`)
+]);
 
 const knownPlaceholders = new Set([
   "activity",
@@ -682,10 +694,12 @@ const warnings = [];
 const questDefinitions = new Map();
 const dialogueTreeDefinitions = new Map();
 const forcedDialogueDefinitions = new Map();
+const dialogueMessageKeys = new Map();
 const forcedDialogueQuestModules = [];
 const pendingQuestReferences = [];
 const pendingDialogueTreeLinks = [];
 const pendingForcedDialogueReferences = [];
+const pendingDialogueMessageKeyReferences = [];
 const dialogueIdScopes = {
   options: new Map(),
   lines: new Map(),
@@ -808,6 +822,7 @@ function checkDialogue(file, data) {
   checkDialogueIds(file, sections.options, "dialogue option", dialogueIdScopes.options);
   checkDialogueIds(file, sections.lines, "dialogue line", dialogueIdScopes.lines);
   checkDialogueIds(file, sections.messages, "dialogue message", dialogueIdScopes.messages);
+  indexDialogueMessageKeys(file, sections.messages);
   checkDialogueIds(file, sections.openings, "opening", dialogueIdScopes.openings);
   checkDialogueIds(file, sections.closings, "closing", dialogueIdScopes.closings);
   checkDialogueIds(file, sections.pacify, "pacify line", dialogueIdScopes.pacify);
@@ -834,6 +849,18 @@ function checkDialogue(file, data) {
       }
     }
     checkConditions(file, line, `lines[${index}]`);
+  }
+}
+
+function indexDialogueMessageKeys(file, messages) {
+  for (const [index, message] of messages.entries()) {
+    const key = stringValue(message?.key);
+    if (!key) {
+      continue;
+    }
+    if (!dialogueMessageKeys.has(key)) {
+      dialogueMessageKeys.set(key, `${relative(file)}: messages[${index}]`);
+    }
   }
 }
 
@@ -868,6 +895,48 @@ function checkEquipmentPredicateSubjectFlags(file, entry, location, subject) {
   if (requiresArmed && requiresUnarmed) {
     errors.push(`${relative(file)}: ${location} requires ${subject} to be both armed and unarmed.`);
   }
+}
+
+function collectQuestMessageKeyReferences(file, value, location = "root") {
+  if (Array.isArray(value)) {
+    value.forEach((child, index) => collectQuestMessageKeyReferences(file, child, `${location}[${index}]`));
+    return;
+  }
+  if (!value || typeof value !== "object") {
+    return;
+  }
+
+  for (const [key, child] of Object.entries(value)) {
+    const childLocation = `${location}.${key}`;
+    if (questTextReferenceKeys.has(key)) {
+      collectQuestMessageKeyReference(file, child, childLocation);
+    }
+    if (child && typeof child === "object") {
+      collectQuestMessageKeyReferences(file, child, childLocation);
+    }
+  }
+}
+
+function collectQuestMessageKeyReference(file, value, location) {
+  if (typeof value === "string") {
+    const key = value.trim();
+    if (key) {
+      pendingDialogueMessageKeyReferences.push({ file, location, key });
+    }
+    return;
+  }
+  if (!Array.isArray(value)) {
+    return;
+  }
+  value.forEach((child, index) => {
+    if (typeof child !== "string") {
+      return;
+    }
+    const key = child.trim();
+    if (key) {
+      pendingDialogueMessageKeyReferences.push({ file, location: `${location}[${index}]`, key });
+    }
+  });
 }
 
 function checkQuest(file, data) {
@@ -930,6 +999,7 @@ function checkQuest(file, data) {
   checkQuestTriggers(file, data.triggers, "triggers", defaultQuestId, stageIds);
   checkQuestRewards(file, data.rewards, "rewards");
   checkQuestDialogue(file, data.dialogue, "dialogue");
+  collectQuestMessageKeyReferences(file, data);
   warnQuestDialogueLinkCoexistence(file, data);
 }
 
@@ -3085,6 +3155,7 @@ function validateCrossReferences() {
   validateQuestlineFolders();
   validateDialogueTreeQuestlineMetadata();
   validateForcedDialogueQuestModules();
+  validateDialogueMessageKeyReferences();
 
   for (const reference of pendingForcedDialogueReferences) {
     if (!forcedDialogueDefinitions.has(reference.id)) {
@@ -3107,6 +3178,14 @@ function validateCrossReferences() {
 
     if (link.metadataQuest && tree.metadataQuest && tree.metadataQuest !== link.metadataQuest) {
       errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree points to "${link.treeId}" but its metadata.quest is "${tree.metadataQuest}" instead of "${link.metadataQuest}".`);
+    }
+  }
+}
+
+function validateDialogueMessageKeyReferences() {
+  for (const reference of pendingDialogueMessageKeyReferences) {
+    if (!dialogueMessageKeys.has(reference.key)) {
+      errors.push(`${relative(reference.file)}: ${reference.location} references missing dialogue message key "${reference.key}".`);
     }
   }
 }
