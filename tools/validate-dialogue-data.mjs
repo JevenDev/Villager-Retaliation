@@ -288,6 +288,11 @@ const questDialogueTreeLifecycleStates = new Map([
   ["reminder", new Set(["in_progress", "active", "started"])],
   ["turn_in", new Set(["ready", "turn_in", "turnin", "completeable", "completable"])]
 ]);
+const questDialogueTreeLifecycleActions = new Map([
+  ["offer", new Set(["start", "accept", "begin"])],
+  ["reminder", new Set(["remind", "reminder", "details"])],
+  ["turn_in", new Set(["turn_in", "turnin", "complete", "claim"])]
+]);
 const memoryKinds = new Set([
   "recent_broken_bed",
   "recent_direct_hit",
@@ -2063,6 +2068,9 @@ function checkDialogueTree(file, data) {
   }
 
   const nodeIds = new Set(nodes.map((node) => node.id).filter(Boolean));
+  const nodeById = new Map(nodes
+    .filter((node) => typeof node.id === "string" && node.id.trim())
+    .map((node) => [node.id, node]));
   checkIds(file, nodes, "dialogue tree node");
   for (const [index, entry] of entries.entries()) {
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
@@ -2101,6 +2109,7 @@ function checkDialogueTree(file, data) {
     }
   }
   checkUnreachableDialogueTreeNodes(file, nodes, entries, nodeIds);
+  warnQuestDialogueTreeLifecycleActionReachability(file, entries, nodeById, defaultQuestId);
 }
 
 function dialogueTreeNodes(nodes) {
@@ -2199,6 +2208,87 @@ function conditionHasQuestState(condition, expectedStates, defaultQuestId) {
   }
   return readValues(condition, ["state", "states"])
     .some((state) => typeof state === "string" && expectedStates.has(normalizedString(state)));
+}
+
+function warnQuestDialogueTreeLifecycleActionReachability(file, entries, nodeById, defaultQuestId) {
+  if (!defaultQuestId || !isQuestDialogueTreeFile(file)) {
+    return;
+  }
+  for (const [index, entry] of entries.entries()) {
+    const entryId = stringValue(entry?.id);
+    const expectedActions = questDialogueTreeLifecycleActions.get(entryId);
+    if (!expectedActions) {
+      continue;
+    }
+    const start = stringValue(entry?.start);
+    if (!start || !nodeById.has(start)) {
+      continue;
+    }
+    if (!hasReachableQuestAction(nodeById, start, expectedActions, defaultQuestId)) {
+      warnings.push(`${relative(file)}: entries[${index}] lifecycle entry "${entryId}" has no reachable ${lifecycleActionDescription(entryId)} quest action.`);
+    }
+  }
+}
+
+function hasReachableQuestAction(nodeById, startNodeId, expectedActions, defaultQuestId) {
+  const pending = [startNodeId];
+  const visited = new Set();
+  while (pending.length > 0) {
+    const nodeId = pending.pop();
+    if (visited.has(nodeId)) {
+      continue;
+    }
+    visited.add(nodeId);
+    const node = nodeById.get(nodeId);
+    if (!node) {
+      continue;
+    }
+    if (actionsIncludeQuestLifecycleAction(node.actions, expectedActions, defaultQuestId)) {
+      return true;
+    }
+    if (!Array.isArray(node.responses)) {
+      continue;
+    }
+    for (const response of node.responses) {
+      if (actionsIncludeQuestLifecycleAction(response?.actions, expectedActions, defaultQuestId)) {
+        return true;
+      }
+      const next = stringValue(response?.next);
+      if (next && nodeById.has(next) && !visited.has(next)) {
+        pending.push(next);
+      }
+    }
+  }
+  return false;
+}
+
+function actionsIncludeQuestLifecycleAction(actions, expectedActions, defaultQuestId) {
+  if (!Array.isArray(actions)) {
+    return false;
+  }
+  return actions.some((action) => actionTargetsQuest(action, defaultQuestId)
+    && actionType(action, defaultQuestId) === "quest"
+    && expectedActions.has(normalizedString(action.action)));
+}
+
+function actionTargetsQuest(action, defaultQuestId) {
+  if (!action || typeof action !== "object" || Array.isArray(action)) {
+    return false;
+  }
+  const questIds = readValues(action, ["quest", "quest_id", "id"])
+    .filter((value) => typeof value === "string" && value.trim())
+    .map((value) => value.trim());
+  return questIds.length === 0 || questIds.includes(defaultQuestId);
+}
+
+function lifecycleActionDescription(entryId) {
+  if (entryId === "offer") {
+    return "start";
+  }
+  if (entryId === "turn_in") {
+    return "turn-in";
+  }
+  return "reminder";
 }
 
 function checkDialogueTreeActions(file, actions, location, defaultQuestId = "", options = {}) {
