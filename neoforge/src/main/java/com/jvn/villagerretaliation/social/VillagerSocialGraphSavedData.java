@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.social;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
@@ -1159,7 +1160,7 @@ public class VillagerSocialGraphSavedData extends SavedData {
             profile.baby = tag.getBoolean(TAG_BABY);
             profile.alive = !tag.contains(TAG_ALIVE, Tag.TAG_BYTE) || tag.getBoolean(TAG_ALIVE);
             profile.dimension = tag.getString(TAG_DIMENSION);
-            profile.village = tag.getString(TAG_VILLAGE);
+            profile.village = VillageScopeKeys.fromSavedSocialKey(tag.getString(TAG_VILLAGE));
             profile.createdGameTime = tag.getLong(TAG_CREATED_GAME_TIME);
             profile.lastSeenGameTime = tag.getLong(TAG_LAST_SEEN_GAME_TIME);
             if (tag.contains(TAG_LAST_POS, Tag.TAG_COMPOUND)) {
@@ -1386,12 +1387,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
         private static String resolveVillageKey(ServerLevel level, Villager villager) {
             return VillageMembership.resolve(level, villager)
-                    .map(area -> level.dimension().location() + "@" + compactPos(area.centerBlock()))
+                    .map(area -> VillageScopeKeys.forPosition(level.dimension(), area.centerBlock()))
                     .orElse("");
-        }
-
-        private static String compactPos(BlockPos pos) {
-            return pos.getX() + "," + pos.getY() + "," + pos.getZ();
         }
 
         private static CompoundTag writeBlockPos(BlockPos pos) {
