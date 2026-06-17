@@ -2967,6 +2967,12 @@ function forcedDialogueFallbackEntryId(file, index) {
   return `${id}_${index}`;
 }
 
+function forcedDialogueSourceIdForFile(file) {
+  const base = path.dirname(path.join(root, roots.forcedDialogue));
+  const relativePath = path.relative(base, file).replaceAll(path.sep, "/");
+  return relativePath ? `villagerretaliation:${relativePath}` : "";
+}
+
 function normalizedString(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
@@ -3185,16 +3191,32 @@ function indexForcedDialogue(file, data) {
   }
   for (const entry of entriesFor(data)) {
     const entryId = stringValue(entry?.id);
-    if (!entryId) {
-      continue;
+    const trigger = normalizedString(entry?.trigger || entry?.event);
+    if (entryId) {
+      registerForcedDialogueDefinition(file, entryId, trigger, true);
     }
-    const previous = forcedDialogueDefinitions.get(entryId);
-    if (previous) {
-      errors.push(`${relative(file)}: duplicate forced dialogue id "${entryId}" also defined in ${previous.file}.`);
-      continue;
-    }
-    forcedDialogueDefinitions.set(entryId, { file: relative(file) });
+    registerForcedDialogueDefinition(file, forcedDialogueSourceIdForFile(file), trigger, false);
   }
+}
+
+function registerForcedDialogueDefinition(file, id, trigger, requireUnique) {
+  if (!id) {
+    return;
+  }
+  const existing = forcedDialogueDefinitions.get(id);
+  if (existing) {
+    if (requireUnique) {
+      errors.push(`${relative(file)}: duplicate forced dialogue id "${id}" also defined in ${existing.file}.`);
+    }
+    if (trigger) {
+      existing.triggers.add(trigger);
+    }
+    return;
+  }
+  forcedDialogueDefinitions.set(id, {
+    file: relative(file),
+    triggers: new Set(trigger ? [trigger] : [])
+  });
 }
 
 function forcedDialogueQuestModule(file) {
@@ -3268,8 +3290,14 @@ function validateCrossReferences() {
   validateForcedDialogueMessageKeyReferences();
 
   for (const reference of pendingForcedDialogueReferences) {
-    if (!forcedDialogueDefinitions.has(reference.id)) {
+    const definition = forcedDialogueDefinitions.get(reference.id);
+    if (!definition) {
       errors.push(`${relative(reference.file)}: ${reference.location} references missing forced dialogue id "${reference.id}" from ${reference.reason}.`);
+      continue;
+    }
+    if (reference.reason === "dialogue or trigger action" && !definition.triggers.has("quest")) {
+      const triggers = [...definition.triggers].sort().join(", ") || "none";
+      errors.push(`${relative(reference.file)}: ${reference.location} references forced dialogue "${reference.id}" from ${reference.reason}, but it is not available to quest forced-dialogue actions (triggers: ${triggers}).`);
     }
   }
 
