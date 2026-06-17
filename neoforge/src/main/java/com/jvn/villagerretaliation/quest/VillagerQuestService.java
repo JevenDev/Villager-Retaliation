@@ -2009,20 +2009,22 @@ public final class VillagerQuestService {
         return DialogueContext.TimeOfDay.NIGHT;
     }
 
-    private static boolean expirationConditionsMet(DialogueContext context, QuestDefinition definition) {
+    private static ConditionMatch expirationConditionsState(
+            ServerPlayer player,
+            DialogueContext context,
+            ServerLevel level,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
         QuestDefinition.Expiration expiration = definition.rules().expiration();
         if (expiration.conditions().isEmpty()) {
-            return false;
+            return ConditionMatch.UNMET;
         }
-        if (context == null) {
-            return false;
+        if (context != null) {
+            return expiration.conditions().stream().allMatch(condition -> condition.matches(context))
+                    ? ConditionMatch.MET
+                    : ConditionMatch.UNMET;
         }
-        for (DialogueCondition condition : expiration.conditions()) {
-            if (!condition.matches(context)) {
-                return false;
-            }
-        }
-        return true;
+        return conditionsStateWithoutLiveContext(player, level, definition, progress, expiration.conditions());
     }
 
     private static Optional<DialogueContext> contextForStartedVillager(
@@ -2056,7 +2058,9 @@ public final class VillagerQuestService {
         boolean expiredByTime = expiration.afterTicks() > 0L
                 && progress.startedGameTime() > 0L
                 && gameTime - progress.startedGameTime() >= expiration.afterTicks();
-        if (!expiredByTime && !expirationConditionsMet(context, definition)) {
+        ConditionMatch expirationConditions =
+                expirationConditionsState(player, context, player.serverLevel(), definition, progress);
+        if (!expiredByTime && expirationConditions != ConditionMatch.MET) {
             return false;
         }
 
