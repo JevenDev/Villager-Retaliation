@@ -698,6 +698,7 @@ const dialogueTreeDefinitions = new Map();
 const forcedDialogueDefinitions = new Map();
 const dialogueMessageKeys = new Map();
 const lootTableDefinitions = new Set();
+const notificationTriggerDefinitions = new Set();
 const forcedDialogueQuestModules = [];
 const pendingQuestReferences = [];
 const pendingDialogueTreeLinks = [];
@@ -705,6 +706,7 @@ const pendingForcedDialogueReferences = [];
 const pendingDialogueMessageKeyReferences = [];
 const pendingForcedDialogueMessageKeyReferences = [];
 const pendingLootTableReferences = [];
+const pendingNotificationTriggerReferences = [];
 const dialogueIdScopes = {
   options: new Map(),
   lines: new Map(),
@@ -733,7 +735,7 @@ for (const [kind, relativeRoot] of Object.entries(roots)) {
     } else if (kind === "lootTables") {
       indexLootTable(file);
     } else if (kind === "notifications") {
-      checkIds(file, data.notifications ?? [], "notification");
+      indexNotifications(file, data);
     } else if (kind === "quests") {
       indexQuest(file, data);
       checkQuest(file, data);
@@ -1488,6 +1490,7 @@ function checkQuestExpiration(file, expiration, location, defaultQuestId = "") {
     checkOptionalBoolean(file, expiration, location, key);
   }
   checkOptionalString(file, expiration, location, "notification");
+  collectNotificationTriggerReference(file, `${location}.notification`, expiration.notification, "quest expiration notification");
   checkOptionalString(file, expiration, location, "text");
   checkOptionalString(file, expiration, location, "text_key");
   checkOptionalString(file, expiration, location, "notification_text_key");
@@ -2251,6 +2254,20 @@ function checkDialogueTreeActions(file, actions, location, defaultQuestId = "", 
         }
       }
     }
+    if (type === "notification") {
+      checkOptionalString(file, action, actionLocation, "notification");
+      checkOptionalString(file, action, actionLocation, "trigger");
+      checkOptionalString(file, action, actionLocation, "text");
+      if (!hasStringValues(action, ["notification", "trigger", "text"])) {
+        errors.push(`${relative(file)}: ${actionLocation} must define notification, trigger, or text for a notification action.`);
+      }
+      collectNotificationTriggerReference(
+        file,
+        stringValue(action.notification) ? `${actionLocation}.notification` : `${actionLocation}.trigger`,
+        stringValue(action.notification) || stringValue(action.trigger),
+        "dialogue or trigger notification action"
+      );
+    }
     if (action.lines !== undefined && (!action.lines || typeof action.lines !== "object" || Array.isArray(action.lines))) {
       errors.push(`${relative(file)}: ${actionLocation}.lines must be an object keyed by action status.`);
     }
@@ -2531,6 +2548,19 @@ function checkMemoryTagId(file, location, value, reason) {
   if (!memoryTags.has(normalizedString(id))) {
     errors.push(`${relative(file)}: ${location} references unknown legacy village memory tag "${id}" from ${reason}; use a known built-in tag or a namespaced custom tag id.`);
   }
+}
+
+function collectNotificationTriggerReference(file, location, value, reason) {
+  const trigger = stringValue(value);
+  if (!trigger) {
+    return;
+  }
+  pendingNotificationTriggerReferences.push({
+    file,
+    location,
+    trigger,
+    reason
+  });
 }
 
 function dialogueSectionsFor(file, data) {
@@ -3232,6 +3262,20 @@ function stringValue(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function indexNotifications(file, data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return;
+  }
+  const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+  checkIds(file, notifications, "notification");
+  for (const entry of notifications) {
+    const trigger = stringValue(entry?.trigger);
+    if (trigger) {
+      notificationTriggerDefinitions.add(trigger);
+    }
+  }
+}
+
 function metadataObject(entry) {
   return entry && typeof entry === "object" && !Array.isArray(entry) && entry.metadata && typeof entry.metadata === "object" && !Array.isArray(entry.metadata)
     ? entry.metadata
@@ -3408,6 +3452,7 @@ function validateCrossReferences() {
   validateDialogueMessageKeyReferences();
   validateForcedDialogueMessageKeyReferences();
   validateLootTableReferences();
+  validateNotificationTriggerReferences();
 
   for (const reference of pendingForcedDialogueReferences) {
     const definition = forcedDialogueDefinitions.get(reference.id);
@@ -3465,6 +3510,14 @@ function validateLootTableReferences() {
     }
     if (id.namespace === "villagerretaliation" && !lootTableDefinitions.has(id.id)) {
       errors.push(`${relative(reference.file)}: ${reference.location} references missing built-in loot table "${id.id}" from ${reference.reason}.`);
+    }
+  }
+}
+
+function validateNotificationTriggerReferences() {
+  for (const reference of pendingNotificationTriggerReferences) {
+    if (!notificationTriggerDefinitions.has(reference.trigger)) {
+      warnings.push(`${relative(reference.file)}: ${reference.location} references missing notification trigger "${reference.trigger}" from ${reference.reason}; live notification resolution will fall back to authored text.`);
     }
   }
 }

@@ -67,6 +67,12 @@
       "color": "#FFD166"
     },
     {
+      "trigger": "quest.expired",
+      "text": "Quest expired: {quest}",
+      "kind": "quest",
+      "color": "#FFD166"
+    },
+    {
       "trigger": "recruitment.follow_start",
       "text": "{villager} is following you.",
       "kind": "villager_following",
