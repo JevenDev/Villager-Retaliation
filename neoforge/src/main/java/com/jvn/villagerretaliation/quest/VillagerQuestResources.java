@@ -621,6 +621,8 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readBoolean(rules, "cross_villager_compatible", false),
                 maxStarts,
                 maxCompletions,
+                QuestDefinition.CompletionScope.bySerializedName(
+                        DatapackJsonReader.readString(rules, "completion_scope", "scope")),
                 DatapackJsonReader.readDurationTicks(rules, "completion_cooldown", 0L),
                 QuestDefinition.AbandonmentMode.bySerializedName(
                         DatapackJsonReader.readString(rules, "abandonment")),

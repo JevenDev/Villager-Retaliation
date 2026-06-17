@@ -298,6 +298,7 @@ public record QuestDefinition(
             boolean crossVillagerCompatible,
             int maxStarts,
             int maxCompletions,
+            CompletionScope completionScope,
             long completionCooldownTicks,
             AbandonmentMode abandonment,
             long abandonmentCooldownTicks,
@@ -312,6 +313,7 @@ public record QuestDefinition(
                 false,
                 1,
                 1,
+                CompletionScope.PLAYER,
                 0L,
                 AbandonmentMode.ALLOW_REPICKUP,
                 0L,
@@ -324,11 +326,29 @@ public record QuestDefinition(
         public Rules {
             maxStarts = Math.max(0, maxStarts);
             maxCompletions = Math.max(0, maxCompletions);
+            completionScope = completionScope == null ? CompletionScope.PLAYER : completionScope;
             completionCooldownTicks = Math.max(0L, completionCooldownTicks);
             abandonment = abandonment == null ? AbandonmentMode.ALLOW_REPICKUP : abandonment;
             abandonmentCooldownTicks = Math.max(0L, abandonmentCooldownTicks);
             activeState = activeState == null ? ActiveState.DEFAULT : activeState;
             expiration = expiration == null ? Expiration.DEFAULT : expiration;
+        }
+    }
+
+    public enum CompletionScope {
+        PLAYER,
+        WORLD,
+        VILLAGE,
+        VILLAGER;
+
+        public static CompletionScope bySerializedName(String value) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
+            return switch (normalized) {
+                case "world", "global", "server" -> WORLD;
+                case "village", "settlement" -> VILLAGE;
+                case "villager", "issuer", "quest_giver" -> VILLAGER;
+                default -> PLAYER;
+            };
         }
     }
 

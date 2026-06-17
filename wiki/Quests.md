@@ -300,6 +300,36 @@ Later dialogue or quest availability can require that branch:
 
 Use `scope: "world"` for shared save-wide consequences, `scope: "player"` for player story flags, `scope: "village"` for local outcomes, and `scope: "villager"` for villager-specific secrets or promises.
 
+## Example: Once Per World Or Village
+
+By default, completion limits are per player. Add `completion_scope` when a quest should be globally settled after enough completions happen in a wider scope.
+
+```json
+{
+  "rules": {
+    "repeatable": false,
+    "max_completions": 1,
+    "completion_scope": "world"
+  },
+  "dialogue": {
+    "already_completed": [
+      "That matter has already been settled."
+    ]
+  }
+}
+```
+
+Completion scopes:
+
+| Scope | Meaning |
+| --- | --- |
+| `player` | Default. Completion count is stored on that player's quest progress. |
+| `world` | One shared completion count for the whole save. |
+| `village` | One shared completion count for the resolved village area. |
+| `villager` | One shared completion count for the issuing villager. |
+
+Use `world` for unique story chapters, `village` for local village crises, and `villager` for personal favor chains.
+
 ## Replacing Or Removing Built-Ins
 
 At the top of any quest file:
