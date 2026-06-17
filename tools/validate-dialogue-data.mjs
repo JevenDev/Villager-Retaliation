@@ -1187,12 +1187,15 @@ function checkQuestTarget(file, target, location) {
   }
   checkUnknownObjectKeys(file, target, location, new Set([
     "structure",
+    "dimension",
     "pieces",
     "search_radius",
     "discovery_radius",
     "proof_item"
   ]));
   checkOptionalString(file, target, location, "structure");
+  checkOptionalString(file, target, location, "dimension");
+  checkResourceIdValues(file, target, location, ["structure", "dimension", "proof_item"], "quest target resource id");
   checkStringList(file, target, location, ["pieces"], "structure piece");
   checkOptionalInteger(file, target, location, "search_radius", { min: 1 });
   checkOptionalInteger(file, target, location, "discovery_radius", { min: 1 });
@@ -1294,6 +1297,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkOptionalBoolean(file, objective, objectiveLocation, "optional");
     checkOptionalString(file, objective, objectiveLocation, "structure");
     checkOptionalString(file, objective, objectiveLocation, "dimension");
+    checkResourceIdValues(file, objective, objectiveLocation, ["structure", "dimension", "item"], "quest objective resource id");
     for (const key of ["x", "y", "z"]) {
       checkOptionalInteger(file, objective, objectiveLocation, key);
     }
