@@ -305,6 +305,7 @@ const memoryTags = new Set([
   "night_attack",
   "raid",
   "villager_death",
+  "player_killed_villager",
   "villager_attacked",
   "baby_villager_attacked",
   "player_attacked_villager",
@@ -1186,6 +1187,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkStringList(file, objective, objectiveLocation, ["block", "blocks"], "block id or #block tag");
     checkStringList(file, objective, objectiveLocation, ["block_tag", "block_tags"], "block tag id");
     checkStringList(file, objective, objectiveLocation, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"], "village memory tag id");
+    checkMemoryTagReferences(file, objective, objectiveLocation, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"], "memory_event objective");
     checkStringValues(file, objective, objectiveLocation, ["reaction", "reactions", "gift_reaction", "gift_reactions"], questGiftReactions, "gift reaction");
     checkStringValues(file, objective, objectiveLocation, ["level", "levels", "reputation_level", "reputation_levels"], reputationLevels, "reputation level");
     checkStringList(file, objective, objectiveLocation, ["quest", "quest_id"], "quest id");
@@ -1901,6 +1903,7 @@ function checkQuestRewards(file, rewards, location) {
   checkOptionalString(file, rewards, location, "loot_table");
   checkOptionalString(file, rewards, location, "memory_event");
   collectLootTableReferences(file, rewards, location, ["loot_table"], "quest rewards");
+  checkMemoryTagReferences(file, rewards, location, ["memory_event"], "quest rewards");
 }
 
 function checkQuestLinks(file, data, location) {
@@ -2228,6 +2231,13 @@ function checkDialogueTreeActions(file, actions, location, defaultQuestId = "", 
       }
       collectLootTableReferences(file, action, actionLocation, ["loot_table"], "dialogue or trigger loot action");
     }
+    if (type === "memory") {
+      checkOptionalString(file, action, actionLocation, "memory_event");
+      if (!hasStringValues(action, ["memory_event"])) {
+        errors.push(`${relative(file)}: ${actionLocation}.memory_event is required for a memory action.`);
+      }
+      checkMemoryTagReferences(file, action, actionLocation, ["memory_event"], "dialogue or trigger memory action");
+    }
     if (type === "forced_dialogue") {
       checkStringList(file, action, actionLocation, ["forced_dialogue"], "forced dialogue id");
       for (const forcedDialogueId of readValues(action, ["forced_dialogue"])) {
@@ -2483,6 +2493,44 @@ function collectLootTableReference(file, location, value, reason) {
       pendingLootTableReferences.push({ file, location: `${location}[${index}]`, id, reason });
     }
   });
+}
+
+function checkMemoryTagReferences(file, entry, location, keys, reason) {
+  for (const key of keys) {
+    checkMemoryTagReference(file, `${location}.${key}`, entry?.[key], reason);
+  }
+}
+
+function checkMemoryTagReference(file, location, value, reason) {
+  if (typeof value === "string") {
+    checkMemoryTagId(file, location, value, reason);
+    return;
+  }
+  if (!Array.isArray(value)) {
+    return;
+  }
+  value.forEach((child, index) => {
+    if (typeof child === "string") {
+      checkMemoryTagId(file, `${location}[${index}]`, child, reason);
+    }
+  });
+}
+
+function checkMemoryTagId(file, location, value, reason) {
+  const id = stringValue(value);
+  if (!id) {
+    return;
+  }
+  const parsed = parseResourceId(id);
+  if (id.includes(":")) {
+    if (!parsed || !parsed.valid) {
+      errors.push(`${relative(file)}: ${location} references invalid village memory tag "${id}" from ${reason}.`);
+    }
+    return;
+  }
+  if (!memoryTags.has(normalizedString(id))) {
+    errors.push(`${relative(file)}: ${location} references unknown legacy village memory tag "${id}" from ${reason}; use a known built-in tag or a namespaced custom tag id.`);
+  }
 }
 
 function dialogueSectionsFor(file, data) {
@@ -2827,7 +2875,8 @@ function checkMemoryCondition(file, condition, location) {
   if (tags.length === 0) {
     errors.push(`${relative(file)}: ${location} must define kind, tag, or tags.`);
   }
-  checkStringValues(file, condition, location, ["tag", "tags"], memoryTags, "memory tag");
+  checkStringList(file, condition, location, ["tag", "tags"], "memory tag");
+  checkMemoryTagReferences(file, condition, location, ["tag", "tags"], "memory condition");
   checkStringValues(file, condition, location, ["source"], memorySources, "memory source");
   checkOptionalBoolean(file, condition, location, "player");
 }
