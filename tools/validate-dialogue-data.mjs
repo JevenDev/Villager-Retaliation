@@ -366,10 +366,11 @@ const dialogueTreeActionKeys = new Set([
   "lines"
 ]);
 const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove", "block", "lock", "consume", "close", "close_branch", "branch_lock"]);
-const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "condition"]);
+const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "memory_event", "village_event", "village_memory", "memory", "event", "condition"]);
 const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "coordinates", "coords", "region_visit"]);
 const questMobKillObjectiveTypes = new Set(["mob_kill", "entity_kill", "kill"]);
 const questBlockObjectiveTypes = new Set(["block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place"]);
+const questMemoryObjectiveTypes = new Set(["memory_event", "village_event", "village_memory", "memory", "event"]);
 const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "completed", "abandoned", "expired"]);
 const questAbandonmentModes = new Set(["remove_forever", "allow_repickup", "cooldown"]);
 const questDialogueStages = [
@@ -495,6 +496,8 @@ const knownPlaceholders = new Set([
   "objective_entity",
   "objective_block",
   "objective_block_id",
+  "objective_memory",
+  "objective_memory_id",
   "objective_id",
   "objective_item",
   "objective_item_id",
@@ -939,6 +942,14 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "blocks",
       "block_tag",
       "block_tags",
+      "memory",
+      "memories",
+      "memory_event",
+      "memory_events",
+      "memory_tag",
+      "memory_tags",
+      "event",
+      "events",
       "count",
       "consume",
       "enchantment",
@@ -972,6 +983,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkStringList(file, objective, objectiveLocation, ["entity_tag", "entity_tags"], "entity tag id");
     checkStringList(file, objective, objectiveLocation, ["block", "blocks"], "block id or #block tag");
     checkStringList(file, objective, objectiveLocation, ["block_tag", "block_tags"], "block tag id");
+    checkStringList(file, objective, objectiveLocation, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"], "village memory tag id");
     checkOptionalInteger(file, objective, objectiveLocation, "count", { min: 1 });
     checkOptionalBoolean(file, objective, objectiveLocation, "consume");
     checkQuestObjectiveItemRequirements(file, objective, objectiveLocation);
@@ -992,6 +1004,9 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     }
     if (questBlockObjectiveTypes.has(type) && readValues(objective, ["block", "blocks", "block_tag", "block_tags"]).length === 0) {
       errors.push(`${relative(file)}: ${objectiveLocation} must define block, blocks, block_tag, or block_tags for a block event objective.`);
+    }
+    if (questMemoryObjectiveTypes.has(type) && readValues(objective, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"]).length === 0) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must define memory, memory_event, memory_tags, event, or events for a memory_event objective.`);
     }
     if (type === "condition" && (!Array.isArray(objective.conditions) || objective.conditions.length === 0)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.conditions is required for a condition objective.`);

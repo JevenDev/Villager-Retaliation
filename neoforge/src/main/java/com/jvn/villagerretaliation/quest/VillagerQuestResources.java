@@ -46,7 +46,7 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
     private static volatile CachedQuests cachedQuests =
-            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of());
+            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
 
     private VillagerQuestResources() {
     }
@@ -56,7 +56,7 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of());
+        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
@@ -80,6 +80,13 @@ public final class VillagerQuestResources {
 
     public static boolean hasBlockPlaceObjectives(MinecraftServer server, ResourceLocation id) {
         return id != null && loadCache(server).blockPlaceQuestIds().contains(id);
+    }
+
+    public static Set<ResourceLocation> memoryEventQuestIds(MinecraftServer server, ResourceLocation memoryTag) {
+        if (memoryTag == null) {
+            return Set.of();
+        }
+        return loadCache(server).memoryEventQuestIds().getOrDefault(memoryTag, Set.of());
     }
 
     public static Set<ResourceLocation> exclusiveGroupQuestIds(MinecraftServer server, ResourceLocation group) {
@@ -118,6 +125,7 @@ public final class VillagerQuestResources {
                     mobKillQuestIds(quests),
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_BREAK),
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_PLACE),
+                    memoryEventQuestIds(quests),
                     exclusiveGroupQuestIds(quests),
                     triggerEventQuestIds(quests));
             cachedQuests = loaded;
@@ -149,6 +157,26 @@ public final class VillagerQuestResources {
             }
         }
         return Set.copyOf(ids);
+    }
+
+    private static Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds(Map<ResourceLocation, QuestDefinition> quests) {
+        Map<ResourceLocation, Set<ResourceLocation>> idsByMemoryTag = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
+            for (QuestDefinition.Objective objective : entry.getValue().objectives()) {
+                if (objective.type() != QuestDefinition.ObjectiveType.MEMORY_EVENT) {
+                    continue;
+                }
+                for (ResourceLocation memoryTag : objective.memoryTags()) {
+                    idsByMemoryTag.computeIfAbsent(memoryTag, ignored -> new LinkedHashSet<>()).add(entry.getKey());
+                }
+            }
+        }
+
+        Map<ResourceLocation, Set<ResourceLocation>> frozen = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, Set<ResourceLocation>> entry : idsByMemoryTag.entrySet()) {
+            frozen.put(entry.getKey(), Set.copyOf(entry.getValue()));
+        }
+        return Map.copyOf(frozen);
     }
 
     private static Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds(Map<ResourceLocation, QuestDefinition> quests) {
@@ -408,6 +436,7 @@ public final class VillagerQuestResources {
         ResourceLocation item = DatapackJsonReader.readResourceLocation(entry, "item").orElse(null);
         EntitySelectors entitySelectors = readEntitySelectors(location, context, entry);
         BlockSelectors blockSelectors = readBlockSelectors(location, context, entry);
+        MemoryEventSelectors memoryEventSelectors = readMemoryEventSelectors(location, context, entry);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
         if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "structure_visit objective must define structure.");
@@ -428,6 +457,10 @@ public final class VillagerQuestResources {
         if ((type == QuestDefinition.ObjectiveType.BLOCK_BREAK || type == QuestDefinition.ObjectiveType.BLOCK_PLACE)
                 && blockSelectors.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, type.name().toLowerCase(Locale.ROOT) + " objective must define block, blocks, block_tag, or block_tags.");
+            return Optional.empty();
+        }
+        if (type == QuestDefinition.ObjectiveType.MEMORY_EVENT && memoryEventSelectors.isEmpty()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "memory_event objective must define memory, memory_event, memory_tags, event, or events.");
             return Optional.empty();
         }
         if (type == QuestDefinition.ObjectiveType.CONDITION && conditions.isEmpty()) {
@@ -451,6 +484,7 @@ public final class VillagerQuestResources {
                 entitySelectors.entityTags(),
                 blockSelectors.blockTypes(),
                 blockSelectors.blockTags(),
+                memoryEventSelectors.memoryTags(),
                 DatapackJsonReader.readInt(entry, "count", 1),
                 DatapackJsonReader.readBoolean(entry, "consume", true),
                 readObjectiveItemRequirements(entry),
@@ -510,6 +544,28 @@ public final class VillagerQuestResources {
             }
         }
         return new BlockSelectors(Set.copyOf(blockTypes), Set.copyOf(blockTags));
+    }
+
+    private static MemoryEventSelectors readMemoryEventSelectors(ResourceLocation location, String context, JsonObject entry) {
+        Set<ResourceLocation> memoryTags = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(
+                entry,
+                "memory",
+                "memories",
+                "memory_event",
+                "memory_events",
+                "memory_tag",
+                "memory_tags",
+                "event",
+                "events")) {
+            Optional<ResourceLocation> memoryTag = VillageEventMemory.parseTagId(value);
+            if (memoryTag.isEmpty()) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "memory event selector \"" + value + "\" is not a valid village memory tag.");
+            } else {
+                memoryTags.add(memoryTag.get());
+            }
+        }
+        return new MemoryEventSelectors(Set.copyOf(memoryTags));
     }
 
     private static void readEntitySelector(
@@ -1126,12 +1182,19 @@ public final class VillagerQuestResources {
         }
     }
 
+    private record MemoryEventSelectors(Set<ResourceLocation> memoryTags) {
+        private boolean isEmpty() {
+            return this.memoryTags.isEmpty();
+        }
+    }
+
     private record CachedQuests(
             MinecraftServer server,
             Map<ResourceLocation, QuestDefinition> quests,
             Set<ResourceLocation> mobKillQuestIds,
             Set<ResourceLocation> blockBreakQuestIds,
             Set<ResourceLocation> blockPlaceQuestIds,
+            Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
             Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds) {
     }

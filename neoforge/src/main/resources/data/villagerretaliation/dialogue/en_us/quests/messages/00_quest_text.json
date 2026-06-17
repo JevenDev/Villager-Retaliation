@@ -3248,6 +3248,118 @@
       "lines": [
         "Wool Blankets"
       ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.description",
+      "key": "quest.village_defense.standing_watch.description",
+      "lines": [
+        "Stand watch and help defend the village from a real threat."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.dialogue.already_completed",
+      "key": "quest.village_defense.standing_watch.dialogue.already_completed",
+      "lines": [
+        "Standing Watch is already settled."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.dialogue.inactive",
+      "key": "quest.village_defense.standing_watch.dialogue.inactive",
+      "lines": [
+        "The watch is not calling for proof right now."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.dialogue.locate_failed",
+      "key": "quest.village_defense.standing_watch.dialogue.locate_failed",
+      "lines": [
+        "There is no watch post to mark on a map. Stay close enough to answer trouble."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.dialogue.missing_proof",
+      "key": "quest.village_defense.standing_watch.dialogue.missing_proof",
+      "lines": [
+        "Words do not hold a gate. Stand with us when danger reaches the village."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.dialogue.missing_target",
+      "key": "quest.village_defense.standing_watch.dialogue.missing_target",
+      "lines": [
+        "The village still needs to see you answer a real threat."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.dialogue.reminder",
+      "key": "quest.village_defense.standing_watch.dialogue.reminder",
+      "lines": [
+        "Stay near the village. If danger comes, answer it before it reaches the doors."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.dialogue.start",
+      "key": "quest.village_defense.standing_watch.dialogue.start",
+      "lines": [
+        "Arrows help. Nerves help more. Stand watch with us, and if danger comes, answer it."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.dialogue.turn_in",
+      "key": "quest.village_defense.standing_watch.dialogue.turn_in",
+      "lines": [
+        "You stood when it mattered. The watch will remember that."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.dialogue.unavailable",
+      "key": "quest.village_defense.standing_watch.dialogue.unavailable",
+      "lines": [
+        "The watch is not ready to ask this of you."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.objective.defend_village.complete_text",
+      "key": "quest.village_defense.standing_watch.objective.defend_village.complete_text",
+      "lines": [
+        "The village saw you defend it."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.objective.defend_village.text",
+      "key": "quest.village_defense.standing_watch.objective.defend_village.text",
+      "lines": [
+        "Defend the village from a real threat."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.title",
+      "key": "quest.village_defense.standing_watch.title",
+      "lines": [
+        "Standing Watch"
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.tracker.event.text",
+      "key": "quest.village_defense.standing_watch.tracker.event.text",
+      "lines": [
+        "Defend the village from a real threat."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.tracker.return.text",
+      "key": "quest.village_defense.standing_watch.tracker.return.text",
+      "lines": [
+        "Return to the quest giver after defending the village."
+      ]
+    },
+    {
+      "id": "quest.village_defense.standing_watch.tracker.title",
+      "key": "quest.village_defense.standing_watch.tracker.title",
+      "lines": [
+        "Standing Watch"
+      ]
     }
   ]
 }

@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.village;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import java.util.AbstractList;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -286,6 +287,7 @@ public final class VillageEventMemory {
         trimToMaxEvents(events);
         data.markChanged();
         invalidateRecentCache(level.dimension());
+        VillagerQuestService.onMemoryEvent(level, event);
         VillagerEventTriggerService.onMemoryWritten(level, event);
         return true;
     }

@@ -1,0 +1,133 @@
+{
+  "dialogue": {
+    "already_completed": [
+      "Standing Watch is already settled."
+    ],
+    "inactive": [
+      "The watch is not calling for proof right now."
+    ],
+    "locate_failed": [
+      "There is no watch post to mark on a map. Stay close enough to answer trouble."
+    ],
+    "missing_proof": [
+      "Words do not hold a gate. Stand with us when danger reaches the village."
+    ],
+    "missing_target": [
+      "The village still needs to see you answer a real threat."
+    ],
+    "reminder": [
+      "Stay near the village. If danger comes, answer it before it reaches the doors."
+    ],
+    "start": [
+      "Arrows help. Nerves help more. Stand watch with us, and if danger comes, answer it."
+    ],
+    "turn_in": [
+      "You stood when it mattered. The watch will remember that."
+    ],
+    "unavailable": [
+      "The watch is not ready to ask this of you."
+    ],
+    "start_key": "quest.village_defense.standing_watch.dialogue.start",
+    "reminder_key": "quest.village_defense.standing_watch.dialogue.reminder",
+    "turn_in_key": "quest.village_defense.standing_watch.dialogue.turn_in",
+    "already_completed_key": "quest.village_defense.standing_watch.dialogue.already_completed",
+    "unavailable_key": "quest.village_defense.standing_watch.dialogue.unavailable",
+    "inactive_key": "quest.village_defense.standing_watch.dialogue.inactive",
+    "missing_target_key": "quest.village_defense.standing_watch.dialogue.missing_target",
+    "missing_proof_key": "quest.village_defense.standing_watch.dialogue.missing_proof",
+    "locate_failed_key": "quest.village_defense.standing_watch.dialogue.locate_failed"
+  },
+  "display": {
+    "description": "Stand watch and help defend the village from a real threat.",
+    "title": "Standing Watch",
+    "title_key": "quest.village_defense.standing_watch.title",
+    "description_key": "quest.village_defense.standing_watch.description"
+  },
+  "id": "villagerretaliation:standing_watch",
+  "objectives": [
+    {
+      "count": 1,
+      "id": "defend_village",
+      "memory": "player_defended_village",
+      "tracker": {
+        "complete_text": "The village saw you defend it.",
+        "progress": 0.85,
+        "show_progress": true,
+        "text": "Defend the village from a real threat.",
+        "text_key": "quest.village_defense.standing_watch.objective.defend_village.text",
+        "complete_text_key": "quest.village_defense.standing_watch.objective.defend_village.complete_text"
+      },
+      "type": "memory_event"
+    }
+  ],
+  "offer": {
+    "min_villager_level": "apprentice",
+    "professions": [
+      "minecraft:fletcher",
+      "minecraft:weaponsmith",
+      "minecraft:armorer"
+    ],
+    "skills": {
+      "guarding": {
+        "min": 10
+      }
+    }
+  },
+  "parent": "villagerretaliation:watch_arrows",
+  "questline": "village_defense",
+  "rewards": {
+    "experience": 140,
+    "gossip_reputation": 6,
+    "loot_table": "villagerretaliation:quest/standing_watch",
+    "memory_event": "player_completed_quest",
+    "reputation": 12
+  },
+  "rules": {
+    "abandonment": "allow_repickup",
+    "completion_scope": "player",
+    "consume_on_completion": true,
+    "cross_villager_compatible": true,
+    "locked_to_villager": false,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "tracker": {
+    "metadata": {
+      "source": "Standing Watch"
+    },
+    "steps": {
+      "event": {
+        "progress": 0.85,
+        "show_progress": true,
+        "text": "Defend the village from a real threat.",
+        "text_key": "quest.village_defense.standing_watch.tracker.event.text"
+      },
+      "return": {
+        "progress": 1,
+        "show_progress": true,
+        "text": "Return to the quest giver after defending the village.",
+        "text_key": "quest.village_defense.standing_watch.tracker.return.text"
+      }
+    },
+    "title": "Standing Watch",
+    "title_key": "quest.village_defense.standing_watch.tracker.title"
+  },
+  "triggers": [
+    {
+      "id": "record_village_defender",
+      "event": "completed",
+      "actions": [
+        {
+          "type": "set_tag",
+          "scope": "player",
+          "tag": "villagerretaliation:village_defender"
+        },
+        {
+          "type": "set_stage",
+          "stage": "village_defender"
+        }
+      ]
+    }
+  ]
+}

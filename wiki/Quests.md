@@ -311,6 +311,58 @@ Block selectors:
 
 Add `dimension`, `x`/`y`/`z`, and `radius` to restrict break/place credit to a region. Tracker placeholders include `{objective_block}` and `{objective_block_id}`.
 
+## Example: Village Memory Event Quest
+
+Use `memory_event` when a quest should advance from a story event already recorded by VR, such as defending a village, curing a villager, giving a loved gift, stealing from a village container, or completing another quest. These update when the memory is written; they do not poll old memories every tick.
+
+```json
+{
+  "id": "my_pack:prove_your_intent",
+  "display": {
+    "title": "Prove Your Intent",
+    "description": "Help the village before asking for guarded knowledge."
+  },
+  "objectives": [
+    {
+      "id": "defend_village",
+      "type": "memory_event",
+      "memory": "player_defended_village",
+      "count": 1,
+      "tracker": {
+        "text": "Defend the village from danger.",
+        "complete_text": "The village saw what you did."
+      }
+    }
+  ],
+  "triggers": [
+    {
+      "id": "defense_witnessed",
+      "event": "progress",
+      "actions": [
+        { "type": "set_tag", "tag": "my_pack:village_defender" },
+        { "type": "set_stage", "value": "trusted_by_watch" }
+      ]
+    }
+  ]
+}
+```
+
+Memory selectors:
+
+| Field | Meaning |
+| --- | --- |
+| `memory` | One memory tag, such as `player_defended_village` or `villagerretaliation:player_defended_village` |
+| `memory_event` | Alias for `memory` |
+| `memory_tag` | Alias for `memory` |
+| `memories`, `memory_events`, `memory_tags` | One or more memory tags |
+| `event`, `events` | Short aliases for memory event objectives |
+
+Add `dimension`, `x`/`y`/`z`, and `radius` to restrict credit to memories written in a region. Tracker placeholders include `{objective_memory}` and `{objective_memory_id}`.
+
+Useful built-in memory tags include `baby_born`, `iron_golem_defeated_mob`, `thunderstorm`, `sandstorm`, `snowstorm`, `village_fire`, `night_attack`, `raid`, `villager_death`, `player_killed_villager`, `villager_attacked`, `baby_villager_attacked`, `player_attacked_villager`, `player_defended_village`, `player_defended_raid`, `player_cured_villager`, `golem_created`, `golem_killed`, `nearby_hostile_mob`, `reputation_changed`, `player_gave_loved_gift`, `player_gave_liked_gift`, `player_gave_neutral_gift`, `player_gave_disliked_gift`, `player_gave_hated_gift`, `player_container_theft`, `player_completed_quest`, and `villager_retaliation_started`.
+
+Memory objectives only count new player-associated memory writes while the quest is active. Use quest fact tags or variables for permanent history gates, such as unlocking a branch after an event that may have happened earlier.
+
 ## Example: Tracker Text
 
 ```json

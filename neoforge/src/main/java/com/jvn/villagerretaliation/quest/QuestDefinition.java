@@ -170,6 +170,7 @@ public record QuestDefinition(
             Set<ResourceLocation> entityTags,
             Set<ResourceLocation> blockTypes,
             Set<ResourceLocation> blockTags,
+            Set<ResourceLocation> memoryTags,
             int count,
             boolean consume,
             ItemRequirements itemRequirements,
@@ -188,6 +189,7 @@ public record QuestDefinition(
             entityTags = entityTags == null ? Set.of() : Set.copyOf(entityTags);
             blockTypes = blockTypes == null ? Set.of() : Set.copyOf(blockTypes);
             blockTags = blockTags == null ? Set.of() : Set.copyOf(blockTags);
+            memoryTags = memoryTags == null ? Set.of() : Set.copyOf(memoryTags);
             count = Math.max(1, count);
             itemRequirements = itemRequirements == null ? ItemRequirements.EMPTY : itemRequirements;
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
@@ -290,6 +292,7 @@ public record QuestDefinition(
         MOB_KILL,
         BLOCK_BREAK,
         BLOCK_PLACE,
+        MEMORY_EVENT,
         CONDITION;
 
         public static ObjectiveType bySerializedName(String value) {
@@ -301,6 +304,7 @@ public record QuestDefinition(
                 case "mob_kill", "entity_kill", "kill" -> MOB_KILL;
                 case "block_break", "break_block", "mine_block", "mine" -> BLOCK_BREAK;
                 case "block_place", "place_block", "place" -> BLOCK_PLACE;
+                case "memory_event", "village_event", "village_memory", "memory", "event" -> MEMORY_EVENT;
                 case "condition" -> CONDITION;
                 default -> null;
             };
