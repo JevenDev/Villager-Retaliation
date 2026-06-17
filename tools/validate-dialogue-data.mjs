@@ -3733,23 +3733,26 @@ function dialogueTreePathQuestline(file) {
 
 function indexForcedDialogue(file, data) {
   const questModule = forcedDialogueQuestModule(file);
+  const metadataQuest = questModule ? stringValue(metadataObject(data).quest) : "";
+  let hasQuestTrigger = false;
+  for (const entry of entriesFor(data)) {
+    const entryId = stringValue(entry?.id);
+    const trigger = normalizedString(entry?.trigger || entry?.event);
+    hasQuestTrigger ||= trigger === "quest";
+    if (entryId) {
+      registerForcedDialogueDefinition(file, entryId, trigger, true);
+    }
+    registerForcedDialogueDefinition(file, forcedDialogueSourceIdForFile(file), trigger, false);
+  }
   if (questModule) {
-    const metadataQuest = stringValue(metadataObject(data).quest);
     forcedDialogueQuestModules.push({
       file,
       questline: questModule.questline,
       questId: metadataQuest || questModule.questId,
       inferredQuestId: questModule.questId,
-      metadataQuest
+      metadataQuest,
+      hasQuestTrigger
     });
-  }
-  for (const entry of entriesFor(data)) {
-    const entryId = stringValue(entry?.id);
-    const trigger = normalizedString(entry?.trigger || entry?.event);
-    if (entryId) {
-      registerForcedDialogueDefinition(file, entryId, trigger, true);
-    }
-    registerForcedDialogueDefinition(file, forcedDialogueSourceIdForFile(file), trigger, false);
   }
 }
 
@@ -3859,9 +3862,9 @@ function validateCrossReferences() {
       errors.push(`${relative(reference.file)}: ${reference.location} references missing forced dialogue id "${reference.id}" from ${reference.reason}.`);
       continue;
     }
-    if (reference.reason === "dialogue or trigger action" && !definition.triggers.has("quest")) {
+    if (forcedDialogueReferenceRequiresQuestTrigger(reference.reason) && !definition.triggers.has("quest")) {
       const triggers = [...definition.triggers].sort().join(", ") || "none";
-      errors.push(`${relative(reference.file)}: ${reference.location} references forced dialogue "${reference.id}" from ${reference.reason}, but it is not available to quest forced-dialogue actions (triggers: ${triggers}).`);
+      errors.push(`${relative(reference.file)}: ${reference.location} references forced dialogue "${reference.id}" from ${reference.reason}, but it is not available to quest forced-dialogue contexts (triggers: ${triggers}).`);
     }
   }
 
@@ -3884,6 +3887,10 @@ function validateCrossReferences() {
       errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree points to "${link.treeId}" but its metadata.quest is "${tree.metadataQuest}" instead of "${link.metadataQuest}".`);
     }
   }
+}
+
+function forcedDialogueReferenceRequiresQuestTrigger(reason) {
+  return reason === "dialogue or trigger action" || reason === "quest links";
 }
 
 function warnDialogueTreeLinkLifecycleActions(link, tree) {
@@ -3980,6 +3987,9 @@ function validateForcedDialogueQuestModules() {
     }
     if (quest.questline && module.questline && quest.questline !== module.questline) {
       errors.push(`${relative(module.file)}: quest forced-dialogue folder "${module.questline}" does not match quest "${module.questId}" questline "${quest.questline}".`);
+    }
+    if (!module.hasQuestTrigger) {
+      errors.push(`${relative(module.file)}: quest forced-dialogue module must define at least one entry with trigger "quest".`);
     }
   }
 }
