@@ -2810,7 +2810,11 @@ function indexQuest(file, data) {
     errors.push(`${relative(file)}: duplicate quest id "${questId}" also defined in ${previous.file}.`);
     return;
   }
-  questDefinitions.set(questId, { file: relative(file) });
+  questDefinitions.set(questId, {
+    file: relative(file),
+    parent: stringValue(data.parent),
+    questline: stringValue(data.questline)
+  });
 }
 
 function indexDialogueTree(file, data) {
@@ -2828,7 +2832,8 @@ function indexDialogueTree(file, data) {
     entryIds: new Set((Array.isArray(data?.entries) ? data.entries : [])
       .filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry) && stringValue(entry.id))
       .map((entry) => stringValue(entry.id))),
-    metadataQuest: dialogueTreeDefaultQuestId(file, data)
+    metadataQuest: dialogueTreeDefaultQuestId(file, data),
+    metadataQuestline: stringValue(metadataObject(data).questline)
   });
 }
 
@@ -2896,6 +2901,9 @@ function validateCrossReferences() {
     }
   }
 
+  validateQuestParentGraph();
+  validateDialogueTreeQuestlineMetadata();
+
   for (const reference of pendingForcedDialogueReferences) {
     if (!forcedDialogueDefinitions.has(reference.id)) {
       errors.push(`${relative(reference.file)}: ${reference.location} references missing forced dialogue id "${reference.id}" from ${reference.reason}.`);
@@ -2917,6 +2925,89 @@ function validateCrossReferences() {
 
     if (link.metadataQuest && tree.metadataQuest && tree.metadataQuest !== link.metadataQuest) {
       errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree points to "${link.treeId}" but its metadata.quest is "${tree.metadataQuest}" instead of "${link.metadataQuest}".`);
+    }
+  }
+}
+
+function validateQuestParentGraph() {
+  for (const [questId, quest] of questDefinitions) {
+    if (!quest.parent) {
+      continue;
+    }
+    const parent = questDefinitions.get(quest.parent);
+    if (quest.parent === questId) {
+      errors.push(`${quest.file}: root.parent must not reference this quest's own id "${questId}".`);
+      continue;
+    }
+    if (parent && quest.questline && parent.questline && quest.questline !== parent.questline) {
+      warnings.push(`${quest.file}: root.parent references quest "${quest.parent}" in questline "${parent.questline}" while this quest uses "${quest.questline}".`);
+    }
+  }
+
+  const state = new Map();
+  const reportedCycles = new Set();
+  for (const questId of questDefinitions.keys()) {
+    visitQuestParentChain(questId, [], state, reportedCycles);
+  }
+}
+
+function visitQuestParentChain(questId, path, state, reportedCycles) {
+  const visitState = state.get(questId);
+  if (visitState === "visited") {
+    return;
+  }
+  if (visitState === "visiting") {
+    reportQuestParentCycle(questId, path, reportedCycles);
+    return;
+  }
+
+  state.set(questId, "visiting");
+  const quest = questDefinitions.get(questId);
+  const parentId = quest?.parent;
+  if (parentId && questDefinitions.has(parentId)) {
+    visitQuestParentChain(parentId, [...path, questId], state, reportedCycles);
+  }
+  state.set(questId, "visited");
+}
+
+function reportQuestParentCycle(repeatedQuestId, path, reportedCycles) {
+  const startIndex = path.indexOf(repeatedQuestId);
+  const cycle = startIndex < 0 ? [repeatedQuestId, repeatedQuestId] : [...path.slice(startIndex), repeatedQuestId];
+  const cycleKey = canonicalCycleKey(cycle);
+  if (reportedCycles.has(cycleKey)) {
+    return;
+  }
+  reportedCycles.add(cycleKey);
+  const owner = questDefinitions.get(cycle[0]);
+  const location = owner == null ? "quest parent graph" : `${owner.file}: root.parent`;
+  errors.push(`${location} creates a quest parent cycle: ${cycle.join(" -> ")}.`);
+}
+
+function canonicalCycleKey(cycle) {
+  const uniqueCycle = cycle.length > 1 && cycle[0] === cycle[cycle.length - 1]
+    ? cycle.slice(0, -1)
+    : cycle;
+  if (uniqueCycle.length === 0) {
+    return "";
+  }
+  let best = uniqueCycle;
+  for (let index = 1; index < uniqueCycle.length; index++) {
+    const rotated = uniqueCycle.slice(index).concat(uniqueCycle.slice(0, index));
+    if (rotated.join("\u0000") < best.join("\u0000")) {
+      best = rotated;
+    }
+  }
+  return best.join("\u0000");
+}
+
+function validateDialogueTreeQuestlineMetadata() {
+  for (const [treeId, tree] of dialogueTreeDefinitions) {
+    if (!tree.metadataQuest || !tree.metadataQuestline) {
+      continue;
+    }
+    const quest = questDefinitions.get(tree.metadataQuest);
+    if (quest && quest.questline && quest.questline !== tree.metadataQuestline) {
+      errors.push(`${tree.file}: metadata.questline "${tree.metadataQuestline}" does not match quest "${tree.metadataQuest}" questline "${quest.questline}".`);
     }
   }
 }
