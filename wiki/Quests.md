@@ -181,6 +181,12 @@ Dialogue and trigger actions can also close a path directly:
 }
 ```
 
+## Quest Debug Inspector
+
+Use `/villagerretaliation quest debug inspect <quest_id>` while testing packs. It prints the current player's saved quest state, repeat and completion-scope rules, active-state gates, branch-lock rules, issuer and target context, objective counters, and fact objective filters.
+
+This is especially useful for story quests because it exposes whether a branch is blocked by `exclusive_group`, `blocks_on_start`, `blocks_on_completion`, or a direct `quest` action with `action: "block"`. For fact-driven objectives, the output includes the configured scope, fact quest id, tags, variable key, allowed values, min and max counter bounds, and the resolved scope key when the quest has saved progress.
+
 ## Example: Structure Quest
 
 ```json

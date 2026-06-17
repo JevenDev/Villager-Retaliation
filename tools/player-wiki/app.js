@@ -1028,6 +1028,7 @@ function renderSettings() {
         "<code>/villagerretaliation dialogue explain &lt;villager&gt; &lt;request&gt; [option_id]</code>",
         "<code>/villagerretaliation quest debug providers [radius]</code>",
         "<code>/villagerretaliation quest debug start &lt;quest_id&gt; &lt;provider_name&gt;</code>",
+        "<code>/villagerretaliation quest debug inspect &lt;quest_id&gt;</code>",
         "<code>/villagerretaliation profile get|reroll|export &lt;villager&gt;</code>",
         "<code>/villagerretaliation skill get|reroll|export &lt;villager&gt;</code>"
       ])}

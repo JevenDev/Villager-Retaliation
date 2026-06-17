@@ -393,6 +393,75 @@ public final class VillagerQuestService {
                         + ". Previous state was " + removed.state().name().toLowerCase(Locale.ROOT) + ".");
     }
 
+    public static DebugInspectResult debugInspectQuest(ServerPlayer player, ResourceLocation questId) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so quest state can be resolved.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugInspectResult(false, List.of(), "Unknown quest: " + questId);
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), definition.id());
+        DialogueContext context = progress == null
+                ? null
+                : contextForStartedVillager(level, player, progress).orElse(null);
+        List<String> lines = new ArrayList<>();
+        lines.add("Quest " + definition.id() + " | " + definition.title());
+        lines.add("identity questline=" + blankAs(definition.questline(), "none")
+                + " parent=" + debugParentState(data, player, definition.parent())
+                + " objectives=" + definition.objectives().size()
+                + " triggers=" + definition.triggers().size());
+        QuestDefinition.Rules rules = definition.rules();
+        lines.add("rules repeatable=" + rules.repeatable()
+                + " max_starts=" + rules.maxStarts()
+                + " max_completions=" + rules.maxCompletions()
+                + " completion_scope=" + debugEnum(rules.completionScope())
+                + " completion_cooldown_ticks=" + rules.completionCooldownTicks()
+                + " locked_to_villager=" + rules.lockedToVillager()
+                + " cross_villager=" + rules.crossVillagerCompatible());
+        lines.add("active_state conditions=" + rules.activeState().conditions().size()
+                + " hide_when_unmet=" + rules.activeState().hideWhenUnmet()
+                + " pause_progress_when_unmet=" + rules.activeState().pauseProgressWhenUnmet()
+                + " expiration_enabled=" + rules.expiration().enabled()
+                + " expiration_after_ticks=" + rules.expiration().afterTicks());
+        lines.add("branching exclusive_group=" + debugResource(rules.branching().exclusiveGroup())
+                + " exclusive_on=" + debugEnum(rules.branching().exclusiveOn())
+                + " blocks_on_start=" + debugResourceSet(rules.branching().blocksOnStart())
+                + " blocks_on_completion=" + debugResourceSet(rules.branching().blocksOnCompletion()));
+        lines.add(debugProgressLine(player, definition, progress, context));
+        if (progress != null) {
+            lines.add("issuer status=" + issuerStatus(player, progress)
+                    + " id=" + (progress.startedVillagerId() == null ? "none" : progress.startedVillagerId())
+                    + " name=" + blankAs(progress.issuerName(), "unknown")
+                    + " profession=" + blankAs(progress.issuerProfession(), "unknown")
+                    + " dimension=" + debugDimension(progress.issuerDimension())
+                    + " pos=" + debugPos(progress.issuerPos()));
+            lines.add("target visited=" + progress.visitedTarget()
+                    + " proof=" + progress.hasProof()
+                    + " objective=" + blankAs(progress.targetObjectiveId(), "none")
+                    + " dimension=" + debugDimension(progress.targetDimension())
+                    + " pos=" + debugPos(progress.targetPos()));
+            lines.add("times started=" + progress.startedGameTime()
+                    + " completed=" + progress.completedGameTime()
+                    + " abandoned=" + progress.abandonedGameTime()
+                    + " expired=" + progress.expiredGameTime()
+                    + " consumed_reason=" + blankAs(progress.consumedReason(), "none"));
+        }
+        if (definition.target().hasStructureTarget()) {
+            lines.add("target_definition structure=" + definition.target().structure()
+                    + " dimension=" + debugDimension(definition.target().dimension())
+                    + " search_radius=" + definition.target().searchRadius()
+                    + " discovery_radius=" + definition.target().discoveryRadius()
+                    + " proof_item=" + debugResource(definition.target().proofItem()));
+        }
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            lines.add(debugObjectiveLine(player, level, definition, progress, context, objective));
+        }
+        return new DebugInspectResult(true, lines, "");
+    }
+
     private static QuestActionOutcome startQuest(DialogueContext context, QuestDefinition definition) {
         return startQuest(context, definition, false, false);
     }
@@ -3232,6 +3301,174 @@ public final class VillagerQuestService {
         return "nearby";
     }
 
+    private static String debugParentState(
+            VillagerQuestSavedData data,
+            ServerPlayer player,
+            ResourceLocation parentId) {
+        if (parentId == null) {
+            return "none";
+        }
+        VillagerQuestSavedData.QuestProgress parentProgress = data.get(player.getUUID(), parentId);
+        if (parentProgress == null) {
+            return parentId + "(not_started)";
+        }
+        String completed = parentProgress.completionCount() > 0 ? ",completed=true" : "";
+        return parentId + "(" + debugEnum(parentProgress.state()) + completed + ")";
+    }
+
+    private static String debugProgressLine(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueContext context) {
+        if (progress == null) {
+            return "progress saved=false state=not_started ready=false active_conditions=n/a branch_locked=false";
+        }
+        boolean activeConditionsMet = activeConditionsMetForPlayer(player, definition, progress);
+        String ready = progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                ? "false"
+                : context == null
+                        ? "unknown_no_live_issuer"
+                        : Boolean.toString(isReadyToTurnIn(context, definition, progress));
+        return "progress saved=true state=" + debugEnum(progress.state())
+                + " starts=" + progress.startCount()
+                + " completions=" + progress.completionCount()
+                + " abandons=" + progress.abandonCount()
+                + " ready=" + ready
+                + " active_conditions=" + activeConditionsMet
+                + " branch_locked=" + branchLocked(progress);
+    }
+
+    private static String debugObjectiveLine(
+            ServerPlayer player,
+            ServerLevel level,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueContext context,
+            QuestDefinition.Objective objective) {
+        boolean complete = progress != null
+                && objectiveComplete(player, context, level, definition, progress, objective);
+        int counter = progress == null ? 0 : progress.objectiveCounter(objective.id());
+        List<String> parts = new ArrayList<>();
+        parts.add("objective " + objective.id());
+        parts.add("type=" + debugEnum(objective.type()));
+        parts.add("optional=" + objective.optional());
+        parts.add("complete=" + complete);
+        switch (objective.type()) {
+            case STRUCTURE_VISIT -> {
+                parts.add("structure=" + debugResource(objective.structure()));
+                parts.add("dimension=" + debugDimension(objective.dimension()));
+                parts.add("pieces=" + debugStringList(objective.pieces()));
+                parts.add("search_radius=" + objective.searchRadius());
+                parts.add("discovery_radius=" + objective.discoveryRadius());
+            }
+            case LOCATION_VISIT -> debugAddLocation(parts, objective);
+            case ITEM_CHECK -> {
+                parts.add("item=" + debugResource(objective.item()));
+                parts.add("count=" + objective.count());
+                parts.add("consume=" + objective.consume());
+                parts.add("enchantments=" + objective.itemRequirements().enchantments().size());
+                parts.add("custom_data=" + objective.itemRequirements().hasCustomData());
+            }
+            case MOB_KILL -> {
+                debugAddCounter(parts, counter, objective.count());
+                parts.add("entities=" + debugResourceSet(objective.entityTypes()));
+                parts.add("entity_tags=" + debugResourceSet(objective.entityTags()));
+                debugAddLocation(parts, objective);
+            }
+            case BLOCK_BREAK, BLOCK_PLACE -> {
+                debugAddCounter(parts, counter, objective.count());
+                parts.add("blocks=" + debugResourceSet(objective.blockTypes()));
+                parts.add("block_tags=" + debugResourceSet(objective.blockTags()));
+                debugAddLocation(parts, objective);
+            }
+            case MEMORY_EVENT -> {
+                debugAddCounter(parts, counter, objective.count());
+                parts.add("memory_tags=" + debugResourceSet(objective.memoryTags()));
+                debugAddLocation(parts, objective);
+            }
+            case GIFT -> {
+                debugAddCounter(parts, counter, objective.count());
+                parts.add("item=" + debugResource(objective.item()));
+                parts.add("reactions=" + debugStringSet(objective.giftReactions()));
+            }
+            case FACT -> {
+                parts.add("scope=" + debugEnum(objective.factScope()));
+                parts.add("quest=" + debugResource(objective.factQuestId() == null ? definition.id() : objective.factQuestId()));
+                parts.add("tags=" + debugResourceSet(objective.factTags()));
+                parts.add("key=" + blankAs(objective.factKey(), "none"));
+                parts.add("values=" + debugStringSet(objective.factValues()));
+                parts.add("min=" + (objective.factMin() == null ? "none" : objective.factMin()));
+                parts.add("max=" + (objective.factMax() == null ? "none" : objective.factMax()));
+                if (progress != null) {
+                    parts.add("scope_key=" + blankAs(factObjectiveScopeKey(level, player, definition, progress, objective), "unresolved"));
+                }
+            }
+            case CONDITION -> parts.add("conditions=" + objective.conditions().size());
+        }
+        return String.join(" ", parts);
+    }
+
+    private static void debugAddCounter(List<String> parts, int current, int required) {
+        parts.add("counter=" + current + "/" + required);
+    }
+
+    private static void debugAddLocation(List<String> parts, QuestDefinition.Objective objective) {
+        parts.add("dimension=" + debugDimension(objective.dimension()));
+        if (objective.location() != null) {
+            parts.add("location=" + debugPos(objective.location()));
+            parts.add("radius=" + objective.radius());
+        }
+    }
+
+    private static String debugResource(ResourceLocation id) {
+        return id == null ? "none" : id.toString();
+    }
+
+    private static String debugDimension(ResourceKey<Level> dimension) {
+        return dimension == null ? "any" : dimension.location().toString();
+    }
+
+    private static String debugPos(BlockPos pos) {
+        return pos == null ? "none" : pos.getX() + "," + pos.getY() + "," + pos.getZ();
+    }
+
+    private static String debugEnum(Enum<?> value) {
+        return value == null ? "none" : value.name().toLowerCase(Locale.ROOT);
+    }
+
+    private static String debugResourceSet(Set<ResourceLocation> values) {
+        if (values == null || values.isEmpty()) {
+            return "[]";
+        }
+        return values.stream()
+                .map(ResourceLocation::toString)
+                .sorted()
+                .toList()
+                .toString();
+    }
+
+    private static String debugStringSet(Set<String> values) {
+        if (values == null || values.isEmpty()) {
+            return "[]";
+        }
+        return values.stream()
+                .sorted()
+                .toList()
+                .toString();
+    }
+
+    private static String debugStringList(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return "[]";
+        }
+        return values.toString();
+    }
+
+    private static String blankAs(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
     private static String lineId(QuestDefinition definition, String stage) {
         return "quest_" + definition.id().toString().replace(':', '_').replace('/', '_') + "_" + stage;
     }
@@ -3244,6 +3481,13 @@ public final class VillagerQuestService {
 
     public record DebugRemoveResult(boolean removed, String message) {
         public DebugRemoveResult {
+            message = message == null ? "" : message;
+        }
+    }
+
+    public record DebugInspectResult(boolean found, List<String> lines, String message) {
+        public DebugInspectResult {
+            lines = lines == null ? List.of() : List.copyOf(lines);
             message = message == null ? "" : message;
         }
     }

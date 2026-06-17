@@ -202,6 +202,9 @@ public final class VillagerRetaliationCommands {
                         .then(literal("remove")
                                 .then(questIdArgument()
                                         .executes(VillagerRetaliationCommands::removeQuestDebug)))
+                        .then(literal("inspect")
+                                .then(questIdArgument()
+                                        .executes(VillagerRetaliationCommands::inspectQuestDebug)))
                         .then(literal("force_start")
                                 .then(questIdArgument()
                                         .then(providerNameArgument()
@@ -408,6 +411,30 @@ public final class VillagerRetaliationCommands {
         }
         source.sendSuccess(() -> Component.literal(result.message()), true);
         return 1;
+    }
+
+    private static int inspectQuestDebug(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
+            return 0;
+        }
+
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+
+        VillagerQuestService.DebugInspectResult result = VillagerQuestService.debugInspectQuest(
+                player,
+                quest.questId());
+        if (!result.found()) {
+            source.sendFailure(Component.literal(result.message()));
+            return 0;
+        }
+        result.lines().forEach(line -> source.sendSuccess(() -> Component.literal(line), false));
+        return result.lines().size();
     }
 
     private static QuestResolution resolveQuestDebugQuest(CommandSourceStack source, String rawQuestId) {
