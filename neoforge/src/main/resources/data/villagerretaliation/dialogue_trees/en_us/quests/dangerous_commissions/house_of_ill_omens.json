@@ -138,7 +138,7 @@
               "The conditions for this quest are not right at the moment."
             ],
             "missing_objectives": [
-              "The informants still need 12 emeralds."
+              "The evoker must fall, and the informants still need 12 emeralds."
             ],
             "missing_proof": [
               "Bring the Totem. Nothing else carries enough of that house on it."
@@ -164,7 +164,7 @@
     "offer": {
       "lines": [
         "There is a house in the woods where bad ideas learned carpentry. I want its power counted, not ignored.",
-        "A mansion has been named in too many frightened reports. Bring a Totem of Undying and money for those who pointed us there."
+        "A mansion has been named in too many frightened reports. Bring down its evoker, bring a Totem of Undying, and pay the people who pointed us there."
       ],
       "responses": [
         {
@@ -188,7 +188,7 @@
               "The conditions for this quest are not right at the moment."
             ],
             "reminder": [
-              "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to pay the informants who helped us."
+              "Woodland Mansion near {target_x}, {target_z}. Bring down the evoker, bring the Totem, then 12 emeralds for the informants."
             ],
             "unavailable": [
               "That quest is not in your hands right now."
@@ -211,7 +211,7 @@
               "The mansion is beyond my reach today. The woods are keeping their mouth shut."
             ],
             "started": [
-              "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Bring a Totem of Undying and 12 emeralds for informants."
+              "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Defeat its evoker, bring a Totem of Undying, and set aside 12 emeralds for informants."
             ],
             "unavailable": [
               "This is not a request for someone the village only half trusts."

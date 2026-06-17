@@ -138,7 +138,7 @@
       "id": "quest.dangerous_commissions.house_of_ill_omens.description",
       "key": "quest.dangerous_commissions.house_of_ill_omens.description",
       "lines": [
-        "Enter a Woodland Mansion and return with a Totem of Undying."
+        "Enter a Woodland Mansion, defeat an evoker, and return with a Totem of Undying."
       ]
     },
     {
@@ -180,14 +180,14 @@
       "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.reminder",
       "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.reminder",
       "lines": [
-        "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to pay the informants who helped us."
+        "Woodland Mansion near {target_x}, {target_z}. Bring down the evoker, bring the Totem, then 12 emeralds for the informants."
       ]
     },
     {
       "id": "quest.dangerous_commissions.house_of_ill_omens.dialogue.start",
       "key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.start",
       "lines": [
-        "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Bring a Totem of Undying and 12 emeralds for informants."
+        "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Defeat its evoker, bring a Totem of Undying, and set aside 12 emeralds for informants."
       ]
     },
     {
@@ -215,7 +215,21 @@
       "id": "quest.dangerous_commissions.house_of_ill_omens.objective.bring_emeralds.text",
       "key": "quest.dangerous_commissions.house_of_ill_omens.objective.bring_emeralds.text",
       "lines": [
-        "Bring 12 emeralds to repay informants after the mansion run."
+        "Bring 12 emeralds to repay informants after the evoker falls."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.objective.defeat_evoker.complete_text",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.objective.defeat_evoker.complete_text",
+      "lines": [
+        "The mansion's evoker is down."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.objective.defeat_evoker.text",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.objective.defeat_evoker.text",
+      "lines": [
+        "Defeat 1 evoker inside the Woodland Mansion."
       ]
     },
     {
@@ -229,14 +243,21 @@
       "id": "quest.dangerous_commissions.house_of_ill_omens.tracker.bring_emeralds.text",
       "key": "quest.dangerous_commissions.house_of_ill_omens.tracker.bring_emeralds.text",
       "lines": [
-        "Set aside 12 emeralds for informants."
+        "Set aside 12 emeralds for informants after the evoker falls."
+      ]
+    },
+    {
+      "id": "quest.dangerous_commissions.house_of_ill_omens.tracker.defeat_evoker.text",
+      "key": "quest.dangerous_commissions.house_of_ill_omens.tracker.defeat_evoker.text",
+      "lines": [
+        "Defeat the mansion's evoker."
       ]
     },
     {
       "id": "quest.dangerous_commissions.house_of_ill_omens.tracker.proof.text",
       "key": "quest.dangerous_commissions.house_of_ill_omens.tracker.proof.text",
       "lines": [
-        "Bring a Totem of Undying and 12 emeralds."
+        "Bring a Totem of Undying after entering the mansion."
       ]
     },
     {

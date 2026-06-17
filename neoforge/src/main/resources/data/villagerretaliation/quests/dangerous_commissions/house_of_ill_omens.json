@@ -16,10 +16,10 @@
       "The totem needs the mansion behind it. I need the place confirmed."
     ],
     "reminder": [
-      "Woodland Mansion near {target_x}, {target_z}. Totem first, then 12 emeralds to pay the informants who helped us."
+      "Woodland Mansion near {target_x}, {target_z}. Bring down the evoker, bring the Totem, then 12 emeralds for the informants."
     ],
     "start": [
-      "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Bring a Totem of Undying and 12 emeralds for informants."
+      "The mansion lies {direction}, around {distance} blocks away, near {target_x}, {target_z}. Defeat its evoker, bring a Totem of Undying, and set aside 12 emeralds for informants."
     ],
     "turn_in": [
       "A Totem of Undying. That is not proof of safety, but it is proof the village has a shield with a name."
@@ -38,13 +38,27 @@
     "locate_failed_key": "quest.dangerous_commissions.house_of_ill_omens.dialogue.locate_failed"
   },
   "display": {
-    "description": "Enter a Woodland Mansion and return with a Totem of Undying.",
+    "description": "Enter a Woodland Mansion, defeat an evoker, and return with a Totem of Undying.",
     "title": "House of Ill Omens",
     "title_key": "quest.dangerous_commissions.house_of_ill_omens.title",
     "description_key": "quest.dangerous_commissions.house_of_ill_omens.description"
   },
   "id": "villagerretaliation:house_of_ill_omens",
   "objectives": [
+    {
+      "count": 1,
+      "entity": "minecraft:evoker",
+      "id": "defeat_evoker",
+      "tracker": {
+        "complete_text": "The mansion's evoker is down.",
+        "progress": 0.72,
+        "show_progress": true,
+        "text": "Defeat 1 evoker inside the Woodland Mansion.",
+        "text_key": "quest.dangerous_commissions.house_of_ill_omens.objective.defeat_evoker.text",
+        "complete_text_key": "quest.dangerous_commissions.house_of_ill_omens.objective.defeat_evoker.complete_text"
+      },
+      "type": "mob_kill"
+    },
     {
       "count": 12,
       "id": "bring_emeralds",
@@ -107,13 +121,19 @@
       "bring_emeralds": {
         "progress": 0.86,
         "show_progress": true,
-        "text": "Set aside 12 emeralds for informants.",
+        "text": "Set aside 12 emeralds for informants after the evoker falls.",
         "text_key": "quest.dangerous_commissions.house_of_ill_omens.tracker.bring_emeralds.text"
+      },
+      "defeat_evoker": {
+        "progress": 0.72,
+        "show_progress": true,
+        "text": "Defeat the mansion's evoker.",
+        "text_key": "quest.dangerous_commissions.house_of_ill_omens.tracker.defeat_evoker.text"
       },
       "proof": {
         "progress": 0.66,
         "show_progress": true,
-        "text": "Bring a Totem of Undying and 12 emeralds.",
+        "text": "Bring a Totem of Undying after entering the mansion.",
         "text_key": "quest.dangerous_commissions.house_of_ill_omens.tracker.proof.text"
       },
       "return": {
@@ -134,5 +154,22 @@
     },
     "title": "House of Ill Omens",
     "title_key": "quest.dangerous_commissions.house_of_ill_omens.tracker.title"
-  }
+  },
+  "triggers": [
+    {
+      "id": "record_mansion_cleansed",
+      "event": "completed",
+      "actions": [
+        {
+          "type": "set_tag",
+          "scope": "world",
+          "tag": "villagerretaliation:mansion_cleansed"
+        },
+        {
+          "type": "set_stage",
+          "stage": "mansion_cleansed"
+        }
+      ]
+    }
+  ]
 }
