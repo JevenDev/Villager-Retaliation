@@ -907,27 +907,40 @@ function dialogueTreeDefaultQuestId(file, data) {
   return isQuestDialogueTreeFile(file) ? dialogueTreeIdForFile(file, data) : "";
 }
 
-function resourceIdForFile(file, relativeRoot, options = {}) {
+function resourceIdForFile(file, relativeRoot) {
   const base = path.join(root, relativeRoot);
   let relativePath = path.relative(base, file).replaceAll(path.sep, "/");
   if (!relativePath.endsWith(".json")) {
     return "";
   }
   relativePath = relativePath.slice(0, -".json".length);
-  if (options.dropLeadingSegment && relativePath.startsWith(`${options.dropLeadingSegment}/`)) {
-    relativePath = relativePath.slice(options.dropLeadingSegment.length + 1);
-  }
   return relativePath ? `villagerretaliation:${relativePath}` : "";
 }
 
 function dialogueTreeFallbackId(file) {
-  return resourceIdForFile(file, roots.dialogueTrees, { dropLeadingSegment: "quests" });
+  const questModule = dialogueTreeQuestModule(file);
+  if (questModule?.questId) {
+    return questModule.questId;
+  }
+  return resourceIdForFile(file, roots.dialogueTrees);
 }
 
 function isQuestDialogueTreeFile(file) {
-  const base = path.join(root, roots.dialogueTrees);
-  const relativePath = path.relative(base, file).replaceAll(path.sep, "/");
-  return relativePath.startsWith("quests/");
+  return dialogueTreeQuestModule(file) != null;
+}
+
+function dialogueTreeQuestModule(file) {
+  const relativePath = path.relative(path.join(root, roots.dialogueTrees), file).replaceAll(path.sep, "/");
+  const parts = relativePath.split("/");
+  if (parts.length < 3 || parts[0] !== "quests" || !parts.at(-1).endsWith(".json")) {
+    return null;
+  }
+  const questline = parts[1];
+  const questName = parts.at(-1).slice(0, -".json".length);
+  return {
+    questline,
+    questId: questName ? `villagerretaliation:${questName}` : ""
+  };
 }
 
 function checkDialogue(file, data) {
@@ -3809,9 +3822,7 @@ function questPathQuestline(file) {
 }
 
 function dialogueTreePathQuestline(file) {
-  const relativePath = path.relative(path.join(root, roots.dialogueTrees), file).replaceAll(path.sep, "/");
-  const parts = relativePath.split("/");
-  return parts.length > 2 && parts[0] === "quests" ? parts[1] : "";
+  return dialogueTreeQuestModule(file)?.questline ?? "";
 }
 
 function indexForcedDialogue(file, data) {
@@ -3905,11 +3916,16 @@ function checkDialogueTreeMetadataConsistency(file, data, location) {
   const metadata = metadataObject(data);
   const metadataQuestline = stringValue(metadata.questline);
   const metadataQuest = stringValue(metadata.quest);
+  const explicitId = stringValue(data.id);
+  const inferredQuestTreeId = dialogueTreeQuestModule(file)?.questId ?? "";
   if (metadataQuestline && !metadataQuest) {
     warnings.push(`${relative(file)}: ${location}.metadata.questline is set without metadata.quest; quest-scoped dialogue trees infer it from their module path or id.`);
   }
   if (metadataQuest && !metadataQuestline) {
     errors.push(`${relative(file)}: ${location}.metadata.questline is required when metadata.quest is set.`);
+  }
+  if (explicitId && inferredQuestTreeId && explicitId !== inferredQuestTreeId) {
+    warnings.push(`${relative(file)}: ${location}.id "${explicitId}" differs from inferred quest dialogue tree id "${inferredQuestTreeId}".`);
   }
   const defaultQuestId = dialogueTreeDefaultQuestId(file, data);
   if (defaultQuestId) {
