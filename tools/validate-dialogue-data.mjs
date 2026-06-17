@@ -414,6 +414,7 @@ const questFactScopes = new Set(["player", "player_world", "per_player", "world"
 const questCompletionScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const questBranchLockEvents = new Set(["started", "start", "accepted", "begin", "begun", "completed", "complete", "turn_in", "turnin", "finish", "finished"]);
 const forcedDialogueTriggers = new Set(["container_theft", "container_opened", "container_broken", "retaliation_started", "low_guts_rally", "player_item_proximity", "trade_refresh", "quest"]);
+const forcedDialogueOutputModes = new Set(["forced_dialogue", "chat"]);
 const dialogueTreeActionKeys = new Set([
   "type",
   "quest",
@@ -2761,6 +2762,18 @@ function checkForcedDialogueEntryText(file, entry, location, messagePrefix = "")
   checkOptionalBoolean(file, entry, location, "remove");
   checkOptionalString(file, entry, location, "message_prefix");
   checkOptionalString(file, entry, location, "text_prefix");
+  for (const key of ["initiate_dialogue", "aggro_immediately", "force_camera_towards_villager", "requires_line_of_sight"]) {
+    checkOptionalBoolean(file, entry, location, key);
+  }
+  checkOptionalInteger(file, entry, location, "priority");
+  checkOptionalInteger(file, entry, location, "reputation");
+  checkOptionalInteger(file, entry, location, "min_recent_container_thefts", { min: 0 });
+  checkOptionalInteger(file, entry, location, "max_recent_container_thefts", { min: 0 });
+  checkOptionalInteger(file, entry, location, "min_recent_retaliations", { min: 0 });
+  checkOptionalInteger(file, entry, location, "max_recent_retaliations", { min: 0 });
+  checkOptionalNumber(file, entry, location, "chance", { min: 0, max: 1 });
+  checkOptionalNumber(file, entry, location, "witness_radius", { min: 1 });
+  checkForcedDialogueOutput(file, entry.output, `${location}.output`);
   checkStringList(file, entry, location, ["line", "lines"], "forced dialogue line");
   checkStringList(file, entry, location, ["line_key", "line_keys", "text_key", "text_keys"], "forced dialogue text key");
   checkOptionalString(file, entry, location, "loot_table");
@@ -2774,6 +2787,19 @@ function checkForcedDialogueEntryText(file, entry, location, messagePrefix = "")
   if (!hasStringValues(entry, ["line_key", "line_keys", "text_key", "text_keys"]) && messagePrefix && hasStringValues(entry, ["line", "lines"])) {
     collectForcedDialogueMessageKey(file, `${location}.message_prefix`, `${messagePrefix}.line`, "derived forced dialogue line key");
   }
+}
+
+function checkForcedDialogueOutput(file, output, location) {
+  if (output === undefined) {
+    return;
+  }
+  if (!output || typeof output !== "object" || Array.isArray(output)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  checkUnknownObjectKeys(file, output, location, new Set(["mode", "radius"]));
+  checkStringValues(file, output, location, ["mode"], forcedDialogueOutputModes, "forced dialogue output mode");
+  checkOptionalNumber(file, output, location, "radius", { min: 0 });
 }
 
 function checkForcedDialogueOptions(file, options, location, defaultQuestId = "", messagePrefix = "", kind = "option") {
