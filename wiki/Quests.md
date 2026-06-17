@@ -369,6 +369,45 @@ Useful built-in memory tags include `baby_born`, `iron_golem_defeated_mob`, `thu
 
 Memory objectives only count new player-associated memory writes while the quest is active. Use quest fact tags or variables for permanent history gates, such as unlocking a branch after an event that may have happened earlier.
 
+## Example: Trade Quest
+
+Use `trade` when a quest should advance from completed villager or wandering trader trades. Trade objectives count completed trade events, not item stack size. Add `item` to require a specific trade result item.
+
+```json
+{
+  "id": "my_pack:restore_market_confidence",
+  "display": {
+    "title": "Restore Market Confidence",
+    "description": "Trade with villagers near the old market."
+  },
+  "objectives": [
+    {
+      "id": "complete_market_trades",
+      "type": "trade",
+      "count": 3,
+      "dimension": "minecraft:overworld",
+      "x": 96,
+      "y": 64,
+      "z": -112,
+      "radius": 24,
+      "tracker": {
+        "text": "Complete village trades near the market: {objective_progress_count}/{objective_count}",
+        "complete_text": "The market is moving again."
+      }
+    }
+  ]
+}
+```
+
+Trade objective fields:
+
+| Field | Meaning |
+| --- | --- |
+| `item` | Optional exact result item id, such as `minecraft:bread` |
+| `count` | Number of completed trade events |
+
+Trade objectives also support the same result item detail filters as `item_check`, such as `enchantments`, durability bounds, and `custom_data`. Add `dimension`, `x`/`y`/`z`, and `radius` to restrict credit to trades completed with merchants in a region. Tracker placeholders include `{objective_item}` and `{objective_item_id}`.
+
 ## Example: Gift Quest
 
 Use `gift` when a quest should advance from accepted villager gifts. Gift objectives count gift events, not item stack size. Add `item` to require a specific item and `reaction` / `gift_reactions` to require loved, liked, neutral, disliked, or hated gifts.

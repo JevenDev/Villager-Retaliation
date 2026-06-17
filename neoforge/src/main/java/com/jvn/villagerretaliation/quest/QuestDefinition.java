@@ -306,6 +306,7 @@ public record QuestDefinition(
         BLOCK_BREAK,
         BLOCK_PLACE,
         MEMORY_EVENT,
+        TRADE,
         GIFT,
         FACT,
         CONDITION;
@@ -320,6 +321,7 @@ public record QuestDefinition(
                 case "block_break", "break_block", "mine_block", "mine" -> BLOCK_BREAK;
                 case "block_place", "place_block", "place" -> BLOCK_PLACE;
                 case "memory_event", "village_event", "village_memory", "memory", "event" -> MEMORY_EVENT;
+                case "trade", "villager_trade", "trading", "merchant_trade" -> TRADE;
                 case "gift", "give_gift", "gift_given" -> GIFT;
                 case "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage" -> FACT;
                 case "condition" -> CONDITION;

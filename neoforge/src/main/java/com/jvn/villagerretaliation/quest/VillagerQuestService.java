@@ -52,12 +52,14 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -1462,6 +1464,32 @@ public final class VillagerQuestService {
         return changed;
     }
 
+    private static boolean updateTradeProgress(
+            ServerLevel level,
+            ServerPlayer player,
+            AbstractVillager villager,
+            MerchantOffer offer,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        boolean changed = false;
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            if (objective.type() != QuestDefinition.ObjectiveType.TRADE || progress.objectiveComplete(objective.id())) {
+                continue;
+            }
+            if (!matchesTradeObjective(level, villager, offer, objective)) {
+                continue;
+            }
+            int count = progress.addObjectiveCounter(objective.id(), 1);
+            changed = true;
+            if (count >= objective.count()) {
+                if (progress.markObjectiveComplete(objective.id())) {
+                    markQuestObjectiveFact(level, player, definition, objective);
+                }
+            }
+        }
+        return changed;
+    }
+
     private static boolean requiredObjectivesComplete(
             ServerPlayer player,
             DialogueContext context,
@@ -1498,7 +1526,7 @@ public final class VillagerQuestService {
             case LOCATION_VISIT -> isAtLocationObjective(level, player.blockPosition(), objective);
             case ITEM_CHECK -> hasItemCount(player, objective);
             case MOB_KILL -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
-            case BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT, GIFT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
+            case BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT, TRADE, GIFT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
@@ -1599,6 +1627,30 @@ public final class VillagerQuestService {
             }
         }
         return objective.memoryTags().contains(event.tagId());
+    }
+
+    private static boolean matchesTradeObjective(
+            ServerLevel level,
+            AbstractVillager villager,
+            MerchantOffer offer,
+            QuestDefinition.Objective objective) {
+        if (villager == null || offer == null) {
+            return false;
+        }
+        if (objective.dimension() != null && level.dimension() != objective.dimension()) {
+            return false;
+        }
+        if (objective.location() != null) {
+            double radius = Math.max(1, objective.radius());
+            if (villager.blockPosition().distSqr(objective.location()) > radius * radius) {
+                return false;
+            }
+        }
+        if (objective.item() == null) {
+            return true;
+        }
+        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
+        return item.isPresent() && matchesObjectiveItem(offer.getResult(), objective, item.get());
     }
 
     private static boolean matchesGiftObjective(
@@ -2439,6 +2491,7 @@ public final class VillagerQuestService {
                     case BLOCK_BREAK -> "break";
                     case BLOCK_PLACE -> "build";
                     case MEMORY_EVENT -> "event";
+                    case TRADE -> "trade";
                     case GIFT -> "gift";
                     case FACT -> "fact";
                     case CONDITION -> "inactive";
@@ -2456,6 +2509,7 @@ public final class VillagerQuestService {
             case "break" -> "Break {objective_count} {objective_block}.";
             case "build" -> "Place {objective_count} {objective_block}.";
             case "event" -> "Wait for {objective_memory}.";
+            case "trade" -> "Complete trades: {objective_progress_count}/{objective_count}.";
             case "gift" -> "Give {objective_count} {objective_item}.";
             case "fact" -> "Resolve {objective_fact}.";
             case "return" -> "Return to {issuer}.";
@@ -2776,7 +2830,7 @@ public final class VillagerQuestService {
             case ITEM_CHECK -> objective.item() == null
                     ? 0.0F
                     : Mth.clamp((float) itemCount(player, objective) / (float) objective.count(), 0.0F, 1.0F);
-            case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT, GIFT -> progress == null
+            case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT, TRADE, GIFT -> progress == null
                     ? 0.0F
                     : Mth.clamp((float) progress.objectiveCounter(objective.id()) / (float) objective.count(), 0.0F, 1.0F);
             case STRUCTURE_VISIT, LOCATION_VISIT, FACT, CONDITION -> progress != null
@@ -3008,6 +3062,62 @@ public final class VillagerQuestService {
                 continue;
             }
             boolean questProgressChanged = updateGiftProgress(level, player, giftedStack, reaction, definition, progress);
+            if (!questProgressChanged) {
+                continue;
+            }
+            changed = true;
+            progressNotice = true;
+            sendQuestProgressNotification(
+                    player,
+                    definition,
+                    progress,
+                    "quest.updated",
+                    "Quest updated: {quest}");
+            changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
+        }
+        if (changed) {
+            data.setDirty();
+            sendTrackerSync(player, progressNotice);
+        }
+    }
+
+    public static void onTradeCompleted(
+            ServerLevel level,
+            ServerPlayer player,
+            AbstractVillager villager,
+            MerchantOffer offer) {
+        if (level == null
+                || player == null
+                || villager == null
+                || offer == null
+                || player.level() != level
+                || villager.level() != level) {
+            return;
+        }
+
+        Set<ResourceLocation> candidateQuestIds = VillagerQuestResources.questIdsWithObjective(
+                level.getServer(),
+                QuestDefinition.ObjectiveType.TRADE);
+        if (candidateQuestIds.isEmpty()) {
+            return;
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        boolean changed = false;
+        boolean progressNotice = false;
+        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
+            if (!candidateQuestIds.contains(entry.getKey())) {
+                continue;
+            }
+            QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
+            if (definition == null) {
+                continue;
+            }
+            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            if (!activeConditionsMetForPlayer(player, definition, progress)) {
+                continue;
+            }
+            boolean questProgressChanged = updateTradeProgress(level, player, villager, offer, definition, progress);
             if (!questProgressChanged) {
                 continue;
             }
@@ -3427,6 +3537,11 @@ public final class VillagerQuestService {
             case MEMORY_EVENT -> {
                 debugAddCounter(parts, counter, objective.count());
                 parts.add("memory_tags=" + debugResourceSet(objective.memoryTags()));
+                debugAddLocation(parts, objective);
+            }
+            case TRADE -> {
+                debugAddCounter(parts, counter, objective.count());
+                parts.add("result_item=" + debugResource(objective.item()));
                 debugAddLocation(parts, objective);
             }
             case GIFT -> {

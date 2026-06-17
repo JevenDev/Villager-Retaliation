@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.skill.VillagerSkillGrowthService;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
 import com.jvn.villagerretaliation.trade.VillagerTradeWalletService;
@@ -217,6 +218,7 @@ public final class VillagerReputationEvents {
             VillagerAmbientIndicatorService.onTradeCompleted(level, villager, event.getEntity());
             if (event.getEntity() instanceof ServerPlayer serverPlayer) {
                 VillagerReputationAdvancements.onTradeCompleted(level, serverPlayer, villager);
+                VillagerQuestService.onTradeCompleted(level, serverPlayer, villager, event.getMerchantOffer());
             }
             VillagerSkillGrowthService.onTradeCompleted(
                     level,

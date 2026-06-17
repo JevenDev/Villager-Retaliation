@@ -46,7 +46,7 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
     private static volatile CachedQuests cachedQuests =
-            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
 
     private VillagerQuestResources() {
     }
@@ -56,7 +56,7 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
@@ -106,6 +106,7 @@ public final class VillagerQuestResources {
             case BLOCK_BREAK -> cache.blockBreakQuestIds();
             case BLOCK_PLACE -> cache.blockPlaceQuestIds();
             case FACT -> cache.factQuestIds();
+            case TRADE -> cache.tradeQuestIds();
             case GIFT -> cache.giftQuestIds();
             case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, MEMORY_EVENT, CONDITION -> Set.of();
         };
@@ -148,6 +149,7 @@ public final class VillagerQuestResources {
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_BREAK),
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_PLACE),
                     objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
+                    objectiveQuestIds(quests, QuestDefinition.ObjectiveType.TRADE),
                     objectiveQuestIds(quests, QuestDefinition.ObjectiveType.GIFT),
                     memoryEventQuestIds(quests),
                     exclusiveGroupQuestIds(quests),
@@ -1335,6 +1337,7 @@ public final class VillagerQuestResources {
             Set<ResourceLocation> blockBreakQuestIds,
             Set<ResourceLocation> blockPlaceQuestIds,
             Set<ResourceLocation> factQuestIds,
+            Set<ResourceLocation> tradeQuestIds,
             Set<ResourceLocation> giftQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
