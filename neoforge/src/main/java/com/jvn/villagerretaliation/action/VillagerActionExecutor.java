@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
@@ -207,7 +208,10 @@ public final class VillagerActionExecutor {
         String scopeKey = action.factScope().scopeKey(context, action.questId());
         String value = VillagerDialogueResources.resolveTemplate(action.factValue(), inheritedReplacements);
         boolean changed = VillagerQuestFacts.get(context.level()).setVariable(scopeKey, action.factKey(), value);
-        return changed
+        boolean stageChanged = "stage".equals(action.factKey())
+                && action.factScope() == QuestFactScope.QUEST
+                && VillagerQuestService.syncQuestStage(context, action.questId(), value);
+        return changed || stageChanged
                 ? factResult(action, inheritedReplacements, scopeKey, value, 0)
                 : VillagerActionResult.EMPTY;
     }
@@ -237,6 +241,10 @@ public final class VillagerActionExecutor {
         replacements.put("quest_fact_key", action.factKey());
         replacements.put("quest_fact_value", value == null ? "" : value);
         replacements.put("quest_fact_counter", Integer.toString(counterValue));
+        if ("stage".equals(action.factKey())) {
+            replacements.put("quest_stage", value == null ? "" : value);
+            replacements.put("current_stage", value == null ? "" : value);
+        }
         return new VillagerActionResult(true, "", "", replacements, action.flashTracker());
     }
 }

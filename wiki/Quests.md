@@ -545,7 +545,7 @@ This dialogue-tree branch stores a chosen route:
 }
 ```
 
-Quest stages are shorthand for the quest-scoped variable `stage`. Use them for Skyrim-style branch gates inside a questline:
+Quest stages are shorthand for the quest-scoped variable `stage`. Use them for Skyrim-style branch gates inside a questline. When a quest-scoped stage action runs, the active quest progress also stores that value as `current_stage`, so tracker text and `/villagerretaliation quest debug inspect <quest_id>` can show the current chapter directly.
 
 ```json
 {
@@ -590,6 +590,8 @@ The same branch can be written with the stage alias:
 ```
 
 Use `scope: "world"` for shared save-wide consequences, `scope: "player"` for player story flags, `scope: "village"` for local outcomes, and `scope: "villager"` for villager-specific secrets or promises.
+
+Tracker text and quest dialogue can use `{quest_stage}` or `{current_stage}` to show the saved progress stage. Lifecycle events also write stage values: `started`, `completed`, `abandoned`, `expired`, and `branch_locked`. A custom `set_stage` action can replace those with a pack-defined stage such as `warned_guard`, `archive_saved`, or `raiders_spared`.
 
 ### Automatic Quest Facts
 

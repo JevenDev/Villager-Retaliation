@@ -39,6 +39,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_TARGET_DIMENSION = "TargetDimension";
     private static final String TAG_TARGET_POS = "TargetPos";
     private static final String TAG_TARGET_OBJECTIVE = "TargetObjective";
+    private static final String TAG_CURRENT_STAGE = "CurrentStage";
     private static final String TAG_COMPLETED_OBJECTIVES = "CompletedObjectives";
     private static final String TAG_OBJECTIVE_COUNTERS = "ObjectiveCounters";
     private static final String TAG_OBJECTIVE = "Objective";
@@ -249,6 +250,7 @@ public class VillagerQuestSavedData extends SavedData {
         private ResourceKey<Level> targetDimension;
         private BlockPos targetPos;
         private String targetObjectiveId = "";
+        private String currentStage = "";
         private final java.util.Set<String> completedObjectives = new java.util.HashSet<>();
         private final Map<String, Integer> objectiveCounters = new HashMap<>();
         private int startCount;
@@ -276,6 +278,7 @@ public class VillagerQuestSavedData extends SavedData {
             progress.abandonCount = tag.getInt(TAG_ABANDON_COUNT);
             progress.consumedReason = tag.getString(TAG_CONSUMED_REASON);
             progress.targetObjectiveId = tag.getString(TAG_TARGET_OBJECTIVE);
+            progress.currentStage = tag.getString(TAG_CURRENT_STAGE);
             if (tag.contains(TAG_COMPLETED_OBJECTIVES, Tag.TAG_LIST)) {
                 ListTag objectivesTag = tag.getList(TAG_COMPLETED_OBJECTIVES, Tag.TAG_STRING);
                 for (Tag rawObjective : objectivesTag) {
@@ -358,6 +361,9 @@ public class VillagerQuestSavedData extends SavedData {
             tag.putString(TAG_CONSUMED_REASON, this.consumedReason);
             if (!this.targetObjectiveId.isBlank()) {
                 tag.putString(TAG_TARGET_OBJECTIVE, this.targetObjectiveId);
+            }
+            if (!this.currentStage.isBlank()) {
+                tag.putString(TAG_CURRENT_STAGE, this.currentStage);
             }
             if (!this.completedObjectives.isEmpty()) {
                 ListTag objectivesTag = new ListTag();
@@ -459,6 +465,20 @@ public class VillagerQuestSavedData extends SavedData {
             return this.targetObjectiveId;
         }
 
+        public String currentStage() {
+            if (!this.currentStage.isBlank()) {
+                return this.currentStage;
+            }
+            return switch (this.state) {
+                case ACTIVE -> "started";
+                case COMPLETED -> "completed";
+                case ABANDONED -> "abandoned";
+                case EXPIRED -> "expired";
+                case CONSUMED -> "branch_lock".equals(this.consumedReason) ? "branch_locked" : "consumed";
+                case NOT_STARTED -> "";
+            };
+        }
+
         public int startCount() {
             return this.startCount;
         }
@@ -488,6 +508,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.visitedTarget = false;
             this.hasProof = false;
             this.consumedReason = "";
+            this.currentStage = "started";
             this.triggerTimes.clear();
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
@@ -521,6 +542,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.completedGameTime = gameTime;
             this.completionCount++;
             this.consumedReason = consume ? "completion" : "";
+            this.currentStage = "completed";
         }
 
         public void abandon(long gameTime, boolean consume) {
@@ -535,6 +557,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
             this.consumedReason = consume ? "abandonment" : "";
+            this.currentStage = "abandoned";
         }
 
         public void expire(long gameTime, boolean consume) {
@@ -548,6 +571,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
             this.consumedReason = consume ? "expiration" : "";
+            this.currentStage = "expired";
         }
 
         public void consume(String reason) {
@@ -560,6 +584,16 @@ public class VillagerQuestSavedData extends SavedData {
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
             this.consumedReason = reason == null ? "" : reason;
+            this.currentStage = "branch_lock".equals(this.consumedReason) ? "branch_locked" : "consumed";
+        }
+
+        public boolean setCurrentStage(String stage) {
+            String normalized = stage == null ? "" : stage.trim();
+            if (this.currentStage.equals(normalized)) {
+                return false;
+            }
+            this.currentStage = normalized;
+            return true;
         }
 
         public boolean markVisitedTarget() {

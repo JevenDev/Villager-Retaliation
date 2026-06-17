@@ -462,6 +462,22 @@ public final class VillagerQuestService {
         return new DebugInspectResult(true, lines, "");
     }
 
+    public static boolean syncQuestStage(DialogueContext context, ResourceLocation questId, String stage) {
+        if (context == null || questId == null || stage == null) {
+            return false;
+        }
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
+        VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), questId);
+        if (progress == null) {
+            return false;
+        }
+        if (!progress.setCurrentStage(stage)) {
+            return false;
+        }
+        data.setDirty();
+        return true;
+    }
+
     private static QuestActionOutcome startQuest(DialogueContext context, QuestDefinition definition) {
         return startQuest(context, definition, false, false);
     }
@@ -893,6 +909,7 @@ public final class VillagerQuestService {
         VillagerQuestFacts facts = VillagerQuestFacts.get(level);
         facts.setTag(scopeKey, tag);
         facts.setVariable(scopeKey, "state", state);
+        facts.setVariable(scopeKey, "stage", state);
     }
 
     private static void markQuestObjectiveFact(
@@ -2463,6 +2480,8 @@ public final class VillagerQuestService {
         values.put("quest_id", definition.id().toString());
         values.put("target", targetName(definition));
         values.put("proof_item", questItemName(definition, progress));
+        values.put("quest_stage", progress == null ? "" : progress.currentStage());
+        values.put("current_stage", progress == null ? "" : progress.currentStage());
         values.put("visited_target", progress != null && progress.visitedTarget() ? "yes" : "no");
         values.put("has_proof", hasRequiredProof(player, definition) ? "yes" : "no");
         values.put("active_conditions", activeConditionsMet ? "met" : "unmet");
@@ -3331,6 +3350,7 @@ public final class VillagerQuestService {
                         ? "unknown_no_live_issuer"
                         : Boolean.toString(isReadyToTurnIn(context, definition, progress));
         return "progress saved=true state=" + debugEnum(progress.state())
+                + " stage=" + blankAs(progress.currentStage(), "none")
                 + " starts=" + progress.startCount()
                 + " completions=" + progress.completionCount()
                 + " abandons=" + progress.abandonCount()
