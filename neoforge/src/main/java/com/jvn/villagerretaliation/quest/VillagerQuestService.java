@@ -1698,6 +1698,9 @@ public final class VillagerQuestService {
         if (condition instanceof DialogueCondition.RecruitmentMemory recruitmentMemory) {
             return recruitmentMemoryStateWithoutLiveContext(player, level, progress, recruitmentMemory);
         }
+        if (condition instanceof DialogueCondition.VillagerAge villagerAge) {
+            return villagerAgeStateWithoutLiveContext(level, progress, villagerAge);
+        }
         if (condition instanceof DialogueCondition.VillagerLevel villagerLevel) {
             return villagerLevelStateWithoutLiveContext(progress, villagerLevel);
         }
@@ -2047,6 +2050,28 @@ public final class VillagerQuestService {
             return "";
         }
         return memory.biomeName().toLowerCase(Locale.ROOT).replace(' ', '_');
+    }
+
+    private static ConditionMatch villagerAgeStateWithoutLiveContext(
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.VillagerAge villagerAge) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        if (villagerId == null) {
+            return ConditionMatch.UNKNOWN;
+        }
+        Optional<Boolean> savedBaby = VillagerSocialGraphService.knownBaby(level, villagerId);
+        if (savedBaby.isEmpty()) {
+            return ConditionMatch.UNKNOWN;
+        }
+        boolean isBaby = savedBaby.get();
+        if (villagerAge.baby() != null && isBaby != villagerAge.baby()) {
+            return ConditionMatch.UNMET;
+        }
+        if (villagerAge.adult() != null && isBaby == villagerAge.adult()) {
+            return ConditionMatch.UNMET;
+        }
+        return ConditionMatch.MET;
     }
 
     private static ConditionMatch villagerLevelStateWithoutLiveContext(

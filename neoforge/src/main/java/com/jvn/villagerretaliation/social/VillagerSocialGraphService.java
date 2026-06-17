@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -163,6 +164,13 @@ public final class VillagerSocialGraphService {
             return VillagerRelationshipSnapshot.EMPTY;
         }
         return VillagerSocialGraphSavedData.get(level).relationshipSnapshot(level, villagerId);
+    }
+
+    public static Optional<Boolean> knownBaby(ServerLevel level, UUID villagerId) {
+        if (villagerId == null || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return Optional.empty();
+        }
+        return VillagerSocialGraphSavedData.get(level).knownBaby(villagerId);
     }
 
     private static String deathCause(DamageSource source) {

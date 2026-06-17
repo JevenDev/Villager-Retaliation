@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -156,6 +157,11 @@ public class VillagerSocialGraphSavedData extends SavedData {
             setDirty();
         }
         return profile;
+    }
+
+    public Optional<Boolean> knownBaby(UUID villagerId) {
+        VillagerProfile profile = villagerId == null ? null : this.profiles.get(villagerId);
+        return profile == null ? Optional.empty() : Optional.of(profile.baby());
     }
 
     public void markDead(ServerLevel level, Villager villager, String deathCause) {
@@ -1271,6 +1277,10 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
         public VillagerGender gender() {
             return this.gender;
+        }
+
+        public boolean baby() {
+            return this.baby;
         }
 
         private boolean setName(String value) {

@@ -177,8 +177,7 @@ const conditionKeys = {
 };
 
 const questLiveOnlyConditionTypes = new Set([
-  "memory",
-  "villager_age"
+  "memory"
 ]);
 
 const questLiveContextActionTypes = new Set([
