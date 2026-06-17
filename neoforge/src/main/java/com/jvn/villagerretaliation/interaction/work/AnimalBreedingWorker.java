@@ -25,7 +25,6 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.goat.Goat;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -47,6 +46,16 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private static final String RECENTLY_HANDLED_ANIMALS_TAG = "RecentlyHandledAnimalBreeding";
     private static final String ANIMAL_ID_TAG = "Animal";
     private static final String COOLDOWN_UNTIL_TAG = "CooldownUntil";
+    private static final HiredItemPickup.Messages GROUND_EGG_PICKUP_MESSAGES = new HiredItemPickup.Messages(
+            "interaction.work.animal_breeding.output_full_depositing",
+            "interaction.work.animal_breeding.output_full_blocked",
+            "egg_unreachable",
+            "interaction.work.animal_breeding.egg_unreachable",
+            "interaction.work.animal_breeding.egg_repositioning",
+            "interaction.work.animal_breeding.moving_to_egg",
+            "interaction.work.animal_breeding.collected_eggs",
+            true,
+            false);
 
     @Override
     public HiredVillagerRole role() {
@@ -437,132 +446,15 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     }
 
     private WorkResult collectGroundEggs(ServerLevel level, Villager villager, HiredWorkContext context) {
-        ItemEntity egg = findNearestGroundEgg(level, villager, context);
-        if (egg == null) {
-            return null;
-        }
-
-        context.setProgressTicks(0);
-        BlockPos eggPos = egg.blockPosition();
-        if (!context.hasOutputSpace()) {
-            DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
-            if (depositResult == DepositResult.DEPOSITED) {
-                return WorkResult.progressed("interaction.work.animal_breeding.output_full_depositing");
-            }
-            if (depositResult == DepositResult.MOVING) {
-                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("interaction.work.animal_breeding.output_full_depositing");
-            }
-            if (depositResult == DepositResult.STORAGE_FULL) {
-                return WorkResult.idle(storageFullStatus(context));
-            }
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, eggPos);
-            return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
-        }
-
-        if (!canCollectEggFromCurrentPosition(villager, context, egg)) {
-            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, eggPos);
-            if (!moveToGroundEgg(level, villager, context, egg, 0.45D)) {
-                if (recordWorkPathFailure(level, villager, eggPos)) {
-                    HiredWorkerBrain.setFailure(context, "egg_unreachable", level.getGameTime() + 20L * 30L);
-                    setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, eggPos);
-                    return WorkResult.idle("interaction.work.animal_breeding.egg_unreachable");
-                }
-                return WorkResult.progressed("interaction.work.animal_breeding.egg_repositioning");
-            }
-            return WorkResult.progressed("interaction.work.animal_breeding.moving_to_egg");
-        }
-
-        clearWorkPathFailure(villager, eggPos);
-        stopWorkNavigation(villager);
-        faceBlock(villager, egg.position());
-        HiredWorkerBrain.clearFailure(context);
-        setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, eggPos);
-
-        ItemStack eggStack = egg.getItem();
-        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, eggStack.copy());
-        int moved = eggStack.getCount() - remainder.getCount();
-        if (moved <= 0) {
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, eggPos);
-            return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
-        }
-
-        if (remainder.isEmpty()) {
-            egg.discard();
-        } else {
-            egg.setItem(remainder);
-        }
-        swingWorkTool(villager);
-        return WorkResult.completed(
-                "interaction.work.animal_breeding.collected_eggs",
-                java.util.Map.of("count", Integer.toString(moved)));
-    }
-
-    private ItemEntity findNearestGroundEgg(ServerLevel level, Villager villager, HiredWorkContext context) {
-        AABB bounds = workAreaBounds(context);
-        List<ItemEntity> eggs = new ArrayList<>(level.getEntitiesOfClass(
-                ItemEntity.class,
-                bounds,
-                egg -> isCollectableGroundEgg(level, context, villager, egg)));
-        eggs.sort(Comparator.comparingDouble(villager::distanceToSqr));
-        return eggs.isEmpty() ? null : eggs.getFirst();
-    }
-
-    private boolean canCollectEggFromCurrentPosition(Villager villager, HiredWorkContext context, ItemEntity egg) {
-        return context.isInsideWorkArea(villager.blockPosition())
-                && context.isInsideWorkArea(egg.blockPosition())
-                && villager.distanceToSqr(egg) <= EGG_PICKUP_REACH_SQR;
-    }
-
-    private boolean moveToGroundEgg(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context,
-            ItemEntity egg,
-            double speed) {
-        if (!context.isInsideWorkArea(villager.blockPosition())
-                || !context.isInsideWorkArea(egg.blockPosition())) {
-            stopWorkNavigation(villager);
-            return false;
-        }
-        if (villager.distanceToSqr(egg) <= EGG_PICKUP_REACH_SQR) {
-            stopWorkNavigation(villager);
-            faceBlock(villager, egg.position());
-            return true;
-        }
-
-        BlockPos targetPos = egg.blockPosition();
-        Path currentPath = villager.getNavigation().getPath();
-        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, context::isInsideWorkArea)) {
-            stopWorkNavigation(villager);
-            return false;
-        }
-        Path path = villager.getNavigation().createPath(targetPos, 0);
-        if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
-            villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
-            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, targetPos, speed, 0);
-            if (moved) {
-                HiredPathMemory.rememberNavigationProgress(level, villager, targetPos, villager.distanceToSqr(targetPos.getCenter()));
-            }
-            return moved;
-        }
-        HiredPathMemory.clearNavigationProgress(villager);
-        return false;
-    }
-
-    private static boolean isCollectableGroundEgg(
-            ServerLevel level,
-            HiredWorkContext context,
-            Villager villager,
-            ItemEntity egg) {
-        BlockPos pos = egg.blockPosition();
-        return egg.isAlive()
-                && egg.getItem().is(Items.EGG)
-                && context.isInsideWorkArea(pos)
-                && context.isLoaded(level, pos)
-                && !HiredPathMemory.isAvoided(level, villager, pos);
+        return HiredItemPickup.collectNearestOutputItem(
+                level,
+                villager,
+                context,
+                this,
+                stack -> stack.is(Items.EGG),
+                EGG_PICKUP_REACH_SQR,
+                0.45D,
+                GROUND_EGG_PICKUP_MESSAGES);
     }
 
     private AnimalProductTarget findAnimalProductTarget(ServerLevel level, Villager villager, HiredWorkContext context) {

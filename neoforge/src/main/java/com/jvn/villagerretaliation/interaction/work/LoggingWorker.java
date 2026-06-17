@@ -7,7 +7,6 @@ import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,6 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
@@ -40,7 +38,6 @@ import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.pathfinder.Path;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -78,6 +75,16 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final int MAX_TREE_LEAVES_PER_HARVEST = 192;
     private static final double DECAY_DROP_PICKUP_REACH_SQR = 2.25D;
     private static final int GROVE_LINK_RADIUS = 6;
+    private static final HiredItemPickup.Messages DECAY_DROP_PICKUP_MESSAGES = new HiredItemPickup.Messages(
+            "interaction.work.logging.output_full_depositing",
+            "interaction.work.logging.output_full_blocked",
+            "decay_drop_unreachable",
+            "interaction.work.logging.decay_drop_unreachable",
+            "interaction.work.logging.decay_drop_repositioning",
+            "interaction.work.logging.moving_to_decay_drop",
+            "interaction.work.logging.collected_decay_drops",
+            false,
+            true);
     private static final HiredTargetSearch.Messages TREE_SEARCH_MESSAGES = new HiredTargetSearch.Messages(
             "active_tree_target",
             "planned_tree_target",
@@ -181,6 +188,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return activeAccessLeafResult;
         }
 
+        WorkResult decayDropResult = collectDecayDrops(level, villager, context);
+        if (decayDropResult != null) {
+            return decayDropResult;
+        }
+
         setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
         HiredPathTarget target = findTreeLog(level, villager, context);
         if (target == null) {
@@ -196,10 +208,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
             WorkResult bonemealResult = tryBonemealSapling(level, villager, context);
             if (bonemealResult != null) {
                 return bonemealResult;
-            }
-            WorkResult decayDropResult = collectDecayDrops(level, villager, context);
-            if (decayDropResult != null) {
-                return decayDropResult;
             }
             DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
             if (depositResult == DepositResult.MOVING) {
@@ -259,6 +267,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
             context.setProgressTicks(0);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target.blockPos());
             if (!moveToTarget(level, villager, context, target, 0.55D)) {
+                WorkResult accessLeafResult = clearTreeAccessLeaf(level, villager, context);
+                if (accessLeafResult != null) {
+                    return accessLeafResult;
+                }
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
                     clearActiveBreakingTarget(level, context, villager);
                     HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 20L * 30L);
@@ -277,7 +289,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         BlockPos blockingLeaf = firstBlockingLeaf(level, villager, target);
         if (blockingLeaf != null) {
             context.setProgressTicks(0);
-            return workBlockingLeaf(level, villager, context, blockingLeaf);
+            return workBlockingLeaf(level, villager, context, target, blockingLeaf);
         }
 
         int needed = adjustedTreeHarvestProgressGoal(level, context, target.blockPos(), axe);
@@ -377,6 +389,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
             return WorkResult.progressed("interaction.work.status.returning_bounds");
         }
+        WorkResult activeAccessLeafResult = continueActiveAccessLeaf(level, villager, context);
+        if (activeAccessLeafResult != null) {
+            return activeAccessLeafResult;
+        }
 
         ItemStack axe = ItemStack.EMPTY;
         BlockState nextLogState = firstPendingLogState(level, context);
@@ -472,6 +488,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 clearActiveBreakingTarget(level, context, villager);
                 return null;
             }
+            WorkResult accessLeafResult = clearTreeAccessLeaf(level, villager, context);
+            if (accessLeafResult != null) {
+                return accessLeafResult;
+            }
             BlockPos origin = pendingTreeOrigin(context);
             if (recordWorkPathFailure(level, villager, origin)) {
                 clearPendingTreeHarvest(context);
@@ -498,6 +518,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     removePendingPosition(context, PENDING_TREE_LEAVES_TAG, target.blockPos());
                     clearActiveBreakingTarget(level, context, villager);
                     return null;
+                }
+                WorkResult accessLeafResult = clearTreeAccessLeaf(level, villager, context);
+                if (accessLeafResult != null) {
+                    return accessLeafResult;
                 }
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
                     clearPendingTreeHarvest(context);
@@ -574,9 +598,13 @@ public final class LoggingWorker extends AbstractBlockWorker {
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
+            HiredPathTarget treeTarget,
             BlockPos blockingLeaf) {
         HiredPathTarget leafTarget = choosePhysicalReachableTarget(level, villager, context, List.of(blockingLeaf));
         if (leafTarget != null) {
+            if (canBreakAccessLeafFromCurrentPosition(level, villager, context, leafTarget)) {
+                return breakBlockingLeafInPlace(level, villager, context, treeTarget, leafTarget.blockPos());
+            }
             return workTreeAccessLeaf(level, villager, context, leafTarget);
         }
 
@@ -589,6 +617,43 @@ public final class LoggingWorker extends AbstractBlockWorker {
         HiredWorkerBrain.setFailure(context, "leaf_blocked_target", level.getGameTime() + 40L);
         setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, blockingLeaf);
         return WorkResult.idle("interaction.work.logging.blocked_target");
+    }
+
+    private WorkResult breakBlockingLeafInPlace(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredPathTarget treeTarget,
+            BlockPos leaf) {
+        clearWorkPathFailure(villager, leaf);
+        holdWorkPosition(villager, treeTarget);
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.WORKING, treeTarget.blockPos());
+
+        LeafBreakResult leafBreakResult = breakAccessLeaf(level, context, villager, leaf);
+        if (leafBreakResult == LeafBreakResult.BLOCKED) {
+            HiredWorkerBrain.setFailure(context, "access_leaf_blocked", level.getGameTime() + 40L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, leaf);
+            return WorkResult.idle("interaction.work.logging.blocked_target");
+        }
+        if (leafBreakResult == LeafBreakResult.OUTPUT_FULL) {
+            DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.55D);
+            if (depositResult == DepositResult.DEPOSITED) {
+                return WorkResult.progressed("interaction.work.logging.clearing_access_leaf");
+            }
+            if (depositResult == DepositResult.MOVING) {
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+                return WorkResult.progressed("interaction.work.logging.output_full_depositing");
+            }
+            if (depositResult == DepositResult.STORAGE_FULL) {
+                return WorkResult.idle(storageFullStatus(context));
+            }
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, leaf);
+            return WorkResult.idle("interaction.work.logging.output_full_blocked");
+        }
+
+        return WorkResult.progressed("interaction.work.logging.clearing_access_leaf");
     }
 
     private WorkResult continueActiveAccessLeaf(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -887,68 +952,15 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (!HiredLoggingOptions.pickUpDecayDrops(context.state()) || !canSeekDecayDrops(level, villager, context)) {
             return null;
         }
-        ItemEntity drop = findNearestDecayDrop(level, villager, context);
-        if (drop == null) {
-            return null;
-        }
-
-        context.setProgressTicks(0);
-        BlockPos dropPos = drop.blockPosition();
-        if (!context.hasOutputSpace()) {
-            DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.55D);
-            if (depositResult == DepositResult.DEPOSITED) {
-                return WorkResult.progressed("interaction.work.logging.output_full_depositing");
-            }
-            if (depositResult == DepositResult.MOVING) {
-                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("interaction.work.logging.output_full_depositing");
-            }
-            if (depositResult == DepositResult.STORAGE_FULL) {
-                return WorkResult.idle(storageFullStatus(context));
-            }
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, dropPos);
-            return WorkResult.idle("interaction.work.logging.output_full_blocked");
-        }
-
-        if (!canCollectDecayDropFromCurrentPosition(villager, context, drop)) {
-            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, dropPos);
-            if (!moveToDecayDrop(level, villager, context, drop, 0.55D)) {
-                if (recordWorkPathFailure(level, villager, dropPos)) {
-                    HiredWorkerBrain.setFailure(context, "decay_drop_unreachable", level.getGameTime() + 20L * 30L);
-                    setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, dropPos);
-                    return WorkResult.idle("interaction.work.logging.decay_drop_unreachable");
-                }
-                return WorkResult.progressed("interaction.work.logging.decay_drop_repositioning");
-            }
-            return WorkResult.progressed("interaction.work.logging.moving_to_decay_drop");
-        }
-
-        clearWorkPathFailure(villager, dropPos);
-        stopWorkNavigation(villager);
-        faceBlock(villager, drop.position());
-        HiredWorkerBrain.clearFailure(context);
-        setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, dropPos);
-
-        ItemStack stack = drop.getItem();
-        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, stack.copy());
-        int moved = stack.getCount() - remainder.getCount();
-        if (moved <= 0) {
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, dropPos);
-            return WorkResult.idle("interaction.work.logging.output_full_blocked");
-        }
-
-        if (remainder.isEmpty()) {
-            drop.discard();
-        } else {
-            drop.setItem(remainder);
-        }
-        swingWorkTool(villager);
-        setTaskState(context, HiredWorkerTaskState.IDLE);
-        return WorkResult.progressed(
-                "interaction.work.logging.collected_decay_drops",
-                Map.of("count", Integer.toString(moved)));
+        return HiredItemPickup.collectNearestOutputItem(
+                level,
+                villager,
+                context,
+                this,
+                LoggingWorker::isTreeDecayDrop,
+                DECAY_DROP_PICKUP_REACH_SQR,
+                0.55D,
+                DECAY_DROP_PICKUP_MESSAGES);
     }
 
     private boolean canSeekDecayDrops(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -967,80 +979,12 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return activeWorkTarget(level, context, villager) == null;
     }
 
-    private ItemEntity findNearestDecayDrop(ServerLevel level, Villager villager, HiredWorkContext context) {
-        List<ItemEntity> drops = new ArrayList<>(level.getEntitiesOfClass(
-                ItemEntity.class,
-                workAreaBounds(context),
-                drop -> isCollectableDecayDrop(level, context, villager, drop)));
-        drops.sort(Comparator.comparingDouble(villager::distanceToSqr));
-        return drops.isEmpty() ? null : drops.getFirst();
-    }
-
-    private static boolean isCollectableDecayDrop(
-            ServerLevel level,
-            HiredWorkContext context,
-            Villager villager,
-            ItemEntity drop) {
-        BlockPos pos = drop.blockPosition();
-        return drop.isAlive()
-                && !drop.hasPickUpDelay()
-                && isTreeDecayDrop(drop.getItem())
-                && context.isInsideWorkArea(pos)
-                && context.isLoaded(level, pos)
-                && !HiredPathMemory.isAvoided(level, villager, pos);
-    }
-
     private static boolean isTreeDecayDrop(ItemStack stack) {
         return !stack.isEmpty()
                 && (stack.is(Items.STICK)
                 || stack.is(Items.APPLE)
                 || stack.is(ItemTags.SAPLINGS)
                 || stack.is(Items.MANGROVE_PROPAGULE));
-    }
-
-    private static boolean canCollectDecayDropFromCurrentPosition(
-            Villager villager,
-            HiredWorkContext context,
-            ItemEntity drop) {
-        return context.isInsideWorkArea(villager.blockPosition())
-                && context.isInsideWorkArea(drop.blockPosition())
-                && villager.distanceToSqr(drop) <= DECAY_DROP_PICKUP_REACH_SQR;
-    }
-
-    private boolean moveToDecayDrop(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context,
-            ItemEntity drop,
-            double speed) {
-        if (!context.isInsideWorkArea(villager.blockPosition())
-                || !context.isInsideWorkArea(drop.blockPosition())) {
-            stopWorkNavigation(villager);
-            return false;
-        }
-        if (villager.distanceToSqr(drop) <= DECAY_DROP_PICKUP_REACH_SQR) {
-            stopWorkNavigation(villager);
-            faceBlock(villager, drop.position());
-            return true;
-        }
-
-        BlockPos targetPos = drop.blockPosition();
-        Path currentPath = villager.getNavigation().getPath();
-        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, context::isInsideWorkArea)) {
-            stopWorkNavigation(villager);
-            return false;
-        }
-        Path path = villager.getNavigation().createPath(targetPos, 0);
-        if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
-            villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
-            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, targetPos, speed, 0);
-            if (moved) {
-                HiredPathMemory.rememberNavigationProgress(level, villager, targetPos, villager.distanceToSqr(targetPos.getCenter()));
-            }
-            return moved;
-        }
-        HiredPathMemory.clearNavigationProgress(villager);
-        return false;
     }
 
     private WorkResult tryBonemealSapling(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -1947,16 +1891,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return !stack.isEmpty()
                 && !plantingItem.isEmpty()
                 && (ItemStack.isSameItemSameComponents(stack, plantingItem) || stack.is(plantingItem.getItem()));
-    }
-
-    private static AABB workAreaBounds(HiredWorkContext context) {
-        return new AABB(
-                context.workMin().getX(),
-                context.workMin().getY(),
-                context.workMin().getZ(),
-                context.workMax().getX() + 1.0D,
-                context.workMax().getY() + 1.0D,
-                context.workMax().getZ() + 1.0D);
     }
 
     private int adjustedTreeHarvestProgressGoal(
