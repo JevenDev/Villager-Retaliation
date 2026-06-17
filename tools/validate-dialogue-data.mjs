@@ -1348,7 +1348,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       objectiveLocation,
       objective,
       ["quest", "quest_id"],
-      ["stage", "stages"],
+      questFactStageReferenceKeys(objective, type),
       defaultQuestId,
       "fact objective"
     );
@@ -2699,22 +2699,17 @@ function checkQuestFactAction(file, action, location, type, defaultQuestId = "")
       errors.push(`${relative(file)}: ${location}.value or ${location}.stage is required for a set_variable action.`);
     }
     const explicitType = normalizedString(action.type);
-    const factKeys = readValues(action, ["variable", "key", "fact"])
-      .filter((value) => typeof value === "string")
-      .map(normalizedString);
-    const stageKeys = [];
-    if (Object.hasOwn(action, "stage")) {
-      stageKeys.push("stage");
-    }
-    if (["set_stage", "quest_stage", "stage"].includes(explicitType) || factKeys.includes("stage")) {
-      stageKeys.push("value");
-    }
     collectQuestStageReferences(
       file,
       location,
       action,
       ["quest", "quest_id", "id"],
-      stageKeys,
+      questFactStageReferenceKeys(action, explicitType, {
+        stageKeys: ["stage"],
+        valueKeys: ["value"],
+        factKeyFields: ["variable", "key", "fact"],
+        typeAliases: ["set_stage", "quest_stage", "stage"]
+      }),
       defaultQuestId,
       "quest fact action"
     );
@@ -3298,16 +3293,12 @@ function checkQuestFactCondition(file, condition, location, defaultQuestId = "")
     }
   }
   const type = normalizedString(condition.type);
-  const stageKeys = ["stage", "stages"];
-  if (type === "stage" || type === "quest_stage") {
-    stageKeys.push("value", "values");
-  }
   collectQuestStageReferences(
     file,
     location,
     condition,
     ["quest", "quest_id"],
-    stageKeys,
+    questFactStageReferenceKeys(condition, type),
     defaultQuestId,
     "quest fact condition"
   );
@@ -3512,6 +3503,21 @@ function collectQuestStageReferences(file, location, entry, questKeys, stageKeys
       pendingQuestStageReferences.push({ file, location, questId, stageId, reason });
     }
   }
+}
+
+function questFactStageReferenceKeys(entry, type, options = {}) {
+  const stageKeys = [...(options.stageKeys ?? ["stage", "stages"])];
+  const valueKeys = options.valueKeys ?? ["value", "values"];
+  const factKeyFields = options.factKeyFields ?? ["key", "variable", "counter", "fact"];
+  const typeAliases = options.typeAliases ?? ["stage", "quest_stage"];
+  const normalizedType = normalizedString(type);
+  const factKeys = readValues(entry, factKeyFields)
+    .filter((value) => typeof value === "string")
+    .map(normalizedString);
+  if (typeAliases.includes(normalizedType) || factKeys.includes("stage")) {
+    stageKeys.push(...valueKeys);
+  }
+  return [...new Set(stageKeys)];
 }
 
 function hasStringValues(entry, keys) {
