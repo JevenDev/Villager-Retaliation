@@ -2568,8 +2568,23 @@ public final class VillagerQuestService {
             case BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case REPUTATION -> progress != null && matchesReputationObjective(level, player, progress, objective);
             case CHOICE, FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
-            case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
+            case CONDITION -> objectiveConditionState(player, context, level, definition, progress, objective) == ConditionMatch.MET;
         };
+    }
+
+    private static ConditionMatch objectiveConditionState(
+            ServerPlayer player,
+            DialogueContext context,
+            ServerLevel level,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Objective objective) {
+        if (context != null) {
+            return objective.conditions().stream().allMatch(condition -> condition.matches(context))
+                    ? ConditionMatch.MET
+                    : ConditionMatch.UNMET;
+        }
+        return conditionsStateWithoutLiveContext(player, level, definition, progress, objective.conditions());
     }
 
     private static boolean isAtLocationObjective(ServerLevel level, BlockPos playerPos, QuestDefinition.Objective objective) {
@@ -4779,7 +4794,10 @@ public final class VillagerQuestService {
                     parts.add("scope_key=" + blankAs(factObjectiveScopeKey(level, player, definition, progress, objective), "unresolved"));
                 }
             }
-            case CONDITION -> parts.add("conditions=" + objective.conditions().size());
+            case CONDITION -> {
+                parts.add("conditions=" + objective.conditions().size());
+                parts.add("condition_state=" + debugEnum(objectiveConditionState(player, context, level, definition, progress, objective)));
+            }
         }
         return String.join(" ", parts);
     }
