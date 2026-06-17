@@ -876,11 +876,13 @@ function checkQuest(file, data) {
   checkQuestLinks(file, data, "links");
   checkQuestOffer(file, data.offer, "offer", defaultQuestId);
   checkQuestTarget(file, data.target, "target");
+  const objectiveIds = questObjectiveIds(data.objectives);
+  const stageIds = questStageIds(data.stages);
   checkQuestObjectives(file, data.objectives, "objectives", defaultQuestId);
   checkQuestRules(file, data.rules, "rules", defaultQuestId);
   checkQuestTracker(file, data.tracker, "tracker");
-  checkQuestStages(file, data.stages, "stages", defaultQuestId, questObjectiveIds(data.objectives));
-  checkQuestTriggers(file, data.triggers, "triggers", defaultQuestId);
+  checkQuestStages(file, data.stages, "stages", defaultQuestId, objectiveIds);
+  checkQuestTriggers(file, data.triggers, "triggers", defaultQuestId, stageIds);
   checkQuestRewards(file, data.rewards, "rewards");
   checkQuestDialogue(file, data.dialogue, "dialogue");
   warnQuestDialogueLinkCoexistence(file, data);
@@ -1458,6 +1460,15 @@ function questObjectiveIds(objectives) {
     .filter(Boolean));
 }
 
+function questStageIds(stages) {
+  if (!stages || typeof stages !== "object" || Array.isArray(stages)) {
+    return new Set();
+  }
+  return new Set(Object.keys(stages)
+    .map((id) => id.trim())
+    .filter(Boolean));
+}
+
 function checkQuestStagePredicates(file, predicates, location, defaultQuestId = "", objectiveIds = new Set()) {
   if (predicates === undefined) {
     return;
@@ -1695,7 +1706,7 @@ function checkStageReferences(file, refs, stageIds, location) {
   }
 }
 
-function checkQuestTriggers(file, triggers, location, defaultQuestId = "") {
+function checkQuestTriggers(file, triggers, location, defaultQuestId = "", stageIds = new Set()) {
   if (triggers === undefined) {
     return;
   }
@@ -1726,7 +1737,16 @@ function checkQuestTriggers(file, triggers, location, defaultQuestId = "") {
     checkStringValues(file, trigger, triggerLocation, ["event"], questTriggerEvents, "quest trigger event", { requireAny: true });
     const event = normalizedString(trigger.event);
     checkConditions(file, trigger, triggerLocation, defaultQuestId);
+    const stageRefs = readValues(trigger, ["stage", "stages"]);
     checkStringList(file, trigger, triggerLocation, ["stage", "stages"], "quest trigger stage");
+    const nonblankStageRefs = stageRefs.filter((stageRef) => typeof stageRef === "string" && stageRef.trim());
+    if (nonblankStageRefs.length > 0) {
+      if (stageIds.size === 0) {
+        errors.push(`${relative(file)}: ${triggerLocation} references quest stages, but the quest does not define stages.`);
+      } else {
+        checkStageReferences(file, nonblankStageRefs, stageIds, triggerLocation);
+      }
+    }
     checkDialogueTreeActions(file, trigger.actions, `${triggerLocation}.actions`, defaultQuestId, {
       liveContextWarningUsage: questTriggerEventsThatMayLackLiveIssuer.has(event) ? "quest trigger action" : ""
     });
