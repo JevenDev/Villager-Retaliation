@@ -171,6 +171,7 @@ public record QuestDefinition(
             Set<ResourceLocation> blockTypes,
             Set<ResourceLocation> blockTags,
             Set<ResourceLocation> memoryTags,
+            Set<String> giftReactions,
             QuestFactScope factScope,
             ResourceLocation factQuestId,
             Set<ResourceLocation> factTags,
@@ -197,6 +198,7 @@ public record QuestDefinition(
             blockTypes = blockTypes == null ? Set.of() : Set.copyOf(blockTypes);
             blockTags = blockTags == null ? Set.of() : Set.copyOf(blockTags);
             memoryTags = memoryTags == null ? Set.of() : Set.copyOf(memoryTags);
+            giftReactions = giftReactions == null ? Set.of() : Set.copyOf(giftReactions);
             factScope = factScope == null ? QuestFactScope.PLAYER : factScope;
             factTags = factTags == null ? Set.of() : Set.copyOf(factTags);
             factKey = factKey == null ? "" : factKey;
@@ -304,6 +306,7 @@ public record QuestDefinition(
         BLOCK_BREAK,
         BLOCK_PLACE,
         MEMORY_EVENT,
+        GIFT,
         FACT,
         CONDITION;
 
@@ -317,6 +320,7 @@ public record QuestDefinition(
                 case "block_break", "break_block", "mine_block", "mine" -> BLOCK_BREAK;
                 case "block_place", "place_block", "place" -> BLOCK_PLACE;
                 case "memory_event", "village_event", "village_memory", "memory", "event" -> MEMORY_EVENT;
+                case "gift", "give_gift", "gift_given" -> GIFT;
                 case "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage" -> FACT;
                 case "condition" -> CONDITION;
                 default -> null;

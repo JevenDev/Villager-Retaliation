@@ -363,6 +363,43 @@ Useful built-in memory tags include `baby_born`, `iron_golem_defeated_mob`, `thu
 
 Memory objectives only count new player-associated memory writes while the quest is active. Use quest fact tags or variables for permanent history gates, such as unlocking a branch after an event that may have happened earlier.
 
+## Example: Gift Quest
+
+Use `gift` when a quest should advance from accepted villager gifts. Gift objectives count gift events, not item stack size. Add `item` to require a specific item and `reaction` / `gift_reactions` to require loved, liked, neutral, disliked, or hated gifts.
+
+```json
+{
+  "id": "my_pack:earn_the_smiths_trust",
+  "display": {
+    "title": "Earn The Smith's Trust",
+    "description": "Bring a gift the smith actually values."
+  },
+  "objectives": [
+    {
+      "id": "give_loved_gift",
+      "type": "gift",
+      "reaction": "loved",
+      "count": 1,
+      "tracker": {
+        "text": "Give the quest giver a loved gift.",
+        "complete_text": "The gift landed exactly right."
+      }
+    }
+  ]
+}
+```
+
+Gift objective fields:
+
+| Field | Meaning |
+| --- | --- |
+| `item` | Optional exact item id, such as `minecraft:diamond` |
+| `reaction`, `gift_reaction` | One reaction: `loved`, `liked`, `neutral`, `disliked`, or `hated` |
+| `reactions`, `gift_reactions` | One or more accepted reactions |
+| `count` | Number of accepted gift events |
+
+Gift objectives also support the same item detail filters as `item_check`, such as `enchantments`, durability bounds, and `custom_data`. Tracker placeholders include `{objective_item}`, `{objective_item_id}`, and `{objective_gift_reaction}`.
+
 ## Example: Fact Objective
 
 Use `fact` when a quest should wait for durable story state written by a dialogue choice, quest trigger, forced dialogue, or another quest. Fact objectives use the same vocabulary as `quest_fact` conditions: `scope`, `tag`, `key`, `variable`, `counter`, `stage`, `value`, `min`, and `max`.

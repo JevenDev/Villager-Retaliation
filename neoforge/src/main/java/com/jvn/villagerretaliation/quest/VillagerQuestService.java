@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
@@ -1345,6 +1346,32 @@ public final class VillagerQuestService {
         return changed;
     }
 
+    private static boolean updateGiftProgress(
+            ServerLevel level,
+            ServerPlayer player,
+            ItemStack giftedStack,
+            VillagerGiftPreferences.GiftReaction reaction,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        boolean changed = false;
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            if (objective.type() != QuestDefinition.ObjectiveType.GIFT || progress.objectiveComplete(objective.id())) {
+                continue;
+            }
+            if (!matchesGiftObjective(giftedStack, reaction, objective)) {
+                continue;
+            }
+            int count = progress.addObjectiveCounter(objective.id(), 1);
+            changed = true;
+            if (count >= objective.count()) {
+                if (progress.markObjectiveComplete(objective.id())) {
+                    markQuestObjectiveFact(level, player, definition, objective);
+                }
+            }
+        }
+        return changed;
+    }
+
     private static boolean requiredObjectivesComplete(
             ServerPlayer player,
             DialogueContext context,
@@ -1381,7 +1408,7 @@ public final class VillagerQuestService {
             case LOCATION_VISIT -> isAtLocationObjective(level, player.blockPosition(), objective);
             case ITEM_CHECK -> hasItemCount(player, objective);
             case MOB_KILL -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
-            case BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
+            case BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT, GIFT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
             case CONDITION -> context != null && objective.conditions().stream().allMatch(condition -> condition.matches(context));
         };
@@ -1482,6 +1509,24 @@ public final class VillagerQuestService {
             }
         }
         return objective.memoryTags().contains(event.tagId());
+    }
+
+    private static boolean matchesGiftObjective(
+            ItemStack giftedStack,
+            VillagerGiftPreferences.GiftReaction reaction,
+            QuestDefinition.Objective objective) {
+        if (giftedStack == null || giftedStack.isEmpty() || reaction == null) {
+            return false;
+        }
+        if (!objective.giftReactions().isEmpty()
+                && !objective.giftReactions().contains(reaction.name().toLowerCase(Locale.ROOT))) {
+            return false;
+        }
+        if (objective.item() == null) {
+            return true;
+        }
+        Optional<Item> item = BuiltInRegistries.ITEM.getOptional(objective.item());
+        return item.isPresent() && matchesObjectiveItem(giftedStack, objective, item.get());
     }
 
     private static boolean matchesFactObjective(
@@ -2286,6 +2331,7 @@ public final class VillagerQuestService {
                     case BLOCK_BREAK -> "break";
                     case BLOCK_PLACE -> "build";
                     case MEMORY_EVENT -> "event";
+                    case GIFT -> "gift";
                     case FACT -> "fact";
                     case CONDITION -> "inactive";
                 };
@@ -2302,6 +2348,7 @@ public final class VillagerQuestService {
             case "break" -> "Break {objective_count} {objective_block}.";
             case "build" -> "Place {objective_count} {objective_block}.";
             case "event" -> "Wait for {objective_memory}.";
+            case "gift" -> "Give {objective_count} {objective_item}.";
             case "fact" -> "Resolve {objective_fact}.";
             case "return" -> "Return to {issuer}.";
             case "abandoned" -> "Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} to pick this back up.";
@@ -2546,6 +2593,7 @@ public final class VillagerQuestService {
             values.put("objective_block_id", "");
             values.put("objective_memory", "");
             values.put("objective_memory_id", "");
+            values.put("objective_gift_reaction", "");
             values.put("objective_fact", "");
             values.put("objective_fact_id", "");
             values.put("objective_fact_key", "");
@@ -2573,6 +2621,7 @@ public final class VillagerQuestService {
         values.put("objective_block_id", objectiveBlockId(objective));
         values.put("objective_memory", objectiveMemoryName(objective));
         values.put("objective_memory_id", objectiveMemoryId(objective));
+        values.put("objective_gift_reaction", objectiveGiftReaction(objective));
         values.put("objective_fact", objectiveFactName(objective));
         values.put("objective_fact_id", objectiveFactId(objective));
         values.put("objective_fact_key", objective.factKey());
@@ -2617,7 +2666,7 @@ public final class VillagerQuestService {
             case ITEM_CHECK -> objective.item() == null
                     ? 0.0F
                     : Mth.clamp((float) itemCount(player, objective) / (float) objective.count(), 0.0F, 1.0F);
-            case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT -> progress == null
+            case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, MEMORY_EVENT, GIFT -> progress == null
                     ? 0.0F
                     : Mth.clamp((float) progress.objectiveCounter(objective.id()) / (float) objective.count(), 0.0F, 1.0F);
             case STRUCTURE_VISIT, LOCATION_VISIT, FACT, CONDITION -> progress != null
@@ -2804,6 +2853,57 @@ public final class VillagerQuestService {
         }
     }
 
+    public static void onGiftGiven(
+            ServerLevel level,
+            ServerPlayer player,
+            Villager villager,
+            ItemStack giftedStack,
+            VillagerGiftPreferences.GiftReaction reaction,
+            int reputationValue) {
+        if (level == null
+                || player == null
+                || giftedStack == null
+                || giftedStack.isEmpty()
+                || reaction == null
+                || player.level() != level) {
+            return;
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        boolean changed = false;
+        boolean progressNotice = false;
+        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
+            if (!VillagerQuestResources.hasGiftObjectives(level.getServer(), entry.getKey())) {
+                continue;
+            }
+            QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
+            if (definition == null) {
+                continue;
+            }
+            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            if (!activeConditionsMetForPlayer(player, definition, progress)) {
+                continue;
+            }
+            boolean questProgressChanged = updateGiftProgress(level, player, giftedStack, reaction, definition, progress);
+            if (!questProgressChanged) {
+                continue;
+            }
+            changed = true;
+            progressNotice = true;
+            sendQuestProgressNotification(
+                    player,
+                    definition,
+                    progress,
+                    "quest.updated",
+                    "Quest updated: {quest}");
+            changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
+        }
+        if (changed) {
+            data.setDirty();
+            sendTrackerSync(player, progressNotice);
+        }
+    }
+
     private static void onBlockEvent(
             ServerLevel level,
             ServerPlayer player,
@@ -2944,6 +3044,13 @@ public final class VillagerQuestService {
             return "";
         }
         return objective.memoryTags().isEmpty() ? "" : objective.memoryTags().iterator().next().toString();
+    }
+
+    private static String objectiveGiftReaction(QuestDefinition.Objective objective) {
+        if (objective == null || objective.type() != QuestDefinition.ObjectiveType.GIFT) {
+            return "";
+        }
+        return objective.giftReactions().isEmpty() ? "" : objective.giftReactions().iterator().next();
     }
 
     private static String objectiveFactName(QuestDefinition.Objective objective) {

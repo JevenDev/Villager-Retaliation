@@ -46,7 +46,7 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
     private static volatile CachedQuests cachedQuests =
-            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
 
     private VillagerQuestResources() {
     }
@@ -56,7 +56,7 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
@@ -91,6 +91,10 @@ public final class VillagerQuestResources {
 
     public static boolean hasFactObjectives(MinecraftServer server, ResourceLocation id) {
         return id != null && loadCache(server).factQuestIds().contains(id);
+    }
+
+    public static boolean hasGiftObjectives(MinecraftServer server, ResourceLocation id) {
+        return id != null && loadCache(server).giftQuestIds().contains(id);
     }
 
     public static Set<ResourceLocation> exclusiveGroupQuestIds(MinecraftServer server, ResourceLocation group) {
@@ -130,6 +134,7 @@ public final class VillagerQuestResources {
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_BREAK),
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_PLACE),
                     objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
+                    objectiveQuestIds(quests, QuestDefinition.ObjectiveType.GIFT),
                     memoryEventQuestIds(quests),
                     exclusiveGroupQuestIds(quests),
                     triggerEventQuestIds(quests));
@@ -448,6 +453,7 @@ public final class VillagerQuestResources {
         EntitySelectors entitySelectors = readEntitySelectors(location, context, entry);
         BlockSelectors blockSelectors = readBlockSelectors(location, context, entry);
         MemoryEventSelectors memoryEventSelectors = readMemoryEventSelectors(location, context, entry);
+        Set<String> giftReactions = readGiftReactions(location, context, entry);
         FactObjective factObjective = readFactObjective(location, context, entry, defaultQuestId);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
         if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
@@ -501,6 +507,7 @@ public final class VillagerQuestResources {
                 blockSelectors.blockTypes(),
                 blockSelectors.blockTags(),
                 memoryEventSelectors.memoryTags(),
+                giftReactions,
                 factObjective.scope(),
                 factObjective.questId(),
                 factObjective.tags(),
@@ -589,6 +596,22 @@ public final class VillagerQuestResources {
             }
         }
         return new MemoryEventSelectors(Set.copyOf(memoryTags));
+    }
+
+    private static Set<String> readGiftReactions(ResourceLocation location, String context, JsonObject entry) {
+        Set<String> reactions = new LinkedHashSet<>();
+        for (String value : DatapackJsonReader.readStringList(entry, "reaction", "reactions", "gift_reaction", "gift_reactions")) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+            if (normalized.isBlank()) {
+                continue;
+            }
+            if (!Set.of("loved", "liked", "neutral", "disliked", "hated").contains(normalized)) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "gift reaction \"" + value + "\" must be loved, liked, neutral, disliked, or hated.");
+            } else {
+                reactions.add(normalized);
+            }
+        }
+        return Set.copyOf(reactions);
     }
 
     private static FactObjective readFactObjective(
@@ -1286,6 +1309,7 @@ public final class VillagerQuestResources {
             Set<ResourceLocation> blockBreakQuestIds,
             Set<ResourceLocation> blockPlaceQuestIds,
             Set<ResourceLocation> factQuestIds,
+            Set<ResourceLocation> giftQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
             Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds) {

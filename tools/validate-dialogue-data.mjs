@@ -366,12 +366,14 @@ const dialogueTreeActionKeys = new Set([
   "lines"
 ]);
 const dialogueTreeQuestActions = new Set(["start", "accept", "begin", "remind", "reminder", "details", "turn_in", "turnin", "complete", "claim", "abandon", "drop", "cancel", "remove", "block", "lock", "consume", "close", "close_branch", "branch_lock"]);
-const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "memory_event", "village_event", "village_memory", "memory", "event", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
+const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "memory_event", "village_event", "village_memory", "memory", "event", "gift", "give_gift", "gift_given", "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage", "condition"]);
 const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "coordinates", "coords", "region_visit"]);
 const questMobKillObjectiveTypes = new Set(["mob_kill", "entity_kill", "kill"]);
 const questBlockObjectiveTypes = new Set(["block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place"]);
 const questMemoryObjectiveTypes = new Set(["memory_event", "village_event", "village_memory", "memory", "event"]);
+const questGiftObjectiveTypes = new Set(["gift", "give_gift", "gift_given"]);
 const questFactObjectiveTypes = new Set(["fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"]);
+const questGiftReactions = new Set(["loved", "liked", "neutral", "disliked", "hated"]);
 const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "completed", "abandoned", "expired"]);
 const questAbandonmentModes = new Set(["remove_forever", "allow_repickup", "cooldown"]);
 const questDialogueStages = [
@@ -499,6 +501,7 @@ const knownPlaceholders = new Set([
   "objective_block_id",
   "objective_memory",
   "objective_memory_id",
+  "objective_gift_reaction",
   "objective_fact",
   "objective_fact_id",
   "objective_fact_key",
@@ -956,6 +959,10 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "memory_tags",
       "event",
       "events",
+      "reaction",
+      "reactions",
+      "gift_reaction",
+      "gift_reactions",
       "quest",
       "quest_id",
       "scope",
@@ -1007,6 +1014,7 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkStringList(file, objective, objectiveLocation, ["block", "blocks"], "block id or #block tag");
     checkStringList(file, objective, objectiveLocation, ["block_tag", "block_tags"], "block tag id");
     checkStringList(file, objective, objectiveLocation, ["memory", "memories", "memory_event", "memory_events", "memory_tag", "memory_tags", "event", "events"], "village memory tag id");
+    checkStringValues(file, objective, objectiveLocation, ["reaction", "reactions", "gift_reaction", "gift_reactions"], questGiftReactions, "gift reaction");
     checkStringList(file, objective, objectiveLocation, ["quest", "quest_id"], "quest id");
     checkStringValues(file, objective, objectiveLocation, ["scope"], questFactScopes, "quest fact scope");
     checkStringList(file, objective, objectiveLocation, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");

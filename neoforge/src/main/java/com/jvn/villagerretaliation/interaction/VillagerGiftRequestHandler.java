@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -106,6 +107,7 @@ public final class VillagerGiftRequestHandler {
                 giftPreference.reaction(),
                 reputationValue
         );
+        VillagerQuestService.onGiftGiven(level, player, villager, giftedStack, giftPreference.reaction(), reputationValue);
         VillagerMoodService.recordGift(level, villager, player, giftPreference.reaction(), reputationValue);
         reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
         sendGiftNotice(player, villager, giftedStack, reputationValue);
