@@ -98,9 +98,33 @@ const conditionTypes = new Set([
   "villager_level",
   "trade_level",
   "quest",
+  "quest_fact",
+  "quest_tag",
+  "quest_variable",
+  "quest_counter",
+  "fact",
   "weather",
   "time",
   "time_of_day"
+]);
+
+const questFactConditionKeys = new Set([
+  "type",
+  "quest",
+  "quest_id",
+  "scope",
+  "tag",
+  "tags",
+  "fact_tag",
+  "quest_tag",
+  "key",
+  "variable",
+  "counter",
+  "fact",
+  "value",
+  "values",
+  "min",
+  "max"
 ]);
 
 const conditionKeys = {
@@ -136,6 +160,11 @@ const conditionKeys = {
   villager_level: new Set(["type", "level", "levels", "min", "min_level", "max", "max_level"]),
   trade_level: new Set(["type", "level", "levels", "min", "min_level", "max", "max_level"]),
   quest: new Set(["type", "quest", "quest_id", "id", "state", "states"]),
+  quest_fact: questFactConditionKeys,
+  quest_tag: questFactConditionKeys,
+  quest_variable: questFactConditionKeys,
+  quest_counter: questFactConditionKeys,
+  fact: questFactConditionKeys,
   weather: new Set(["type", "state", "states", "weather", "weathers"]),
   time: new Set(["type", "value", "values", "time", "times"]),
   time_of_day: new Set(["type", "value", "values", "time", "times"])
@@ -289,7 +318,9 @@ const relationshipStates = new Set([
 const recruitmentScenarios = new Set(["betrayed", "injured", "left_behind"]);
 const weatherStates = new Set(["clear", "rain", "thunder"]);
 const timesOfDay = new Set(["morning", "afternoon", "evening", "night"]);
-const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "gossip", "memory", "loot", "notification", "tracker", "forced_dialogue"]);
+const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "gossip", "memory", "loot", "notification", "tracker", "forced_dialogue", "set_tag", "clear_tag", "set_variable", "counter"]);
+const questFactScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "quest", "quest_progress", "player_quest", "villager", "issuer", "quest_giver", "village", "settlement"]);
+const questCompletionScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const dialogueTreeActionKeys = new Set([
   "type",
   "quest",
@@ -308,10 +339,25 @@ const dialogueTreeActionKeys = new Set([
   "text",
   "forced_dialogue",
   "flash_tracker",
+  "set_tag",
+  "clear_tag",
+  "fact_tag",
+  "quest_tag",
+  "tag",
+  "variable",
+  "key",
+  "value",
+  "fact",
+  "counter",
+  "increment_counter",
+  "scope",
+  "fact_scope",
   "lines"
 ]);
 const dialogueTreeQuestActions = new Set(["start", "remind", "turn_in", "abandon"]);
-const questObjectiveTypes = new Set(["structure_visit", "item_check", "condition"]);
+const questObjectiveTypes = new Set(["structure_visit", "location_visit", "coordinate", "coordinates", "coords", "region_visit", "item_check", "mob_kill", "entity_kill", "kill", "condition"]);
+const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "coordinates", "coords", "region_visit"]);
+const questMobKillObjectiveTypes = new Set(["mob_kill", "entity_kill", "kill"]);
 const questTriggerEvents = new Set(["player_tick", "proximity", "started", "progress", "completed", "abandoned", "expired"]);
 const questAbandonmentModes = new Set(["remove_forever", "allow_repickup", "cooldown"]);
 const questDialogueStages = [
@@ -434,10 +480,13 @@ const knownPlaceholders = new Set([
   "objective",
   "objective_complete",
   "objective_count",
+  "objective_entity",
   "objective_id",
   "objective_item",
   "objective_item_id",
   "objective_progress",
+  "objective_progress_count",
+  "objective_radius",
   "objective_target_x",
   "objective_target_y",
   "objective_target_z",
@@ -473,6 +522,12 @@ const knownPlaceholders = new Set([
   "prior_retaliations",
   "previous_villager",
   "quest",
+  "quest_fact_counter",
+  "quest_fact_key",
+  "quest_fact_scope",
+  "quest_fact_scope_key",
+  "quest_fact_tag",
+  "quest_fact_value",
   "quest_id",
   "radius",
   "range",
@@ -841,10 +896,19 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
       "optional",
       "structure",
       "dimension",
+      "x",
+      "y",
+      "z",
+      "pos",
+      "radius",
       "pieces",
       "search_radius",
       "discovery_radius",
       "item",
+      "entity",
+      "entities",
+      "entity_tag",
+      "entity_tags",
       "count",
       "consume",
       "enchantment",
@@ -865,10 +929,17 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     checkOptionalBoolean(file, objective, objectiveLocation, "optional");
     checkOptionalString(file, objective, objectiveLocation, "structure");
     checkOptionalString(file, objective, objectiveLocation, "dimension");
+    for (const key of ["x", "y", "z"]) {
+      checkOptionalInteger(file, objective, objectiveLocation, key);
+    }
+    checkQuestObjectivePosition(file, objective.pos, `${objectiveLocation}.pos`);
+    checkOptionalInteger(file, objective, objectiveLocation, "radius", { min: 0 });
     checkStringList(file, objective, objectiveLocation, ["pieces"], "structure piece");
     checkOptionalInteger(file, objective, objectiveLocation, "search_radius", { min: 1 });
     checkOptionalInteger(file, objective, objectiveLocation, "discovery_radius", { min: 1 });
     checkOptionalString(file, objective, objectiveLocation, "item");
+    checkStringList(file, objective, objectiveLocation, ["entity", "entities"], "entity id or #entity tag");
+    checkStringList(file, objective, objectiveLocation, ["entity_tag", "entity_tags"], "entity tag id");
     checkOptionalInteger(file, objective, objectiveLocation, "count", { min: 1 });
     checkOptionalBoolean(file, objective, objectiveLocation, "consume");
     checkQuestObjectiveItemRequirements(file, objective, objectiveLocation);
@@ -878,13 +949,43 @@ function checkQuestObjectives(file, objectives, location, defaultQuestId = "") {
     if (type === "structure_visit" && !stringValue(objective.structure)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.structure is required for a structure_visit objective.`);
     }
+    if (questLocationObjectiveTypes.has(type) && !hasQuestObjectivePosition(objective)) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must define x, y, and z, or pos for a location_visit objective.`);
+    }
     if (type === "item_check" && !stringValue(objective.item)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.item is required for an item_check objective.`);
+    }
+    if (questMobKillObjectiveTypes.has(type) && readValues(objective, ["entity", "entities", "entity_tag", "entity_tags"]).length === 0) {
+      errors.push(`${relative(file)}: ${objectiveLocation} must define entity, entities, entity_tag, or entity_tags for a mob_kill objective.`);
     }
     if (type === "condition" && (!Array.isArray(objective.conditions) || objective.conditions.length === 0)) {
       errors.push(`${relative(file)}: ${objectiveLocation}.conditions is required for a condition objective.`);
     }
   }
+}
+
+function checkQuestObjectivePosition(file, value, location) {
+  if (value === undefined) {
+    return;
+  }
+  if (!Array.isArray(value)) {
+    errors.push(`${relative(file)}: ${location} must be an array of three integers.`);
+    return;
+  }
+  if (value.length < 3) {
+    errors.push(`${relative(file)}: ${location} must contain x, y, and z.`);
+    return;
+  }
+  value.slice(0, 3).forEach((coordinate, index) => {
+    if (!Number.isInteger(coordinate)) {
+      errors.push(`${relative(file)}: ${location}[${index}] must be an integer.`);
+    }
+  });
+}
+
+function hasQuestObjectivePosition(objective) {
+  return (Number.isInteger(objective.x) && Number.isInteger(objective.y) && Number.isInteger(objective.z))
+    || (Array.isArray(objective.pos) && objective.pos.length >= 3 && objective.pos.slice(0, 3).every(Number.isInteger));
 }
 
 function checkQuestObjectiveItemRequirements(file, objective, location) {
@@ -968,6 +1069,8 @@ function checkQuestRules(file, rules, location, defaultQuestId = "") {
     "cross_villager_compatible",
     "max_starts",
     "max_completions",
+    "completion_scope",
+    "scope",
     "completion_cooldown_ticks",
     "completion_cooldown_seconds",
     "completion_cooldown_days",
@@ -986,6 +1089,7 @@ function checkQuestRules(file, rules, location, defaultQuestId = "") {
   for (const key of ["max_starts", "max_completions", "completion_cooldown_ticks", "completion_cooldown_seconds", "completion_cooldown_days", "abandonment_cooldown_ticks", "abandonment_cooldown_seconds", "abandonment_cooldown_days"]) {
     checkOptionalInteger(file, rules, location, key, { min: 0 });
   }
+  checkStringValues(file, rules, location, ["completion_scope", "scope"], questCompletionScopes, "quest completion scope");
   checkStringValues(file, rules, location, ["abandonment"], questAbandonmentModes, "quest abandonment mode");
   checkQuestActive(file, rules.active, `${location}.active`, defaultQuestId);
   checkQuestExpiration(file, rules.expiration, `${location}.expiration`, defaultQuestId);
@@ -1359,6 +1463,9 @@ function checkDialogueTreeActions(file, actions, location, defaultQuestId = "") 
         }
       }
     }
+    if (isQuestFactActionType(type)) {
+      checkQuestFactAction(file, action, actionLocation, type, defaultQuestId);
+    }
     if (type === "forced_dialogue") {
       checkStringList(file, action, actionLocation, ["forced_dialogue"], "forced dialogue id");
       for (const forcedDialogueId of readValues(action, ["forced_dialogue"])) {
@@ -1402,6 +1509,49 @@ function checkForcedDialogue(file, data) {
     checkForcedDialogueOptions(file, entry.options, `entries[${entryIndex}].options`, entryQuestId);
     checkForcedDialogueOptions(file, entry.leave_options, `entries[${entryIndex}].leave_options`, entryQuestId);
     checkForcedDialogueOption(file, entry.leave_option, `entries[${entryIndex}].leave_option`, entryQuestId);
+  }
+}
+
+function checkQuestFactAction(file, action, location, type, defaultQuestId = "") {
+  checkStringList(file, action, location, ["quest", "quest_id", "id"], "quest id");
+  checkStringValues(file, action, location, ["scope", "fact_scope"], questFactScopes, "quest fact scope");
+  const questIds = readValues(action, ["quest", "quest_id", "id"]);
+  for (const questId of questIds.length === 0 && defaultQuestId ? [defaultQuestId] : questIds) {
+    if (typeof questId === "string" && questId.trim()) {
+      pendingQuestReferences.push({
+        file,
+        location,
+        id: questId.trim(),
+        reason: "quest fact action"
+      });
+    }
+  }
+
+  if (type === "set_tag") {
+    checkStringList(file, action, location, ["set_tag", "fact_tag", "quest_tag", "tag"], "quest fact tag");
+    if (readValues(action, ["set_tag", "fact_tag", "quest_tag", "tag"]).length === 0) {
+      errors.push(`${relative(file)}: ${location} must define set_tag, fact_tag, quest_tag, or tag for a set_tag action.`);
+    }
+  } else if (type === "clear_tag") {
+    checkStringList(file, action, location, ["clear_tag", "fact_tag", "quest_tag", "tag"], "quest fact tag");
+    if (readValues(action, ["clear_tag", "fact_tag", "quest_tag", "tag"]).length === 0) {
+      errors.push(`${relative(file)}: ${location} must define clear_tag, fact_tag, quest_tag, or tag for a clear_tag action.`);
+    }
+  } else if (type === "set_variable") {
+    checkStringList(file, action, location, ["variable", "key", "fact"], "quest fact key");
+    checkOptionalString(file, action, location, "value");
+    if (readValues(action, ["variable", "key", "fact"]).length === 0) {
+      errors.push(`${relative(file)}: ${location} must define variable, key, or fact for a set_variable action.`);
+    }
+    if (!Object.hasOwn(action, "value")) {
+      errors.push(`${relative(file)}: ${location}.value is required for a set_variable action.`);
+    }
+  } else if (type === "counter") {
+    checkStringList(file, action, location, ["counter", "increment_counter", "key", "fact"], "quest fact counter");
+    checkOptionalInteger(file, action, location, "amount");
+    if (readValues(action, ["counter", "increment_counter", "key", "fact"]).length === 0) {
+      errors.push(`${relative(file)}: ${location} must define counter, increment_counter, key, or fact for a counter action.`);
+    }
   }
 }
 
@@ -1696,10 +1846,37 @@ function checkCondition(file, condition, location, defaultQuestId = "") {
         });
       }
     }
+  } else if (type === "quest_fact" || type === "quest_tag" || type === "quest_variable" || type === "quest_counter" || type === "fact") {
+    checkQuestFactCondition(file, condition, location, defaultQuestId);
   } else if (type === "weather") {
     checkStringValues(file, condition, location, ["state", "states", "weather", "weathers"], weatherStates, "weather state", { requireAny: true });
   } else if (type === "time" || type === "time_of_day") {
     checkStringValues(file, condition, location, ["value", "values", "time", "times"], timesOfDay, "time of day", { requireAny: true });
+  }
+}
+
+function checkQuestFactCondition(file, condition, location, defaultQuestId = "") {
+  checkStringList(file, condition, location, ["quest", "quest_id"], "quest id");
+  checkStringValues(file, condition, location, ["scope"], questFactScopes, "quest fact scope");
+  checkStringList(file, condition, location, ["tag", "tags", "fact_tag", "quest_tag"], "quest fact tag");
+  checkStringList(file, condition, location, ["key", "variable", "counter", "fact"], "quest fact key");
+  checkStringList(file, condition, location, ["value", "values"], "quest fact value");
+  checkOptionalInteger(file, condition, location, "min");
+  checkOptionalInteger(file, condition, location, "max");
+
+  const questIds = readValues(condition, ["quest", "quest_id"]);
+  for (const questId of questIds.length === 0 && defaultQuestId ? [defaultQuestId] : questIds) {
+    if (typeof questId === "string" && questId.trim()) {
+      pendingQuestReferences.push({
+        file,
+        location,
+        id: questId.trim(),
+        reason: "quest fact condition"
+      });
+    }
+  }
+  if (readValues(condition, ["tag", "tags", "fact_tag", "quest_tag", "key", "variable", "counter", "fact"]).length === 0) {
+    errors.push(`${relative(file)}: ${location} must define tag, tags, fact_tag, quest_tag, key, variable, counter, or fact.`);
   }
 }
 
@@ -1867,16 +2044,47 @@ function normalizedString(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
+function canonicalActionType(value) {
+  const normalized = normalizedString(value);
+  if (!normalized) {
+    return "";
+  }
+  if (["notification", "notify", "hud", "message"].includes(normalized)) return "notification";
+  if (["tracker", "quest_tracker", "flash_tracker"].includes(normalized)) return "tracker";
+  if (["forced_dialogue", "force_dialogue", "dialogue"].includes(normalized)) return "forced_dialogue";
+  if (["quest", "quest_action"].includes(normalized)) return "quest";
+  if (["experience", "xp"].includes(normalized)) return "experience";
+  if (["reputation", "rep"].includes(normalized)) return "reputation";
+  if (["gossip", "gossip_reputation"].includes(normalized)) return "gossip";
+  if (["memory", "memory_event"].includes(normalized)) return "memory";
+  if (["loot", "loot_table"].includes(normalized)) return "loot";
+  if (["set_tag", "quest_tag", "add_tag", "tag"].includes(normalized)) return "set_tag";
+  if (["clear_tag", "remove_tag", "unset_tag"].includes(normalized)) return "clear_tag";
+  if (["set_variable", "variable", "set_fact", "fact"].includes(normalized)) return "set_variable";
+  if (["counter", "increment_counter", "add_counter"].includes(normalized)) return "counter";
+  return "";
+}
+
+function isQuestFactActionType(type) {
+  return type === "set_tag" || type === "clear_tag" || type === "set_variable" || type === "counter";
+}
+
 function actionType(action, defaultQuestId = "") {
-  const explicit = normalizedString(action.type);
+  const explicit = canonicalActionType(action.type);
   if (explicit) {
     return explicit;
   }
-  if (Object.hasOwn(action, "quest") || Object.hasOwn(action, "quest_id") || Object.hasOwn(action, "id")) {
-    return "quest";
+  if (Object.hasOwn(action, "set_tag") || Object.hasOwn(action, "fact_tag") || Object.hasOwn(action, "quest_tag")) {
+    return "set_tag";
   }
-  if (defaultQuestId && Object.hasOwn(action, "action")) {
-    return "quest";
+  if (Object.hasOwn(action, "clear_tag")) {
+    return "clear_tag";
+  }
+  if (Object.hasOwn(action, "variable") || (Object.hasOwn(action, "key") && Object.hasOwn(action, "value"))) {
+    return "set_variable";
+  }
+  if (Object.hasOwn(action, "counter") || Object.hasOwn(action, "increment_counter")) {
+    return "counter";
   }
   if (Object.hasOwn(action, "forced_dialogue")) {
     return "forced_dialogue";
@@ -1901,6 +2109,12 @@ function actionType(action, defaultQuestId = "") {
   }
   if (Object.hasOwn(action, "notification") || Object.hasOwn(action, "trigger") || Object.hasOwn(action, "text")) {
     return "notification";
+  }
+  if (Object.hasOwn(action, "quest") || Object.hasOwn(action, "quest_id") || Object.hasOwn(action, "id")) {
+    return "quest";
+  }
+  if (defaultQuestId && Object.hasOwn(action, "action")) {
+    return "quest";
   }
   return "";
 }

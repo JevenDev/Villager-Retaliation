@@ -183,12 +183,6 @@ public record VillagerActionDefinition(
         if (explicit != Kind.NONE) {
             return explicit;
         }
-        if (hasQuestIdField(entry)) {
-            return Kind.QUEST;
-        }
-        if (defaultQuestId != null && entry.has("action")) {
-            return Kind.QUEST;
-        }
         if (entry.has("set_tag") || entry.has("fact_tag") || entry.has("quest_tag")) {
             return Kind.SET_TAG;
         }
@@ -200,6 +194,12 @@ public record VillagerActionDefinition(
         }
         if (entry.has("counter") || entry.has("increment_counter")) {
             return Kind.COUNTER;
+        }
+        if (hasQuestIdField(entry)) {
+            return Kind.QUEST;
+        }
+        if (defaultQuestId != null && entry.has("action")) {
+            return Kind.QUEST;
         }
         if (entry.has("forced_dialogue")) {
             return Kind.FORCED_DIALOGUE;
