@@ -1093,11 +1093,6 @@ public final class VillagerQuestService {
         return changed;
     }
 
-    private static boolean hasMobKillObjective(QuestDefinition definition) {
-        return definition.objectives().stream()
-                .anyMatch(objective -> objective.type() == QuestDefinition.ObjectiveType.MOB_KILL);
-    }
-
     private static boolean updateMobKillProgress(
             ServerLevel level,
             ServerPlayer player,
@@ -2331,8 +2326,11 @@ public final class VillagerQuestService {
         boolean changed = false;
         boolean progressNotice = false;
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
+            if (!VillagerQuestResources.hasMobKillObjectives(level.getServer(), entry.getKey())) {
+                continue;
+            }
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
-            if (definition == null || !hasMobKillObjective(definition)) {
+            if (definition == null) {
                 continue;
             }
             VillagerQuestSavedData.QuestProgress progress = entry.getValue();

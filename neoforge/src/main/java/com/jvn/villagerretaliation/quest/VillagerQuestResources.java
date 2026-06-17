@@ -44,7 +44,7 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_STRUCTURE_SEARCH_RADIUS = 256;
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
-    private static volatile CachedQuests cachedQuests = new CachedQuests(null, Map.of());
+    private static volatile CachedQuests cachedQuests = new CachedQuests(null, Map.of(), Set.of());
 
     private VillagerQuestResources() {
     }
@@ -54,36 +54,53 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of());
+        cachedQuests = new CachedQuests(null, Map.of(), Set.of());
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
-        return load(server).values();
+        return loadCache(server).quests().values();
     }
 
     public static Optional<QuestDefinition> quest(MinecraftServer server, ResourceLocation id) {
         if (id == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(load(server).get(id));
+        return Optional.ofNullable(loadCache(server).quests().get(id));
     }
 
-    private static Map<ResourceLocation, QuestDefinition> load(MinecraftServer server) {
+    public static boolean hasMobKillObjectives(MinecraftServer server, ResourceLocation id) {
+        return id != null && loadCache(server).mobKillQuestIds().contains(id);
+    }
+
+    private static CachedQuests loadCache(MinecraftServer server) {
         CachedQuests current = cachedQuests;
         if (current.server() == server) {
-            return current.quests();
+            return current;
         }
 
         synchronized (VillagerQuestResources.class) {
             current = cachedQuests;
             if (current.server() == server) {
-                return current.quests();
+                return current;
             }
 
             Map<ResourceLocation, QuestDefinition> quests = read(server);
-            cachedQuests = new CachedQuests(server, quests);
-            return quests;
+            CachedQuests loaded = new CachedQuests(server, quests, mobKillQuestIds(quests));
+            cachedQuests = loaded;
+            return loaded;
         }
+    }
+
+    private static Set<ResourceLocation> mobKillQuestIds(Map<ResourceLocation, QuestDefinition> quests) {
+        Set<ResourceLocation> ids = new LinkedHashSet<>();
+        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
+            boolean hasMobKillObjective = entry.getValue().objectives().stream()
+                    .anyMatch(objective -> objective.type() == QuestDefinition.ObjectiveType.MOB_KILL);
+            if (hasMobKillObjective) {
+                ids.add(entry.getKey());
+            }
+        }
+        return Set.copyOf(ids);
     }
 
     private static Map<ResourceLocation, QuestDefinition> read(MinecraftServer server) {
@@ -920,6 +937,9 @@ public final class VillagerQuestResources {
         }
     }
 
-    private record CachedQuests(MinecraftServer server, Map<ResourceLocation, QuestDefinition> quests) {
+    private record CachedQuests(
+            MinecraftServer server,
+            Map<ResourceLocation, QuestDefinition> quests,
+            Set<ResourceLocation> mobKillQuestIds) {
     }
 }
