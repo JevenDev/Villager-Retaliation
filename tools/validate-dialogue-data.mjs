@@ -2104,6 +2104,7 @@ function checkDialogueTree(file, data) {
     checkProfessionReferences(file, entry, `entries[${index}]`, ["professions"], "dialogue tree entry");
     warnQuestDialogueTreeLifecycleEntryState(file, entry, `entries[${index}]`, defaultQuestId);
   }
+  warnQuestDialogueTreeLifecycleEntryCoverage(file, entries, defaultQuestId);
 
   const nodes = dialogueTreeNodes(data.nodes);
   if (nodes.length === 0) {
@@ -2298,6 +2299,21 @@ function warnQuestDialogueTreeLifecycleEntryState(file, entry, location, default
   }
   if (!conditionListHasQuestState(entry.conditions, expectedStates, defaultQuestId)) {
     warnings.push(`${relative(file)}: ${location} has lifecycle entry id "${entry.id}" without a matching quest state condition.`);
+  }
+}
+
+function warnQuestDialogueTreeLifecycleEntryCoverage(file, entries, defaultQuestId) {
+  if (!defaultQuestId || !isQuestDialogueTreeFile(file)) {
+    return;
+  }
+  const entryIds = new Set(entries
+    .filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry))
+    .map((entry) => stringValue(entry.id))
+    .filter(Boolean));
+  for (const entryId of questDialogueTreeLifecycleStates.keys()) {
+    if (!entryIds.has(entryId)) {
+      warnings.push(`${relative(file)}: quest dialogue tree is missing lifecycle entry "${entryId}".`);
+    }
   }
 }
 
