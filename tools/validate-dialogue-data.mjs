@@ -682,6 +682,7 @@ const warnings = [];
 const questDefinitions = new Map();
 const dialogueTreeDefinitions = new Map();
 const forcedDialogueDefinitions = new Map();
+const forcedDialogueQuestModules = [];
 const pendingQuestReferences = [];
 const pendingDialogueTreeLinks = [];
 const pendingForcedDialogueReferences = [];
@@ -2992,6 +2993,17 @@ function dialogueTreePathQuestline(file) {
 }
 
 function indexForcedDialogue(file, data) {
+  const questModule = forcedDialogueQuestModule(file);
+  if (questModule) {
+    const metadataQuest = stringValue(metadataObject(data).quest);
+    forcedDialogueQuestModules.push({
+      file,
+      questline: questModule.questline,
+      questId: metadataQuest || questModule.questId,
+      inferredQuestId: questModule.questId,
+      metadataQuest
+    });
+  }
   for (const entry of entriesFor(data)) {
     const entryId = stringValue(entry?.id);
     if (!entryId) {
@@ -3004,6 +3016,20 @@ function indexForcedDialogue(file, data) {
     }
     forcedDialogueDefinitions.set(entryId, { file: relative(file) });
   }
+}
+
+function forcedDialogueQuestModule(file) {
+  const relativePath = path.relative(path.join(root, roots.forcedDialogue), file).replaceAll(path.sep, "/");
+  const parts = relativePath.split("/");
+  if (parts.length < 3 || parts[0] !== "quests" || !parts.at(-1).endsWith(".json")) {
+    return null;
+  }
+  const questline = parts[1];
+  const questName = parts.at(-1).slice(0, -".json".length);
+  return {
+    questline,
+    questId: questName ? `villagerretaliation:${questName}` : ""
+  };
 }
 
 function checkQuestMetadataConsistency(file, data, location, defaultQuestId = "") {
@@ -3058,6 +3084,7 @@ function validateCrossReferences() {
   validateQuestParentGraph();
   validateQuestlineFolders();
   validateDialogueTreeQuestlineMetadata();
+  validateForcedDialogueQuestModules();
 
   for (const reference of pendingForcedDialogueReferences) {
     if (!forcedDialogueDefinitions.has(reference.id)) {
@@ -3080,6 +3107,25 @@ function validateCrossReferences() {
 
     if (link.metadataQuest && tree.metadataQuest && tree.metadataQuest !== link.metadataQuest) {
       errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree points to "${link.treeId}" but its metadata.quest is "${tree.metadataQuest}" instead of "${link.metadataQuest}".`);
+    }
+  }
+}
+
+function validateForcedDialogueQuestModules() {
+  for (const module of forcedDialogueQuestModules) {
+    if (!module.questId) {
+      continue;
+    }
+    const quest = questDefinitions.get(module.questId);
+    if (!quest) {
+      errors.push(`${relative(module.file)}: quest forced-dialogue module references missing quest id "${module.questId}".`);
+      continue;
+    }
+    if (module.metadataQuest && module.metadataQuest !== module.inferredQuestId) {
+      warnings.push(`${relative(module.file)}: metadata.quest "${module.metadataQuest}" differs from inferred quest module id "${module.inferredQuestId}".`);
+    }
+    if (quest.questline && module.questline && quest.questline !== module.questline) {
+      errors.push(`${relative(module.file)}: quest forced-dialogue folder "${module.questline}" does not match quest "${module.questId}" questline "${quest.questline}".`);
     }
   }
 }
