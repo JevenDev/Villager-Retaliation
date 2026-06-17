@@ -180,6 +180,14 @@ const questLiveOnlyConditionTypes = new Set([
   "memory"
 ]);
 
+const questSavedMemoryKinds = new Set([
+  "recent_broken_bed",
+  "recent_direct_hit",
+  "gear_report_used_in_combat",
+  "gear_report_unused_in_combat",
+  "recruitment_memory"
+]);
+
 const questLiveContextActionTypes = new Set([
   "quest",
   "reputation",
@@ -2313,7 +2321,7 @@ function warnLiveOnlyQuestCondition(file, condition, location, usage) {
     warnLiveOnlyQuestCondition(file, condition.condition, `${location}.condition`, usage);
     return;
   }
-  if (type === "memory" && normalizedString(condition.kind) === "recruitment_memory") {
+  if (type === "memory" && questSavedMemoryKinds.has(normalizedString(condition.kind))) {
     return;
   }
   if (questLiveOnlyConditionTypes.has(type)) {

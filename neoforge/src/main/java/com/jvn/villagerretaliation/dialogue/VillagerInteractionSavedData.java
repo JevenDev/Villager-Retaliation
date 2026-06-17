@@ -991,6 +991,20 @@ public class VillagerInteractionSavedData extends SavedData {
         return entry == null ? null : entry.unreportedGearReport(villagerId);
     }
 
+    public boolean hasRecentBrokenBedMemory(UUID villagerId, UUID playerId, long gameTime, long maxAgeTicks) {
+        InteractionEntry entry = getIndexedEntry(villagerId, playerId);
+        return entry != null
+                && entry.lastBrokenBedGameTime() != Long.MIN_VALUE
+                && gameTime - entry.lastBrokenBedGameTime() <= maxAgeTicks;
+    }
+
+    public boolean hasRecentDirectHitMemory(UUID villagerId, UUID playerId, long gameTime, long maxAgeTicks) {
+        InteractionEntry entry = getIndexedEntry(villagerId, playerId);
+        return entry != null
+                && entry.lastDirectHitGameTime() != Long.MIN_VALUE
+                && gameTime - entry.lastDirectHitGameTime() <= maxAgeTicks;
+    }
+
     public VillagerInteractionTracker.GearReport claimUnreportedGearReport(UUID villagerId, UUID playerId) {
         InteractionEntry entry = getIndexedEntry(villagerId, playerId);
         return entry == null ? null : entry.claimUnreportedGearReport(villagerId);

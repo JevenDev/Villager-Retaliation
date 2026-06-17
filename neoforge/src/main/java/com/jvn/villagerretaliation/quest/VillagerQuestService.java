@@ -80,6 +80,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerQuestService {
     private static final int QUEST_PROGRESS_SCAN_INTERVAL_TICKS = 20;
+    private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 60L * 20L;
+    private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;
     private static final int QUEST_TRACKER_HEARTBEAT_TICKS = 20 * 30;
     private static final int MAX_STAGE_ADVANCES_PER_CHECK = 8;
     private static final int APPROXIMATE_COORDINATE_STEP = 50;
@@ -1679,9 +1681,11 @@ public final class VillagerQuestService {
         if (condition instanceof DialogueCondition.Reputation reputation) {
             return reputationStateWithoutLiveContext(player, level, progress, reputation);
         }
-        if (condition instanceof DialogueCondition.Memory memory
-                && memory.kind() == DialogueCondition.MemoryKind.RECRUITMENT_MEMORY) {
-            return recruitmentMemoryPresentWithoutLiveContext(player, level, progress);
+        if (condition instanceof DialogueCondition.Memory memory) {
+            ConditionMatch memoryState = memoryStateWithoutLiveContext(player, level, progress, memory);
+            if (memoryState != ConditionMatch.UNKNOWN) {
+                return memoryState;
+            }
         }
         if (condition instanceof DialogueCondition.SocialAttribute socialAttribute) {
             return socialAttributeStateWithoutLiveContext(level, progress, socialAttribute);
@@ -2016,6 +2020,50 @@ public final class VillagerQuestService {
             return ConditionMatch.UNMET;
         }
         return ConditionMatch.MET;
+    }
+
+    private static ConditionMatch memoryStateWithoutLiveContext(
+            ServerPlayer player,
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.Memory memory) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        if (villagerId == null) {
+            return ConditionMatch.UNKNOWN;
+        }
+        VillagerInteractionSavedData interactionData = VillagerInteractionSavedData.get(level);
+        return switch (memory.kind()) {
+            case RECENT_BROKEN_BED -> interactionData.hasRecentBrokenBedMemory(
+                    villagerId,
+                    player.getUUID(),
+                    level.getGameTime(),
+                    BROKEN_BED_MEMORY_TICKS)
+                    ? ConditionMatch.MET
+                    : ConditionMatch.UNMET;
+            case RECENT_DIRECT_HIT -> interactionData.hasRecentDirectHitMemory(
+                    villagerId,
+                    player.getUUID(),
+                    level.getGameTime(),
+                    DIRECT_HIT_MEMORY_TICKS)
+                    ? ConditionMatch.MET
+                    : ConditionMatch.UNMET;
+            case GEAR_REPORT_USED_IN_COMBAT -> {
+                VillagerInteractionTracker.GearReport gearReport =
+                        interactionData.unreportedGearReport(villagerId, player.getUUID());
+                yield gearReport != null && gearReport.usedInCombat()
+                        ? ConditionMatch.MET
+                        : ConditionMatch.UNMET;
+            }
+            case GEAR_REPORT_UNUSED_IN_COMBAT -> {
+                VillagerInteractionTracker.GearReport gearReport =
+                        interactionData.unreportedGearReport(villagerId, player.getUUID());
+                yield gearReport != null && !gearReport.usedInCombat()
+                        ? ConditionMatch.MET
+                        : ConditionMatch.UNMET;
+            }
+            case RECRUITMENT_MEMORY -> recruitmentMemoryPresentWithoutLiveContext(player, level, progress);
+            case EVENT_TAG -> ConditionMatch.UNKNOWN;
+        };
     }
 
     private static ConditionMatch recruitmentMemoryPresentWithoutLiveContext(
