@@ -367,6 +367,23 @@ const recruitmentScenarios = new Set(["betrayed", "injured", "left_behind"]);
 const moodStates = new Set(["neutral", "content", "grateful", "afraid", "angry", "suspicious", "grieving", "protective", "hopeful", "stressed", "proud", "lonely"]);
 const weatherStates = new Set(["clear", "rain", "thunder"]);
 const timesOfDay = new Set(["morning", "afternoon", "evening", "night"]);
+const vanillaVillagerProfessions = new Set([
+  "none",
+  "armorer",
+  "butcher",
+  "cartographer",
+  "cleric",
+  "farmer",
+  "fisherman",
+  "fletcher",
+  "leatherworker",
+  "librarian",
+  "mason",
+  "nitwit",
+  "shepherd",
+  "toolsmith",
+  "weaponsmith"
+]);
 const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "gossip", "memory", "loot", "notification", "tracker", "forced_dialogue", "set_tag", "clear_tag", "set_variable", "counter"]);
 const questFactScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "quest", "quest_progress", "player_quest", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const questCompletionScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "villager", "issuer", "quest_giver", "village", "settlement"]);
@@ -1037,6 +1054,7 @@ function checkQuestOffer(file, offer, location, defaultQuestId = "") {
   }
   checkUnknownObjectKeys(file, offer, location, new Set(["professions", "min_villager_level", "skills", "conditions"]));
   checkStringList(file, offer, location, ["professions"], "profession id");
+  checkProfessionReferences(file, offer, location, ["professions"], "quest offer");
   checkStringValues(file, offer, location, ["min_villager_level"], villagerLevels, "villager trade level");
   checkConditions(file, offer, location, defaultQuestId);
   if (offer.skills !== undefined) {
@@ -2034,6 +2052,7 @@ function checkDialogueTree(file, data) {
     checkDialogueMetadata(file, entry, `entries[${index}]`);
     checkConditions(file, entry, `entries[${index}]`, stringValue(metadataObject(entry).quest) || defaultQuestId);
     checkStringList(file, entry, `entries[${index}]`, ["professions"], "profession id");
+    checkProfessionReferences(file, entry, `entries[${index}]`, ["professions"], "dialogue tree entry");
     warnQuestDialogueTreeLifecycleEntryState(file, entry, `entries[${index}]`, defaultQuestId);
   }
 
@@ -2547,6 +2566,47 @@ function checkMemoryTagId(file, location, value, reason) {
   }
   if (!memoryTags.has(normalizedString(id))) {
     errors.push(`${relative(file)}: ${location} references unknown legacy village memory tag "${id}" from ${reason}; use a known built-in tag or a namespaced custom tag id.`);
+  }
+}
+
+function checkProfessionReferences(file, entry, location, keys, reason) {
+  for (const key of keys) {
+    checkProfessionReference(file, `${location}.${key}`, entry?.[key], reason);
+  }
+}
+
+function checkProfessionReference(file, location, value, reason) {
+  if (typeof value === "string") {
+    checkProfessionId(file, location, value, reason);
+    return;
+  }
+  if (!Array.isArray(value)) {
+    return;
+  }
+  value.forEach((child, index) => {
+    if (typeof child === "string") {
+      checkProfessionId(file, `${location}[${index}]`, child, reason);
+    }
+  });
+}
+
+function checkProfessionId(file, location, value, reason) {
+  const raw = stringValue(value);
+  if (!raw) {
+    return;
+  }
+  let normalized = raw.toLowerCase();
+  if (normalized === "unemployed" || normalized === "minecraft:unemployed") {
+    normalized = "minecraft:none";
+  }
+  const namespaced = normalized.includes(":") ? normalized : `minecraft:${normalized}`;
+  const parsed = parseResourceId(namespaced);
+  if (!parsed || !parsed.valid || !parsed.namespace || !parsed.path) {
+    errors.push(`${relative(file)}: ${location} references invalid profession id "${value}" from ${reason}.`);
+    return;
+  }
+  if (parsed.namespace === "minecraft" && !vanillaVillagerProfessions.has(parsed.path)) {
+    errors.push(`${relative(file)}: ${location} references unknown vanilla profession "${value}" from ${reason}; use a known profession or a full modded profession id.`);
   }
 }
 
