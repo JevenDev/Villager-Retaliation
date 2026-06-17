@@ -1094,6 +1094,8 @@ function checkQuest(file, data) {
 
   checkOptionalBoolean(file, data, "root", "replace");
   checkOptionalBoolean(file, data, "root", "remove");
+  checkOptionalString(file, data, "root", "id");
+  checkResourceIdValues(file, data, "root", ["id", "parent"], "quest resource id");
   checkOptionalString(file, data, "root", "message_prefix");
   checkOptionalString(file, data, "root", "text_prefix");
   checkDialogueMetadata(file, data, "root");
@@ -2152,6 +2154,8 @@ function checkDialogueTree(file, data) {
   checkUnknownObjectKeys(file, data, "root", dialogueTreeRootKeys);
   checkOptionalBoolean(file, data, "root", "replace");
   checkOptionalBoolean(file, data, "root", "remove");
+  checkOptionalString(file, data, "root", "id");
+  checkResourceIdValues(file, data, "root", ["id"], "dialogue tree resource id");
   checkDialogueTreeDisplay(file, data.display, "display");
   checkDialogueMetadata(file, data, "root");
   checkDialogueTreeMetadataConsistency(file, data, "root");
