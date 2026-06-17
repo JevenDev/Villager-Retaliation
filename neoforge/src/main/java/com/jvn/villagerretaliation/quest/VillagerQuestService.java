@@ -733,7 +733,8 @@ public final class VillagerQuestService {
                 VillagerPresetNameRegistry.resolveDisplayName(context.villager()).getString(),
                 VillagerProfessionUtil.id(context.profession()).toString(),
                 context.level().dimension(),
-                context.villager().blockPosition());
+                context.villager().blockPosition(),
+                liveVillageScopeKey(context.level(), context.villager()));
         if (target != null && !target.objectiveId().isBlank()) {
             started.setTarget(context.villager().getUUID(), target.dimension(), target.pos(), target.objectiveId());
         }
@@ -2253,11 +2254,11 @@ public final class VillagerQuestService {
 
     private static String factVillageScopeKey(ServerLevel level, VillagerQuestSavedData.QuestProgress progress) {
         Villager villager = startedVillager(level, progress);
-        String dimension = level.dimension().location().toString();
         if (villager != null && villager.isAlive()) {
-            return VillageMembership.resolve(level, villager)
-                    .map(area -> "village:" + dimension + ":" + factPosKey(area.centerBlock()))
-                    .orElseGet(() -> "village:" + dimension + ":" + factPosKey(villager.blockPosition()));
+            return liveVillageScopeKey(level, villager);
+        }
+        if (!progress.issuerVillageKey().isBlank()) {
+            return progress.issuerVillageKey();
         }
         if (progress.issuerPos() == null) {
             return "";
@@ -2266,6 +2267,13 @@ public final class VillagerQuestService {
                 ? level.dimension()
                 : progress.issuerDimension();
         return "village:" + issuerDimension.location() + ":" + factPosKey(progress.issuerPos());
+    }
+
+    private static String liveVillageScopeKey(ServerLevel level, Villager villager) {
+        String dimension = level.dimension().location().toString();
+        return VillageMembership.resolve(level, villager)
+                .map(area -> "village:" + dimension + ":" + factPosKey(area.centerBlock()))
+                .orElseGet(() -> "village:" + dimension + ":" + factPosKey(villager.blockPosition()));
     }
 
     private static String factPosKey(BlockPos pos) {

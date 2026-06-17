@@ -36,6 +36,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_ISSUER_PROFESSION = "IssuerProfession";
     private static final String TAG_ISSUER_DIMENSION = "IssuerDimension";
     private static final String TAG_ISSUER_POS = "IssuerPos";
+    private static final String TAG_ISSUER_VILLAGE_KEY = "IssuerVillageKey";
     private static final String TAG_TARGET_DIMENSION = "TargetDimension";
     private static final String TAG_TARGET_POS = "TargetPos";
     private static final String TAG_TARGET_OBJECTIVE = "TargetObjective";
@@ -247,6 +248,7 @@ public class VillagerQuestSavedData extends SavedData {
         private String issuerProfession = "";
         private ResourceKey<Level> issuerDimension;
         private BlockPos issuerPos;
+        private String issuerVillageKey = "";
         private ResourceKey<Level> targetDimension;
         private BlockPos targetPos;
         private String targetObjectiveId = "";
@@ -273,6 +275,7 @@ public class VillagerQuestSavedData extends SavedData {
             progress.hasProof = tag.getBoolean(TAG_HAS_PROOF);
             progress.issuerName = tag.getString(TAG_ISSUER_NAME);
             progress.issuerProfession = tag.getString(TAG_ISSUER_PROFESSION);
+            progress.issuerVillageKey = tag.getString(TAG_ISSUER_VILLAGE_KEY);
             progress.startCount = tag.getInt(TAG_START_COUNT);
             progress.completionCount = tag.getInt(TAG_COMPLETION_COUNT);
             progress.abandonCount = tag.getInt(TAG_ABANDON_COUNT);
@@ -354,6 +357,9 @@ public class VillagerQuestSavedData extends SavedData {
                 posTag.putInt("Y", this.issuerPos.getY());
                 posTag.putInt("Z", this.issuerPos.getZ());
                 tag.put(TAG_ISSUER_POS, posTag);
+            }
+            if (!this.issuerVillageKey.isBlank()) {
+                tag.putString(TAG_ISSUER_VILLAGE_KEY, this.issuerVillageKey);
             }
             tag.putInt(TAG_START_COUNT, this.startCount);
             tag.putInt(TAG_COMPLETION_COUNT, this.completionCount);
@@ -453,6 +459,10 @@ public class VillagerQuestSavedData extends SavedData {
             return this.issuerPos;
         }
 
+        public String issuerVillageKey() {
+            return this.issuerVillageKey;
+        }
+
         public ResourceKey<Level> targetDimension() {
             return this.targetDimension;
         }
@@ -509,6 +519,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.hasProof = false;
             this.consumedReason = "";
             this.currentStage = "started";
+            this.issuerVillageKey = "";
             this.triggerTimes.clear();
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
@@ -520,7 +531,8 @@ public class VillagerQuestSavedData extends SavedData {
                 String displayName,
                 String professionId,
                 ResourceKey<Level> dimension,
-                BlockPos pos) {
+                BlockPos pos,
+                String villageKey) {
             if (villagerId != null) {
                 this.startedVillagerId = villagerId;
             }
@@ -528,6 +540,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.issuerProfession = professionId == null ? "" : professionId;
             this.issuerDimension = dimension;
             this.issuerPos = pos == null ? null : pos.immutable();
+            this.issuerVillageKey = villageKey == null ? "" : villageKey;
         }
 
         public void setTarget(UUID villagerId, ResourceKey<Level> dimension, BlockPos pos, String objectiveId) {
