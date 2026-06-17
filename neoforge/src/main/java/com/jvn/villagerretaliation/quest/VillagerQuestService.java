@@ -20,8 +20,13 @@ import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.profile.VillagerProfile;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
+import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
+import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
+import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
@@ -1054,6 +1059,7 @@ public final class VillagerQuestService {
                 context.villager().getUUID(),
                 VillagerPresetNameRegistry.resolveDisplayName(context.villager()).getString(),
                 VillagerProfessionUtil.id(context.profession()).toString(),
+                context.villager().getVillagerData().getLevel(),
                 context.level().dimension(),
                 context.villager().blockPosition(),
                 liveVillageScopeKey(context.level(), context.villager()));
@@ -1655,6 +1661,24 @@ public final class VillagerQuestService {
         if (condition instanceof DialogueCondition.QuestFact fact) {
             return questFactStateWithoutLiveContext(player, level, definition, progress, fact);
         }
+        if (condition instanceof DialogueCondition.Reputation reputation) {
+            return reputationStateWithoutLiveContext(player, level, progress, reputation);
+        }
+        if (condition instanceof DialogueCondition.SocialAttribute socialAttribute) {
+            return socialAttributeStateWithoutLiveContext(level, progress, socialAttribute);
+        }
+        if (condition instanceof DialogueCondition.Skill skill) {
+            return skillStateWithoutLiveContext(level, progress, skill);
+        }
+        if (condition instanceof DialogueCondition.Family family) {
+            return familyStateWithoutLiveContext(level, progress, family);
+        }
+        if (condition instanceof DialogueCondition.Relationship relationship) {
+            return relationshipStateWithoutLiveContext(level, progress, relationship);
+        }
+        if (condition instanceof DialogueCondition.VillagerLevel villagerLevel) {
+            return villagerLevelStateWithoutLiveContext(progress, villagerLevel);
+        }
         if (condition instanceof DialogueCondition.Weather weather) {
             return weather.states().contains(savedWeatherState(level, player, progress))
                     ? ConditionMatch.MET
@@ -1767,6 +1791,179 @@ public final class VillagerQuestService {
         return !fact.values().isEmpty() || fact.min() != null || fact.max() != null || variable.isPresent() || counter != 0
                 ? ConditionMatch.MET
                 : ConditionMatch.UNMET;
+    }
+
+    private static ConditionMatch reputationStateWithoutLiveContext(
+            ServerPlayer player,
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.Reputation reputation) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        if (villagerId == null) {
+            return ConditionMatch.UNKNOWN;
+        }
+        VillagerReputationSavedData.ReputationEntry entry =
+                VillagerReputationSavedData.get(level).get(villagerId, player.getUUID());
+        int value = entry == null ? 0 : entry.reputation();
+        VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(value);
+        if (!reputation.levels().isEmpty() && !reputation.levels().contains(reputationLevel)) {
+            return ConditionMatch.UNMET;
+        }
+        if (reputation.minReputation() != null && value < reputation.minReputation()) {
+            return ConditionMatch.UNMET;
+        }
+        if (reputation.maxReputation() != null && value > reputation.maxReputation()) {
+            return ConditionMatch.UNMET;
+        }
+        return ConditionMatch.MET;
+    }
+
+    private static ConditionMatch socialAttributeStateWithoutLiveContext(
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.SocialAttribute socialAttribute) {
+        Optional<VillagerProfile> profile = savedIssuerProfile(level, progress);
+        if (profile.isEmpty()) {
+            return ConditionMatch.UNKNOWN;
+        }
+        for (var attribute : socialAttribute.attributes()) {
+            int value = profile.get().socialAttributes().get(attribute);
+            if (socialAttribute.minValue() != null && value < socialAttribute.minValue()) {
+                continue;
+            }
+            if (socialAttribute.maxValue() != null && value > socialAttribute.maxValue()) {
+                continue;
+            }
+            return ConditionMatch.MET;
+        }
+        return ConditionMatch.UNMET;
+    }
+
+    private static ConditionMatch skillStateWithoutLiveContext(
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.Skill skill) {
+        Optional<VillagerProfile> profile = savedIssuerProfile(level, progress);
+        if (profile.isEmpty()) {
+            return ConditionMatch.UNKNOWN;
+        }
+        for (var villagerSkill : skill.skills()) {
+            int value = profile.get().skills().get(villagerSkill);
+            if (skill.minValue() != null && value < skill.minValue()) {
+                continue;
+            }
+            if (skill.maxValue() != null && value > skill.maxValue()) {
+                continue;
+            }
+            if (skill.minRank() != null && value < skill.minRank().minInclusive()) {
+                continue;
+            }
+            if (skill.maxRank() != null && value > skill.maxRank().maxInclusive()) {
+                continue;
+            }
+            return ConditionMatch.MET;
+        }
+        return ConditionMatch.UNMET;
+    }
+
+    private static Optional<VillagerProfile> savedIssuerProfile(
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        return villagerId == null ? Optional.empty() : VillagerProfileManager.getProfile(level, villagerId);
+    }
+
+    private static ConditionMatch familyStateWithoutLiveContext(
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.Family family) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        if (villagerId == null) {
+            return ConditionMatch.UNKNOWN;
+        }
+        VillagerFamilyTreeSnapshot snapshot = VillagerSocialGraphService.familySnapshot(level, villagerId);
+        if (family.relations().isEmpty()) {
+            return snapshot.hasFamily() ? ConditionMatch.MET : ConditionMatch.UNMET;
+        }
+        for (String relation : family.relations()) {
+            if (savedFamilyRelationMatches(snapshot, relation)) {
+                return ConditionMatch.MET;
+            }
+        }
+        return ConditionMatch.UNMET;
+    }
+
+    private static boolean savedFamilyRelationMatches(VillagerFamilyTreeSnapshot snapshot, String relation) {
+        return switch (relation) {
+            case "family", "any" -> snapshot.hasFamily();
+            case "parent" -> snapshot.hasParent();
+            case "sibling" -> snapshot.hasSibling();
+            case "spouse" -> snapshot.hasSpouse();
+            case "child" -> snapshot.hasChild();
+            case "grandparent" -> snapshot.hasGrandparent();
+            case "grandchild" -> snapshot.hasGrandchild();
+            case "descendant" -> snapshot.hasDescendant();
+            case "aunt_uncle", "aunt_or_uncle" -> snapshot.hasAuntUncle();
+            case "cousin" -> snapshot.hasCousin();
+            case "niece_nephew", "niece_or_nephew" -> snapshot.hasNieceNephew();
+            case "extended_family" -> snapshot.hasExtendedFamily();
+            case "deceased_family" -> snapshot.hasDeceasedFamily();
+            default -> false;
+        };
+    }
+
+    private static ConditionMatch relationshipStateWithoutLiveContext(
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.Relationship relationship) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        if (villagerId == null) {
+            return ConditionMatch.UNKNOWN;
+        }
+        VillagerRelationshipSnapshot snapshot = VillagerSocialGraphService.relationshipSnapshot(level, villagerId);
+        if (relationship.states().isEmpty()) {
+            return snapshot.hasRelationships() ? ConditionMatch.MET : ConditionMatch.UNMET;
+        }
+        for (String state : relationship.states()) {
+            if (savedRelationshipStateMatches(snapshot, state)) {
+                return ConditionMatch.MET;
+            }
+        }
+        return ConditionMatch.UNMET;
+    }
+
+    private static boolean savedRelationshipStateMatches(VillagerRelationshipSnapshot snapshot, String state) {
+        return switch (state) {
+            case "relationship", "any" -> snapshot.hasRelationships();
+            case "current", "current_relationship" -> snapshot.hasCurrentRelationship();
+            case "past", "past_relationship" -> snapshot.hasPastRelationship();
+            case "crush" -> snapshot.hasCrush();
+            case "dating", "dating_partner" -> snapshot.hasDatingPartner();
+            case "fiance", "fiancee" -> snapshot.hasFiance();
+            case "romantic_spouse", "spouse" -> snapshot.hasRomanticSpouse();
+            case "separated", "separated_partner" -> snapshot.hasSeparatedPartner();
+            case "widowed", "widowed_partner" -> snapshot.hasWidowedPartner();
+            default -> false;
+        };
+    }
+
+    private static ConditionMatch villagerLevelStateWithoutLiveContext(
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.VillagerLevel villagerLevel) {
+        int level = progress == null ? 0 : progress.issuerLevel();
+        if (level <= 0) {
+            return ConditionMatch.UNKNOWN;
+        }
+        if (!villagerLevel.levels().isEmpty() && !villagerLevel.levels().contains(level)) {
+            return ConditionMatch.UNMET;
+        }
+        if (villagerLevel.minLevel() != null && level < villagerLevel.minLevel()) {
+            return ConditionMatch.UNMET;
+        }
+        if (villagerLevel.maxLevel() != null && level > villagerLevel.maxLevel()) {
+            return ConditionMatch.UNMET;
+        }
+        return ConditionMatch.MET;
     }
 
     private static String savedQuestFactScopeKey(
@@ -4481,7 +4678,7 @@ public final class VillagerQuestService {
         if (progress == null) {
             return "progress saved=false state=not_started ready=false active_conditions=n/a branch_locked=false";
         }
-        boolean activeConditionsMet = activeConditionsMetForPlayer(player, definition, progress);
+        ConditionMatch activeConditions = activeConditionsStateForPlayer(player, definition, progress);
         String ready = progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
                 ? "false"
                 : context == null
@@ -4493,7 +4690,7 @@ public final class VillagerQuestService {
                 + " completions=" + progress.completionCount()
                 + " abandons=" + progress.abandonCount()
                 + " ready=" + ready
-                + " active_conditions=" + activeConditionsMet
+                + " active_conditions=" + debugEnum(activeConditions)
                 + " branch_locked=" + branchLocked(progress);
     }
 

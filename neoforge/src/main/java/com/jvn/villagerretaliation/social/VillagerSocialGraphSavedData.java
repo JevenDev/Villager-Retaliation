@@ -275,7 +275,13 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
     public VillagerFamilyTreeSnapshot familySnapshot(ServerLevel level, Villager villager) {
         ensureProfile(level, villager);
-        UUID villagerId = villager.getUUID();
+        return familySnapshot(level, villager.getUUID());
+    }
+
+    public VillagerFamilyTreeSnapshot familySnapshot(ServerLevel level, UUID villagerId) {
+        if (villagerId == null) {
+            return VillagerFamilyTreeSnapshot.EMPTY;
+        }
         return new VillagerFamilyTreeSnapshot(
                 relationshipMembers(level, villagerId, RelationshipType.PARENT),
                 relationshipMembers(level, villagerId, RelationshipType.BIRTH_PARENT),
@@ -296,7 +302,13 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
     public VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, Villager villager) {
         ensureProfile(level, villager);
-        UUID villagerId = villager.getUUID();
+        return relationshipSnapshot(level, villager.getUUID());
+    }
+
+    public VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, UUID villagerId) {
+        if (villagerId == null) {
+            return VillagerRelationshipSnapshot.EMPTY;
+        }
         boolean changed = false;
         for (UUID spouseId : relationships(villagerId, RelationshipType.SPOUSE)) {
             boolean spouseAlive = isKnownAlive(spouseId);

@@ -34,6 +34,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_HAS_PROOF = "HasProof";
     private static final String TAG_ISSUER_NAME = "IssuerName";
     private static final String TAG_ISSUER_PROFESSION = "IssuerProfession";
+    private static final String TAG_ISSUER_LEVEL = "IssuerLevel";
     private static final String TAG_ISSUER_DIMENSION = "IssuerDimension";
     private static final String TAG_ISSUER_POS = "IssuerPos";
     private static final String TAG_ISSUER_VILLAGE_KEY = "IssuerVillageKey";
@@ -246,6 +247,7 @@ public class VillagerQuestSavedData extends SavedData {
         private boolean hasProof;
         private String issuerName = "";
         private String issuerProfession = "";
+        private int issuerLevel;
         private ResourceKey<Level> issuerDimension;
         private BlockPos issuerPos;
         private String issuerVillageKey = "";
@@ -275,6 +277,7 @@ public class VillagerQuestSavedData extends SavedData {
             progress.hasProof = tag.getBoolean(TAG_HAS_PROOF);
             progress.issuerName = tag.getString(TAG_ISSUER_NAME);
             progress.issuerProfession = tag.getString(TAG_ISSUER_PROFESSION);
+            progress.issuerLevel = tag.getInt(TAG_ISSUER_LEVEL);
             progress.issuerVillageKey = tag.getString(TAG_ISSUER_VILLAGE_KEY);
             progress.startCount = tag.getInt(TAG_START_COUNT);
             progress.completionCount = tag.getInt(TAG_COMPLETION_COUNT);
@@ -347,6 +350,9 @@ public class VillagerQuestSavedData extends SavedData {
             }
             if (!this.issuerProfession.isBlank()) {
                 tag.putString(TAG_ISSUER_PROFESSION, this.issuerProfession);
+            }
+            if (this.issuerLevel > 0) {
+                tag.putInt(TAG_ISSUER_LEVEL, this.issuerLevel);
             }
             if (this.issuerDimension != null) {
                 tag.putString(TAG_ISSUER_DIMENSION, this.issuerDimension.location().toString());
@@ -451,6 +457,10 @@ public class VillagerQuestSavedData extends SavedData {
             return this.issuerProfession;
         }
 
+        public int issuerLevel() {
+            return this.issuerLevel;
+        }
+
         public ResourceKey<Level> issuerDimension() {
             return this.issuerDimension;
         }
@@ -530,6 +540,7 @@ public class VillagerQuestSavedData extends SavedData {
                 UUID villagerId,
                 String displayName,
                 String professionId,
+                int villagerLevel,
                 ResourceKey<Level> dimension,
                 BlockPos pos,
                 String villageKey) {
@@ -538,6 +549,7 @@ public class VillagerQuestSavedData extends SavedData {
             }
             this.issuerName = displayName == null ? "" : displayName;
             this.issuerProfession = professionId == null ? "" : professionId;
+            this.issuerLevel = Math.max(0, villagerLevel);
             this.issuerDimension = dimension;
             this.issuerPos = pos == null ? null : pos.immutable();
             this.issuerVillageKey = villageKey == null ? "" : villageKey;

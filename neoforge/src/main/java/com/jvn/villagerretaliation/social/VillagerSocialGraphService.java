@@ -144,11 +144,25 @@ public final class VillagerSocialGraphService {
         return VillagerSocialGraphSavedData.get(level).familySnapshot(level, villager);
     }
 
+    public static VillagerFamilyTreeSnapshot familySnapshot(ServerLevel level, UUID villagerId) {
+        if (villagerId == null || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return VillagerFamilyTreeSnapshot.EMPTY;
+        }
+        return VillagerSocialGraphSavedData.get(level).familySnapshot(level, villagerId);
+    }
+
     public static VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, Villager villager) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
             return VillagerRelationshipSnapshot.EMPTY;
         }
         return VillagerSocialGraphSavedData.get(level).relationshipSnapshot(level, villager);
+    }
+
+    public static VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, UUID villagerId) {
+        if (villagerId == null || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return VillagerRelationshipSnapshot.EMPTY;
+        }
+        return VillagerSocialGraphSavedData.get(level).relationshipSnapshot(level, villagerId);
     }
 
     private static String deathCause(DamageSource source) {
