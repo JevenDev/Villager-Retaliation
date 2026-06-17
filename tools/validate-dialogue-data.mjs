@@ -2902,7 +2902,8 @@ function indexQuest(file, data) {
   questDefinitions.set(questId, {
     file: relative(file),
     parent: stringValue(data.parent),
-    questline: stringValue(data.questline)
+    questline: stringValue(data.questline),
+    pathQuestline: questPathQuestline(file)
   });
 }
 
@@ -2922,8 +2923,21 @@ function indexDialogueTree(file, data) {
       .filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry) && stringValue(entry.id))
       .map((entry) => stringValue(entry.id))),
     metadataQuest: dialogueTreeDefaultQuestId(file, data),
-    metadataQuestline: stringValue(metadataObject(data).questline)
+    metadataQuestline: stringValue(metadataObject(data).questline),
+    pathQuestline: dialogueTreePathQuestline(file)
   });
+}
+
+function questPathQuestline(file) {
+  const relativePath = path.relative(path.join(root, roots.quests), file).replaceAll(path.sep, "/");
+  const parts = relativePath.split("/");
+  return parts.length > 1 ? parts[0] : "";
+}
+
+function dialogueTreePathQuestline(file) {
+  const relativePath = path.relative(path.join(root, roots.dialogueTrees), file).replaceAll(path.sep, "/");
+  const parts = relativePath.split("/");
+  return parts.length > 2 && parts[0] === "quests" ? parts[1] : "";
 }
 
 function indexForcedDialogue(file, data) {
@@ -2991,6 +3005,7 @@ function validateCrossReferences() {
   }
 
   validateQuestParentGraph();
+  validateQuestlineFolders();
   validateDialogueTreeQuestlineMetadata();
 
   for (const reference of pendingForcedDialogueReferences) {
@@ -3014,6 +3029,14 @@ function validateCrossReferences() {
 
     if (link.metadataQuest && tree.metadataQuest && tree.metadataQuest !== link.metadataQuest) {
       errors.push(`${relative(link.file)}: ${link.location}.dialogue_tree points to "${link.treeId}" but its metadata.quest is "${tree.metadataQuest}" instead of "${link.metadataQuest}".`);
+    }
+  }
+}
+
+function validateQuestlineFolders() {
+  for (const [questId, quest] of questDefinitions) {
+    if (quest.pathQuestline && quest.questline && quest.pathQuestline !== quest.questline) {
+      errors.push(`${quest.file}: root.questline "${quest.questline}" does not match quest folder "${quest.pathQuestline}" for "${questId}".`);
     }
   }
 }
@@ -3091,12 +3114,15 @@ function canonicalCycleKey(cycle) {
 
 function validateDialogueTreeQuestlineMetadata() {
   for (const [treeId, tree] of dialogueTreeDefinitions) {
-    if (!tree.metadataQuest || !tree.metadataQuestline) {
+    if (!tree.metadataQuest) {
       continue;
     }
     const quest = questDefinitions.get(tree.metadataQuest);
-    if (quest && quest.questline && quest.questline !== tree.metadataQuestline) {
+    if (quest && quest.questline && tree.metadataQuestline && quest.questline !== tree.metadataQuestline) {
       errors.push(`${tree.file}: metadata.questline "${tree.metadataQuestline}" does not match quest "${tree.metadataQuest}" questline "${quest.questline}".`);
+    }
+    if (quest && quest.questline && tree.pathQuestline && tree.pathQuestline !== quest.questline) {
+      errors.push(`${tree.file}: quest dialogue tree folder "${tree.pathQuestline}" does not match quest "${tree.metadataQuest}" questline "${quest.questline}".`);
     }
   }
 }
