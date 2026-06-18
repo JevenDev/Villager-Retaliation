@@ -1028,15 +1028,13 @@ public final class VillagerRetaliationHandler {
 
     private static void suppressVanillaPanic(Villager villager) {
         Brain<Villager> brain = villager.getBrain();
-        VillagerRetaliationVillagerBrainUtil.clearThreatMemories(villager);
-        brain.eraseMemory(MemoryModuleType.HEARD_BELL_TIME);
-        brain.eraseMemory(MemoryModuleType.HIDING_PLACE);
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
-        if (brain.isActive(Activity.PANIC) || brain.isActive(Activity.HIDE)) {
-            brain.setDefaultActivity(Activity.IDLE);
-            brain.setActiveActivityIfPossible(Activity.IDLE);
+        if (villager.level() instanceof ServerLevel level) {
+            VillagerRetaliationVillagerBrainUtil.suppressVanillaFleeState(level, villager);
+        } else {
+            VillagerRetaliationVillagerBrainUtil.clearFleeMemories(villager);
+            brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+            brain.eraseMemory(MemoryModuleType.PATH);
+            brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
         }
     }
 
@@ -1130,7 +1128,6 @@ public final class VillagerRetaliationHandler {
         String roleKey = BuiltInRegistries.VILLAGER_PROFESSION
                 .getKey(villager.getVillagerData().getProfession())
                 .toString();
-        VillagerRetaliationVillagerEquipment.suppressVanillaTradePreviewMainHand(villager, roleWeapon);
         VillagerRetaliationVillagerEquipment.ensureRoleMainHand(villager, roleKey, roleWeapon);
     }
 

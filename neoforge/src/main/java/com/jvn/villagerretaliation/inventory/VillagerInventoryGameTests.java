@@ -229,6 +229,33 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void managedMainHandMaintenanceMovesDisplacedStackOnce(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        for (int slot = 0; slot < villager.getInventory().getContainerSize(); slot++) {
+            villager.getInventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        VillagerRetaliationVillagerEquipment.setPickedUpMainHand(villager, new ItemStack(Items.DIAMOND_SWORD));
+
+        villager.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.EMERALD, 3));
+        helper.assertTrue(
+                VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager),
+                "managed main hand maintenance should restore tracked equipment");
+        helper.assertTrue(villager.getMainHandItem().is(Items.DIAMOND_SWORD), "tracked weapon should return to main hand");
+        helper.assertValueEqual(countStored(villager, Items.EMERALD), 3, "displaced stack should be stored once");
+        helper.assertValueEqual(countStored(villager, Items.DIAMOND_SWORD), 0, "tracked weapon should not be copied into inventory");
+        helper.assertValueEqual(countDroppedItems(level, villager.blockPosition(), Items.EMERALD), 0, "displaced stack should use extended inventory before dropping");
+
+        VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager);
+        helper.assertValueEqual(countStored(villager, Items.EMERALD), 3, "repeat maintenance should not duplicate displaced stack");
+        helper.assertValueEqual(countStored(villager, Items.DIAMOND_SWORD), 0, "repeat maintenance should not duplicate tracked weapon");
+        helper.assertValueEqual(countDroppedItems(level, villager.blockPosition(), Items.EMERALD), 0, "repeat maintenance should not drop duplicates");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void villagerFoodSharingMixinKeepsBreadInInventory(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         ServerLevel level = helper.getLevel();

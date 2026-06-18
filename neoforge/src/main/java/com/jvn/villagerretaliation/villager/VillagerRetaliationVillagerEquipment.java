@@ -1,17 +1,14 @@
 package com.jvn.villagerretaliation.villager;
 
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.trading.MerchantOffer;
 
 public final class VillagerRetaliationVillagerEquipment {
-    private static final double TRADE_PREVIEW_PLAYER_RADIUS = 8.0D;
     private static final String MAINHAND_STATE_TAG = "VillagerRetaliationMainhandState";
     private static final String MAINHAND_OWNER_TAG = "Owner";
     private static final String MAINHAND_STACK_TAG = "Stack";
@@ -189,13 +186,7 @@ public final class VillagerRetaliationVillagerEquipment {
         }
 
         if (!mainHand.isEmpty()) {
-            if (!isVanillaTradePreviewMainHand(villager, mainHand)) {
-                ItemStack displacedMainHand = mainHand.copy();
-                ItemStack remainder = villager.getInventory().addItem(displacedMainHand);
-                if (!remainder.isEmpty()) {
-                    villager.spawnAtLocation(remainder);
-                }
-            }
+            storeOrDropDisplacedMainHand(villager, mainHand.copy());
         }
 
         setPlayerManagedMainHand(villager, expectedStack);
@@ -209,29 +200,6 @@ public final class VillagerRetaliationVillagerEquipment {
         }
 
         setPlayerManagedMainHand(villager, expectedStack);
-        return true;
-    }
-
-    public static boolean suppressVanillaTradePreviewMainHand(Villager villager, ItemStack protectedMainHand) {
-        ItemStack mainHand = villager.getMainHandItem();
-        MainHandOwner owner = mainHandOwner(villager);
-        ItemStack protectedStack = owner == MainHandOwner.ROLE ? roleMainHand(villager) : protectedMainHand;
-        if (protectedStack.isEmpty()) {
-            protectedStack = protectedMainHand;
-        }
-        boolean protectedStackMatches = owner == MainHandOwner.ROLE
-                ? ItemStack.isSameItem(mainHand, protectedStack)
-                : sameStack(mainHand, protectedStack);
-        if (!isVanillaTradePreviewMainHand(villager, mainHand)
-                || (!protectedStack.isEmpty() && protectedStackMatches)) {
-            return false;
-        }
-
-        if (isPlayerManagedMainHand(villager)) {
-            return restorePlayerManagedMainHand(villager);
-        }
-
-        setEquipment(villager, EquipmentSlot.MAINHAND, ItemStack.EMPTY, false);
         return true;
     }
 
@@ -304,6 +272,22 @@ public final class VillagerRetaliationVillagerEquipment {
         setManualMainHandState(villager, stack);
     }
 
+    private static void storeOrDropDisplacedMainHand(AbstractVillager villager, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        ItemStack remainder;
+        if (villager instanceof Villager regularVillager) {
+            remainder = VillagerInventoryAccess.addItem(regularVillager, stack);
+        } else {
+            remainder = villager.getInventory().addItem(stack);
+        }
+        if (!remainder.isEmpty()) {
+            villager.spawnAtLocation(remainder);
+        }
+    }
+
     private static void clearMainHandState(AbstractVillager villager) {
         villager.getPersistentData().remove(MAINHAND_STATE_TAG);
         villager.getPersistentData().remove(ROLE_MAINHAND_TAG);
@@ -341,45 +325,6 @@ public final class VillagerRetaliationVillagerEquipment {
             return;
         }
         setPickedUpMainHand(villager, stack);
-    }
-
-    private static boolean isVanillaTradePreviewMainHand(AbstractVillager villager, ItemStack stack) {
-        if (!(villager instanceof Villager regularVillager) || stack.isEmpty() || regularVillager.getOffers().isEmpty()) {
-            return false;
-        }
-
-        for (MerchantOffer offer : regularVillager.getOffers()) {
-            if (offer.isOutOfStock() || !ItemStack.isSameItemSameComponents(stack, offer.getResult())) {
-                continue;
-            }
-            if (hasNearbyPlayerHoldingTradeCost(regularVillager, offer)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean hasNearbyPlayerHoldingTradeCost(Villager villager, MerchantOffer offer) {
-        return !villager.level()
-                .getEntitiesOfClass(
-                        Player.class,
-                        villager.getBoundingBox().inflate(TRADE_PREVIEW_PLAYER_RADIUS),
-                        player -> EntitySelector.NO_SPECTATORS.test(player) && isHoldingTradeCost(player, offer))
-                .isEmpty();
-    }
-
-    private static boolean isHoldingTradeCost(Player player, MerchantOffer offer) {
-        return isTradeCost(player.getMainHandItem(), offer)
-                || isTradeCost(player.getOffhandItem(), offer);
-    }
-
-    private static boolean isTradeCost(ItemStack stack, MerchantOffer offer) {
-        return !stack.isEmpty()
-                && (matchesCost(stack, offer.getCostA()) || matchesCost(stack, offer.getCostB()));
-    }
-
-    private static boolean matchesCost(ItemStack stack, ItemStack cost) {
-        return !cost.isEmpty() && ItemStack.isSameItemSameComponents(stack, cost);
     }
 
     private static void setManualMainHandState(AbstractVillager villager, ItemStack stack) {

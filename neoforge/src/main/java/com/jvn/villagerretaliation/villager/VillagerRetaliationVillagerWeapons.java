@@ -20,6 +20,7 @@ import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.Tags;
@@ -268,7 +269,8 @@ public final class VillagerRetaliationVillagerWeapons {
     private static boolean isMeleeWeapon(ItemStack stack) {
         return stack.is(Tags.Items.MELEE_WEAPON_TOOLS)
                 || stack.is(Tags.Items.MINING_TOOL_TOOLS)
-                || stack.is(Tags.Items.TOOLS_MACE);
+                || stack.is(Tags.Items.TOOLS_MACE)
+                || stack.getItem() instanceof SwordItem;
     }
 
     private static boolean canBeWantedGroundWeapon(ItemEntity itemEntity) {

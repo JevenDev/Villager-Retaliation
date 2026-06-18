@@ -107,7 +107,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        if (RETALIATION.hasAnger(trader)) {
+        if (shouldSuppressVanillaAvoidance(trader)) {
             suppressVanillaPanic(trader);
         }
     }
@@ -207,6 +207,15 @@ public final class WanderingTraderRetaliationHandler {
 
         VillagerRetaliationRetaliationUtil.spawnMadParticles(trader);
         return true;
+    }
+
+    public static boolean shouldSuppressVanillaAvoidance(WanderingTrader trader) {
+        if (trader.level().isClientSide || !VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()) {
+            return false;
+        }
+
+        RETALIATION.restorePersistedAngerIfNeeded(trader);
+        return RETALIATION.hasAnger(trader);
     }
 
     public static boolean tryPacifyWithEmeralds(WanderingTrader trader, Player player, ItemStack interactionStack) {

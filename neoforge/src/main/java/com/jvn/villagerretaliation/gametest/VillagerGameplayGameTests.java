@@ -1,18 +1,23 @@
 package com.jvn.villagerretaliation.gametest;
 
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
+import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.mojang.authlib.GameProfile;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -21,8 +26,20 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.behavior.BehaviorControl;
+import net.minecraft.world.entity.ai.behavior.ReactToBell;
+import net.minecraft.world.entity.ai.behavior.SetHiddenState;
+import net.minecraft.world.entity.ai.behavior.VillagerPanicTrigger;
+import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
+import net.minecraft.world.entity.ai.goal.PanicGoal;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.WanderingTrader;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -88,6 +105,80 @@ public final class VillagerGameplayGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void panicMixinKeepsArmedVillagerOutOfVanillaPanic(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack weapon = new ItemStack(Items.IRON_SWORD);
+
+        VillagerRetaliationVillagerEquipment.setPickedUpMainHand(villager, weapon.copy());
+        helper.assertTrue(VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager), "armed villager fixture should suppress vanilla fleeing");
+        Villager mate = spawnVillager(helper, new BlockPos(2, 2, 1));
+        Zombie hostile = spawnZombie(helper, new BlockPos(4, 2, 1));
+        villager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, hostile);
+        villager.getBrain().setMemory(MemoryModuleType.BREED_TARGET, mate);
+
+        new VillagerPanicTrigger().tryStart(level, villager, level.getGameTime());
+
+        helper.assertFalse(villager.getBrain().isActive(Activity.PANIC), "armed villager should not enter vanilla panic");
+        helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.NEAREST_HOSTILE), "panic trigger should clear threat memory after suppression");
+        helper.assertTrue(villager.getBrain().hasMemoryValue(MemoryModuleType.BREED_TARGET), "suppressed panic should preserve breeding target memory");
+        helper.assertTrue(ItemStack.isSameItemSameComponents(villager.getMainHandItem(), weapon), "suppressed panic should preserve main hand weapon");
+
+        hostile.discard();
+        mate.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hideMixinsKeepArmedVillagerOutOfBellAndHiddenState(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerRetaliationVillagerEquipment.setPickedUpMainHand(villager, new ItemStack(Items.IRON_SWORD));
+        helper.assertTrue(VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager), "armed villager fixture should suppress vanilla fleeing");
+
+        villager.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, level.getGameTime());
+        BehaviorControl<LivingEntity> bellReaction = ReactToBell.create();
+        bellReaction.tryStart(level, villager, level.getGameTime());
+
+        helper.assertFalse(villager.getBrain().isActive(Activity.HIDE), "armed villager should not enter vanilla hide after bell");
+        helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.HEARD_BELL_TIME), "suppressed bell hide should clear bell memory");
+
+        villager.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, level.getGameTime());
+        villager.getBrain().setMemory(MemoryModuleType.HIDING_PLACE, GlobalPos.of(level.dimension(), villager.blockPosition()));
+        BehaviorControl<LivingEntity> hiddenState = SetHiddenState.create(15, 3);
+        hiddenState.tryStart(level, villager, level.getGameTime());
+
+        helper.assertFalse(villager.getBrain().isActive(Activity.HIDE), "armed villager should not remain in vanilla hidden state");
+        helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.HIDING_PLACE), "suppressed hidden state should clear hiding place");
+        helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.HEARD_BELL_TIME), "suppressed hidden state should clear bell memory");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void traderAvoidanceMixinsStopVanillaPanicAndAvoidGoals(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        WanderingTrader trader = spawnWanderingTrader(helper, new BlockPos(1, 2, 1));
+        Zombie hostile = spawnZombie(helper, new BlockPos(4, 2, 1));
+
+        invokeTraderAnger(trader, hostile);
+        helper.assertTrue(WanderingTraderRetaliationHandler.shouldSuppressVanillaAvoidance(trader), "angered trader should suppress vanilla avoidance");
+
+        AvoidEntityGoal<Zombie> avoidGoal = new AvoidEntityGoal<>(trader, Zombie.class, 8.0F, 0.5D, 0.5D);
+        helper.assertFalse(avoidGoal.canUse(), "angered trader should not start vanilla avoid goal");
+
+        trader.hurt(level.damageSources().mobAttack(hostile), 1.0F);
+        PanicGoal panicGoal = new PanicGoal(trader, 0.5D);
+        helper.assertFalse(panicGoal.canUse(), "angered trader should not start vanilla panic goal");
+
+        hostile.discard();
+        trader.discard();
+        helper.succeed();
+    }
+
     private static ServerPlayer fakePlayer(ServerLevel level, String name) {
         UUID id = UUID.nameUUIDFromBytes(("villagerretaliation:" + name).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         ServerPlayer player = FakePlayerFactory.get(level, new GameProfile(id, name));
@@ -108,6 +199,48 @@ public final class VillagerGameplayGameTests {
             throw new GameTestAssertException("Could not add villager to level");
         }
         return villager;
+    }
+
+    private static WanderingTrader spawnWanderingTrader(GameTestHelper helper, BlockPos relativePos) {
+        ServerLevel level = helper.getLevel();
+        WanderingTrader trader = EntityType.WANDERING_TRADER.create(level);
+        if (trader == null) {
+            throw new GameTestAssertException("Could not create wandering trader");
+        }
+        BlockPos pos = helper.absolutePos(relativePos);
+        trader.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
+        if (!level.addFreshEntity(trader)) {
+            throw new GameTestAssertException("Could not add wandering trader to level");
+        }
+        return trader;
+    }
+
+    private static Zombie spawnZombie(GameTestHelper helper, BlockPos relativePos) {
+        ServerLevel level = helper.getLevel();
+        Zombie zombie = EntityType.ZOMBIE.create(level);
+        if (zombie == null) {
+            throw new GameTestAssertException("Could not create zombie");
+        }
+        BlockPos pos = helper.absolutePos(relativePos);
+        zombie.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
+        if (!level.addFreshEntity(zombie)) {
+            throw new GameTestAssertException("Could not add zombie to level");
+        }
+        return zombie;
+    }
+
+    private static void invokeTraderAnger(WanderingTrader trader, LivingEntity attacker) {
+        try {
+            Method method = WanderingTraderRetaliationHandler.class.getDeclaredMethod(
+                    "anger",
+                    WanderingTrader.class,
+                    LivingEntity.class
+            );
+            method.setAccessible(true);
+            method.invoke(null, trader, attacker);
+        } catch (ReflectiveOperationException exception) {
+            throw new GameTestAssertException("Could not invoke WanderingTraderRetaliationHandler.anger: " + exception);
+        }
     }
 
     private static void configureGameTestStructures() {

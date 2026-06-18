@@ -6,7 +6,6 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.schedule.Activity;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
@@ -21,12 +20,12 @@ public final class VillagerFleeBehaviorHandler {
         }
 
         Brain<Villager> brain = villager.getBrain();
-        if (!hasAnyFleeState(levelOrNull(villager), brain)
-                || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)) {
+        if (!VillagerRetaliationVillagerBrainUtil.hasVanillaFleeState(levelOrNull(villager), brain)
+                || !VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager)) {
             return;
         }
 
-        clearImmediateFleeMemories(villager);
+        VillagerRetaliationVillagerBrainUtil.clearFleeMemories(villager);
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
@@ -37,7 +36,7 @@ public final class VillagerFleeBehaviorHandler {
         }
 
         Brain<Villager> brain = villager.getBrain();
-        if (!hasAnyFleeState(level, brain)) {
+        if (!VillagerRetaliationVillagerBrainUtil.hasVanillaFleeState(level, brain)) {
             return;
         }
 
@@ -46,45 +45,17 @@ public final class VillagerFleeBehaviorHandler {
             maybeAnnounceFlee(level, villager, brain);
             return;
         }
-        if (!VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager, keepFleeingBehavior)) {
+        if (!VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager, keepFleeingBehavior)) {
             return;
         }
 
-        boolean shouldResetFleeState = brain.isActive(Activity.PANIC)
-                || brain.isActive(Activity.HIDE)
-                || shouldSuppressActiveRaidHide(level, villager, brain)
-                || hasFleeMemory(brain);
-
-        VillagerRetaliationVillagerBrainUtil.clearThreatMemories(villager);
-        brain.eraseMemory(MemoryModuleType.HEARD_BELL_TIME);
-        brain.eraseMemory(MemoryModuleType.HIDING_PLACE);
-
-        if (!shouldResetFleeState) {
-            return;
-        }
-
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
-        brain.setDefaultActivity(Activity.IDLE);
-        brain.setActiveActivityIfPossible(scheduledActivity(level, brain));
-    }
-
-    private static void clearImmediateFleeMemories(Villager villager) {
-        VillagerRetaliationVillagerBrainUtil.clearThreatMemories(villager);
+        VillagerRetaliationVillagerBrainUtil.suppressVanillaFleeState(level, villager);
     }
 
     private static boolean hasFleeMemory(Brain<Villager> brain) {
         return VillagerRetaliationVillagerBrainUtil.hasThreatMemories(brain)
                 || brain.hasMemoryValue(MemoryModuleType.HEARD_BELL_TIME)
                 || brain.hasMemoryValue(MemoryModuleType.HIDING_PLACE);
-    }
-
-    private static boolean hasAnyFleeState(ServerLevel level, Brain<Villager> brain) {
-        return hasFleeMemory(brain)
-                || brain.isActive(Activity.PANIC)
-                || brain.isActive(Activity.HIDE)
-                || level != null && brain.isActive(Activity.RAID);
     }
 
     private static ServerLevel levelOrNull(Villager villager) {
@@ -98,23 +69,5 @@ public final class VillagerFleeBehaviorHandler {
         brain.getMemory(MemoryModuleType.NEAREST_HOSTILE)
                 .filter(LivingEntity::isAlive)
                 .ifPresent(hostile -> VillagerAmbientIndicatorService.onFleeStarted(level, villager, hostile));
-    }
-
-    private static boolean shouldSuppressActiveRaidHide(ServerLevel level, Villager villager, Brain<Villager> brain) {
-        if (!brain.isActive(Activity.RAID)) {
-            return false;
-        }
-
-        Raid raid = level.getRaidAt(villager.blockPosition());
-        return raid != null && raid.isActive() && !raid.isVictory() && !raid.isLoss();
-    }
-
-    private static Activity scheduledActivity(ServerLevel level, Brain<Villager> brain) {
-        Activity activity = brain.getSchedule().getActivityAt((int) (level.getDayTime() % 24000L));
-        return isFleeActivity(activity) ? Activity.IDLE : activity;
-    }
-
-    private static boolean isFleeActivity(Activity activity) {
-        return activity == Activity.PANIC || activity == Activity.PRE_RAID || activity == Activity.RAID || activity == Activity.HIDE;
     }
 }
