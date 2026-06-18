@@ -631,6 +631,7 @@ final class VillagerInventoryContainer implements Container {
 
     private void loadInventory() {
         boolean cleanedInvalidTradePayments = false;
+        boolean migratedLegacyOverflow = false;
         int vanillaSlots = vanillaInventorySlots();
         for (int slot = 0; slot < vanillaSlots; slot++) {
             ItemStack stack = this.villager.getInventory().getItem(slot).copy();
@@ -661,9 +662,10 @@ final class VillagerInventoryContainer implements Container {
             }
             if (!overflow.isEmpty()) {
                 this.villager.spawnAtLocation(overflow.copy());
+                migratedLegacyOverflow = true;
             }
         }
-        if (cleanedInvalidTradePayments) {
+        if (cleanedInvalidTradePayments || migratedLegacyOverflow) {
             setChanged();
         }
     }
@@ -703,8 +705,7 @@ final class VillagerInventoryContainer implements Container {
         for (int slot = 0; slot < extraInventory.size(); slot++) {
             extraInventory.set(slot, inventory.get(vanillaSlots + slot).copy());
         }
-        CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), extraInventory, true, villager.level().registryAccess());
-        villager.getPersistentData().put(EXTRA_INVENTORY_TAG, tag);
+        saveExtraInventory(villager, extraInventory);
         invalidateUsableWeaponCache(villager);
     }
 
@@ -772,16 +773,9 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private static void fillEmptySlots(NonNullList<ItemStack> inventory, ItemStack remainder) {
-        fillEmptySlotsExcept(inventory, remainder, -1);
-    }
-
-    private static void fillEmptySlotsExcept(NonNullList<ItemStack> inventory, ItemStack remainder, int excludedSlot) {
         for (int slot = 0; slot < inventory.size(); slot++) {
             if (remainder.isEmpty()) {
                 return;
-            }
-            if (slot == excludedSlot) {
-                continue;
             }
             if (!inventory.get(slot).isEmpty()) {
                 continue;
@@ -949,8 +943,7 @@ final class VillagerInventoryContainer implements Container {
             extraInventory.set(slot, this.inventory.get(vanillaSlots + slot).copy());
         }
 
-        CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), extraInventory, true, this.villager.level().registryAccess());
-        this.villager.getPersistentData().put(EXTRA_INVENTORY_TAG, tag);
+        saveExtraInventory(this.villager, extraInventory);
     }
 
     private void saveInventory() {
@@ -959,5 +952,23 @@ final class VillagerInventoryContainer implements Container {
             this.villager.getInventory().setItem(slot, this.inventory.get(slot).copy());
         }
         this.villager.getInventory().setChanged();
+    }
+
+    private static void saveExtraInventory(Villager villager, NonNullList<ItemStack> extraInventory) {
+        if (isEmpty(extraInventory)) {
+            villager.getPersistentData().remove(EXTRA_INVENTORY_TAG);
+            return;
+        }
+        CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), extraInventory, true, villager.level().registryAccess());
+        villager.getPersistentData().put(EXTRA_INVENTORY_TAG, tag);
+    }
+
+    private static boolean isEmpty(NonNullList<ItemStack> inventory) {
+        for (ItemStack stack : inventory) {
+            if (!stack.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

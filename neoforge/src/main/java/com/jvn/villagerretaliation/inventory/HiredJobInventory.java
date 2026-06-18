@@ -25,6 +25,7 @@ public final class HiredJobInventory implements Container {
     public static final int OFFHAND_SLOT = 5;
     private static final int ARMOR_SLOT_COUNT = 4;
     private static final String TAG = "VillagerRetaliationJobInventory";
+    private static final String ITEMS_TAG = "Items";
     private static final String SLOT_TYPES_TAG = "SlotTypes";
     private static final String SLOT_TAG = "Slot";
     private static final String TYPE_TAG = "Type";
@@ -56,7 +57,18 @@ public final class HiredJobInventory implements Container {
     }
 
     public static void maintainEquipmentSlots(Villager villager) {
-        if (villager == null || villager.getPersistentData().getCompound(TAG).isEmpty()) {
+        if (villager == null) {
+            return;
+        }
+        CompoundTag tag = jobInventoryTag(villager);
+        if (tag.isEmpty()) {
+            return;
+        }
+        if (!hasPersistedItemStacks(tag) && tag.getList(SLOT_TYPES_TAG, Tag.TAG_COMPOUND).isEmpty()) {
+            villager.getPersistentData().remove(TAG);
+            return;
+        }
+        if (!hasPersistedJobEquipment(tag)) {
             return;
         }
         new HiredJobInventory(villager).maintainEquipmentAuthority();
@@ -66,7 +78,8 @@ public final class HiredJobInventory implements Container {
         if (villager == null || equipmentSlot == null) {
             return false;
         }
-        return !new HiredJobInventory(villager).jobEquipmentItem(equipmentSlot).isEmpty();
+        int slot = jobSlotForEquipmentSlot(equipmentSlot);
+        return slot >= 0 && hasPersistedJobStack(villager, slot);
     }
 
     public static boolean isProtectedVillagerProperty(ItemStack stack) {
@@ -862,7 +875,14 @@ public final class HiredJobInventory implements Container {
             typeTag.putString(TYPE_TAG, type.id());
             slotTypesTag.add(typeTag);
         }
-        tag.put(SLOT_TYPES_TAG, slotTypesTag);
+
+        if (!hasAnyItem() && slotTypesTag.isEmpty()) {
+            this.villager.getPersistentData().remove(TAG);
+            return;
+        }
+        if (!slotTypesTag.isEmpty()) {
+            tag.put(SLOT_TYPES_TAG, slotTypesTag);
+        }
         this.villager.getPersistentData().put(TAG, tag);
     }
 
@@ -979,6 +999,48 @@ public final class HiredJobInventory implements Container {
         if (!remainder.isEmpty()) {
             this.villager.spawnAtLocation(remainder);
         }
+    }
+
+    private boolean hasAnyItem() {
+        for (ItemStack stack : this.items) {
+            if (!stack.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static CompoundTag jobInventoryTag(Villager villager) {
+        return villager.getPersistentData().getCompound(TAG);
+    }
+
+    private static boolean hasPersistedJobEquipment(CompoundTag tag) {
+        ListTag itemsTag = tag.getList(ITEMS_TAG, Tag.TAG_COMPOUND);
+        for (Tag rawItem : itemsTag) {
+            if (rawItem instanceof CompoundTag itemTag
+                    && equipmentSlotForJobSlot(savedItemSlot(itemTag)) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasPersistedJobStack(Villager villager, int targetSlot) {
+        ListTag itemsTag = jobInventoryTag(villager).getList(ITEMS_TAG, Tag.TAG_COMPOUND);
+        for (Tag rawItem : itemsTag) {
+            if (rawItem instanceof CompoundTag itemTag && savedItemSlot(itemTag) == targetSlot) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasPersistedItemStacks(CompoundTag tag) {
+        return !tag.getList(ITEMS_TAG, Tag.TAG_COMPOUND).isEmpty();
+    }
+
+    private static int savedItemSlot(CompoundTag itemTag) {
+        return itemTag.getByte(SLOT_TAG) & 255;
     }
 
     private static boolean isValidSlot(int slot) {
