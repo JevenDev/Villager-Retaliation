@@ -778,9 +778,7 @@ public final class HiredJobInventory implements Container {
         if (!isValidSlot(slot) || ProtectedVillagerProperty.isProtected(inventory.get(slot))) {
             return false;
         }
-        HiredJobInventorySlotType type = slotType(slot);
-        return type == HiredJobInventorySlotType.OUTPUT
-                || type == HiredJobInventorySlotType.SUPPLY && this.items.get(slot).isEmpty();
+        return slotType(slot) == HiredJobInventorySlotType.OUTPUT;
     }
 
     private boolean canInsertSupplyIntoSlot(int slot) {

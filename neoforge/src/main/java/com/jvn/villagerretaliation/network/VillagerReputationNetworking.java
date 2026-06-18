@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -370,7 +371,7 @@ public final class VillagerReputationNetworking {
     }
 
     public static void sendServerConfig(ServerPlayer player) {
-        PacketDistributor.sendToPlayer(player, new ServerConfigSyncPayload(
+        trySendToPlayer(player, new ServerConfigSyncPayload(
                 VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get()
         ));
         sendBuilderStructureCatalog(player);
@@ -380,9 +381,17 @@ public final class VillagerReputationNetworking {
         if (player == null || player.server == null) {
             return;
         }
-        PacketDistributor.sendToPlayer(player, new BuilderStructureCatalogSyncPayload(
+        trySendToPlayer(player, new BuilderStructureCatalogSyncPayload(
                 BuilderStructureCatalog.entries(player.server)
         ));
+    }
+
+    private static void trySendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
+        try {
+            PacketDistributor.sendToPlayer(player, payload);
+        } catch (UnsupportedOperationException ignored) {
+            // Some server-side harnesses use mock connections that cannot negotiate mod payloads.
+        }
     }
 
     public static void sendFearedPulse(AbstractVillager villager, int ticks) {

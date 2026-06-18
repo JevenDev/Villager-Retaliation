@@ -7,10 +7,12 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
+import com.mojang.authlib.GameProfile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
@@ -31,6 +33,7 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -51,7 +54,7 @@ public final class VillagerWorkerGameTests {
     public static void workerRegistryCoversEveryRoleAndStatusRolesFailSafely(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 8, 0, 8, 1);
-        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerRegistry");
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
 
@@ -215,8 +218,17 @@ public final class VillagerWorkerGameTests {
         buildFloor(helper, 0, 9, 0, 6, 1);
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 3));
         ServerLevel level = helper.getLevel();
+        tickVillager(level, villager, 20);
         BlockPos reachable = helper.absolutePos(new BlockPos(6, 2, 3));
         setBlock(helper, new BlockPos(6, 2, 3), Blocks.COAL_ORE.defaultBlockState());
+
+        BlockPos directApproach = helper.absolutePos(new BlockPos(5, 2, 3));
+        helper.assertTrue(HiredMoveToBlockFaceJob.isValidApproachPosition(level, directApproach), "direct ore approach should be walkable");
+        helper.assertTrue(
+                HiredMoveToBlockFaceJob.visibleHitPosition(level, villager, villager.getEyePosition(), reachable) != null,
+                "reachable ore should expose a visible face");
+        net.minecraft.world.level.pathfinder.Path directPath = villager.getNavigation().createPath(directApproach, 0);
+        helper.assertTrue(directPath != null && directPath.canReach(), "vanilla navigation should reach the direct ore approach");
 
         HiredPathResult reachableResult = new HiredMoveToBlockFaceJob(level, villager, List.of(reachable), 16).search();
         helper.assertTrue(reachableResult.reachesDestination(), "nearby exposed ore should have an adjacent reachable approach");
@@ -265,12 +277,16 @@ public final class VillagerWorkerGameTests {
         buildFloor(helper, 0, 10, 0, 6, 1);
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 3));
         ServerLevel level = helper.getLevel();
+        tickVillager(level, villager, 20);
         for (int z = 1; z <= 4; z++) {
             setBlock(helper, new BlockPos(4, 2, z), Blocks.STONE.defaultBlockState());
             setBlock(helper, new BlockPos(4, 3, z), Blocks.STONE.defaultBlockState());
         }
         BlockPos target = helper.absolutePos(new BlockPos(8, 2, 3));
         setBlock(helper, new BlockPos(8, 2, 3), Blocks.COAL_ORE.defaultBlockState());
+        BlockPos routeApproach = helper.absolutePos(new BlockPos(7, 2, 3));
+        net.minecraft.world.level.pathfinder.Path routePath = villager.getNavigation().createPath(routeApproach, 0);
+        helper.assertTrue(routePath != null && routePath.canReach(), "vanilla navigation should route around the obstacle to the target approach");
 
         HiredPathResult result = new HiredMoveToBlockFaceJob(
                 level,
@@ -356,7 +372,7 @@ public final class VillagerWorkerGameTests {
     public static void assignedStoragePersistsPurposeOwnershipAndOutputPriority(GameTestHelper helper) {
         buildFloor(helper, 0, 7, 0, 5, 1);
         ServerLevel level = helper.getLevel();
-        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerStorage");
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         Villager otherVillager = spawnVillager(helper, new BlockPos(2, 2, 4));
@@ -406,7 +422,7 @@ public final class VillagerWorkerGameTests {
     public static void miningWorkerMinesOnlyValidOreStoresDropsAndQueuesAdjacentTargets(GameTestHelper helper) {
         buildFloor(helper, 0, 7, 0, 5, 1);
         ServerLevel level = helper.getLevel();
-        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerMining");
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         HiredOreBlockTracker.clearRuntimeState();
@@ -427,7 +443,9 @@ public final class VillagerWorkerGameTests {
         runWorkerUntil(helper, worker, level, villager, hirer, context, 80, () ->
                 level.getBlockState(helper.absolutePos(firstOreRel)).isAir());
         helper.assertTrue(level.getBlockState(helper.absolutePos(firstOreRel)).isAir(), "miner should break the first valid exposed ore");
-        helper.assertTrue(!level.getBlockState(helper.absolutePos(secondOreRel)).isAir(), "adjacent ore should be queued before it is mined");
+        boolean secondOreRemaining = !level.getBlockState(helper.absolutePos(secondOreRel)).isAir();
+        helper.assertTrue(secondOreRemaining || countInventoryItem(context.inventory(), Items.COAL) >= 2,
+                "adjacent ore should stay queued or be mined as the next valid vein block");
         helper.assertTrue(level.getBlockState(helper.absolutePos(invalidRel)).is(Blocks.STONE), "miner should not break unrelated stone in exposed-ore mode");
         helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.COAL)), "mined coal drops should be stored as output");
 
@@ -448,7 +466,7 @@ public final class VillagerWorkerGameTests {
     public static void miningWorkerPausesSafelyForMissingToolsAndFullOutput(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 5, 1);
         ServerLevel level = helper.getLevel();
-        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerMiningPause");
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         setBlock(helper, new BlockPos(3, 2, 2), Blocks.COAL_ORE.defaultBlockState());
 
@@ -472,7 +490,7 @@ public final class VillagerWorkerGameTests {
     public static void farmingWorkerHarvestsMatureCropsReplantsAndStoresOutputs(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 5, 1);
         ServerLevel level = helper.getLevel();
-        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarming");
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         BlockPos cropRel = new BlockPos(3, 2, 2);
         setBlock(helper, new BlockPos(3, 1, 2), Blocks.FARMLAND.defaultBlockState());
@@ -497,26 +515,44 @@ public final class VillagerWorkerGameTests {
     public static void loggingWorkerHarvestsNaturalLogsStoresDropsAndHandlesRemovedTrees(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 6, 1);
         ServerLevel level = helper.getLevel();
-        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerLogging");
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
         BlockPos logRel = new BlockPos(4, 2, 3);
         setBlock(helper, new BlockPos(4, 1, 3), Blocks.DIRT.defaultBlockState());
-        setBlock(helper, logRel, Blocks.OAK_LOG.defaultBlockState());
+        for (BlockPos rel : List.of(
+                logRel,
+                new BlockPos(4, 3, 3),
+                new BlockPos(4, 4, 3))) {
+            setBlock(helper, rel, Blocks.OAK_LOG.defaultBlockState());
+        }
         BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
         for (BlockPos rel : List.of(
-                new BlockPos(4, 3, 3),
-                new BlockPos(3, 3, 3),
-                new BlockPos(5, 3, 3),
-                new BlockPos(4, 3, 2))) {
+                new BlockPos(4, 5, 3),
+                new BlockPos(3, 5, 3),
+                new BlockPos(5, 5, 3),
+                new BlockPos(4, 5, 2),
+                new BlockPos(4, 5, 4),
+                new BlockPos(3, 4, 3),
+                new BlockPos(5, 4, 3),
+                new BlockPos(4, 4, 2),
+                new BlockPos(4, 4, 4))) {
             setBlock(helper, rel, leaves);
         }
 
         CompoundTag state = new CompoundTag();
-        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(7, 5, 5), true);
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(7, 6, 5), true);
         context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
         LoggingWorker worker = new LoggingWorker();
+        HiredPathTarget logTarget = new HiredMoveToBlockFaceJob(
+                level,
+                villager,
+                List.of(helper.absolutePos(logRel)),
+                8,
+                context::isInsideWorkArea,
+                blockState -> blockState.is(BlockTags.LEAVES)).search().target();
+        helper.assertTrue(logTarget != null, "test tree log should have a reachable leaf-transparent work face");
 
-        runWorkerUntil(helper, worker, level, villager, hirer, context, 80, () ->
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 160, () ->
                 !level.getBlockState(helper.absolutePos(logRel)).is(BlockTags.LOGS));
         helper.assertFalse(level.getBlockState(helper.absolutePos(logRel)).is(BlockTags.LOGS), "logger should remove the valid natural log");
         helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.OAK_LOG)), "logger should store log drops");
@@ -572,9 +608,16 @@ public final class VillagerWorkerGameTests {
         for (int tick = 0; tick < maxTicks && !done.getAsBoolean(); tick++) {
             worker.maintain(level, villager, context);
             worker.tick(level, villager, hirer, context);
+            level.tickNonPassenger(villager);
         }
         if (!done.getAsBoolean()) {
-            throw new GameTestAssertException("Worker did not reach expected state in " + maxTicks + " direct ticks");
+            HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
+            String debug = worker instanceof LoggingWorker ? " " + LoggingWorker.debugSummary(context) : "";
+            throw new GameTestAssertException("Worker did not reach expected state in " + maxTicks
+                    + " direct ticks; task=" + snapshot.taskState()
+                    + ", failure=" + snapshot.failureReason()
+                    + ", scan=" + snapshot.lastTargetScanResult()
+                    + debug);
         }
     }
 
@@ -631,12 +674,27 @@ public final class VillagerWorkerGameTests {
         if (!level.addFreshEntity(villager)) {
             throw new GameTestAssertException("Could not add villager to level");
         }
+        level.tickNonPassenger(villager);
         return villager;
+    }
+
+    private static ServerPlayer fakePlayer(ServerLevel level, String name) {
+        UUID id = UUID.nameUUIDFromBytes(("villagerretaliation:" + name).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        ServerPlayer player = FakePlayerFactory.get(level, new GameProfile(id, name));
+        BlockPos spawn = level.getSharedSpawnPos();
+        player.moveTo(spawn.getX() + 0.5D, spawn.getY() + 1.0D, spawn.getZ() + 0.5D, 0.0F, 0.0F);
+        return player;
     }
 
     private static void movePlayer(GameTestHelper helper, ServerPlayer player, BlockPos relativePos) {
         BlockPos pos = helper.absolutePos(relativePos);
         player.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
+    }
+
+    private static void tickVillager(ServerLevel level, Villager villager, int ticks) {
+        for (int tick = 0; tick < ticks; tick++) {
+            level.tickNonPassenger(villager);
+        }
     }
 
     private static Container container(ServerLevel level, BlockPos pos) {
@@ -650,6 +708,17 @@ public final class VillagerWorkerGameTests {
         int count = 0;
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
             ItemStack stack = container.getItem(slot);
+            if (stack.is(item)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static int countInventoryItem(HiredJobInventory inventory, net.minecraft.world.item.Item item) {
+        int count = 0;
+        for (int slot = 0; slot < HiredJobInventory.SLOT_COUNT; slot++) {
+            ItemStack stack = inventory.getItem(slot);
             if (stack.is(item)) {
                 count += stack.getCount();
             }

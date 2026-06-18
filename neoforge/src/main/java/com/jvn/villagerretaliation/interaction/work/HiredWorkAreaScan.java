@@ -19,7 +19,9 @@ final class HiredWorkAreaScan {
         int sizeY = Math.max(1, context.workMax().getY() - context.workMin().getY() + 1);
         int sizeZ = Math.max(1, context.workMax().getZ() - context.workMin().getZ() + 1);
         long totalPositions = (long) sizeX * sizeY * sizeZ;
-        long index = Math.floorMod(context.state().getLong(cursorTag), totalPositions);
+        long index = context.state().contains(cursorTag)
+                ? Math.floorMod(context.state().getLong(cursorTag), totalPositions)
+                : 0L;
         long visited = 0L;
         List<BlockPos> candidates = new ArrayList<>();
 
@@ -30,9 +32,12 @@ final class HiredWorkAreaScan {
             }
             index = (index + 1L) % totalPositions;
             visited++;
+            if (index == 0L) {
+                break;
+            }
         }
 
-        boolean completedFullPass = visited >= totalPositions || index == 0L;
+        boolean completedFullPass = index == 0L;
         if (completedFullPass) {
             clearCursor(context, cursorTag);
         } else {
