@@ -114,6 +114,7 @@ public final class VillagerRetaliationEvents {
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             VillagerQuestService.clearRuntimeState(player);
+            HiredDebugPreviewService.clearRuntimeState(player);
         }
     }
 

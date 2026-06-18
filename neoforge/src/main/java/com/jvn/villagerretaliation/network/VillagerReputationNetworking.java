@@ -344,11 +344,10 @@ public final class VillagerReputationNetworking {
                 ClipboardPreviewTogglePayload.TYPE,
                 ClipboardPreviewTogglePayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
-                        ToucanNetwork.withServerPlayer(context, player -> com.jvn.villagerretaliation.debug.HiredDebugPreviewService.setEnabled(
-                                player,
-                                payload.enabled(),
-                                com.jvn.villagerretaliation.debug.HiredDebugPreviewService.DEFAULT_RADIUS
-                        )))
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.debug.HiredDebugPreviewService.setClipboardPreviewEnabled(
+                                        player,
+                                        payload.enabled())))
         );
         network.playToServer(
                 VillagerConversationEndRequestPayload.TYPE,

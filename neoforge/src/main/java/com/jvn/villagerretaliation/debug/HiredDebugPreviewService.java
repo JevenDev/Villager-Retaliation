@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.HiredDebugPreviewSyncPayload;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -40,7 +42,7 @@ public final class HiredDebugPreviewService {
             PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
             return new DebugPreviewSummary(false, 0, 0, 0, sanitizeRadius(radius));
         }
-        ENABLED_PLAYERS.put(playerId, new DebugPreviewState(sanitizeRadius(radius), 0L));
+        ENABLED_PLAYERS.put(playerId, new DebugPreviewState(sanitizeRadius(radius), 0L, false));
         return refreshNow(player);
     }
 
@@ -51,13 +53,37 @@ public final class HiredDebugPreviewService {
             PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
             return new DebugPreviewSummary(false, 0, 0, 0, sanitizeRadius(radius));
         }
-        ENABLED_PLAYERS.put(playerId, new DebugPreviewState(sanitizeRadius(radius), 0L));
+        ENABLED_PLAYERS.put(playerId, new DebugPreviewState(sanitizeRadius(radius), 0L, false));
+        return refreshNow(player);
+    }
+
+    public static DebugPreviewSummary setClipboardPreviewEnabled(ServerPlayer player, boolean enabled) {
+        if (!enabled) {
+            return setEnabled(player, false, DEFAULT_RADIUS);
+        }
+        if (!hasHeldClipboard(player)) {
+            ENABLED_PLAYERS.remove(player.getUUID());
+            PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
+            return new DebugPreviewSummary(false, 0, 0, 0, DEFAULT_RADIUS);
+        }
+        DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
+        if (state != null
+                && player.level() instanceof ServerLevel level
+                && level.getGameTime() < state.nextRefreshGameTime()) {
+            return new DebugPreviewSummary(true, 0, 0, 0, state.radius());
+        }
+        ENABLED_PLAYERS.put(player.getUUID(), new DebugPreviewState(DEFAULT_RADIUS, 0L, true));
         return refreshNow(player);
     }
 
     public static void onPlayerTick(ServerPlayer player) {
         DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
         if (state == null || !(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (state.requiresClipboard() && !hasHeldClipboard(player)) {
+            ENABLED_PLAYERS.remove(player.getUUID());
+            PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
             return;
         }
         long gameTime = level.getGameTime();
@@ -69,6 +95,12 @@ public final class HiredDebugPreviewService {
 
     public static void clearRuntimeState() {
         ENABLED_PLAYERS.clear();
+    }
+
+    public static void clearRuntimeState(ServerPlayer player) {
+        if (player != null) {
+            ENABLED_PLAYERS.remove(player.getUUID());
+        }
     }
 
     private static DebugPreviewSummary refreshNow(ServerPlayer player) {
@@ -111,7 +143,10 @@ public final class HiredDebugPreviewService {
             addStorageEntries(storage, seenStorage, ownerName, AssignedStorageService.allAssignedStorage(level, villager));
         }
         PacketDistributor.sendToPlayer(player, new HiredDebugPreviewSyncPayload(true, workAreas, storage, VISIBLE_TICKS));
-        ENABLED_PLAYERS.put(player.getUUID(), new DebugPreviewState(state.radius(), gameTime + REFRESH_TICKS));
+        ENABLED_PLAYERS.put(player.getUUID(), new DebugPreviewState(
+                state.radius(),
+                gameTime + REFRESH_TICKS,
+                state.requiresClipboard()));
         return new DebugPreviewSummary(true, villagers.size(), workAreas.size(), storage.size(), state.radius());
     }
 
@@ -119,6 +154,12 @@ public final class HiredDebugPreviewService {
         AABB bounds = AABB.ofSize(player.position(), radius * 2.0D, radius * 2.0D, radius * 2.0D);
         return level.getEntitiesOfClass(Villager.class, bounds, villager ->
                 villager.isAlive() && HiredVillagerContractService.isHired(level, villager));
+    }
+
+    private static boolean hasHeldClipboard(ServerPlayer player) {
+        ItemStack mainHand = player.getMainHandItem();
+        return VillagerRetaliationItems.isClipboard(mainHand)
+                || VillagerRetaliationItems.isClipboard(player.getOffhandItem());
     }
 
     private static void addStorageEntries(
@@ -168,7 +209,7 @@ public final class HiredDebugPreviewService {
     public record DebugPreviewSummary(boolean enabled, int villagers, int workAreas, int storage, double radius) {
     }
 
-    private record DebugPreviewState(double radius, long nextRefreshGameTime) {
+    private record DebugPreviewState(double radius, long nextRefreshGameTime, boolean requiresClipboard) {
     }
 
     private record StorageDebugKey(ResourceLocation dimension, BlockPos pos, boolean payment) {

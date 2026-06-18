@@ -101,8 +101,8 @@
     {
       "actions": [
         {
-          "forced_dialogue": "quest.lost_civilization.storm_reminder",
-          "type": "forced_dialogue"
+          "flash_tracker": true,
+          "type": "tracker"
         }
       ],
       "conditions": [

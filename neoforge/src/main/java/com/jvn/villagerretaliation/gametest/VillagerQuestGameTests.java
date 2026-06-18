@@ -36,6 +36,18 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class VillagerQuestGameTests {
     private static final String EMPTY_TEMPLATE = "empty";
     private static final String LOCALE = "en_us";
+    private static final EnumSet<QuestDefinition.TriggerEvent> DEFERRED_TRIGGER_EVENTS = EnumSet.of(
+            QuestDefinition.TriggerEvent.PLAYER_TICK,
+            QuestDefinition.TriggerEvent.PROXIMITY,
+            QuestDefinition.TriggerEvent.PROGRESS);
+    private static final EnumSet<VillagerActionDefinition.Kind> LIVE_CONTEXT_ACTION_KINDS = EnumSet.of(
+            VillagerActionDefinition.Kind.QUEST,
+            VillagerActionDefinition.Kind.REPUTATION,
+            VillagerActionDefinition.Kind.GOSSIP,
+            VillagerActionDefinition.Kind.MEMORY,
+            VillagerActionDefinition.Kind.LOOT,
+            VillagerActionDefinition.Kind.NOTIFICATION,
+            VillagerActionDefinition.Kind.FORCED_DIALOGUE);
     private static final Map<String, Integer> EXPECTED_QUESTLINE_COUNTS = orderedMap(
             Map.entry("cartographers_atlas", 8),
             Map.entry("dangerous_commissions", 4),
@@ -165,7 +177,7 @@ public final class VillagerQuestGameTests {
                 VillagerActionDefinition.Kind.SET_TAG,
                 VillagerActionDefinition.Kind.SET_VARIABLE,
                 VillagerActionDefinition.Kind.NOTIFICATION,
-                VillagerActionDefinition.Kind.FORCED_DIALOGUE), "trigger action kinds");
+                VillagerActionDefinition.Kind.TRACKER), "trigger action kinds");
         assertContainsAll(helper, abandonmentModes, Set.of(
                 QuestDefinition.AbandonmentMode.ALLOW_REPICKUP,
                 QuestDefinition.AbandonmentMode.COOLDOWN,
@@ -218,6 +230,25 @@ public final class VillagerQuestGameTests {
                         VillagerRetaliation.id("end_city_margin"),
                         QuestDefinition.TriggerEvent.COMPLETED),
                 "completed trigger index is missing end_city_margin");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void deferredQuestTriggersAvoidLiveIssuerActions(GameTestHelper helper) {
+        for (QuestDefinition quest : quests(helper)) {
+            for (QuestDefinition.Trigger trigger : quest.triggers()) {
+                if (!DEFERRED_TRIGGER_EVENTS.contains(trigger.event())) {
+                    continue;
+                }
+                for (VillagerActionDefinition action : trigger.actions()) {
+                    helper.assertFalse(
+                            LIVE_CONTEXT_ACTION_KINDS.contains(action.kind()),
+                            quest.id() + "/" + trigger.id() + " uses " + action.kind()
+                                    + " from " + trigger.event() + ", which may wait on an unloaded quest issuer");
+                }
+            }
+        }
 
         helper.succeed();
     }
