@@ -85,16 +85,21 @@ public final class VillagerGossipHooks {
 
     private static List<Villager> nearestReceivers(Villager source, Iterable<Villager> candidates, int receiverLimit) {
         List<Villager> nearest = new ArrayList<>(receiverLimit);
+        double[] nearestDistances = new double[receiverLimit];
         for (Villager candidate : candidates) {
             int insertAt = 0;
             double distanceSqr = source.distanceToSqr(candidate);
-            while (insertAt < nearest.size() && source.distanceToSqr(nearest.get(insertAt)) <= distanceSqr) {
+            while (insertAt < nearest.size() && nearestDistances[insertAt] <= distanceSqr) {
                 insertAt++;
             }
             if (insertAt >= receiverLimit) {
                 continue;
             }
             nearest.add(insertAt, candidate);
+            for (int i = Math.min(nearest.size() - 1, receiverLimit - 1); i > insertAt; i--) {
+                nearestDistances[i] = nearestDistances[i - 1];
+            }
+            nearestDistances[insertAt] = distanceSqr;
             if (nearest.size() > receiverLimit) {
                 nearest.remove(nearest.size() - 1);
             }
