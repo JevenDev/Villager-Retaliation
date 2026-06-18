@@ -2,6 +2,8 @@
 
 The cleanest beta.12 quest authoring style is module-based. One quest or story beat gets a matching set of files that share the same relative path.
 
+If this is your first quest, start with [First Quest Guide](First-Quest.md). It shows the two files every playable quest normally needs: the quest JSON and the matching dialogue tree.
+
 ## Recommended Module Layout
 
 ```text

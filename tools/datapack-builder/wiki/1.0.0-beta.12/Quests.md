@@ -2,6 +2,8 @@
 
 Quest JSON defines who can offer a quest, what the player must do, how the quest repeats, and what happens on completion.
 
+If you are making your first playable quest, start with [First Quest Guide](First-Quest.md). Quest JSON defines the quest, but a matching dialogue tree is what creates the Talk menu offer, reminder, and turn-in flow.
+
 ## Paths
 
 ```text

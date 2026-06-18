@@ -284,6 +284,7 @@ For full pack-author documentation, examples, JSON references, and model notes, 
 - [Player Wiki](https://jevendev.github.io/Villager-Retaliation/)
 - [Pack Wiki Home](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki)
 - [Datapack Generator](https://jevendev.github.io/Villager-Retaliation/datapack-builder/)
+- [First Quest Guide](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/First-Quest.md)
 - [Quest JSON](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Quests.md)
 - [Dialogue Trees](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Dialogue-Trees.md)
 - [Skill Trades](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Skill-Trades.md)
