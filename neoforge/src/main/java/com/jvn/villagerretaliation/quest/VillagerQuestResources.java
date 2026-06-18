@@ -345,7 +345,7 @@ public final class VillagerQuestResources {
                 description,
                 titleKey,
                 descriptionKey,
-                DatapackJsonReader.readString(root, "questline"),
+                firstNonBlank(DatapackJsonReader.readString(root, "questline"), inferQuestline(location)),
                 readQuestTags(root),
                 parent,
                 readOffer(location, root, id),
@@ -1580,6 +1580,16 @@ public final class VillagerQuestResources {
         }
         String questPath = path.substring((RESOURCE_ROOT + "/").length(), path.length() - ".json".length());
         return ResourceLocation.tryParse(location.getNamespace() + ":" + questPath);
+    }
+
+    private static String inferQuestline(ResourceLocation location) {
+        String path = location.getPath();
+        if (!path.startsWith(RESOURCE_ROOT + "/")) {
+            return "";
+        }
+        String questPath = path.substring((RESOURCE_ROOT + "/").length());
+        int slash = questPath.indexOf('/');
+        return slash <= 0 ? "" : questPath.substring(0, slash);
     }
 
     private static int readVillagerLevel(JsonObject object, String key, int fallback) {

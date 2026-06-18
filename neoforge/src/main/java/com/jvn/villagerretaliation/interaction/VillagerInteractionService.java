@@ -709,13 +709,13 @@ public final class VillagerInteractionService {
             return;
         }
         int stepCount = Math.max(1, Math.min(5, steps));
-        Optional<HiredVillagerTarget> target = findHiredVillagerByUuid(player, villagerId);
+        Optional<HiredVillagerIndex.Target> target = HiredVillagerIndex.find(player, villagerId);
         if (target.isEmpty()) {
             player.displayClientMessage(Component.literal("That worker is not available right now."), true);
             return;
         }
 
-        HiredVillagerTarget contextTarget = target.get();
+        HiredVillagerIndex.Target contextTarget = target.get();
         ServerLevel level = contextTarget.level();
         Villager villager = contextTarget.villager();
         if (findClipboard(player).isEmpty()) {
@@ -785,20 +785,6 @@ public final class VillagerInteractionService {
                     CONTRACT_DOWN -> true;
             case PREVIEW, CONFIGURE_ROLE -> false;
         };
-    }
-
-    private static Optional<HiredVillagerTarget> findHiredVillagerByUuid(ServerPlayer player, UUID villagerId) {
-        for (ServerLevel level : player.server.getAllLevels()) {
-            for (Entity entity : level.getAllEntities()) {
-                if (!(entity instanceof Villager villager) || !villager.isAlive() || !villager.getUUID().equals(villagerId)) {
-                    continue;
-                }
-                if (HiredVillagerContractService.isHiredBy(level, villager, player)) {
-                    return Optional.of(new HiredVillagerTarget(level, villager));
-                }
-            }
-        }
-        return Optional.empty();
     }
 
     private static boolean handleHireDurationRequest(
@@ -2364,9 +2350,6 @@ public final class VillagerInteractionService {
     }
 
     private record ReputationSnapshot(int value, VillagerReputationLevel level) {
-    }
-
-    private record HiredVillagerTarget(ServerLevel level, Villager villager) {
     }
 
     private enum BuilderPaymentSource {

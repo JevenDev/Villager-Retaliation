@@ -23,7 +23,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -49,14 +48,9 @@ public final class ClipboardWorkforceService {
         int paymentContainers = 0;
         int dailyWages = 0;
 
-        for (ServerLevel level : player.server.getAllLevels()) {
-            for (Entity entity : level.getAllEntities()) {
-                if (!(entity instanceof Villager villager) || !villager.isAlive() || villager.isBaby()) {
-                    continue;
-                }
-                if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-                    continue;
-                }
+        for (HiredVillagerIndex.Target target : HiredVillagerIndex.targetsFor(player)) {
+            ServerLevel level = target.level();
+            Villager villager = target.villager();
 
                 HiredWorkSession session = HiredWorkSession.active(level, villager);
                 HiredVillagerRole role = session.role();
@@ -154,7 +148,6 @@ public final class ClipboardWorkforceService {
                         tooFar,
                         missingTools
                 ));
-            }
         }
 
         List<ClipboardWorkforceSnapshot.JobSummary> jobs = new ArrayList<>();

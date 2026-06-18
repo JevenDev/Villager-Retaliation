@@ -38,6 +38,12 @@ neoForge {
             programArgument '--nogui'
         }
 
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory.set(layout.buildDirectory.dir('gametest-run'))
+            systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
+        }
+
         data {
             data()
             programArguments.addAll '--mod', rootProject.mod_id, '--all',
@@ -65,6 +71,7 @@ configurations {
 dependencies {
     implementation "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
     annotationProcessor "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
+    implementation "dev.architectury:architectury-neoforge:${rootProject.architectury_version}"
 
     if (rootProject.enable_toucanlib.toBoolean()) {
         if (rootProject.useLocalToucanLib.toBoolean()) {
@@ -83,6 +90,7 @@ tasks.named('processResources', ProcessResources).configure {
             loader_version_range   : rootProject.loader_version_range,
             toucanlib_version      : rootProject.toucanlib_version,
             owo_version            : rootProject.owo_version,
+            architectury_version   : rootProject.architectury_version,
             mod_id                 : rootProject.mod_id,
             mod_name               : rootProject.mod_name,
             mod_license            : rootProject.mod_license,
@@ -104,6 +112,13 @@ side="BOTH"
 modId="owo"
 type="required"
 versionRange="[${rootProject.owo_version},)"
+ordering="AFTER"
+side="BOTH"
+""",
+            neoforge_architectury_dependency: """[[dependencies."${rootProject.mod_id}"]]
+modId="architectury"
+type="required"
+versionRange="[${rootProject.architectury_version},)"
 ordering="AFTER"
 side="BOTH"
 """,

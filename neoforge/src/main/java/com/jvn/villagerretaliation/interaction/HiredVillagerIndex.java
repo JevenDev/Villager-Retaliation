@@ -1,0 +1,138 @@
+package com.jvn.villagerretaliation.interaction;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.Level;
+
+public final class HiredVillagerIndex {
+    private static final Map<UUID, Entry> BY_VILLAGER = new HashMap<>();
+    private static final Map<UUID, LinkedHashSet<UUID>> BY_OWNER = new HashMap<>();
+
+    private HiredVillagerIndex() {
+    }
+
+    public static void update(ServerLevel level, Villager villager) {
+        if (level == null || villager == null || !villager.isAlive() || villager.isBaby()) {
+            remove(villager);
+            return;
+        }
+        Optional<UUID> owner = HiredVillagerContractService.getHirer(level, villager);
+        if (owner.isEmpty()) {
+            remove(villager);
+            return;
+        }
+        upsert(level, villager, owner.get());
+    }
+
+    public static Optional<Target> find(ServerPlayer player, UUID villagerId) {
+        if (player == null || player.server == null || villagerId == null) {
+            return Optional.empty();
+        }
+        Entry entry = BY_VILLAGER.get(villagerId);
+        if (entry == null || !entry.owner().equals(player.getUUID())) {
+            return Optional.empty();
+        }
+        return resolve(player.server, villagerId, entry);
+    }
+
+    public static List<Target> targetsFor(ServerPlayer player) {
+        if (player == null || player.server == null) {
+            return List.of();
+        }
+        Set<UUID> indexed = BY_OWNER.get(player.getUUID());
+        if (indexed == null || indexed.isEmpty()) {
+            return List.of();
+        }
+
+        List<Target> targets = new ArrayList<>();
+        for (UUID villagerId : List.copyOf(indexed)) {
+            Entry entry = BY_VILLAGER.get(villagerId);
+            if (entry == null || !entry.owner().equals(player.getUUID())) {
+                remove(villagerId);
+                continue;
+            }
+            resolve(player.server, villagerId, entry).ifPresent(targets::add);
+        }
+        return targets;
+    }
+
+    public static void remove(Villager villager) {
+        if (villager != null) {
+            remove(villager.getUUID());
+        }
+    }
+
+    public static void clearRuntimeState() {
+        BY_VILLAGER.clear();
+        BY_OWNER.clear();
+    }
+
+    static int indexedVillagerCountFor(UUID owner) {
+        Set<UUID> villagerIds = BY_OWNER.get(owner);
+        return villagerIds == null ? 0 : villagerIds.size();
+    }
+
+    private static void upsert(ServerLevel level, Villager villager, UUID owner) {
+        UUID villagerId = villager.getUUID();
+        Entry previous = BY_VILLAGER.put(villagerId, new Entry(owner, level.dimension()));
+        if (previous != null && !previous.owner().equals(owner)) {
+            removeFromOwner(previous.owner(), villagerId);
+        }
+        BY_OWNER.computeIfAbsent(owner, ignored -> new LinkedHashSet<>()).add(villagerId);
+    }
+
+    private static Optional<Target> resolve(MinecraftServer server, UUID villagerId, Entry entry) {
+        ServerLevel level = server.getLevel(entry.dimension());
+        if (level == null) {
+            remove(villagerId);
+            return Optional.empty();
+        }
+        Entity entity = level.getEntity(villagerId);
+        if (!(entity instanceof Villager villager) || !villager.isAlive() || villager.isBaby()) {
+            remove(villagerId);
+            return Optional.empty();
+        }
+        Optional<UUID> owner = HiredVillagerContractService.getHirer(level, villager);
+        if (owner.isEmpty() || !owner.get().equals(entry.owner())) {
+            remove(villagerId);
+            return Optional.empty();
+        }
+        return Optional.of(new Target(level, villager));
+    }
+
+    private static void remove(UUID villagerId) {
+        Entry previous = BY_VILLAGER.remove(villagerId);
+        if (previous != null) {
+            removeFromOwner(previous.owner(), villagerId);
+        }
+    }
+
+    private static void removeFromOwner(UUID owner, UUID villagerId) {
+        Set<UUID> owned = BY_OWNER.get(owner);
+        if (owned == null) {
+            return;
+        }
+        owned.remove(villagerId);
+        if (owned.isEmpty()) {
+            BY_OWNER.remove(owner);
+        }
+    }
+
+    public record Target(ServerLevel level, Villager villager) {
+    }
+
+    private record Entry(UUID owner, ResourceKey<Level> dimension) {
+    }
+}

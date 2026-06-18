@@ -175,6 +175,7 @@ public final class HiredVillagerContractService {
         lockProfessionForHire(villager, tag);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
         villager.setPersistenceRequired();
+        HiredVillagerIndex.update(level, villager);
     }
 
     public static boolean extendHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
@@ -400,6 +401,7 @@ public final class HiredVillagerContractService {
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
         villager.setPersistenceRequired();
+        HiredVillagerIndex.remove(villager);
     }
 
     private static void setWorkStatus(Villager villager, String status) {

@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.work.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -133,6 +134,7 @@ public final class VillagerRetaliationEvents {
         VillagerConversationService.clearRuntimeState();
         VillagerRecruitmentService.clearRuntimeState();
         HiredVillagerWorkService.clearRuntimeState();
+        HiredVillagerIndex.clearRuntimeState();
         HiredOreBlockTracker.clearRuntimeState();
         VillagerTradeMemory.clearRuntimeState();
         VillagerSocialGraphService.clearRuntimeState();
@@ -259,6 +261,9 @@ public final class VillagerRetaliationEvents {
         if (entity instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
             HiredVillagerContractService.onVillagerTickPost(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                HiredVillagerIndex.update(level, villager);
+            }
             VillagerRecruitmentService.onVillagerTickPost(villager);
             HiredVillagerWorkService.onVillagerTickPost(villager);
             if (villager.level() instanceof ServerLevel level) {
@@ -581,6 +586,7 @@ public final class VillagerRetaliationEvents {
             VillagerTradeUseTracker.forget(villager);
         }
         if (event.getEntity() instanceof Villager villager) {
+            HiredVillagerIndex.remove(villager);
             if (villager.level() instanceof ServerLevel level) {
                 HiredVillagerWorkService.onVillagerLeaveLevel(level, villager);
             }
