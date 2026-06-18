@@ -8,6 +8,7 @@ import io.wispforest.owo.config.annotation.RangeConstraint;
 import io.wispforest.owo.config.annotation.SectionHeader;
 import com.jvn.villagerretaliation.config.ContainerForcedDialogueTrigger;
 import com.jvn.villagerretaliation.config.ContainerWatchMode;
+import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.ReputationChangeDisplayMode;
 import com.jvn.villagerretaliation.config.ReputationChangeHudPosition;
@@ -121,6 +122,8 @@ public final class VillagerRetaliationConfigModel {
         public boolean separateVillagerChatSpeakers = true;
 
         public InteractionChatPosition interactionChatPosition = InteractionChatPosition.BOTTOM_LEFT;
+
+        public DialogueTextSpeed dialogueTextSpeed = DialogueTextSpeed.MEDIUM;
 
         @RangeConstraint(min = 0.0D, max = 0.25D, decimalPlaces = 2)
         public double dialogueCameraZoomAmount = 0.15D;

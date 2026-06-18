@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.reputation.VillagerReputationIconSet;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
@@ -244,6 +245,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private long experimentalSkillsExitStartMillis = -1L;
     private Button giftButton;
     private String villagerDialogueText = "";
+    private long dialogueTextAnimationStartMillis;
+    private boolean dialogueTextAnimationSkipped;
     private final GiftPageContext giftPageContext = new GiftPageContext();
     private final OptionListContext optionListContext = new OptionListContext();
     private final NavigationChromeContext navigationChromeContext = new NavigationChromeContext();
@@ -421,6 +424,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         this.villagerDialogueText = text.strip();
+        this.dialogueTextAnimationStartMillis = Util.getMillis();
+        this.dialogueTextAnimationSkipped = dialogueTextSpeed().instant();
     }
 
     @Override
@@ -494,6 +499,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         if (this.page == DialoguePage.GIFT && tryClickGiftPage(mouseX, mouseY)) {
+            return true;
+        }
+
+        if (trySkipDialogueTextAnimation(mouseX, mouseY)) {
             return true;
         }
 
@@ -1942,8 +1951,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int textBottom = top + INTERACTION_DIALOGUE_BOTTOM;
         int lineStep = this.font.lineHeight;
         int maxLines = Math.max(1, (textBottom - textTop) / lineStep);
+        String displayedDialogue = displayedDialogueText();
+        if (displayedDialogue.isBlank()) {
+            return;
+        }
         List<FormattedCharSequence> lines = this.font.split(
-                Component.literal(this.villagerDialogueText),
+                Component.literal(displayedDialogue),
                 INTERACTION_DIALOGUE_RIGHT - INTERACTION_DIALOGUE_LEFT
         );
         graphics.enableScissor(textLeft, textTop, textRight, textBottom);
@@ -1958,6 +1971,66 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             );
         }
         graphics.disableScissor();
+    }
+
+    private String displayedDialogueText() {
+        if (isDialogueTextAnimationComplete()) {
+            return this.villagerDialogueText;
+        }
+
+        int visibleCharacters = visibleDialogueTextCharacters();
+        if (visibleCharacters <= 0) {
+            return "";
+        }
+        int endIndex = this.villagerDialogueText.offsetByCodePoints(
+                0,
+                Math.min(visibleCharacters, this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length()))
+        );
+        return this.villagerDialogueText.substring(0, endIndex);
+    }
+
+    private boolean trySkipDialogueTextAnimation(double mouseX, double mouseY) {
+        if (isDialogueTextAnimationComplete() || !isPointInsideInteractionDialogue(mouseX, mouseY)) {
+            return false;
+        }
+        this.dialogueTextAnimationSkipped = true;
+        return true;
+    }
+
+    private boolean isPointInsideInteractionDialogue(double mouseX, double mouseY) {
+        if (!shouldRenderInteractionContainer() || this.villagerDialogueText.isBlank()) {
+            return false;
+        }
+
+        int left = interactionContainerLeft();
+        int top = interactionContainerTop();
+        return mouseX >= left + INTERACTION_DIALOGUE_LEFT
+                && mouseX < left + INTERACTION_DIALOGUE_RIGHT
+                && mouseY >= top + INTERACTION_DIALOGUE_TOP
+                && mouseY < top + INTERACTION_DIALOGUE_BOTTOM;
+    }
+
+    private boolean isDialogueTextAnimationComplete() {
+        if (this.villagerDialogueText.isBlank() || this.dialogueTextAnimationSkipped) {
+            return true;
+        }
+        DialogueTextSpeed speed = dialogueTextSpeed();
+        return speed.instant()
+                || visibleDialogueTextCharacters() >= this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length());
+    }
+
+    private int visibleDialogueTextCharacters() {
+        DialogueTextSpeed speed = dialogueTextSpeed();
+        if (speed.instant()) {
+            return this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length());
+        }
+        long elapsedMillis = Math.max(0L, Util.getMillis() - this.dialogueTextAnimationStartMillis);
+        return Math.max(1, (int) (elapsedMillis / speed.millisPerCharacter()) + 1);
+    }
+
+    private static DialogueTextSpeed dialogueTextSpeed() {
+        DialogueTextSpeed speed = VillagerRetaliationConfig.DIALOGUE_TEXT_SPEED.get();
+        return speed == null ? DialogueTextSpeed.MEDIUM : speed;
     }
 
     private void renderInteractionStats(GuiGraphics graphics, int left, int top) {
