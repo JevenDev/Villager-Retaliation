@@ -127,7 +127,6 @@ public final class VillagerRetaliationEvents {
 
     public static void onServerStopping(ServerStoppingEvent event) {
         VillagerDataWarmup.clearCaches();
-        VillagerRetaliationVillagerBrainUtil.clearRuntimeState();
         VillagerTaskNavigationUtil.clearRuntimeState();
         VillagerRetaliationVillagerRules.clearCachedChecks();
         VillagerGossipHooks.clear();
@@ -593,7 +592,6 @@ public final class VillagerRetaliationEvents {
                 HiredVillagerWorkService.onVillagerLeaveLevel(level, villager);
             }
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
-            VillagerRetaliationVillagerBrainUtil.clearRuntimeState(villager);
             VillagerTaskNavigationUtil.clearRuntimeState(villager);
             VillagerRetaliationVillagerRules.clearCachedChecks(villager);
             VillagerTradeMemory.clearRuntimeState(villager);

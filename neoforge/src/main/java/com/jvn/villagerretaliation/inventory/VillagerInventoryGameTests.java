@@ -1,10 +1,14 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
+import com.mojang.authlib.GameProfile;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.gametest.framework.GameTest;
@@ -14,9 +18,16 @@ import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.behavior.GiveGiftToHero;
+import net.minecraft.world.entity.ai.behavior.ShowTradesToPlayer;
+import net.minecraft.world.entity.ai.behavior.TradeWithVillager;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
@@ -26,6 +37,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -189,6 +201,118 @@ public final class VillagerInventoryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void tradePreviewMixinPreservesVillagerMainHand(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrTradePreview");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        player.moveTo(villager.getX() + 1.0D, villager.getY(), villager.getZ(), 0.0F, 0.0F);
+        villager.getBrain().setMemory(MemoryModuleType.INTERACTION_TARGET, player);
+        villager.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND_SWORD));
+
+        ShowTradesToPlayer previewBehavior = new ShowTradesToPlayer(400, 1600);
+        helper.assertFalse(
+                previewBehavior.checkExtraStartConditions(level, villager),
+                "trade preview behavior should not start for player-held trade items");
+        helper.assertFalse(
+                previewBehavior.canStillUse(level, villager, level.getGameTime()),
+                "trade preview behavior should stop if already running");
+
+        invokeShowTradesToPlayerDisplayAsHeldItem(villager, new ItemStack(Items.EMERALD));
+        helper.assertTrue(villager.getMainHandItem().is(Items.DIAMOND_SWORD), "trade preview should not replace real main hand");
+
+        invokeShowTradesToPlayerClearHeldItem(villager);
+        helper.assertTrue(villager.getMainHandItem().is(Items.DIAMOND_SWORD), "trade preview cleanup should not clear real main hand");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerFoodSharingMixinKeepsBreadInInventory(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        Villager source = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Villager target = spawnVillager(helper, new BlockPos(2, 2, 1));
+        source.getInventory().setItem(0, new ItemStack(Items.BREAD, 32));
+
+        invokeTradeWithVillagerThrowHalfStack(source, Set.of(Items.BREAD), target);
+        helper.assertValueEqual(source.getInventory().countItem(Items.BREAD), 32, "suppressed food sharing should not remove bread");
+        helper.assertValueEqual(countDroppedItems(level, source.blockPosition(), Items.BREAD), 0, "suppressed food sharing should not spawn bread");
+        source.discard();
+        target.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void heroGiftMixinSuppressesDroppedGifts(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hero = fakePlayer(level, "VrGiftSuppress");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        invokeHeroGiftThrow(new GiveGiftToHero(100), villager, hero);
+        helper.assertValueEqual(countDroppedItems(level, villager.blockPosition(), Items.WHEAT_SEEDS), 0, "suppressed hero gifts should not spawn items");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void jobInventoryDisplacesRegularMainHandWithoutDuplicating(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager,
+                EquipmentSlot.MAINHAND,
+                new ItemStack(Items.DIAMOND_SWORD));
+
+        HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+        jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_PICKAXE));
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_PICKAXE), "job gear should take main hand authority");
+        helper.assertValueEqual(countStored(villager, Items.DIAMOND_SWORD), 1, "displaced personal weapon should be stored once");
+        helper.assertValueEqual(countStored(villager, Items.IRON_PICKAXE), 0, "active job gear should not be copied into personal inventory");
+
+        jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        helper.assertValueEqual(countStored(villager, Items.IRON_PICKAXE), 0, "replacing job gear should not duplicate previous job gear");
+        helper.assertValueEqual(countStored(villager, Items.DIAMOND_SWORD), 1, "personal weapon should remain stored exactly once");
+
+        jobInventory.removeItemNoUpdate(HiredJobInventory.MAINHAND_SLOT);
+        helper.assertTrue(villager.getMainHandItem().isEmpty(), "removed job gear should clear job-controlled main hand");
+        helper.assertValueEqual(countStored(villager, Items.DIAMOND_SWORD), 1, "stored personal weapon should not duplicate after job removal");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void jobInventoryAssignedStorageDepositMovesExactCountOnce(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrInventoryDeposit");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        BlockPos storageRel = new BlockPos(3, 2, 1);
+        BlockPos storagePos = helper.absolutePos(storageRel);
+        setBlock(helper, storageRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, storagePos);
+
+        AssignedStorageService.AssignSummary summary = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), storagePos)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+        helper.assertValueEqual(summary.assigned(), 1, "output storage assignment");
+
+        HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+        helper.assertTrue(jobInventory.insertOutput(new ItemStack(Items.COBBLESTONE, 32)).isEmpty(), "output should fit");
+        helper.assertTrue(jobInventory.depositOutputToAssignedStorage(), "first deposit should move output");
+        helper.assertFalse(jobInventory.depositOutputToAssignedStorage(), "second deposit should find no remaining output");
+        helper.assertValueEqual(countItem(container(level, storagePos), Items.COBBLESTONE), 32, "storage should receive the exact output count once");
+        helper.assertValueEqual(countJobInventoryItem(jobInventory, Items.COBBLESTONE), 0, "job inventory should have no duplicate remainder");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
     private static int countStored(Villager villager, Item item) {
         int count = 0;
         NonNullList<ItemStack> inventory = VillagerInventoryContainer.loadFullInventory(villager);
@@ -198,6 +322,85 @@ public final class VillagerInventoryGameTests {
             }
         }
         return count;
+    }
+
+    private static int countItem(Container container, Item item) {
+        int count = 0;
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack stack = container.getItem(slot);
+            if (stack.is(item)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static int countJobInventoryItem(HiredJobInventory inventory, Item item) {
+        int count = 0;
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack.is(item)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static void invokeTradeWithVillagerThrowHalfStack(
+            Villager villager,
+            Set<Item> items,
+            LivingEntity target) {
+        try {
+            Method method = TradeWithVillager.class.getDeclaredMethod(
+                    "throwHalfStack",
+                    Villager.class,
+                    Set.class,
+                    LivingEntity.class);
+            method.setAccessible(true);
+            method.invoke(null, villager, items, target);
+        } catch (ReflectiveOperationException exception) {
+            throw new GameTestAssertException("Could not invoke TradeWithVillager.throwHalfStack: " + exception);
+        }
+    }
+
+    private static void invokeShowTradesToPlayerDisplayAsHeldItem(Villager villager, ItemStack stack) {
+        try {
+            Method method = ShowTradesToPlayer.class.getDeclaredMethod(
+                    "displayAsHeldItem",
+                    Villager.class,
+                    ItemStack.class);
+            method.setAccessible(true);
+            method.invoke(null, villager, stack);
+        } catch (ReflectiveOperationException exception) {
+            throw new GameTestAssertException("Could not invoke ShowTradesToPlayer.displayAsHeldItem: " + exception);
+        }
+    }
+
+    private static void invokeShowTradesToPlayerClearHeldItem(Villager villager) {
+        try {
+            Method method = ShowTradesToPlayer.class.getDeclaredMethod("clearHeldItem", Villager.class);
+            method.setAccessible(true);
+            method.invoke(null, villager);
+        } catch (ReflectiveOperationException exception) {
+            throw new GameTestAssertException("Could not invoke ShowTradesToPlayer.clearHeldItem: " + exception);
+        }
+    }
+
+    private static void invokeHeroGiftThrow(GiveGiftToHero behavior, Villager villager, LivingEntity target) {
+        try {
+            Method method = GiveGiftToHero.class.getDeclaredMethod("throwGift", Villager.class, LivingEntity.class);
+            method.setAccessible(true);
+            method.invoke(behavior, villager, target);
+        } catch (ReflectiveOperationException exception) {
+            throw new GameTestAssertException("Could not invoke GiveGiftToHero.throwGift: " + exception);
+        }
+    }
+
+    private static Container container(ServerLevel level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof Container container) {
+            return container;
+        }
+        throw new GameTestAssertException("Expected container at " + pos);
     }
 
     private static int countDroppedItems(ServerLevel level, BlockPos center, Item item) {
@@ -238,6 +441,14 @@ public final class VillagerInventoryGameTests {
         }
         level.tickNonPassenger(villager);
         return villager;
+    }
+
+    private static ServerPlayer fakePlayer(ServerLevel level, String name) {
+        UUID id = UUID.nameUUIDFromBytes(("villagerretaliation:" + name).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        ServerPlayer player = FakePlayerFactory.get(level, new GameProfile(id, name));
+        BlockPos spawn = level.getSharedSpawnPos();
+        player.moveTo(spawn.getX() + 0.5D, spawn.getY() + 1.0D, spawn.getZ() + 0.5D, 0.0F, 0.0F);
+        return player;
     }
 
     private static void configureGameTestStructures() {

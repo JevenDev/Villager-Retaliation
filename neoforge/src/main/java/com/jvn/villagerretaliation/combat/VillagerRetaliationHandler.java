@@ -106,9 +106,6 @@ public final class VillagerRetaliationHandler {
         }
 
         ensureProfessionMainHand(villager);
-        if (villager.level() instanceof ServerLevel level) {
-            VillagerRetaliationVillagerBrainUtil.removeTradePreviewBehavior(level, villager);
-        }
         VillagerArmorerCombatTactics.ensureSpawnShieldRoll(villager);
     }
 
@@ -232,10 +229,6 @@ public final class VillagerRetaliationHandler {
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         if (!(event.getEntity() instanceof Villager villager) || villager.level().isClientSide) {
             return;
-        }
-
-        if (villager.level() instanceof ServerLevel level) {
-            VillagerRetaliationVillagerBrainUtil.removeTradePreviewBehaviorIfDue(level, villager);
         }
 
         if (shouldSuppressFleeingForRetaliation(villager)) {

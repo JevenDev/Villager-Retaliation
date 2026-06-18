@@ -6,7 +6,10 @@
     "AbstractContainerMenuAccessor",
     "BrewingStandBlockEntityAccessor",
     "EntityNameMixin",
+    "GiveGiftToHeroMixin",
     "HarvestFarmlandMixin",
+    "ShowTradesToPlayerMixin",
+    "TradeWithVillagerMixin",
     "VillagerBrainTickMixin",
     "VillagerTradeLevelingMixin",
     "WalkNodeEvaluatorMixin"
