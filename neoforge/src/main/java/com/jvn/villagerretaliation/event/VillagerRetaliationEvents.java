@@ -44,6 +44,7 @@ import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.trade.VillagerTradeMemory;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerDataWarmup;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -713,7 +714,7 @@ public final class VillagerRetaliationEvents {
         if (!(villager.level() instanceof ServerLevel level) || !level.isThundering()) {
             return;
         }
-        if (level.getGameTime() % 200L == Math.floorMod(villager.getUUID().getLeastSignificantBits(), 200L)) {
+        if (TickThrottle.isSpreadTick(villager.getUUID(), level.getGameTime(), 200L)) {
             VillageEventMemory.EventTag weatherTag = weatherEventTag(level, villager.blockPosition());
             if (VillageEventMemory.remember(level, weatherTag, villager.blockPosition(), villager, null)) {
                 VillagerMoodService.recordVillageEvent(level, villager, weatherTag, null);

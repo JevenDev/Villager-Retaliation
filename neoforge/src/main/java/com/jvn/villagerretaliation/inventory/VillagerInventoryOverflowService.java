@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.dialogue.GeneratedContainerSavedData;
 import com.jvn.villagerretaliation.dialogue.GeneratedContainerLootResources;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -59,7 +60,7 @@ final class VillagerInventoryOverflowService {
         closePendingContainersIfDue(level);
         if (villager.isBaby()
                 || VillagerInventoryContainer.hasOpenInventory(villager)
-                || level.getGameTime() % SCAN_INTERVAL_TICKS != spreadTickOffset(villager)) {
+                || !TickThrottle.isSpreadTick(villager.getUUID(), level.getGameTime(), SCAN_INTERVAL_TICKS)) {
             return;
         }
 
@@ -102,10 +103,6 @@ final class VillagerInventoryOverflowService {
             VillagerInventoryContainer.saveFullInventory(villager, inventory);
             openUsedContainers(level, usedContainers);
         }
-    }
-
-    private static long spreadTickOffset(Villager villager) {
-        return Math.floorMod(villager.getUUID().getLeastSignificantBits(), SCAN_INTERVAL_TICKS);
     }
 
     private static boolean hasNoEmptySlots(NonNullList<ItemStack> inventory) {

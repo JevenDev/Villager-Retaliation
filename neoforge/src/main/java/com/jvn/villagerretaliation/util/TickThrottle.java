@@ -23,6 +23,28 @@ public final class TickThrottle {
         return true;
     }
 
+    public static boolean isSpreadTick(long seed, long gameTime, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return true;
+        }
+        return Math.floorMod(gameTime, intervalTicks) == spreadOffset(seed, intervalTicks);
+    }
+
+    public static boolean isSpreadTick(UUID id, long gameTime, long intervalTicks) {
+        return isSpreadTick(id.getLeastSignificantBits(), gameTime, intervalTicks);
+    }
+
+    public static long spreadOffset(long seed, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(seed, intervalTicks);
+    }
+
+    public static long spreadOffset(UUID id, long intervalTicks) {
+        return spreadOffset(id.getLeastSignificantBits(), intervalTicks);
+    }
+
     public static long stagger(UUID id, long intervalTicks) {
         if (intervalTicks <= 1L) {
             return 0L;

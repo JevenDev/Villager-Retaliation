@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.combat;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -488,8 +489,7 @@ public final class VillagerRetaliationRetaliationUtil {
     }
 
     private static boolean shouldPersistAngerRefresh(AbstractVillager villager, long gameTime) {
-        return gameTime % PERSISTENT_ANGER_REFRESH_INTERVAL_TICKS
-                == Math.floorMod(villager.getUUID().getLeastSignificantBits(), PERSISTENT_ANGER_REFRESH_INTERVAL_TICKS);
+        return TickThrottle.isSpreadTick(villager.getUUID(), gameTime, PERSISTENT_ANGER_REFRESH_INTERVAL_TICKS);
     }
 
     private static float currentCombatWeaponDropChance() {

@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.skill.VillagerSkillGrowthService;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
 import com.jvn.villagerretaliation.trade.VillagerTradeWalletService;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageMembership;
@@ -282,12 +283,12 @@ public final class VillagerReputationEvents {
         }
 
         long gameTime = level.getGameTime();
-        if (gameTime % SIGHT_SCAN_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getLeastSignificantBits(), SIGHT_SCAN_INTERVAL_TICKS)) {
+        if (TickThrottle.isSpreadTick(villager.getUUID(), gameTime, SIGHT_SCAN_INTERVAL_TICKS)) {
             scanReputationReactions(level, villager);
         }
         VillagerAmbientIndicatorService.maybeMurmurNearPlayers(level, villager);
         if (VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
-                && gameTime % DEBUG_SYNC_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getMostSignificantBits(), DEBUG_SYNC_INTERVAL_TICKS)) {
+                && TickThrottle.isSpreadTick(villager.getUUID().getMostSignificantBits(), gameTime, DEBUG_SYNC_INTERVAL_TICKS)) {
             syncNearbyDebug(level, villager);
         }
     }
@@ -581,25 +582,34 @@ public final class VillagerReputationEvents {
             return;
         }
 
+        List<IronGolem> nearbyGolems = null;
         for (NearbyPlayerReputation nearbyPlayer : nearbyPlayers) {
             if (!nearbyPlayer.visible() || !isBellAlertTier(nearbyPlayer.reputationLevel())) {
                 continue;
             }
-            if (aggroNearbyIronGolems(villager, nearbyPlayer.player(), radius, radiusSqr)) {
+            if (nearbyGolems == null) {
+                nearbyGolems = nearbyIronGolems(villager, radius);
+                if (nearbyGolems.isEmpty()) {
+                    return;
+                }
+            }
+            if (aggroNearbyIronGolems(nearbyGolems, nearbyPlayer.player(), radiusSqr)) {
                 triggerNegativeReputationBell(level, villager, nearbyPlayer.reputationLevel());
                 return;
             }
         }
     }
 
-    private static boolean aggroNearbyIronGolems(AbstractVillager villager, Player player, double radius, double radiusSqr) {
+    private static List<IronGolem> nearbyIronGolems(AbstractVillager villager, double radius) {
         ServerLevel level = (ServerLevel) villager.level();
         AABB area = villager.getBoundingBox().inflate(radius);
+        return level.getEntitiesOfClass(IronGolem.class, area, IronGolem::isAlive);
+    }
+
+    private static boolean aggroNearbyIronGolems(List<IronGolem> nearbyGolems, Player player, double radiusSqr) {
         boolean aggroedAny = false;
-        for (IronGolem ironGolem : level.getEntitiesOfClass(IronGolem.class, area)) {
-            if (!ironGolem.isAlive()
-                    || ironGolem.distanceToSqr(player) > radiusSqr
-                    || !ironGolem.hasLineOfSight(player)) {
+        for (IronGolem ironGolem : nearbyGolems) {
+            if (ironGolem.distanceToSqr(player) > radiusSqr || !ironGolem.hasLineOfSight(player)) {
                 continue;
             }
             ironGolem.setTarget(player);

@@ -1894,8 +1894,7 @@ public final class ForcedDialogueService {
         }
 
         long gameTime = level.getGameTime();
-        if (gameTime % TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS
-                != Math.floorMod(villager.getUUID().getLeastSignificantBits(), TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.isSpreadTick(villager.getUUID(), gameTime, TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
@@ -2859,8 +2858,7 @@ public final class ForcedDialogueService {
         }
 
         long gameTime = level.getGameTime();
-        if (gameTime % PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS
-                != Math.floorMod(villager.getUUID().getLeastSignificantBits(), PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.isSpreadTick(villager.getUUID(), gameTime, PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS)) {
             return;
         }
 

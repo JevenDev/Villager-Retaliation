@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.inventory.ProtectedVillagerProperty;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import java.util.Locale;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -168,7 +169,7 @@ public final class VillagerWalletService {
                 || !(villager.level() instanceof ServerLevel level)
                 || villager.isBaby()
                 || !villager.isAlive()
-                || level.getGameTime() % WALLET_TICK_INTERVAL != spreadTickOffset(villager)) {
+                || !TickThrottle.isSpreadTick(villager.getUUID(), level.getGameTime(), WALLET_TICK_INTERVAL)) {
             return;
         }
 
@@ -466,10 +467,6 @@ public final class VillagerWalletService {
 
     private static long currentDay(ServerLevel level) {
         return level.getDayTime() / DAY_TICKS;
-    }
-
-    private static long spreadTickOffset(Villager villager) {
-        return Math.floorMod(villager.getUUID().getLeastSignificantBits(), WALLET_TICK_INTERVAL);
     }
 
     public enum WalletSource {

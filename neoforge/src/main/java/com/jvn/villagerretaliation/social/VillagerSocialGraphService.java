@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.social;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +37,8 @@ public final class VillagerSocialGraphService {
         if (event.getLevel() instanceof ServerLevel level && event.getEntity() instanceof Villager villager) {
             PENDING_JOIN_PROFILE_TICKS.put(
                     villager.getUUID(),
-                    level.getGameTime() + profileRefreshOffset(villager.getUUID())
+                    level.getGameTime()
+                            + TickThrottle.spreadOffset(villager.getUUID(), PROFILE_REFRESH_INTERVAL_TICKS)
             );
         }
     }
@@ -60,7 +62,7 @@ public final class VillagerSocialGraphService {
             return;
         }
 
-        if (gameTime % PROFILE_REFRESH_INTERVAL_TICKS != profileRefreshOffset(villagerId)) {
+        if (!TickThrottle.isSpreadTick(villagerId, gameTime, PROFILE_REFRESH_INTERVAL_TICKS)) {
             return;
         }
 
@@ -189,7 +191,4 @@ public final class VillagerSocialGraphService {
         return cause;
     }
 
-    private static long profileRefreshOffset(UUID villagerId) {
-        return Math.floorMod(villagerId.getLeastSignificantBits(), PROFILE_REFRESH_INTERVAL_TICKS);
-    }
 }

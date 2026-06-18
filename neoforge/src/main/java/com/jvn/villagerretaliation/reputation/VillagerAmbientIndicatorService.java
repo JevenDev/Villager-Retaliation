@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -60,7 +61,7 @@ public final class VillagerAmbientIndicatorService {
         }
 
         long gameTime = level.getGameTime();
-        if (gameTime % MURMUR_SCAN_INTERVAL_TICKS != Math.floorMod(villager.getUUID().getMostSignificantBits(), MURMUR_SCAN_INTERVAL_TICKS)
+        if (!TickThrottle.isSpreadTick(villager.getUUID().getMostSignificantBits(), gameTime, MURMUR_SCAN_INTERVAL_TICKS)
                 || gameTime < NEXT_MURMUR_TICK.getOrDefault(villager.getUUID(), 0L)) {
             return;
         }
