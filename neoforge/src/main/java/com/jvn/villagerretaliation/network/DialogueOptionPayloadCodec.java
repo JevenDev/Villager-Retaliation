@@ -30,8 +30,8 @@ final class DialogueOptionPayloadCodec {
     }
 
     static List<DialogueOptionDefinition> readDialogueOptions(RegistryFriendlyByteBuf buffer) {
-        int size = Math.max(0, buffer.readVarInt());
-        List<DialogueOptionDefinition> options = new ArrayList<>(Math.min(size, MAX_DIALOGUE_OPTIONS));
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_DIALOGUE_OPTIONS, "dialogue options");
+        List<DialogueOptionDefinition> options = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             DialogueOptionDefinition option = DialogueOptionDefinition.transmitted(
                     buffer.readUtf(OPTION_ID_LENGTH),
@@ -40,9 +40,7 @@ final class DialogueOptionPayloadCodec {
                     buffer.readBoolean(),
                     buffer.readVarInt()
             );
-            if (index < MAX_DIALOGUE_OPTIONS) {
-                options.add(option);
-            }
+            options.add(option);
         }
         return List.copyOf(options);
     }
@@ -56,13 +54,10 @@ final class DialogueOptionPayloadCodec {
     }
 
     static List<String> readStringList(RegistryFriendlyByteBuf buffer) {
-        int size = Math.max(0, buffer.readVarInt());
-        List<String> values = new ArrayList<>(Math.min(size, MAX_STRING_LIST_VALUES));
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_STRING_LIST_VALUES, "string list values");
+        List<String> values = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
-            String value = buffer.readUtf(STRING_VALUE_LENGTH);
-            if (index < MAX_STRING_LIST_VALUES) {
-                values.add(value);
-            }
+            values.add(buffer.readUtf(STRING_VALUE_LENGTH));
         }
         return List.copyOf(values);
     }

@@ -48,7 +48,7 @@ public record ClipboardWorkAreaSyncPayload(List<ClipboardWorkAreaEntry> entries,
     }
 
     private static ClipboardWorkAreaSyncPayload decode(RegistryFriendlyByteBuf buffer) {
-        int size = Math.min(MAX_ENTRIES, buffer.readVarInt());
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_ENTRIES, "clipboard work area entries");
         List<ClipboardWorkAreaEntry> entries = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             entries.add(new ClipboardWorkAreaEntry(

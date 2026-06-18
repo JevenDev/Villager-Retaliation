@@ -1677,7 +1677,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         int left = interactionContainerLeft();
         int top = interactionContainerTop();
-        String displayedName = interactionDisplayName();
+        VillagerInteractionTextLayout.Nameplate nameplate = interactionNameplate();
+        String displayedName = nameplate.displayName();
         graphics.blit(
                 VillagerRetaliationClientAssets.INTERACTION_CONTAINER_TEXTURE,
                 left,
@@ -1695,7 +1696,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         renderInteractionDialogue(graphics, left, top);
         renderInteractionStats(graphics, left, top);
         renderInteractionContainerOrnament(graphics, left, top);
-        renderInteractionNameplate(graphics, left, top, displayedName);
+        renderInteractionNameplate(graphics, left, top, nameplate);
         graphics.drawString(
                 this.font,
                 displayedName,
@@ -1706,15 +1707,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         );
     }
 
-    private String interactionDisplayName() {
-        if (this.villagerName.length() <= INTERACTION_NAMEPLATE_MAX_NAME_CHARS) {
-            return this.villagerName;
-        }
-        return this.villagerName.substring(0, INTERACTION_NAMEPLATE_MAX_NAME_CHARS);
+    private VillagerInteractionTextLayout.Nameplate interactionNameplate() {
+        return VillagerInteractionTextLayout.nameplate(
+                this.font,
+                this.villagerName,
+                INTERACTION_NAMEPLATE_MAX_NAME_CHARS,
+                INTERACTION_NAMEPLATE_TEXTURE_WIDTH,
+                INTERACTION_CONTAINER_NAME_X,
+                INTERACTION_NAMEPLATE_RIGHT_PADDING
+        );
     }
 
-    private void renderInteractionNameplate(GuiGraphics graphics, int left, int top, String displayedName) {
-        int width = interactionNameplateWidth(displayedName);
+    private void renderInteractionNameplate(GuiGraphics graphics, int left, int top, VillagerInteractionTextLayout.Nameplate nameplate) {
+        int width = nameplate.width();
         int plateLeft = left + INTERACTION_NAMEPLATE_X;
         int plateTop = top + INTERACTION_NAMEPLATE_Y;
         blitNineSlicedTexture(
@@ -1744,13 +1749,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 INTERACTION_NAMEPLATE_ORNAMENT_SLICE_RIGHT,
                 INTERACTION_NAMEPLATE_ORNAMENT_SLICE_TOP,
                 INTERACTION_NAMEPLATE_ORNAMENT_SLICE_BOTTOM
-        );
-    }
-
-    private int interactionNameplateWidth(String displayedName) {
-        return Math.max(
-                INTERACTION_NAMEPLATE_TEXTURE_WIDTH,
-                INTERACTION_CONTAINER_NAME_X + this.font.width(displayedName) + INTERACTION_NAMEPLATE_RIGHT_PADDING
         );
     }
 

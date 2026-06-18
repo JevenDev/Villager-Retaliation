@@ -30,7 +30,7 @@ public record ClipboardAssignedStorageSyncPayload(List<Entry> entries, int ticks
     }
 
     private static ClipboardAssignedStorageSyncPayload decode(RegistryFriendlyByteBuf buffer) {
-        int size = Math.min(MAX_ENTRIES, buffer.readVarInt());
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_ENTRIES, "clipboard assigned storage entries");
         List<Entry> entries = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             entries.add(new Entry(buffer.readResourceLocation(), buffer.readBlockPos(), buffer.readBoolean()));

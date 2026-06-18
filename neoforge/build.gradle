@@ -64,6 +64,25 @@ neoForge {
     }
 }
 
+def skipGameTests = providers.gradleProperty('skipGameTests')
+        .map { it.toBoolean() }
+        .orElse(false)
+
+tasks.register('gameTest') {
+    group = 'verification'
+    description = 'Runs the NeoForge GameTest server. Use -PskipGameTests=true to skip during quick local checks.'
+    dependsOn tasks.named('runGameTestServer')
+    onlyIf { !skipGameTests.get() }
+}
+
+tasks.named('runGameTestServer') {
+    onlyIf { !skipGameTests.get() }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('gameTest')
+}
+
 configurations {
     runtimeClasspath.extendsFrom localRuntime
 }

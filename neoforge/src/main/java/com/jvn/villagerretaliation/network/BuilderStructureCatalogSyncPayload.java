@@ -31,8 +31,8 @@ public record BuilderStructureCatalogSyncPayload(List<BuilderStructureCatalog.En
     }
 
     private static BuilderStructureCatalogSyncPayload decode(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
-        java.util.ArrayList<BuilderStructureCatalog.Entry> entries = new java.util.ArrayList<>(Math.min(MAX_ENTRIES, size));
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_ENTRIES, "builder structure catalog entries");
+        java.util.ArrayList<BuilderStructureCatalog.Entry> entries = new java.util.ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             ResourceLocation id = buffer.readResourceLocation();
             BuilderStructureCatalog.Entry entry = new BuilderStructureCatalog.Entry(
@@ -40,9 +40,7 @@ public record BuilderStructureCatalogSyncPayload(List<BuilderStructureCatalog.En
                     buffer.readUtf(96),
                     buffer.readUtf(128),
                     buffer.readVarInt());
-            if (entries.size() < MAX_ENTRIES) {
-                entries.add(entry);
-            }
+            entries.add(entry);
         }
         return new BuilderStructureCatalogSyncPayload(entries);
     }

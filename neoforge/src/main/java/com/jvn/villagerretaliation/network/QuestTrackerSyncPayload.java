@@ -47,8 +47,8 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
     }
 
     private static QuestTrackerSyncPayload decode(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
-        List<Entry> entries = new ArrayList<>(Math.min(MAX_SYNC_ENTRIES, size));
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_SYNC_ENTRIES, "quest tracker entries");
+        List<Entry> entries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Entry entry = new Entry(
                     buffer.readUtf(128),
@@ -63,25 +63,21 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
                     buffer.readUtf(192),
                     readQuestItems(buffer)
             );
-            if (entries.size() < MAX_SYNC_ENTRIES) {
-                entries.add(entry);
-            }
+            entries.add(entry);
         }
         return new QuestTrackerSyncPayload(entries, buffer.readUtf(128), buffer.readBoolean());
     }
 
     private static List<QuestItem> readQuestItems(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
-        List<QuestItem> items = new ArrayList<>(Math.min(MAX_QUEST_ITEMS, size));
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_QUEST_ITEMS, "quest tracker items");
+        List<QuestItem> items = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             QuestItem item = new QuestItem(
                     buffer.readUtf(128),
                     buffer.readUtf(128),
                     buffer.readVarInt()
             );
-            if (items.size() < MAX_QUEST_ITEMS) {
-                items.add(item);
-            }
+            items.add(item);
         }
         return items;
     }

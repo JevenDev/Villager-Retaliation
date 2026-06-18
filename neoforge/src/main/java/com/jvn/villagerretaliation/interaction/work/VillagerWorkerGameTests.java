@@ -261,6 +261,7 @@ public final class VillagerWorkerGameTests {
         helper.assertFalse(blockedResult.reachesDestination(), "fully blocked target should fail gracefully");
 
         setBlock(helper, new BlockPos(3, 2, 3), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 3, 3), Blocks.STONE.defaultBlockState());
         Vec3 eye = villager.getEyePosition();
         Vec3 hit = Vec3.atCenterOf(helper.absolutePos(new BlockPos(4, 2, 3)));
         setBlock(helper, new BlockPos(4, 2, 3), Blocks.COAL_ORE.defaultBlockState());
@@ -278,7 +279,7 @@ public final class VillagerWorkerGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 3));
         ServerLevel level = helper.getLevel();
         tickVillager(level, villager, 20);
-        for (int z = 1; z <= 4; z++) {
+        for (int z = 2; z <= 4; z++) {
             setBlock(helper, new BlockPos(4, 2, z), Blocks.STONE.defaultBlockState());
             setBlock(helper, new BlockPos(4, 3, z), Blocks.STONE.defaultBlockState());
         }

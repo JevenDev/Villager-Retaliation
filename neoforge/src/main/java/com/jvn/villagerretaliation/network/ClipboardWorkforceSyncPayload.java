@@ -15,6 +15,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot) implements CustomPacketPayload {
     private static final int PROTOCOL_VERSION = 5;
+    private static final int MAX_JOB_SUMMARIES = 16;
+    private static final int MAX_WORKER_ROWS = 256;
+    private static final int MAX_WARNING_SUMMARIES = 64;
     public static final Type<ClipboardWorkforceSyncPayload> TYPE = VillagerPayloads.type("clipboard_workforce_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, ClipboardWorkforceSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(ClipboardWorkforceSyncPayload::encode, ClipboardWorkforceSyncPayload::decode);
@@ -53,15 +56,17 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
     }
 
     private static void writeJobs(RegistryFriendlyByteBuf buffer, List<JobSummary> jobs) {
-        buffer.writeVarInt(jobs.size());
-        for (JobSummary job : jobs) {
+        int size = Math.min(jobs.size(), MAX_JOB_SUMMARIES);
+        buffer.writeVarInt(size);
+        for (int index = 0; index < size; index++) {
+            JobSummary job = jobs.get(index);
             buffer.writeEnum(job.role());
             buffer.writeVarInt(job.count());
         }
     }
 
     private static List<JobSummary> readJobs(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_JOB_SUMMARIES, "clipboard workforce job summaries");
         List<JobSummary> jobs = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             jobs.add(new JobSummary(buffer.readEnum(HiredVillagerRole.class), buffer.readVarInt()));
@@ -70,8 +75,10 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
     }
 
     private static void writeWorkers(RegistryFriendlyByteBuf buffer, List<WorkerRow> workers) {
-        buffer.writeVarInt(workers.size());
-        for (WorkerRow worker : workers) {
+        int size = Math.min(workers.size(), MAX_WORKER_ROWS);
+        buffer.writeVarInt(size);
+        for (int index = 0; index < size; index++) {
+            WorkerRow worker = workers.get(index);
             buffer.writeUUID(worker.villagerId());
             buffer.writeUtf(worker.displayName(), 128);
             buffer.writeEnum(worker.role());
@@ -99,7 +106,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
     }
 
     private static List<WorkerRow> readWorkers(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_WORKER_ROWS, "clipboard workforce worker rows");
         List<WorkerRow> workers = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             workers.add(new WorkerRow(
@@ -132,8 +139,10 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
     }
 
     private static void writeWarnings(RegistryFriendlyByteBuf buffer, List<WarningSummary> warnings) {
-        buffer.writeVarInt(warnings.size());
-        for (WarningSummary warning : warnings) {
+        int size = Math.min(warnings.size(), MAX_WARNING_SUMMARIES);
+        buffer.writeVarInt(size);
+        for (int index = 0; index < size; index++) {
+            WarningSummary warning = warnings.get(index);
             buffer.writeEnum(warning.type());
             buffer.writeEnum(warning.role());
             buffer.writeVarInt(warning.count());
@@ -141,7 +150,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
     }
 
     private static List<WarningSummary> readWarnings(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_WARNING_SUMMARIES, "clipboard workforce warnings");
         List<WarningSummary> warnings = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             warnings.add(new WarningSummary(

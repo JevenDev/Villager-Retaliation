@@ -61,6 +61,10 @@ public record OpenVillagerInteractionPayload(
         VillagerFamilyTreeSnapshot familyTree,
         VillagerRelationshipSnapshot relationships)
         implements CustomPacketPayload {
+    private static final int MAX_HIRED_ROLES = 16;
+    private static final int MAX_FAMILY_MEMBERS = 64;
+    private static final int MAX_FAMILY_GENERATIONS = 16;
+    private static final int MAX_ROMANTIC_BONDS = 32;
     public static final Type<OpenVillagerInteractionPayload> TYPE = VillagerPayloads.type("open_villager_interaction");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerInteractionPayload> STREAM_CODEC =
             VillagerPayloads.codec(OpenVillagerInteractionPayload::encode, OpenVillagerInteractionPayload::decode);
@@ -160,14 +164,15 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static void writeHiredRoles(RegistryFriendlyByteBuf buffer, List<HiredVillagerRole> roles) {
-        buffer.writeVarInt(roles.size());
-        for (HiredVillagerRole role : roles) {
-            buffer.writeEnum(role);
+        int size = Math.min(roles.size(), MAX_HIRED_ROLES);
+        buffer.writeVarInt(size);
+        for (int i = 0; i < size; i++) {
+            buffer.writeEnum(roles.get(i));
         }
     }
 
     private static List<HiredVillagerRole> readHiredRoles(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_HIRED_ROLES, "hired roles");
         List<HiredVillagerRole> roles = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             roles.add(buffer.readEnum(HiredVillagerRole.class));
@@ -213,8 +218,10 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static void writeFamilyMembers(RegistryFriendlyByteBuf buffer, List<VillagerFamilyTreeSnapshot.FamilyMember> members) {
-        buffer.writeVarInt(members.size());
-        for (VillagerFamilyTreeSnapshot.FamilyMember member : members) {
+        int size = Math.min(members.size(), MAX_FAMILY_MEMBERS);
+        buffer.writeVarInt(size);
+        for (int i = 0; i < size; i++) {
+            VillagerFamilyTreeSnapshot.FamilyMember member = members.get(i);
             buffer.writeUtf(member.name(), 128);
             buffer.writeEnum(member.gender());
             buffer.writeBoolean(member.alive());
@@ -222,7 +229,7 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static List<VillagerFamilyTreeSnapshot.FamilyMember> readFamilyMembers(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_FAMILY_MEMBERS, "family members");
         List<VillagerFamilyTreeSnapshot.FamilyMember> members = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             members.add(new VillagerFamilyTreeSnapshot.FamilyMember(
@@ -235,15 +242,17 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static void writeAncestry(RegistryFriendlyByteBuf buffer, List<VillagerFamilyTreeSnapshot.AncestorGeneration> ancestry) {
-        buffer.writeVarInt(ancestry.size());
-        for (VillagerFamilyTreeSnapshot.AncestorGeneration generation : ancestry) {
+        int size = Math.min(ancestry.size(), MAX_FAMILY_GENERATIONS);
+        buffer.writeVarInt(size);
+        for (int i = 0; i < size; i++) {
+            VillagerFamilyTreeSnapshot.AncestorGeneration generation = ancestry.get(i);
             buffer.writeVarInt(generation.generation());
             writeFamilyMembers(buffer, generation.ancestors());
         }
     }
 
     private static List<VillagerFamilyTreeSnapshot.AncestorGeneration> readAncestry(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_FAMILY_GENERATIONS, "ancestor generations");
         List<VillagerFamilyTreeSnapshot.AncestorGeneration> ancestry = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             ancestry.add(new VillagerFamilyTreeSnapshot.AncestorGeneration(buffer.readVarInt(), readFamilyMembers(buffer)));
@@ -252,15 +261,17 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static void writeDescendants(RegistryFriendlyByteBuf buffer, List<VillagerFamilyTreeSnapshot.DescendantGeneration> descendants) {
-        buffer.writeVarInt(descendants.size());
-        for (VillagerFamilyTreeSnapshot.DescendantGeneration generation : descendants) {
+        int size = Math.min(descendants.size(), MAX_FAMILY_GENERATIONS);
+        buffer.writeVarInt(size);
+        for (int i = 0; i < size; i++) {
+            VillagerFamilyTreeSnapshot.DescendantGeneration generation = descendants.get(i);
             buffer.writeVarInt(generation.generation());
             writeFamilyMembers(buffer, generation.descendants());
         }
     }
 
     private static List<VillagerFamilyTreeSnapshot.DescendantGeneration> readDescendants(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_FAMILY_GENERATIONS, "descendant generations");
         List<VillagerFamilyTreeSnapshot.DescendantGeneration> descendants = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             descendants.add(new VillagerFamilyTreeSnapshot.DescendantGeneration(buffer.readVarInt(), readFamilyMembers(buffer)));
@@ -282,8 +293,10 @@ public record OpenVillagerInteractionPayload(
             RegistryFriendlyByteBuf buffer,
             List<VillagerRelationshipSnapshot.RomanticBondView> bonds
     ) {
-        buffer.writeVarInt(bonds.size());
-        for (VillagerRelationshipSnapshot.RomanticBondView bond : bonds) {
+        int size = Math.min(bonds.size(), MAX_ROMANTIC_BONDS);
+        buffer.writeVarInt(size);
+        for (int i = 0; i < size; i++) {
+            VillagerRelationshipSnapshot.RomanticBondView bond = bonds.get(i);
             buffer.writeUtf(bond.partnerName(), 128);
             buffer.writeBoolean(bond.partnerAlive());
             buffer.writeEnum(bond.stage());
@@ -297,7 +310,7 @@ public record OpenVillagerInteractionPayload(
     }
 
     private static List<VillagerRelationshipSnapshot.RomanticBondView> readRomanticBondViews(RegistryFriendlyByteBuf buffer) {
-        int size = buffer.readVarInt();
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_ROMANTIC_BONDS, "romantic bonds");
         List<VillagerRelationshipSnapshot.RomanticBondView> bonds = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             bonds.add(new VillagerRelationshipSnapshot.RomanticBondView(

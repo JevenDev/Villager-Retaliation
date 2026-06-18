@@ -101,6 +101,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 BlockPos approach = rawCandidate.immutable();
                 if (approach.equals(currentPos)
                         || !this.approachFilter.test(approach)
+                        || !isAdjacentApproach(approach, target)
                         || !isValidApproachPosition(this.level, approach)) {
                     continue;
                 }
@@ -148,7 +149,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
 
     private HiredPathTarget targetFromCurrentPosition(BlockPos target) {
         BlockPos currentPos = this.villager.blockPosition().immutable();
-        if (!isLoaded(this.level, target) || !this.approachFilter.test(currentPos)) {
+        if (!isLoaded(this.level, target) || !this.approachFilter.test(currentPos) || !isAdjacentApproach(currentPos, target)) {
             return null;
         }
         Vec3 hit = visibleHitPosition(this.level, this.villager, this.villager.getEyePosition(), target, this.sightTransparent);
@@ -341,6 +342,10 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 && isPassableForApproach(level, pos.above(), head)
                 && floor.isSolid()
                 && !VillagerContainerClimbGuard.isForbiddenStandingFloor(level, pos.below());
+    }
+
+    private static boolean isAdjacentApproach(BlockPos approach, BlockPos target) {
+        return approach.distSqr(target) <= 4;
     }
 
     private static boolean isPassableForApproach(CollisionGetter level, BlockPos pos, BlockState state) {

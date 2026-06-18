@@ -75,6 +75,13 @@ public final class VillagerReputationEvents {
     private VillagerReputationEvents() {
     }
 
+    public static void clearRuntimeState() {
+        HOSTILE_PLAYER_CONTRIBUTIONS.clear();
+        NEGATIVE_REPUTATION_BELL_COOLDOWNS.clear();
+        NEGATIVE_REPUTATION_BELL_CACHE.clear();
+        NEGATIVE_REPUTATION_BELL_POSITION_COOLDOWNS.clear();
+    }
+
     public static void onLivingDamage(LivingDamageEvent.Post event) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || event.getNewDamage() <= 0.0F
@@ -301,8 +308,6 @@ public final class VillagerReputationEvents {
 
         if (gameTime % VillagerRetaliationConfig.REPUTATION_DECAY_INTERVAL.get() == 0L) {
             VillagerReputationManager.pruneOldEntries(event.getServer().overworld());
-            pruneHostileContributions(gameTime);
-            pruneNegativeReputationBellState(gameTime);
         }
 
         if (gameTime % COMMONFOLK_VILLAGE_SCAN_INTERVAL_TICKS == 0L) {
@@ -312,6 +317,8 @@ public final class VillagerReputationEvents {
         }
 
         if (gameTime % SIGHT_SCAN_INTERVAL_TICKS == 0L) {
+            pruneHostileContributions(gameTime);
+            pruneNegativeReputationBellState(gameTime);
             for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
                 VillagerReputationAdvancements.onPlayerHostilityCheck(player.serverLevel(), player);
             }

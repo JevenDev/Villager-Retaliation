@@ -56,7 +56,7 @@ public record HiredDebugPreviewSyncPayload(
 
     private static HiredDebugPreviewSyncPayload decode(RegistryFriendlyByteBuf buffer) {
         boolean enabled = buffer.readBoolean();
-        int workAreaCount = Math.min(MAX_WORK_AREAS, buffer.readVarInt());
+        int workAreaCount = VillagerPayloads.readCollectionSize(buffer, MAX_WORK_AREAS, "hired debug work areas");
         List<WorkAreaEntry> workAreas = new ArrayList<>(workAreaCount);
         for (int index = 0; index < workAreaCount; index++) {
             workAreas.add(new WorkAreaEntry(
@@ -73,7 +73,7 @@ public record HiredDebugPreviewSyncPayload(
                     buffer.readUtf()
             ));
         }
-        int storageCount = Math.min(MAX_STORAGE, buffer.readVarInt());
+        int storageCount = VillagerPayloads.readCollectionSize(buffer, MAX_STORAGE, "hired debug storage entries");
         List<StorageEntry> storage = new ArrayList<>(storageCount);
         for (int index = 0; index < storageCount; index++) {
             storage.add(new StorageEntry(
