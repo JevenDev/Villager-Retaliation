@@ -37,9 +37,7 @@ import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -106,7 +104,6 @@ public final class VillagerQuestService {
     private static final ResourceLocation QUEST_BRANCH_BLOCKED_FACT =
             ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_branch_blocked");
     private static final String BRANCH_LOCK_CONSUMED_REASON = "branch_lock";
-    private static final String STAGE_BRANCH_OPTION_PREFIX = "vr_stage_branch:";
     private static final int STAGE_BRANCH_OPTION_ORDER = 900;
     private static final ThreadLocal<Boolean> DISPATCHING_STAGE_TRIGGERS =
             ThreadLocal.withInitial(() -> false);
@@ -120,9 +117,6 @@ public final class VillagerQuestService {
         MET,
         UNMET,
         UNKNOWN
-    }
-
-    private record StageBranchOptionKey(ResourceLocation questId, String branchId) {
     }
 
     private record InventoryObjectiveCountKey(
@@ -267,7 +261,7 @@ public final class VillagerQuestService {
                     continue;
                 }
                 options.add(DialogueOptionDefinition.simple(
-                        stageBranchOptionId(definition.id(), branch.id()),
+                        QuestStageBranchOptionIds.create(definition.id(), branch.id()),
                         label,
                         DialogueRequestType.QUESTION,
                         order++));
@@ -297,7 +291,7 @@ public final class VillagerQuestService {
     private static Optional<VillagerDialogueService.DialogueResult> handleStageBranchOption(
             DialogueContext context,
             String optionId) {
-        Optional<StageBranchOptionKey> key = parseStageBranchOptionId(optionId);
+        Optional<QuestStageBranchOptionIds.Key> key = QuestStageBranchOptionIds.parse(optionId);
         if (key.isEmpty()) {
             return Optional.empty();
         }
@@ -517,41 +511,6 @@ public final class VillagerQuestService {
         facts.setVariable(scopeKey, "branch_status", status);
         facts.setVariable(scopeKey, "branch_stage", progress == null ? "" : progress.currentStage());
         facts.setVariable(scopeKey, "branch_next_stage", branch.next());
-    }
-
-    private static String stageBranchOptionId(ResourceLocation questId, String branchId) {
-        return STAGE_BRANCH_OPTION_PREFIX + encodeOptionPart(questId.toString()) + ":" + encodeOptionPart(branchId);
-    }
-
-    private static Optional<StageBranchOptionKey> parseStageBranchOptionId(String optionId) {
-        if (optionId == null || !optionId.startsWith(STAGE_BRANCH_OPTION_PREFIX)) {
-            return Optional.empty();
-        }
-        String payload = optionId.substring(STAGE_BRANCH_OPTION_PREFIX.length());
-        int separator = payload.indexOf(':');
-        if (separator <= 0 || separator >= payload.length() - 1) {
-            return Optional.empty();
-        }
-        ResourceLocation questId = ResourceLocation.tryParse(decodeOptionPart(payload.substring(0, separator)));
-        String branchId = decodeOptionPart(payload.substring(separator + 1));
-        if (questId == null || branchId.isBlank()) {
-            return Optional.empty();
-        }
-        return Optional.of(new StageBranchOptionKey(questId, branchId));
-    }
-
-    private static String encodeOptionPart(String value) {
-        return Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString((value == null ? "" : value).getBytes(StandardCharsets.UTF_8));
-    }
-
-    private static String decodeOptionPart(String value) {
-        try {
-            return new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException ignored) {
-            return "";
-        }
     }
 
     public static Optional<QuestActionOutcome> performAction(

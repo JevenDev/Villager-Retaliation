@@ -520,6 +520,34 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         return depositOutputsOrMoveToStorage(level, context, villager, speed);
     }
 
+    protected OutputFullHandling handleOutputFullInventory(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            double speed,
+            BlockPos pauseTarget,
+            String depositingStatus,
+            String blockedStatus) {
+        DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, speed);
+        if (depositResult == DepositResult.DEPOSITED) {
+            return new OutputFullHandling(depositResult, null);
+        }
+        if (depositResult == DepositResult.MOVING) {
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+            return new OutputFullHandling(depositResult, WorkResult.progressed(depositingStatus));
+        }
+        if (depositResult == DepositResult.STORAGE_FULL) {
+            return new OutputFullHandling(depositResult, WorkResult.idle(storageFullStatus(context)));
+        }
+        HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+        if (pauseTarget == null) {
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
+        } else {
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, pauseTarget);
+        }
+        return new OutputFullHandling(depositResult, WorkResult.idle(blockedStatus));
+    }
+
     protected ToolStorageResult equipBestToolOrCollectFromStorage(
             ServerLevel level,
             Villager villager,
@@ -698,6 +726,16 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     }
 
     protected record ToolStorageResult(ToolStorageStatus status, ItemStack tool, BlockPos storagePos) {
+    }
+
+    protected record OutputFullHandling(DepositResult depositResult, WorkResult result) {
+        protected boolean deposited() {
+            return this.depositResult == DepositResult.DEPOSITED;
+        }
+
+        protected boolean handled() {
+            return this.result != null;
+        }
     }
 
 }

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.reputation;
 
+import com.jvn.villagerretaliation.util.NbtDataUtil;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -8,9 +9,9 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -58,10 +59,7 @@ public class VillagerReputationSavedData extends SavedData {
             entry.lastTradeDay = entryTag.getLong(TAG_LAST_TRADE_DAY);
             entry.tradesToday = entryTag.getInt(TAG_TRADES_TODAY);
             entry.lastGiftDay = entryTag.getLong(TAG_LAST_GIFT_DAY);
-            if (entryTag.contains(TAG_LAST_POS, Tag.TAG_COMPOUND)) {
-                CompoundTag posTag = entryTag.getCompound(TAG_LAST_POS);
-                entry.lastKnownVillagerPosition = new BlockPos(posTag.getInt("X"), posTag.getInt("Y"), posTag.getInt("Z"));
-            }
+            entry.lastKnownVillagerPosition = NbtDataUtil.readBlockPos(entryTag, TAG_LAST_POS).orElse(null);
             data.entries.computeIfAbsent(villagerId, ignored -> new HashMap<>()).put(playerId, entry);
         }
         return data;
@@ -84,13 +82,7 @@ public class VillagerReputationSavedData extends SavedData {
                 entryTag.putLong(TAG_LAST_TRADE_DAY, entry.lastTradeDay);
                 entryTag.putInt(TAG_TRADES_TODAY, entry.tradesToday);
                 entryTag.putLong(TAG_LAST_GIFT_DAY, entry.lastGiftDay);
-                if (entry.lastKnownVillagerPosition != null) {
-                    CompoundTag posTag = new CompoundTag();
-                    posTag.putInt("X", entry.lastKnownVillagerPosition.getX());
-                    posTag.putInt("Y", entry.lastKnownVillagerPosition.getY());
-                    posTag.putInt("Z", entry.lastKnownVillagerPosition.getZ());
-                    entryTag.put(TAG_LAST_POS, posTag);
-                }
+                NbtDataUtil.putBlockPos(entryTag, TAG_LAST_POS, entry.lastKnownVillagerPosition);
                 entriesTag.add(entryTag);
             }
         }

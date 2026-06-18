@@ -167,8 +167,15 @@ public final class FarmingWorker extends AbstractBlockWorker {
         ItemStack tool = context.inventory().findTool(FarmerHoeRequirement::isHoe);
         FarmHarvestResult harvestResult = storeFarmOutputDrops(level, context, villager, targetPos, tool);
         if (harvestResult == FarmHarvestResult.OUTPUT_FULL) {
-            DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
-            if (depositResult == DepositResult.DEPOSITED) {
+            OutputFullHandling outputFull = handleOutputFullInventory(
+                    level,
+                    context,
+                    villager,
+                    0.45D,
+                    null,
+                    "interaction.work.farming.output_full_depositing",
+                    "interaction.work.farming.output_full_blocked");
+            if (outputFull.deposited()) {
                 harvestResult = storeFarmOutputDrops(level, context, villager, targetPos, tool);
             }
             if (harvestResult == FarmHarvestResult.COMPLETED) {
@@ -182,19 +189,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
                 return targetChanged(level, villager, context, targetPos);
             }
-            if (depositResult == DepositResult.DEPOSITED && harvestResult == FarmHarvestResult.OUTPUT_FULL) {
+            if (outputFull.deposited() && harvestResult == FarmHarvestResult.OUTPUT_FULL) {
                 return WorkResult.progressed("interaction.work.farming.output_full_depositing");
             }
-            if (depositResult == DepositResult.MOVING) {
-                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("interaction.work.farming.output_full_depositing");
+            if (outputFull.handled()) {
+                return outputFull.result();
             }
-            if (depositResult == DepositResult.STORAGE_FULL) {
-                return WorkResult.idle(storageFullStatus(context));
-            }
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("interaction.work.farming.output_full_blocked");
         }
         if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
             return targetChanged(level, villager, context, targetPos);
@@ -218,8 +218,15 @@ public final class FarmingWorker extends AbstractBlockWorker {
         ItemStack tool = context.inventory().findTool(FarmerHoeRequirement::isHoe);
         FarmHarvestResult harvestResult = storeCropDrops(level, context, villager, target, tool);
         if (harvestResult == FarmHarvestResult.OUTPUT_FULL) {
-            DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.45D);
-            if (depositResult == DepositResult.DEPOSITED) {
+            OutputFullHandling outputFull = handleOutputFullInventory(
+                    level,
+                    context,
+                    villager,
+                    0.45D,
+                    null,
+                    "interaction.work.farming.output_full_depositing",
+                    "interaction.work.farming.output_full_blocked");
+            if (outputFull.deposited()) {
                 harvestResult = storeCropDrops(level, context, villager, target, tool);
             }
             if (harvestResult == FarmHarvestResult.COMPLETED) {
@@ -238,19 +245,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (harvestResult == FarmHarvestResult.TARGET_CHANGED) {
                 return targetChanged(level, villager, context, target);
             }
-            if (depositResult == DepositResult.DEPOSITED && harvestResult == FarmHarvestResult.OUTPUT_FULL) {
+            if (outputFull.deposited() && harvestResult == FarmHarvestResult.OUTPUT_FULL) {
                 return WorkResult.progressed("interaction.work.farming.output_full_depositing");
             }
-            if (depositResult == DepositResult.MOVING) {
-                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed("interaction.work.farming.output_full_depositing");
+            if (outputFull.handled()) {
+                return outputFull.result();
             }
-            if (depositResult == DepositResult.STORAGE_FULL) {
-                return WorkResult.idle(storageFullStatus(context));
-            }
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("interaction.work.farming.output_full_blocked");
         }
         if (harvestResult == FarmHarvestResult.MISSING_PLANTING_ITEM) {
             HiredWorkerBrain.setFailure(context, "missing_planting_item", level.getGameTime() + 100L);

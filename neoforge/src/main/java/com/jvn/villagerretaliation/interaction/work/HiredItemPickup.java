@@ -36,20 +36,18 @@ final class HiredItemPickup {
         context.setProgressTicks(0);
         BlockPos itemPos = item.blockPosition();
         if (!context.hasOutputSpace()) {
-            AbstractBlockWorker.DepositResult depositResult = worker.depositOutputsForFullInventory(level, context, villager, speed);
-            if (depositResult == AbstractBlockWorker.DepositResult.DEPOSITED) {
+            AbstractBlockWorker.OutputFullHandling outputFull = worker.handleOutputFullInventory(
+                    level,
+                    context,
+                    villager,
+                    speed,
+                    itemPos,
+                    messages.outputFullDepositing(),
+                    messages.outputFullBlocked());
+            if (outputFull.deposited()) {
                 return WorkResult.progressed(messages.outputFullDepositing());
             }
-            if (depositResult == AbstractBlockWorker.DepositResult.MOVING) {
-                worker.setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                return WorkResult.progressed(messages.outputFullDepositing());
-            }
-            if (depositResult == AbstractBlockWorker.DepositResult.STORAGE_FULL) {
-                return WorkResult.idle(worker.storageFullStatus(context));
-            }
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            worker.setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, itemPos);
-            return WorkResult.idle(messages.outputFullBlocked());
+            return outputFull.result();
         }
 
         if (!canCollectFromCurrentPosition(villager, context, item, reachSqr)) {

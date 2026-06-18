@@ -159,7 +159,7 @@ public final class ForcedDialogueService {
         if (!(event.getEntity() instanceof ServerPlayer player)
                 || !(event.getLevel() instanceof ServerLevel level)
                 || event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND
-                || !containerForcedDialogueEnabled()) {
+                || !ForcedDialogueTriggerGates.containerEnabled()) {
             return;
         }
 
@@ -179,7 +179,7 @@ public final class ForcedDialogueService {
     public static void onContainerOpen(PlayerContainerEvent.Open event) {
         if (!(event.getEntity() instanceof ServerPlayer player)
                 || !(player.level() instanceof ServerLevel level)
-                || !containerForcedDialogueEnabled()) {
+                || !ForcedDialogueTriggerGates.containerEnabled()) {
             return;
         }
 
@@ -225,7 +225,7 @@ public final class ForcedDialogueService {
         if (!(event.getPlayer() instanceof ServerPlayer player)
                 || !(player.level() instanceof ServerLevel level)
                 || event.getEntity().getItem().isEmpty()
-                || !containerForcedDialogueEnabled()) {
+                || !ForcedDialogueTriggerGates.containerEnabled()) {
             return;
         }
 
@@ -250,7 +250,7 @@ public final class ForcedDialogueService {
     public static void onContainerClose(PlayerContainerEvent.Close event) {
         if (!(event.getEntity() instanceof ServerPlayer player)
                 || !(player.level() instanceof ServerLevel level)
-                || !containerForcedDialogueEnabled()) {
+                || !ForcedDialogueTriggerGates.containerEnabled()) {
             return;
         }
 
@@ -271,7 +271,7 @@ public final class ForcedDialogueService {
     public static void onContainerBreak(BlockEvent.BreakEvent event) {
         if (!(event.getPlayer() instanceof ServerPlayer player)
                 || !(event.getLevel() instanceof ServerLevel level)
-                || !containerForcedDialogueEnabled()) {
+                || !ForcedDialogueTriggerGates.containerEnabled()) {
             return;
         }
 
@@ -1991,7 +1991,7 @@ public final class ForcedDialogueService {
                     session,
                     TRADE_REFRESH_READY_INTERJECTION_MESSAGE_KEY);
         }
-        if (isSharedContainerDialogueTrigger(session.definition().trigger())) {
+        if (ForcedDialogueTriggerGates.isSharedContainerTrigger(session.definition().trigger())) {
             return tryAdvanceTradeRefreshReadyGroup(
                     player,
                     currentVillager,
@@ -2051,13 +2051,8 @@ public final class ForcedDialogueService {
                 && VillagerTradeRefreshService.hasReadyRefreshesForPlayer(level, villager, player)) {
             return true;
         }
-        return isSharedContainerDialogueTrigger(session.definition().trigger())
+        return ForcedDialogueTriggerGates.isSharedContainerTrigger(session.definition().trigger())
                 && matchingAdditionalContainerWitnessDefinition(level, player, session, villager).isPresent();
-    }
-
-    private static boolean isSharedContainerDialogueTrigger(ForcedDialogueTrigger trigger) {
-        return trigger == ForcedDialogueTrigger.CONTAINER_THEFT
-                || trigger == ForcedDialogueTrigger.CONTAINER_OPENED;
     }
 
     private static int nextInterjectionSpeakerIndex(ForcedDialogueSession session) {
@@ -2254,7 +2249,7 @@ public final class ForcedDialogueService {
     private static List<ForcedDialogueDefinition> sharedContainerWitnessDefinitions(
             ServerLevel level,
             ForcedDialogueSession session) {
-        if (!isSharedContainerDialogueTrigger(session.definition().trigger())) {
+        if (!ForcedDialogueTriggerGates.isSharedContainerTrigger(session.definition().trigger())) {
             return List.of();
         }
         ResourceLocation lootTable = session.context().lootTable().isBlank()
@@ -2263,7 +2258,7 @@ public final class ForcedDialogueService {
         List<ForcedDialogueDefinition> definitions = ForcedDialogueResources
                 .selectCandidates(level.getServer(), session.definition().trigger(), lootTable)
                 .stream()
-                .filter(definition -> !isChatOutput(definition))
+                .filter(definition -> !ForcedDialogueTriggerGates.isChatOutput(definition))
                 .filter(ForcedDialogueDefinition::initiateDialogue)
                 .toList();
         return definitions.isEmpty() ? List.of(session.definition()) : definitions;
@@ -2753,7 +2748,7 @@ public final class ForcedDialogueService {
                 definition.selectLine(level.getRandom()),
                 context,
                 safeReplacements);
-        if (isChatOutput(definition)) {
+        if (ForcedDialogueTriggerGates.isChatOutput(definition)) {
             if (!line.isBlank()) {
                 VillagerInteractionService.broadcastForcedVillagerChat(
                         level,
@@ -2850,7 +2845,7 @@ public final class ForcedDialogueService {
     }
 
     public static void maybeTriggerPlayerItemProximity(ServerLevel level, Villager villager) {
-        if (!playerItemProximityForcedDialogueEnabled()
+        if (!ForcedDialogueTriggerGates.playerItemProximityEnabled()
                 || !villager.isAlive()
                 || villager.isBaby()
                 || villager.isTrading()) {
@@ -2910,7 +2905,7 @@ public final class ForcedDialogueService {
             long gameTime,
             boolean chatOutput) {
         for (ForcedDialogueDefinition definition : definitions) {
-            if (isChatOutput(definition) != chatOutput
+            if (ForcedDialogueTriggerGates.isChatOutput(definition) != chatOutput
                     || !definition.matchesPlayerItem(player)
                     || !definitionMatchesReputation(level, villager, player, definition)
                     || villager.distanceToSqr(player) > definition.witnessRadius() * definition.witnessRadius()
@@ -2931,7 +2926,7 @@ public final class ForcedDialogueService {
     }
 
     public static boolean triggerRetaliationStarted(ServerLevel level, Villager villager, ServerPlayer player) {
-        if (!retaliationForcedDialogueEnabled()) {
+        if (!ForcedDialogueTriggerGates.retaliationEnabled()) {
             return false;
         }
         ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(player.getType());
@@ -2945,7 +2940,7 @@ public final class ForcedDialogueService {
         List<ForcedDialogueDefinition> candidates = ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.RETALIATION_STARTED, null, targetTypeId)
                 .stream()
-                .filter(definition -> !isChatOutput(definition))
+                .filter(definition -> !ForcedDialogueTriggerGates.isChatOutput(definition))
                 .filter(definition -> definition.matchesWitness(villager))
                 .filter(definition -> definitionMatchesReputation(level, villager, player, definition))
                 .filter(definition -> villager.distanceToSqr(player) <= definition.witnessRadius() * definition.witnessRadius())
@@ -2967,7 +2962,7 @@ public final class ForcedDialogueService {
     }
 
     public static boolean triggerLowGutsRetaliationRally(ServerLevel level, Villager victim, ServerPlayer player) {
-        if (!retaliationForcedDialogueEnabled()) {
+        if (!ForcedDialogueTriggerGates.retaliationEnabled()) {
             return false;
         }
 
@@ -2975,7 +2970,7 @@ public final class ForcedDialogueService {
         List<ForcedDialogueDefinition> candidates = ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.LOW_GUTS_RALLY, null, targetTypeId)
                 .stream()
-                .filter(definition -> !isChatOutput(definition))
+                .filter(definition -> !ForcedDialogueTriggerGates.isChatOutput(definition))
                 .toList();
         if (candidates.isEmpty()) {
             return false;
@@ -2991,14 +2986,14 @@ public final class ForcedDialogueService {
     }
 
     public static void triggerRetaliationChat(ServerLevel level, Villager villager, LivingEntity target) {
-        if (target instanceof ServerPlayer || !retaliationForcedDialogueEnabled()) {
+        if (target instanceof ServerPlayer || !ForcedDialogueTriggerGates.retaliationEnabled()) {
             return;
         }
         ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
         ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.RETALIATION_STARTED, null, targetTypeId)
                 .stream()
-                .filter(ForcedDialogueService::isChatOutput)
+                .filter(ForcedDialogueTriggerGates::isChatOutput)
                 .filter(definition -> definition.matchesWitness(villager))
                 .filter(definition -> villager.distanceToSqr(target) <= definition.witnessRadius() * definition.witnessRadius())
                 .filter(definition -> !definition.requiresLineOfSight() || villager.hasLineOfSight(target))
@@ -3063,7 +3058,7 @@ public final class ForcedDialogueService {
         ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.CONTAINER_THEFT, snapshot.lootTable())
                 .stream()
-                .filter(definition -> !isChatOutput(definition))
+                .filter(definition -> !ForcedDialogueTriggerGates.isChatOutput(definition))
                 .anyMatch(definition -> trigger(level, player, snapshot, removedCount, removedStacks, definition));
     }
 
@@ -3075,7 +3070,7 @@ public final class ForcedDialogueService {
         ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.CONTAINER_OPENED, snapshot.lootTable())
                 .stream()
-                .filter(definition -> !isChatOutput(definition))
+                .filter(definition -> !ForcedDialogueTriggerGates.isChatOutput(definition))
                 .anyMatch(definition -> trigger(level, player, snapshot, 0, List.of(), definition));
     }
 
@@ -3249,7 +3244,7 @@ public final class ForcedDialogueService {
         ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.CONTAINER_BROKEN, snapshot.lootTable())
                 .stream()
-                .filter(definition -> !isChatOutput(definition))
+                .filter(definition -> !ForcedDialogueTriggerGates.isChatOutput(definition))
                 .anyMatch(definition -> trigger(level, player, snapshot, snapshot.itemCount(), snapshot.itemStacks(), definition));
     }
 
@@ -3263,7 +3258,7 @@ public final class ForcedDialogueService {
         ForcedDialogueResources
                 .selectCandidates(level.getServer(), trigger, snapshot.lootTable())
                 .stream()
-                .filter(ForcedDialogueService::isChatOutput)
+                .filter(ForcedDialogueTriggerGates::isChatOutput)
                 .anyMatch(definition -> triggerContainerChat(level, player, snapshot, removedCount, removedStacks, definition));
     }
 
@@ -3791,7 +3786,7 @@ public final class ForcedDialogueService {
         ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.RETALIATION_STARTED, null, targetTypeId)
                 .stream()
-                .filter(ForcedDialogueService::isChatOutput)
+                .filter(ForcedDialogueTriggerGates::isChatOutput)
                 .filter(definition -> definition.matchesWitness(villager))
                 .filter(definition -> villager.distanceToSqr(player) <= definition.witnessRadius() * definition.witnessRadius())
                 .filter(definition -> !definition.requiresLineOfSight() || villager.hasLineOfSight(player))
@@ -3912,10 +3907,6 @@ public final class ForcedDialogueService {
                 option.itemPayment().removal().replacements());
     }
 
-    private static boolean isChatOutput(ForcedDialogueDefinition definition) {
-        return definition.output().mode() == ForcedDialogueOutputMode.CHAT;
-    }
-
     private static double outputRadius(ForcedDialogueDefinition definition) {
         return definition.output().radius() > 0.0D
                 ? definition.output().radius()
@@ -3977,21 +3968,6 @@ public final class ForcedDialogueService {
         Vec3 to = Vec3.atCenterOf(pos);
         BlockHitResult result = level.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, villager));
         return result.getType() == HitResult.Type.MISS || result.getBlockPos().equals(pos);
-    }
-
-    private static boolean containerForcedDialogueEnabled() {
-        return VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
-                && VillagerRetaliationConfig.ENABLE_CONTAINER_FORCED_DIALOGUE.get();
-    }
-
-    private static boolean retaliationForcedDialogueEnabled() {
-        return VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
-                && VillagerRetaliationConfig.ENABLE_RETALIATION_FORCED_DIALOGUE.get();
-    }
-
-    private static boolean playerItemProximityForcedDialogueEnabled() {
-        return VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
-                && VillagerRetaliationConfig.ENABLE_PLAYER_ITEM_PROXIMITY_FORCED_DIALOGUE.get();
     }
 
     private static void rememberContainerTheft(

@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
+import com.jvn.villagerretaliation.util.ServerResourceCache;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -18,7 +19,8 @@ import net.minecraft.server.packs.resources.Resource;
 
 public final class VillagerEventTriggerResources {
     private static final String RESOURCE_ROOT = "villager_events";
-    private static volatile CachedTriggers cachedTriggers = new CachedTriggers(null, Map.of());
+    private static final ServerResourceCache<Map<ResourceLocation, VillagerEventTriggerDefinition>> CACHED_TRIGGERS =
+            ServerResourceCache.create(Map::of, VillagerEventTriggerResources::read);
 
     private VillagerEventTriggerResources() {
     }
@@ -28,7 +30,7 @@ public final class VillagerEventTriggerResources {
     }
 
     public static void clearCache() {
-        cachedTriggers = new CachedTriggers(null, Map.of());
+        CACHED_TRIGGERS.clear();
     }
 
     public static Collection<VillagerEventTriggerDefinition> triggers(MinecraftServer server) {
@@ -36,21 +38,7 @@ public final class VillagerEventTriggerResources {
     }
 
     private static Map<ResourceLocation, VillagerEventTriggerDefinition> load(MinecraftServer server) {
-        CachedTriggers current = cachedTriggers;
-        if (current.server() == server) {
-            return current.triggers();
-        }
-
-        synchronized (VillagerEventTriggerResources.class) {
-            current = cachedTriggers;
-            if (current.server() == server) {
-                return current.triggers();
-            }
-
-            Map<ResourceLocation, VillagerEventTriggerDefinition> triggers = read(server);
-            cachedTriggers = new CachedTriggers(server, triggers);
-            return triggers;
-        }
+        return CACHED_TRIGGERS.get(server);
     }
 
     private static Map<ResourceLocation, VillagerEventTriggerDefinition> read(MinecraftServer server) {
@@ -134,8 +122,5 @@ public final class VillagerEventTriggerResources {
         }
         String triggerPath = path.substring((RESOURCE_ROOT + "/").length(), path.length() - ".json".length());
         return triggerPath.isBlank() ? null : ResourceLocation.fromNamespaceAndPath(location.getNamespace(), triggerPath);
-    }
-
-    private record CachedTriggers(MinecraftServer server, Map<ResourceLocation, VillagerEventTriggerDefinition> triggers) {
     }
 }

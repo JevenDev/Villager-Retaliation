@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.util.NbtDataUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -306,15 +307,7 @@ public class VillagerQuestSavedData extends SavedData {
             progress.consumedReason = tag.getString(TAG_CONSUMED_REASON);
             progress.targetObjectiveId = tag.getString(TAG_TARGET_OBJECTIVE);
             progress.currentStage = tag.getString(TAG_CURRENT_STAGE);
-            if (tag.contains(TAG_COMPLETED_OBJECTIVES, Tag.TAG_LIST)) {
-                ListTag objectivesTag = tag.getList(TAG_COMPLETED_OBJECTIVES, Tag.TAG_STRING);
-                for (Tag rawObjective : objectivesTag) {
-                    String objectiveId = rawObjective.getAsString();
-                    if (!objectiveId.isBlank()) {
-                        progress.completedObjectives.add(objectiveId);
-                    }
-                }
-            }
+            progress.completedObjectives.addAll(NbtDataUtil.readStringSet(tag, TAG_COMPLETED_OBJECTIVES));
             if (tag.contains(TAG_OBJECTIVE_COUNTERS, Tag.TAG_LIST)) {
                 ListTag countersTag = tag.getList(TAG_OBJECTIVE_COUNTERS, Tag.TAG_COMPOUND);
                 for (Tag rawCounter : countersTag) {
@@ -335,22 +328,12 @@ public class VillagerQuestSavedData extends SavedData {
                     progress.triggerTimes.put(key, triggerTimesTag.getLong(key));
                 }
             }
-            ResourceLocation issuerDimensionId = ResourceLocation.tryParse(tag.getString(TAG_ISSUER_DIMENSION));
-            if (issuerDimensionId != null) {
-                progress.issuerDimension = ResourceKey.create(Registries.DIMENSION, issuerDimensionId);
-            }
-            if (tag.contains(TAG_ISSUER_POS, Tag.TAG_COMPOUND)) {
-                CompoundTag posTag = tag.getCompound(TAG_ISSUER_POS);
-                progress.issuerPos = new BlockPos(posTag.getInt("X"), posTag.getInt("Y"), posTag.getInt("Z"));
-            }
-            ResourceLocation dimensionId = ResourceLocation.tryParse(tag.getString(TAG_TARGET_DIMENSION));
-            if (dimensionId != null) {
-                progress.targetDimension = ResourceKey.create(Registries.DIMENSION, dimensionId);
-            }
-            if (tag.contains(TAG_TARGET_POS, Tag.TAG_COMPOUND)) {
-                CompoundTag posTag = tag.getCompound(TAG_TARGET_POS);
-                progress.targetPos = new BlockPos(posTag.getInt("X"), posTag.getInt("Y"), posTag.getInt("Z"));
-            }
+            NbtDataUtil.readResourceLocation(tag, TAG_ISSUER_DIMENSION)
+                    .ifPresent(id -> progress.issuerDimension = ResourceKey.create(Registries.DIMENSION, id));
+            progress.issuerPos = NbtDataUtil.readBlockPos(tag, TAG_ISSUER_POS).orElse(null);
+            NbtDataUtil.readResourceLocation(tag, TAG_TARGET_DIMENSION)
+                    .ifPresent(id -> progress.targetDimension = ResourceKey.create(Registries.DIMENSION, id));
+            progress.targetPos = NbtDataUtil.readBlockPos(tag, TAG_TARGET_POS).orElse(null);
             return progress;
         }
 
@@ -376,15 +359,9 @@ public class VillagerQuestSavedData extends SavedData {
                 tag.putInt(TAG_ISSUER_LEVEL, this.issuerLevel);
             }
             if (this.issuerDimension != null) {
-                tag.putString(TAG_ISSUER_DIMENSION, this.issuerDimension.location().toString());
+                NbtDataUtil.putResourceLocation(tag, TAG_ISSUER_DIMENSION, this.issuerDimension.location());
             }
-            if (this.issuerPos != null) {
-                CompoundTag posTag = new CompoundTag();
-                posTag.putInt("X", this.issuerPos.getX());
-                posTag.putInt("Y", this.issuerPos.getY());
-                posTag.putInt("Z", this.issuerPos.getZ());
-                tag.put(TAG_ISSUER_POS, posTag);
-            }
+            NbtDataUtil.putBlockPos(tag, TAG_ISSUER_POS, this.issuerPos);
             if (!this.issuerVillageKey.isBlank()) {
                 tag.putString(TAG_ISSUER_VILLAGE_KEY, this.issuerVillageKey);
             }
@@ -399,11 +376,7 @@ public class VillagerQuestSavedData extends SavedData {
                 tag.putString(TAG_CURRENT_STAGE, this.currentStage);
             }
             if (!this.completedObjectives.isEmpty()) {
-                ListTag objectivesTag = new ListTag();
-                for (String objectiveId : this.completedObjectives) {
-                    objectivesTag.add(net.minecraft.nbt.StringTag.valueOf(objectiveId));
-                }
-                tag.put(TAG_COMPLETED_OBJECTIVES, objectivesTag);
+                tag.put(TAG_COMPLETED_OBJECTIVES, NbtDataUtil.stringList(this.completedObjectives));
             }
             if (!this.objectiveCounters.isEmpty()) {
                 ListTag countersTag = new ListTag();
@@ -426,15 +399,9 @@ public class VillagerQuestSavedData extends SavedData {
                 tag.put(TAG_TRIGGER_TIMES, triggerTimesTag);
             }
             if (this.targetDimension != null) {
-                tag.putString(TAG_TARGET_DIMENSION, this.targetDimension.location().toString());
+                NbtDataUtil.putResourceLocation(tag, TAG_TARGET_DIMENSION, this.targetDimension.location());
             }
-            if (this.targetPos != null) {
-                CompoundTag posTag = new CompoundTag();
-                posTag.putInt("X", this.targetPos.getX());
-                posTag.putInt("Y", this.targetPos.getY());
-                posTag.putInt("Z", this.targetPos.getZ());
-                tag.put(TAG_TARGET_POS, posTag);
-            }
+            NbtDataUtil.putBlockPos(tag, TAG_TARGET_POS, this.targetPos);
             return tag;
         }
 

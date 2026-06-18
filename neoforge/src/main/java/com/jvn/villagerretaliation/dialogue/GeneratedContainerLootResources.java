@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
+import com.jvn.villagerretaliation.util.ServerResourceCache;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -23,7 +24,8 @@ public final class GeneratedContainerLootResources {
             "loot_tables",
             "LootTable",
             "LootTables");
-    private static volatile CachedGeneratedContainers cachedContainers = CachedGeneratedContainers.empty();
+    private static final ServerResourceCache<Set<ResourceLocation>> CACHED_CONTAINERS =
+            ServerResourceCache.create(Set::of, GeneratedContainerLootResources::read);
 
     private GeneratedContainerLootResources() {
     }
@@ -33,7 +35,7 @@ public final class GeneratedContainerLootResources {
     }
 
     public static void clearCache() {
-        cachedContainers = CachedGeneratedContainers.empty();
+        CACHED_CONTAINERS.clear();
     }
 
     public static boolean isVillagePropertyLootTable(MinecraftServer server, ResourceLocation lootTable) {
@@ -41,21 +43,7 @@ public final class GeneratedContainerLootResources {
     }
 
     private static Set<ResourceLocation> lootTables(MinecraftServer server) {
-        CachedGeneratedContainers current = cachedContainers;
-        if (current.server() == server) {
-            return current.lootTables();
-        }
-
-        synchronized (GeneratedContainerLootResources.class) {
-            current = cachedContainers;
-            if (current.server() == server) {
-                return current.lootTables();
-            }
-
-            Set<ResourceLocation> lootTables = read(server);
-            cachedContainers = new CachedGeneratedContainers(server, lootTables);
-            return lootTables;
-        }
+        return CACHED_CONTAINERS.get(server);
     }
 
     private static Set<ResourceLocation> read(MinecraftServer server) {
@@ -102,11 +90,5 @@ public final class GeneratedContainerLootResources {
             normalized = ResourceLocation.DEFAULT_NAMESPACE + ":" + normalized;
         }
         return Optional.ofNullable(ResourceLocation.tryParse(normalized));
-    }
-
-    private record CachedGeneratedContainers(MinecraftServer server, Set<ResourceLocation> lootTables) {
-        private static CachedGeneratedContainers empty() {
-            return new CachedGeneratedContainers(null, Set.of());
-        }
     }
 }

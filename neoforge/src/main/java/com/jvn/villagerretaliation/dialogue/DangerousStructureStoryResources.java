@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
+import com.jvn.villagerretaliation.util.ServerResourceCache;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,7 +16,8 @@ public final class DangerousStructureStoryResources {
     private static final String RESOURCE_ROOT = "story_structures";
     private static final int DEFAULT_RADIUS = 96;
 
-    private static volatile CachedStructures cachedStructures = new CachedStructures(null, List.of());
+    private static final ServerResourceCache<List<Entry>> CACHED_STRUCTURES =
+            ServerResourceCache.create(List::of, DangerousStructureStoryResources::read);
 
     private DangerousStructureStoryResources() {
     }
@@ -25,25 +27,11 @@ public final class DangerousStructureStoryResources {
     }
 
     public static void clearCache() {
-        cachedStructures = new CachedStructures(null, List.of());
+        CACHED_STRUCTURES.clear();
     }
 
     public static List<Entry> entries(MinecraftServer server) {
-        CachedStructures current = cachedStructures;
-        if (current.server() == server) {
-            return current.entries();
-        }
-
-        synchronized (DangerousStructureStoryResources.class) {
-            current = cachedStructures;
-            if (current.server() == server) {
-                return current.entries();
-            }
-
-            List<Entry> entries = read(server);
-            cachedStructures = new CachedStructures(server, entries);
-            return entries;
-        }
+        return CACHED_STRUCTURES.get(server);
     }
 
     private static List<Entry> read(MinecraftServer server) {
@@ -82,8 +70,5 @@ public final class DangerousStructureStoryResources {
     }
 
     public record Entry(ResourceLocation structureId, String targetName, int radius) {
-    }
-
-    private record CachedStructures(MinecraftServer server, List<Entry> entries) {
     }
 }

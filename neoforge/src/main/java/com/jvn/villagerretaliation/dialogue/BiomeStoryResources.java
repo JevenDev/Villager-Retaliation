@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
+import com.jvn.villagerretaliation.util.ServerResourceCache;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -13,7 +14,8 @@ import net.minecraft.server.MinecraftServer;
 public final class BiomeStoryResources {
     private static final String RESOURCE_ROOT = "story_biomes";
 
-    private static volatile CachedBiomes cachedBiomes = new CachedBiomes(null, Map.of());
+    private static final ServerResourceCache<Map<ResourceLocation, Entry>> CACHED_BIOMES =
+            ServerResourceCache.create(Map::of, BiomeStoryResources::read);
 
     private BiomeStoryResources() {
     }
@@ -23,25 +25,11 @@ public final class BiomeStoryResources {
     }
 
     public static void clearCache() {
-        cachedBiomes = new CachedBiomes(null, Map.of());
+        CACHED_BIOMES.clear();
     }
 
     public static Map<ResourceLocation, Entry> entriesByBiome(MinecraftServer server) {
-        CachedBiomes current = cachedBiomes;
-        if (current.server() == server) {
-            return current.entriesByBiome();
-        }
-
-        synchronized (BiomeStoryResources.class) {
-            current = cachedBiomes;
-            if (current.server() == server) {
-                return current.entriesByBiome();
-            }
-
-            Map<ResourceLocation, Entry> entries = read(server);
-            cachedBiomes = new CachedBiomes(server, entries);
-            return entries;
-        }
+        return CACHED_BIOMES.get(server);
     }
 
     private static Map<ResourceLocation, Entry> read(MinecraftServer server) {
@@ -74,8 +62,5 @@ public final class BiomeStoryResources {
     }
 
     public record Entry(ResourceLocation biomeId, String targetName) {
-    }
-
-    private record CachedBiomes(MinecraftServer server, Map<ResourceLocation, Entry> entriesByBiome) {
     }
 }
