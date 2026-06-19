@@ -32,7 +32,6 @@ import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
-import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
@@ -814,54 +813,31 @@ public final class VillagerQuestService {
                 ? null
                 : contextForStartedVillager(level, player, progress).orElse(null);
         List<String> lines = new ArrayList<>();
-        lines.add("Quest " + definition.id() + " | " + definition.title());
-        lines.add("identity questline=" + blankAs(definition.questline(), "none")
-                + " tags=" + debugStringSet(definition.tags())
-                + " parent=" + debugParentState(data, player, definition.parent())
-                + " objectives=" + definition.objectives().size()
-                + " triggers=" + definition.triggers().size());
+        lines.add(QuestDebugFormatter.header(definition));
+        lines.add(QuestDebugFormatter.identityLine(definition, debugParentState(data, player, definition.parent())));
         QuestDefinition.Rules rules = definition.rules();
-        lines.add("rules repeatable=" + rules.repeatable()
-                + " max_starts=" + rules.maxStarts()
-                + " max_completions=" + rules.maxCompletions()
-                + " completion_scope=" + debugEnum(rules.completionScope())
-                + " completion_cooldown_ticks=" + rules.completionCooldownTicks()
-                + " locked_to_villager=" + rules.lockedToVillager()
-                + " cross_villager=" + rules.crossVillagerCompatible());
-        lines.add("active_state conditions=" + rules.activeState().conditions().size()
-                + " hide_when_unmet=" + rules.activeState().hideWhenUnmet()
-                + " pause_progress_when_unmet=" + rules.activeState().pauseProgressWhenUnmet()
-                + " expiration_enabled=" + rules.expiration().enabled()
-                + " expiration_after_ticks=" + rules.expiration().afterTicks());
-        lines.add("branching exclusive_group=" + debugResource(rules.branching().exclusiveGroup())
-                + " exclusive_on=" + debugEnum(rules.branching().exclusiveOn())
-                + " blocks_on_start=" + debugResourceSet(rules.branching().blocksOnStart())
-                + " blocks_on_completion=" + debugResourceSet(rules.branching().blocksOnCompletion()));
+        lines.add(QuestDebugFormatter.rulesLine(rules));
+        lines.add(QuestDebugFormatter.activeStateLine(rules));
+        lines.add(QuestDebugFormatter.branchingLine(rules.branching()));
         lines.add(debugProgressLine(player, definition, progress, context));
         if (progress != null) {
-            lines.add("issuer status=" + issuerStatus(player, progress)
-                    + " id=" + (progress.startedVillagerId() == null ? "none" : progress.startedVillagerId())
-                    + " name=" + blankAs(progress.issuerName(), "unknown")
-                    + " profession=" + blankAs(progress.issuerProfession(), "unknown")
-                    + " dimension=" + debugDimension(progress.issuerDimension())
-                    + " pos=" + debugPos(progress.issuerPos()));
-            lines.add("target visited=" + progress.visitedTarget()
-                    + " proof=" + progress.hasProof()
-                    + " objective=" + blankAs(progress.targetObjectiveId(), "none")
-                    + " dimension=" + debugDimension(progress.targetDimension())
-                    + " pos=" + debugPos(progress.targetPos()));
-            lines.add("times started=" + progress.startedGameTime()
-                    + " completed=" + progress.completedGameTime()
-                    + " abandoned=" + progress.abandonedGameTime()
-                    + " expired=" + progress.expiredGameTime()
-                    + " consumed_reason=" + blankAs(progress.consumedReason(), "none"));
+            lines.add(QuestDebugFormatter.issuerLine(new QuestDebugFormatter.IssuerLine(
+                    issuerStatus(player, progress),
+                    progress.startedVillagerId() == null ? "none" : progress.startedVillagerId().toString(),
+                    progress.issuerName(),
+                    progress.issuerProfession(),
+                    debugDimension(progress.issuerDimension()),
+                    debugPos(progress.issuerPos()))));
+            lines.add(QuestDebugFormatter.targetProgressLine(new QuestDebugFormatter.TargetProgressLine(
+                    progress.visitedTarget(),
+                    progress.hasProof(),
+                    progress.targetObjectiveId(),
+                    debugDimension(progress.targetDimension()),
+                    debugPos(progress.targetPos()))));
+            lines.add(QuestDebugFormatter.timesLine(progress));
         }
         if (definition.target().hasStructureTarget()) {
-            lines.add("target_definition structure=" + definition.target().structure()
-                    + " dimension=" + debugDimension(definition.target().dimension())
-                    + " search_radius=" + definition.target().searchRadius()
-                    + " discovery_radius=" + definition.target().discoveryRadius()
-                    + " proof_item=" + debugResource(definition.target().proofItem()));
+            lines.add(QuestDebugFormatter.targetDefinitionLine(definition.target()));
         }
         for (QuestDefinition.Objective objective : definition.objectives()) {
             lines.add(debugObjectiveLine(player, level, definition, progress, context, objective));
@@ -3659,7 +3635,7 @@ public final class VillagerQuestService {
                 entries.add(trackerEntry(player, questContext, definition, entry.getValue(), activeConditions));
             }
         }
-        String signature = trackerSyncSignature(entries, trackedQuestId);
+        String signature = QuestTrackerPresenter.syncSignature(entries, trackedQuestId);
         long gameTime = level.getGameTime();
         TrackerSyncState previous = LAST_TRACKER_SYNCS.get(player.getUUID());
         boolean heartbeatDue = previous == null
@@ -3677,32 +3653,6 @@ public final class VillagerQuestService {
                 trackedQuestId == null ? "" : trackedQuestId.toString(),
                 flash));
         LAST_TRACKER_SYNCS.put(player.getUUID(), new TrackerSyncState(signature, gameTime));
-    }
-
-    private static String trackerSyncSignature(
-            List<QuestTrackerSyncPayload.Entry> entries,
-            ResourceLocation trackedQuestId) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(trackedQuestId == null ? "" : trackedQuestId.toString()).append('\n');
-        for (QuestTrackerSyncPayload.Entry entry : entries) {
-            builder.append(entry.questId()).append('|')
-                    .append(entry.title()).append('|')
-                    .append(entry.objective()).append('|')
-                    .append(entry.metadata()).append('|')
-                    .append(entry.progress()).append('|')
-                    .append(entry.showProgress()).append('|')
-                    .append(entry.state()).append('|')
-                    .append(entry.status()).append('|')
-                    .append(entry.issuer()).append('|')
-                    .append(entry.issuerLocation()).append('|');
-            for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
-                builder.append(item.itemId()).append(',')
-                        .append(item.label()).append(',')
-                        .append(item.count()).append(';');
-            }
-            builder.append('\n');
-        }
-        return builder.toString();
     }
 
     private static boolean shouldSyncTrackerEntry(
@@ -3771,23 +3721,19 @@ public final class VillagerQuestService {
                 && player.level() instanceof ServerLevel level
                 && objectiveComplete(player, context, level, definition, progress, currentObjective);
         Map<String, String> replacements = trackerReplacements(player, context, definition, progress, currentObjective, activeConditionsMet);
-        QuestDefinition.Step fallback = new QuestDefinition.Step(
-                trackerFallbackText(stepKey),
-                trackerFallbackTextKey(stepKey),
-                progress.state() == VillagerQuestSavedData.QuestState.ACTIVE,
-                trackerFallbackProgress(stepKey),
-                Map.of()
-        );
+        QuestDefinition.Step fallback = QuestTrackerPresenter.fallbackStep(stepKey, progress.state());
         boolean objectiveTracker = progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
                 && currentObjective != null
-                && objectiveTrackerHasDisplay(currentObjective, currentObjectiveComplete);
+                && QuestTrackerPresenter.objectiveTrackerHasDisplay(currentObjective, currentObjectiveComplete);
         QuestDefinition.Step step = objectiveTracker
-                ? objectiveTrackerStep(currentObjective, fallback, currentObjectiveComplete)
+                ? QuestTrackerPresenter.objectiveTrackerStep(currentObjective, fallback, currentObjectiveComplete)
                 : definition.tracker().step(stepKey, fallback);
         boolean configuredStep = objectiveTracker
                 || (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
                 && definition.tracker().steps().containsKey(stepKey));
-        float progressValue = configuredStep && step.progress() >= 0.0F ? step.progress() : trackerFallbackProgress(stepKey);
+        float progressValue = configuredStep && step.progress() >= 0.0F
+                ? step.progress()
+                : QuestTrackerPresenter.fallbackProgress(stepKey);
         boolean showProgress = configuredStep ? step.showProgress() : progress.state() == VillagerQuestSavedData.QuestState.ACTIVE;
         QuestDefinition.SelectedText title = definition.tracker().title().isBlank() && definition.tracker().titleKey().isBlank()
                 ? new QuestDefinition.SelectedText(definition.title(), definition.titleKey())
@@ -3795,19 +3741,19 @@ public final class VillagerQuestService {
         String issuer = issuerSummary(player, progress);
         String issuerLocation = issuerLocationSummary(player, progress);
         String status = trackerStatusText(player, context, definition, progress, activeConditions, replacements);
-        return new QuestTrackerSyncPayload.Entry(
-                definition.id().toString(),
-                resolveQuestText(player, title, replacements),
-                resolveQuestText(player, new QuestDefinition.SelectedText(step.text(), step.textKey()), replacements),
-                metadataText(player, step.metadata(), replacements, status, issuer),
-                Mth.clamp(progressValue, 0.0F, 1.0F),
-                showProgress,
-                progress.state().name().toLowerCase(Locale.ROOT),
+        return QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+                player,
+                definition,
+                title,
+                step,
+                replacements,
                 status,
                 issuer,
                 issuerLocation,
-                questItems(player, definition, progress)
-        );
+                QuestTrackerPresenter.questItems(definition, progress, VillagerQuestService::itemName),
+                progressValue,
+                showProgress,
+                progress.state()));
     }
 
     private static String trackerStateStepKey(
@@ -3828,23 +3774,6 @@ public final class VillagerQuestService {
             case NOT_STARTED -> "not_started";
             case ACTIVE -> trackerStepKey(player, definition, progress, true);
         };
-    }
-
-    private static QuestDefinition.Step objectiveTrackerStep(
-            QuestDefinition.Objective objective,
-            QuestDefinition.Step fallback,
-            boolean complete) {
-        QuestDefinition.ObjectiveTracker tracker = objective.tracker();
-        QuestDefinition.SelectedText displayText = tracker.displayText(complete);
-        String text = displayText.text().isBlank() ? fallback.text() : displayText.text();
-        String textKey = displayText.key().isBlank() ? fallback.textKey() : displayText.key();
-        float progress = !complete && tracker.progress() >= 0.0F ? tracker.progress() : fallback.progress();
-        Map<String, String> metadata = tracker.metadata().isEmpty() ? fallback.metadata() : tracker.metadata();
-        return new QuestDefinition.Step(text, textKey, tracker.showProgress(), progress, metadata);
-    }
-
-    private static boolean objectiveTrackerHasDisplay(QuestDefinition.Objective objective, boolean complete) {
-        return complete ? objective.tracker().hasCompletionDisplay() : objective.tracker().hasActiveDisplay();
     }
 
     private static QuestDefinition.Objective currentObjectiveForTrackerStep(
@@ -3968,45 +3897,6 @@ public final class VillagerQuestService {
         return "return";
     }
 
-    private static String trackerFallbackText(String stepKey) {
-        return switch (stepKey) {
-            case "inactive" -> "Return when this quest's conditions are right again.";
-            case "proof" -> "Obtain {proof_item} for this quest.";
-            case "hunt" -> "Defeat {objective_count} {objective_entity}.";
-            case "break" -> "Break {objective_count} {objective_block}.";
-            case "build" -> "Place {objective_count} {objective_block}.";
-            case "interact" -> "Use {objective_count} {objective_block}.";
-            case "event" -> "Wait for {objective_memory}.";
-            case "trade" -> "Complete trades: {objective_progress_count}/{objective_count}.";
-            case "gift" -> "Give {objective_count} {objective_item}.";
-            case "reputation" -> "Reach {objective_reputation_level} reputation with {issuer}.";
-            case "choice" -> "Make a choice for this quest.";
-            case "fact" -> "Resolve {objective_fact}.";
-            case "return" -> "Return to {issuer}.";
-            case "abandoned" -> "Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} to pick this back up.";
-            case "abandoned_cooldown" -> "Available later. Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z}.";
-            case "expired" -> "Expired. Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} if this can be restarted.";
-            case "completed" -> "Completed.";
-            case "branch_locked" -> "Closed by another choice.";
-            case "consumed" -> "Unavailable.";
-            default -> "Reach the center of {target} near {target_x}, {target_z}.";
-        };
-    }
-
-    private static String trackerFallbackTextKey(String stepKey) {
-        String normalized = stepKey == null || stepKey.isBlank() ? "travel" : stepKey.toLowerCase(Locale.ROOT);
-        return "quest.tracker.step." + normalized;
-    }
-
-    private static float trackerFallbackProgress(String stepKey) {
-        return switch (stepKey) {
-            case "inactive", "abandoned", "abandoned_cooldown", "expired", "branch_locked", "consumed", "not_started" -> 0.0F;
-            case "proof" -> 0.66F;
-            case "return", "completed" -> 1.0F;
-            default -> 0.25F;
-        };
-    }
-
     private static Map<String, String> trackerReplacements(
             ServerPlayer player,
             QuestDefinition definition,
@@ -4061,29 +3951,6 @@ public final class VillagerQuestService {
         return Map.copyOf(values);
     }
 
-    private static String metadataText(
-            ServerPlayer player,
-            Map<String, String> metadata,
-            Map<String, String> replacements,
-            String status,
-            String issuer) {
-        List<String> parts = new ArrayList<>();
-        if (status != null && !status.isBlank()) {
-            parts.add(status);
-        }
-        if (issuer != null && !issuer.isBlank()) {
-            parts.add(resolveGlobalText(player, "quest.tracker.metadata.issued_by", "Issued by {issuer}", replacements));
-        }
-        if (metadata == null || metadata.isEmpty()) {
-            return String.join(" | ", parts);
-        }
-        metadata.values().stream()
-                .filter(value -> value != null && !value.isBlank())
-                .map(value -> VillagerDialogueResources.resolveTemplate(value, replacements))
-                .forEach(parts::add);
-        return String.join(" | ", parts);
-    }
-
     private static QuestActionOutcome result(
             String status,
             String lineId,
@@ -4117,13 +3984,7 @@ public final class VillagerQuestService {
             ServerPlayer player,
             QuestDefinition.SelectedText selected,
             Map<String, String> replacements) {
-        if (selected == null) {
-            return "";
-        }
-        if (!selected.key().isBlank()) {
-            return resolveGlobalText(player, selected.key(), selected.text(), replacements);
-        }
-        return VillagerDialogueResources.resolveTemplate(selected.text(), replacements);
+        return QuestTrackerPresenter.resolveText(player, selected, replacements);
     }
 
     private static String resolveGlobalText(
@@ -4131,12 +3992,7 @@ public final class VillagerQuestService {
             String key,
             String fallback,
             Map<String, String> replacements) {
-        if (player != null && player.getServer() != null && key != null && !key.isBlank()) {
-            return VillagerDialogueResources
-                    .globalMessage(player.getServer(), player.getRandom(), key, VillagerLocale.locale(player), replacements)
-                    .orElseGet(() -> VillagerDialogueResources.resolveTemplate(fallback, replacements));
-        }
-        return VillagerDialogueResources.resolveTemplate(fallback, replacements);
+        return QuestTrackerPresenter.resolveGlobalText(player, key, fallback, replacements);
     }
 
     private static String questTitle(
@@ -4381,38 +4237,6 @@ public final class VillagerQuestService {
                     : resolveGlobalText(player, "quest.tracker.status.consumed", "Unavailable", replacements);
             case NOT_STARTED -> resolveGlobalText(player, "quest.tracker.status.not_started", "Not started", replacements);
         };
-    }
-
-    private static List<QuestTrackerSyncPayload.QuestItem> questItems(
-            ServerPlayer player,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
-        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
-            return List.of();
-        }
-        Map<String, QuestTrackerSyncPayload.QuestItem> items = new LinkedHashMap<>();
-        addQuestItem(items, definition.target().proofItem(), 1);
-        for (QuestDefinition.Objective objective : definition.objectives()) {
-            if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK || objective.item() == null) {
-                continue;
-            }
-            addQuestItem(items, objective.item(), objective.count());
-        }
-        return List.copyOf(items.values());
-    }
-
-    private static void addQuestItem(
-            Map<String, QuestTrackerSyncPayload.QuestItem> items,
-            ResourceLocation itemId,
-            int count) {
-        if (itemId == null) {
-            return;
-        }
-        String key = itemId.toString();
-        QuestTrackerSyncPayload.QuestItem existing = items.get(key);
-        if (existing == null || count > existing.count()) {
-            items.put(key, new QuestTrackerSyncPayload.QuestItem(key, itemName(itemId), count));
-        }
     }
 
     public static void onEntityKilled(LivingEntity killed, Entity attacker) {
@@ -4985,15 +4809,8 @@ public final class VillagerQuestService {
             VillagerQuestSavedData data,
             ServerPlayer player,
             ResourceLocation parentId) {
-        if (parentId == null) {
-            return "none";
-        }
-        VillagerQuestSavedData.QuestProgress parentProgress = data.get(player.getUUID(), parentId);
-        if (parentProgress == null) {
-            return parentId + "(not_started)";
-        }
-        String completed = parentProgress.completionCount() > 0 ? ",completed=true" : "";
-        return parentId + "(" + debugEnum(parentProgress.state()) + completed + ")";
+        VillagerQuestSavedData.QuestProgress parentProgress = parentId == null ? null : data.get(player.getUUID(), parentId);
+        return QuestDebugFormatter.parentState(parentId, parentProgress);
     }
 
     private static String debugProgressLine(
@@ -5002,7 +4819,16 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             DialogueContext context) {
         if (progress == null) {
-            return "progress saved=false state=not_started ready=false active_conditions=n/a branch_locked=false";
+            return QuestDebugFormatter.progressLine(new QuestDebugFormatter.ProgressLine(
+                    false,
+                    VillagerQuestSavedData.QuestState.NOT_STARTED,
+                    "",
+                    0,
+                    0,
+                    0,
+                    "false",
+                    "n/a",
+                    false));
         }
         ConditionMatch activeConditions = activeConditionsStateForPlayer(player, definition, progress);
         String ready = progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
@@ -5010,14 +4836,16 @@ public final class VillagerQuestService {
                 : context == null
                         ? "unknown_no_live_issuer"
                         : Boolean.toString(isReadyToTurnIn(context, definition, progress));
-        return "progress saved=true state=" + debugEnum(progress.state())
-                + " stage=" + blankAs(progress.currentStage(), "none")
-                + " starts=" + progress.startCount()
-                + " completions=" + progress.completionCount()
-                + " abandons=" + progress.abandonCount()
-                + " ready=" + ready
-                + " active_conditions=" + debugEnum(activeConditions)
-                + " branch_locked=" + branchLocked(progress);
+        return QuestDebugFormatter.progressLine(new QuestDebugFormatter.ProgressLine(
+                true,
+                progress.state(),
+                progress.currentStage(),
+                progress.startCount(),
+                progress.completionCount(),
+                progress.abandonCount(),
+                ready,
+                debugEnum(activeConditions),
+                branchLocked(progress)));
     }
 
     private static String debugObjectiveLine(
@@ -5030,100 +4858,27 @@ public final class VillagerQuestService {
         boolean complete = progress != null
                 && objectiveComplete(player, context, level, definition, progress, objective);
         int counter = progress == null ? 0 : progress.objectiveCounter(objective.id());
-        List<String> parts = new ArrayList<>();
-        parts.add("objective " + objective.id());
-        parts.add("type=" + debugEnum(objective.type()));
-        parts.add("optional=" + objective.optional());
-        parts.add("complete=" + complete);
-        switch (objective.type()) {
-            case STRUCTURE_VISIT -> {
-                parts.add("structure=" + debugResource(objective.structure()));
-                parts.add("dimension=" + debugDimension(objective.dimension()));
-                parts.add("pieces=" + debugStringList(objective.pieces()));
-                parts.add("search_radius=" + objective.searchRadius());
-                parts.add("discovery_radius=" + objective.discoveryRadius());
-            }
-            case LOCATION_VISIT -> debugAddLocation(parts, objective);
-            case ITEM_CHECK -> {
-                parts.add("item=" + debugResource(objective.item()));
-                parts.add("current=" + itemCount(player, objective));
-                parts.add("count=" + objective.count());
-                parts.add("consume=" + objective.consume());
-                parts.add("enchantments=" + objective.itemRequirements().enchantments().size());
-                parts.add("custom_data=" + objective.itemRequirements().hasCustomData());
-            }
-            case MOB_KILL -> {
-                debugAddCounter(parts, counter, objective.count());
-                parts.add("entities=" + debugResourceSet(objective.entityTypes()));
-                parts.add("entity_tags=" + debugResourceSet(objective.entityTags()));
-                debugAddLocation(parts, objective);
-            }
-            case BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT -> {
-                debugAddCounter(parts, counter, objective.count());
-                parts.add("blocks=" + debugResourceSet(objective.blockTypes()));
-                parts.add("block_tags=" + debugResourceSet(objective.blockTags()));
-                debugAddLocation(parts, objective);
-            }
-            case MEMORY_EVENT -> {
-                debugAddCounter(parts, counter, objective.count());
-                parts.add("memory_tags=" + debugResourceSet(objective.memoryTags()));
-                debugAddLocation(parts, objective);
-            }
-            case TRADE -> {
-                debugAddCounter(parts, counter, objective.count());
-                parts.add("result_item=" + debugResource(objective.item()));
-                debugAddLocation(parts, objective);
-            }
-            case GIFT -> {
-                debugAddCounter(parts, counter, objective.count());
-                parts.add("item=" + debugResource(objective.item()));
-                parts.add("reactions=" + debugStringSet(objective.giftReactions()));
-            }
-            case REPUTATION -> {
-                parts.add("current=" + reputationForObjective(level, player, progress));
-                parts.add("levels=" + debugEnumSet(objective.reputationLevels()));
-                parts.add("min=" + (objective.minReputation() == null ? "none" : objective.minReputation()));
-                parts.add("max=" + (objective.maxReputation() == null ? "none" : objective.maxReputation()));
-            }
-            case CHOICE -> {
-                parts.add("scope=" + debugEnum(objective.factScope()));
-                parts.add("quest=" + debugResource(objective.factQuestId() == null ? definition.id() : objective.factQuestId()));
-                parts.add("key=" + blankAs(objective.factKey(), "none"));
-                parts.add("choices=" + debugStringSet(objective.factValues()));
-                if (progress != null) {
-                    parts.add("scope_key=" + blankAs(factObjectiveScopeKey(level, player, definition, progress, objective), "unresolved"));
-                }
-            }
-            case FACT -> {
-                parts.add("scope=" + debugEnum(objective.factScope()));
-                parts.add("quest=" + debugResource(objective.factQuestId() == null ? definition.id() : objective.factQuestId()));
-                parts.add("tags=" + debugResourceSet(objective.factTags()));
-                parts.add("key=" + blankAs(objective.factKey(), "none"));
-                parts.add("values=" + debugStringSet(objective.factValues()));
-                parts.add("min=" + (objective.factMin() == null ? "none" : objective.factMin()));
-                parts.add("max=" + (objective.factMax() == null ? "none" : objective.factMax()));
-                if (progress != null) {
-                    parts.add("scope_key=" + blankAs(factObjectiveScopeKey(level, player, definition, progress, objective), "unresolved"));
-                }
-            }
-            case CONDITION -> {
-                parts.add("conditions=" + objective.conditions().size());
-                parts.add("condition_state=" + debugEnum(objectiveConditionState(player, context, level, definition, progress, objective)));
-            }
+        String scopeKey = "";
+        if (progress != null
+                && (objective.type() == QuestDefinition.ObjectiveType.CHOICE
+                || objective.type() == QuestDefinition.ObjectiveType.FACT)) {
+            scopeKey = blankAs(factObjectiveScopeKey(level, player, definition, progress, objective), "unresolved");
         }
-        return String.join(" ", parts);
-    }
-
-    private static void debugAddCounter(List<String> parts, int current, int required) {
-        parts.add("counter=" + current + "/" + required);
-    }
-
-    private static void debugAddLocation(List<String> parts, QuestDefinition.Objective objective) {
-        parts.add("dimension=" + debugDimension(objective.dimension()));
-        if (objective.location() != null) {
-            parts.add("location=" + debugPos(objective.location()));
-            parts.add("radius=" + objective.radius());
-        }
+        String conditionState = objective.type() == QuestDefinition.ObjectiveType.CONDITION
+                ? debugEnum(objectiveConditionState(player, context, level, definition, progress, objective))
+                : "";
+        return QuestDebugFormatter.objectiveLine(
+                definition.id(),
+                objective,
+                new QuestDebugFormatter.ObjectiveLineState(
+                        complete,
+                        counter,
+                        objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK ? itemCount(player, objective) : 0,
+                        objective.type() == QuestDefinition.ObjectiveType.REPUTATION
+                                ? reputationForObjective(level, player, progress)
+                                : 0,
+                        scopeKey,
+                        conditionState));
     }
 
     private static String debugInventoryCacheLine(ServerPlayer player, QuestDefinition definition) {
@@ -5140,90 +4895,58 @@ public final class VillagerQuestService {
         }
         boolean proofItem = definition.target().hasProofItem();
         if (itemObjectives == 0 && !proofItem) {
-            return "";
+            return QuestDebugFormatter.inventoryCacheLine(new QuestDebugFormatter.InventoryCacheLine(
+                    false,
+                    false,
+                    0,
+                    0,
+                    0,
+                    false,
+                    0,
+                    0,
+                    0L,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0));
         }
 
         int changeCount = player.getInventory().getTimesChanged();
         InventoryItemCountCache cache = INVENTORY_ITEM_COUNT_CACHES.get(player.getUUID());
         boolean warm = cache != null && cache.changeCount() == changeCount;
         long gameTime = player.level().getGameTime();
-        List<String> parts = new ArrayList<>();
-        parts.add("inventory_cache");
-        parts.add("state=" + (warm ? "warm" : "cold"));
-        parts.add("change_count=" + changeCount);
-        parts.add("item_objectives=" + itemObjectives);
-        parts.add("exact_item_objectives=" + exactItemObjectives);
-        parts.add("proof_item=" + proofItem);
-        if (warm) {
-            parts.add("simple_item_entries=" + cache.counts().size());
-            parts.add("exact_objective_entries=" + cache.objectiveCounts().size());
-            parts.add("rebuilt_age_ticks=" + Math.max(0L, gameTime - cache.rebuiltGameTime()));
-            parts.add("simple_scan_slots=" + cache.simpleScanSlots());
-            parts.add("simple_lookups=" + cache.simpleLookups());
-            parts.add("exact_lookups=" + cache.exactLookups());
-            parts.add("exact_cache_misses=" + cache.exactCacheMisses());
-            parts.add("exact_scan_slots=" + cache.exactScanSlots());
-        }
-        return String.join(" ", parts);
-    }
-
-    private static String debugResource(ResourceLocation id) {
-        return id == null ? "none" : id.toString();
+        return QuestDebugFormatter.inventoryCacheLine(new QuestDebugFormatter.InventoryCacheLine(
+                true,
+                warm,
+                changeCount,
+                itemObjectives,
+                exactItemObjectives,
+                proofItem,
+                warm ? cache.counts().size() : 0,
+                warm ? cache.objectiveCounts().size() : 0,
+                warm ? Math.max(0L, gameTime - cache.rebuiltGameTime()) : 0L,
+                warm ? cache.simpleScanSlots() : 0,
+                warm ? cache.simpleLookups() : 0,
+                warm ? cache.exactLookups() : 0,
+                warm ? cache.exactCacheMisses() : 0,
+                warm ? cache.exactScanSlots() : 0));
     }
 
     private static String debugDimension(ResourceKey<Level> dimension) {
-        return dimension == null ? "any" : dimension.location().toString();
+        return QuestDebugFormatter.dimension(dimension);
     }
 
     private static String debugPos(BlockPos pos) {
-        return pos == null ? "none" : pos.getX() + "," + pos.getY() + "," + pos.getZ();
+        return QuestDebugFormatter.pos(pos);
     }
 
     private static String debugEnum(Enum<?> value) {
-        return value == null ? "none" : value.name().toLowerCase(Locale.ROOT);
-    }
-
-    private static String debugEnumSet(Set<? extends Enum<?>> values) {
-        if (values == null || values.isEmpty()) {
-            return "[]";
-        }
-        return values.stream()
-                .map(VillagerQuestService::debugEnum)
-                .sorted()
-                .toList()
-                .toString();
-    }
-
-    private static String debugResourceSet(Set<ResourceLocation> values) {
-        if (values == null || values.isEmpty()) {
-            return "[]";
-        }
-        return values.stream()
-                .map(ResourceLocation::toString)
-                .sorted()
-                .toList()
-                .toString();
-    }
-
-    private static String debugStringSet(Set<String> values) {
-        if (values == null || values.isEmpty()) {
-            return "[]";
-        }
-        return values.stream()
-                .sorted()
-                .toList()
-                .toString();
-    }
-
-    private static String debugStringList(List<String> values) {
-        if (values == null || values.isEmpty()) {
-            return "[]";
-        }
-        return values.toString();
+        return QuestDebugFormatter.enumName(value);
     }
 
     private static String blankAs(String value, String fallback) {
-        return value == null || value.isBlank() ? fallback : value;
+        return QuestDebugFormatter.blankAs(value, fallback);
     }
 
     private static String lineId(QuestDefinition definition, String stage) {

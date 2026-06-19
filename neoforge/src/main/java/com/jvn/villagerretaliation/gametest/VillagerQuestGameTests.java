@@ -8,7 +8,9 @@ import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestTrackerPresenter;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestStage;
@@ -17,6 +19,7 @@ import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -345,6 +348,125 @@ public final class VillagerQuestGameTests {
                 QuestFactScope.bySerializedName("quest_giver", QuestFactScope.PLAYER),
                 QuestFactScope.VILLAGER,
                 "quest_giver fact scope alias");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questTrackerPresenterFormatsEntryPayload(GameTestHelper helper) {
+        QuestDefinition quest = quest(helper, VillagerRetaliation.id("tales_of_a_lost_civilization"));
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, new BlockPos(100, 64, 100), 42L);
+        progress.setIssuer(
+                UUID.randomUUID(),
+                "Lore Keeper",
+                "minecraft:cartographer",
+                3,
+                Level.OVERWORLD,
+                new BlockPos(4, 65, -2),
+                "village:overworld:0:0");
+
+        List<QuestTrackerSyncPayload.QuestItem> items = QuestTrackerPresenter.questItems(
+                quest,
+                progress,
+                ResourceLocation::toString);
+        helper.assertTrue(
+                items.stream().anyMatch(item -> item.itemId().equals("minecraft:echo_shard") && item.count() == 1),
+                "presenter did not include proof item");
+
+        QuestDefinition.Step step = new QuestDefinition.Step(
+                "Recover {proof_item}",
+                "",
+                true,
+                0.5F,
+                Map.of("hint", "Proof: {proof_item}"));
+        Map<String, String> replacements = Map.of(
+                "quest", quest.title(),
+                "proof_item", "Echo Shard",
+                "issuer", "Lore Keeper");
+        QuestTrackerSyncPayload.Entry entry = QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+                null,
+                quest,
+                new QuestDefinition.SelectedText("{quest}", ""),
+                step,
+                replacements,
+                "Active",
+                "Lore Keeper",
+                "minecraft:overworld 4,65,-2",
+                items,
+                0.5F,
+                true,
+                progress.state()));
+
+        helper.assertValueEqual(entry.questId(), quest.id().toString(), "presenter quest id");
+        helper.assertValueEqual(entry.title(), quest.title(), "presenter title");
+        helper.assertValueEqual(entry.objective(), "Recover Echo Shard", "presenter objective text");
+        helper.assertValueEqual(entry.metadata(), "Active | Issued by Lore Keeper | Proof: Echo Shard", "presenter metadata");
+        helper.assertValueEqual(entry.progress(), 0.5F, "presenter progress");
+        helper.assertTrue(entry.showProgress(), "presenter show progress");
+        helper.assertValueEqual(entry.state(), "active", "presenter state");
+        helper.assertTrue(
+                QuestTrackerPresenter.syncSignature(List.of(entry), quest.id()).contains(entry.questId()),
+                "presenter signature omitted quest id");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questDebugFormatterOutputsStableInspectLines(GameTestHelper helper) {
+        QuestDefinition quest = quest(helper, VillagerRetaliation.id("choose_the_horizon"));
+        VillagerQuestSavedData.QuestProgress parentProgress = new VillagerQuestSavedData.QuestProgress();
+        parentProgress.complete(99L, false);
+        String parentId = VillagerRetaliation.id("atlas_parent").toString();
+
+        helper.assertValueEqual(
+                QuestDebugFormatter.header(quest),
+                "Quest " + quest.id() + " | " + quest.title(),
+                "debug formatter header");
+        helper.assertTrue(
+                QuestDebugFormatter.identityLine(quest, QuestDebugFormatter.parentState(VillagerRetaliation.id("atlas_parent"), parentProgress))
+                        .contains("parent=" + parentId + "(completed,completed=true)"),
+                "debug formatter parent state");
+        helper.assertValueEqual(
+                QuestDebugFormatter.progressLine(new QuestDebugFormatter.ProgressLine(
+                        true,
+                        VillagerQuestSavedData.QuestState.ACTIVE,
+                        "started",
+                        1,
+                        0,
+                        0,
+                        "false",
+                        "met",
+                        false)),
+                "progress saved=true state=active stage=started starts=1 completions=0 abandons=0 ready=false active_conditions=met branch_locked=false",
+                "debug formatter progress line");
+
+        QuestDefinition.Objective objective = quest.objectives().getFirst();
+        String objectiveLine = QuestDebugFormatter.objectiveLine(
+                quest.id(),
+                objective,
+                new QuestDebugFormatter.ObjectiveLineState(false, 0, 0, 0, "quest:choose_the_horizon", ""));
+        helper.assertTrue(objectiveLine.contains("objective " + objective.id()), "debug formatter objective id");
+        helper.assertTrue(objectiveLine.contains("type=choice"), "debug formatter objective type");
+        helper.assertTrue(objectiveLine.contains("choices=[coast, dark_roof]"), "debug formatter choices");
+        helper.assertValueEqual(
+                QuestDebugFormatter.inventoryCacheLine(new QuestDebugFormatter.InventoryCacheLine(
+                        true,
+                        true,
+                        7,
+                        2,
+                        1,
+                        true,
+                        3,
+                        1,
+                        4L,
+                        36,
+                        5,
+                        2,
+                        1,
+                        9)),
+                "inventory_cache state=warm change_count=7 item_objectives=2 exact_item_objectives=1 proof_item=true simple_item_entries=3 exact_objective_entries=1 rebuilt_age_ticks=4 simple_scan_slots=36 simple_lookups=5 exact_lookups=2 exact_cache_misses=1 exact_scan_slots=9",
+                "debug formatter inventory cache line");
 
         helper.succeed();
     }
