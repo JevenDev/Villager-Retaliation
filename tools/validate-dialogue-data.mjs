@@ -844,7 +844,7 @@ const questV2ResponseKeys = new Set(["id", "label", "label_key", "text", "text_k
 const questV2TransitionKeys = new Set(["stage", "scene", "response", "complete", "abandon", "fail"]);
 const questV2EventKeys = new Set(["id", "event", "type", "trigger", "stage", "stages", "conditions", "actions", "transition", "next", "cooldown", "cooldown_ticks", "radius", "repeatable", "metadata"]);
 const questV2RewardsKeys = new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event"]);
-const questV2UiKeys = new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "placeholders", "icon", "color", "priority", "hidden"]);
+const questV2UiKeys = new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "show_progress", "progress", "placeholders", "icon", "color", "priority", "hidden"]);
 const questV2LifecycleCoverageSlots = new Set(["offer", "reminder", "turn_in"]);
 
 const cli = parseValidatorArgs(process.argv.slice(2));
@@ -1880,6 +1880,8 @@ function checkQuestV2Ui(file, ui, pointer, location) {
   checkQuestV2OptionalString(file, ui, pointer, location, "description_key");
   checkQuestV2OptionalString(file, ui, pointer, location, "tracker_text");
   checkQuestV2OptionalString(file, ui, pointer, location, "tracker_text_key");
+  checkQuestV2OptionalBoolean(file, ui, pointer, location, "show_progress");
+  checkQuestV2OptionalNumber(file, ui, pointer, location, "progress", { min: 0 });
   const placeholders = new Set();
   if (ui.placeholders !== undefined) {
     if (!ui.placeholders || typeof ui.placeholders !== "object" || Array.isArray(ui.placeholders)) {

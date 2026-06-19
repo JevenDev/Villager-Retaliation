@@ -965,10 +965,16 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void stagedBranchQuestKeepsLegacyNextAndSetStageSemantics(GameTestHelper helper) {
-        QuestDefinition quest = quest(helper, VillagerRetaliation.id("choose_the_horizon"));
+    public static void branchingQuestModuleV2CompilesResponseTransitions(GameTestHelper helper) {
+        ResourceLocation questId = VillagerRetaliation.id("choose_the_horizon");
+        CompiledQuest compiled = VillagerQuestResources
+                .compiledQuest(helper.getLevel().getServer(), questId)
+                .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
+        QuestDefinition quest = compiled.asQuestDefinition();
+        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "choose_the_horizon schema version");
         helper.assertValueEqual(quest.objectives().size(), 1, "choose_the_horizon objective count");
         QuestDefinition.Objective objective = quest.objectives().getFirst();
+        helper.assertValueEqual(objective.id(), "started.choose_route", "branch objective id");
         helper.assertValueEqual(objective.type(), QuestDefinition.ObjectiveType.CHOICE, "branch objective type");
         helper.assertValueEqual(objective.factScope(), QuestFactScope.QUEST, "branch objective fact scope");
         helper.assertValueEqual(objective.factKey(), "choice", "branch objective fact key");
@@ -978,11 +984,87 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(quest.stages().size(), 3, "choose_the_horizon stage count");
         QuestDefinition.Stage started = quest.stages().get("started");
         helper.assertTrue(started != null, "choose_the_horizon has no started stage");
-        helper.assertValueEqual(started.branches().size(), 2, "started branch count");
-        assertRouteBranch(helper, started, "coast", "coast_chosen", VillagerRetaliation.id("atlas_coast_route"));
-        assertRouteBranch(helper, started, "dark_roof", "dark_roof_chosen", VillagerRetaliation.id("atlas_dark_roof_route"));
+        helper.assertTrue(started.branches().isEmpty(), "v2 responses should not compile duplicate legacy branches");
+        helper.assertValueEqual(started.objectives(), List.of("started.choose_route"), "started objective ownership");
+        helper.assertValueEqual(started.completeWhen().getFirst().objective(), "started.choose_route", "started predicate");
         helper.assertTrue(quest.stages().containsKey("coast_chosen"), "coast_chosen stage missing");
         helper.assertTrue(quest.stages().containsKey("dark_roof_chosen"), "dark_roof_chosen stage missing");
+        assertTrackerStepMatches(helper, quest.tracker().steps().get("started"), legacyChooseTheHorizonQuestV1Fixture()
+                .getAsJsonObject("tracker").getAsJsonObject("steps").getAsJsonObject("proof"), "choose horizon proof");
+        assertTrackerStepMatches(helper, quest.tracker().steps().get("coast_chosen"), legacyChooseTheHorizonQuestV1Fixture()
+                .getAsJsonObject("tracker").getAsJsonObject("steps").getAsJsonObject("return"), "choose horizon coast return");
+        assertTrackerStepMatches(helper, quest.tracker().steps().get("dark_roof_chosen"), legacyChooseTheHorizonQuestV1Fixture()
+                .getAsJsonObject("tracker").getAsJsonObject("steps").getAsJsonObject("return"), "choose horizon dark roof return");
+
+        DialogueTreeDefinition generatedTree = DialogueTreeResources
+                .tree(helper.getLevel().getServer(), LOCALE, QuestDialogueCompiler.treeId(questId))
+                .orElseThrow(() -> new GameTestAssertException("choose_the_horizon generated dialogue tree missing"));
+        DialogueTreeDefinition.Node responsesNode = generatedTree
+                .node("stage.started.responses")
+                .orElseThrow(() -> new GameTestAssertException("choose_the_horizon response node missing"));
+        assertRouteResponse(
+                helper,
+                responsesNode,
+                "coast",
+                "coast_chosen",
+                VillagerRetaliation.id("atlas_coast_route"));
+        assertRouteResponse(
+                helper,
+                responsesNode,
+                "dark_roof",
+                "dark_roof_chosen",
+                VillagerRetaliation.id("atlas_dark_roof_route"));
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void builtInChooseTheHorizonBranchesRoundTripResponseHistory(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        VillagerQuestResources.clearCache();
+        DialogueTreeResources.clearCache();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation questId = VillagerRetaliation.id("choose_the_horizon");
+        ResourceLocation treeId = QuestDialogueCompiler.treeId(questId);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        configureChooseTheHorizonProvider(level, villager);
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            assertChooseTheHorizonBranchRuntime(
+                    helper,
+                    level,
+                    player,
+                    villager,
+                    questId,
+                    treeId,
+                    "coast",
+                    "coast_chosen",
+                    VillagerRetaliation.id("atlas_coast_route"));
+            VillagerQuestService.debugRemoveQuest(player, questId);
+            DialogueTreeService.clearRuntimeState();
+            assertChooseTheHorizonBranchRuntime(
+                    helper,
+                    level,
+                    player,
+                    villager,
+                    questId,
+                    treeId,
+                    "dark_roof",
+                    "dark_roof_chosen",
+                    VillagerRetaliation.id("atlas_dark_roof_route"));
+            helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "choose_the_horizon branch runtime emitted diagnostics");
+            DatapackDiagnostics.clear();
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            DialogueTreeService.clearRuntimeState();
+            DialogueTreeResources.clearCache();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
 
         helper.succeed();
     }
@@ -990,7 +1072,12 @@ public final class VillagerQuestGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questDialogueTreesCoverEveryQuest(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
+        QuestDialogueCatalog catalog = VillagerQuestResources.questDialogueCatalog(server);
         for (QuestDefinition quest : quests(helper)) {
+            if (catalog.hasGeneratedQuestDialogue(quest.id())) {
+                assertGeneratedQuestDialogueLifecycle(helper, server, quest.id(), catalog);
+                continue;
+            }
             DialogueTreeDefinition tree = DialogueTreeResources.tree(server, LOCALE, quest.id())
                     .orElseThrow(() -> new GameTestAssertException(quest.id() + " has no matching quest dialogue tree"));
             assertEntryLifecycle(helper, quest.id(), tree, "offer", VillagerActionDefinition.QuestAction.START);
@@ -2378,6 +2465,13 @@ public final class VillagerQuestGameTests {
         VillagerProfileManager.setSkill(level, villager, VillagerSkill.COOKING, 4);
     }
 
+    private static void configureChooseTheHorizonProvider(ServerLevel level, Villager villager) {
+        villager.setVillagerData(villager.getVillagerData()
+                .setProfession(VillagerProfession.CARTOGRAPHER)
+                .setLevel(2));
+        VillagerProfileManager.setSkill(level, villager, VillagerSkill.CARTOGRAPHY, 20);
+    }
+
     private static void assertEggBasketsLegacySemantics(
             GameTestHelper helper,
             QuestDefinition quest,
@@ -3129,28 +3223,113 @@ public final class VillagerQuestGameTests {
         }
     }
 
-    private static void assertRouteBranch(
+    private static void assertChooseTheHorizonBranchRuntime(
             GameTestHelper helper,
-            QuestDefinition.Stage stage,
+            ServerLevel level,
+            ServerPlayer player,
+            Villager villager,
+            ResourceLocation questId,
+            ResourceLocation treeId,
             String branchId,
             String nextStage,
             ResourceLocation routeTag) {
-        QuestDefinition.StageBranch branch = stage.branches().stream()
+        VillagerQuestService.DebugStartResult started =
+                VillagerQuestService.debugStartQuest(player, villager, questId, true);
+        helper.assertTrue(started.started(), branchId + " choose_the_horizon did not start: " + started.message());
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        selectDialogueOption(
+                helper,
+                context,
+                DialogueTreeService.entryOptionId(treeId, "stage.started.responses"));
+        helper.assertTrue(
+                selectDialogueOption(
+                        helper,
+                        context,
+                        DialogueTreeService.responseOptionId(treeId, branchId)).text().contains("Atlas route chosen"),
+                branchId + " response text");
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), questId);
+        helper.assertTrue(progress != null, branchId + " progress missing after response");
+        helper.assertValueEqual(progress.currentStage(), nextStage, branchId + " transition stage");
+        helper.assertValueEqual(progress.choiceHistory().size(), 1, branchId + " choice history count");
+        VillagerQuestSavedData.ChoiceHistoryEntry choice = progress.choiceHistory().getFirst();
+        helper.assertValueEqual(choice.scenePath(), "stage.started.responses", branchId + " choice scene path");
+        helper.assertValueEqual(choice.responseId(), branchId, branchId + " choice response");
+        helper.assertValueEqual(choice.priorStage(), "started", branchId + " choice prior stage");
+        helper.assertValueEqual(choice.nextStage(), nextStage, branchId + " choice next stage");
+
+        QuestScopeKey questScope = QuestScopeKey.quest(player.getUUID(), questId);
+        VillagerQuestFacts facts = VillagerQuestFacts.get(level);
+        helper.assertValueEqual(
+                facts.variable(questScope, "choice").orElse(""),
+                branchId,
+                branchId + " choice fact");
+        helper.assertValueEqual(
+                facts.variable(questScope, "last_choice_response").orElse(""),
+                branchId,
+                branchId + " response history fact");
+        helper.assertValueEqual(
+                facts.variable(questScope, "last_choice_next_stage").orElse(""),
+                nextStage,
+                branchId + " transition history fact");
+        helper.assertTrue(facts.hasTag(QuestScopeKey.player(player.getUUID()), routeTag), branchId + " route tag fact");
+
+        CompoundTag saved = data.save(new CompoundTag(), level.registryAccess());
+        VillagerQuestSavedData loaded = VillagerQuestSavedData.load(saved, level.registryAccess());
+        VillagerQuestSavedData.QuestProgress loadedProgress = loaded.get(player.getUUID(), questId);
+        helper.assertTrue(loadedProgress != null, branchId + " progress did not reload");
+        helper.assertValueEqual(loadedProgress.currentStage(), nextStage, branchId + " reloaded stage");
+        helper.assertValueEqual(loadedProgress.choiceHistory().getFirst().responseId(), branchId, branchId + " reloaded response");
+
+        VillagerQuestService.DebugInspectResult inspect = VillagerQuestService.debugInspectQuest(player, questId);
+        assertDebugTraceContains(helper, inspect, "latest_response=" + branchId);
+        assertDebugTraceContains(helper, inspect, "latest_next_stage=" + nextStage);
+        VillagerQuestService.DebugInspectResult factScope = VillagerQuestService.debugFactScope(player, questScope.asString());
+        assertDebugTraceContains(helper, factScope, "fact variable choice=" + branchId);
+        assertDebugTraceContains(helper, factScope, "fact variable last_choice_response=" + branchId);
+        assertDebugTraceContains(helper, factScope, "fact variable last_choice_next_stage=" + nextStage);
+
+        var duplicate = VillagerQuestService.applyCompiledTransition(
+                context,
+                new CompiledQuestTransition(
+                        questId,
+                        "started",
+                        "stage.started.responses",
+                        branchId,
+                        CompiledQuestTransition.Target.STAGE,
+                        nextStage,
+                        "/stages/0/responses/" + ("coast".equals(branchId) ? "0" : "1")),
+                Map.of());
+        helper.assertTrue(duplicate.text().contains("already"), branchId + " duplicate response replay was not reported");
+        helper.assertValueEqual(progress.currentStage(), nextStage, branchId + " duplicate replay changed stage");
+        helper.assertValueEqual(progress.choiceHistory().size(), 1, branchId + " duplicate replay recorded history");
+    }
+
+    private static void assertRouteResponse(
+            GameTestHelper helper,
+            DialogueTreeDefinition.Node node,
+            String branchId,
+            String nextStage,
+            ResourceLocation routeTag) {
+        DialogueTreeDefinition.Response response = node.responses().stream()
                 .filter(candidate -> candidate.id().equals(branchId))
                 .findFirst()
-                .orElseThrow(() -> new GameTestAssertException("Missing branch " + branchId));
-        helper.assertValueEqual(branch.next(), nextStage, branchId + " branch next stage");
-        helper.assertValueEqual(branch.actions().size(), 4, branchId + " branch action count");
-        assertSetVariableAction(helper, branch.actions().get(0), "choice", branchId, branchId + " choice action");
-        assertSetVariableAction(helper, branch.actions().get(1), "stage", nextStage, branchId + " set_stage action");
-        VillagerActionDefinition tagAction = branch.actions().get(2);
+                .orElseThrow(() -> new GameTestAssertException("Missing response " + branchId));
+        helper.assertValueEqual(response.actions().size(), 4, branchId + " response action count");
+        assertSetVariableAction(helper, response.actions().get(0), "choice", branchId, branchId + " choice action");
+        VillagerActionDefinition tagAction = response.actions().get(1);
         helper.assertValueEqual(tagAction.kind(), VillagerActionDefinition.Kind.SET_TAG, branchId + " route tag kind");
         helper.assertValueEqual(tagAction.factScope(), QuestFactScope.PLAYER, branchId + " route tag scope");
         helper.assertValueEqual(tagAction.factTag(), routeTag, branchId + " route tag id");
-        VillagerActionDefinition notification = branch.actions().get(3);
+        VillagerActionDefinition notification = response.actions().get(2);
         helper.assertValueEqual(notification.kind(), VillagerActionDefinition.Kind.NOTIFICATION, branchId + " notification kind");
         helper.assertValueEqual(notification.notificationTrigger(), "quest.updated", branchId + " notification trigger");
         helper.assertFalse(notification.text().isBlank(), branchId + " notification text");
+        VillagerActionDefinition transition = response.actions().get(3);
+        helper.assertValueEqual(transition.kind(), VillagerActionDefinition.Kind.QUEST_TRANSITION, branchId + " transition kind");
+        helper.assertValueEqual(transition.questTransition().responseId(), branchId, branchId + " transition response");
+        helper.assertValueEqual(transition.questTransition().targetStage(), nextStage, branchId + " transition target");
     }
 
     private static void assertSetVariableAction(
@@ -3191,6 +3370,27 @@ public final class VillagerQuestGameTests {
                         + DatapackDiagnostics.structuredRecent().stream()
                                 .map(diagnostic -> diagnostic.jsonPointer() + " :: " + diagnostic.message())
                                 .toList());
+    }
+
+    private static JsonObject legacyChooseTheHorizonQuestV1Fixture() {
+        return JsonParser.parseString("""
+                {
+                  "tracker": {
+                    "steps": {
+                      "proof": {
+                        "text": "Pick the atlas route from the cartographer's branch options.",
+                        "show_progress": true,
+                        "progress": 0.7
+                      },
+                      "return": {
+                        "text": "Return to the cartographer after choosing the route.",
+                        "show_progress": true,
+                        "progress": 1
+                      }
+                    }
+                  }
+                }
+                """).getAsJsonObject();
     }
 
     private static JsonObject legacyEggBasketsQuestV1Fixture() {
@@ -4126,6 +4326,32 @@ public final class VillagerQuestGameTests {
                 questId + " dialogue tree entry " + entryId + " points to missing node " + entry.start());
         helper.assertTrue(hasReachableQuestAction(tree, entry.start(), action, questId),
                 questId + " dialogue tree entry " + entryId + " has no reachable " + action + " action");
+    }
+
+    private static void assertGeneratedQuestDialogueLifecycle(
+            GameTestHelper helper,
+            MinecraftServer server,
+            ResourceLocation questId,
+            QuestDialogueCatalog catalog) {
+        assertGeneratedQuestDialogueSlot(helper, server, questId, catalog, "offer", VillagerActionDefinition.QuestAction.START);
+        assertGeneratedQuestDialogueSlot(helper, server, questId, catalog, "reminder", VillagerActionDefinition.QuestAction.REMIND);
+        assertGeneratedQuestDialogueSlot(helper, server, questId, catalog, "turn_in", VillagerActionDefinition.QuestAction.TURN_IN);
+    }
+
+    private static void assertGeneratedQuestDialogueSlot(
+            GameTestHelper helper,
+            MinecraftServer server,
+            ResourceLocation questId,
+            QuestDialogueCatalog catalog,
+            String slot,
+            VillagerActionDefinition.QuestAction action) {
+        QuestDialogueCatalog.Binding binding = catalog.bindings(questId).stream()
+                .filter(candidate -> candidate.slot().equals(slot))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException(questId + " has no generated " + slot + " binding"));
+        DialogueTreeDefinition tree = DialogueTreeResources.tree(server, LOCALE, binding.treeId())
+                .orElseThrow(() -> new GameTestAssertException(questId + " generated tree missing " + binding.treeId()));
+        assertEntryLifecycle(helper, questId, tree, binding.entryId(), action);
     }
 
     private static boolean hasReachableQuestAction(

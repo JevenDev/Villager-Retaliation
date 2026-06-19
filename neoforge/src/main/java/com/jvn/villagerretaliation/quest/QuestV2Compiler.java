@@ -773,6 +773,8 @@ public final class QuestV2Compiler {
         JsonObject step = new JsonObject();
         putString(step, "text", ui.trackerText());
         putString(step, "text_key", ui.trackerTextKey());
+        copyIfPresent(ui.data(), step, "show_progress");
+        copyIfPresent(ui.data(), step, "progress");
         return step;
     }
 

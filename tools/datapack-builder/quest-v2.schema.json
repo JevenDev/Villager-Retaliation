@@ -1142,6 +1142,12 @@
         "tracker_text_key": {
           "type": "string"
         },
+        "show_progress": {
+          "type": "boolean"
+        },
+        "progress": {
+          "type": "number"
+        },
         "placeholders": {
           "type": "object",
           "additionalProperties": {

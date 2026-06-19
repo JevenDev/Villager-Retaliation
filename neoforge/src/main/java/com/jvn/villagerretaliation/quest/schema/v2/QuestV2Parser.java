@@ -276,6 +276,8 @@ public final class QuestV2Parser {
             "description_key",
             "tracker_text",
             "tracker_text_key",
+            "show_progress",
+            "progress",
             "placeholders",
             "icon",
             "color",

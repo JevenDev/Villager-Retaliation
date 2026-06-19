@@ -222,7 +222,9 @@
       ],
       "ui": {
         "tracker_text": "Bring 12 eggs for the kitchen baskets.",
-        "tracker_text_key": "quest.village_supply.egg_baskets.tracker.proof.text"
+        "tracker_text_key": "quest.village_supply.egg_baskets.tracker.proof.text",
+        "show_progress": true,
+        "progress": 0.7
       }
     },
     {
@@ -345,7 +347,9 @@
       ],
       "ui": {
         "tracker_text": "Return to the quest giver with the eggs.",
-        "tracker_text_key": "quest.village_supply.egg_baskets.tracker.return.text"
+        "tracker_text_key": "quest.village_supply.egg_baskets.tracker.return.text",
+        "show_progress": true,
+        "progress": 1
       }
     }
   ],

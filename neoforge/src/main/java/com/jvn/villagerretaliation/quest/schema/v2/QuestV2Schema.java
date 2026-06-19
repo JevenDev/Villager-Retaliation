@@ -355,6 +355,8 @@ public final class QuestV2Schema {
         properties.add("description_key", string());
         properties.add("tracker_text", string());
         properties.add("tracker_text_key", string());
+        properties.add("show_progress", booleanSchema());
+        properties.add("progress", number());
         properties.add("placeholders", objectMap(string()));
         properties.add("icon", resourceLocation());
         properties.add("color", string());
