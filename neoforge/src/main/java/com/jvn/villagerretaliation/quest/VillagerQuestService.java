@@ -4156,10 +4156,15 @@ public final class VillagerQuestService {
         String syncReason = flash ? "flash" : force ? "force" : previous == null ? "initial" : heartbeatDue ? "heartbeat" : "changed";
         QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
                 "result=sent reason=" + syncReason + " entries=" + entries.size());
-        PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(
-                entries,
-                trackedQuestId == null ? "" : trackedQuestId.toString(),
-                flash));
+        try {
+            PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(
+                    entries,
+                    trackedQuestId == null ? "" : trackedQuestId.toString(),
+                    flash));
+        } catch (UnsupportedOperationException ignored) {
+            QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
+                    "result=skipped reason=unsupported_connection entries=" + entries.size());
+        }
         LAST_TRACKER_SYNCS.put(player.getUUID(), new TrackerSyncState(signature, gameTime));
     }
 

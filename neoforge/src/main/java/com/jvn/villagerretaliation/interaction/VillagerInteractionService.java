@@ -68,6 +68,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
@@ -462,7 +463,7 @@ public final class VillagerInteractionService {
             }
             String responseText = message(createDialogueContext(level, player, villager), responseKey);
             sendVillagerNotice(player, villager, responseText);
-            PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
+            trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
             VillagerConversationService.endForPlayer(player, false);
             return;
         }
@@ -1737,7 +1738,7 @@ public final class VillagerInteractionService {
         ));
         VillagerAmbientIndicatorService.onConversationClosed(level, villager, player);
         broadcastVillagerChat(level, villager, goodbyeText);
-        PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
+        trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
         VillagerConversationService.endForPlayer(player, false);
     }
 
@@ -1857,7 +1858,7 @@ public final class VillagerInteractionService {
         DialogueContext context = createDialogueContext(level, player, villager);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
-        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
+        trySendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
                 reputation.value(),
                 reputation.level(),
@@ -1892,7 +1893,7 @@ public final class VillagerInteractionService {
         java.util.List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(context, mood);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
-        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
+        trySendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
                 reputation.value(),
                 reputation.level(),
@@ -2024,7 +2025,7 @@ public final class VillagerInteractionService {
         String resolvedText = VillagerDialogueResources
                 .globalMessage(player.getServer(), player.getRandom(), text, VillagerLocale.locale(player))
                 .orElse(text);
-        PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(entityId, resolvedText, ""));
+        trySendToPlayer(player, new VillagerInteractionNoticePayload(entityId, resolvedText, ""));
     }
 
     public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text) {
@@ -2032,7 +2033,7 @@ public final class VillagerInteractionService {
         if (villager.level() instanceof ServerLevel level) {
             resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text).orElse(text);
         }
-        PacketDistributor.sendToPlayer(
+        trySendToPlayer(
                 player,
                 new VillagerInteractionNoticePayload(villager.getId(), resolvedText, "")
         );
@@ -2043,7 +2044,7 @@ public final class VillagerInteractionService {
         if (villager.level() instanceof ServerLevel level) {
             resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text, replacements).orElse(text);
         }
-        PacketDistributor.sendToPlayer(
+        trySendToPlayer(
                 player,
                 new VillagerInteractionNoticePayload(villager.getId(), resolvedText, "")
         );
@@ -2180,7 +2181,15 @@ public final class VillagerInteractionService {
                     || nearbyPlayer.distanceToSqr(villager) > radiusSqr) {
                 continue;
             }
-            PacketDistributor.sendToPlayer(nearbyPlayer, payload);
+            trySendToPlayer(nearbyPlayer, payload);
+        }
+    }
+
+    private static void trySendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
+        try {
+            PacketDistributor.sendToPlayer(player, payload);
+        } catch (UnsupportedOperationException ignored) {
+            // Mock server players used by GameTests do not negotiate custom client payload channels.
         }
     }
 

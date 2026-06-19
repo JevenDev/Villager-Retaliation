@@ -362,7 +362,7 @@ public final class VillagerReputationNetworking {
     }
 
     public static void sendReputation(ServerPlayer player, AbstractVillager villager, int reputation) {
-        PacketDistributor.sendToPlayer(player, new VillagerReputationSyncPayload(
+        trySendToPlayer(player, new VillagerReputationSyncPayload(
                 villager.getId(),
                 villager.getUUID(),
                 reputation,
@@ -402,7 +402,7 @@ public final class VillagerReputationNetworking {
         if (villager.hasCustomName() && villager.getCustomName() != null) {
             String customName = villager.getCustomName().getString().trim();
             if (!customName.isBlank()) {
-                PacketDistributor.sendToPlayer(player, new VillagerNameSyncPayload(
+                trySendToPlayer(player, new VillagerNameSyncPayload(
                         villager.getId(),
                         villager.getUUID(),
                         "",
@@ -417,7 +417,7 @@ public final class VillagerReputationNetworking {
             return;
         }
 
-        PacketDistributor.sendToPlayer(player, new VillagerNameSyncPayload(
+        trySendToPlayer(player, new VillagerNameSyncPayload(
                 villager.getId(),
                 villager.getUUID(),
                 "",
@@ -426,15 +426,15 @@ public final class VillagerReputationNetworking {
     }
 
     public static void sendTierNotice(ServerPlayer player, String text) {
-        PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(text));
+        trySendToPlayer(player, new VillagerReputationTierNoticePayload(text));
     }
 
     public static void sendNotice(ServerPlayer player, String text, VillagerReputationNoticeKind kind) {
-        PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(text, kind));
+        trySendToPlayer(player, new VillagerReputationTierNoticePayload(text, kind));
     }
 
     public static void sendNotice(ServerPlayer player, ResolvedVillagerNotification notification) {
-        PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(
+        trySendToPlayer(player, new VillagerReputationTierNoticePayload(
                 notification.text(),
                 notification.noticeKind(),
                 notification.textColor(),
@@ -443,7 +443,7 @@ public final class VillagerReputationNetworking {
     }
 
     public static void sendProfile(ServerPlayer player, AbstractVillager villager, VillagerProfile profile) {
-        PacketDistributor.sendToPlayer(player, VillagerProfileSyncPayload.create(
+        trySendToPlayer(player, VillagerProfileSyncPayload.create(
                 villager.getId(),
                 profile.villagerUuid(),
                 profile.lastKnownProfession(),

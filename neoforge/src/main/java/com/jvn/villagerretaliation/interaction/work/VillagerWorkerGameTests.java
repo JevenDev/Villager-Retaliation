@@ -277,17 +277,17 @@ public final class VillagerWorkerGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void pathingCanRouteAroundSimpleObstaclesWithoutLeavingTheWorkArea(GameTestHelper helper) {
-        buildFloor(helper, 0, 10, 0, 6, 1);
-        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 3));
+        buildFloor(helper, 0, 10, 0, 8, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 4));
         ServerLevel level = helper.getLevel();
         tickVillager(level, villager, 20);
-        for (int z = 2; z <= 4; z++) {
+        for (int z = 3; z <= 5; z++) {
             setBlock(helper, new BlockPos(4, 2, z), Blocks.STONE.defaultBlockState());
             setBlock(helper, new BlockPos(4, 3, z), Blocks.STONE.defaultBlockState());
         }
-        BlockPos target = helper.absolutePos(new BlockPos(8, 2, 3));
-        setBlock(helper, new BlockPos(8, 2, 3), Blocks.COAL_ORE.defaultBlockState());
-        BlockPos routeApproach = helper.absolutePos(new BlockPos(7, 2, 3));
+        BlockPos target = helper.absolutePos(new BlockPos(8, 2, 4));
+        setBlock(helper, new BlockPos(8, 2, 4), Blocks.COAL_ORE.defaultBlockState());
+        BlockPos routeApproach = helper.absolutePos(new BlockPos(7, 2, 4));
         net.minecraft.world.level.pathfinder.Path routePath = villager.getNavigation().createPath(routeApproach, 0);
         helper.assertTrue(routePath != null && routePath.canReach(), "vanilla navigation should route around the obstacle to the target approach");
 
@@ -299,14 +299,14 @@ public final class VillagerWorkerGameTests {
                 pos -> pos.getX() >= helper.absolutePos(new BlockPos(0, 0, 0)).getX()
                         && pos.getX() <= helper.absolutePos(new BlockPos(10, 0, 0)).getX()
                         && pos.getZ() >= helper.absolutePos(new BlockPos(0, 0, 0)).getZ()
-                        && pos.getZ() <= helper.absolutePos(new BlockPos(0, 0, 6)).getZ()).search();
+                        && pos.getZ() <= helper.absolutePos(new BlockPos(0, 0, 8)).getZ()).search();
 
         helper.assertTrue(result.reachesDestination(), "path search should route around a simple obstacle wall");
         helper.assertTrue(result.path() == null || HiredMoveToBlockFaceJob.pathStaysInsideFilter(result.path(), pos ->
                 pos.getX() >= helper.absolutePos(new BlockPos(0, 0, 0)).getX()
                         && pos.getX() <= helper.absolutePos(new BlockPos(10, 0, 0)).getX()
                         && pos.getZ() >= helper.absolutePos(new BlockPos(0, 0, 0)).getZ()
-                        && pos.getZ() <= helper.absolutePos(new BlockPos(0, 0, 6)).getZ()), "path should stay in the allowed area");
+                        && pos.getZ() <= helper.absolutePos(new BlockPos(0, 0, 8)).getZ()), "path should stay in the allowed area");
 
         villager.discard();
         helper.succeed();

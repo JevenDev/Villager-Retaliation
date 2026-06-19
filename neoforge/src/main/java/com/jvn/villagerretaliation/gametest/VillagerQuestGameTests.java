@@ -183,7 +183,7 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void compiledV1CatalogMatchesParsedBuiltIns(GameTestHelper helper) {
+    public static void compiledCatalogMatchesParsedBuiltIns(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         List<QuestDefinition> quests = quests(helper);
         Map<ResourceLocation, CompiledQuest> compiledById = VillagerQuestResources.compiledQuests(server).stream()
@@ -199,16 +199,22 @@ public final class VillagerQuestGameTests {
         for (QuestDefinition quest : quests) {
             CompiledQuest compiled = compiledById.get(quest.id());
             helper.assertTrue(compiled != null, "Missing compiled quest " + quest.id());
-            assertCompiledQuestMatchesParsed(helper, quest, compiled);
+            if (compiled.schemaVersion() == QuestSchemaVersion.V1) {
+                assertCompiledV1QuestMatchesParsed(helper, quest, compiled);
+            } else {
+                assertCompiledQuestKeepsCanonicalDefinition(helper, quest, compiled);
+            }
         }
 
         helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void schemaLessBuiltInQuestResourcesKeepExplicitV1Ids(GameTestHelper helper) {
+    public static void mixedBuiltInQuestResourcesKeepStableAuthoredIds(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         Map<ResourceLocation, ResourceLocation> authoredIdsByResource = new LinkedHashMap<>();
+        Set<ResourceLocation> v1Ids = new LinkedHashSet<>();
+        Set<ResourceLocation> v2Ids = new LinkedHashSet<>();
         server.getResourceManager()
                 .listResources("quests", location -> VillagerRetaliation.MOD_ID.equals(location.getNamespace())
                         && location.getPath().endsWith(".json"))
@@ -217,13 +223,39 @@ public final class VillagerQuestGameTests {
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
                 .forEach(entry -> {
                     JsonObject root = readJsonObject(entry.getKey(), entry.getValue());
-                    helper.assertFalse(root.has("schema"), entry.getKey() + " is no longer schema-less v1");
                     helper.assertTrue(root.has("id"), entry.getKey() + " no longer declares its stable v1 id");
                     ResourceLocation authoredId = ResourceLocation.tryParse(root.get("id").getAsString());
-                    helper.assertTrue(authoredId != null, entry.getKey() + " declares an invalid v1 id");
+                    helper.assertTrue(authoredId != null, entry.getKey() + " declares an invalid quest id");
+                    QuestResourceEnvelope envelope = QuestResourceEnvelope.read(entry.getKey(), root)
+                            .orElseThrow(() -> new GameTestAssertException(entry.getKey() + " did not route to a quest schema"));
+                    if (envelope.schemaVersion() == QuestSchemaVersion.V1) {
+                        helper.assertFalse(root.has("schema"), entry.getKey() + " v1 quest gained a schema marker");
+                        v1Ids.add(authoredId);
+                    } else {
+                        helper.assertValueEqual(
+                                envelope.schemaVersion(),
+                                QuestSchemaVersion.V2,
+                                entry.getKey() + " schema version");
+                        helper.assertValueEqual(
+                                root.get("schema").getAsString(),
+                                QuestSchemaVersion.V2.schemaId(),
+                                entry.getKey() + " v2 schema marker");
+                        v2Ids.add(authoredId);
+                    }
                     authoredIdsByResource.put(entry.getKey(), authoredId);
                 });
         helper.assertValueEqual(authoredIdsByResource.size(), EXPECTED_QUEST_COUNT, "built-in quest resource count");
+        helper.assertFalse(v1Ids.isEmpty(), "built-in compatibility catalog no longer contains v1 quests");
+        helper.assertFalse(v2Ids.isEmpty(), "built-in compatibility catalog no longer contains v2 quests");
+        assertContainsAll(
+                helper,
+                v2Ids,
+                Set.of(
+                        VillagerRetaliation.id("egg_baskets"),
+                        VillagerRetaliation.id("choose_the_horizon"),
+                        VillagerRetaliation.id("first_far_marker"),
+                        VillagerRetaliation.id("tales_of_a_lost_civilization")),
+                "migrated v2 built-in quest ids");
 
         Set<ResourceLocation> loadedIds = quests(helper).stream()
                 .map(QuestDefinition::id)
@@ -1117,6 +1149,130 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void finalQuestCompatibilityGuardsStayIndexedAndBounded(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        List<CompiledQuest> compiled = VillagerQuestResources.compiledQuests(server).stream()
+                .filter(quest -> VillagerRetaliation.MOD_ID.equals(quest.id().getNamespace()))
+                .sorted(Comparator.comparing(quest -> quest.id().toString()))
+                .toList();
+        Set<ResourceLocation> ids = new LinkedHashSet<>();
+        int v1 = 0;
+        int v2 = 0;
+        int triggerCount = 0;
+        int continuousTriggerCount = 0;
+        for (CompiledQuest quest : compiled) {
+            helper.assertTrue(ids.add(quest.id()), "duplicate compiled quest id " + quest.id());
+            if (quest.schemaVersion() == QuestSchemaVersion.V1) {
+                v1++;
+            } else if (quest.schemaVersion() == QuestSchemaVersion.V2) {
+                v2++;
+            }
+            helper.assertValueEqual(
+                    quest.objectivesById().size(),
+                    quest.objectives().size(),
+                    quest.id() + " objective index size");
+            helper.assertValueEqual(
+                    quest.stagesById().size(),
+                    quest.stages().size(),
+                    quest.id() + " stage index size");
+            helper.assertValueEqual(
+                    quest.triggerIndex().triggers().size(),
+                    quest.triggers().size(),
+                    quest.id() + " trigger index size");
+            triggerCount += quest.triggers().size();
+            continuousTriggerCount += quest.triggerIndex().continuousTriggers().size();
+            for (CompiledQuestTrigger trigger : quest.triggers()) {
+                if (trigger.definition().stages().isEmpty()) {
+                    helper.assertTrue(
+                            quest.triggerIndex().candidates(trigger.definition().event(), "").contains(trigger),
+                            quest.id() + "/" + trigger.id() + " missing global trigger candidate");
+                } else {
+                    for (String stage : trigger.definition().stages()) {
+                        helper.assertTrue(
+                                quest.triggerIndex().candidates(trigger.definition().event(), stage).contains(trigger),
+                                quest.id() + "/" + trigger.id() + " missing stage trigger candidate " + stage);
+                    }
+                }
+            }
+        }
+        helper.assertValueEqual(compiled.size(), EXPECTED_QUEST_COUNT, "compiled compatibility quest count");
+        helper.assertTrue(v1 > 0, "compiled catalog lost v1 quests");
+        helper.assertTrue(v2 >= 4, "compiled catalog lost migrated v2 quests");
+        helper.assertTrue(triggerCount > 0, "compiled catalog lost quest triggers");
+        helper.assertTrue(continuousTriggerCount > 0, "compiled catalog lost continuous trigger throttles");
+
+        DatapackDiagnostics.clear();
+        for (int index = 0; index < 100; index++) {
+            DatapackDiagnostics.warnSkippedEntry(
+                    VillagerRetaliation.id("diagnostics/bounds_" + index),
+                    "quest",
+                    "entries[" + index + "]",
+                    "bounds check");
+        }
+        helper.assertValueEqual(DatapackDiagnostics.recent().size(), 80, "bounded recent diagnostics");
+        helper.assertValueEqual(DatapackDiagnostics.structuredRecent().size(), 80, "bounded structured diagnostics");
+        DatapackDiagnostics.clear();
+
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+        try {
+            QuestDebugTraceService.clear(player);
+            for (int index = 0; index < QuestDebugTraceService.capacity() + 10; index++) {
+                QuestDebugTraceService.record(
+                        player,
+                        QuestDebugTraceService.EventType.TRIGGER,
+                        VillagerRetaliation.id("trace_bounds"),
+                        "event " + index);
+            }
+            helper.assertValueEqual(
+                    QuestDebugTraceService.recent(player, QuestDebugTraceService.capacity() + 10).size(),
+                    QuestDebugTraceService.capacity(),
+                    "bounded quest trace buffer");
+            helper.assertValueEqual(
+                    QuestDebugTraceService.recent(player, 3).size(),
+                    3,
+                    "bounded quest trace query limit");
+        } finally {
+            QuestDebugTraceService.clear(player);
+        }
+
+        List<QuestTrackerSyncPayload.QuestItem> manyItems = new ArrayList<>();
+        for (int index = 0; index < QuestTrackerSyncPayload.MAX_QUEST_ITEMS + 4; index++) {
+            manyItems.add(new QuestTrackerSyncPayload.QuestItem(
+                    "minecraft:paper_" + index,
+                    "Paper " + index,
+                    index));
+        }
+        List<QuestTrackerSyncPayload.Entry> manyEntries = new ArrayList<>();
+        for (int index = 0; index < QuestTrackerSyncPayload.MAX_SYNC_ENTRIES + 4; index++) {
+            manyEntries.add(new QuestTrackerSyncPayload.Entry(
+                    "villagerretaliation:quest_" + index,
+                    "Quest " + index,
+                    "Objective " + index,
+                    "metadata",
+                    index,
+                    true,
+                    "active",
+                    "status",
+                    "issuer",
+                    "issuer location",
+                    manyItems));
+        }
+        QuestTrackerSyncPayload payload = new QuestTrackerSyncPayload(manyEntries, null, false);
+        helper.assertValueEqual(
+                payload.entries().size(),
+                QuestTrackerSyncPayload.MAX_SYNC_ENTRIES,
+                "bounded quest tracker entry payload");
+        helper.assertValueEqual(
+                payload.entries().getFirst().questItems().size(),
+                QuestTrackerSyncPayload.MAX_QUEST_ITEMS,
+                "bounded quest tracker item payload");
+        helper.assertValueEqual(payload.entries().getFirst().progress(), 0.0F, "tracker progress lower bound");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void deferredQuestTriggersAvoidLiveIssuerActions(GameTestHelper helper) {
         for (QuestDefinition quest : quests(helper)) {
             for (QuestDefinition.Trigger trigger : quest.triggers()) {
@@ -1405,13 +1561,14 @@ public final class VillagerQuestGameTests {
                 .orElseThrow(() -> new GameTestAssertException("v2 debug fixture did not parse"));
         CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
                 .orElseThrow(() -> new GameTestAssertException("v2 debug fixture did not compile"));
+        QuestDialogueCatalog dialogueCatalog = QuestDialogueCompiler.compile(parsed, envelope);
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         movePlayer(helper, player, new BlockPos(1, 2, 2));
 
         try {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
-            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled));
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled), dialogueCatalog);
 
             VillagerQuestService.DebugInspectResult availability =
                     VillagerQuestService.debugWhyAvailable(player, villager, compiled.id());
@@ -1430,7 +1587,7 @@ public final class VillagerQuestGameTests {
             VillagerQuestService.DebugInspectResult objectives =
                     VillagerQuestService.debugObjectives(player, compiled.id());
             helper.assertTrue(
-                    objectives.lines().stream().anyMatch(line -> line.contains("objective talk")),
+                    objectives.lines().stream().anyMatch(line -> line.contains("objective offer.talk")),
                     "debug objectives omitted talk objective: " + objectives.lines());
 
             VillagerQuestService.DebugInspectResult dryRun =
@@ -2120,6 +2277,9 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(stormReminder.cooldownTicks(), 20L * 120L, "lost civilization forced trigger cooldown");
         helper.assertValueEqual(stormReminder.radius(), 10.0D, "lost civilization forced trigger radius");
         helper.assertFalse(stormReminder.repeatable(), "lost civilization forced trigger repeatable");
+        helper.assertTrue(
+                stormReminder.conditions().stream().anyMatch(DialogueCondition.Weather.class::isInstance),
+                "lost civilization forced trigger weather condition missing");
         helper.assertValueEqual(
                 stormReminder.actions().stream().map(VillagerActionRegistry::canonicalTypeId).toList(),
                 List.of("tracker", "forced_dialogue"),
@@ -2162,7 +2322,26 @@ public final class VillagerQuestGameTests {
         ForcedDialogueService.clearRuntimeState();
         ServerLevel level = helper.getLevel();
         ResourceLocation questId = VillagerRetaliation.id("tales_of_a_lost_civilization");
-        QuestDefinition quest = quest(helper, questId);
+        CompiledQuest compiled = VillagerQuestResources
+                .compiledQuest(level.getServer(), questId)
+                .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
+        QuestDefinition quest = compiled.asQuestDefinition();
+        QuestDefinition.Trigger stormReminder = quest.triggers().stream()
+                .filter(trigger -> trigger.id().equals("storm_reminder"))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("lost civilization storm reminder trigger missing"));
+        QuestDefinition.Trigger deterministicStormReminder = new QuestDefinition.Trigger(
+                stormReminder.id(),
+                stormReminder.event(),
+                List.of(),
+                stormReminder.actions(),
+                stormReminder.stages(),
+                stormReminder.cooldownTicks(),
+                stormReminder.radius(),
+                stormReminder.repeatable());
+        VillagerQuestResources.installCompiledTestCatalog(
+                level.getServer(),
+                List.of(compiledQuestWithTriggers(compiled, quest, List.of(deterministicStormReminder))));
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         movePlayer(helper, player, new BlockPos(1, 2, 2));
@@ -2171,7 +2350,6 @@ public final class VillagerQuestGameTests {
         try {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
             level.setDayTime(18000L);
-            level.setWeatherParameters(0, 6000, true, true);
             VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
             VillagerQuestSavedData.QuestProgress progress = data.getOrCreate(player.getUUID(), questId);
             progress.start(villager.getUUID(), Level.OVERWORLD, new BlockPos(256, -40, -256), -2400L);
@@ -2232,10 +2410,6 @@ public final class VillagerQuestGameTests {
                     unloaded.message().contains("is not loaded"),
                     "lost civilization unloaded issuer message was not explainable: " + unloaded.message());
 
-            QuestDefinition.Trigger stormReminder = quest.triggers().stream()
-                    .filter(trigger -> trigger.id().equals("storm_reminder"))
-                    .findFirst()
-                    .orElseThrow(() -> new GameTestAssertException("lost civilization storm reminder trigger missing"));
             VillagerActionDefinition forcedAction = stormReminder.actions().stream()
                     .filter(action -> action.kind() == VillagerActionDefinition.Kind.FORCED_DIALOGUE)
                     .findFirst()
@@ -2261,7 +2435,6 @@ public final class VillagerQuestGameTests {
             DatapackDiagnostics.clear();
         } finally {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
-            level.setWeatherParameters(6000, 0, false, false);
             ForcedDialogueService.clearRuntimeState();
             VillagerConversationService.endForPlayer(player, false);
             villager.discard();
@@ -3421,7 +3594,52 @@ public final class VillagerQuestGameTests {
         return List.copyOf(compiled);
     }
 
-    private static void assertCompiledQuestMatchesParsed(
+    private static CompiledQuest compiledQuestWithTriggers(
+            CompiledQuest compiled,
+            QuestDefinition definition,
+            List<QuestDefinition.Trigger> triggers) {
+        QuestDefinition compatibility = new QuestDefinition(
+                definition.id(),
+                definition.title(),
+                definition.description(),
+                definition.titleKey(),
+                definition.descriptionKey(),
+                definition.questline(),
+                definition.tags(),
+                definition.parent(),
+                definition.offer(),
+                definition.target(),
+                definition.objectives(),
+                definition.rules(),
+                definition.tracker(),
+                definition.stages(),
+                triggers,
+                definition.rewards(),
+                definition.dialogue(),
+                definition.metadata(),
+                definition.links());
+        List<CompiledQuestTrigger> compiledTriggers = compiledTriggers(triggers);
+        QuestTriggerIndex index = QuestTriggerRegistry.index(compiledTriggers);
+        return new CompiledQuest(
+                compiled.id(),
+                compiled.source(),
+                compatibility,
+                compiled.metadata(),
+                compiled.provider(),
+                compiled.target(),
+                compiled.rules(),
+                compiled.ui(),
+                compiled.objectives(),
+                compiled.objectivesById(),
+                compiled.stages(),
+                compiled.stagesById(),
+                compiledTriggers,
+                index.triggersByEvent(),
+                index,
+                compiled.rewards());
+    }
+
+    private static void assertCompiledV1QuestMatchesParsed(
             GameTestHelper helper,
             QuestDefinition quest,
             CompiledQuest compiled) {
@@ -3452,6 +3670,28 @@ public final class VillagerQuestGameTests {
         assertCompiledObjectivesMatchParsed(helper, quest, compiled);
         assertCompiledStagesMatchParsed(helper, quest, compiled);
         assertCompiledTriggersMatchParsed(helper, quest, compiled);
+    }
+
+    private static void assertCompiledQuestKeepsCanonicalDefinition(
+            GameTestHelper helper,
+            QuestDefinition quest,
+            CompiledQuest compiled) {
+        helper.assertValueEqual(compiled.id(), quest.id(), quest.id() + " compiled id");
+        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, quest.id() + " schema");
+        helper.assertValueEqual(compiled.asQuestDefinition(), quest, quest.id() + " compatibility definition");
+        helper.assertValueEqual(compiled.source().resource().getNamespace(), VillagerRetaliation.MOD_ID,
+                quest.id() + " source namespace");
+        helper.assertFalse(compiled.source().resource().getPath().isBlank(), quest.id() + " source path");
+
+        helper.assertValueEqual(compiled.metadata().title(), quest.title(), quest.id() + " title");
+        helper.assertValueEqual(compiled.metadata().description(), quest.description(), quest.id() + " description");
+        helper.assertValueEqual(compiled.metadata().questline(), quest.questline(), quest.id() + " questline");
+        helper.assertValueEqual(compiled.provider().offer(), quest.offer(), quest.id() + " provider");
+        helper.assertValueEqual(compiled.target(), quest.target(), quest.id() + " target");
+        helper.assertValueEqual(compiled.rules(), quest.rules(), quest.id() + " rules");
+        helper.assertValueEqual(compiled.objectives().size(), quest.objectives().size(), quest.id() + " objectives");
+        helper.assertValueEqual(compiled.stages().size(), quest.stages().size(), quest.id() + " stages");
+        helper.assertValueEqual(compiled.triggers().size(), quest.triggers().size(), quest.id() + " triggers");
     }
 
     private static void assertCompiledObjectivesMatchParsed(

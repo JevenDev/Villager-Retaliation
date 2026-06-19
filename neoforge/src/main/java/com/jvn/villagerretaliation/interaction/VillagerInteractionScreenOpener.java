@@ -50,7 +50,7 @@ public final class VillagerInteractionScreenOpener {
                 dialogueOptions
         );
         VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
-        PacketDistributor.sendToPlayer(player, payload);
+        trySendToPlayer(player, payload);
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
         VillagerInteractionService.broadcastVillagerChat(level, villager, greetingText);
     }
@@ -74,7 +74,7 @@ public final class VillagerInteractionScreenOpener {
                 dialogueOptions
         );
         VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
-        PacketDistributor.sendToPlayer(player, payload);
+        trySendToPlayer(player, payload);
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
     }
 
@@ -93,7 +93,7 @@ public final class VillagerInteractionScreenOpener {
                 List.of()
         );
         VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
-        PacketDistributor.sendToPlayer(player, payload);
+        trySendToPlayer(player, payload);
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
     }
 
@@ -102,7 +102,7 @@ public final class VillagerInteractionScreenOpener {
         DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, villager);
         DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
         List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
-        PacketDistributor.sendToPlayer(player, createPayload(
+        trySendToPlayer(player, createPayload(
                 level,
                 player,
                 villager,
@@ -113,6 +113,14 @@ public final class VillagerInteractionScreenOpener {
                 false,
                 dialogueOptions
         ));
+    }
+
+    private static void trySendToPlayer(ServerPlayer player, OpenVillagerInteractionPayload payload) {
+        try {
+            PacketDistributor.sendToPlayer(player, payload);
+        } catch (UnsupportedOperationException ignored) {
+            // Server-side test harnesses can use mock connections without negotiated custom payloads.
+        }
     }
 
     private static OpenVillagerInteractionPayload createPayload(
