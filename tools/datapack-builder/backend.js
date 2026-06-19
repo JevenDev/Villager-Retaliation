@@ -37,6 +37,10 @@
           fileName: "my_pack_forced_dialogue",
           entries: []
         },
+        quests: {
+          modules: [],
+          v1Imports: []
+        },
         notifications: {
           fileName: "my_pack_notifications",
           notifications: []
@@ -331,6 +335,10 @@
       const files = { ...state.extraFiles };
       files["pack.mcmeta"] = safeJson(makePackMeta(state));
 
+      if (state.quests.modules.length > 0) {
+        Object.assign(files, generatedQuestFiles(state));
+      }
+
       if (hasAnyEntries(state, "dialogue", dialogueKindKeys)) {
         Object.assign(files, generatedDialogueFiles(state));
       }
@@ -397,6 +405,91 @@
         grouped.get(path).entries.push(entry);
       }
       return Object.fromEntries([...grouped.entries()].map(([path, value]) => [path, safeJson(value)]));
+    }
+
+    function generatedQuestFiles(state) {
+      const files = {};
+      for (const [index, entry] of state.quests.modules.entries()) {
+        files[questModulePath(state, entry, index)] = JSON.stringify(stripBuilderFields(entry), null, 2) + "\n";
+      }
+      return files;
+    }
+
+    function stripBuilderFields(value) {
+      if (Array.isArray(value)) return value.map(stripBuilderFields);
+      if (value && typeof value === "object" && !(value instanceof Uint8Array)) {
+        const result = {};
+        for (const [key, child] of Object.entries(value)) {
+          if (key.startsWith("__")) continue;
+          result[key] = stripBuilderFields(child);
+        }
+        return result;
+      }
+      return value;
+    }
+
+    function questModulePath(state, entry, index = 0) {
+      if (entry?.__sourcePath) return entry.__sourcePath;
+      const parts = resourceLocationParts(entry?.id);
+      const namespace = namespaceify(parts.namespace || contentNamespace(state), contentNamespace(state));
+      const fallbackName = `quest_${String(index + 1).padStart(2, "0")}`;
+      const fileName = normalizeFileName(entry?.__fileName || parts.path || fallbackName, fallbackName);
+      return `data/${namespace}/quests/${fileName}.json`;
+    }
+
+    function resourceLocationParts(id) {
+      const text = String(id || "").trim();
+      const match = text.match(/^([a-z0-9_.-]+):([a-z0-9_./-]+)$/);
+      return match ? { namespace: match[1], path: match[2] } : { namespace: "", path: "" };
+    }
+
+    function isQuestV2Module(json) {
+      return Boolean(json && typeof json === "object" && !Array.isArray(json) && json.schema === "villagerretaliation:quest/v2");
+    }
+
+    function isQuestV1Resource(json) {
+      return Boolean(
+        json
+        && typeof json === "object"
+        && !Array.isArray(json)
+        && !isQuestV2Module(json)
+        && typeof json.id === "string"
+        && (Array.isArray(json.objectives) || json.offer || json.rules || json.tracker || json.display)
+      );
+    }
+
+    function normalizeQuestModuleEntry(json, path) {
+      const entry = stripBuilderFields(json);
+      if (path) entry.__sourcePath = path;
+      return entry;
+    }
+
+    function normalizeQuestV1Import(json, path) {
+      const title = json?.display?.title || json?.title || json?.id || path;
+      return {
+        id: String(json?.id || ""),
+        title: String(title || path),
+        sourcePath: path,
+        suggestion: "Run the migration tool to create a quest module v2 copy; the builder will not overwrite this legacy resource."
+      };
+    }
+
+    function upsertQuestV1Import(state, json, path) {
+      state.quests.v1Imports = state.quests.v1Imports.filter((entry) => entry.sourcePath !== path);
+      state.quests.v1Imports.push(normalizeQuestV1Import(json, path));
+    }
+
+    function removeQuestV1Import(state, path) {
+      state.quests.v1Imports = state.quests.v1Imports.filter((entry) => entry.sourcePath !== path);
+    }
+
+    function replaceQuestModuleFile(state, path, json) {
+      const namespaceMatch = path.match(/^data\/([^/]+)\/quests\/.+\.json$/);
+      if (namespaceMatch) state.meta.namespace = namespaceify(namespaceMatch[1], state.meta.namespace || "my_pack");
+      state.quests.modules = state.quests.modules.filter((entry, index) => questModulePath(state, entry, index) !== path);
+      state.quests.modules.push(normalizeQuestModuleEntry(json, path));
+      delete state.extraFiles[path];
+      removeQuestV1Import(state, path);
     }
 
     function normalizeImportedPaths(fileMap) {
@@ -532,10 +625,19 @@
         return true;
       }
 
-      if (
-        path.match(/^data\/[^/]+\/quests\/.+\.json$/)
-        || path.match(/^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/)
-      ) {
+      if (path.match(/^data\/[^/]+\/quests\/.+\.json$/)) {
+        const parsed = json();
+        if (!parsed) return false;
+        if (isQuestV2Module(parsed)) {
+          replaceQuestModuleFile(state, path, parsed);
+        } else {
+          state.extraFiles[path] = source;
+          if (isQuestV1Resource(parsed)) upsertQuestV1Import(state, parsed, path);
+        }
+        return true;
+      }
+
+      if (path.match(/^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/)) {
         const parsed = json();
         if (!parsed) return false;
         state.extraFiles[path] = source;
@@ -731,7 +833,17 @@
         return true;
       }
 
-      if (/^data\/[^/]+\/quests\/.+\.json$/.test(path) || /^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/.test(path)) {
+      if (/^data\/[^/]+\/quests\/.+\.json$/.test(path)) {
+        if (isQuestV2Module(json)) {
+          replaceQuestModuleFile(state, path, json);
+        } else {
+          state.extraFiles[path] = stripTextBom(source);
+          if (isQuestV1Resource(json)) upsertQuestV1Import(state, json, path);
+        }
+        return true;
+      }
+
+      if (/^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/.test(path)) {
         state.extraFiles[path] = stripTextBom(source);
         return true;
       }
@@ -1089,6 +1201,13 @@
       generatedFiles,
       generatedDialogueFiles,
       generatedForcedDialogueFiles,
+      generatedQuestFiles,
+      questModulePath,
+      isQuestV2Module,
+      isQuestV1Resource,
+      normalizeQuestModuleEntry,
+      normalizeQuestV1Import,
+      replaceQuestModuleFile,
       normalizeImportedPaths,
       normalizeNamespaceRootImportPaths,
       isNamespaceRootDataPath,

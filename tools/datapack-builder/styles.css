@@ -1168,6 +1168,11 @@ button.check {
   font-size: 13px;
 }
 
+.quest-migration-list {
+  display: grid;
+  gap: 10px;
+}
+
 .tooltip-label {
   width: fit-content;
   cursor: help;

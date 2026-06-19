@@ -818,6 +818,7 @@ const BETA_13_PLANNED_DIALOGUE_DEPRECATION_REPLACEMENT = "`conditions` blocks";
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const PREVIEW_EXACT_WRAP_LINE_LIMIT = 2500;
+const QUEST_MODULE_SCHEMA_ID = "villagerretaliation:quest/v2";
 const datapackBackend = window.VR_DATAPACK_BACKEND.create({
   constants: CONSTANTS,
   dialogueKindKeys: DIALOGUE_KIND_KEYS,
@@ -868,6 +869,9 @@ let importDragDepth = 0;
 let entryFormDirty = false;
 let unsavedShakeTimer = null;
 let exportIssueDialogResolve = null;
+let questRegistryMetadata = null;
+let questV2Schema = null;
+let questMetadataLoadStatus = "loading";
 
 const els = {
   workspace: document.querySelector(".workspace"),
@@ -1020,6 +1024,67 @@ function renderIcons() {
       // Text labels keep the builder usable if the icon CDN is unavailable.
     }
   }
+}
+
+async function loadQuestAuthoringMetadata() {
+  questMetadataLoadStatus = "loading";
+  try {
+    const [metadataResponse, schemaResponse] = await Promise.all([
+      fetch("quest-registry-metadata.json", { cache: "no-store" }),
+      fetch("quest-v2.schema.json", { cache: "no-store" })
+    ]);
+    if (!metadataResponse.ok || !schemaResponse.ok) {
+      throw new Error("Quest metadata fetch failed.");
+    }
+    questRegistryMetadata = await metadataResponse.json();
+    questV2Schema = await schemaResponse.json();
+    questMetadataLoadStatus = "ready";
+  } catch {
+    questRegistryMetadata = null;
+    questV2Schema = null;
+    questMetadataLoadStatus = "error";
+  }
+  invalidateCurrentViewSnapshot();
+  renderTabs();
+  if (activeSection === "quests") {
+    renderPanel();
+    renderChecks();
+    renderIcons();
+  }
+}
+
+function questRegistryItems(registry) {
+  return Array.isArray(questRegistryMetadata?.registries?.[registry])
+    ? questRegistryMetadata.registries[registry]
+    : [];
+}
+
+function questRegistryIds(registry, { includeAliases = false } = {}) {
+  return questRegistryItems(registry).flatMap((item) => [
+    item.id,
+    ...(includeAliases ? item.aliases || [] : [])
+  ]).filter(Boolean);
+}
+
+function questRegistryIdSet(registry, options) {
+  return new Set(questRegistryIds(registry, options));
+}
+
+function questRegistrySummary(registry, limit = 12) {
+  const ids = questRegistryIds(registry);
+  if (ids.length === 0) return "Metadata not loaded.";
+  return ids.slice(0, limit).join(", ") + (ids.length > limit ? `, +${ids.length - limit}` : "");
+}
+
+function questMetadataStatusText() {
+  if (questMetadataLoadStatus === "ready") {
+    const objectiveCount = questRegistryIds("objectives").length;
+    const actionCount = questRegistryIds("actions").length;
+    const triggerCount = questRegistryIds("triggers").length;
+    return `${objectiveCount} objectives, ${actionCount} actions, ${triggerCount} triggers`;
+  }
+  if (questMetadataLoadStatus === "error") return "Registry metadata unavailable";
+  return "Loading registry metadata";
 }
 
 function readKeybinds() {
@@ -3259,6 +3324,14 @@ function generatedForcedDialogueFiles() {
   return datapackBackend.generatedForcedDialogueFiles(state);
 }
 
+function generatedQuestFiles() {
+  return datapackBackend.generatedQuestFiles(state);
+}
+
+function questModulePath(entry, index = 0) {
+  return datapackBackend.questModulePath(state, entry, index);
+}
+
 function pathsFromGeneratedFiles(fileMap, fallbackPath) {
   const paths = Object.keys(fileMap);
   return paths.length > 0 ? paths : [fallbackPath];
@@ -3270,6 +3343,7 @@ function storyPaths() {
 
 function primaryGeneratedPaths() {
   return [
+    ...pathsFromGeneratedFiles(generatedQuestFiles(), questModulePath({}, 0)),
     dialoguePath(),
     forcedDialoguePath(),
     notificationsPath(),
@@ -3285,6 +3359,9 @@ function pathsForCheck(check) {
   if (check.title === "Preview JSON") return previewEditError?.path ? [previewEditError.path] : [];
   if (check.title === "Pack format" || check.title === "VR version") return ["pack.mcmeta"];
   if (check.title === "File slug") return primaryGeneratedPaths();
+  if (check.title.startsWith("Quest")) {
+    return pathsFromGeneratedFiles(generatedQuestFiles(), questModulePath({}, 0));
+  }
   if (check.title.startsWith("Dialogue") || check.title === "Pacify outcome") {
     return pathsFromGeneratedFiles(generatedDialogueFiles(), dialoguePath());
   }
@@ -3332,8 +3409,174 @@ function issueSeverityFromEntries(entries, tests) {
   return severity;
 }
 
+function stripQuestBuilderFields(value) {
+  if (Array.isArray(value)) return value.map(stripQuestBuilderFields);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value)
+      .filter(([key]) => !key.startsWith("__"))
+      .map(([key, child]) => [key, stripQuestBuilderFields(child)]));
+  }
+  return value;
+}
+
+function questModulePayload(entry) {
+  return stripQuestBuilderFields(entry || {});
+}
+
+function questSchemaRequiredFields() {
+  return Array.isArray(questV2Schema?.required) ? questV2Schema.required : ["schema", "id", "provider", "entry_stage", "stages"];
+}
+
+function questSchemaConst(property) {
+  return questV2Schema?.properties?.[property]?.const || "";
+}
+
+function questTopLevelIssueDetail(entry) {
+  const module = questModulePayload(entry);
+  if (!module || typeof module !== "object" || Array.isArray(module)) {
+    return issueDetail("Quest JSON", "a JSON object", module, "quest-json");
+  }
+  if (entry?.__sourcePath && !/^data\/[a-z0-9_.-]+\/quests\/[a-z0-9_./-]+\.json$/.test(entry.__sourcePath)) {
+    return issueDetail("Quest file path", "data/<namespace>/quests/<path>.json", entry.__sourcePath, "quest-sourcePath");
+  }
+  const schemaId = questSchemaConst("schema") || QUEST_MODULE_SCHEMA_ID;
+  if (module.schema !== schemaId) {
+    return issueDetail("Quest schema", schemaId, module.schema, "quest-json");
+  }
+  const missingRequired = questSchemaRequiredFields().find((key) => module[key] === undefined);
+  if (missingRequired) {
+    return issueDetail(`Quest ${missingRequired}`, "required by quest-v2.schema.json", module[missingRequired], "quest-json");
+  }
+  if (!isValidResourceLocation(module.id, { requireNamespace: true })) {
+    return issueDetail("Quest id", "a full resource location such as my_pack:first_steps", module.id, "quest-json");
+  }
+  if (!module.provider || typeof module.provider !== "object" || Array.isArray(module.provider)) {
+    return issueDetail("Provider", "a provider object", module.provider, "quest-json");
+  }
+  if (!module.entry_stage) {
+    return issueDetail("Entry stage", "a non-empty stage id", module.entry_stage, "quest-json");
+  }
+  if (!Array.isArray(module.stages) || module.stages.length === 0) {
+    return issueDetail("Stages", "at least one stage object", module.stages, "quest-json");
+  }
+  return null;
+}
+
+function questModuleIssueDetail(entry) {
+  const topLevel = questTopLevelIssueDetail(entry);
+  if (topLevel) return topLevel;
+  const module = questModulePayload(entry);
+  const stages = module.stages || [];
+  const stageIds = stages.map((stage) => String(stage?.id || "").trim()).filter(Boolean);
+  const duplicateStage = firstDuplicate(stageIds);
+  if (duplicateStage) {
+    return issueDetail("Stage ids", "unique stage ids", duplicateStage, "quest-json", "warning");
+  }
+  if (!stageIds.includes(module.entry_stage)) {
+    return issueDetail("Entry stage", "one of the stage ids", module.entry_stage, "quest-json");
+  }
+  const missingStageId = stages.find((stage) => !stage?.id);
+  if (missingStageId) {
+    return issueDetail("Stage id", "a non-empty stage id", missingStageId?.id, "quest-json");
+  }
+  const missingObjectives = stages.find((stage) => !Array.isArray(stage.objectives));
+  if (missingObjectives) {
+    return issueDetail("Stage objectives", "an objectives array", missingObjectives?.objectives, "quest-json");
+  }
+  const duplicateObjective = firstDuplicate(stages.flatMap((stage) => (stage.objectives || []).map((objective) => objective?.id).filter(Boolean)));
+  if (duplicateObjective) {
+    return issueDetail("Objective ids", "unique objective ids within the module", duplicateObjective, "quest-json", "warning");
+  }
+  const badObjective = firstQuestRegistryMiss(module, "objectives", "type");
+  if (badObjective) {
+    return issueDetail("Objective type", `one of ${questRegistrySummary("objectives", 8)}`, badObjective, "quest-json");
+  }
+  const badAction = firstQuestRegistryMiss(module, "actions", ["type", "action"]);
+  if (badAction) {
+    return issueDetail("Action type", `one of ${questRegistrySummary("actions", 8)}`, badAction, "quest-json");
+  }
+  const badCondition = firstQuestRegistryMiss(module, "conditions", "type");
+  if (badCondition) {
+    return issueDetail("Condition type", `one of ${questRegistrySummary("conditions", 8)}`, badCondition, "quest-json");
+  }
+  const badTrigger = firstQuestRegistryMiss(module, "triggers", ["type", "trigger", "event"]);
+  if (badTrigger) {
+    return issueDetail("Event trigger", `one of ${questRegistrySummary("triggers", 8)}`, badTrigger, "quest-json");
+  }
+  const conflict = firstQuestTransitionConflict(module);
+  if (conflict) {
+    return infoIssueDetail(`Response ${conflict} has both direct transition fields and transition actions. Keep one transition source.`, "quest-json");
+  }
+  if (questMetadataLoadStatus === "error") {
+    return infoIssueDetail("Quest registry metadata could not load; run the Node or Java validators before exporting.", "quest-json");
+  }
+  return null;
+}
+
+function firstQuestRegistryMiss(module, registry, keys) {
+  if (questMetadataLoadStatus !== "ready") return "";
+  const allowed = questRegistryIdSet(registry, { includeAliases: true });
+  if (allowed.size === 0) return "";
+  const keyList = Array.isArray(keys) ? keys : [keys];
+  for (const block of questBlocksForRegistry(module, registry)) {
+    const value = keyList.map((key) => block?.[key]).find(Boolean);
+    if (value && !allowed.has(String(value))) return String(value);
+  }
+  return "";
+}
+
+function questBlocksForRegistry(module, registry) {
+  if (registry === "objectives") return questNestedArrayEntries(module, "objectives");
+  if (registry === "actions") return [
+    ...questNestedArrayEntries(module, "actions"),
+    ...questNestedArrayEntries(module, "entry_actions"),
+    ...questNestedArrayEntries(module, "exit_actions")
+  ];
+  if (registry === "conditions") return questNestedArrayEntries(module, "conditions");
+  if (registry === "triggers") return questNestedArrayEntries(module, "events");
+  return [];
+}
+
+function questNestedArrayEntries(value, key) {
+  const entries = [];
+  const visit = (node) => {
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node[key])) {
+      entries.push(...node[key].filter((entry) => entry && typeof entry === "object"));
+    }
+    Object.values(node).forEach(visit);
+  };
+  visit(value);
+  return entries;
+}
+
+function firstQuestTransitionConflict(module) {
+  const transitionActionIds = new Set(questRegistryItems("actions")
+    .filter((item) => item.kind === "quest_transition")
+    .flatMap((item) => [item.id, ...(item.aliases || [])])
+    .filter(Boolean));
+  const responses = questNestedArrayEntries(module, "responses");
+  for (const response of responses) {
+    const hasDirectTransition = Boolean(response.transition || response.next || response.stage || response.scene || response.complete || response.abandon || response.fail);
+    if (!hasDirectTransition || !Array.isArray(response.actions)) continue;
+    const hasActionTransition = response.actions.some((action) => {
+      const id = action?.type || action?.action || "";
+      return transitionActionIds.has(id) || Boolean(action?.transition || action?.next || action?.stage);
+    });
+    if (hasActionTransition) return response.id || response.label || "response";
+  }
+  return "";
+}
+
 function entryIssueSeverity(section, kind, entry) {
   if (!entry) return "";
+  if (section === "quests") {
+    return questModuleIssueDetail(entry)?.severity || "";
+  }
   if (section === "dialogue") {
     const tests = [
       { severity: "error", predicate: (item) => kind === "options" && (!item.id || !item.label || !isValidDialogueOptionType(item) || !item.request) },
@@ -3644,6 +3887,9 @@ function invalidSocialAttributeRange(entry) {
 
 function entryIssueDetail(section, kind, entry) {
   if (!entry) return null;
+  if (section === "quests") {
+    return questModuleIssueDetail(entry);
+  }
   if (section === "dialogue") {
     if (kind === "options") {
       if (!entry.id) return issueDetail("Option id", "a non-empty stable id", entry.id, "dialogue-id");
@@ -3932,6 +4178,9 @@ function sectionIssueSeverity(section) {
   if (section === "forcedDialogue") {
     return entryCollectionIssueSeverity(section, "entries") || (!isValidFileName(state.forcedDialogue.fileName) ? "error" : "");
   }
+  if (section === "quests") {
+    return entryCollectionIssueSeverity(section, "modules");
+  }
   if (section === "notifications") {
     return entryCollectionIssueSeverity(section, "notifications") || (!isValidFileName(state.notifications.fileName) ? "error" : "");
   }
@@ -4014,6 +4263,7 @@ function entryPath(section, entry, kind = activeDialogueKind, index = 0) {
   if (entry?.__sourcePath) return entry.__sourcePath;
   if (section === "dialogue") return dialoguePath(kind, entry, index);
   if (section === "forcedDialogue") return forcedDialoguePath();
+  if (section === "quests") return questModulePath(entry, index);
   if (section === "notifications") return notificationsPath();
   if (section === "gifts") return giftsPath();
   if (section === "pacification") return pacificationPath();
@@ -4540,6 +4790,27 @@ function validate() {
     }
   }
 
+  for (let index = 0; index < state.quests.modules.length; index += 1) {
+    const entry = state.quests.modules[index];
+    const detail = questModuleIssueDetail(entry);
+    if (!detail) continue;
+    const locations = entryLocations("quests", "modules", [{ entry, index }], detail.fieldIds[0] || "quest-json");
+    addCheck(checks, detail.severity || "error", "Quest module", detail.message, {
+      locations,
+      paths: locations.map((location) => location.path)
+    });
+    break;
+  }
+  const duplicateQuestPath = firstDuplicate(state.quests.modules.map((entry, index) => questModulePath(entry, index)));
+  if (duplicateQuestPath) {
+    addCheck(checks, "warning", "Quest file path", `Multiple quest modules export to ${duplicateQuestPath}.`, {
+      paths: [duplicateQuestPath]
+    });
+  }
+  if (state.quests.v1Imports.length > 0) {
+    addCheck(checks, "info", "Quest migration", `${state.quests.v1Imports.length} legacy quest import${state.quests.v1Imports.length === 1 ? "" : "s"} preserved with migration suggestions.`);
+  }
+
   for (const entry of state.notifications.notifications) {
     if (!entry.trigger || !hasNotificationText(entry)) {
       addCheck(checks, "error", "Notification", "Every notification needs a trigger and text.");
@@ -4853,6 +5124,7 @@ function sectionCounts() {
       state.dialogue.pacify
     ),
     forcedDialogue: totalEntries(state.forcedDialogue.entries),
+    quests: totalEntries(state.quests.modules),
     notifications: totalEntries(state.notifications.notifications),
     gifts: totalEntries(state.gifts.preferences, state.gifts.rewards),
     pacification: totalEntries(state.pacification.payments),
@@ -4946,6 +5218,7 @@ function fileTreeEntryItems() {
   };
   for (const kind of DIALOGUE_KIND_KEYS) addEntries("dialogue", kind, state.dialogue[kind]);
   addEntries("forcedDialogue", "entries", state.forcedDialogue.entries);
+  addEntries("quests", "modules", state.quests.modules);
   addEntries("notifications", "notifications", state.notifications.notifications);
   for (const kind of GIFT_KINDS.map((item) => item.key)) addEntries("gifts", kind, state.gifts[kind]);
   addEntries("pacification", "payments", state.pacification.payments);
@@ -4954,11 +5227,12 @@ function fileTreeEntryItems() {
 }
 
 function entryTreeTitle(entry, kind, index) {
-  return entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${index + 1}`;
+  return entry.metadata?.title || entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${index + 1}`;
 }
 
 function entryTreeDetail(entry, section, kind) {
   if (section === "dialogue" && (kind === "options" || kind === "lines")) return entry.request || "";
+  if (section === "quests") return entry.id || entry.entry_stage || "";
   return entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
 }
 
@@ -5047,6 +5321,9 @@ function activeEntryDirectoryData() {
   if (activeSection === "forcedDialogue") {
     return { section: "forcedDialogue", kind: "entries", label: "Forced Dialogue", collection: state.forcedDialogue.entries };
   }
+  if (activeSection === "quests") {
+    return { section: "quests", kind: "modules", label: "Quest Modules", collection: state.quests.modules };
+  }
   if (activeSection === "notifications") {
     return { section: "notifications", kind: "notifications", label: "Notifications", collection: state.notifications.notifications };
   }
@@ -5075,10 +5352,12 @@ function renderEntryDirectory() {
     editing,
     page: data ? entryListPages[entryListPageKey(data.section, data.kind)] || 0 : 0,
     entries: data ? collection.map((entry, index) => ({
-      title: entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(data.kind)} ${index + 1}`,
+      title: entry.metadata?.title || entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(data.kind)} ${index + 1}`,
       detail: data.section === "dialogue" && (data.kind === "options" || data.kind === "lines")
         ? entry.request || ""
-        : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "",
+        : data.section === "quests"
+          ? entry.id || entry.entry_stage || ""
+          : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "",
       severity: entryIssueSeverity(data.section, data.kind, entry),
       issue: entryIssueMessage(data.section, data.kind, entry)
     })) : []
@@ -5940,6 +6219,11 @@ function previewIssueEntries(path) {
       .filter((entry) => (entry.__sourcePath || forcedDialoguePath()) === path)
       .map((entry) => ({ section: "forcedDialogue", kind: "entries", entry }));
   }
+  if (/^data\/[^/]+\/quests\/.+\.json$/.test(path)) {
+    return state.quests.modules
+      .filter((entry, index) => entryPath("quests", entry, "modules", index) === path)
+      .map((entry) => ({ section: "quests", kind: "modules", entry }));
+  }
   if (path === notificationsPath()) {
     return state.notifications.notifications.map((entry) => ({ section: "notifications", kind: "notifications", entry }));
   }
@@ -6043,7 +6327,9 @@ function jsonKeysForFieldId(fieldId, section, kind) {
     "pacification-items": ["items", "item"],
     "pacification-tags": ["tags", "tag"],
     "story-structures": ["structures", "structure"],
-    "story-biomes": ["biomes", "biome"]
+    "story-biomes": ["biomes", "biome"],
+    "quest-json": ["schema", "id", "provider", "entry_stage", "stages", "objectives", "dialogue", "responses", "actions", "events"],
+    "quest-sourcePath": ["id"]
   };
   if (exact[fieldId]) return exact[fieldId];
   const prefix = `${fieldPrefixForSection(section, kind)}-`;
@@ -6057,6 +6343,7 @@ function fieldPrefixForSection(section, kind) {
   if (section === "stories") return "story";
   if (section === "gifts") return "gift";
   if (section === "dialogue") return "dialogue";
+  if (section === "quests") return "quest";
   return kind || section;
 }
 
@@ -6084,6 +6371,7 @@ function renderPanel() {
   if (activeSection === "overview") renderOverview();
   if (activeSection === "dialogue") renderDialogue();
   if (activeSection === "forcedDialogue") renderForcedDialogue();
+  if (activeSection === "quests") renderQuests();
   if (activeSection === "notifications") renderNotifications();
   if (activeSection === "gifts") renderGifts();
   if (activeSection === "pacification") renderPacification();
@@ -6483,6 +6771,7 @@ function entrySaveAction(section) {
   return {
     dialogue: "save-dialogue-entry",
     forcedDialogue: "save-forced-dialogue",
+    quests: "save-quest-module",
     notifications: "save-notification",
     gifts: "save-gift-entry",
     pacification: "save-pacification",
@@ -6502,10 +6791,12 @@ function renderEntryList(collection, kind, section) {
   const entries = visibleEntries
     .map((entry, index) => {
       const absoluteIndex = start + index;
-      const title = entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${absoluteIndex + 1}`;
+      const title = entry.metadata?.title || entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${absoluteIndex + 1}`;
       const detail = section === "dialogue" && (kind === "options" || kind === "lines")
         ? entry.request || ""
-        : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
+        : section === "quests"
+          ? entry.id || entry.entry_stage || ""
+          : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
       const active = editing && editing.section === section && editing.kind === kind && editing.index === absoluteIndex;
       const severity = entryIssueSeverity(section, kind, entry);
       const issueMessage = entryIssueMessage(section, kind, entry);
@@ -6784,6 +7075,246 @@ function updateForcedOutputModeFields(root = document) {
   for (const field of form.querySelectorAll(".forced-output-forced_dialogue")) {
     field.classList.toggle("is-hidden", mode !== "forced_dialogue");
   }
+}
+
+function renderQuests() {
+  const collection = state.quests.modules;
+  const entry = editing?.section === "quests" ? collection[editing.index] : questModuleExample();
+  const module = questModulePayload(entry);
+  const sourcePath = entry.__sourcePath || "";
+  const derivedPath = questModulePath(entry, editing?.section === "quests" ? editing.index : collection.length);
+  const sceneMode = questSceneMode(module);
+  const issue = entryIssueMessage("quests", "modules", entry);
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("scroll-text", "section-icon")}
+          <div>
+            <h2>Quest Modules</h2>
+            <p class="path-label">data/${escapeHtml(state.meta.namespace)}/quests</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-quest-module-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid">
+        ${field({ id: "quest-sourcePath", label: "Quest file path", value: sourcePath, help: `Blank exports to ${derivedPath}.`, className: "span-6" })}
+        ${selectField({
+          id: "quest-scene-mode",
+          label: "Scene mode",
+          value: sceneMode,
+          options: [
+            { value: "inline", label: "Inline scenes" },
+            { value: "external", label: "External scene reference" }
+          ],
+          allowBlank: false,
+          help: "Applies to the first offer slot in the JSON editor.",
+          className: "span-6"
+        })}
+        <div class="compat-alert ${questMetadataLoadStatus === "error" ? "warning" : "info"} full" role="status">
+          ${icon(questMetadataLoadStatus === "error" ? "triangle-alert" : "database", "inline-icon")}
+          <div>
+            <strong>Registry metadata</strong>
+            <span>${escapeHtml(questMetadataStatusText())}</span>
+          </div>
+        </div>
+        ${issue ? `
+          <div class="compat-alert ${entryIssueSeverity("quests", "modules", entry) === "error" ? "warning" : "info"} full" role="status">
+            ${icon(entryIssueSeverity("quests", "modules", entry) === "error" ? "triangle-alert" : "info", "inline-icon")}
+            <div>
+              <strong>Quest check</strong>
+              <span>${escapeHtml(issue)}</span>
+            </div>
+          </div>
+        ` : ""}
+      </div>
+      <div class="entry-layout">
+        <form class="entry-form" data-form="quests">
+          <div class="form-grid">
+            ${textareaField({
+              id: "quest-module-json",
+              label: "Quest module JSON",
+              value: JSON.stringify(module, null, 2),
+              help: `Objectives: ${questRegistrySummary("objectives", 6)}. Actions: ${questRegistrySummary("actions", 6)}. Triggers: ${questRegistrySummary("triggers", 6)}.`,
+              className: "full",
+              rows: 24
+            })}
+          </div>
+          ${formActions(editing?.section === "quests" ? "Update" : "Add", "save-quest-module", "clear-quest-form")}
+        </form>
+      </div>
+      ${renderQuestMigrationSuggestions()}
+    </div>
+  `;
+}
+
+function renderQuestMigrationSuggestions() {
+  if (!state.quests.v1Imports.length) return "";
+  return `
+    <div class="quest-migration-list">
+      ${state.quests.v1Imports.map((entry) => `
+        <div class="compat-alert info" role="status">
+          ${icon("git-branch-plus", "inline-icon")}
+          <div>
+            <strong>${escapeHtml(entry.title || entry.id || "Legacy quest")}</strong>
+            <span>${escapeHtml(entry.sourcePath)} - ${escapeHtml(entry.suggestion)}</span>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function questSceneMode(module) {
+  return questHasExternalScene(module) ? "external" : "inline";
+}
+
+function questHasExternalScene(value) {
+  if (Array.isArray(value)) return value.some(questHasExternalScene);
+  if (!value || typeof value !== "object") return false;
+  if (value.external || value.external_scene || value.external_entry) return true;
+  return Object.values(value).some(questHasExternalScene);
+}
+
+function questExternalSceneResource(module) {
+  const id = isValidResourceLocation(module.id, { requireNamespace: true }) ? module.id : `${state.meta.namespace}:first_steps`;
+  const [namespace, path] = id.split(":");
+  return `${namespace}:${path}/offer`;
+}
+
+function applyQuestSceneMode(module, mode) {
+  if (!module || typeof module !== "object" || Array.isArray(module)) return module;
+  const stages = Array.isArray(module.stages) ? module.stages : [];
+  const stage = stages[0];
+  if (!stage || typeof stage !== "object") return module;
+  stage.dialogue = stage.dialogue && typeof stage.dialogue === "object" && !Array.isArray(stage.dialogue) ? stage.dialogue : {};
+  if (mode === "external") {
+    const externalScene = questExternalSceneResource(module);
+    stage.dialogue.offer = {
+      label: stage.dialogue.offer?.label || module.metadata?.title || "Quest Offer",
+      request: stage.dialogue.offer?.request || "question",
+      external_scene: stage.dialogue.offer?.external_scene || externalScene
+    };
+    module.external_scenes = unique([...(Array.isArray(module.external_scenes) ? module.external_scenes : []), externalScene]);
+    return module;
+  }
+  if (!stage.dialogue.offer || questHasExternalScene(stage.dialogue.offer)) {
+    stage.dialogue.offer = inlineQuestOfferSlot(module);
+  }
+  const generatedExternalScene = questExternalSceneResource(module);
+  if (Array.isArray(module.external_scenes)) {
+    module.external_scenes = module.external_scenes.filter((scene) => scene !== generatedExternalScene);
+    if (module.external_scenes.length === 0) delete module.external_scenes;
+  }
+  return module;
+}
+
+function inlineQuestOfferSlot(module) {
+  return {
+    label: module.metadata?.title || "First Steps",
+    request: "question",
+    lines: ["Could you bring three loaves of bread?"],
+    responses: [
+      {
+        id: "accept",
+        label: "I can help.",
+        scene: "start_quest"
+      },
+      {
+        id: "decline",
+        label: "Not now.",
+        scene: "end"
+      }
+    ]
+  };
+}
+
+function questModuleExample() {
+  const namespace = namespaceify(state.meta.namespace || state.meta.slug, "my_pack");
+  const slug = normalizeFileName(state.meta.slug || namespace, "my_pack");
+  return {
+    schema: QUEST_MODULE_SCHEMA_ID,
+    id: `${namespace}:first_steps`,
+    metadata: {
+      title: "First Steps",
+      description: "Bring three loaves of bread to a villager.",
+      questline: slug,
+      tags: ["starter"]
+    },
+    provider: {
+      type: "villagerretaliation:villager",
+      filters: {
+        professions: ["minecraft:farmer"]
+      }
+    },
+    availability: {
+      repeatable: false,
+      max_completions: 1,
+      max_starts: 0,
+      locked_to_villager: true,
+      cross_villager_compatible: false,
+      abandonment: "allow_repickup",
+      consume_on_completion: true
+    },
+    entry_stage: "gather",
+    stages: [
+      {
+        id: "gather",
+        objectives: [
+          {
+            id: "bring_bread",
+            type: "item_check",
+            item: "minecraft:bread",
+            count: 3,
+            tracker: {
+              text: "Bring 3 bread to the quest giver.",
+              complete_text: "The bread is ready to deliver.",
+              show_progress: true,
+              progress: 0.75
+            }
+          }
+        ],
+        dialogue: {
+          offer: inlineQuestOfferSlot({
+            metadata: {
+              title: "First Steps"
+            }
+          }),
+          reminder: {
+            request: "question",
+            lines: ["Three loaves will be enough for today."],
+            responses: [
+              {
+                id: "back",
+                label: "I'm working on it.",
+                scene: "end"
+              }
+            ]
+          },
+          turn_in: {
+            request: "question",
+            lines: ["You found the bread. That helps more than you know."],
+            responses: [
+              {
+                id: "complete",
+                label: "Hand over the bread.",
+                complete: true
+              }
+            ]
+          }
+        }
+      }
+    ],
+    rewards: {
+      experience: 25,
+      reputation: 5
+    },
+    ui: {
+      tracker_text: "Bring 3 bread.",
+      icon: "minecraft:bread",
+      color: "#DCEBA6"
+    }
+  };
 }
 
 function renderNotifications() {
@@ -7115,6 +7646,10 @@ function readCurrentDraftEntry(options = {}) {
       const entry = readForcedDialogueEntry(options);
       return entry ? { section: "forcedDialogue", kind: "entries", entry: cleanObject(entry) } : null;
     }
+    if (form.dataset.form === "quests") {
+      const entry = readQuestModuleEntry(options);
+      return entry ? { section: "quests", kind: "modules", entry } : null;
+    }
     if (form.dataset.form === "notifications") {
       return { section: "notifications", kind: "notifications", entry: cleanObject(readNotificationEntry()) };
     }
@@ -7361,6 +7896,48 @@ function saveForcedDialogue(event) {
   upsertEntry("forcedDialogue", "entries", cleanObject(entry));
 }
 
+function readQuestModuleEntry(options = {}) {
+  const source = readValue("quest-module-json").trim();
+  let module;
+  try {
+    module = JSON.parse(stripTextBom(source || "{}"));
+  } catch {
+    if (!options.quiet) showToast("Quest module JSON must be a JSON object.");
+    return null;
+  }
+  if (!module || typeof module !== "object" || Array.isArray(module)) {
+    if (!options.quiet) showToast("Quest module JSON must be a JSON object.");
+    return null;
+  }
+  module = applyQuestSceneMode(module, readValue("quest-scene-mode") || "inline");
+  const sourcePath = readValue("quest-sourcePath").trim();
+  if (sourcePath) module.__sourcePath = sourcePath.replaceAll("\\", "/").replace(/^\/+/, "");
+  return module;
+}
+
+function saveQuestModule(event) {
+  event.preventDefault();
+  const entry = readQuestModuleEntry();
+  if (!entry) return;
+  upsertEntry("quests", "modules", entry);
+}
+
+function updateQuestSceneModeEditor(root = document) {
+  const form = root.querySelector?.('form[data-form="quests"]');
+  const textarea = form?.querySelector("#quest-module-json");
+  if (!form || !textarea) return;
+  try {
+    const module = JSON.parse(stripTextBom(textarea.value || "{}"));
+    if (!module || typeof module !== "object" || Array.isArray(module)) return;
+    textarea.value = JSON.stringify(applyQuestSceneMode(module, readValue("quest-scene-mode") || "inline"), null, 2);
+    resizeTextareas(form);
+    invalidateCurrentViewSnapshot();
+    scheduleOutputRender();
+  } catch {
+    // The save path shows the actionable JSON parse error.
+  }
+}
+
 function readNotificationEntry() {
   return readBooleans("notification", [], {
     id: readValue("notification-id").trim(),
@@ -7551,6 +8128,7 @@ function selectedPathAfterEntrySave(section, previousSelectedPath, sourcePath = 
 function inferSelectedPath(section) {
   if (section === "dialogue") return dialoguePath(activeDialogueKind, state.dialogue[activeDialogueKind]?.[0] || {}, 0);
   if (section === "forcedDialogue") return forcedDialoguePath();
+  if (section === "quests") return questModulePath(state.quests.modules[0] || {}, 0);
   if (section === "notifications") return notificationsPath();
   if (section === "gifts") return giftsPath();
   if (section === "pacification") return pacificationPath();
@@ -7825,6 +8403,17 @@ function addForcedDialogueExample() {
     ]
   });
   selectedPath = forcedDialoguePath();
+  render();
+}
+
+function addQuestModuleExample() {
+  const entry = questModuleExample();
+  const index = state.quests.modules.length;
+  state.quests.modules.push(entry);
+  selectedPath = questModulePath(entry, index);
+  activeSection = "quests";
+  editing = { section: "quests", kind: "modules", index };
+  clearEntryFormDirty();
   render();
 }
 
@@ -9067,11 +9656,12 @@ els.panel.addEventListener("click", (event) => {
     deleteEntry(actionButton.dataset.section, actionButton.dataset.kind, Number(actionButton.dataset.index));
     return;
   }
-  if (action === "clear-dialogue-form" || action === "clear-forced-dialogue-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
+  if (action === "clear-dialogue-form" || action === "clear-forced-dialogue-form" || action === "clear-quest-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
     clearEditing();
   }
   if (action === "add-dialogue-example" && canLeaveEntryForm()) addDialogueExample();
   if (action === "add-forced-dialogue-example" && canLeaveEntryForm()) addForcedDialogueExample();
+  if (action === "add-quest-module-example" && canLeaveEntryForm()) addQuestModuleExample();
   if (action === "add-notification-example" && canLeaveEntryForm()) addNotificationExample();
   if (action === "add-gift-example" && canLeaveEntryForm()) addGiftExample();
   if (action === "add-pacification-example" && canLeaveEntryForm()) addPacificationExample();
@@ -9254,6 +9844,7 @@ els.panel.addEventListener("submit", (event) => {
   if (!form) return;
   if (form.dataset.form === "dialogue") saveDialogueEntry(event);
   if (form.dataset.form === "forcedDialogue") saveForcedDialogue(event);
+  if (form.dataset.form === "quests") saveQuestModule(event);
   if (form.dataset.form === "notifications") saveNotification(event);
   if (form.dataset.form === "gifts") saveGiftEntry(event);
   if (form.dataset.form === "pacification") savePacification(event);
@@ -9284,6 +9875,9 @@ els.panel.addEventListener("change", (event) => {
   if (event.target.id === "forced-output_mode") {
     updateForcedOutputModeFields(els.panel);
     resizeTextareas(event.target.closest(".entry-form"));
+  }
+  if (event.target.id === "quest-scene-mode") {
+    updateQuestSceneModeEditor(els.panel);
   }
   if (activeSection === "overview") updateOverviewFromInput(event.target);
   updateSectionSettings(event.target);
@@ -9871,3 +10465,4 @@ updateShortcutTooltips();
 applyStoredPanelSizes();
 initializePreviewEditor();
 render();
+loadQuestAuthoringMetadata();
