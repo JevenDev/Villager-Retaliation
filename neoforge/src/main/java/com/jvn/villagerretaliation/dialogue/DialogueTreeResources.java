@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
@@ -54,7 +55,11 @@ public final class DialogueTreeResources {
         if (id == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(load(server, locale).get(id));
+        DialogueTreeDefinition external = load(server, locale).get(id);
+        if (external != null) {
+            return Optional.of(external);
+        }
+        return VillagerQuestResources.questDialogueCatalog(server).tree(id);
     }
 
     private static Collection<DialogueTreeDefinition> trees(MinecraftServer server, String locale) {

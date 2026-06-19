@@ -10,11 +10,16 @@ import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
+import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
 import com.jvn.villagerretaliation.dialogue.QuestDialogueCatalog;
 import com.jvn.villagerretaliation.dialogue.QuestDialogueCompiler;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
@@ -1246,6 +1251,117 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2EmbeddedDialogueRunsThroughExistingSessions(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ServerLevel level = helper.getLevel();
+        EmbeddedDialogueQuest playable = embeddedDialogueQuest("v2_embedded_runtime", false);
+        EmbeddedDialogueQuest unavailable = embeddedDialogueQuest("v2_embedded_unavailable", true);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(
+                    level.getServer(),
+                    List.of(playable.quest(), unavailable.quest()),
+                    QuestDialogueCatalog.merge(List.of(playable.dialogueCatalog(), unavailable.dialogueCatalog())));
+            DialogueTreeResources.clearCache();
+            DialogueTreeService.clearRuntimeState();
+
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            String offerOptionId = DialogueTreeService.entryOptionId(playable.treeId(), "stage.offer.offer");
+            assertHasDialogueOption(helper, context, offerOptionId, "v2 embedded offer option");
+            helper.assertValueEqual(
+                    selectDialogueOption(helper, context, offerOptionId).text(),
+                    "Can you take this embedded errand?",
+                    "v2 embedded offer text");
+            helper.assertValueEqual(
+                    selectDialogueOption(
+                            helper,
+                            context,
+                            DialogueTreeService.responseOptionId(playable.treeId(), "decline")).text(),
+                    "Not now, then.",
+                    "v2 embedded decline text");
+            helper.assertTrue(
+                    VillagerQuestSavedData.get(level).get(player.getUUID(), playable.quest().id()) == null,
+                    "declining embedded v2 dialogue started the quest");
+
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            selectDialogueOption(helper, context, offerOptionId);
+            helper.assertValueEqual(
+                    selectDialogueOption(
+                            helper,
+                            context,
+                            DialogueTreeService.responseOptionId(playable.treeId(), "accept")).text(),
+                    "Embedded quest started.",
+                    "v2 embedded accept/start text");
+
+            VillagerQuestSavedData.QuestProgress progress =
+                    VillagerQuestSavedData.get(level).get(player.getUUID(), playable.quest().id());
+            helper.assertTrue(progress != null, "embedded v2 dialogue did not create quest progress");
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.ACTIVE, "embedded v2 active state");
+            helper.assertValueEqual(progress.currentStage(), "offer", "embedded v2 initial stage");
+
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            helper.assertValueEqual(
+                    selectDialogueOption(
+                            helper,
+                            context,
+                            DialogueTreeService.entryOptionId(playable.treeId(), "stage.offer.reminder")).text(),
+                    "Embedded reminder active.",
+                    "v2 embedded active reminder text");
+
+            VillagerQuestFacts.get(level).setVariable(
+                    QuestScopeKey.quest(player.getUUID(), playable.quest().id()),
+                    "ready",
+                    "yes");
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            helper.assertValueEqual(
+                    selectDialogueOption(
+                            helper,
+                            context,
+                            DialogueTreeService.entryOptionId(playable.treeId(), "stage.offer.ready")).text(),
+                    "Ready to close embedded quest?",
+                    "v2 embedded ready text");
+            helper.assertValueEqual(
+                    selectDialogueOption(
+                            helper,
+                            context,
+                            DialogueTreeService.responseOptionId(playable.treeId(), "complete")).text(),
+                    "Embedded quest complete.",
+                    "v2 embedded turn-in text");
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.COMPLETED, "embedded v2 completed state");
+
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            helper.assertValueEqual(
+                    selectDialogueOption(
+                            helper,
+                            context,
+                            DialogueTreeService.entryOptionId(playable.treeId(), "stage.offer.already_completed")).text(),
+                    "Embedded quest already complete.",
+                    "v2 embedded already-completed text");
+            helper.assertValueEqual(
+                    selectDialogueOption(
+                            helper,
+                            context,
+                            DialogueTreeService.entryOptionId(unavailable.treeId(), "stage.offer.unavailable")).text(),
+                    "This embedded quest is unavailable.",
+                    "v2 embedded unavailable text");
+            helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "v2 embedded dialogue emitted diagnostics");
+            DatapackDiagnostics.clear();
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            DialogueTreeService.clearRuntimeState();
+            DialogueTreeResources.clearCache();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2ParserReportsPreciseInvalidDiagnostics(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ResourceLocation location = VillagerRetaliation.id("quests/v2_invalid_fixture.json");
@@ -1651,6 +1767,65 @@ public final class VillagerQuestGameTests {
             case NOTIFICATION -> "notification:" + action.text();
             default -> action.kind().serializedName();
         };
+    }
+
+    private static void assertHasDialogueOption(
+            GameTestHelper helper,
+            DialogueContext context,
+            String optionId,
+            String message) {
+        helper.assertTrue(
+                VillagerDialogueResources
+                        .dialogueOptions(context, VillagerDialogueService.moodFor(context))
+                        .stream()
+                        .anyMatch(option -> option.id().equals(optionId)),
+                message + " missing");
+    }
+
+    private static VillagerDialogueService.DialogueResult selectDialogueOption(
+            GameTestHelper helper,
+            DialogueContext context,
+            String optionId) {
+        DialogueOptionDefinition option = VillagerDialogueResources
+                .dialogueOptions(context, VillagerDialogueService.moodFor(context))
+                .stream()
+                .filter(candidate -> candidate.id().equals(optionId))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("Missing dialogue option " + optionId));
+        return DialogueTreeService.handleDialogueOption(context, option)
+                .orElseThrow(() -> new GameTestAssertException("Dialogue option did not produce a result " + optionId));
+    }
+
+    private static EmbeddedDialogueQuest embeddedDialogueQuest(String path, boolean unavailable) {
+        ResourceLocation location = VillagerRetaliation.id("quests/" + path + ".json");
+        JsonObject root = embeddedDialogueQuestV2Fixture(path);
+        if (unavailable) {
+            JsonObject availability = new JsonObject();
+            JsonArray conditions = new JsonArray();
+            JsonObject condition = new JsonObject();
+            condition.addProperty("type", "quest");
+            condition.addProperty("quest", VillagerRetaliation.id(path).toString());
+            condition.addProperty("state", "completed");
+            conditions.add(condition);
+            availability.add("conditions", conditions);
+            root.add("availability", availability);
+        }
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
+                .orElseThrow(() -> new GameTestAssertException(path + " envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException(path + " did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException(path + " did not compile"));
+        return new EmbeddedDialogueQuest(
+                compiled,
+                QuestDialogueCompiler.compile(parsed, envelope),
+                QuestDialogueCompiler.treeId(parsed.id()));
+    }
+
+    private record EmbeddedDialogueQuest(
+            CompiledQuest quest,
+            QuestDialogueCatalog dialogueCatalog,
+            ResourceLocation treeId) {
     }
 
     private static QuestDefinition.Objective registryObjective(
@@ -2444,6 +2619,113 @@ public final class VillagerQuestGameTests {
                   ]
                 }
                 """).getAsJsonObject();
+    }
+
+    private static JsonObject embeddedDialogueQuestV2Fixture(String path) {
+        JsonObject root = JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "metadata": {
+                    "title": "Embedded Runtime Quest",
+                    "description": "A v2 quest whose dialogue is embedded in the quest file.",
+                    "questline": "tests",
+                    "tags": [
+                      "test"
+                    ]
+                  },
+                  "provider": {
+                    "type": "villagerretaliation:villager"
+                  },
+                  "entry_stage": "offer",
+                  "stages": [
+                    {
+                      "id": "offer",
+                      "objectives": [
+                        {
+                          "id": "ready",
+                          "type": "fact",
+                          "scope": "quest",
+                          "key": "ready",
+                          "value": "yes"
+                        }
+                      ],
+                      "complete_when": [
+                        "ready"
+                      ],
+                      "dialogue": {
+                        "offer": {
+                          "text": "Can you take this embedded errand?",
+                          "responses": [
+                            {
+                              "id": "accept",
+                              "label": "I can help.",
+                              "actions": [
+                                {
+                                  "type": "quest",
+                                  "action": "start",
+                                  "lines": {
+                                    "started": [
+                                      "Embedded quest started."
+                                    ],
+                                    "unavailable": [
+                                      "This embedded quest is unavailable."
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "decline",
+                              "label": "Not now.",
+                              "text": "Not now, then."
+                            }
+                          ]
+                        },
+                        "reminder": {
+                          "text": "Embedded reminder active."
+                        },
+                        "ready": {
+                          "text": "Ready to close embedded quest?",
+                          "responses": [
+                            {
+                              "id": "complete",
+                              "label": "Close it.",
+                              "actions": [
+                                {
+                                  "type": "quest",
+                                  "action": "turn_in",
+                                  "lines": {
+                                    "completed": [
+                                      "Embedded quest complete."
+                                    ],
+                                    "missing_objectives": [
+                                      "Embedded quest is not ready."
+                                    ],
+                                    "unavailable": [
+                                      "This embedded quest is unavailable."
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "already_completed": {
+                          "text": "Embedded quest already complete."
+                        },
+                        "unavailable": {
+                          "text": "This embedded quest is unavailable."
+                        }
+                      },
+                      "ui": {
+                        "tracker_text": "Set the ready fact to close the embedded quest."
+                      }
+                    }
+                  ]
+                }
+                """).getAsJsonObject();
+        root.addProperty("id", VillagerRetaliation.id(path).toString());
+        return root;
     }
 
     private static JsonObject invalidQuestV2Fixture() {

@@ -7,9 +7,12 @@ import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
+import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
+import com.jvn.villagerretaliation.dialogue.QuestDialogueCatalog;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
@@ -277,6 +280,105 @@ public final class VillagerQuestService {
             }
         }
         return List.copyOf(options);
+    }
+
+    public static List<DialogueOptionDefinition> embeddedDialogueOptions(
+            DialogueContext context,
+            DialogueDisposition disposition) {
+        if (context == null) {
+            return List.of();
+        }
+        QuestDialogueCatalog catalog = VillagerQuestResources.questDialogueCatalog(context.level().getServer());
+        if (catalog.bindings().isEmpty()) {
+            return List.of();
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
+        List<DialogueOptionDefinition> options = new ArrayList<>();
+        for (QuestDialogueCatalog.Binding binding : catalog.bindings().values()) {
+            QuestDefinition definition = VillagerQuestResources
+                    .quest(context.level().getServer(), binding.questId())
+                    .orElse(null);
+            if (definition == null) {
+                continue;
+            }
+            VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
+            if (!matchesEmbeddedDialogueBinding(context, definition, progress, binding)) {
+                continue;
+            }
+
+            DialogueTreeDefinition tree = catalog.tree(binding.treeId()).orElse(null);
+            if (tree == null || !tree.matches(context)) {
+                continue;
+            }
+            DialogueTreeDefinition.Entry entry = tree.entry(binding.entryId()).orElse(null);
+            if (entry != null && entry.matches(context, disposition)) {
+                options.add(entry.toOption(tree.id()));
+            }
+        }
+        options.sort(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id));
+        return List.copyOf(options);
+    }
+
+    private static boolean matchesEmbeddedDialogueBinding(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDialogueCatalog.Binding binding) {
+        String slot = normalizeEmbeddedDialogueSlot(binding.slot());
+        if (slot.isBlank() || slot.startsWith("scene:")) {
+            return false;
+        }
+        boolean activeStage = matchesEmbeddedDialogueStage(definition, progress, binding);
+        return switch (slot) {
+            case "offer", "start", "begin" ->
+                    isInitialEmbeddedDialogueStage(definition, binding) && canStart(context, definition, progress);
+            case "reminder", "remind", "details", "active", "in_progress", "incomplete" ->
+                    activeStage && activeConditionsMet(context, definition) && !isReadyToTurnIn(context, definition, progress);
+            case "ready", "turn_in", "turnin", "turn-in", "complete", "completeable", "completable" ->
+                    activeStage && isReadyToTurnIn(context, definition, progress);
+            case "responses", "stage_responses", "stage-responses" ->
+                    activeStage && activeConditionsMet(context, definition);
+            case "already_completed", "already-completed", "completed" ->
+                    matchesState(context, definition, progress, "completed");
+            case "unavailable" ->
+                    isInitialEmbeddedDialogueStage(definition, binding)
+                            && !matchesState(context, definition, progress, "completed")
+                            && matchesState(context, definition, progress, "unavailable");
+            case "abandoned", "dropped" ->
+                    matchesState(context, definition, progress, "abandoned");
+            case "expired", "timed_out", "timed-out" ->
+                    matchesState(context, definition, progress, "expired");
+            case "consumed", "removed" ->
+                    matchesState(context, definition, progress, "consumed");
+            case "branch_locked", "branch-locked" ->
+                    matchesState(context, definition, progress, "branch_locked");
+            default -> !binding.stageId().isBlank() && activeStage && activeConditionsMet(context, definition);
+        };
+    }
+
+    private static boolean matchesEmbeddedDialogueStage(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDialogueCatalog.Binding binding) {
+        return definition != null
+                && progress != null
+                && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && binding.stageId().equals(progress.currentStage());
+    }
+
+    private static boolean isInitialEmbeddedDialogueStage(
+            QuestDefinition definition,
+            QuestDialogueCatalog.Binding binding) {
+        return binding.stageId().isBlank()
+                || binding.stageId().equals(QuestLifecycleService.initialStage(definition));
+    }
+
+    private static String normalizeEmbeddedDialogueSlot(String slot) {
+        String normalized = slot == null ? "" : slot.trim().toLowerCase(Locale.ROOT);
+        return normalized.startsWith("lifecycle:")
+                ? normalized.substring("lifecycle:".length())
+                : normalized;
     }
 
     public static Optional<VillagerDialogueService.DialogueResult> handleDialogueOption(

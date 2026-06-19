@@ -85,6 +85,13 @@ public final class VillagerQuestResources {
     }
 
     public static void installCompiledTestCatalog(MinecraftServer server, Collection<CompiledQuest> compiledQuests) {
+        installCompiledTestCatalog(server, compiledQuests, QuestDialogueCatalog.empty());
+    }
+
+    public static void installCompiledTestCatalog(
+            MinecraftServer server,
+            Collection<CompiledQuest> compiledQuests,
+            QuestDialogueCatalog dialogueCatalog) {
         Map<ResourceLocation, CompiledQuest> compiled = new LinkedHashMap<>();
         Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
         if (compiledQuests != null) {
@@ -101,7 +108,7 @@ public final class VillagerQuestResources {
         cachedQuests = new CachedQuests(
                 server,
                 catalog,
-                QuestDialogueCatalog.empty(),
+                dialogueCatalog == null ? QuestDialogueCatalog.empty() : dialogueCatalog,
                 frozenQuests,
                 objectiveEventQuestIds(frozenQuests),
                 objectiveQuestIds(frozenQuests, QuestDefinition.ObjectiveType.FACT),

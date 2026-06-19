@@ -276,6 +276,7 @@ public final class VillagerDialogueResources {
                 .sorted(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id))
                 .toList());
         options.addAll(DialogueTreeResources.entryOptions(context, disposition));
+        options.addAll(VillagerQuestService.embeddedDialogueOptions(context, disposition));
         options.addAll(VillagerQuestService.stageBranchOptions(context));
         options.sort(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id));
         return List.copyOf(options);
