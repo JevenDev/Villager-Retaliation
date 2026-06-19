@@ -41,6 +41,7 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -103,10 +104,22 @@ public final class VillagerQuestService {
     private static final int STAGE_BRANCH_OPTION_ORDER = 900;
     private static final ThreadLocal<Boolean> DISPATCHING_STAGE_TRIGGERS =
             ThreadLocal.withInitial(() -> false);
+    private static final Set<UUID> CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS = new HashSet<>();
     private static final Map<UUID, TrackerSyncState> LAST_TRACKER_SYNCS = new HashMap<>();
     private static final Map<UUID, InventoryItemCountCache> INVENTORY_ITEM_COUNT_CACHES = new HashMap<>();
 
     private VillagerQuestService() {
+    }
+
+    public static void setClientEffectsSuppressedForTests(ServerPlayer player, boolean suppressed) {
+        if (player == null) {
+            return;
+        }
+        if (suppressed) {
+            CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS.add(player.getUUID());
+        } else {
+            CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS.remove(player.getUUID());
+        }
     }
 
     private enum ConditionMatch {
@@ -3261,6 +3274,9 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             String fallbackText) {
+        if (clientEffectsSuppressedForTests(context.player())) {
+            return;
+        }
         Map<String, String> replacements = replacements(context, definition, progress);
         VillagerNotifications.sendHud(
                 context.player(),
@@ -3279,6 +3295,9 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             String trigger,
             String fallbackText) {
+        if (clientEffectsSuppressedForTests(player)) {
+            return;
+        }
         if (!(player.level() instanceof ServerLevel level)) {
             return;
         }
@@ -3309,6 +3328,9 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
+        if (clientEffectsSuppressedForTests(context == null ? player : context.player())) {
+            return;
+        }
         QuestDefinition.Expiration expiration = definition.rules().expiration();
         if (context != null) {
             Map<String, String> replacements = replacements(context, definition, progress);
@@ -3340,6 +3362,9 @@ public final class VillagerQuestService {
             ServerPlayer player,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
+        if (clientEffectsSuppressedForTests(player)) {
+            return;
+        }
         Map<String, String> replacements = trackerReplacements(player, definition, progress, true);
         VillagerReputationNetworking.sendNotice(
                 player,
@@ -3360,6 +3385,9 @@ public final class VillagerQuestService {
     }
 
     private static void sendTrackerSync(ServerPlayer player, boolean flash, boolean force) {
+        if (clientEffectsSuppressedForTests(player)) {
+            return;
+        }
         if (!(player.level() instanceof ServerLevel level)) {
             return;
         }
@@ -3413,6 +3441,10 @@ public final class VillagerQuestService {
                 trackedQuestId == null ? "" : trackedQuestId.toString(),
                 flash));
         LAST_TRACKER_SYNCS.put(player.getUUID(), new TrackerSyncState(signature, gameTime));
+    }
+
+    private static boolean clientEffectsSuppressedForTests(ServerPlayer player) {
+        return player != null && CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS.contains(player.getUUID());
     }
 
     private static boolean shouldSyncTrackerEntry(

@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
+import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Resource;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -78,6 +79,31 @@ public final class VillagerQuestResources {
 
     public static void clearCache() {
         cachedQuests = emptyCache();
+    }
+
+    public static void installCompiledTestCatalog(MinecraftServer server, Collection<CompiledQuest> compiledQuests) {
+        Map<ResourceLocation, CompiledQuest> compiled = new LinkedHashMap<>();
+        Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
+        if (compiledQuests != null) {
+            for (CompiledQuest quest : compiledQuests) {
+                if (quest == null) {
+                    continue;
+                }
+                compiled.put(quest.id(), quest);
+                quests.put(quest.id(), quest.asQuestDefinition());
+            }
+        }
+        CompiledQuestCatalog catalog = new CompiledQuestCatalog(compiled);
+        Map<ResourceLocation, QuestDefinition> frozenQuests = freezeOrderedResourceMap(quests);
+        cachedQuests = new CachedQuests(
+                server,
+                catalog,
+                frozenQuests,
+                objectiveEventQuestIds(frozenQuests),
+                objectiveQuestIds(frozenQuests, QuestDefinition.ObjectiveType.FACT),
+                memoryEventQuestIds(frozenQuests),
+                exclusiveGroupQuestIds(frozenQuests),
+                triggerEventQuestIds(catalog));
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
@@ -329,17 +355,13 @@ public final class VillagerQuestResources {
                 .filter(resource -> resource.schemaVersion() == QuestSchemaVersion.V1)
                 .anyMatch(resource -> DatapackJsonReader.readBoolean(resource.root(), "replace"));
         for (QuestResourceEnvelope resource : resources) {
-            if (resource.schemaVersion() == QuestSchemaVersion.V2) {
-                QuestV2Parser.parse(resource).ifPresent(ignored -> DatapackDiagnostics.warnSkippedEntry(
-                                resource.location(),
-                                "quest",
-                                "schema " + resource.schemaVersion().schemaId(),
-                                "quest module v2 is recognized and validated but not playable until the v2 compiler is enabled."));
-                continue;
-            }
             if (replacementMode
                     && isBuiltInModResource(resource.source())
                     && !DatapackJsonReader.readBoolean(resource.root(), "replace")) {
+                continue;
+            }
+            if (resource.schemaVersion() == QuestSchemaVersion.V2) {
+                readV2File(resource, quests, compiledQuests, sources);
                 continue;
             }
             readFile(resource, quests, compiledQuests, sources, replacementMode);
@@ -389,6 +411,28 @@ public final class VillagerQuestResources {
         compiledQuests.put(definition.id(), QuestV1Compiler.compile(definition, resource));
     }
 
+    private static void readV2File(
+            QuestResourceEnvelope resource,
+            Map<ResourceLocation, QuestDefinition> quests,
+            Map<ResourceLocation, CompiledQuest> compiledQuests,
+            Map<ResourceLocation, ResourceLocation> sources) {
+        Optional<QuestV2Resource> parsed = QuestV2Parser.parse(resource);
+        if (parsed.isEmpty()) {
+            return;
+        }
+        Optional<CompiledQuest> compiled = QuestV2Compiler.compile(parsed.get(), resource);
+        if (compiled.isEmpty()) {
+            return;
+        }
+        CompiledQuest quest = compiled.get();
+        ResourceLocation previous = sources.put(quest.id(), resource.location());
+        if (previous != null) {
+            DatapackDiagnostics.warnDuplicateId(resource.location(), "quest", quest.id().toString(), previous);
+        }
+        quests.put(quest.id(), quest.asQuestDefinition());
+        compiledQuests.put(quest.id(), quest);
+    }
+
     private static boolean isBuiltInModResource(QuestResourceSource source) {
         return VillagerRetaliation.MOD_ID.equals(source.location().getNamespace())
                 && source.isFromPack(VillagerRetaliation.MOD_ID);
@@ -402,6 +446,10 @@ public final class VillagerQuestResources {
             }
         }
         return true;
+    }
+
+    static QuestDefinition readCanonicalQuest(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
+        return readQuest(location, root, fallbackId);
     }
 
     private static QuestDefinition readQuest(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {

@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestDiagnostic;
@@ -38,6 +39,8 @@ import com.jvn.villagerretaliation.quest.QuestTrackerPresenter;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.quest.QuestV2Compiler;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestStage;
@@ -82,8 +85,12 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -1048,6 +1055,145 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2CompilerFlattensIntoCanonicalRuntimeModel(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_valid_fixture.json");
+        JsonObject root = validQuestV2Fixture();
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
+                .orElseThrow(() -> new GameTestAssertException("v2 compiler fixture envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("v2 compiler fixture did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException("v2 compiler fixture did not compile"));
+
+        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "compiled v2 schema version");
+        helper.assertValueEqual(
+                compiled.objectives().stream().map(CompiledQuestObjective::id).toList(),
+                List.of("offer.talk", "finish.done"),
+                "flattened v2 objective ids");
+        helper.assertValueEqual(
+                compiled.objectivesById().get("offer.talk").source().jsonPointer(),
+                "/stages/0/objectives/0",
+                "v2 objective source pointer");
+        helper.assertValueEqual(compiled.stages().getFirst().id(), "offer", "v2 entry stage order");
+        helper.assertValueEqual(
+                compiled.stagesById().get("offer").definition().objectives(),
+                List.of("offer.talk"),
+                "v2 stage-local objective ownership");
+        helper.assertValueEqual(
+                compiled.stagesById().get("offer").definition().completeWhen().getFirst().objective(),
+                "offer.talk",
+                "v2 complete_when objective reference");
+        helper.assertValueEqual(
+                compiled.triggersByEvent().get(QuestDefinition.TriggerEvent.STARTED).getFirst().id(),
+                "lifecycle.on_start",
+                "v2 lifecycle trigger");
+        helper.assertValueEqual(
+                compiled.triggersByEvent().get(QuestDefinition.TriggerEvent.PROGRESS).getFirst().source().jsonPointer(),
+                "/events/0",
+                "v2 event source pointer");
+        helper.assertValueEqual(compiled.rewards().definition().experience(), 5, "v2 reward action folded into XP");
+
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        progress.setCurrentStage("offer");
+        QuestTriggerDispatchResult dispatch = QuestTriggerDispatcher.dispatchAtGameTime(
+                null,
+                200L,
+                compiled.asQuestDefinition(),
+                compiled.triggerIndex(),
+                progress,
+                QuestDefinition.TriggerEvent.PROGRESS,
+                (context, definition, questProgress, trigger) -> true);
+        helper.assertValueEqual(dispatch.trace().candidateTriggers(), 1, "bounded v2 progress candidates");
+        helper.assertValueEqual(dispatch.trace().evaluatedTriggers(), 1, "bounded v2 progress evaluations");
+        helper.assertValueEqual(dispatch.trace().matchedTriggers(), 1, "bounded v2 progress matches");
+        DatapackDiagnostics.clear();
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2CompiledQuestUsesRuntimeServices(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_runtime_fixture.json");
+        JsonObject root = runtimeQuestV2Fixture();
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
+                .orElseThrow(() -> new GameTestAssertException("v2 runtime fixture envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("v2 runtime fixture did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException("v2 runtime fixture did not compile"));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled));
+            int experienceBefore = player.totalExperience;
+            VillagerQuestService.DebugStartResult started =
+                    VillagerQuestService.debugStartQuest(player, villager, compiled.id(), true);
+            helper.assertTrue(started.started(), "v2 debug start failed: " + started.message());
+
+            VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+            VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), compiled.id());
+            helper.assertTrue(progress != null, "v2 runtime progress was not created");
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.ACTIVE, "v2 started state");
+            helper.assertValueEqual(progress.currentStage(), "offer", "v2 initial stage");
+            helper.assertValueEqual(data.getTrackedQuest(player.getUUID()), compiled.id(), "v2 tracked quest after start");
+
+            VillagerQuestFacts.get(level).setVariable(
+                    QuestScopeKey.quest(player.getUUID(), compiled.id()),
+                    "ready",
+                    "yes");
+            player.tickCount = 0;
+            VillagerQuestService.onPlayerTick(player);
+            helper.assertValueEqual(progress.currentStage(), "done", "v2 stage advanced through runtime scan");
+            helper.assertTrue(progress.objectiveComplete("offer.ready"), "v2 fact objective did not complete");
+
+            var context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            VillagerQuestService.performAction(
+                    context,
+                    compiled.id(),
+                    VillagerActionDefinition.QuestAction.TURN_IN)
+                    .orElseThrow(() -> new GameTestAssertException("v2 turn-in produced no outcome"));
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.COMPLETED, "v2 completed state");
+            helper.assertValueEqual(player.totalExperience, experienceBefore + 7, "v2 reward XP");
+
+            CompoundTag saved = data.save(new CompoundTag(), level.registryAccess());
+            VillagerQuestSavedData loaded = VillagerQuestSavedData.load(saved, level.registryAccess());
+            VillagerQuestSavedData.QuestProgress loadedProgress = loaded.get(player.getUUID(), compiled.id());
+            helper.assertTrue(loadedProgress != null, "v2 completed progress did not reload");
+            helper.assertValueEqual(
+                    loadedProgress.state(),
+                    VillagerQuestSavedData.QuestState.COMPLETED,
+                    "v2 reloaded completed state");
+            QuestTrackerSyncPayload.Entry entry = QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+                    player,
+                    compiled.asQuestDefinition(),
+                    null,
+                    null,
+                    Map.of(),
+                    "",
+                    "",
+                    "",
+                    List.of(),
+                    1.0F,
+                    true,
+                    loadedProgress.state()));
+            helper.assertValueEqual(entry.questId(), compiled.id().toString(), "v2 tracker entry quest id");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2ParserReportsPreciseInvalidDiagnostics(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ResourceLocation location = VillagerRetaliation.id("quests/v2_invalid_fixture.json");
@@ -1383,6 +1529,26 @@ public final class VillagerQuestGameTests {
     private static QuestDefinition quest(GameTestHelper helper, ResourceLocation questId) {
         return VillagerQuestResources.quest(helper.getLevel().getServer(), questId)
                 .orElseThrow(() -> new GameTestAssertException("Missing quest " + questId));
+    }
+
+    private static Villager spawnVillager(GameTestHelper helper, BlockPos relativePos) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = EntityType.VILLAGER.create(level);
+        if (villager == null) {
+            throw new GameTestAssertException("Could not create villager");
+        }
+        BlockPos pos = helper.absolutePos(relativePos);
+        villager.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
+        if (!level.addFreshEntity(villager)) {
+            throw new GameTestAssertException("Could not add villager to level");
+        }
+        level.tickNonPassenger(villager);
+        return villager;
+    }
+
+    private static void movePlayer(GameTestHelper helper, ServerPlayer player, BlockPos relativePos) {
+        BlockPos pos = helper.absolutePos(relativePos);
+        player.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
     }
 
     private static QuestDefinition.Objective registryObjective(
@@ -1969,6 +2135,66 @@ public final class VillagerQuestGameTests {
                     "placeholders": {
                       "issuer": "provider.name"
                     }
+                  }
+                }
+                """).getAsJsonObject();
+    }
+
+    private static JsonObject runtimeQuestV2Fixture() {
+        return JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "id": "villagerretaliation:v2_runtime_fixture",
+                  "metadata": {
+                    "title": "Runtime V2 Fixture",
+                    "description": "A silent v2 quest for runtime coverage.",
+                    "questline": "tests",
+                    "tags": [
+                      "test"
+                    ]
+                  },
+                  "provider": {
+                    "type": "villagerretaliation:villager"
+                  },
+                  "entry_stage": "offer",
+                  "stages": [
+                    {
+                      "id": "offer",
+                      "objectives": [
+                        {
+                          "id": "ready",
+                          "type": "fact",
+                          "scope": "quest",
+                          "key": "ready",
+                          "value": "yes",
+                          "ui": {
+                            "tracker_text": "Prepare the v2 fixture."
+                          }
+                        }
+                      ],
+                      "complete_when": [
+                        "ready"
+                      ],
+                      "next": "done"
+                    },
+                    {
+                      "id": "done",
+                      "objectives": [],
+                      "on_enter": [
+                        {
+                          "type": "tracker"
+                        }
+                      ],
+                      "ui": {
+                        "tracker_text": "Return to the issuer."
+                      }
+                    }
+                  ],
+                  "rewards": {
+                    "experience": 7
+                  },
+                  "ui": {
+                    "tracker_text": "Prepare the v2 fixture."
                   }
                 }
                 """).getAsJsonObject();
