@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest;
 
 import java.util.Optional;
+import java.util.Set;
 
 public interface QuestObjectiveType<C> {
     QuestObjectiveResult evaluate(
@@ -27,6 +28,21 @@ public interface QuestObjectiveType<C> {
     }
 
     default boolean requiresItemHandIn(QuestDefinition.Objective objective) {
+        return false;
+    }
+
+    default Set<QuestObjectiveEventKind> eventKinds(QuestDefinition.Objective objective) {
+        return Set.of();
+    }
+
+    default Set<net.minecraft.resources.ResourceLocation> eventSubscriptionKeys(QuestDefinition.Objective objective) {
+        return Set.of();
+    }
+
+    default boolean matchesEvent(
+            QuestObjectiveEvaluationContext context,
+            QuestDefinition.Objective objective,
+            QuestObjectiveEvent event) {
         return false;
     }
 }

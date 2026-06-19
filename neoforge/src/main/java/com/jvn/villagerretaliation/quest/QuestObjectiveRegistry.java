@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -8,8 +9,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class QuestObjectiveRegistry {
     private static final List<QuestObjectiveTypeDescriptor<?>> REGISTRATIONS = List.of(
@@ -39,49 +48,49 @@ public final class QuestObjectiveRegistry {
                     QuestDefinition.ObjectiveType.MOB_KILL,
                     aliases("entity_kill", "kill"),
                     requirements(QuestObjectiveRequirement.EVENT, QuestObjectiveRequirement.COUNTER),
-                    null),
+                    new MobKillObjectiveType()),
             register(
                     "block_break",
                     QuestDefinition.ObjectiveType.BLOCK_BREAK,
                     aliases("break_block", "mine_block", "mine"),
                     requirements(QuestObjectiveRequirement.EVENT, QuestObjectiveRequirement.COUNTER),
-                    null),
+                    new BlockObjectiveType(QuestObjectiveEventKind.BLOCK_BREAK)),
             register(
                     "block_place",
                     QuestDefinition.ObjectiveType.BLOCK_PLACE,
                     aliases("place_block", "place"),
                     requirements(QuestObjectiveRequirement.EVENT, QuestObjectiveRequirement.COUNTER),
-                    null),
+                    new BlockObjectiveType(QuestObjectiveEventKind.BLOCK_PLACE)),
             register(
                     "block_interact",
                     QuestDefinition.ObjectiveType.BLOCK_INTERACT,
                     aliases("interact_block", "right_click_block", "use_block", "block_use"),
                     requirements(QuestObjectiveRequirement.EVENT, QuestObjectiveRequirement.COUNTER),
-                    null),
+                    new BlockObjectiveType(QuestObjectiveEventKind.BLOCK_INTERACT)),
             register(
                     "memory_event",
                     QuestDefinition.ObjectiveType.MEMORY_EVENT,
                     aliases("village_event", "village_memory", "memory", "event"),
                     requirements(QuestObjectiveRequirement.EVENT, QuestObjectiveRequirement.COUNTER),
-                    null),
+                    new MemoryEventObjectiveType()),
             register(
                     "trade",
                     QuestDefinition.ObjectiveType.TRADE,
                     aliases("villager_trade", "trading", "merchant_trade"),
                     requirements(QuestObjectiveRequirement.EVENT, QuestObjectiveRequirement.COUNTER),
-                    null),
+                    new TradeObjectiveType()),
             register(
                     "gift",
                     QuestDefinition.ObjectiveType.GIFT,
                     aliases("give_gift", "gift_given"),
                     requirements(QuestObjectiveRequirement.EVENT, QuestObjectiveRequirement.COUNTER),
-                    null),
+                    new GiftObjectiveType()),
             register(
                     "reputation",
                     QuestDefinition.ObjectiveType.REPUTATION,
                     aliases("rep", "reputation_level", "trust"),
                     requirements(QuestObjectiveRequirement.POLLING, QuestObjectiveRequirement.LIVE_CONTEXT),
-                    null),
+                    new ReputationObjectiveType()),
             register(
                     "choice",
                     QuestDefinition.ObjectiveType.CHOICE,
@@ -176,6 +185,51 @@ public final class QuestObjectiveRegistry {
                 .orElse(false);
     }
 
+    public static Set<QuestObjectiveEventKind> eventKinds(QuestDefinition.Objective objective) {
+        return implementation(objective)
+                .map(type -> type.eventKinds(objective))
+                .orElse(Set.of());
+    }
+
+    public static Set<ResourceLocation> eventSubscriptionKeys(QuestDefinition.Objective objective) {
+        return implementation(objective)
+                .map(type -> type.eventSubscriptionKeys(objective))
+                .orElse(Set.of());
+    }
+
+    public static boolean matchesEvent(
+            QuestObjectiveEvaluationContext context,
+            QuestDefinition.Objective objective,
+            QuestObjectiveEvent event) {
+        if (event == null || !eventKinds(objective).contains(event.kind())) {
+            return false;
+        }
+        return implementation(objective)
+                .map(type -> type.matchesEvent(context, objective, event))
+                .orElse(false);
+    }
+
+    public static QuestObjectiveEventTrace traceEventMatches(
+            QuestObjectiveEvaluationContext context,
+            Iterable<QuestDefinition.Objective> objectives,
+            QuestObjectiveEvent event) {
+        if (objectives == null || event == null) {
+            return new QuestObjectiveEventTrace(0, 0);
+        }
+        int evaluated = 0;
+        int matched = 0;
+        for (QuestDefinition.Objective objective : objectives) {
+            if (!eventKinds(objective).contains(event.kind())) {
+                continue;
+            }
+            evaluated++;
+            if (matchesEvent(context, objective, event)) {
+                matched++;
+            }
+        }
+        return new QuestObjectiveEventTrace(evaluated, matched);
+    }
+
     static String normalizeType(String type) {
         return type == null ? "" : type.trim().toLowerCase(Locale.ROOT);
     }
@@ -235,6 +289,292 @@ public final class QuestObjectiveRegistry {
         return requirements == null || requirements.length == 0
                 ? Set.of()
                 : Set.of(requirements);
+    }
+
+    private abstract static class CounterEventObjectiveType implements QuestObjectiveType<Void> {
+        @Override
+        public QuestObjectiveResult evaluate(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective) {
+            int count = context == null || context.progress() == null
+                    ? 0
+                    : context.progress().objectiveCounter(objective.id());
+            float progress = Mth.clamp((float) count / (float) objective.count(), 0.0F, 1.0F);
+            return count >= objective.count()
+                    ? QuestObjectiveResult.complete("event objective complete")
+                    : QuestObjectiveResult.incomplete(progress, "event objective incomplete");
+        }
+    }
+
+    private static final class MobKillObjectiveType extends CounterEventObjectiveType {
+        @Override
+        public Optional<String> validationError(QuestDefinition.Objective objective) {
+            return objective.entityTypes().isEmpty() && objective.entityTags().isEmpty()
+                    ? Optional.of("mob_kill objective must define entity, entities, entity_tag, or entity_tags.")
+                    : Optional.empty();
+        }
+
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return "hunt";
+        }
+
+        @Override
+        public Set<QuestObjectiveEventKind> eventKinds(QuestDefinition.Objective objective) {
+            return Set.of(QuestObjectiveEventKind.MOB_KILL);
+        }
+
+        @Override
+        public boolean matchesEvent(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective,
+                QuestObjectiveEvent event) {
+            if (event.killedEntity() == null
+                    || !matchesDimensionAndLocation(context, event.killedEntity().blockPosition(), objective)
+                    || (objective.entityTypes().isEmpty() && objective.entityTags().isEmpty())) {
+                return false;
+            }
+            ResourceLocation killedType = BuiltInRegistries.ENTITY_TYPE.getKey(event.killedEntity().getType());
+            if (killedType != null && objective.entityTypes().contains(killedType)) {
+                return true;
+            }
+            for (ResourceLocation tagId : objective.entityTags()) {
+                TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, tagId);
+                if (event.killedEntity().getType().is(tag)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    private static final class BlockObjectiveType extends CounterEventObjectiveType {
+        private final QuestObjectiveEventKind eventKind;
+
+        private BlockObjectiveType(QuestObjectiveEventKind eventKind) {
+            this.eventKind = eventKind;
+        }
+
+        @Override
+        public Optional<String> validationError(QuestDefinition.Objective objective) {
+            return objective.blockTypes().isEmpty() && objective.blockTags().isEmpty()
+                    ? Optional.of(objective.type().name().toLowerCase(Locale.ROOT)
+                            + " objective must define block, blocks, block_tag, or block_tags.")
+                    : Optional.empty();
+        }
+
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return switch (this.eventKind) {
+                case BLOCK_BREAK -> "break";
+                case BLOCK_PLACE -> "build";
+                case BLOCK_INTERACT -> "interact";
+                default -> "";
+            };
+        }
+
+        @Override
+        public Set<QuestObjectiveEventKind> eventKinds(QuestDefinition.Objective objective) {
+            return Set.of(this.eventKind);
+        }
+
+        @Override
+        public boolean matchesEvent(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective,
+                QuestObjectiveEvent event) {
+            BlockState state = event.blockState();
+            if (state == null
+                    || state.isAir()
+                    || !matchesDimensionAndLocation(context, event.blockPos(), objective)
+                    || (objective.blockTypes().isEmpty() && objective.blockTags().isEmpty())) {
+                return false;
+            }
+            ResourceLocation blockType = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+            if (blockType != null && objective.blockTypes().contains(blockType)) {
+                return true;
+            }
+            for (ResourceLocation tagId : objective.blockTags()) {
+                TagKey<Block> tag = TagKey.create(Registries.BLOCK, tagId);
+                if (state.is(tag)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    private static final class MemoryEventObjectiveType extends CounterEventObjectiveType {
+        @Override
+        public Optional<String> validationError(QuestDefinition.Objective objective) {
+            return objective.memoryTags().isEmpty()
+                    ? Optional.of("memory_event objective must define memory, memory_event, memory_tags, event, or events.")
+                    : Optional.empty();
+        }
+
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return "event";
+        }
+
+        @Override
+        public Set<QuestObjectiveEventKind> eventKinds(QuestDefinition.Objective objective) {
+            return Set.of(QuestObjectiveEventKind.MEMORY_EVENT);
+        }
+
+        @Override
+        public Set<ResourceLocation> eventSubscriptionKeys(QuestDefinition.Objective objective) {
+            return objective.memoryTags();
+        }
+
+        @Override
+        public boolean matchesEvent(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective,
+                QuestObjectiveEvent event) {
+            if (context == null
+                    || context.player() == null
+                    || event.memoryEvent() == null
+                    || event.memoryEvent().tagId() == null
+                    || event.memoryEvent().pos() == null
+                    || !context.player().getUUID().equals(event.memoryEvent().playerId())
+                    || !matchesDimensionAndLocation(context, event.memoryEvent().pos(), objective)) {
+                return false;
+            }
+            return objective.memoryTags().contains(event.memoryEvent().tagId());
+        }
+    }
+
+    private static final class TradeObjectiveType extends CounterEventObjectiveType {
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return "trade";
+        }
+
+        @Override
+        public Set<QuestObjectiveEventKind> eventKinds(QuestDefinition.Objective objective) {
+            return Set.of(QuestObjectiveEventKind.TRADE);
+        }
+
+        @Override
+        public boolean matchesEvent(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective,
+                QuestObjectiveEvent event) {
+            if (event.villager() == null
+                    || event.offer() == null
+                    || !matchesDimensionAndLocation(context, event.villager().blockPosition(), objective)) {
+                return false;
+            }
+            return objective.item() == null || context.matchesItem(objective, event.offer().getResult());
+        }
+    }
+
+    private static final class GiftObjectiveType extends CounterEventObjectiveType {
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return "gift";
+        }
+
+        @Override
+        public Set<QuestObjectiveEventKind> eventKinds(QuestDefinition.Objective objective) {
+            return Set.of(QuestObjectiveEventKind.GIFT);
+        }
+
+        @Override
+        public boolean matchesEvent(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective,
+                QuestObjectiveEvent event) {
+            ItemStack stack = event.itemStack();
+            if (stack.isEmpty() || event.giftReaction() == null) {
+                return false;
+            }
+            if (!objective.giftReactions().isEmpty()
+                    && !objective.giftReactions().contains(event.giftReaction().name().toLowerCase(Locale.ROOT))) {
+                return false;
+            }
+            return objective.item() == null || context.matchesItem(objective, stack);
+        }
+    }
+
+    private static final class ReputationObjectiveType implements QuestObjectiveType<Void> {
+        @Override
+        public QuestObjectiveResult evaluate(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective) {
+            int reputation = context == null ? 0 : context.reputationValue(objective);
+            boolean complete = matchesReputation(objective, reputation);
+            return complete
+                    ? QuestObjectiveResult.complete("reputation requirement met")
+                    : QuestObjectiveResult.incomplete(0.0F, "reputation requirement unmet");
+        }
+
+        @Override
+        public Optional<String> validationError(QuestDefinition.Objective objective) {
+            return objective.reputationLevels().isEmpty()
+                    && objective.minReputation() == null
+                    && objective.maxReputation() == null
+                    ? Optional.of("reputation objective must define level, levels, min_reputation, max_reputation, min, or max.")
+                    : Optional.empty();
+        }
+
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return "reputation";
+        }
+
+        @Override
+        public Set<QuestObjectiveEventKind> eventKinds(QuestDefinition.Objective objective) {
+            return Set.of(QuestObjectiveEventKind.REPUTATION);
+        }
+
+        @Override
+        public boolean matchesEvent(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective,
+                QuestObjectiveEvent event) {
+            if (event.villager() != null) {
+                if (context == null
+                        || context.progress() == null
+                        || context.progress().startedVillagerId() == null
+                        || !event.villager().getUUID().equals(context.progress().startedVillagerId())) {
+                    return false;
+                }
+            }
+            int reputation = event.reputationValue() == null
+                    ? context == null ? 0 : context.reputationValue(objective)
+                    : event.reputationValue();
+            return matchesReputation(objective, reputation);
+        }
+
+        private static boolean matchesReputation(QuestDefinition.Objective objective, int reputation) {
+            VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(reputation);
+            if (!objective.reputationLevels().isEmpty() && !objective.reputationLevels().contains(reputationLevel)) {
+                return false;
+            }
+            if (objective.minReputation() != null && reputation < objective.minReputation()) {
+                return false;
+            }
+            return objective.maxReputation() == null || reputation <= objective.maxReputation();
+        }
+    }
+
+    private static boolean matchesDimensionAndLocation(
+            QuestObjectiveEvaluationContext context,
+            BlockPos pos,
+            QuestDefinition.Objective objective) {
+        if (context == null || context.level() == null || pos == null) {
+            return false;
+        }
+        if (objective.dimension() != null && context.level().dimension() != objective.dimension()) {
+            return false;
+        }
+        if (objective.location() == null) {
+            return true;
+        }
+        double radius = Math.max(1, objective.radius());
+        return pos.distSqr(objective.location()) <= radius * radius;
     }
 
     private static final class StructureVisitObjectiveType implements QuestObjectiveType<Void> {

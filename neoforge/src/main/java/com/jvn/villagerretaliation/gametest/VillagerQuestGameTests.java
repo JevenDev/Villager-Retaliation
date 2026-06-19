@@ -13,11 +13,14 @@ import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
+import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestObjectiveEvaluationContext;
+import com.jvn.villagerretaliation.quest.QuestObjectiveEvent;
+import com.jvn.villagerretaliation.quest.QuestObjectiveEventTrace;
 import com.jvn.villagerretaliation.quest.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.QuestObjectiveRequirement;
 import com.jvn.villagerretaliation.quest.QuestObjectiveResult;
@@ -69,6 +72,8 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -453,7 +458,9 @@ public final class VillagerQuestGameTests {
                                 helper.getLevel(),
                                 null,
                                 null,
-                                objective -> 3),
+                                objective -> 3,
+                                (objective, stack) -> true,
+                                objective -> 0),
                         itemObjective)
                 .orElseThrow(() -> new GameTestAssertException("item objective registry did not evaluate"));
         helper.assertTrue(result.complete(), "item objective registry did not complete at required count");
@@ -470,6 +477,36 @@ public final class VillagerQuestGameTests {
                 QuestObjectiveRegistry.validationError(invalidItem).orElse(""),
                 "item_check objective must define item.",
                 "item objective validation message");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void objectiveRegistryTracesEventObjectiveMatches(GameTestHelper helper) {
+        QuestDefinition.Objective giftObjective = registryGiftObjective(Set.of("loved"));
+        QuestObjectiveEvaluationContext context = new QuestObjectiveEvaluationContext(
+                null,
+                null,
+                helper.getLevel(),
+                null,
+                null,
+                objective -> 0,
+                (objective, stack) -> true,
+                objective -> 0);
+
+        QuestObjectiveEventTrace unrelated = QuestObjectiveRegistry.traceEventMatches(
+                context,
+                List.of(giftObjective),
+                QuestObjectiveEvent.reputation(0));
+        helper.assertValueEqual(unrelated.evaluatedObjectives(), 0, "unrelated event evaluated objective count");
+        helper.assertValueEqual(unrelated.matchedObjectives(), 0, "unrelated event matched objective count");
+
+        QuestObjectiveEventTrace related = QuestObjectiveRegistry.traceEventMatches(
+                context,
+                List.of(giftObjective),
+                QuestObjectiveEvent.gift(new ItemStack(Items.EMERALD), VillagerGiftPreferences.GiftReaction.LOVED));
+        helper.assertValueEqual(related.evaluatedObjectives(), 1, "related event evaluated objective count");
+        helper.assertValueEqual(related.matchedObjectives(), 1, "related event matched objective count");
 
         helper.succeed();
     }
@@ -1067,6 +1104,42 @@ public final class VillagerQuestGameTests {
                 null,
                 count,
                 consume,
+                QuestDefinition.ItemRequirements.EMPTY,
+                List.of(),
+                QuestDefinition.ObjectiveTracker.EMPTY);
+    }
+
+    private static QuestDefinition.Objective registryGiftObjective(Set<String> giftReactions) {
+        return new QuestDefinition.Objective(
+                "registry_gift",
+                QuestDefinition.ObjectiveType.GIFT,
+                false,
+                null,
+                Level.OVERWORLD,
+                null,
+                8,
+                List.of(),
+                16,
+                8,
+                null,
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                giftReactions,
+                Set.of(),
+                null,
+                null,
+                QuestFactScope.PLAYER,
+                null,
+                Set.of(),
+                "",
+                Set.of(),
+                null,
+                null,
+                1,
+                false,
                 QuestDefinition.ItemRequirements.EMPTY,
                 List.of(),
                 QuestDefinition.ObjectiveTracker.EMPTY);

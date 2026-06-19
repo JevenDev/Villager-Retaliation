@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
@@ -79,6 +80,7 @@ public final class VillagerReputationManager {
         addVanillaGossip(villager, player.getUUID(), GossipType.TRADING, VillagerRetaliationConfig.TRADE_REPUTATION_GAIN.get());
         handleTierChange(level, villager, player, previousLevel, newLevel);
         VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+        notifyQuestReputationChanged(level, villager, player, entry.reputation());
         syncToTrackingPlayer(level, villager, player.getUUID());
     }
 
@@ -184,6 +186,7 @@ public final class VillagerReputationManager {
         if (player != null) {
             handleTierChange(level, villager, player, previousLevel, newLevel);
             VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+            notifyQuestReputationChanged(level, villager, player, entry.reputation());
         }
         syncToTrackingPlayer(level, villager, playerId);
         return true;
@@ -255,8 +258,19 @@ public final class VillagerReputationManager {
         if (player != null) {
             handleTierChange(level, villager, player, previousLevel, newLevel);
             VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+            notifyQuestReputationChanged(level, villager, player, entry.reputation());
         }
         syncToTrackingPlayer(level, villager, playerId);
+    }
+
+    private static void notifyQuestReputationChanged(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            int reputation) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            VillagerQuestService.onReputationChanged(level, serverPlayer, villager, reputation);
+        }
     }
 
     private static void handleTierChange(ServerLevel level, AbstractVillager villager, Player player, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {

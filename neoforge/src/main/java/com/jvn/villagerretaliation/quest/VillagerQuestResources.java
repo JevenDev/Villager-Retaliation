@@ -63,12 +63,7 @@ public final class VillagerQuestResources {
                 null,
                 new CompiledQuestCatalog(Map.of()),
                 Map.of(),
-                Set.of(),
-                Set.of(),
-                Set.of(),
-                Set.of(),
-                Set.of(),
-                Set.of(),
+                Map.of(),
                 Set.of(),
                 Map.of(),
                 Map.of(),
@@ -106,19 +101,27 @@ public final class VillagerQuestResources {
     }
 
     public static boolean hasMobKillObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).mobKillQuestIds().contains(id);
+        return id != null && loadCache(server).objectiveEventQuestIds()
+                .getOrDefault(QuestObjectiveEventKind.MOB_KILL, Set.of())
+                .contains(id);
     }
 
     public static boolean hasBlockBreakObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).blockBreakQuestIds().contains(id);
+        return id != null && loadCache(server).objectiveEventQuestIds()
+                .getOrDefault(QuestObjectiveEventKind.BLOCK_BREAK, Set.of())
+                .contains(id);
     }
 
     public static boolean hasBlockPlaceObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).blockPlaceQuestIds().contains(id);
+        return id != null && loadCache(server).objectiveEventQuestIds()
+                .getOrDefault(QuestObjectiveEventKind.BLOCK_PLACE, Set.of())
+                .contains(id);
     }
 
     public static boolean hasBlockInteractObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).blockInteractQuestIds().contains(id);
+        return id != null && loadCache(server).objectiveEventQuestIds()
+                .getOrDefault(QuestObjectiveEventKind.BLOCK_INTERACT, Set.of())
+                .contains(id);
     }
 
     public static Set<ResourceLocation> memoryEventQuestIds(MinecraftServer server, ResourceLocation memoryTag) {
@@ -133,7 +136,18 @@ public final class VillagerQuestResources {
     }
 
     public static boolean hasGiftObjectives(MinecraftServer server, ResourceLocation id) {
-        return id != null && loadCache(server).giftQuestIds().contains(id);
+        return id != null && loadCache(server).objectiveEventQuestIds()
+                .getOrDefault(QuestObjectiveEventKind.GIFT, Set.of())
+                .contains(id);
+    }
+
+    public static Set<ResourceLocation> questIdsForObjectiveEvent(
+            MinecraftServer server,
+            QuestObjectiveEventKind kind) {
+        if (kind == null) {
+            return Set.of();
+        }
+        return loadCache(server).objectiveEventQuestIds().getOrDefault(kind, Set.of());
     }
 
     public static Set<ResourceLocation> questIdsWithObjective(
@@ -141,14 +155,16 @@ public final class VillagerQuestResources {
             QuestDefinition.ObjectiveType type) {
         CachedQuests cache = loadCache(server);
         return switch (type) {
-            case MOB_KILL -> cache.mobKillQuestIds();
-            case BLOCK_BREAK -> cache.blockBreakQuestIds();
-            case BLOCK_PLACE -> cache.blockPlaceQuestIds();
-            case BLOCK_INTERACT -> cache.blockInteractQuestIds();
+            case MOB_KILL -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.MOB_KILL, Set.of());
+            case BLOCK_BREAK -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.BLOCK_BREAK, Set.of());
+            case BLOCK_PLACE -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.BLOCK_PLACE, Set.of());
+            case BLOCK_INTERACT -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.BLOCK_INTERACT, Set.of());
             case FACT -> cache.factQuestIds();
-            case TRADE -> cache.tradeQuestIds();
-            case GIFT -> cache.giftQuestIds();
-            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, MEMORY_EVENT, REPUTATION, CHOICE, CONDITION -> Set.of();
+            case TRADE -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.TRADE, Set.of());
+            case GIFT -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.GIFT, Set.of());
+            case MEMORY_EVENT -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.MEMORY_EVENT, Set.of());
+            case REPUTATION -> cache.objectiveEventQuestIds().getOrDefault(QuestObjectiveEventKind.REPUTATION, Set.of());
+            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK, CHOICE, CONDITION -> Set.of();
         };
     }
 
@@ -187,37 +203,14 @@ public final class VillagerQuestResources {
                     server,
                     catalog.compiledCatalog(),
                     quests,
-                    mobKillQuestIds(quests),
-                    blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_BREAK),
-                    blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_PLACE),
-                    blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_INTERACT),
+                    objectiveEventQuestIds(quests),
                     objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
-                    objectiveQuestIds(quests, QuestDefinition.ObjectiveType.TRADE),
-                    objectiveQuestIds(quests, QuestDefinition.ObjectiveType.GIFT),
                     memoryEventQuestIds(quests),
                     exclusiveGroupQuestIds(quests),
                     triggerEventQuestIds(quests));
             cachedQuests = loaded;
             return loaded;
         }
-    }
-
-    private static Set<ResourceLocation> mobKillQuestIds(Map<ResourceLocation, QuestDefinition> quests) {
-        Set<ResourceLocation> ids = new LinkedHashSet<>();
-        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
-            boolean hasMobKillObjective = entry.getValue().objectives().stream()
-                    .anyMatch(objective -> objective.type() == QuestDefinition.ObjectiveType.MOB_KILL);
-            if (hasMobKillObjective) {
-                ids.add(entry.getKey());
-            }
-        }
-        return Set.copyOf(ids);
-    }
-
-    private static Set<ResourceLocation> blockObjectiveQuestIds(
-            Map<ResourceLocation, QuestDefinition> quests,
-            QuestDefinition.ObjectiveType type) {
-        return objectiveQuestIds(quests, type);
     }
 
     private static Set<ResourceLocation> objectiveQuestIds(
@@ -234,14 +227,31 @@ public final class VillagerQuestResources {
         return Set.copyOf(ids);
     }
 
+    private static Map<QuestObjectiveEventKind, Set<ResourceLocation>> objectiveEventQuestIds(
+            Map<ResourceLocation, QuestDefinition> quests) {
+        Map<QuestObjectiveEventKind, Set<ResourceLocation>> idsByEvent = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
+            for (QuestDefinition.Objective objective : entry.getValue().objectives()) {
+                for (QuestObjectiveEventKind eventKind : QuestObjectiveRegistry.eventKinds(objective)) {
+                    idsByEvent.computeIfAbsent(eventKind, ignored -> new LinkedHashSet<>()).add(entry.getKey());
+                }
+            }
+        }
+        Map<QuestObjectiveEventKind, Set<ResourceLocation>> frozen = new LinkedHashMap<>();
+        for (Map.Entry<QuestObjectiveEventKind, Set<ResourceLocation>> entry : idsByEvent.entrySet()) {
+            frozen.put(entry.getKey(), Set.copyOf(entry.getValue()));
+        }
+        return Map.copyOf(frozen);
+    }
+
     private static Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds(Map<ResourceLocation, QuestDefinition> quests) {
         Map<ResourceLocation, Set<ResourceLocation>> idsByMemoryTag = new LinkedHashMap<>();
         for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
             for (QuestDefinition.Objective objective : entry.getValue().objectives()) {
-                if (objective.type() != QuestDefinition.ObjectiveType.MEMORY_EVENT) {
+                if (!QuestObjectiveRegistry.eventKinds(objective).contains(QuestObjectiveEventKind.MEMORY_EVENT)) {
                     continue;
                 }
-                for (ResourceLocation memoryTag : objective.memoryTags()) {
+                for (ResourceLocation memoryTag : QuestObjectiveRegistry.eventSubscriptionKeys(objective)) {
                     idsByMemoryTag.computeIfAbsent(memoryTag, ignored -> new LinkedHashSet<>()).add(entry.getKey());
                 }
             }
@@ -551,27 +561,8 @@ public final class VillagerQuestResources {
         ReputationObjective reputationObjective = readReputationObjective(location, context, entry);
         FactObjective factObjective = readFactObjective(location, context, entry, defaultQuestId);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
-        if (type == QuestDefinition.ObjectiveType.MOB_KILL && entitySelectors.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "mob_kill objective must define entity, entities, entity_tag, or entity_tags.");
-            return Optional.empty();
-        }
-        if ((type == QuestDefinition.ObjectiveType.BLOCK_BREAK
-                || type == QuestDefinition.ObjectiveType.BLOCK_PLACE
-                || type == QuestDefinition.ObjectiveType.BLOCK_INTERACT)
-                && blockSelectors.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, type.name().toLowerCase(Locale.ROOT) + " objective must define block, blocks, block_tag, or block_tags.");
-            return Optional.empty();
-        }
-        if (type == QuestDefinition.ObjectiveType.MEMORY_EVENT && memoryEventSelectors.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "memory_event objective must define memory, memory_event, memory_tags, event, or events.");
-            return Optional.empty();
-        }
         if (type == QuestDefinition.ObjectiveType.FACT && factObjective.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective must define tag, tags, key, variable, counter, stage, or stages.");
-            return Optional.empty();
-        }
-        if (type == QuestDefinition.ObjectiveType.REPUTATION && reputationObjective.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "reputation objective must define level, levels, min_reputation, max_reputation, min, or max.");
             return Optional.empty();
         }
         if (type == QuestDefinition.ObjectiveType.CHOICE && factObjective.isEmpty()) {
@@ -1738,13 +1729,8 @@ public final class VillagerQuestResources {
             MinecraftServer server,
             CompiledQuestCatalog compiledCatalog,
             Map<ResourceLocation, QuestDefinition> quests,
-            Set<ResourceLocation> mobKillQuestIds,
-            Set<ResourceLocation> blockBreakQuestIds,
-            Set<ResourceLocation> blockPlaceQuestIds,
-            Set<ResourceLocation> blockInteractQuestIds,
+            Map<QuestObjectiveEventKind, Set<ResourceLocation>> objectiveEventQuestIds,
             Set<ResourceLocation> factQuestIds,
-            Set<ResourceLocation> tradeQuestIds,
-            Set<ResourceLocation> giftQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
             Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds) {
