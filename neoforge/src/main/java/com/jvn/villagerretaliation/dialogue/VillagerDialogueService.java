@@ -506,7 +506,7 @@ public final class VillagerDialogueService {
                 && context.shareableStory().map(report -> !line.storyTargetIds().contains(report.targetId())).orElse(true)) {
             return "story target";
         }
-        if (!line.conditions().isEmpty() && !line.conditions().stream().allMatch(condition -> condition.matches(context))) {
+        if (!line.conditions().isEmpty() && !DialogueCondition.matchesAll(context, line.conditions())) {
             return "conditions";
         }
         if (line.weight() <= 0) {

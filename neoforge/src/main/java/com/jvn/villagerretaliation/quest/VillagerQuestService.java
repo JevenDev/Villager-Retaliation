@@ -393,12 +393,7 @@ public final class VillagerQuestService {
     }
 
     private static boolean stageBranchConditionsMet(DialogueContext context, QuestDefinition.StageBranch branch) {
-        for (DialogueCondition condition : branch.conditions()) {
-            if (!condition.matches(context)) {
-                return false;
-            }
-        }
-        return true;
+        return DialogueCondition.matchesAll(context, branch.conditions());
     }
 
     private static Optional<QuestDefinition.StageBranchBlocker> matchingStageBranchBlocker(
@@ -413,12 +408,7 @@ public final class VillagerQuestService {
     }
 
     private static boolean conditionsMatch(DialogueContext context, List<DialogueCondition> conditions) {
-        for (DialogueCondition condition : conditions) {
-            if (!condition.matches(context)) {
-                return false;
-            }
-        }
-        return true;
+        return DialogueCondition.matchesAll(context, conditions);
     }
 
     private static String stageBranchLabel(
@@ -1003,12 +993,7 @@ public final class VillagerQuestService {
                 return false;
             }
         }
-        for (DialogueCondition condition : predicate.conditions()) {
-            if (!condition.matches(context)) {
-                return false;
-            }
-        }
-        return true;
+        return DialogueCondition.matchesAll(context, predicate.conditions());
     }
 
     private static boolean runStageActions(
@@ -1555,12 +1540,7 @@ public final class VillagerQuestService {
         if (context == null) {
             return false;
         }
-        for (DialogueCondition condition : activeState.conditions()) {
-            if (!condition.matches(context)) {
-                return false;
-            }
-        }
-        return true;
+        return DialogueCondition.matchesAll(context, activeState.conditions());
     }
 
     private static ConditionMatch activeConditionsState(
@@ -2246,7 +2226,7 @@ public final class VillagerQuestService {
             return ConditionMatch.UNMET;
         }
         if (context != null) {
-            return expiration.conditions().stream().allMatch(condition -> condition.matches(context))
+            return DialogueCondition.matchesAll(context, expiration.conditions())
                     ? ConditionMatch.MET
                     : ConditionMatch.UNMET;
         }
@@ -2836,7 +2816,7 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
         if (context != null) {
-            return objective.conditions().stream().allMatch(condition -> condition.matches(context))
+            return DialogueCondition.matchesAll(context, objective.conditions())
                     ? ConditionMatch.MET
                     : ConditionMatch.UNMET;
         }
@@ -3428,12 +3408,7 @@ public final class VillagerQuestService {
                 return false;
             }
         }
-        for (DialogueCondition condition : trigger.conditions()) {
-            if (!condition.matches(context)) {
-                return false;
-            }
-        }
-        return true;
+        return DialogueCondition.matchesAll(context, trigger.conditions());
     }
 
     private static boolean runQuestTriggerActions(

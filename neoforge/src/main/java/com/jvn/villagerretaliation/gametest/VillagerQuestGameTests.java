@@ -1,9 +1,11 @@
 package com.jvn.villagerretaliation.gametest;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
@@ -358,6 +360,68 @@ public final class VillagerQuestGameTests {
                 QuestFactScope.bySerializedName("quest_giver", QuestFactScope.PLAYER),
                 QuestFactScope.VILLAGER,
                 "quest_giver fact scope alias");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void conditionRegistryNormalizesAliasesAndCapabilities(GameTestHelper helper) {
+        helper.assertValueEqual(DialogueCondition.canonicalTypeId("all_of"), "all", "all_of condition alias");
+        helper.assertValueEqual(DialogueCondition.canonicalTypeId("quest_stage"), "quest_fact", "quest_stage condition alias");
+        helper.assertTrue(
+                DialogueCondition.descriptors().stream()
+                        .anyMatch(descriptor -> descriptor.id().equals("quest_fact")
+                                && descriptor.aliases().contains("stage")),
+                "quest_fact descriptor did not expose legacy stage alias");
+
+        JsonObject root = new JsonObject();
+        JsonArray conditions = new JsonArray();
+        JsonObject all = new JsonObject();
+        all.addProperty("type", "all_of");
+        JsonArray children = new JsonArray();
+        JsonObject stage = new JsonObject();
+        stage.addProperty("type", "quest_stage");
+        stage.addProperty("stage", "started");
+        children.add(stage);
+        all.add("conditions", children);
+        conditions.add(all);
+        root.add("conditions", conditions);
+
+        List<DialogueCondition> parsed = DialogueCondition.readList(
+                VillagerRetaliation.id("test/condition_registry"),
+                "condition registry",
+                root,
+                VillagerRetaliation.id("choose_the_horizon"));
+        helper.assertValueEqual(parsed.size(), 1, "parsed registry condition count");
+        DialogueCondition condition = parsed.getFirst();
+        helper.assertValueEqual(DialogueCondition.canonicalTypeId(condition), "all", "parsed canonical condition id");
+        helper.assertTrue(
+                DialogueCondition.capabilities(condition).contains(DialogueCondition.ConditionCapability.WORLD_KNOWN),
+                "compound condition did not inherit child capabilities");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void conditionTraceReportsFirstUnknownCondition(GameTestHelper helper) {
+        DialogueCondition condition = new DialogueCondition.QuestFact(
+                QuestFactScope.QUEST,
+                VillagerRetaliation.id("choose_the_horizon"),
+                Set.of(),
+                "stage",
+                Set.of("started"),
+                null,
+                null);
+
+        DialogueCondition.ConditionEvaluationTrace trace = DialogueCondition.trace(null, condition);
+        helper.assertValueEqual(
+                trace.outcome(),
+                DialogueCondition.ConditionOutcome.UNKNOWN,
+                "trace outcome without live context");
+        DialogueCondition.ConditionEvaluationTrace failed = trace.firstUnmatched()
+                .orElseThrow(() -> new GameTestAssertException("trace did not report first unmatched condition"));
+        helper.assertValueEqual(failed.canonicalTypeId(), "quest_fact", "first unmatched condition type");
+        helper.assertValueEqual(failed.message(), "live context unavailable", "first unmatched condition message");
 
         helper.succeed();
     }

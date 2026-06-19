@@ -69,10 +69,8 @@ public final class VillagerEventTriggerService {
             if (context == null) {
                 return;
             }
-            for (DialogueCondition condition : definition.conditions()) {
-                if (!condition.matches(context)) {
-                    return;
-                }
+            if (!DialogueCondition.matchesAll(context, definition.conditions())) {
+                return;
             }
         }
 

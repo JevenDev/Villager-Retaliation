@@ -272,7 +272,7 @@ public record DialogueOptionDefinition(
         if (this.requiresKnownWidowedPartner && !context.hasKnownWidowedPartner()) {
             return false;
         }
-        if (!this.conditions.stream().allMatch(condition -> condition.matches(context))) {
+        if (!DialogueCondition.matchesAll(context, this.conditions)) {
             return false;
         }
         if (this.requiresActiveSpecialOrders && !context.hasActiveSpecialOrders()) {

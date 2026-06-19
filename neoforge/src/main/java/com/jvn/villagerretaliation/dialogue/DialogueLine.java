@@ -360,7 +360,7 @@ public record DialogueLine(
         if (this.requiresKnownWidowedPartner && !context.hasKnownWidowedPartner()) {
             return false;
         }
-        if (!this.conditions.stream().allMatch(condition -> condition.matches(context))) {
+        if (!DialogueCondition.matchesAll(context, this.conditions)) {
             return false;
         }
         return this.weight > 0;

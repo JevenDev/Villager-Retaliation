@@ -120,12 +120,7 @@ public record QuestDefinition(
                     return false;
                 }
             }
-            for (DialogueCondition condition : this.conditions) {
-                if (!condition.matches(context)) {
-                    return false;
-                }
-            }
-            return true;
+            return DialogueCondition.matchesAll(context, this.conditions);
         }
     }
 

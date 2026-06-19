@@ -1334,7 +1334,7 @@ public final class ForcedDialogueService {
                 || !option.socialAttributeCondition().matches(context))) {
             return false;
         }
-        return option.conditions().stream().allMatch(condition -> condition.matches(context));
+        return DialogueCondition.matchesAll(context, option.conditions());
     }
 
     private static ForcedDialogueDefinition tradeRefreshDefinition(String line, ForcedDialogueDefinition optionDefinition) {

@@ -30,7 +30,7 @@ public record DialogueTreeDefinition(
     }
 
     public boolean matches(DialogueContext context) {
-        return this.conditions.stream().allMatch(condition -> condition.matches(context));
+        return DialogueCondition.matchesAll(context, this.conditions);
     }
 
     public Optional<Node> node(String id) {
@@ -86,7 +86,7 @@ public record DialogueTreeDefinition(
             if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
                 return false;
             }
-            if (!this.conditions.stream().allMatch(condition -> condition.matches(context))) {
+            if (!DialogueCondition.matchesAll(context, this.conditions)) {
                 return false;
             }
             return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
@@ -123,7 +123,7 @@ public record DialogueTreeDefinition(
         }
 
         public boolean matches(DialogueContext context) {
-            return this.conditions.stream().allMatch(condition -> condition.matches(context));
+            return DialogueCondition.matchesAll(context, this.conditions);
         }
 
         public String selectLine(net.minecraft.util.RandomSource random) {
@@ -158,7 +158,7 @@ public record DialogueTreeDefinition(
         }
 
         public boolean matches(DialogueContext context) {
-            return !this.label.isBlank() && this.conditions.stream().allMatch(condition -> condition.matches(context));
+            return !this.label.isBlank() && DialogueCondition.matchesAll(context, this.conditions);
         }
 
         public DialogueOptionDefinition toOption(ResourceLocation treeId) {

@@ -17,9 +17,12 @@ import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -35,6 +38,39 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     boolean matches(DialogueContext context);
 
     int specificityScore();
+
+    static boolean matchesAll(DialogueContext context, List<DialogueCondition> conditions) {
+        return ConditionRegistry.matchesAll(context, conditions);
+    }
+
+    static ConditionEvaluationTrace trace(DialogueContext context, DialogueCondition condition) {
+        return ConditionRegistry.trace(context, condition);
+    }
+
+    static Optional<ConditionEvaluationTrace> firstUnmatched(
+            DialogueContext context,
+            List<DialogueCondition> conditions) {
+        return ConditionRegistry.traceAll(context, conditions).stream()
+                .map(ConditionEvaluationTrace::firstUnmatched)
+                .flatMap(Optional::stream)
+                .findFirst();
+    }
+
+    static List<ConditionTypeDescriptor> descriptors() {
+        return ConditionRegistry.descriptors();
+    }
+
+    static String canonicalTypeId(String type) {
+        return ConditionRegistry.canonicalTypeId(type);
+    }
+
+    static String canonicalTypeId(DialogueCondition condition) {
+        return ConditionRegistry.canonicalTypeId(condition);
+    }
+
+    static Set<ConditionCapability> capabilities(DialogueCondition condition) {
+        return ConditionRegistry.capabilities(condition);
+    }
 
     static List<DialogueCondition> readList(ResourceLocation location, String context, JsonObject entry) {
         return readList(location, context, entry, null);
@@ -102,30 +138,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         }
 
         JsonObject condition = element.getAsJsonObject();
-        String type = readString(condition, "type").toLowerCase(Locale.ROOT);
-        return switch (type) {
-            case "all", "all_of", "and" -> readChildren(location, context, condition, defaultQuestId).map(AllOf::new);
-            case "any", "any_of", "or" -> readChildren(location, context, condition, defaultQuestId).map(AnyOf::new);
-            case "not" -> read(location, context + ".condition", condition.get("condition"), defaultQuestId).map(Not::new);
-            case "reputation" -> Optional.of(readReputation(condition));
-            case "memory" -> readMemory(location, context, condition);
-            case "family" -> Optional.of(readFamily(condition));
-            case "relationship" -> Optional.of(readRelationship(condition));
-            case "recruitment_memory" -> Optional.of(readRecruitmentMemory(condition));
-            case "villager_age" -> Optional.of(readVillagerAge(condition));
-            case "social_attribute", "attribute", "stat" -> readSocialAttribute(location, context, condition);
-            case "skill" -> readSkill(location, context, condition);
-            case "villager_level", "trade_level" -> readVillagerLevel(location, context, condition);
-            case "quest" -> readQuest(location, context, condition, defaultQuestId);
-            case "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "fact", "stage" -> readQuestFact(location, context, condition, defaultQuestId);
-            case "mood", "villager_mood" -> readMood(location, context, condition);
-            case "weather" -> readWeather(condition);
-            case "time", "time_of_day" -> readTime(condition);
-            default -> {
-                warnInvalid(location, context, "unknown condition type \"" + type + "\".");
-                yield Optional.empty();
-            }
-        };
+        return ConditionRegistry.read(location, context, condition, defaultQuestId);
     }
 
     private static Optional<List<DialogueCondition>> readChildren(
@@ -642,10 +655,407 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         }
     }
 
+    enum ConditionCapability {
+        PLAYER_LIVE,
+        PROVIDER_LIVE,
+        PROVIDER_SNAPSHOT,
+        VILLAGE_KNOWN,
+        WORLD_KNOWN
+    }
+
+    enum ConditionOutcome {
+        MATCHED,
+        UNMET,
+        UNKNOWN
+    }
+
+    record ConditionTypeDescriptor(
+            String id,
+            Set<String> aliases,
+            Set<ConditionCapability> capabilities,
+            Class<? extends DialogueCondition> implementationType
+    ) {
+        public ConditionTypeDescriptor {
+            id = normalizeType(id);
+            aliases = aliases == null ? Set.of() : Set.copyOf(aliases);
+            capabilities = capabilities == null ? Set.of() : Set.copyOf(capabilities);
+        }
+    }
+
+    record ConditionEvaluationTrace(
+            String canonicalTypeId,
+            ConditionOutcome outcome,
+            String message,
+            List<ConditionEvaluationTrace> children
+    ) {
+        public ConditionEvaluationTrace {
+            canonicalTypeId = canonicalTypeId == null || canonicalTypeId.isBlank() ? "unknown" : canonicalTypeId;
+            outcome = outcome == null ? ConditionOutcome.UNKNOWN : outcome;
+            message = message == null ? "" : message;
+            children = children == null ? List.of() : List.copyOf(children);
+        }
+
+        public boolean matched() {
+            return this.outcome == ConditionOutcome.MATCHED;
+        }
+
+        public Optional<ConditionEvaluationTrace> firstUnmatched() {
+            if (this.outcome != ConditionOutcome.MATCHED && this.children.isEmpty()) {
+                return Optional.of(this);
+            }
+            for (ConditionEvaluationTrace child : this.children) {
+                Optional<ConditionEvaluationTrace> failed = child.firstUnmatched();
+                if (failed.isPresent()) {
+                    return failed;
+                }
+            }
+            return this.outcome == ConditionOutcome.MATCHED ? Optional.empty() : Optional.of(this);
+        }
+    }
+
+    final class ConditionRegistry {
+        private static final List<ConditionTypeRegistration> REGISTRATIONS = List.of(
+                register(
+                        "all",
+                        AllOf.class,
+                        aliases("all_of", "and"),
+                        Set.of(),
+                        (location, context, condition, defaultQuestId) ->
+                                readChildren(location, context, condition, defaultQuestId).map(AllOf::new)),
+                register(
+                        "any",
+                        AnyOf.class,
+                        aliases("any_of", "or"),
+                        Set.of(),
+                        (location, context, condition, defaultQuestId) ->
+                                readChildren(location, context, condition, defaultQuestId).map(AnyOf::new)),
+                register(
+                        "not",
+                        Not.class,
+                        Set.of(),
+                        Set.of(),
+                        (location, context, condition, defaultQuestId) ->
+                                DialogueCondition.read(location, context + ".condition", condition.get("condition"), defaultQuestId).map(Not::new)),
+                register(
+                        "reputation",
+                        Reputation.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readReputation(condition))),
+                register(
+                        "memory",
+                        Memory.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE,
+                                ConditionCapability.PROVIDER_SNAPSHOT, ConditionCapability.VILLAGE_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readMemory(location, context, condition)),
+                register(
+                        "family",
+                        Family.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readFamily(condition))),
+                register(
+                        "relationship",
+                        Relationship.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readRelationship(condition))),
+                register(
+                        "recruitment_memory",
+                        RecruitmentMemory.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readRecruitmentMemory(condition))),
+                register(
+                        "villager_age",
+                        VillagerAge.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> Optional.of(readVillagerAge(condition))),
+                register(
+                        "social_attribute",
+                        SocialAttribute.class,
+                        aliases("attribute", "stat"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> readSocialAttribute(location, context, condition)),
+                register(
+                        "skill",
+                        Skill.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> readSkill(location, context, condition)),
+                register(
+                        "villager_level",
+                        VillagerLevel.class,
+                        aliases("trade_level"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> readVillagerLevel(location, context, condition)),
+                register(
+                        "quest",
+                        Quest.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        DialogueCondition::readQuest),
+                register(
+                        "quest_fact",
+                        QuestFact.class,
+                        aliases("quest_tag", "quest_variable", "quest_counter", "quest_stage", "fact", "stage"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN,
+                                ConditionCapability.PROVIDER_SNAPSHOT, ConditionCapability.VILLAGE_KNOWN),
+                        DialogueCondition::readQuestFact),
+                register(
+                        "mood",
+                        Mood.class,
+                        aliases("villager_mood"),
+                        capabilities(ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> readMood(location, context, condition)),
+                register(
+                        "weather",
+                        Weather.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readWeather(condition)),
+                register(
+                        "time",
+                        Time.class,
+                        aliases("time_of_day"),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, defaultQuestId) -> readTime(condition))
+        );
+        private static final Map<String, ConditionTypeRegistration> BY_ALIAS = registrationsByAlias();
+        private static final Map<Class<? extends DialogueCondition>, ConditionTypeRegistration> BY_IMPLEMENTATION =
+                registrationsByImplementation();
+
+        private ConditionRegistry() {
+        }
+
+        static Optional<DialogueCondition> read(
+                ResourceLocation location,
+                String context,
+                JsonObject condition,
+                ResourceLocation defaultQuestId) {
+            String type = normalizeType(readString(condition, "type"));
+            ConditionTypeRegistration registration = BY_ALIAS.get(type);
+            if (registration == null) {
+                warnInvalid(location, context, "unknown condition type \"" + type + "\".");
+                return Optional.empty();
+            }
+            return registration.reader().read(location, context, condition, defaultQuestId);
+        }
+
+        static boolean matchesAll(DialogueContext context, List<DialogueCondition> conditions) {
+            if (conditions == null || conditions.isEmpty()) {
+                return true;
+            }
+            if (context == null) {
+                return false;
+            }
+            for (DialogueCondition condition : conditions) {
+                if (condition == null || !condition.matches(context)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        static ConditionEvaluationTrace trace(DialogueContext context, DialogueCondition condition) {
+            if (condition == null) {
+                return new ConditionEvaluationTrace("unknown", ConditionOutcome.UNKNOWN, "condition is missing", List.of());
+            }
+            if (condition instanceof AllOf allOf) {
+                List<ConditionEvaluationTrace> children = traceAll(context, allOf.conditions());
+                return new ConditionEvaluationTrace("all", allOutcome(children), allMessage(children), children);
+            }
+            if (condition instanceof AnyOf anyOf) {
+                List<ConditionEvaluationTrace> children = traceAll(context, anyOf.conditions());
+                return new ConditionEvaluationTrace("any", anyOutcome(children), anyMessage(children), children);
+            }
+            if (condition instanceof Not not) {
+                ConditionEvaluationTrace child = trace(context, not.condition());
+                ConditionOutcome outcome = switch (child.outcome()) {
+                    case MATCHED -> ConditionOutcome.UNMET;
+                    case UNMET -> ConditionOutcome.MATCHED;
+                    case UNKNOWN -> ConditionOutcome.UNKNOWN;
+                };
+                return new ConditionEvaluationTrace("not", outcome, "negated " + child.outcome().name().toLowerCase(Locale.ROOT), List.of(child));
+            }
+            String id = canonicalTypeId(condition);
+            if (context == null) {
+                return new ConditionEvaluationTrace(id, ConditionOutcome.UNKNOWN, "live context unavailable", List.of());
+            }
+            boolean matched = condition.matches(context);
+            return new ConditionEvaluationTrace(
+                    id,
+                    matched ? ConditionOutcome.MATCHED : ConditionOutcome.UNMET,
+                    matched ? "matched" : "condition returned false",
+                    List.of());
+        }
+
+        static List<ConditionEvaluationTrace> traceAll(DialogueContext context, List<DialogueCondition> conditions) {
+            if (conditions == null || conditions.isEmpty()) {
+                return List.of();
+            }
+            List<ConditionEvaluationTrace> traces = new ArrayList<>();
+            for (DialogueCondition condition : conditions) {
+                traces.add(trace(context, condition));
+            }
+            return List.copyOf(traces);
+        }
+
+        static List<ConditionTypeDescriptor> descriptors() {
+            return REGISTRATIONS.stream()
+                    .map(ConditionTypeRegistration::descriptor)
+                    .toList();
+        }
+
+        static String canonicalTypeId(String type) {
+            String normalized = normalizeType(type);
+            ConditionTypeRegistration registration = BY_ALIAS.get(normalized);
+            return registration == null ? normalized : registration.descriptor().id();
+        }
+
+        static String canonicalTypeId(DialogueCondition condition) {
+            if (condition == null) {
+                return "unknown";
+            }
+            ConditionTypeRegistration registration = BY_IMPLEMENTATION.get(condition.getClass());
+            if (registration != null) {
+                return registration.descriptor().id();
+            }
+            return normalizeType(condition.getClass().getSimpleName());
+        }
+
+        static Set<ConditionCapability> capabilities(DialogueCondition condition) {
+            if (condition == null) {
+                return Set.of();
+            }
+            if (condition instanceof AllOf allOf) {
+                return childCapabilities(allOf.conditions());
+            }
+            if (condition instanceof AnyOf anyOf) {
+                return childCapabilities(anyOf.conditions());
+            }
+            if (condition instanceof Not not) {
+                return capabilities(not.condition());
+            }
+            ConditionTypeRegistration registration = BY_IMPLEMENTATION.get(condition.getClass());
+            return registration == null ? Set.of() : registration.descriptor().capabilities();
+        }
+
+        private static Set<ConditionCapability> childCapabilities(List<DialogueCondition> conditions) {
+            LinkedHashSet<ConditionCapability> result = new LinkedHashSet<>();
+            if (conditions != null) {
+                for (DialogueCondition child : conditions) {
+                    result.addAll(capabilities(child));
+                }
+            }
+            return Set.copyOf(result);
+        }
+
+        private static ConditionOutcome allOutcome(List<ConditionEvaluationTrace> children) {
+            boolean sawUnknown = false;
+            for (ConditionEvaluationTrace child : children) {
+                if (child.outcome() == ConditionOutcome.UNMET) {
+                    return ConditionOutcome.UNMET;
+                }
+                sawUnknown |= child.outcome() == ConditionOutcome.UNKNOWN;
+            }
+            return sawUnknown ? ConditionOutcome.UNKNOWN : ConditionOutcome.MATCHED;
+        }
+
+        private static String allMessage(List<ConditionEvaluationTrace> children) {
+            return allOutcome(children) == ConditionOutcome.MATCHED ? "all conditions matched" : "one or more conditions did not match";
+        }
+
+        private static ConditionOutcome anyOutcome(List<ConditionEvaluationTrace> children) {
+            boolean sawUnknown = false;
+            for (ConditionEvaluationTrace child : children) {
+                if (child.outcome() == ConditionOutcome.MATCHED) {
+                    return ConditionOutcome.MATCHED;
+                }
+                sawUnknown |= child.outcome() == ConditionOutcome.UNKNOWN;
+            }
+            return sawUnknown ? ConditionOutcome.UNKNOWN : ConditionOutcome.UNMET;
+        }
+
+        private static String anyMessage(List<ConditionEvaluationTrace> children) {
+            return anyOutcome(children) == ConditionOutcome.MATCHED ? "at least one condition matched" : "no conditions matched";
+        }
+
+        private static Map<String, ConditionTypeRegistration> registrationsByAlias() {
+            Map<String, ConditionTypeRegistration> byAlias = new LinkedHashMap<>();
+            for (ConditionTypeRegistration registration : REGISTRATIONS) {
+                byAlias.put(registration.descriptor().id(), registration);
+                for (String alias : registration.descriptor().aliases()) {
+                    byAlias.put(normalizeType(alias), registration);
+                }
+            }
+            return Map.copyOf(byAlias);
+        }
+
+        private static Map<Class<? extends DialogueCondition>, ConditionTypeRegistration> registrationsByImplementation() {
+            Map<Class<? extends DialogueCondition>, ConditionTypeRegistration> byImplementation = new HashMap<>();
+            for (ConditionTypeRegistration registration : REGISTRATIONS) {
+                byImplementation.put(registration.descriptor().implementationType(), registration);
+            }
+            return Map.copyOf(byImplementation);
+        }
+
+        private static ConditionTypeRegistration register(
+                String id,
+                Class<? extends DialogueCondition> implementationType,
+                Set<String> aliases,
+                Set<ConditionCapability> capabilities,
+                ConditionReader reader) {
+            return new ConditionTypeRegistration(
+                    new ConditionTypeDescriptor(id, aliases, capabilities, implementationType),
+                    reader);
+        }
+
+        private static Set<String> aliases(String... aliases) {
+            LinkedHashSet<String> result = new LinkedHashSet<>();
+            if (aliases != null) {
+                for (String alias : aliases) {
+                    String normalized = normalizeType(alias);
+                    if (!normalized.isBlank()) {
+                        result.add(normalized);
+                    }
+                }
+            }
+            return Set.copyOf(result);
+        }
+
+        private static Set<ConditionCapability> capabilities(ConditionCapability... capabilities) {
+            return capabilities == null || capabilities.length == 0
+                    ? Set.of()
+                    : Set.of(capabilities);
+        }
+
+        private record ConditionTypeRegistration(
+                ConditionTypeDescriptor descriptor,
+                ConditionReader reader
+        ) {
+        }
+
+        @FunctionalInterface
+        private interface ConditionReader {
+            Optional<DialogueCondition> read(
+                    ResourceLocation location,
+                    String context,
+                    JsonObject condition,
+                    ResourceLocation defaultQuestId);
+        }
+    }
+
+    private static String normalizeType(String type) {
+        return type == null ? "" : type.trim().toLowerCase(Locale.ROOT);
+    }
+
     record AllOf(List<DialogueCondition> conditions) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            return this.conditions.stream().allMatch(condition -> condition.matches(context));
+            return DialogueCondition.matchesAll(context, this.conditions);
         }
 
         @Override
@@ -657,7 +1067,15 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     record AnyOf(List<DialogueCondition> conditions) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            return this.conditions.stream().anyMatch(condition -> condition.matches(context));
+            if (context == null) {
+                return false;
+            }
+            for (DialogueCondition condition : this.conditions) {
+                if (condition != null && condition.matches(context)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
@@ -672,7 +1090,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     record Not(DialogueCondition condition) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            return !this.condition.matches(context);
+            return context != null && this.condition != null && !this.condition.matches(context);
         }
 
         @Override
