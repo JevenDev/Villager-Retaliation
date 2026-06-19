@@ -811,6 +811,7 @@ const forcedDialogueQuestModules = [];
 const pendingQuestReferences = [];
 const pendingQuestStageReferences = [];
 const pendingDialogueTreeLinks = [];
+const pendingExternalDialogueSceneReferences = [];
 const pendingForcedDialogueReferences = [];
 const pendingDialogueMessageKeyReferences = [];
 const pendingForcedDialogueMessageKeyReferences = [];
@@ -825,53 +826,200 @@ const dialogueIdScopes = {
   pacify: new Map()
 };
 
+const questV2SchemaId = "villagerretaliation:quest/v2";
+const resourceLocationPattern = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
+const questV2IdPattern = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
+const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]);
+const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "author", "version"]);
+const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "filters", "data"]);
+const questV2AvailabilityKeys = new Set(["conditions", "active", "cooldown", "cooldown_ticks", "exclusive_group", "repeatable", "prerequisites"]);
+const questV2LifecycleKeys = new Set(["on_start", "on_complete", "on_abandon", "on_expire", "on_fail", "on_stage_enter", "on_stage_exit", "dialogue"]);
+const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stage", "scene", "complete", "abandon", "fail"]);
+const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
+const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "target", "targets", "structure", "dimension", "location", "radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
+const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
+const questV2SceneKeys = new Set(["id", "slot", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "external", "external_scene", "external_entry", "scene_ref", "metadata"]);
+const questV2ExternalSceneKeys = new Set(["tree", "tree_id", "dialogue_tree", "entry", "entry_id", "metadata"]);
+const questV2ResponseKeys = new Set(["id", "label", "label_key", "text", "text_key", "lines", "conditions", "actions", "transition", "next", "stage", "scene", "response", "complete", "abandon", "fail", "request", "metadata"]);
+const questV2TransitionKeys = new Set(["stage", "scene", "response", "complete", "abandon", "fail"]);
+const questV2EventKeys = new Set(["id", "event", "type", "trigger", "stage", "stages", "conditions", "actions", "transition", "next", "cooldown", "cooldown_ticks", "radius", "repeatable", "metadata"]);
+const questV2RewardsKeys = new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event"]);
+const questV2UiKeys = new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "placeholders", "icon", "color", "priority", "hidden"]);
+const questV2LifecycleCoverageSlots = new Set(["offer", "reminder", "turn_in"]);
+
+const cli = parseValidatorArgs(process.argv.slice(2));
 const questRegistryMetadata = await loadQuestRegistryMetadata();
 validateQuestRegistryMetadata(questRegistryMetadata);
 const questV2Schema = await loadQuestV2Schema();
 validateQuestV2Schema(questV2Schema);
+const questV2RegistryIndex = questRegistryIndex(questRegistryMetadata);
 
-for (const [kind, relativeRoot] of Object.entries(roots)) {
-  for (const file of await jsonFiles(path.join(root, relativeRoot))) {
-    const data = await parseJson(file);
-    if (data === undefined) {
-      continue;
-    }
-    checkPlaceholders(file, data);
-    checkEquipmentPredicateFlags(file, data);
-    if (kind === "dialogue") {
-      checkDialogue(file, data);
-    } else if (kind === "dialogueTrees") {
-      indexDialogueTree(file, data);
-      checkDialogueTree(file, data);
-    } else if (kind === "forcedDialogue") {
-      indexForcedDialogue(file, data);
-      checkForcedDialogue(file, data);
-    } else if (kind === "lootTables") {
-      indexLootTable(file);
-    } else if (kind === "notifications") {
-      indexNotifications(file, data);
-    } else if (kind === "quests") {
-      indexQuest(file, data);
-      checkQuest(file, data);
-    }
-  }
+if (cli.help) {
+  printValidatorHelp();
+  process.exit(0);
+}
+
+if (cli.questFiles.length > 0) {
+  await validateQuestFiles(cli.questFiles);
+} else {
+  await validateBuiltInData();
 }
 
 validateCrossReferences();
 
 if (errors.length > 0) {
   for (const error of errors) {
-    console.error(error);
+    console.error(formatIssue(error, "error"));
   }
   process.exitCode = 1;
-} else {
+} else if (!cli.quiet) {
   console.log("Built-in dialogue data validation passed.");
 }
 
 if (warnings.length > 0) {
   for (const warning of warnings) {
-    console.warn(warning);
+    console.warn(formatIssue(warning, "warning"));
   }
+}
+
+function parseValidatorArgs(args) {
+  const parsed = {
+    help: false,
+    quiet: false,
+    questFiles: []
+  };
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (arg === "--help" || arg === "-h") {
+      parsed.help = true;
+    } else if (arg === "--quiet" || arg === "-q") {
+      parsed.quiet = true;
+    } else if (arg === "--quest" || arg === "--quest-file") {
+      const file = args[++index];
+      if (!file) {
+        errors.push("tools/validate-dialogue-data.mjs: --quest requires a JSON file path.");
+      } else {
+        parsed.questFiles.push(path.resolve(file));
+      }
+    } else if (arg.startsWith("--")) {
+      errors.push(`tools/validate-dialogue-data.mjs: unsupported option "${arg}".`);
+    } else {
+      parsed.questFiles.push(path.resolve(arg));
+    }
+  }
+  return parsed;
+}
+
+function printValidatorHelp() {
+  console.log([
+    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--quest path/to/quest.json ...]",
+    "",
+    "Without --quest, validates the checked-in built-in datapack dialogue and quest data.",
+    "With --quest, validates only the supplied quest resource files plus generated metadata."
+  ].join("\n"));
+}
+
+async function validateBuiltInData() {
+  for (const [kind, relativeRoot] of Object.entries(roots)) {
+    for (const file of await jsonFiles(path.join(root, relativeRoot))) {
+      const data = await parseJson(file);
+      if (data === undefined) {
+        continue;
+      }
+      if (!(kind === "quests" && isQuestModuleV2(data))) {
+        checkPlaceholders(file, data);
+      }
+      checkEquipmentPredicateFlags(file, data);
+      if (kind === "dialogue") {
+        checkDialogue(file, data);
+      } else if (kind === "dialogueTrees") {
+        indexDialogueTree(file, data);
+        checkDialogueTree(file, data);
+      } else if (kind === "forcedDialogue") {
+        indexForcedDialogue(file, data);
+        checkForcedDialogue(file, data);
+      } else if (kind === "lootTables") {
+        indexLootTable(file);
+      } else if (kind === "notifications") {
+        indexNotifications(file, data);
+      } else if (kind === "quests") {
+        indexQuestResource(file, data);
+        checkQuestResource(file, data);
+      }
+    }
+  }
+}
+
+async function validateQuestFiles(files) {
+  await indexBuiltInReferenceData();
+  for (const file of files) {
+    const data = await parseJson(file);
+    if (data === undefined) {
+      continue;
+    }
+    if (!isQuestModuleV2(data)) {
+      checkPlaceholders(file, data);
+    }
+    checkEquipmentPredicateFlags(file, data);
+    indexQuestResource(file, data);
+    checkQuestResource(file, data);
+  }
+}
+
+async function indexBuiltInReferenceData() {
+  for (const [kind, relativeRoot] of Object.entries(roots)) {
+    if (kind === "quests") {
+      continue;
+    }
+    for (const file of await jsonFiles(path.join(root, relativeRoot))) {
+      const data = await parseJson(file);
+      if (data === undefined) {
+        continue;
+      }
+      checkPlaceholders(file, data);
+      checkEquipmentPredicateFlags(file, data);
+      if (kind === "dialogue") {
+        checkDialogue(file, data);
+      } else if (kind === "dialogueTrees") {
+        indexDialogueTree(file, data);
+      } else if (kind === "forcedDialogue") {
+        indexForcedDialogueDefinitionsOnly(file, data);
+      } else if (kind === "lootTables") {
+        indexLootTable(file);
+      } else if (kind === "notifications") {
+        indexNotifications(file, data);
+      }
+    }
+  }
+}
+
+function indexForcedDialogueDefinitionsOnly(file, data) {
+  for (const entry of entriesFor(data)) {
+    const entryId = stringValue(entry?.id);
+    const trigger = normalizedString(entry?.trigger || entry?.event);
+    if (entryId) {
+      registerForcedDialogueDefinition(file, entryId, trigger, true);
+    }
+    registerForcedDialogueDefinition(file, forcedDialogueSourceIdForFile(file), trigger, false);
+  }
+}
+
+function formatIssue(issue, fallbackSeverity) {
+  if (!issue || typeof issue !== "object" || Array.isArray(issue)) {
+    return `[${fallbackSeverity.toUpperCase()}] ${issue}`;
+  }
+  const severity = String(issue.severity || fallbackSeverity).toUpperCase();
+  const parts = [
+    `[${severity}]`,
+    `resource=${issue.resource || "unknown"}`,
+    `path=${issue.path || "root"}`,
+    `pointer=${issue.pointer || ""}`,
+    issue.message || ""
+  ];
+  if (issue.suggestion) {
+    parts.push(`suggestion=${issue.suggestion}`);
+  }
+  return parts.filter(Boolean).join(" ");
 }
 
 async function loadQuestRegistryMetadata() {
@@ -1157,6 +1305,1205 @@ function collectQuestMessageKeyReference(file, value, location) {
       pendingDialogueMessageKeyReferences.push({ file, location: `${location}[${index}]`, key });
     }
   });
+}
+
+function indexQuestResource(file, data) {
+  if (isQuestModuleV2(data)) {
+    indexQuestV2(file, data);
+  } else {
+    indexQuest(file, data);
+  }
+}
+
+function checkQuestResource(file, data) {
+  if (isQuestModuleV2(data)) {
+    checkQuestV2(file, data);
+  } else {
+    checkQuest(file, data);
+  }
+}
+
+function isQuestModuleV2(data) {
+  return data
+    && typeof data === "object"
+    && !Array.isArray(data)
+    && stringValue(data.schema) === questV2SchemaId;
+}
+
+function indexQuestV2(file, data) {
+  const questId = stringValue(data?.id) || resourceIdForFile(file, roots.quests);
+  if (!questId) {
+    return;
+  }
+  const previous = questDefinitions.get(questId);
+  if (previous) {
+    errors.push(`${relative(file)}: duplicate quest id "${questId}" also defined in ${previous.file}.`);
+    return;
+  }
+  const metadata = metadataObject(data);
+  questDefinitions.set(questId, {
+    file: relative(file),
+    parent: stringValue(metadata.parent),
+    questline: stringValue(metadata.questline),
+    pathQuestline: questPathQuestline(file),
+    stageIds: questV2StageIds(data.stages),
+    requiresDialogueTree: false
+  });
+}
+
+function checkQuestV2(file, data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    questV2Error(file, "", "root", "quest module v2 root must be an object.", "Wrap the resource in a JSON object.");
+    return;
+  }
+
+  const questId = stringValue(data.id);
+  checkQuestV2UnknownKeys(file, data, "", "root", questV2RootKeys);
+  if (stringValue(data.schema) !== questV2SchemaId) {
+    questV2Error(file, "/schema", "schema", `schema must be "${questV2SchemaId}".`, "Use the quest module v2 schema marker.");
+  }
+  if (!questId) {
+    questV2Error(file, "/id", "id", "quest id is required.", "Add a namespaced id such as villagerretaliation:example_quest.");
+  } else if (!isResourceLocation(questId)) {
+    questV2Error(file, "/id", "id", `quest id "${questId}" is not a valid resource location.`, "Use namespace:path with lowercase characters.");
+  }
+
+  checkQuestV2Metadata(file, data.metadata, "/metadata", "metadata", questId);
+  checkQuestV2Provider(file, data.provider, "/provider", "provider");
+  checkQuestV2Availability(file, data.availability, "/availability", "availability", questId);
+  checkQuestV2Lifecycle(file, data.lifecycle, "/lifecycle", "lifecycle", questId);
+  checkQuestV2RootDialogue(file, data.dialogue, "/dialogue", "dialogue", questId);
+  const model = checkQuestV2Stages(file, data.stages, "/stages", "stages", questId);
+  checkQuestV2Events(file, data.events, "/events", "events", questId, model.stageIds, "");
+  checkQuestV2Rewards(file, data.rewards, "/rewards", "rewards", questId);
+  checkQuestV2Ui(file, data.ui, "/ui", "ui");
+  checkQuestV2ExternalScenes(file, data.external_scenes, "/external_scenes", "external_scenes");
+  validateQuestV2Graph(file, data, model, questId);
+  warnQuestV2LifecycleCoverage(file, data, model);
+  collectQuestMessageKeyReferences(file, data);
+}
+
+function checkQuestV2Metadata(file, metadata, pointer, location, questId) {
+  if (metadata === undefined) {
+    return;
+  }
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    questV2Error(file, pointer, location, "metadata must be an object.", "Use metadata.title, metadata.questline, and related fields inside an object.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, metadata, pointer, location, questV2MetadataKeys);
+  checkQuestV2OptionalString(file, metadata, pointer, location, "title");
+  checkQuestV2OptionalString(file, metadata, pointer, location, "description");
+  checkQuestV2OptionalString(file, metadata, pointer, location, "title_key");
+  checkQuestV2OptionalString(file, metadata, pointer, location, "description_key");
+  checkQuestV2OptionalString(file, metadata, pointer, location, "questline");
+  checkQuestV2OptionalString(file, metadata, pointer, location, "parent");
+  checkQuestV2OptionalString(file, metadata, pointer, location, "author");
+  checkQuestV2OptionalString(file, metadata, pointer, location, "version");
+  checkStringList(file, metadata, location, ["tags"], "quest metadata tag");
+  checkResourceIdValues(file, metadata, location, ["parent"], "quest parent id");
+  const parent = stringValue(metadata.parent);
+  if (parent) {
+    pendingQuestReferences.push({ file, location: `${location}.parent`, id: parent, reason: "quest module v2 metadata parent" });
+  }
+  if (questId && parent === questId) {
+    questV2Error(file, `${pointer}/parent`, `${location}.parent`, "metadata.parent must not reference this quest's own id.", "Point parent at another quest or remove it.");
+  }
+}
+
+function checkQuestV2Provider(file, provider, pointer, location) {
+  if (!provider || typeof provider !== "object" || Array.isArray(provider)) {
+    questV2Error(file, pointer, location, "provider must be an object.", "Set provider.type to a registered provider.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, provider, pointer, location, questV2ProviderKeys);
+  const type = stringValue(provider.type);
+  if (!type) {
+    questV2Error(file, `${pointer}/type`, `${location}.type`, "provider type is required.", "Set provider.type to a registered provider such as villagerretaliation:villager.");
+  } else if (!questV2RegistryIndex.providers.values.has(type)) {
+    questV2Error(file, `${pointer}/type`, `${location}.type`, `unknown provider type "${type}".`, "Use one of the providers in quest-registry-metadata.json.");
+  }
+  for (const key of ["capabilities", "required_capabilities"]) {
+    checkQuestV2StringArray(file, provider[key], `${pointer}/${key}`, `${location}.${key}`, "provider capability");
+    for (const capability of readValues(provider, [key])) {
+      if (typeof capability !== "string" || !capability.trim()) {
+        continue;
+      }
+      const normalized = capability.trim();
+      if (!isResourceLocation(normalized)) {
+        questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `provider capability "${normalized}" is not a valid resource location.`, "Use namespaced capability ids from quest-registry-metadata.json.");
+      }
+      const supported = questV2RegistryIndex.providers.capabilities.get(type);
+      if (supported && !supported.has(normalized)) {
+        questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `provider "${type}" does not support capability "${normalized}".`, "Remove the capability or choose a provider that exports it.");
+      }
+    }
+  }
+  checkQuestV2OptionalObject(file, provider.filters, `${pointer}/filters`, `${location}.filters`, "provider filters");
+  checkQuestV2OptionalObject(file, provider.data, `${pointer}/data`, `${location}.data`, "provider data");
+}
+
+function checkQuestV2Availability(file, availability, pointer, location, questId) {
+  if (availability === undefined) {
+    return;
+  }
+  if (!availability || typeof availability !== "object" || Array.isArray(availability)) {
+    questV2Error(file, pointer, location, "availability must be an object.", "Use availability.conditions, prerequisites, or repeatable fields.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, availability, pointer, location, questV2AvailabilityKeys);
+  checkQuestV2Conditions(file, availability.conditions, `${pointer}/conditions`, `${location}.conditions`, questId, "quest module v2 availability");
+  checkQuestV2OptionalBoolean(file, availability, pointer, location, "active");
+  checkQuestV2OptionalString(file, availability, pointer, location, "cooldown");
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "cooldown_ticks", { min: 0 });
+  checkQuestV2OptionalString(file, availability, pointer, location, "exclusive_group");
+  checkQuestV2OptionalBoolean(file, availability, pointer, location, "repeatable");
+  checkQuestV2StringArray(file, availability.prerequisites, `${pointer}/prerequisites`, `${location}.prerequisites`, "quest prerequisite");
+  for (const prerequisite of readValues(availability, ["prerequisites"])) {
+    if (typeof prerequisite === "string" && prerequisite.trim()) {
+      pendingQuestReferences.push({
+        file,
+        location: `${location}.prerequisites`,
+        id: prerequisite.trim(),
+        reason: "quest module v2 availability prerequisite"
+      });
+    }
+  }
+}
+
+function checkQuestV2Lifecycle(file, lifecycle, pointer, location, questId) {
+  if (lifecycle === undefined) {
+    return;
+  }
+  if (!lifecycle || typeof lifecycle !== "object" || Array.isArray(lifecycle)) {
+    questV2Error(file, pointer, location, "lifecycle must be an object.", "Use lifecycle hooks such as on_start or on_complete.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, lifecycle, pointer, location, questV2LifecycleKeys);
+  for (const hook of questV2LifecycleKeys) {
+    if (hook === "dialogue" || lifecycle[hook] === undefined) {
+      continue;
+    }
+    checkQuestV2LifecycleHook(file, lifecycle[hook], `${pointer}/${hook}`, `${location}.${hook}`, questId);
+  }
+  checkQuestV2Scenes(file, lifecycle.dialogue, `${pointer}/dialogue`, `${location}.dialogue`, questId);
+}
+
+function checkQuestV2LifecycleHook(file, hook, pointer, location, questId) {
+  if (!hook || typeof hook !== "object" || Array.isArray(hook)) {
+    questV2Error(file, pointer, location, "lifecycle hook must be an object.", "Use actions or one transition target inside the hook.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, hook, pointer, location, questV2LifecycleHookKeys);
+  checkQuestV2Actions(file, hook.actions, `${pointer}/actions`, `${location}.actions`, questId, {
+    liveContextWarningUsage: "quest module v2 lifecycle hook"
+  });
+  const transition = readQuestV2WrapperTransition(file, hook, pointer, location);
+  if (Array.isArray(hook.actions) && hook.actions.length > 0 && !transition.empty) {
+    questV2Error(file, pointer, location, "lifecycle hook cannot define both actions and a transition.", "Choose actions for side effects or transition for flow control, not both.");
+  }
+}
+
+function checkQuestV2RootDialogue(file, dialogue, pointer, location, questId) {
+  if (dialogue === undefined) {
+    return;
+  }
+  if (!dialogue || typeof dialogue !== "object" || Array.isArray(dialogue)) {
+    questV2Error(file, pointer, location, "dialogue must be an object keyed by slot id.", "Move dialogue entries under named slots.");
+    return;
+  }
+  for (const [slot, value] of Object.entries(dialogue)) {
+    checkQuestV2DialogueSlot(file, value, `${pointer}/${escapeJsonPointer(slot)}`, `${location}.${slot}`, questId, slot, new Set());
+  }
+}
+
+function checkQuestV2Stages(file, stages, pointer, location, questId) {
+  const model = {
+    stages: [],
+    stageIds: new Set(),
+    stagePointers: new Map(),
+    objectiveIdsByStage: new Map(),
+    sceneIdsByStage: new Map(),
+    responseIdsByStage: new Map(),
+    transitions: []
+  };
+  if (!Array.isArray(stages)) {
+    questV2Error(file, pointer, location, "stages must be an array.", "Add an ordered stages array.");
+    return model;
+  }
+  const declaredStageIds = questV2StageIds(stages);
+  for (const [index, stage] of stages.entries()) {
+    const stagePointer = `${pointer}/${index}`;
+    const stageLocation = `${location}[${index}]`;
+    if (!stage || typeof stage !== "object" || Array.isArray(stage)) {
+      questV2Error(file, stagePointer, stageLocation, "stage must be an object.", "Each stage entry needs id and objectives.");
+      continue;
+    }
+    checkQuestV2UnknownKeys(file, stage, stagePointer, stageLocation, questV2StageKeys);
+    const stageId = stringValue(stage.id);
+    checkQuestV2Id(file, stageId, `${stagePointer}/id`, `${stageLocation}.id`, "stage id");
+    if (stageId) {
+      if (model.stageIds.has(stageId)) {
+        questV2Error(file, `${stagePointer}/id`, `${stageLocation}.id`, `duplicate stage id "${stageId}".`, "Use unique stage ids within the quest.");
+      }
+      model.stageIds.add(stageId);
+      model.stagePointers.set(stageId, stagePointer);
+      model.stages.push({ id: stageId, pointer: stagePointer, location: stageLocation, raw: stage });
+    }
+    checkQuestV2OptionalString(file, stage, stagePointer, stageLocation, "title");
+    checkQuestV2OptionalString(file, stage, stagePointer, stageLocation, "title_key");
+    checkQuestV2OptionalString(file, stage, stagePointer, stageLocation, "description");
+    checkQuestV2OptionalString(file, stage, stagePointer, stageLocation, "description_key");
+    const objectiveIds = checkQuestV2Objectives(file, stage.objectives, `${stagePointer}/objectives`, `${stageLocation}.objectives`, questId);
+    model.objectiveIdsByStage.set(stageId, objectiveIds);
+    const completeWhenRefs = readQuestV2ObjectiveReferences(stage.complete_when);
+    for (const ref of completeWhenRefs) {
+      if (!objectiveIds.has(ref)) {
+        questV2Error(file, `${stagePointer}/complete_when`, `${stageLocation}.complete_when`, `complete_when references missing objective "${ref}".`, "Reference an objective id defined in the same stage.");
+      }
+    }
+    const next = readQuestV2Transition(file, stage.next, `${stagePointer}/next`, `${stageLocation}.next`);
+    if (!next.empty) {
+      model.transitions.push({ pointer: `${stagePointer}/next`, location: `${stageLocation}.next`, transition: next, stageId });
+    }
+    const sceneIds = checkQuestV2Scenes(file, stage.scenes, `${stagePointer}/scenes`, `${stageLocation}.scenes`, questId);
+    model.sceneIdsByStage.set(stageId, sceneIds);
+    checkQuestV2DialogueSlots(file, stage.dialogue, `${stagePointer}/dialogue`, `${stageLocation}.dialogue`, questId, sceneIds);
+    const responseIds = checkQuestV2Responses(file, stage.responses, `${stagePointer}/responses`, `${stageLocation}.responses`, questId, model.transitions, stageId);
+    model.responseIdsByStage.set(stageId, responseIds);
+    checkQuestV2Events(file, stage.events, `${stagePointer}/events`, `${stageLocation}.events`, questId, declaredStageIds, stageId, model.transitions);
+    checkQuestV2Actions(file, firstDefined(stage.on_enter, stage.entry_actions), `${stagePointer}/on_enter`, `${stageLocation}.on_enter`, questId, {
+      liveContextWarningUsage: "quest module v2 stage entry action"
+    });
+    checkQuestV2Actions(file, firstDefined(stage.on_exit, stage.exit_actions), `${stagePointer}/on_exit`, `${stageLocation}.on_exit`, questId, {
+      liveContextWarningUsage: "quest module v2 stage exit action"
+    });
+    checkQuestV2Rewards(file, stage.rewards, `${stagePointer}/rewards`, `${stageLocation}.rewards`, questId);
+    checkQuestV2Ui(file, stage.ui, `${stagePointer}/ui`, `${stageLocation}.ui`);
+  }
+  return model;
+}
+
+function checkQuestV2Objectives(file, objectives, pointer, location, questId) {
+  const ids = new Set();
+  if (!Array.isArray(objectives)) {
+    questV2Error(file, pointer, location, "objectives must be an array.", "Add stage objectives as an array.");
+    return ids;
+  }
+  for (const [index, objective] of objectives.entries()) {
+    const objectivePointer = `${pointer}/${index}`;
+    const objectiveLocation = `${location}[${index}]`;
+    if (!objective || typeof objective !== "object" || Array.isArray(objective)) {
+      questV2Error(file, objectivePointer, objectiveLocation, "objective must be an object.", "Each objective needs id and type.");
+      continue;
+    }
+    checkQuestV2UnknownKeys(file, objective, objectivePointer, objectiveLocation, questV2ObjectiveKeys);
+    const id = stringValue(objective.id);
+    checkQuestV2Id(file, id, `${objectivePointer}/id`, `${objectiveLocation}.id`, "objective id");
+    if (id) {
+      if (ids.has(id)) {
+        questV2Error(file, `${objectivePointer}/id`, `${objectiveLocation}.id`, `duplicate objective id "${id}" in stage.`, "Use unique objective ids within each stage.");
+      }
+      ids.add(id);
+    }
+    const type = stringValue(objective.type);
+    if (!type) {
+      questV2Error(file, `${objectivePointer}/type`, `${objectiveLocation}.type`, "objective type is required.", "Use one of the objective types in quest-registry-metadata.json.");
+    } else if (!questV2RegistryIndex.objectives.values.has(type)) {
+      questV2Error(file, `${objectivePointer}/type`, `${objectiveLocation}.type`, `unknown objective type "${type}".`, "Use one of the objective types in quest-registry-metadata.json.");
+    }
+    checkQuestV2OptionalBoolean(file, objective, objectivePointer, objectiveLocation, "optional");
+    checkQuestV2OptionalInteger(file, objective, objectivePointer, objectiveLocation, "count", { min: 1 });
+    checkQuestV2OptionalBoolean(file, objective, objectivePointer, objectiveLocation, "consume");
+    checkQuestV2OptionalObject(file, objective.tracker, `${objectivePointer}/tracker`, `${objectiveLocation}.tracker`, "objective tracker");
+    checkQuestV2OptionalObject(file, objective.target, `${objectivePointer}/target`, `${objectiveLocation}.target`, "objective target");
+    checkQuestV2OptionalObject(file, objective.location, `${objectivePointer}/location`, `${objectiveLocation}.location`, "objective location");
+    checkQuestV2Conditions(file, objective.conditions, `${objectivePointer}/conditions`, `${objectiveLocation}.conditions`, questId, "quest module v2 objective");
+    checkQuestV2Ui(file, objective.ui, `${objectivePointer}/ui`, `${objectiveLocation}.ui`);
+    checkQuestV2ObjectiveRuntimeRequirements(file, objective, objectivePointer, objectiveLocation, type);
+  }
+  return ids;
+}
+
+function checkQuestV2ObjectiveRuntimeRequirements(file, objective, pointer, location, type) {
+  const canonical = questV2RegistryIndex.objectives.canonical.get(type) || type;
+  if (canonical === "structure_visit" && !hasStringValues(objective, ["structure"]) && !hasStringValues(objective.target, ["structure"])) {
+    questV2Error(file, pointer, location, "structure_visit objective is missing structure.", "Set objective.structure or objective.target.structure.");
+  }
+  if (canonical === "item_check" && !hasStringValues(objective, ["item", "items", "item_tag", "item_tags"])) {
+    questV2Error(file, pointer, location, "item_check objective is missing an item selector.", "Set item, items, item_tag, or item_tags.");
+  }
+  if (["mob_kill"].includes(canonical) && !hasStringValues(objective, ["entity", "entities", "entity_tag", "entity_tags"])) {
+    questV2Error(file, pointer, location, "mob_kill objective is missing an entity selector.", "Set entity, entities, entity_tag, or entity_tags.");
+  }
+  if (["block_break", "block_place", "block_interact"].includes(canonical) && !hasStringValues(objective, ["block", "blocks", "block_tag", "block_tags"])) {
+    questV2Error(file, pointer, location, "block objective is missing a block selector.", "Set block, blocks, block_tag, or block_tags.");
+  }
+}
+
+function checkQuestV2DialogueSlots(file, dialogue, pointer, location, questId, sceneIds) {
+  if (dialogue === undefined) {
+    return;
+  }
+  if (!dialogue || typeof dialogue !== "object" || Array.isArray(dialogue)) {
+    questV2Error(file, pointer, location, "dialogue must be an object keyed by slot id.", "Use dialogue.slot_name objects.");
+    return;
+  }
+  for (const [slot, value] of Object.entries(dialogue)) {
+    checkQuestV2DialogueSlot(file, value, `${pointer}/${escapeJsonPointer(slot)}`, `${location}.${slot}`, questId, slot, sceneIds);
+  }
+}
+
+function checkQuestV2DialogueSlot(file, slot, pointer, location, questId, slotId, sceneIds) {
+  if (!slot || typeof slot !== "object" || Array.isArray(slot)) {
+    questV2Error(file, pointer, location, "dialogue slot must be an object.", "Use scene, external_scene, or inline lines/responses.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, slot, pointer, location, questV2DialogueSlotKeys);
+  const scene = firstString(slot.scene, slot.scene_ref);
+  if (scene && sceneIds.size > 0 && !sceneIds.has(scene)) {
+    questV2Error(file, `${pointer}/scene`, `${location}.scene`, `dialogue slot references missing local scene "${scene}".`, "Reference a scene id from this stage's scenes array.");
+  }
+  const hasInline = hasAnyKey(slot, ["text", "text_key", "lines", "responses"]);
+  const hasExternal = hasAnyKey(slot, ["external", "external_scene"]);
+  if (hasInline && (scene || hasExternal)) {
+    questV2Error(file, pointer, location, "dialogue slot cannot mix inline scene content with scene_ref or external_scene.", "Use either inline content or a reference.");
+  }
+  collectQuestV2ExternalSceneReference(file, slot, pointer, location, slotId);
+  if (hasInline) {
+    checkQuestV2InlineScene(file, slot, pointer, location, questId, slotId);
+  }
+}
+
+function checkQuestV2Scenes(file, scenes, pointer, location, questId) {
+  const ids = new Set();
+  if (scenes === undefined) {
+    return ids;
+  }
+  if (!Array.isArray(scenes)) {
+    questV2Error(file, pointer, location, "scenes must be an array.", "Use an array of scene objects.");
+    return ids;
+  }
+  for (const [index, scene] of scenes.entries()) {
+    const scenePointer = `${pointer}/${index}`;
+    const sceneLocation = `${location}[${index}]`;
+    const id = checkQuestV2InlineScene(file, scene, scenePointer, sceneLocation, questId, `scene_${index}`);
+    if (id) {
+      if (ids.has(id)) {
+        questV2Error(file, `${scenePointer}/id`, `${sceneLocation}.id`, `duplicate scene id "${id}".`, "Use unique scene ids within the stage.");
+      }
+      ids.add(id);
+    }
+  }
+  return ids;
+}
+
+function checkQuestV2InlineScene(file, scene, pointer, location, questId, fallbackId) {
+  if (!scene || typeof scene !== "object" || Array.isArray(scene)) {
+    questV2Error(file, pointer, location, "scene must be an object.", "Use lines, text_key, responses, or external_scene inside the scene.");
+    return "";
+  }
+  checkQuestV2UnknownKeys(file, scene, pointer, location, questV2SceneKeys);
+  const id = stringValue(scene.id) || fallbackId || "";
+  checkQuestV2Id(file, id, `${pointer}/id`, `${location}.id`, "scene id");
+  checkQuestV2StringArray(file, scene.lines, `${pointer}/lines`, `${location}.lines`, "scene line");
+  checkQuestV2OptionalString(file, scene, pointer, location, "text");
+  checkQuestV2OptionalString(file, scene, pointer, location, "text_key");
+  checkQuestV2Conditions(file, scene.conditions, `${pointer}/conditions`, `${location}.conditions`, questId, "quest module v2 scene");
+  checkQuestV2Actions(file, scene.actions, `${pointer}/actions`, `${location}.actions`, questId);
+  collectQuestV2ExternalSceneReference(file, scene, pointer, location, id, "scene_ref");
+  const hasInline = hasAnyKey(scene, ["text", "text_key", "lines", "responses"]);
+  const hasExternal = hasAnyKey(scene, ["external", "external_scene", "scene_ref"]);
+  if (hasInline && hasExternal) {
+    questV2Error(file, pointer, location, "scene cannot mix inline dialogue content with an external scene reference.", "Use either inline lines/responses or external_scene.");
+  }
+  checkQuestV2Responses(file, scene.responses, `${pointer}/responses`, `${location}.responses`, questId, [], "");
+  return id;
+}
+
+function checkQuestV2Responses(file, responses, pointer, location, questId, transitions, stageId) {
+  const ids = new Set();
+  if (responses === undefined) {
+    return ids;
+  }
+  if (!Array.isArray(responses)) {
+    questV2Error(file, pointer, location, "responses must be an array.", "Use an array of response objects.");
+    return ids;
+  }
+  for (const [index, response] of responses.entries()) {
+    const responsePointer = `${pointer}/${index}`;
+    const responseLocation = `${location}[${index}]`;
+    if (!response || typeof response !== "object" || Array.isArray(response)) {
+      questV2Error(file, responsePointer, responseLocation, "response must be an object.", "Each response needs an id and optional label/actions/transition.");
+      continue;
+    }
+    checkQuestV2UnknownKeys(file, response, responsePointer, responseLocation, questV2ResponseKeys);
+    const id = stringValue(response.id);
+    checkQuestV2Id(file, id, `${responsePointer}/id`, `${responseLocation}.id`, "response id");
+    if (id) {
+      if (ids.has(id)) {
+        questV2Error(file, `${responsePointer}/id`, `${responseLocation}.id`, `duplicate response id "${id}" in scene.`, "Use unique response ids within the response list.");
+      }
+      ids.add(id);
+    }
+    checkQuestV2OptionalString(file, response, responsePointer, responseLocation, "label");
+    checkQuestV2OptionalString(file, response, responsePointer, responseLocation, "label_key");
+    checkQuestV2OptionalString(file, response, responsePointer, responseLocation, "text");
+    checkQuestV2OptionalString(file, response, responsePointer, responseLocation, "text_key");
+    checkQuestV2StringArray(file, response.lines, `${responsePointer}/lines`, `${responseLocation}.lines`, "response line");
+    checkQuestV2Conditions(file, response.conditions, `${responsePointer}/conditions`, `${responseLocation}.conditions`, questId, "quest module v2 response");
+    checkQuestV2Actions(file, response.actions, `${responsePointer}/actions`, `${responseLocation}.actions`, questId);
+    const transition = readQuestV2WrapperTransition(file, response, responsePointer, responseLocation);
+    if (!transition.empty) {
+      transitions?.push({ pointer: responsePointer, location: responseLocation, transition, stageId });
+      if (transitionChangesStage(transition) && Array.isArray(response.actions)) {
+        response.actions.forEach((action, actionIndex) => {
+          if (isQuestV2StageChangingAction(action)) {
+            questV2Error(file, `${responsePointer}/actions/${actionIndex}`, `${responseLocation}.actions[${actionIndex}]`, "response cannot define both a transition and a stage-changing action.", "Use transition or next for branch flow, and keep actions for side effects.");
+          }
+        });
+      }
+    }
+  }
+  return ids;
+}
+
+function checkQuestV2Events(file, events, pointer, location, questId, stageIds, localStageId, transitions = []) {
+  if (events === undefined) {
+    return;
+  }
+  if (!Array.isArray(events)) {
+    questV2Error(file, pointer, location, "events must be an array.", "Use an array of event trigger objects.");
+    return;
+  }
+  const ids = new Set();
+  for (const [index, event] of events.entries()) {
+    const eventPointer = `${pointer}/${index}`;
+    const eventLocation = `${location}[${index}]`;
+    if (!event || typeof event !== "object" || Array.isArray(event)) {
+      questV2Error(file, eventPointer, eventLocation, "event must be an object.", "Each event needs id, event/trigger, and actions or transition.");
+      continue;
+    }
+    checkQuestV2UnknownKeys(file, event, eventPointer, eventLocation, questV2EventKeys);
+    const id = stringValue(event.id);
+    checkQuestV2Id(file, id, `${eventPointer}/id`, `${eventLocation}.id`, "event id");
+    if (id) {
+      if (ids.has(id)) {
+        questV2Error(file, `${eventPointer}/id`, `${eventLocation}.id`, `duplicate event id "${id}".`, "Use unique event ids in this event list.");
+      }
+      ids.add(id);
+    }
+    const trigger = firstString(event.event, event.trigger, event.type);
+    if (!trigger) {
+      questV2Error(file, `${eventPointer}/event`, `${eventLocation}.event`, "event trigger is required.", "Use a trigger event from quest-registry-metadata.json.");
+    } else if (!questV2RegistryIndex.triggers.values.has(trigger)) {
+      questV2Error(file, `${eventPointer}/event`, `${eventLocation}.event`, `unknown trigger event "${trigger}".`, "Use one of the trigger events in quest-registry-metadata.json.");
+    }
+    for (const stageRef of readValues(event, ["stage", "stages"])) {
+      if (typeof stageRef === "string" && stageRef.trim() && stageIds.size > 0 && !stageIds.has(stageRef.trim())) {
+        questV2Error(file, `${eventPointer}/stages`, `${eventLocation}.stages`, `event references missing stage "${stageRef.trim()}".`, "Reference a stage id from stages[].id.");
+      }
+    }
+    checkQuestV2Conditions(file, event.conditions, `${eventPointer}/conditions`, `${eventLocation}.conditions`, questId, "quest module v2 event");
+    checkQuestV2Actions(file, event.actions, `${eventPointer}/actions`, `${eventLocation}.actions`, questId, {
+      liveContextWarningUsage: questTriggerEventsThatMayLackLiveIssuer.has(normalizedString(trigger)) ? "quest module v2 event action" : ""
+    });
+    checkQuestV2OptionalInteger(file, event, eventPointer, eventLocation, "cooldown_ticks", { min: 0 });
+    checkQuestV2OptionalNumber(file, event, eventPointer, eventLocation, "radius", { min: 0 });
+    checkQuestV2OptionalBoolean(file, event, eventPointer, eventLocation, "repeatable");
+    const transition = readQuestV2WrapperTransition(file, event, eventPointer, eventLocation);
+    if (!transition.empty) {
+      transitions.push({ pointer: `${eventPointer}/transition`, location: `${eventLocation}.transition`, transition, stageId: localStageId || "" });
+    }
+  }
+}
+
+function checkQuestV2Rewards(file, rewards, pointer, location, questId) {
+  if (rewards === undefined) {
+    return;
+  }
+  if (!rewards || typeof rewards !== "object" || Array.isArray(rewards)) {
+    questV2Error(file, pointer, location, "rewards must be an object.", "Use reward fields or rewards.actions.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, rewards, pointer, location, questV2RewardsKeys);
+  checkQuestV2Actions(file, rewards.actions, `${pointer}/actions`, `${location}.actions`, questId);
+  checkQuestV2OptionalInteger(file, rewards, pointer, location, "experience");
+  checkQuestV2OptionalInteger(file, rewards, pointer, location, "reputation");
+  checkQuestV2OptionalInteger(file, rewards, pointer, location, "gossip_reputation");
+  checkQuestV2OptionalString(file, rewards, pointer, location, "loot_table");
+  checkQuestV2OptionalString(file, rewards, pointer, location, "memory_event");
+  collectLootTableReferences(file, rewards, location, ["loot_table"], "quest module v2 rewards");
+  checkMemoryTagReferences(file, rewards, location, ["memory_event"], "quest module v2 rewards");
+}
+
+function checkQuestV2Ui(file, ui, pointer, location) {
+  if (ui === undefined) {
+    return;
+  }
+  if (!ui || typeof ui !== "object" || Array.isArray(ui)) {
+    questV2Error(file, pointer, location, "ui must be an object.", "Use tracker_text, title, or placeholders inside ui.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, ui, pointer, location, questV2UiKeys);
+  checkQuestV2OptionalString(file, ui, pointer, location, "title");
+  checkQuestV2OptionalString(file, ui, pointer, location, "title_key");
+  checkQuestV2OptionalString(file, ui, pointer, location, "description");
+  checkQuestV2OptionalString(file, ui, pointer, location, "description_key");
+  checkQuestV2OptionalString(file, ui, pointer, location, "tracker_text");
+  checkQuestV2OptionalString(file, ui, pointer, location, "tracker_text_key");
+  const placeholders = new Set();
+  if (ui.placeholders !== undefined) {
+    if (!ui.placeholders || typeof ui.placeholders !== "object" || Array.isArray(ui.placeholders)) {
+      questV2Error(file, `${pointer}/placeholders`, `${location}.placeholders`, "ui.placeholders must be an object.", "Use placeholder names mapped to string expressions.");
+    } else {
+      for (const [name, value] of Object.entries(ui.placeholders)) {
+        const placeholderPointer = `${pointer}/placeholders/${escapeJsonPointer(name)}`;
+        if (!/^[a-zA-Z0-9_]+$/.test(name)) {
+          questV2Error(file, placeholderPointer, `${location}.placeholders.${name}`, `placeholder name "${name}" is invalid.`, "Use letters, numbers, and underscores.");
+        }
+        if (typeof value !== "string") {
+          questV2Error(file, placeholderPointer, `${location}.placeholders.${name}`, "placeholder value must be a string expression.", "Use a string expression for the placeholder source.");
+        }
+        placeholders.add(name);
+      }
+    }
+  }
+  for (const key of ["title", "description", "tracker_text"]) {
+    for (const token of placeholderTokens(ui[key])) {
+      if (!placeholders.has(token)) {
+        questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `text references undefined UI placeholder "{${token}}".`, `Add ui.placeholders.${token} or remove the placeholder.`);
+      }
+    }
+  }
+}
+
+function checkQuestV2ExternalScenes(file, externalScenes, pointer, location) {
+  if (externalScenes === undefined) {
+    return;
+  }
+  if (!Array.isArray(externalScenes)) {
+    questV2Error(file, pointer, location, "external_scenes must be an array.", "List external dialogue tree resource ids.");
+    return;
+  }
+  for (const [index, scene] of externalScenes.entries()) {
+    const externalPointer = `${pointer}/${index}`;
+    const externalLocation = `${location}[${index}]`;
+    if (typeof scene !== "string" || !scene.trim()) {
+      questV2Error(file, externalPointer, externalLocation, "external_scenes entries must be nonblank strings.", "Use dialogue tree resource ids such as villagerretaliation:example.");
+      continue;
+    }
+    if (!isResourceLocation(scene.trim())) {
+      questV2Error(file, externalPointer, externalLocation, `external scene "${scene.trim()}" is not a valid resource location.`, "Use namespace:path.");
+    }
+    pendingExternalDialogueSceneReferences.push({ file, location: externalLocation, pointer: externalPointer, treeId: scene.trim(), entry: "" });
+  }
+}
+
+function checkQuestV2Conditions(file, conditions, pointer, location, questId, usage) {
+  if (conditions === undefined) {
+    return;
+  }
+  const entries = [];
+  if (conditions && typeof conditions === "object" && !Array.isArray(conditions)) {
+    entries.push({ value: conditions, pointer, location });
+  } else if (Array.isArray(conditions)) {
+    conditions.forEach((condition, index) => entries.push({
+      value: condition,
+      pointer: `${pointer}/${index}`,
+      location: `${location}[${index}]`
+    }));
+  } else {
+    questV2Error(file, pointer, location, "conditions must be an object or array.", "Use condition objects with a type field.");
+    return;
+  }
+  for (const entry of entries) {
+    const condition = entry.value;
+    if (!condition || typeof condition !== "object" || Array.isArray(condition)) {
+      questV2Error(file, entry.pointer, entry.location, "condition must be an object.", "Use a condition object with a type field.");
+      continue;
+    }
+    const type = normalizedString(condition.type);
+    if (!type) {
+      questV2Error(file, `${entry.pointer}/type`, `${entry.location}.type`, "condition type is required.", "Use a condition type from quest-registry-metadata.json.");
+      continue;
+    }
+    if (!questV2RegistryIndex.conditions.values.has(type)) {
+      questV2Error(file, `${entry.pointer}/type`, `${entry.location}.type`, `unknown condition type "${condition.type}".`, "Use one of the condition types in quest-registry-metadata.json.");
+    }
+    if (conditionTypes.has(type)) {
+      checkCondition(file, condition, entry.location, questId);
+    }
+    warnLiveOnlyQuestCondition(file, condition, entry.location, usage);
+    if (["all", "all_of", "and", "any", "any_of", "or"].includes(type)) {
+      checkQuestV2Conditions(file, condition.conditions, `${entry.pointer}/conditions`, `${entry.location}.conditions`, questId, usage);
+    } else if (type === "not") {
+      checkQuestV2Conditions(file, condition.condition, `${entry.pointer}/condition`, `${entry.location}.condition`, questId, usage);
+    }
+  }
+}
+
+function checkQuestV2Actions(file, actions, pointer, location, questId, options = {}) {
+  if (actions === undefined) {
+    return;
+  }
+  if (!Array.isArray(actions)) {
+    questV2Error(file, pointer, location, "actions must be an array.", "Use an array of action objects.");
+    return;
+  }
+  for (const [index, action] of actions.entries()) {
+    const actionPointer = `${pointer}/${index}`;
+    const actionLocation = `${location}[${index}]`;
+    if (!action || typeof action !== "object" || Array.isArray(action)) {
+      questV2Error(file, actionPointer, actionLocation, "action must be an object.", "Use an action object with a type field.");
+      continue;
+    }
+    const rawType = firstString(action.type, action.action);
+    if (!rawType) {
+      questV2Error(file, `${actionPointer}/type`, `${actionLocation}.type`, "action type is required.", "Use an action type from quest-registry-metadata.json.");
+      continue;
+    }
+    const type = questV2RegistryIndex.actions.canonical.get(rawType) || rawType;
+    if (!questV2RegistryIndex.actions.values.has(rawType)) {
+      questV2Error(file, `${actionPointer}/type`, `${actionLocation}.type`, `unknown action type "${rawType}".`, "Use one of the action types in quest-registry-metadata.json.");
+    }
+    warnLiveContextQuestAction(file, actionLocation, type, options.liveContextWarningUsage);
+    if (type === "quest") {
+      checkStringList(file, action, actionLocation, ["quest", "quest_id", "id"], "quest id");
+      checkStringValues(file, action, actionLocation, ["action"], dialogueTreeQuestActions, "quest action", { requireAny: true });
+      const questIds = readValues(action, ["quest", "quest_id", "id"]);
+      if (questIds.length === 0 && !questId) {
+        questV2Error(file, actionPointer, actionLocation, "quest action must define quest or quest_id unless a default quest is available.", "Set quest to the target quest id.");
+      }
+      for (const targetQuestId of questIds.length === 0 && questId ? [questId] : questIds) {
+        if (typeof targetQuestId === "string" && targetQuestId.trim()) {
+          pendingQuestReferences.push({ file, location: actionLocation, id: targetQuestId.trim(), reason: "quest module v2 action" });
+        }
+      }
+    }
+    if (isQuestFactActionType(type)) {
+      checkQuestFactAction(file, action, actionLocation, type, questId);
+    }
+    if (type === "loot") {
+      checkOptionalString(file, action, actionLocation, "loot_table");
+      if (!hasStringValues(action, ["loot_table"])) {
+        questV2Error(file, `${actionPointer}/loot_table`, `${actionLocation}.loot_table`, "loot action requires loot_table.", "Set loot_table to a loot table resource id.");
+      }
+      collectLootTableReferences(file, action, actionLocation, ["loot_table"], "quest module v2 loot action");
+    }
+    if (type === "memory") {
+      checkOptionalString(file, action, actionLocation, "memory_event");
+      if (!hasStringValues(action, ["memory_event"])) {
+        questV2Error(file, `${actionPointer}/memory_event`, `${actionLocation}.memory_event`, "memory action requires memory_event.", "Set memory_event to a village memory tag.");
+      }
+      checkMemoryTagReferences(file, action, actionLocation, ["memory_event"], "quest module v2 memory action");
+    }
+    if (type === "forced_dialogue") {
+      checkStringList(file, action, actionLocation, ["forced_dialogue"], "forced dialogue id");
+      for (const forcedDialogueId of readValues(action, ["forced_dialogue"])) {
+        if (typeof forcedDialogueId === "string" && forcedDialogueId.trim()) {
+          pendingForcedDialogueReferences.push({ file, location: actionLocation, id: forcedDialogueId.trim(), reason: "dialogue or trigger action" });
+        }
+      }
+    }
+    if (type === "notification") {
+      checkOptionalString(file, action, actionLocation, "notification");
+      checkOptionalString(file, action, actionLocation, "trigger");
+      checkOptionalString(file, action, actionLocation, "text");
+      if (!hasStringValues(action, ["notification", "trigger", "text"])) {
+        questV2Error(file, actionPointer, actionLocation, "notification action must define notification, trigger, or text.", "Set notification to a notification trigger or provide inline text.");
+      }
+      collectNotificationTriggerReference(
+        file,
+        stringValue(action.notification) ? `${actionLocation}.notification` : `${actionLocation}.trigger`,
+        stringValue(action.notification) || stringValue(action.trigger),
+        "quest module v2 notification action"
+      );
+    }
+  }
+}
+
+function validateQuestV2Graph(file, data, model) {
+  const entryStage = stringValue(data.entry_stage);
+  if (!entryStage) {
+    questV2Error(file, "/entry_stage", "entry_stage", "entry_stage is required.", "Set entry_stage to the first stage id.");
+  } else if (!model.stageIds.has(entryStage)) {
+    questV2Error(file, "/entry_stage", "entry_stage", `entry_stage references missing stage "${entryStage}".`, "Set entry_stage to an id from stages[].id.");
+  }
+  for (const entry of model.transitions) {
+    const transition = entry.transition;
+    if (transition.stage && !model.stageIds.has(transition.stage)) {
+      questV2Error(file, entry.pointer, entry.location, `transition references missing stage "${transition.stage}".`, "Reference a stage id from stages[].id.");
+    }
+    if (transition.scene && entry.stageId) {
+      const scenes = model.sceneIdsByStage.get(entry.stageId) || new Set();
+      if (!scenes.has(transition.scene)) {
+        questV2Error(file, entry.pointer, entry.location, `transition references missing local scene "${transition.scene}".`, "Reference a scene id from the current stage.");
+      }
+    }
+    if (transition.response && entry.stageId) {
+      const responses = model.responseIdsByStage.get(entry.stageId) || new Set();
+      if (responses.size > 0 && !responses.has(transition.response)) {
+        questV2Warning(file, entry.pointer, entry.location, `transition references response "${transition.response}" that is not visible from this stage response list.`, "Move the response to this scene/stage or remove the transition.");
+      }
+    }
+  }
+  warnQuestV2UnreachableStages(file, entryStage, model);
+  warnQuestV2UnreachableScenes(file, model);
+}
+
+function warnQuestV2UnreachableStages(file, entryStage, model) {
+  if (!entryStage || !model.stageIds.has(entryStage)) {
+    return;
+  }
+  const reachable = new Set();
+  const pending = [entryStage];
+  while (pending.length > 0) {
+    const stageId = pending.pop();
+    if (reachable.has(stageId)) {
+      continue;
+    }
+    reachable.add(stageId);
+    for (const entry of model.transitions) {
+      if (entry.stageId === stageId && entry.transition.stage && model.stageIds.has(entry.transition.stage)) {
+        pending.push(entry.transition.stage);
+      }
+    }
+  }
+  for (const stage of model.stages) {
+    if (!reachable.has(stage.id)) {
+      questV2Warning(file, `${stage.pointer}/id`, `${stage.location}.id`, `stage "${stage.id}" is unreachable from entry_stage.`, "Link to it from an earlier transition or remove it.");
+    }
+  }
+}
+
+function warnQuestV2UnreachableScenes(file, model) {
+  for (const stage of model.stages) {
+    const scenes = model.sceneIdsByStage.get(stage.id) || new Set();
+    if (scenes.size === 0) {
+      continue;
+    }
+    const reachable = new Set();
+    const dialogue = stage.raw.dialogue && typeof stage.raw.dialogue === "object" && !Array.isArray(stage.raw.dialogue) ? stage.raw.dialogue : {};
+    for (const slot of Object.values(dialogue)) {
+      const scene = firstString(slot?.scene, slot?.scene_ref);
+      if (scene && scenes.has(scene)) {
+        reachable.add(scene);
+      }
+    }
+    for (const entry of model.transitions) {
+      if (entry.stageId === stage.id && entry.transition.scene && scenes.has(entry.transition.scene)) {
+        reachable.add(entry.transition.scene);
+      }
+    }
+    for (const scene of scenes) {
+      if (!reachable.has(scene)) {
+        questV2Warning(file, `${stage.pointer}/scenes`, `${stage.location}.scenes`, `scene "${scene}" is not reachable from any dialogue slot or scene transition.`, "Reference it from stage dialogue or a response transition, or remove it.");
+      }
+    }
+  }
+}
+
+function warnQuestV2LifecycleCoverage(file, data, model) {
+  const covered = new Set();
+  for (const hook of ["on_start", "on_complete", "on_abandon", "on_expire", "on_fail"]) {
+    if (data.lifecycle && typeof data.lifecycle === "object" && data.lifecycle[hook] !== undefined) {
+      covered.add(hook);
+    }
+  }
+  for (const stage of model.stages) {
+    const dialogue = stage.raw.dialogue && typeof stage.raw.dialogue === "object" && !Array.isArray(stage.raw.dialogue) ? stage.raw.dialogue : {};
+    for (const slot of Object.keys(dialogue)) {
+      if (questV2LifecycleCoverageSlots.has(slot)) {
+        covered.add(slot);
+      }
+    }
+  }
+  if (!covered.has("on_start") && !covered.has("offer")) {
+    questV2Warning(file, "/lifecycle", "lifecycle", "quest module v2 has no start lifecycle hook or offer dialogue slot.", "Add lifecycle.on_start or a dialogue.offer slot so authors can verify start behavior.");
+  }
+  if (!covered.has("on_complete") && !covered.has("turn_in")) {
+    questV2Warning(file, "/lifecycle", "lifecycle", "quest module v2 has no completion lifecycle hook or turn_in dialogue slot.", "Add lifecycle.on_complete or a dialogue.turn_in slot so completion behavior is explicit.");
+  }
+}
+
+function readQuestV2Transition(file, value, pointer, location) {
+  const empty = { empty: true, stage: "", scene: "", response: "", complete: false, abandon: false, fail: false };
+  if (value === undefined || value === null) {
+    return empty;
+  }
+  if (typeof value === "string") {
+    if (!value.trim()) {
+      questV2Error(file, pointer, location, "transition target stage must not be blank.", "Reference a stage id or remove the transition.");
+      return empty;
+    }
+    return { ...empty, empty: false, stage: value.trim() };
+  }
+  let object = value;
+  if (value && typeof value === "object" && !Array.isArray(value) && value.transition !== undefined) {
+    return readQuestV2Transition(file, value.transition, `${pointer}/transition`, `${location}.transition`);
+  }
+  if (value && typeof value === "object" && !Array.isArray(value) && hasAnyKey(value, ["next", "stage", "scene", "response", "complete", "abandon", "fail"])) {
+    object = {
+      stage: firstDefined(value.next, value.stage),
+      scene: value.scene,
+      response: value.response,
+      complete: value.complete,
+      abandon: value.abandon,
+      fail: value.fail
+    };
+  }
+  if (!object || typeof object !== "object" || Array.isArray(object)) {
+    questV2Error(file, pointer, location, "transition must be a string or object.", "Use a stage id string or one transition object.");
+    return empty;
+  }
+  checkQuestV2UnknownKeys(file, object, pointer, location, questV2TransitionKeys);
+  const transition = {
+    empty: false,
+    stage: stringValue(object.stage),
+    scene: stringValue(object.scene),
+    response: stringValue(object.response),
+    complete: object.complete === true,
+    abandon: object.abandon === true,
+    fail: object.fail === true
+  };
+  const targetCount = [transition.stage, transition.scene, transition.response].filter(Boolean).length
+    + (transition.complete ? 1 : 0)
+    + (transition.abandon ? 1 : 0)
+    + (transition.fail ? 1 : 0);
+  if (targetCount === 0) {
+    questV2Error(file, pointer, location, "transition must choose a target.", "Set exactly one of stage, scene, response, complete, abandon, or fail.");
+    return empty;
+  }
+  if (targetCount > 1) {
+    questV2Error(file, pointer, location, "transition must choose only one target.", "Keep exactly one transition target.");
+  }
+  return transition;
+}
+
+function readQuestV2WrapperTransition(file, object, pointer, location) {
+  if (!object || typeof object !== "object" || Array.isArray(object)) {
+    return emptyQuestV2Transition();
+  }
+  if (!Object.hasOwn(object, "transition") && !hasAnyKey(object, ["next", "stage", "scene", "response", "complete", "abandon", "fail"])) {
+    return emptyQuestV2Transition();
+  }
+  return readQuestV2Transition(file, object, pointer, location);
+}
+
+function emptyQuestV2Transition() {
+  return { empty: true, stage: "", scene: "", response: "", complete: false, abandon: false, fail: false };
+}
+
+function transitionChangesStage(transition) {
+  return transition && (transition.stage || transition.complete || transition.abandon || transition.fail);
+}
+
+function isQuestV2StageChangingAction(action) {
+  if (!action || typeof action !== "object" || Array.isArray(action)) {
+    return false;
+  }
+  const type = questV2RegistryIndex.actions.canonical.get(firstString(action.type, action.action)) || firstString(action.type, action.action);
+  if (type === "quest_transition") {
+    return true;
+  }
+  if (type === "set_variable") {
+    const key = firstString(action.variable, action.key, action.fact);
+    return Object.hasOwn(action, "stage") || key === "stage";
+  }
+  if (type !== "quest") {
+    return false;
+  }
+  return ["start", "turn_in", "abandon", "block"].includes(normalizedString(action.action));
+}
+
+function readQuestV2ObjectiveReferences(value) {
+  if (value === undefined) {
+    return [];
+  }
+  if (typeof value === "string") {
+    return value.trim() ? [value.trim()] : [];
+  }
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const refs = [];
+  for (const entry of value) {
+    if (typeof entry === "string" && entry.trim()) {
+      refs.push(entry.trim());
+    } else if (entry && typeof entry === "object" && !Array.isArray(entry)) {
+      const ref = firstString(entry.objective, entry.objective_id, entry.id);
+      if (ref) {
+        refs.push(ref);
+      }
+    }
+  }
+  return refs;
+}
+
+function collectQuestV2ExternalSceneReference(file, object, pointer, location, defaultEntry, ...extraKeys) {
+  if (!object || typeof object !== "object" || Array.isArray(object)) {
+    return;
+  }
+  const keys = ["external_scene", "external", ...extraKeys];
+  const key = keys.find((candidate) => Object.hasOwn(object, candidate));
+  if (!key) {
+    return;
+  }
+  const value = object[key];
+  const externalPointer = `${pointer}/${escapeJsonPointer(key)}`;
+  const externalLocation = `${location}.${key}`;
+  const fallbackEntry = firstString(object.external_entry, defaultEntry);
+  if (typeof value === "string") {
+    if (!value.trim()) {
+      return;
+    }
+    if (!isResourceLocation(value.trim())) {
+      questV2Error(file, externalPointer, externalLocation, `invalid external dialogue tree "${value.trim()}".`, "Use a resource location such as namespace:path.");
+      return;
+    }
+    pendingExternalDialogueSceneReferences.push({ file, location: externalLocation, pointer: externalPointer, treeId: value.trim(), entry: fallbackEntry });
+    return;
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    questV2Error(file, externalPointer, externalLocation, "external scene reference must be a string or object.", "Use a dialogue tree id or an object with tree and entry.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, value, externalPointer, externalLocation, questV2ExternalSceneKeys);
+  const treeId = firstString(value.tree, value.tree_id, value.dialogue_tree);
+  if (!treeId) {
+    questV2Error(file, `${externalPointer}/tree`, `${externalLocation}.tree`, "external dialogue scene must define tree.", "Set external.tree to the dialogue tree resource id.");
+    return;
+  }
+  if (!isResourceLocation(treeId)) {
+    questV2Error(file, `${externalPointer}/tree`, `${externalLocation}.tree`, `invalid external dialogue tree "${treeId}".`, "Use a resource location such as namespace:path.");
+    return;
+  }
+  pendingExternalDialogueSceneReferences.push({
+    file,
+    location: externalLocation,
+    pointer: externalPointer,
+    treeId,
+    entry: firstString(value.entry, value.entry_id, fallbackEntry)
+  });
+}
+
+function checkQuestV2UnknownKeys(file, object, pointer, location, allowedKeys) {
+  if (!object || typeof object !== "object" || Array.isArray(object)) {
+    return;
+  }
+  for (const key of Object.keys(object)) {
+    if (!allowedKeys.has(key)) {
+      questV2Error(file, childJsonPointer(pointer, key), `${location}.${key}`, `unsupported field "${key}".`, "Remove the field or move it to a supported quest module v2 location.");
+    }
+  }
+}
+
+function checkQuestV2Id(file, id, pointer, location, label) {
+  if (!id) {
+    questV2Error(file, pointer, location, `${label} is required.`, "Add a stable non-empty id.");
+    return;
+  }
+  if (!questV2IdPattern.test(id)) {
+    questV2Error(file, pointer, location, `${label} "${id}" uses an invalid or reserved id.`, "Use letters, numbers, underscores, dots, colons, or hyphens, and avoid __generated or vr$ prefixes.");
+  }
+}
+
+function checkQuestV2OptionalString(file, object, pointer, location, key) {
+  if (object?.[key] !== undefined && typeof object[key] !== "string") {
+    questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `${key} must be a string.`, "Use a string value or remove the field.");
+  }
+}
+
+function checkQuestV2StringArray(file, value, pointer, location, label) {
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value === "string") {
+    if (!value.trim()) {
+      questV2Error(file, pointer, location, `${label} must not be blank.`, "Use a nonblank string or remove it.");
+    }
+    return;
+  }
+  if (!Array.isArray(value)) {
+    questV2Error(file, pointer, location, `${label} must be a string or array of strings.`, "Use string values.");
+    return;
+  }
+  value.forEach((entry, index) => {
+    if (typeof entry !== "string" || !entry.trim()) {
+      questV2Error(file, `${pointer}/${index}`, `${location}[${index}]`, `${label} must be a nonblank string.`, "Use a nonblank string.");
+    }
+  });
+}
+
+function checkQuestV2OptionalBoolean(file, object, pointer, location, key) {
+  if (object?.[key] !== undefined && typeof object[key] !== "boolean") {
+    questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `${key} must be a boolean.`, "Use true or false.");
+  }
+}
+
+function checkQuestV2OptionalInteger(file, object, pointer, location, key, options = {}) {
+  if (object?.[key] === undefined) {
+    return;
+  }
+  if (!Number.isInteger(object[key])) {
+    questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `${key} must be an integer.`, "Use a whole number.");
+    return;
+  }
+  if (options.min !== undefined && object[key] < options.min) {
+    questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `${key} must be at least ${options.min}.`, "Raise the value or remove it.");
+  }
+}
+
+function checkQuestV2OptionalNumber(file, object, pointer, location, key, options = {}) {
+  if (object?.[key] === undefined) {
+    return;
+  }
+  if (typeof object[key] !== "number" || Number.isNaN(object[key])) {
+    questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `${key} must be a number.`, "Use a numeric value.");
+    return;
+  }
+  if (options.min !== undefined && object[key] < options.min) {
+    questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `${key} must be at least ${options.min}.`, "Raise the value or remove it.");
+  }
+}
+
+function checkQuestV2OptionalObject(file, value, pointer, location, label) {
+  if (value !== undefined && (!value || typeof value !== "object" || Array.isArray(value))) {
+    questV2Error(file, pointer, location, `${label} must be an object.`, "Use an object or remove the field.");
+  }
+}
+
+function questV2Error(file, pointer, location, message, suggestion) {
+  errors.push(questV2Issue(file, "error", pointer, location, message, suggestion));
+}
+
+function questV2Warning(file, pointer, location, message, suggestion) {
+  warnings.push(questV2Issue(file, "warning", pointer, location, message, suggestion));
+}
+
+function questV2Issue(file, severity, pointer, location, message, suggestion) {
+  return {
+    severity,
+    resource: relative(file),
+    path: location || pointerToPath(pointer),
+    pointer: pointer || "",
+    message,
+    suggestion
+  };
+}
+
+function questV2StageIds(stages) {
+  if (!Array.isArray(stages)) {
+    return new Set();
+  }
+  return new Set(stages
+    .filter((stage) => stage && typeof stage === "object" && !Array.isArray(stage))
+    .map((stage) => stringValue(stage.id))
+    .filter(Boolean));
+}
+
+function questRegistryIndex(metadata) {
+  const empty = () => ({ values: new Set(), canonical: new Map(), capabilities: new Map() });
+  const index = {
+    conditions: empty(),
+    actions: empty(),
+    objectives: empty(),
+    triggers: empty(),
+    providers: empty()
+  };
+  const registries = metadata?.registries;
+  if (!registries || typeof registries !== "object" || Array.isArray(registries)) {
+    return index;
+  }
+  addRegistryAliases(index.conditions, registries.conditions);
+  addRegistryAliases(index.actions, registries.actions);
+  addRegistryAliases(index.objectives, registries.objectives);
+  addRegistryAliases(index.triggers, registries.triggers, "event");
+  addRegistryAliases(index.providers, registries.providers);
+  for (const provider of Array.isArray(registries.providers) ? registries.providers : []) {
+    const id = stringValue(provider?.id);
+    if (id) {
+      index.providers.capabilities.set(id, new Set(readValues(provider, ["capabilities"]).filter((value) => typeof value === "string")));
+    }
+  }
+  return index;
+}
+
+function addRegistryAliases(target, entries, canonicalKey = "id") {
+  if (!Array.isArray(entries)) {
+    return;
+  }
+  for (const entry of entries) {
+    const canonical = stringValue(entry?.[canonicalKey]) || stringValue(entry?.id);
+    if (!canonical) {
+      continue;
+    }
+    target.values.add(canonical);
+    target.canonical.set(canonical, canonical);
+    for (const alias of readValues(entry, ["aliases"])) {
+      if (typeof alias === "string" && alias.trim()) {
+        target.values.add(alias.trim());
+        target.canonical.set(alias.trim(), canonical);
+      }
+    }
+  }
+}
+
+function pointerToPath(pointer) {
+  if (!pointer || pointer === "/") {
+    return "root";
+  }
+  return pointer.split("/").slice(1).reduce((pathText, part) => {
+    const value = unescapeJsonPointer(part);
+    return /^\d+$/.test(value) ? `${pathText}[${value}]` : `${pathText}.${value}`;
+  }, "root");
+}
+
+function childJsonPointer(pointer, key) {
+  const escaped = escapeJsonPointer(key);
+  return pointer ? `${pointer}/${escaped}` : `/${escaped}`;
+}
+
+function escapeJsonPointer(value) {
+  return String(value).replaceAll("~", "~0").replaceAll("/", "~1");
+}
+
+function unescapeJsonPointer(value) {
+  return String(value).replaceAll("~1", "/").replaceAll("~0", "~");
+}
+
+function placeholderTokens(value) {
+  if (typeof value !== "string") {
+    return [];
+  }
+  return [...value.matchAll(textTokenPattern)].map((match) => match[1]);
+}
+
+function isResourceLocation(value) {
+  return typeof value === "string" && resourceLocationPattern.test(value.trim());
+}
+
+function firstString(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return "";
+}
+
+function firstDefined(...values) {
+  for (const value of values) {
+    if (value !== undefined) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function hasAnyKey(object, keys) {
+  return Boolean(object && typeof object === "object" && !Array.isArray(object) && keys.some((key) => Object.hasOwn(object, key)));
 }
 
 function checkQuest(file, data) {
@@ -4004,6 +5351,9 @@ function indexDialogueTree(file, data) {
 
 function questPathQuestline(file) {
   const relativePath = path.relative(path.join(root, roots.quests), file).replaceAll(path.sep, "/");
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    return "";
+  }
   const parts = relativePath.split("/");
   return parts.length > 1 ? parts[0] : "";
 }
@@ -4142,6 +5492,7 @@ function validateCrossReferences() {
   validateForcedDialogueMessageKeyReferences();
   validateLootTableReferences();
   validateNotificationTriggerReferences();
+  validateExternalDialogueSceneReferences();
 
   for (const reference of pendingForcedDialogueReferences) {
     const definition = forcedDialogueDefinitions.get(reference.id);
@@ -4255,6 +5606,33 @@ function validateNotificationTriggerReferences() {
   for (const reference of pendingNotificationTriggerReferences) {
     if (!notificationTriggerDefinitions.has(reference.trigger)) {
       warnings.push(`${relative(reference.file)}: ${reference.location} references missing notification trigger "${reference.trigger}" from ${reference.reason}; live notification resolution will fall back to authored text.`);
+    }
+  }
+}
+
+function validateExternalDialogueSceneReferences() {
+  for (const reference of pendingExternalDialogueSceneReferences) {
+    const tree = dialogueTreeDefinitions.get(reference.treeId);
+    if (!tree) {
+      errors.push(questV2Issue(
+        reference.file,
+        "error",
+        reference.pointer,
+        reference.location,
+        `external dialogue tree "${reference.treeId}" does not exist.`,
+        "Create the dialogue tree or update the external_scene tree id."
+      ));
+      continue;
+    }
+    if (reference.entry && !tree.entryIds.has(reference.entry)) {
+      errors.push(questV2Issue(
+        reference.file,
+        "error",
+        reference.pointer,
+        reference.location,
+        `external dialogue tree "${reference.treeId}" has no entry "${reference.entry}".`,
+        "Use an entry id defined by the referenced dialogue tree."
+      ));
     }
   }
 }
