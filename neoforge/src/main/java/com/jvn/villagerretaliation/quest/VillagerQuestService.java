@@ -931,15 +931,15 @@ public final class VillagerQuestService {
         }
         boolean changed = false;
         for (int i = 0; i < MAX_STAGE_ADVANCES_PER_CHECK; i++) {
-            QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
-            if (stage == null
-                    || stage.next().isBlank()
-                    || stage.completeWhen().isEmpty()
-                    || !definition.stages().containsKey(stage.next())
-                    || !stagePredicatesMet(context, definition, progress, stage)) {
+            QuestStageReadiness readiness = QuestStageReadiness.forCurrentStage(
+                    context,
+                    definition,
+                    progress,
+                    objective -> objectiveComplete(context.player(), context, context.level(), definition, progress, objective));
+            if (!readiness.ready()) {
                 break;
             }
-            if (!changeQuestStage(context, definition, progress, stage.next(), true, true)) {
+            if (!changeQuestStage(context, definition, progress, readiness.nextStage(), true, true)) {
                 break;
             }
             changed = true;
@@ -955,40 +955,6 @@ public final class VillagerQuestService {
         return contextForStartedVillager(level, player, progress)
                 .map(context -> advanceStageIfComplete(context, definition, progress))
                 .orElse(false);
-    }
-
-    private static boolean stagePredicatesMet(
-            DialogueContext context,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
-            QuestDefinition.Stage stage) {
-        for (QuestDefinition.StagePredicate predicate : stage.completeWhen()) {
-            if (!stagePredicateMet(context, definition, progress, predicate)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean stagePredicateMet(
-            DialogueContext context,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
-            QuestDefinition.StagePredicate predicate) {
-        if (predicate == null || predicate.isEmpty()) {
-            return false;
-        }
-        if (!predicate.objective().isBlank()) {
-            QuestDefinition.Objective objective = definition.objectives().stream()
-                    .filter(candidate -> candidate.id().equals(predicate.objective()))
-                    .findFirst()
-                    .orElse(null);
-            if (objective == null
-                    || !objectiveComplete(context.player(), context, context.level(), definition, progress, objective)) {
-                return false;
-            }
-        }
-        return DialogueCondition.matchesAll(context, predicate.conditions());
     }
 
     private static boolean runStageActions(
@@ -2723,13 +2689,9 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        List<QuestDefinition.Objective> requiredItemHandIns = new ArrayList<>();
-        for (QuestDefinition.Objective objective : definition.objectives()) {
-            if (objective.optional()) {
-                continue;
-            }
+        List<QuestDefinition.Objective> requiredItemHandIns = QuestObjectiveQuery.requiredItemHandIns(definition);
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.requiredObjectives(definition)) {
             if (QuestObjectiveRegistry.requiresItemHandIn(objective)) {
-                requiredItemHandIns.add(objective);
                 continue;
             }
             if (!objectiveComplete(player, context, context.level(), definition, progress, objective)) {
@@ -2755,12 +2717,7 @@ public final class VillagerQuestService {
         if (registryResult.isPresent()) {
             return registryResult.get().complete();
         }
-        return switch (objective.type()) {
-            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK,
-                    MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT, REPUTATION -> false;
-            case CHOICE, FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
-            case CONDITION -> objectiveConditionState(player, context, level, definition, progress, objective) == ConditionMatch.MET;
-        };
+        return false;
     }
 
     private static QuestObjectiveEvaluationContext objectiveEvaluationContext(
@@ -2777,7 +2734,29 @@ public final class VillagerQuestService {
                 progress,
                 objective -> itemCount(player, objective),
                 VillagerQuestService::matchesObjectiveItemStack,
-                objective -> reputationForObjective(level, player, progress));
+                objective -> reputationForObjective(level, player, progress),
+                objective -> matchesFactObjective(level, player, definition, progress, objective),
+                objective -> objectiveConditionState(player, context, level, definition, progress, objective) == ConditionMatch.MET,
+                objective -> objectiveDebugState(player, context, level, definition, progress, objective));
+    }
+
+    private static QuestObjectiveDebugState objectiveDebugState(
+            ServerPlayer player,
+            DialogueContext context,
+            ServerLevel level,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Objective objective) {
+        String scopeKey = "";
+        if (progress != null
+                && (objective.type() == QuestDefinition.ObjectiveType.CHOICE
+                || objective.type() == QuestDefinition.ObjectiveType.FACT)) {
+            scopeKey = blankAs(factObjectiveScopeKey(level, player, definition, progress, objective), "unresolved");
+        }
+        String conditionState = objective.type() == QuestDefinition.ObjectiveType.CONDITION
+                ? debugEnum(objectiveConditionState(player, context, level, definition, progress, objective))
+                : "";
+        return new QuestObjectiveDebugState(null, "", scopeKey, conditionState);
     }
 
     private static ConditionMatch objectiveConditionState(
@@ -2885,21 +2864,13 @@ public final class VillagerQuestService {
             ServerLevel level,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        for (QuestDefinition.Objective objective : definition.objectives()) {
-            if (!objective.optional() && !objectiveComplete(player, context, level, definition, progress, objective)) {
-                return Optional.of(objective);
-            }
-        }
-        return Optional.empty();
+        return QuestObjectiveQuery.firstIncompleteRequired(
+                definition,
+                objective -> objectiveComplete(player, context, level, definition, progress, objective));
     }
 
     private static ItemHandInResult handInRequiredObjectiveItems(DialogueContext context, QuestDefinition definition) {
-        List<QuestDefinition.Objective> requiredItemHandIns = new ArrayList<>();
-        for (QuestDefinition.Objective objective : definition.objectives()) {
-            if (!objective.optional() && QuestObjectiveRegistry.requiresItemHandIn(objective)) {
-                requiredItemHandIns.add(objective);
-            }
-        }
+        List<QuestDefinition.Objective> requiredItemHandIns = QuestObjectiveQuery.requiredItemHandIns(definition);
         if (requiredItemHandIns.isEmpty()) {
             return ItemHandInResult.SUCCESS;
         }
@@ -3688,21 +3659,7 @@ public final class VillagerQuestService {
                 if (!registeredStep.isBlank()) {
                     return registeredStep;
                 }
-                return switch (objective.type()) {
-                    case STRUCTURE_VISIT, LOCATION_VISIT -> "travel";
-                    case ITEM_CHECK -> "proof";
-                    case MOB_KILL -> "hunt";
-                    case BLOCK_BREAK -> "break";
-                    case BLOCK_PLACE -> "build";
-                    case BLOCK_INTERACT -> "interact";
-                    case MEMORY_EVENT -> "event";
-                    case TRADE -> "trade";
-                    case GIFT -> "gift";
-                    case REPUTATION -> "reputation";
-                    case CHOICE -> "choice";
-                    case FACT -> "fact";
-                    case CONDITION -> "inactive";
-                };
+                return "inactive";
             }
         }
         return "return";
@@ -3996,14 +3953,7 @@ public final class VillagerQuestService {
         if (registryResult.isPresent()) {
             return registryResult.get().progress();
         }
-        return switch (objective.type()) {
-            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK,
-                    MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT, REPUTATION -> 0.0F;
-            case CHOICE, FACT, CONDITION -> progress != null
-                    && objectiveComplete(player, context, player.serverLevel(), definition, progress, objective)
-                    ? 1.0F
-                    : 0.0F;
-        };
+        return 0.0F;
     }
 
     private static void addIssuerReplacements(
@@ -4491,15 +4441,6 @@ public final class VillagerQuestService {
         boolean complete = progress != null
                 && objectiveComplete(player, context, level, definition, progress, objective);
         int counter = progress == null ? 0 : progress.objectiveCounter(objective.id());
-        String scopeKey = "";
-        if (progress != null
-                && (objective.type() == QuestDefinition.ObjectiveType.CHOICE
-                || objective.type() == QuestDefinition.ObjectiveType.FACT)) {
-            scopeKey = blankAs(factObjectiveScopeKey(level, player, definition, progress, objective), "unresolved");
-        }
-        String conditionState = objective.type() == QuestDefinition.ObjectiveType.CONDITION
-                ? debugEnum(objectiveConditionState(player, context, level, definition, progress, objective))
-                : "";
         return QuestDebugFormatter.objectiveLine(
                 definition.id(),
                 objective,
@@ -4511,8 +4452,8 @@ public final class VillagerQuestService {
                         objective.type() == QuestDefinition.ObjectiveType.REPUTATION
                                 ? reputationForObjective(level, player, progress)
                                 : 0,
-                        scopeKey,
-                        conditionState));
+                        registryDebug.factScopeKeyOr(""),
+                        registryDebug.conditionStateOr("")));
     }
 
     private static String debugInventoryCacheLine(ServerPlayer player, QuestDefinition definition) {

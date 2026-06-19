@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestCatalog;
+import com.jvn.villagerretaliation.quest.compiled.QuestSourcePointer;
 import com.jvn.villagerretaliation.quest.compiler.QuestV1Compiler;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
@@ -98,6 +99,18 @@ public final class VillagerQuestResources {
             return Optional.empty();
         }
         return loadCache(server).compiledCatalog().quest(id);
+    }
+
+    public static Optional<QuestSourcePointer> objectiveSource(
+            MinecraftServer server,
+            ResourceLocation questId,
+            String objectiveId) {
+        if (objectiveId == null || objectiveId.isBlank()) {
+            return Optional.empty();
+        }
+        return compiledQuest(server, questId)
+                .map(quest -> quest.objectivesById().get(objectiveId))
+                .map(objective -> objective == null ? null : objective.source());
     }
 
     public static boolean hasMobKillObjectives(MinecraftServer server, ResourceLocation id) {
@@ -561,18 +574,6 @@ public final class VillagerQuestResources {
         ReputationObjective reputationObjective = readReputationObjective(location, context, entry);
         FactObjective factObjective = readFactObjective(location, context, entry, defaultQuestId);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
-        if (type == QuestDefinition.ObjectiveType.FACT && factObjective.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "fact objective must define tag, tags, key, variable, counter, stage, or stages.");
-            return Optional.empty();
-        }
-        if (type == QuestDefinition.ObjectiveType.CHOICE && factObjective.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "choice objective must define choice, choices, value, values, or a fact key.");
-            return Optional.empty();
-        }
-        if (type == QuestDefinition.ObjectiveType.CONDITION && conditions.isEmpty()) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "condition objective must define conditions.");
-            return Optional.empty();
-        }
 
         QuestDefinition.Objective objective = new QuestDefinition.Objective(
                 id,

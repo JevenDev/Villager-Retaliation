@@ -96,19 +96,19 @@ public final class QuestObjectiveRegistry {
                     QuestDefinition.ObjectiveType.CHOICE,
                     aliases("dialogue_choice", "branch_choice", "quest_choice"),
                     requirements(QuestObjectiveRequirement.POLLING),
-                    null),
+                    new ChoiceObjectiveType()),
             register(
                     "fact",
                     QuestDefinition.ObjectiveType.FACT,
                     aliases("quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"),
                     requirements(QuestObjectiveRequirement.POLLING),
-                    null),
+                    new FactObjectiveType()),
             register(
                     "condition",
                     QuestDefinition.ObjectiveType.CONDITION,
                     aliases(),
                     requirements(QuestObjectiveRequirement.POLLING, QuestObjectiveRequirement.LIVE_CONTEXT),
-                    null)
+                    new ConditionObjectiveType())
     );
     private static final Map<String, QuestObjectiveTypeDescriptor<?>> BY_ALIAS = descriptorsByAlias();
     private static final Map<QuestDefinition.ObjectiveType, QuestObjectiveTypeDescriptor<?>> BY_TYPE = descriptorsByType();
@@ -575,6 +575,131 @@ public final class QuestObjectiveRegistry {
         }
         double radius = Math.max(1, objective.radius());
         return pos.distSqr(objective.location()) <= radius * radius;
+    }
+
+    private abstract static class LogicalObjectiveType implements QuestObjectiveType<Void> {
+        @Override
+        public QuestObjectiveResult evaluate(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective) {
+            if (context == null) {
+                return QuestObjectiveResult.incomplete(0.0F, "logical context unavailable");
+            }
+            boolean complete = matches(context, objective);
+            return complete
+                    ? QuestObjectiveResult.complete(completeMessage())
+                    : QuestObjectiveResult.incomplete(0.0F, incompleteMessage());
+        }
+
+        @Override
+        public QuestObjectiveDebugState debugState(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective,
+                QuestObjectiveResult result) {
+            return context == null ? QuestObjectiveDebugState.EMPTY : context.debugState(objective);
+        }
+
+        protected abstract boolean matches(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective);
+
+        protected abstract String completeMessage();
+
+        protected abstract String incompleteMessage();
+    }
+
+    private static class FactObjectiveType extends LogicalObjectiveType {
+        @Override
+        public Optional<String> validationError(QuestDefinition.Objective objective) {
+            return factDefinitionMissing(objective)
+                    ? Optional.of("fact objective must define tag, tags, key, variable, counter, stage, or stages.")
+                    : Optional.empty();
+        }
+
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return "fact";
+        }
+
+        @Override
+        protected boolean matches(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective) {
+            return context.matchesFact(objective);
+        }
+
+        @Override
+        protected String completeMessage() {
+            return "fact objective complete";
+        }
+
+        @Override
+        protected String incompleteMessage() {
+            return "fact objective incomplete";
+        }
+    }
+
+    private static final class ChoiceObjectiveType extends FactObjectiveType {
+        @Override
+        public Optional<String> validationError(QuestDefinition.Objective objective) {
+            return factDefinitionMissing(objective)
+                    ? Optional.of("choice objective must define choice, choices, value, values, or a fact key.")
+                    : Optional.empty();
+        }
+
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return "choice";
+        }
+
+        @Override
+        protected String completeMessage() {
+            return "choice objective complete";
+        }
+
+        @Override
+        protected String incompleteMessage() {
+            return "choice objective incomplete";
+        }
+    }
+
+    private static final class ConditionObjectiveType extends LogicalObjectiveType {
+        @Override
+        public Optional<String> validationError(QuestDefinition.Objective objective) {
+            return objective.conditions().isEmpty()
+                    ? Optional.of("condition objective must define conditions.")
+                    : Optional.empty();
+        }
+
+        @Override
+        public String trackerStepKey(QuestDefinition.Objective objective) {
+            return "inactive";
+        }
+
+        @Override
+        protected boolean matches(
+                QuestObjectiveEvaluationContext context,
+                QuestDefinition.Objective objective) {
+            return context.matchesConditions(objective);
+        }
+
+        @Override
+        protected String completeMessage() {
+            return "condition objective complete";
+        }
+
+        @Override
+        protected String incompleteMessage() {
+            return "condition objective incomplete";
+        }
+    }
+
+    private static boolean factDefinitionMissing(QuestDefinition.Objective objective) {
+        return objective.factTags().isEmpty()
+                && objective.factKey().isBlank()
+                && objective.factValues().isEmpty()
+                && objective.factMin() == null
+                && objective.factMax() == null;
     }
 
     private static final class StructureVisitObjectiveType implements QuestObjectiveType<Void> {

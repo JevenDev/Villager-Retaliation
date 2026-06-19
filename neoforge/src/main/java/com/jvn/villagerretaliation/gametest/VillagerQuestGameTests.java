@@ -18,13 +18,16 @@ import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.quest.QuestObjectiveDebugState;
 import com.jvn.villagerretaliation.quest.QuestObjectiveEvaluationContext;
 import com.jvn.villagerretaliation.quest.QuestObjectiveEvent;
 import com.jvn.villagerretaliation.quest.QuestObjectiveEventTrace;
 import com.jvn.villagerretaliation.quest.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.QuestObjectiveRequirement;
 import com.jvn.villagerretaliation.quest.QuestObjectiveResult;
+import com.jvn.villagerretaliation.quest.QuestObjectiveQuery;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
+import com.jvn.villagerretaliation.quest.QuestStageReadiness;
 import com.jvn.villagerretaliation.quest.QuestTrackerPresenter;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
@@ -460,7 +463,10 @@ public final class VillagerQuestGameTests {
                                 null,
                                 objective -> 3,
                                 (objective, stack) -> true,
-                                objective -> 0),
+                                objective -> 0,
+                                objective -> false,
+                                objective -> false,
+                                objective -> QuestObjectiveDebugState.EMPTY),
                         itemObjective)
                 .orElseThrow(() -> new GameTestAssertException("item objective registry did not evaluate"));
         helper.assertTrue(result.complete(), "item objective registry did not complete at required count");
@@ -492,7 +498,10 @@ public final class VillagerQuestGameTests {
                 null,
                 objective -> 0,
                 (objective, stack) -> true,
-                objective -> 0);
+                objective -> 0,
+                objective -> false,
+                objective -> false,
+                objective -> QuestObjectiveDebugState.EMPTY);
 
         QuestObjectiveEventTrace unrelated = QuestObjectiveRegistry.traceEventMatches(
                 context,
@@ -507,6 +516,72 @@ public final class VillagerQuestGameTests {
                 QuestObjectiveEvent.gift(new ItemStack(Items.EMERALD), VillagerGiftPreferences.GiftReaction.LOVED));
         helper.assertValueEqual(related.evaluatedObjectives(), 1, "related event evaluated objective count");
         helper.assertValueEqual(related.matchedObjectives(), 1, "related event matched objective count");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void objectiveRegistryEvaluatesLogicalObjectives(GameTestHelper helper) {
+        QuestDefinition.Objective choiceObjective = registryFactObjective(
+                QuestDefinition.ObjectiveType.CHOICE,
+                "choice",
+                Set.of("coast"));
+        QuestDefinition.Objective conditionObjective = registryConditionObjective();
+        QuestObjectiveEvaluationContext context = new QuestObjectiveEvaluationContext(
+                null,
+                null,
+                helper.getLevel(),
+                null,
+                null,
+                objective -> 0,
+                (objective, stack) -> false,
+                objective -> 0,
+                objective -> objective == choiceObjective,
+                objective -> objective == conditionObjective,
+                objective -> objective == choiceObjective
+                        ? new QuestObjectiveDebugState(null, "", "quest:choice", "")
+                        : new QuestObjectiveDebugState(null, "", "", "met"));
+
+        QuestObjectiveResult choiceResult = QuestObjectiveRegistry.evaluate(context, choiceObjective)
+                .orElseThrow(() -> new GameTestAssertException("choice objective registry did not evaluate"));
+        helper.assertTrue(choiceResult.complete(), "choice objective did not use fact matcher");
+        helper.assertValueEqual(QuestObjectiveRegistry.trackerStepKey(choiceObjective), "choice", "choice tracker step");
+        helper.assertValueEqual(
+                QuestObjectiveRegistry.debugState(context, choiceObjective, choiceResult).factScopeKey(),
+                "quest:choice",
+                "choice debug scope");
+
+        QuestObjectiveResult conditionResult = QuestObjectiveRegistry.evaluate(context, conditionObjective)
+                .orElseThrow(() -> new GameTestAssertException("condition objective registry did not evaluate"));
+        helper.assertTrue(conditionResult.complete(), "condition objective did not use condition matcher");
+        helper.assertValueEqual(QuestObjectiveRegistry.trackerStepKey(conditionObjective), "inactive", "condition tracker step");
+        helper.assertValueEqual(
+                QuestObjectiveRegistry.debugState(context, conditionObjective, conditionResult).conditionState(),
+                "met",
+                "condition debug state");
+
+        QuestDefinition branchingQuest = quest(helper, VillagerRetaliation.id("choose_the_horizon"));
+        helper.assertValueEqual(
+                QuestObjectiveQuery.choiceObjectives(branchingQuest).size(),
+                1,
+                "choice query objective count");
+
+        QuestDefinition stagedQuest = registryStageQuest(choiceObjective);
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, BlockPos.ZERO, 1L);
+        QuestStageReadiness blocked = QuestStageReadiness.forCurrentStage(
+                null,
+                stagedQuest,
+                progress,
+                objective -> false);
+        helper.assertFalse(blocked.ready(), "stage readiness ignored incomplete objective");
+        QuestStageReadiness ready = QuestStageReadiness.forCurrentStage(
+                null,
+                stagedQuest,
+                progress,
+                objective -> objective.id().equals(choiceObjective.id()));
+        helper.assertTrue(ready.ready(), "stage readiness did not accept complete objective");
+        helper.assertValueEqual(ready.nextStage(), "done", "stage readiness next stage");
 
         helper.succeed();
     }
@@ -1145,6 +1220,128 @@ public final class VillagerQuestGameTests {
                 QuestDefinition.ObjectiveTracker.EMPTY);
     }
 
+    private static QuestDefinition.Objective registryFactObjective(
+            QuestDefinition.ObjectiveType type,
+            String factKey,
+            Set<String> factValues) {
+        return new QuestDefinition.Objective(
+                "registry_" + type.name().toLowerCase(java.util.Locale.ROOT),
+                type,
+                false,
+                null,
+                Level.OVERWORLD,
+                null,
+                8,
+                List.of(),
+                16,
+                8,
+                null,
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                null,
+                null,
+                QuestFactScope.QUEST,
+                null,
+                Set.of(),
+                factKey,
+                factValues,
+                null,
+                null,
+                1,
+                false,
+                QuestDefinition.ItemRequirements.EMPTY,
+                List.of(),
+                QuestDefinition.ObjectiveTracker.EMPTY);
+    }
+
+    private static QuestDefinition.Objective registryConditionObjective() {
+        DialogueCondition condition = new DialogueCondition.QuestFact(
+                QuestFactScope.QUEST,
+                VillagerRetaliation.id("registry_stage"),
+                Set.of(),
+                "choice",
+                Set.of("coast"),
+                null,
+                null);
+        return new QuestDefinition.Objective(
+                "registry_condition",
+                QuestDefinition.ObjectiveType.CONDITION,
+                false,
+                null,
+                Level.OVERWORLD,
+                null,
+                8,
+                List.of(),
+                16,
+                8,
+                null,
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                null,
+                null,
+                QuestFactScope.PLAYER,
+                null,
+                Set.of(),
+                "",
+                Set.of(),
+                null,
+                null,
+                1,
+                false,
+                QuestDefinition.ItemRequirements.EMPTY,
+                List.of(condition),
+                QuestDefinition.ObjectiveTracker.EMPTY);
+    }
+
+    private static QuestDefinition registryStageQuest(QuestDefinition.Objective objective) {
+        QuestDefinition.Stage started = new QuestDefinition.Stage(
+                "started",
+                List.of(objective.id()),
+                List.of(new QuestDefinition.StagePredicate(objective.id(), List.of())),
+                "done",
+                List.of(),
+                List.of(),
+                List.of());
+        QuestDefinition.Stage done = new QuestDefinition.Stage(
+                "done",
+                List.of(),
+                List.of(),
+                "",
+                List.of(),
+                List.of(),
+                List.of());
+        return new QuestDefinition(
+                VillagerRetaliation.id("registry_stage"),
+                "Registry Stage",
+                "",
+                "",
+                "",
+                "",
+                Set.of("test"),
+                null,
+                null,
+                QuestDefinition.Target.EMPTY,
+                List.of(objective),
+                QuestDefinition.Rules.DEFAULT,
+                QuestDefinition.Tracker.EMPTY,
+                Map.of("started", started, "done", done),
+                List.of(),
+                QuestDefinition.Rewards.EMPTY,
+                QuestDefinition.Dialogue.EMPTY,
+                null,
+                QuestDefinition.Links.EMPTY);
+    }
+
     private static void assertCompiledQuestMatchesParsed(
             GameTestHelper helper,
             QuestDefinition quest,
@@ -1201,6 +1398,11 @@ public final class VillagerQuestGameTests {
             helper.assertValueEqual(compiledObjective.definition(), parsed, quest.id() + "/" + parsed.id() + " objective");
             helper.assertTrue(compiledObjective.source().jsonPointer().startsWith("/objectives/"),
                     quest.id() + "/" + parsed.id() + " objective source pointer");
+            helper.assertValueEqual(
+                    VillagerQuestResources.objectiveSource(helper.getLevel().getServer(), quest.id(), parsed.id())
+                            .orElseThrow(() -> new GameTestAssertException("Missing objective source " + parsed.id())),
+                    compiledObjective.source(),
+                    quest.id() + "/" + parsed.id() + " objective source lookup");
         }
     }
 
