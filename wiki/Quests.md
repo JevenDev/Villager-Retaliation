@@ -1,8 +1,8 @@
 # Quests
 
-Quest JSON defines who can offer a quest, what the player must do, how the quest repeats, and what happens on completion.
+Quest module v2 is the preferred shape for new quest datapacks. A v2 module can define the provider, availability, lifecycle, stages, objectives, dialogue, responses, transitions, events, rewards, and tracker UI in one file.
 
-If you are making your first playable quest, start with [First Quest Guide](First-Quest.md). Quest JSON defines the quest, but a matching dialogue tree is what creates the Talk menu offer, reminder, and turn-in flow.
+Legacy v1 quest files are still supported. Keep existing v1 packs working, but use v2 for new simple quests and for migrations where you want dialogue and quest state to live together.
 
 ## Paths
 
@@ -11,28 +11,162 @@ data/<namespace>/quests/<quest>.json
 data/<namespace>/quests/<module>/<quest>.json
 ```
 
-For new packs, prefer the module folder layout. The folder is for file organization; it does not automatically make the quests a questline.
+The folder path is for organization and overrides. It does not create a questline by itself.
 
-## Minimal Fetch Quest
+## One-File Quest
+
+This is a complete playable quest. It needs no external dialogue tree.
 
 ```json
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "my_pack:bread_delivery",
-  "display": {
+  "metadata": {
     "title": "Bread Delivery",
-    "description": "Bring 16 bread to the village stores."
+    "description": "Bring 16 bread to the village stores.",
+    "questline": "village_supply",
+    "tags": ["group.village_supply"]
   },
-  "tags": ["group.village_supply"],
-  "offer": {
-    "professions": ["minecraft:farmer"],
-    "min_villager_level": "novice"
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": ["minecraft:farmer"],
+      "min_villager_level": "novice"
+    }
   },
-  "objectives": [
+  "availability": {
+    "repeatable": true,
+    "completion_cooldown_days": 1,
+    "locked_to_villager": true,
+    "cross_villager_compatible": false,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true
+  },
+  "entry_stage": "gather",
+  "stages": [
     {
-      "id": "bring_bread",
-      "type": "item_check",
-      "item": "minecraft:bread",
-      "count": 16
+      "id": "gather",
+      "objectives": [
+        {
+          "id": "bring_bread",
+          "type": "item_check",
+          "item": "minecraft:bread",
+          "count": 16,
+          "tracker": {
+            "text": "Bring 16 bread back to the quest giver.",
+            "complete_text": "The bread is packed and ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "dialogue": {
+        "offer": {
+          "label": "Bread Delivery",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The bins are low. Sixteen bread would quiet a lot of worried stomachs."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can help stock the larder.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Another time.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Bread Delivery",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Bread Delivery is still open. The tracker has the count."
+          ],
+          "responses": [
+            {
+              "id": "leave",
+              "label": "I'll keep looking.",
+              "scene": "end"
+            }
+          ]
+        },
+        "turn_in": {
+          "label": "About Bread Delivery",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "If that pack smells like fresh bread, you may have saved me an argument."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Show what I brought.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "end"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Good. Bring the bread back when the count is ready."
+                ],
+                "unavailable": [
+                  "The larder is not asking you for bread right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Good. A full shelf makes brave talk sound less hollow."
+                ],
+                "missing_objectives": [
+                  "Bread Delivery is still short. The tracker has the exact count."
+                ],
+                "unavailable": [
+                  "This bread delivery is not ready to close yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "text": "Then I will keep counting crumbs and pretending it is planning."
+        },
+        {
+          "id": "end",
+          "text": "Keep the bread close until you are ready."
+        }
+      ]
     }
   ],
   "rewards": {
@@ -40,905 +174,539 @@ For new packs, prefer the module folder layout. The folder is for file organizat
     "reputation": 5,
     "gossip_reputation": 2
   },
-  "rules": {
-    "repeatable": true,
-    "completion_cooldown_days": 1
+  "ui": {
+    "tracker_text": "Bring 16 bread.",
+    "icon": "minecraft:bread",
+    "color": "#DCEBA6"
   }
 }
+```
+
+Validate standalone quest examples with:
+
+```text
+node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 ```
 
 ## Main Parts
 
 | Section | Purpose |
 | --- | --- |
-| `display` | Title and description shown to players |
-| `offer` | Which villagers can offer it |
-| `tags` | Optional authoring and browsing tags, such as `group.village_supply` |
-| `questline` | Optional connected progression id for quests that share a real chain |
+| `schema` | Must be `villagerretaliation:quest/v2` for v2 modules |
+| `id` | Stable quest resource id used by saves, commands, dialogue, and overrides |
+| `metadata` | Player-facing title, description, questline, tags, and parent |
+| `provider` | Who can offer or own the quest |
+| `availability` | Repeat limits, abandonment, cooldowns, locking, and active gates |
 | `target` | Optional world target such as a structure search |
-| `objectives` | What the player must actually complete |
-| `rewards` | XP, reputation, gossip, loot, memory events |
-| `rules` | Repeat limits, abandonment, cooldowns, locking |
-| `tracker` | Optional custom quest tracker text |
-| `triggers` | Event-based reactions while the quest exists |
+| `entry_stage` | First stage id |
+| `stages` | Objectives, stage-local dialogue, responses, scenes, events, and UI |
+| `events` | Quest-level triggers that run while the quest exists |
+| `rewards` | XP, reputation, gossip, loot, memory events, or reward actions |
+| `ui` | Tracker text, icon, progress, placeholders, color, and priority |
+| `external_scenes` | Optional external dialogue scene resources used by this module |
 
-## Questline Vs Group Tags
+## Dialogue And Scenes
 
-Use `questline` only when quests are part of a connected progression, usually through `parent`, prerequisite conditions, stages, or branches. Use `tags` for broad browsing buckets:
+Stage `dialogue` slots normally use these names:
 
-```json
-{
-  "id": "my_pack:road_ledger",
-  "tags": ["group.old_roads"]
-}
-```
-
-A connected questline can also have a group tag:
-
-```json
-{
-  "id": "my_pack:first_map",
-  "questline": "cartographers_atlas",
-  "tags": ["group.exploration"]
-}
-```
-
-## Locale-Friendly Text
-
-Inline English can stay in the quest as a fallback, but every player-facing quest string can point at a datapack message key:
-
-```json
-{
-  "display": {
-    "title": "Bread Delivery",
-    "title_key": "quest.village_supply.bread_delivery.title",
-    "description": "Bring 16 bread to the village stores.",
-    "description_key": "quest.village_supply.bread_delivery.description"
-  },
-  "dialogue": {
-    "start": ["Bring me 16 bread."],
-    "start_key": "quest.village_supply.bread_delivery.dialogue.start"
-  }
-}
-```
-
-Put the keyed text in `data/<namespace>/dialogue/<locale>/.../messages/*.json`:
-
-```json
-{
-  "messages": [
-    {
-      "id": "quest.village_supply.bread_delivery.title",
-      "key": "quest.village_supply.bread_delivery.title",
-      "lines": ["Bread Delivery"]
-    }
-  ]
-}
-```
-
-Supported quest text keys:
-
-| Place | Key fields |
+| Slot | When it appears |
 | --- | --- |
-| `display` | `title_key`, `description_key` |
-| objective `tracker` | `text_key`, `complete_text_key` |
-| top-level `tracker` | `title_key` |
-| tracker `steps.*` | `text_key` |
-| `dialogue` stages | `<stage>_key`, `<stage>_keys` |
-| object-form dialogue stage | `text_key`, `text_keys` |
-| `rules.expiration` | `text_key` or `notification_text_key` |
+| `offer` | Quest can be started |
+| `reminder` | Quest is active but not ready |
+| `turn_in` | Objectives are complete |
+| `already_completed` | Player already completed a non-repeatable quest |
+| `unavailable` | Provider is known but availability gates fail |
+| `inactive` | Accepted quest is paused by active conditions |
+| `missing_target`, `missing_proof`, `locate_failed` | Target/proof helper states |
 
-Quest dialogue stages are `start`, `reminder`, `turn_in`, `already_completed`, `unavailable`, `inactive`, `missing_target`, `missing_proof`, and `locate_failed`.
+Inline scenes stay inside the quest module. Use `external` or `external_scene` only when the scene is large, shared, localized separately, or deliberately owned by another datapack resource.
 
-## Availability And Story Locks
+## Transition Rules
 
-Use `parent` for a linear quest chain. A quest with `parent` can only be offered after the current player has completed that parent quest.
+Keep each response to one transition source. Pick one of:
 
-```json
-{
-  "id": "my_pack:chapter_two",
-  "parent": "my_pack:chapter_one"
-}
-```
+- direct response fields such as `next`, `stage`, `scene`, `complete`, `abandon`, or `fail`
+- a `transition` object with `stage`, `scene`, `response`, `complete`, `abandon`, or `fail`
+- a transition action such as `quest_transition`
 
-Use `offer.conditions` for branch-specific availability, world-state locks, or optional story consequences. These conditions are checked before the quest can be started:
+Do not combine direct transition fields with a transition action on the same response. Put side effects, such as `set_variable`, `notification`, or `reputation`, in `actions`, then put the single stage or scene move in `transition`.
 
-```json
-{
-  "offer": {
-    "professions": ["minecraft:cartographer"],
-    "conditions": [
-      {
-        "type": "quest_stage",
-        "quest": "my_pack:old_road",
-        "stage": "warned_guard"
-      },
-      {
-        "type": "quest_fact",
-        "scope": "world",
-        "tag": "my_pack:bridge_repaired"
-      }
-    ]
-  }
-}
-```
+## Branch Example
 
-Use `rules.active.conditions` when an already accepted quest should pause or hide until the world is right again. Saved-state conditions, including villager mood, can still evaluate after the issuing villager unloads:
+This module records a route choice, moves to the chosen stage, and completes from either branch.
 
 ```json
 {
-  "rules": {
-    "active": {
-      "conditions": [
-        { "type": "mood", "mood": "grateful", "min_mood_intensity": 25 }
-      ]
-    }
-  }
-}
-```
-
-Use branch locks when one path should close another path. Quests in the same `exclusive_group` lock their siblings when the configured `exclusive_on` event fires:
-
-```json
-{
-  "id": "my_pack:join_the_wardens",
-  "rules": {
-    "exclusive_group": "my_pack:faction_choice",
-    "exclusive_on": "started"
-  }
-}
-```
-
-Use explicit lock lists for named consequences outside the group:
-
-```json
-{
-  "rules": {
-    "blocks_on_completion": [
-      "my_pack:warn_the_raiders",
-      "my_pack:smuggle_the_relic"
-    ]
-  }
-}
-```
-
-Locked quests are consumed with state `branch_locked` and receive the quest-scoped tag `villagerretaliation:quest_branch_locked`. Their quest fact variables include `state: "branch_locked"`, `blocked_by`, `blocked_on`, and `exclusive_group` when a group caused the lock.
-
-Dialogue and trigger actions can also close a path directly:
-
-```json
-{
-  "actions": [
-    {
-      "type": "quest",
-      "quest": "my_pack:smuggle_the_relic",
-      "action": "block"
-    }
-  ]
-}
-```
-
-## Quest Debug Inspector
-
-Use `/villagerretaliation quest debug inspect <quest_id>` while testing packs. It prints the current player's saved quest state, repeat and completion-scope rules, active-state gates, branch-lock rules, issuer and target context, objective counters, and fact objective filters.
-
-This is especially useful for story quests because it exposes whether a branch is blocked by `exclusive_group`, `blocks_on_start`, `blocks_on_completion`, or a direct `quest` action with `action: "block"`. For fact-driven objectives, the output includes the configured scope, fact quest id, tags, variable key, allowed values, min and max counter bounds, and the resolved scope key when the quest has saved progress.
-
-## Example: Structure Quest
-
-```json
-{
-  "id": "my_pack:echo_shard_run",
-  "display": {
-    "title": "Echo Shard Run",
-    "description": "Reach the Ancient City and return with an Echo Shard."
+  "schema": "villagerretaliation:quest/v2",
+  "id": "my_pack:choose_supply_route",
+  "metadata": {
+    "title": "Choose Supply Route",
+    "description": "Choose how the village will move supplies.",
+    "questline": "village_supply",
+    "tags": ["group.village_supply"]
   },
-  "target": {
-    "structure": "minecraft:ancient_city",
-    "dimension": "minecraft:overworld",
-    "proof_item": "minecraft:echo_shard"
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": ["minecraft:cartographer"]
+    }
   },
-  "objectives": [
-    {
-      "id": "recover_shard",
-      "type": "item_check",
-      "item": "minecraft:echo_shard",
-      "count": 1
-    }
-  ]
-}
-```
-
-## Example: Coordinate Quest
-
-Use `location_visit` when the quest should complete after the player reaches a specific coordinate or region. This check is cheap and runs with the normal quest progress tick.
-
-```json
-{
-  "id": "my_pack:old_milestone",
-  "display": {
-    "title": "Old Milestone",
-    "description": "Find the road marker beyond the river."
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": true
   },
-  "objectives": [
+  "entry_stage": "choose_route",
+  "stages": [
     {
-      "id": "reach_marker",
-      "type": "location_visit",
-      "dimension": "minecraft:overworld",
-      "x": 1840,
-      "y": 72,
-      "z": -420,
-      "radius": 12,
-      "tracker": {
-        "text": "Find the old milestone near {objective_target_x}, {objective_target_z}.",
-        "complete_text": "You found the old milestone."
+      "id": "choose_route",
+      "objectives": [
+        {
+          "id": "choose_route",
+          "type": "choice",
+          "choices": ["river", "ridge"],
+          "tracker": {
+            "text": "Choose a supply route.",
+            "complete_text": "Route chosen: {objective_choice_value}."
+          }
+        }
+      ],
+      "dialogue": {
+        "offer": {
+          "label": "Choose Supply Route",
+          "request": "question",
+          "lines": [
+            "The village needs a safer supply route. River or ridge?"
+          ],
+          "responses": [
+            {
+              "id": "river",
+              "label": "Use the river.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "river"
+                }
+              ],
+              "transition": {
+                "stage": "river_route"
+              }
+            },
+            {
+              "id": "ridge",
+              "label": "Use the ridge.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "ridge"
+                }
+              ],
+              "transition": {
+                "stage": "ridge_route"
+              }
+            }
+          ]
+        }
       }
-    }
-  ]
-}
-```
-
-`pos: [x, y, z]` is also accepted instead of separate `x`, `y`, and `z` fields.
-
-## Example: Mob Kill Quest
-
-Use `mob_kill` for event-driven kill counters. The counter updates from the living-death event, so it does not scan nearby mobs every tick.
-
-```json
-{
-  "id": "my_pack:clear_raiders",
-  "display": {
-    "title": "Clear The Road",
-    "description": "Defeat the raiders harassing the old road."
-  },
-  "objectives": [
+    },
     {
-      "id": "clear_raiders",
-      "type": "mob_kill",
-      "entities": ["#minecraft:raiders"],
-      "count": 5,
-      "tracker": {
-        "text": "Defeat raiders: {objective_progress_count}/{objective_count}",
-        "complete_text": "The road is clear."
+      "id": "river_route",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "River Route",
+          "request": "question",
+          "lines": ["The river road will move quietly."],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Mark the river route.",
+              "complete": true
+            }
+          ]
+        }
       }
-    }
-  ]
-}
-```
-
-Mob selectors:
-
-| Field | Meaning |
-| --- | --- |
-| `entity` | One entity type id, such as `minecraft:zombie` |
-| `entities` | One or more entity type ids or `#tag` selectors |
-| `entity_tag` | One entity type tag id |
-| `entity_tags` | One or more entity type tag ids |
-
-Add `dimension`, `x`/`y`/`z`, and `radius` to restrict kills to a region.
-
-## Example: Block Event Quest
-
-Use `block_break`, `block_place`, and `block_interact` for event-driven block counters. These update from break, place, and right-click block events and do not scan the world.
-
-```json
-{
-  "id": "my_pack:repair_the_bridge",
-  "objectives": [
+    },
     {
-      "id": "place_planks",
-      "type": "block_place",
-      "blocks": ["#minecraft:planks"],
-      "count": 8,
-      "x": 120,
-      "y": 64,
-      "z": -30,
-      "radius": 10,
-      "tracker": {
-        "text": "Place planks at the bridge: {objective_progress_count}/{objective_count}",
-        "complete_text": "The bridge has fresh planks."
-      }
-    }
-  ]
-}
-```
-
-Use `block_interact` for shrine, bell, lectern, button, door, or workstation beats:
-
-```json
-{
-  "id": "my_pack:ring_the_old_bell",
-  "objectives": [
-    {
-      "id": "ring_bell",
-      "type": "block_interact",
-      "block": "minecraft:bell",
-      "count": 1,
-      "x": 120,
-      "y": 65,
-      "z": -34,
-      "radius": 4,
-      "tracker": {
-        "text": "Ring the bell at the old bridge.",
-        "complete_text": "The old bell answered."
-      }
-    }
-  ]
-}
-```
-
-Block selectors:
-
-| Field | Meaning |
-| --- | --- |
-| `block` | One block id, such as `minecraft:oak_planks` |
-| `blocks` | One or more block ids or `#tag` selectors |
-| `block_tag` | One block tag id |
-| `block_tags` | One or more block tag ids |
-
-Add `dimension`, `x`/`y`/`z`, and `radius` to restrict break/place/use credit to a region. Tracker placeholders include `{objective_block}` and `{objective_block_id}`.
-
-## Example: Village Memory Event Quest
-
-Use `memory_event` when a quest should advance from a story event already recorded by VR, such as defending a village, curing a villager, giving a loved gift, stealing from a village container, or completing another quest. These update when the memory is written; they do not poll old memories every tick.
-
-```json
-{
-  "id": "my_pack:prove_your_intent",
-  "display": {
-    "title": "Prove Your Intent",
-    "description": "Help the village before asking for guarded knowledge."
-  },
-  "objectives": [
-    {
-      "id": "defend_village",
-      "type": "memory_event",
-      "memory": "player_defended_village",
-      "count": 1,
-      "tracker": {
-        "text": "Defend the village from danger.",
-        "complete_text": "The village saw what you did."
+      "id": "ridge_route",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "Ridge Route",
+          "request": "question",
+          "lines": ["The ridge road will keep watch over the valley."],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Mark the ridge route.",
+              "complete": true
+            }
+          ]
+        }
       }
     }
   ],
-  "triggers": [
-    {
-      "id": "defense_witnessed",
-      "event": "progress",
-      "actions": [
-        { "type": "set_tag", "tag": "my_pack:village_defender" },
-        { "type": "set_stage", "value": "trusted_by_watch" }
-      ]
-    }
-  ]
-}
-```
-
-Memory selectors:
-
-| Field | Meaning |
-| --- | --- |
-| `memory` | One memory tag, such as `player_defended_village` or `villagerretaliation:player_defended_village` |
-| `memory_event` | Alias for `memory` |
-| `memory_tag` | Alias for `memory` |
-| `memories`, `memory_events`, `memory_tags` | One or more memory tags |
-| `event`, `events` | Short aliases for memory event objectives |
-
-Add `dimension`, `x`/`y`/`z`, and `radius` to restrict credit to memories written in a region. Tracker placeholders include `{objective_memory}` and `{objective_memory_id}`.
-
-Useful built-in memory tags include `baby_born`, `iron_golem_defeated_mob`, `thunderstorm`, `sandstorm`, `snowstorm`, `village_fire`, `night_attack`, `raid`, `villager_death`, `player_killed_villager`, `villager_attacked`, `baby_villager_attacked`, `player_attacked_villager`, `player_defended_village`, `player_defended_raid`, `player_cured_villager`, `golem_created`, `golem_killed`, `nearby_hostile_mob`, `reputation_changed`, `player_gave_loved_gift`, `player_gave_liked_gift`, `player_gave_neutral_gift`, `player_gave_disliked_gift`, `player_gave_hated_gift`, `player_container_theft`, `player_completed_quest`, and `villager_retaliation_started`.
-
-Memory objectives only count new player-associated memory writes while the quest is active. Use quest fact tags or variables for permanent history gates, such as unlocking a branch after an event that may have happened earlier.
-
-## Example: Trade Quest
-
-Use `trade` when a quest should advance from completed villager or wandering trader trades. Trade objectives count completed trade events, not item stack size. Add `item` to require a specific trade result item.
-
-```json
-{
-  "id": "my_pack:restore_market_confidence",
-  "display": {
-    "title": "Restore Market Confidence",
-    "description": "Trade with villagers near the old market."
-  },
-  "objectives": [
-    {
-      "id": "complete_market_trades",
-      "type": "trade",
-      "count": 3,
-      "dimension": "minecraft:overworld",
-      "x": 96,
-      "y": 64,
-      "z": -112,
-      "radius": 24,
-      "tracker": {
-        "text": "Complete village trades near the market: {objective_progress_count}/{objective_count}",
-        "complete_text": "The market is moving again."
-      }
-    }
-  ]
-}
-```
-
-Trade objective fields:
-
-| Field | Meaning |
-| --- | --- |
-| `item` | Optional exact result item id, such as `minecraft:bread` |
-| `count` | Number of completed trade events |
-
-Trade objectives also support the same result item detail filters as `item_check`, such as `enchantments`, durability bounds, and `custom_data`. Add `dimension`, `x`/`y`/`z`, and `radius` to restrict credit to trades completed with merchants in a region. Tracker placeholders include `{objective_item}` and `{objective_item_id}`.
-
-## Example: Gift Quest
-
-Use `gift` when a quest should advance from accepted villager gifts. Gift objectives count gift events, not item stack size. Add `item` to require a specific item and `reaction` / `gift_reactions` to require loved, liked, neutral, disliked, or hated gifts.
-
-```json
-{
-  "id": "my_pack:earn_the_smiths_trust",
-  "display": {
-    "title": "Earn The Smith's Trust",
-    "description": "Bring a gift the smith actually values."
-  },
-  "objectives": [
-    {
-      "id": "give_loved_gift",
-      "type": "gift",
-      "reaction": "loved",
-      "count": 1,
-      "tracker": {
-        "text": "Give the quest giver a loved gift.",
-        "complete_text": "The gift landed exactly right."
-      }
-    }
-  ]
-}
-```
-
-Gift objective fields:
-
-| Field | Meaning |
-| --- | --- |
-| `item` | Optional exact item id, such as `minecraft:diamond` |
-| `reaction`, `gift_reaction` | One reaction: `loved`, `liked`, `neutral`, `disliked`, or `hated` |
-| `reactions`, `gift_reactions` | One or more accepted reactions |
-| `count` | Number of accepted gift events |
-
-Gift objectives also support the same item detail filters as `item_check`, such as `enchantments`, durability bounds, and `custom_data`. Tracker placeholders include `{objective_item}`, `{objective_item_id}`, and `{objective_gift_reaction}`.
-
-## Example: Reputation Quest
-
-Use `reputation` when a quest should complete after the player reaches a trust threshold with the quest giver. Reputation objectives read saved reputation for the started quest giver UUID, so they can complete even when that villager is not currently loaded.
-
-```json
-{
-  "id": "my_pack:earn_the_guard_captains_trust",
-  "display": {
-    "title": "Earn The Captain's Trust",
-    "description": "Build enough trust to hear the guarded story."
-  },
-  "objectives": [
-    {
-      "id": "become_trusted",
-      "type": "reputation",
-      "level": "trusted",
-      "min_reputation": 35,
-      "tracker": {
-        "text": "Earn the captain's trust: {objective_reputation}/{objective_reputation_min}",
-        "complete_text": "The captain trusts you enough to speak."
-      }
-    }
-  ]
-}
-```
-
-Reputation objective fields:
-
-| Field | Meaning |
-| --- | --- |
-| `level`, `levels` | One or more reputation tiers: `royalty`, `revered`, `respected`, `trusted`, `neutral`, `suspicious`, `hostile`, `despised`, or `feared` |
-| `reputation_level`, `reputation_levels` | Aliases for `level` / `levels` |
-| `min`, `min_reputation` | Minimum saved reputation value |
-| `max`, `max_reputation` | Maximum saved reputation value |
-
-Tracker placeholders include `{objective_reputation}`, `{objective_reputation_level}`, `{objective_reputation_min}`, and `{objective_reputation_max}`.
-
-## Example: Choice Objective
-
-Use `choice` when a quest should wait for a dialogue branch or trigger to record the player's decision. Choice objectives are shorthand for a quest-scoped fact variable named `choice`.
-
-```json
-{
-  "id": "my_pack:choose_supply_route",
-  "display": {
-    "title": "Choose A Supply Route",
-    "description": "Pick how the village will move supplies."
-  },
-  "objectives": [
-    {
-      "id": "choose_route",
-      "type": "choice",
-      "choices": ["river_route", "ridge_route"],
-      "tracker": {
-        "text": "Choose a supply route.",
-        "complete_text": "Route chosen: {objective_choice_value}."
-      }
-    }
-  ]
-}
-```
-
-Record the choice from dialogue or quest triggers with a quest-scoped variable action:
-
-```json
-{
-  "type": "set_variable",
-  "scope": "quest",
-  "key": "choice",
-  "value": "river_route"
-}
-```
-
-Choice objective fields:
-
-| Field | Meaning |
-| --- | --- |
-| `choice`, `choices` | Accepted choice values for the quest-scoped `choice` variable |
-| `value`, `values` | Aliases for accepted choice values |
-| `key`, `variable`, `fact` | Optional custom variable key instead of `choice` |
-
-Tracker placeholders include `{objective_choice}`, `{objective_choice_key}`, and `{objective_choice_value}`.
-
-## Example: Fact Objective
-
-Use `fact` when a quest should wait for durable story state written by a dialogue choice, quest trigger, forced dialogue, or another quest. Fact objectives use the same vocabulary as `quest_fact` conditions: `scope`, `tag`, `key`, `variable`, `counter`, `stage`, `value`, `min`, and `max`.
-
-```json
-{
-  "id": "my_pack:choose_a_route",
-  "display": {
-    "title": "Choose A Route",
-    "description": "Choose how the village will move supplies."
-  },
-  "objectives": [
-    {
-      "id": "choose_route",
-      "type": "fact",
-      "scope": "quest",
-      "stage": ["river_route", "ridge_route"],
-      "tracker": {
-        "text": "Choose a supply route.",
-        "complete_text": "The route is chosen: {objective_fact_value}."
-      }
-    }
-  ]
-}
-```
-
-Common fact objective shapes:
-
-```json
-{ "type": "fact", "scope": "player", "tag": "my_pack:village_defender" }
-```
-
-```json
-{ "type": "fact", "scope": "world", "counter": "old_roads.relics_found", "min": 3 }
-```
-
-```json
-{ "type": "quest_stage", "quest": "my_pack:trial_path", "stage": "accused_the_guard" }
-```
-
-Fact objective fields:
-
-| Field | Meaning |
-| --- | --- |
-| `scope` | `player`, `world`, `quest`, `villager`, or `village`; defaults to `quest` inside quest files |
-| `quest` / `quest_id` | Quest id to read when `scope` is `quest`; defaults to the current quest |
-| `tag`, `tags`, `fact_tag`, `quest_tag` | Durable fact tags to require |
-| `key`, `variable`, `fact` | Variable key to require |
-| `counter` | Counter key to test with `min` / `max` |
-| `stage`, `stages` | Shorthand for variable key `stage` with one or more accepted values |
-| `value`, `values` | Accepted variable values |
-| `min`, `max` | Counter bounds |
-
-Tracker placeholders include `{objective_fact}`, `{objective_fact_id}`, `{objective_fact_key}`, `{objective_fact_value}`, and `{objective_fact_scope}`.
-
-## Example: Tracker Text
-
-```json
-{
-  "tracker": {
-    "title": "Bread Delivery",
-    "title_key": "quest.village_supply.bread_delivery.tracker.title",
-    "steps": {
-      "proof": {
-        "text": "Bring 16 bread back to the quest giver.",
-        "text_key": "quest.village_supply.bread_delivery.tracker.proof.text",
-        "show_progress": true,
-        "progress": 0.7
-      }
-    }
+  "ui": {
+    "tracker_text": "Choose a route.",
+    "icon": "minecraft:map"
   }
 }
 ```
 
-## Example: Triggered Quest Follow-Up
+## Structure Target Example
+
+Root `target` fields define a structure search, discovery radius, and proof item. Stages can combine a visit objective with a proof-item objective.
 
 ```json
 {
-  "triggers": [
+  "schema": "villagerretaliation:quest/v2",
+  "id": "my_pack:trail_marker",
+  "metadata": {
+    "title": "Trail Marker",
+    "description": "Find nearby Trail Ruins and return with a brush.",
+    "tags": ["group.old_roads"]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": ["minecraft:cartographer", "minecraft:mason"]
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": true
+  },
+  "target": {
+    "structure": "minecraft:trail_ruins",
+    "dimension": "minecraft:overworld",
+    "search_radius": 192,
+    "discovery_radius": 96,
+    "proof_item": "minecraft:brush"
+  },
+  "entry_stage": "survey",
+  "stages": [
     {
-      "id": "storm_warning",
-      "event": "proximity",
+      "id": "survey",
+      "objectives": [
+        {
+          "id": "visit_ruins",
+          "type": "structure_visit",
+          "structure": "minecraft:trail_ruins",
+          "tracker": {
+            "text": "Find the Trail Ruins near {target_x}, {target_z}.",
+            "complete_text": "You found the old road."
+          }
+        },
+        {
+          "id": "bring_brush",
+          "type": "item_check",
+          "item": "minecraft:brush",
+          "count": 1,
+          "tracker": {
+            "text": "Bring a brush back from the ruins.",
+            "complete_text": "The brush is ready."
+          }
+        }
+      ],
+      "complete_when": ["visit_ruins", "bring_brush"],
+      "dialogue": {
+        "offer": {
+          "label": "Trail Marker",
+          "request": "question",
+          "lines": ["The old road left a mark under the dust."],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "Mark the ruins.",
+              "scene": "start_quest"
+            }
+          ]
+        },
+        "turn_in": {
+          "label": "Trail Marker",
+          "request": "question",
+          "lines": ["You found the mark and brought a brush."],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the notes.",
+              "complete": true
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": ["The ruins should be near {target_x}, {target_z}."],
+                "locate_failed": ["The old road is hiding from the map today."]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "experience": 80,
+    "reputation": 6
+  },
+  "ui": {
+    "tracker_text": "Find the Trail Ruins.",
+    "icon": "minecraft:brush"
+  }
+}
+```
+
+## Forced Or External Scene Example
+
+Use external scenes when another file owns a long conversation. Use `forced_dialogue` actions when the quest needs an event-driven locked scene. These actions need live player and provider context; if the quest giver is unloaded, the runtime records diagnostics and waits until it can safely run the live action.
+
+```json
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "my_pack:storm_warning",
+  "metadata": {
+    "title": "Storm Warning",
+    "description": "Ask a cleric about a storm omen.",
+    "questline": "lost_civilization",
+    "tags": ["group.lost_civilization"]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": ["minecraft:cleric"]
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": true
+  },
+  "external_scenes": ["my_pack:quests/storm_warning"],
+  "entry_stage": "ask",
+  "stages": [
+    {
+      "id": "ask",
+      "objectives": [
+        {
+          "id": "hear_warning",
+          "type": "choice",
+          "choices": ["heard"],
+          "tracker": {
+            "text": "Hear the storm warning.",
+            "complete_text": "The warning is clear."
+          }
+        }
+      ],
+      "dialogue": {
+        "offer": {
+          "label": "Storm Warning",
+          "request": "question",
+          "external_scene": {
+            "tree": "my_pack:quests/storm_warning",
+            "entry": "offer"
+          }
+        },
+        "turn_in": {
+          "label": "Storm Warning",
+          "request": "question",
+          "lines": ["The storm warning is clear now."],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "I understand the omen.",
+              "complete": true
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "storm_reminder",
+      "event": "near_provider",
       "radius": 10,
       "cooldown_seconds": 120,
       "conditions": [
-        { "type": "quest", "state": "active" },
         { "type": "weather", "state": "thunder" }
       ],
       "actions": [
         {
           "type": "forced_dialogue",
-          "forced_dialogue": "my_pack.quest.road_ledger.storm_warning"
+          "forced_dialogue": "my_pack.quest.storm_warning.reminder"
         }
       ]
     }
-  ]
+  ],
+  "ui": {
+    "tracker_text": "Hear the storm warning.",
+    "icon": "minecraft:lightning_rod"
+  }
 }
 ```
 
-## Example: Quest Facts For Branches
-
-Quest facts are durable tags, variables, and counters that dialogue, triggers, and later quests can read with `quest_fact` conditions. Use them for branch choices, story locks, and persistent consequences.
-
-This trigger writes a quest-scoped tag when the quest starts:
+The external scene above can live in `data/my_pack/dialogue_trees/en_us/quests/storm_warning.json`:
 
 ```json
 {
-  "id": "my_pack:old_road",
-  "triggers": [
+  "id": "my_pack:quests/storm_warning",
+  "metadata": {
+    "quest": "my_pack:storm_warning",
+    "questline": "lost_civilization"
+  },
+  "entries": [
     {
-      "id": "remember_offer_seen",
-      "event": "started",
-      "actions": [
-        {
-          "type": "set_tag",
-          "tag": "my_pack:old_road_started"
-        }
-      ]
+      "id": "offer",
+      "label": "Storm Warning",
+      "request": "question",
+      "start": "offer"
     }
-  ]
-}
-```
-
-This dialogue-tree branch stores a chosen route:
-
-```json
-{
-  "actions": [
-    {
-      "type": "set_variable",
-      "scope": "quest",
-      "quest": "my_pack:old_road",
-      "key": "route",
-      "value": "river"
-    }
-  ]
-}
-```
-
-Quest stages are shorthand for the quest-scoped variable `stage`. Use them for Skyrim-style branch gates inside a questline. When a quest-scoped stage action runs, the active quest progress also stores that value as `current_stage`, so tracker text and `/villagerretaliation quest debug inspect <quest_id>` can show the current chapter directly.
-
-```json
-{
-  "actions": [
-    {
-      "type": "set_stage",
-      "quest": "my_pack:old_road",
-      "stage": "warned_guard"
-    }
-  ]
-}
-```
-
-Later dialogue or quest availability can require that branch:
-
-```json
-{
-  "conditions": [
-    {
-      "type": "quest_fact",
-      "scope": "quest",
-      "quest": "my_pack:old_road",
-      "key": "route",
-      "value": "river"
-    }
-  ]
-}
-```
-
-The same branch can be written with the stage alias:
-
-```json
-{
-  "conditions": [
-    {
-      "type": "quest_stage",
-      "quest": "my_pack:old_road",
-      "stage": "warned_guard"
-    }
-  ]
-}
-```
-
-Quests can also declare automatic stages at the top level. The first declared stage starts when the quest starts, unless a `started` stage exists. Each stage can run `entry_actions`, wait for `complete_when`, advance to `next`, and run `exit_actions` during the transition:
-
-```json
-{
-  "stages": {
-    "started": {
-      "entry_actions": [
-        {
-          "type": "notification",
-          "text": "The watch wants proof before it moves."
-        }
+  ],
+  "nodes": {
+    "offer": {
+      "lines": [
+        "Thunder is not the omen. The silence after it is."
       ],
-      "complete_when": "find_proof",
-      "next": "proof_found"
-    },
-    "proof_found": {
-      "entry_actions": [
+      "responses": [
         {
-          "type": "set_stage",
-          "stage": "proof_found"
-        }
-      ],
-      "branches": [
-        {
-          "id": "warn_guard",
-          "label": "Warn the guard.",
-          "conditions": [
-            {
-              "type": "quest_stage",
-              "stage": "proof_found"
-            }
-          ],
+          "id": "heard",
+          "label": "I will listen for it.",
           "actions": [
             {
               "type": "set_variable",
               "scope": "quest",
-              "key": "route",
-              "value": "guard"
+              "key": "choice",
+              "value": "heard"
             }
           ],
-          "next": "guard_warned",
-          "blocked_by": [
-            {
-              "conditions": [
-                {
-                  "type": "quest_fact",
-                  "scope": "quest",
-                  "key": "route",
-                  "value": "raiders"
-                }
-              ],
-              "reason": "You already promised the raiders you would stay quiet."
-            }
-          ]
+          "end": true
         }
       ]
-    },
-    "guard_warned": {}
+    }
   }
 }
 ```
 
-`complete_when` accepts an objective id string, an array of objective ids, a condition object, or `{ "conditions": [...] }`. Stage and branch `next` values must name another declared stage. Branches with `label` or `label_key` auto-render as dialogue options while their stage is current. Selecting an available branch records branch facts, runs its `actions`, and advances to `next` when set. If a `blocked_by` entry matches, selecting the option returns `reason` or `reason_key` instead of running the branch.
-
-Use `scope: "world"` for shared save-wide consequences, `scope: "player"` for player story flags, `scope: "village"` for local outcomes, and `scope: "villager"` for villager-specific secrets or promises.
-
-Tracker text and quest dialogue can use `{quest_stage}` or `{current_stage}` to show the saved progress stage. Lifecycle events also write stage values: `started`, `completed`, `abandoned`, `expired`, and `branch_locked`. A custom `set_stage` action can replace those with a pack-defined stage such as `warned_guard`, `archive_saved`, or `raiders_spared`.
-
-Stage changes can fire quest triggers. Use `event: "stage_changed"` and an optional `stage` or `stages` filter for entry actions:
+The forced quest scene above can live in `data/my_pack/forced_dialogue/quests/lost_civilization/storm_warning.json`:
 
 ```json
 {
-  "triggers": [
-    {
-      "id": "warned_guard_followup",
-      "event": "stage_changed",
-      "stage": "warned_guard",
-      "actions": [
-        {
-          "type": "forced_dialogue",
-          "forced_dialogue": "my_pack.quest.old_road.guard_warning"
-        }
-      ]
-    }
-  ]
-}
-```
-
-Stage triggers do not recursively trigger more stage triggers in the same action chain. A stage entry action can still set a later stage, but that second stage change will not immediately run another nested `stage_changed` trigger.
-
-### Automatic Quest Facts
-
-Every quest also writes common quest-scoped facts for the current player:
-
-| Fact | When it is written |
-| --- | --- |
-| `villagerretaliation:quest_started` | The quest starts |
-| `villagerretaliation:quest_completed` | The quest is turned in |
-| `villagerretaliation:quest_abandoned` | The quest is abandoned |
-| `villagerretaliation:quest_expired` | The quest expires |
-| `villagerretaliation:quest_objective_completed` | An objective completes |
-
-The quest-scoped variable `state` is set to `started`, `completed`, `abandoned`, or `expired`. Objective completion also sets `last_objective` and increments `objective_completed:<objective_id>`.
-
-```json
-{
-  "conditions": [
-    {
-      "type": "quest_fact",
-      "scope": "quest",
-      "quest": "my_pack:old_road",
-      "tag": "villagerretaliation:quest_completed"
-    }
-  ]
-}
-```
-
-## Example: Once Per World Or Village
-
-By default, completion limits are per player. Add `completion_scope` when a quest should be globally settled after enough completions happen in a wider scope.
-
-```json
-{
-  "rules": {
-    "repeatable": false,
-    "max_completions": 1,
-    "completion_scope": "world"
+  "metadata": {
+    "quest": "my_pack:storm_warning",
+    "questline": "lost_civilization"
   },
-  "dialogue": {
-    "already_completed": [
-      "That matter has already been settled."
-    ]
+  "entries": [
+    {
+      "id": "my_pack.quest.storm_warning.reminder",
+      "trigger": "quest",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "lines": [
+        "Storms make old warnings easier to hear. Stay close to shelter."
+      ],
+      "requires_line_of_sight": true,
+      "force_camera_towards_villager": true,
+      "options": [
+        {
+          "id": "my_pack.quest.storm_warning.ok",
+          "label": "I understand.",
+          "response": "Then keep the warning near your feet.",
+          "end_conversation": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Localization
+
+Inline text is a fallback. Use `*_key` fields when you want datapack-localized text:
+
+```json
+{
+  "metadata": {
+    "title": "Bread Delivery",
+    "title_key": "quest.my_pack.bread_delivery.title",
+    "description": "Bring 16 bread.",
+    "description_key": "quest.my_pack.bread_delivery.description"
+  },
+  "ui": {
+    "tracker_text": "Bring 16 bread.",
+    "tracker_text_key": "quest.my_pack.bread_delivery.tracker"
   }
 }
 ```
 
-Completion scopes:
+Dialogue slots and scenes also accept `text_key`, `label_key`, and keyed lines where the generated schema lists them. Put keyed text in normal dialogue message files under `data/<namespace>/dialogue/<locale>/.../messages/*.json`.
 
-| Scope | Meaning |
-| --- | --- |
-| `player` | Default. Completion count is stored on that player's quest progress. |
-| `player_world` | Explicit per-player-in-this-world behavior; useful when a pack wants the default semantics to be obvious. |
-| `world` | One shared completion count for the whole save. |
-| `village` | One shared completion count for the resolved village area. |
-| `villager` | One shared completion count for the issuing villager. |
+## Capabilities And Live Context
 
-Use `player_world` when the default needs to be explicit, `world` for unique story chapters, `village` for local village crises, and `villager` for personal favor chains.
+Conditions and actions come from the generated quest registries. The datapack builder reads `tools/datapack-builder/quest-registry-metadata.json`; the Node validator and Java schema generator use the same runtime metadata.
 
-## Replacing Or Removing Built-Ins
+Some registry entries need live entities:
 
-At the top of any quest file:
+- provider-live conditions, such as villager equipment or live mood checks, need the quest giver loaded
+- player-live actions, such as notifications, forced dialogue, loot, XP, and reputation changes, need a player context
+- provider-live actions, such as forced dialogue and gossip, need the issuing villager loaded
 
-```json
-{ "replace": true }
+Prefer saved-state conditions for active quest gates that must continue while the villager is unloaded. Use live-context actions from events only when the event is expected to run near the player and provider.
+
+## Diagnostics And Trace Commands
+
+Useful commands while testing:
+
+```text
+/villagerretaliation datapack diagnostics
+/villagerretaliation quest debug providers [radius]
+/villagerretaliation quest debug why_available <quest_id> <provider_name>
+/villagerretaliation quest debug why_hidden <quest_id> [provider_name]
+/villagerretaliation quest debug inspect <quest_id>
+/villagerretaliation quest debug objectives <quest_id>
+/villagerretaliation quest debug trace on
+/villagerretaliation quest debug trace show [limit]
+/villagerretaliation quest debug trace capture <quest_id> <provider_name>
+/villagerretaliation quest debug fire_trigger <quest_id> <event>
+/villagerretaliation quest debug actions dry_run <quest_id> <trigger_id>
 ```
 
-puts the quest loader in replacement mode. VR skips built-in quest resources, then loads add-on quest files normally. A control-only replace file is valid; it disables the built-ins without registering a placeholder quest. Put your replacement quests in the same file or any other quest file in your datapack.
+Use `inspect` for saved state, issuer context, target context, repeat rules, objective counters, current stage, and fact values. Use `trace` for indexed trigger dispatch, condition traces, action diagnostics, and bounded recent events.
 
-```json
-{
-  "id": "villagerretaliation:bread_delivery",
-  "remove": true
-}
+## Legacy V1 Compatibility
+
+V1 quest JSON remains supported when the file has no `schema: "villagerretaliation:quest/v2"`. V1 fields such as `display`, `offer`, top-level `objectives`, `rules`, `tracker`, `triggers`, and separate dialogue trees still load through the compatibility adapter.
+
+Legacy override rules still apply:
+
+- a higher-priority datapack can replace a built-in quest by writing the same quest id
+- a v2 module can replace a v1 quest with the same id
+- old dialogue tree resources under `data/<namespace>/dialogue_trees/<locale>/quests/...` still work
+- `remove` and `replace` on dialogue trees still remove or replace legacy/extracted scenes
+
+Do not delete v1 resources just because v2 exists. Migrate intentionally, validate the generated v2 file, and keep any external dialogue tree only when it is still needed.
+
+## Extraction Guidance
+
+Start with one v2 quest file. Extract only when the file becomes hard to maintain:
+
+```text
+data/<namespace>/quests/<module>/<quest>.json
+data/<namespace>/dialogue_trees/<locale>/quests/<module>/<quest>.json
+data/<namespace>/dialogue/<locale>/quests/<module>/<quest>/messages/*.json
+data/<namespace>/forced_dialogue/quests/<module>/<quest>.json
 ```
 
-removes one quest by `id`. If `id` is omitted, the id is inferred from the file path.
-
-## Best Practice
-
-Pair every quest with a [Dialogue Tree](Dialogue-Trees.md) for the offer, reminder, and turn-in scene. Keep the quest file focused on state, and put translatable wording behind message keys so translators do not have to edit objective logic.
+Use the quest module for quest state, stages, objective readiness, rewards, transitions, and short scenes. Use external dialogue trees for long authored branches or shared localization. Use forced dialogue only for event-driven locked scenes outside the normal Talk flow.

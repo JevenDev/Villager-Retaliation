@@ -19,7 +19,7 @@ Use the generator when you want to:
 
 ## Current Target
 
-The current rewrite in this repo targets `VR 1.0.0-beta.12`.
+The current rewrite in this repo targets `VR 1.0.0-beta.12` plus the current quest module v2 authoring surface.
 
 - Choose `1.0.0-beta.12` for new work against this wiki.
 - Keep using the `1.0.0-beta.11` snapshot for older packs that have not been manually migrated.
@@ -29,9 +29,9 @@ The current rewrite in this repo targets `VR 1.0.0-beta.12`.
 
 | Builder area | Output root |
 | --- | --- |
+| Quests | `data/<namespace>/quests/` |
 | Dialogue | `data/<namespace>/dialogue/<locale>/` |
 | Forced dialogue | `data/<namespace>/forced_dialogue/` |
-| Imported quests | `data/<namespace>/quests/` |
 | Imported dialogue trees | `data/<namespace>/dialogue_trees/<locale>/` |
 | Notifications | `data/villagerretaliation/notifications/<locale>/` |
 | Gifts | `data/villagerretaliation/gifts/` |
@@ -56,7 +56,7 @@ The `Preset` button is the fastest way to start:
 - `Starter Pack` gives you a small editable beta.12 pack.
 - `Dialogue Folder Template` gives you the full folderized template from `example-packs/dialogue-folder-template/`.
 
-That template already includes examples for dialogue, forced dialogue, notifications, gifts, pacification, profession loot, story discovery, and names.
+That template already includes examples for quest module v2, dialogue, forced dialogue, notifications, gifts, pacification, profession loot, story discovery, and names.
 
 ## Example Use
 
@@ -75,18 +75,34 @@ data/my_pack/dialogue/en_us/my_pack/options/00_rumor.json
 data/my_pack/dialogue/en_us/my_pack/lines/00_rumor.json
 ```
 
+If you want one simple quest:
+
+1. Open the Quests tab.
+2. Click `Add Example`.
+3. Edit the quest id, provider filters, objective, dialogue, rewards, and tracker text in the JSON editor.
+4. Keep `Scene mode` on `Inline scenes` unless the scene should live in a separate dialogue tree.
+5. Export.
+
+You should end up with output similar to:
+
+```text
+data/my_pack/quests/first_steps.json
+```
+
 ## Import Notes
 
 Import works best when your pack already follows the documented folder layout.
 
 - Files under `dialogue/<locale>/` import as dialogue.
 - Files under `forced_dialogue/` import as forced dialogue.
-- Files under `quests/` and `dialogue_trees/<locale>/` are recognized and preserved as JSON pass-through files.
+- Quest module v2 files under `quests/` import as editable Quests tab modules.
+- Legacy v1 quest files under `quests/` are preserved as JSON pass-through files with migration suggestions.
+- Files under `dialogue_trees/<locale>/` are recognized and preserved as JSON pass-through files.
 - Files under `notifications/<locale>/` import as notifications.
 
 If an older handwritten pack mixed several systems into one file, split those files first. The game itself also treats those paths as separate loaders.
 
-Quest and dialogue-tree pass-through means the builder keeps those files in the pack and export zip. It does not yet provide full structured editors for quest objectives, quest rules, or branching tree nodes.
+Legacy quest and dialogue-tree pass-through means the builder keeps those files in the pack and export zip without overwriting them. Use the migration suggestions as a prompt to run the v1-to-v2 tooling separately.
 
 ## Good Safety Checks
 
@@ -97,5 +113,7 @@ Before exporting, confirm:
 - Tags start with `#`.
 - Structure and biome ids are fully namespaced.
 - Stable `id` values are present on entries you may translate or override later.
+- Quest modules use `schema: "villagerretaliation:quest/v2"`.
+- Response transitions use only one transition source.
 
 The builder is a convenience layer. It does not register new items, professions, structures, or biomes on its own.

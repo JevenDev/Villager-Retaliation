@@ -8514,7 +8514,7 @@ function dialogueFolderTemplateFiles() {
       "Replace ids, labels, filters, and text as your pack grows.",
       "",
       "The template intentionally uses focused single-entry files so translators and pack authors can work in small, readable chunks.",
-      "It also includes compact examples for beta.12 text keys, nested metadata, compound conditions, mood and Social Attribute filters, forced-dialogue chat output, quest notifications, gifts, pacification payments, story discovery, profession loot, and preset names."
+      "It also includes compact examples for beta.12 text keys, nested metadata, compound conditions, mood and Social Attribute filters, one quest module v2 file, forced-dialogue chat output, quest notifications, gifts, pacification payments, story discovery, profession loot, and preset names."
     ].join("\n") + "\n"
   };
   const dialogueRoot = "data/example_template/dialogue/en_us/example_template";
@@ -8603,6 +8603,103 @@ function dialogueFolderTemplateFiles() {
       notes: "Shows text_key, conditions, mood, Social Attribute shorthand, priority, category, and nested metadata."
     },
     weight: 10
+  });
+  files["data/example_template/quests/first_steps.json"] = safeJson({
+    schema: "villagerretaliation:quest/v2",
+    id: "example_template:first_steps",
+    metadata: {
+      title: "Example First Steps",
+      description: "Bring one paper to a villager.",
+      questline: "example_template",
+      tags: ["example", "group.example"]
+    },
+    provider: {
+      type: "villagerretaliation:villager"
+    },
+    availability: {
+      repeatable: false,
+      max_completions: 1,
+      locked_to_villager: true
+    },
+    entry_stage: "started",
+    stages: [
+      {
+        id: "started",
+        objectives: [
+          {
+            id: "bring_paper",
+            type: "item_check",
+            item: "minecraft:paper",
+            count: 1,
+            tracker: {
+              text: "Bring one paper.",
+              complete_text: "The paper is ready.",
+              show_progress: true,
+              progress: 0.75
+            }
+          }
+        ],
+        dialogue: {
+          offer: {
+            label: "Example First Steps",
+            request: "question",
+            lines: ["Bring one paper."],
+            responses: [
+              {
+                id: "accept",
+                label: "I can help.",
+                scene: "start_quest"
+              }
+            ]
+          },
+          turn_in: {
+            label: "Example First Steps",
+            request: "question",
+            lines: ["Thank you for the paper."],
+            responses: [
+              {
+                id: "complete",
+                label: "Hand over the paper.",
+                scene: "complete_quest"
+              }
+            ]
+          }
+        },
+        scenes: [
+          {
+            id: "start_quest",
+            actions: [
+              {
+                type: "quest",
+                action: "start",
+                lines: {
+                  started: ["Paper first, then ink."],
+                  unavailable: ["This example quest is not available right now."]
+                }
+              }
+            ]
+          },
+          {
+            id: "complete_quest",
+            actions: [
+              {
+                type: "quest",
+                action: "turn_in",
+                lines: {
+                  completed: ["Good. This is enough to write the first draft."],
+                  missing_objectives: ["Bring one paper before we close this."],
+                  unavailable: ["This example quest is not ready to close yet."]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    ui: {
+      tracker_text: "Bring one paper.",
+      icon: "minecraft:paper"
+    }
   });
   files[`${dialogueRoot}/professions/farmer/options/00_example.json`] = safeJson({
     id: "example_template.farmer.option.question",

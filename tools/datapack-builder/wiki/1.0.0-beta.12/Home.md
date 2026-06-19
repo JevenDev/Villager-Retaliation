@@ -18,8 +18,8 @@ Every page includes at least one copyable example. Start small, test one system 
 | --- | --- | --- | --- |
 | Dialogue | Talk menu options, replies, keyed text, openings, closings, pacify lines | `data/<namespace>/dialogue/<locale>/` | [Dialogue](Dialogue.md) |
 | Dialogue trees | Branching scenes and authored conversations | `data/<namespace>/dialogue_trees/<locale>/` | [Dialogue Trees](Dialogue-Trees.md) |
-| Quests | Offers, objectives, rewards, tracker text, quest triggers | `data/<namespace>/quests/` | [Quests](Quests.md) |
-| First quest | A complete beginner quest with the required quest file and dialogue tree | `data/<namespace>/quests/` and `data/<namespace>/dialogue_trees/<locale>/` | [First Quest Guide](First-Quest.md) |
+| Quests | Offers, objectives, rewards, tracker text, quest triggers, and inline quest scenes | `data/<namespace>/quests/` | [Quests](Quests.md) |
+| First quest | A complete beginner quest in one quest module v2 file | `data/<namespace>/quests/` | [First Quest Guide](First-Quest.md) |
 | Forced dialogue | Event-driven locked scenes and chat barks | `data/<namespace>/forced_dialogue/` | [Forced Dialogue](Forced-Dialogue.md) |
 | Notifications | HUD quest notices and ambient world text | `data/villagerretaliation/notifications/<locale>/` | [Notifications](Notifications.md) |
 | Gifts | Gift preferences and high-trust rewards | `data/villagerretaliation/gifts/` | [Gifts](Gifts.md) |

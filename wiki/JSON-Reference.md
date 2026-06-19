@@ -78,7 +78,7 @@ Builder structures also support removal by structure id:
 
 Many fields accept one value or several values.
 
-```json
+```jsonc
 "professions": ["minecraft:farmer", "minecraft:fletcher"]
 ```
 
@@ -123,13 +123,13 @@ Example:
 
 Use item ids for exact matches:
 
-```json
+```jsonc
 "items": ["minecraft:emerald"]
 ```
 
 Use tags with `#` when any item in the tag should count:
 
-```json
+```jsonc
 "items": ["#minecraft:flowers"]
 ```
 
@@ -304,6 +304,87 @@ Branch locks close unchosen paths:
 ```
 
 `exclusive_group` makes sibling quests in the same group mutually exclusive. `exclusive_on` accepts `started` or `completed`. `blocks_on_start`, `blocks_on_completion`, and `blocks` explicitly consume named quests. A locked quest matches quest state `branch_locked` and gets the quest-scoped tag `villagerretaliation:quest_branch_locked` plus variables `blocked_by`, `blocked_on`, and `exclusive_group`.
+
+## Quest Module V2
+
+New quests should use `schema: "villagerretaliation:quest/v2"` under `data/<namespace>/quests/`. A simple playable quest can keep provider filters, availability, stages, objectives, dialogue slots, responses, scenes, rewards, events, and tracker UI in one file.
+
+Required top-level fields:
+
+| Field | Meaning |
+| --- | --- |
+| `schema` | Must be `villagerretaliation:quest/v2` |
+| `id` | Full quest id, such as `my_pack:bread_delivery` |
+| `provider` | Provider type and filters, usually `villagerretaliation:villager` |
+| `entry_stage` | First stage id |
+| `stages` | Array of stage objects |
+
+Common optional fields:
+
+| Field | Meaning |
+| --- | --- |
+| `metadata` | `title`, `description`, `title_key`, `description_key`, `questline`, `tags`, `parent` |
+| `availability` | Repeat, cooldown, abandonment, locking, completion scope, and active gates |
+| `target` | Structure target, dimension, search radius, discovery radius, and proof item |
+| `events` | Quest-level trigger actions |
+| `rewards` | XP, reputation, gossip, loot, memory event, or reward actions |
+| `ui` | Tracker text, icon, color, progress, placeholders, priority, and hidden flag |
+| `external_scenes` | Resource ids for extracted dialogue tree scenes |
+
+Each stage requires `id` and `objectives`. Stages can also define `complete_when`, `next`, `dialogue`, `responses`, `scenes`, `events`, `entry_actions`, `exit_actions`, `rewards`, `ui`, and `metadata`.
+
+Dialogue slots such as `offer`, `reminder`, and `turn_in` can be inline:
+
+```json
+{
+  "dialogue": {
+    "offer": {
+      "label": "Bread Delivery",
+      "request": "question",
+      "lines": ["The bins are low."],
+      "responses": [
+        {
+          "id": "accept",
+          "label": "I can help.",
+          "scene": "start_quest"
+        }
+      ]
+    }
+  }
+}
+```
+
+Or extracted:
+
+```json
+{
+  "external_scenes": ["my_pack:quests/village_supply/bread_delivery"],
+  "dialogue": {
+    "offer": {
+      "label": "Bread Delivery",
+      "request": "question",
+      "external_scene": {
+        "tree": "my_pack:quests/village_supply/bread_delivery",
+        "entry": "offer"
+      }
+    }
+  }
+}
+```
+
+For responses, use one transition source: direct response fields, a `transition` object, or a transition action. Do not mix direct `next`/`stage`/`scene`/`complete` fields with a transition action on the same response.
+
+Validate standalone quest modules with:
+
+```text
+node tools/validate-dialogue-data.mjs --quest path/to/quest.json
+```
+
+Regenerate the generated authoring schema and registry metadata with:
+
+```text
+.\gradlew.bat :neoforge:generateQuestV2Schema
+```
 
 ## Shared Actions
 

@@ -16,7 +16,7 @@ Beta.12 is not a marker-only update. Review these areas before changing pack tar
 2. Dialogue requests: options use `request`, and typed option files can omit `type` entirely.
 3. Complex logic: newer content should prefer `conditions` over older one-off helper fields.
 4. Dialogue filtering: beta.12 adds temporary mood filters, Social Attribute score filters, `priority`, `category`, and `text_key`.
-5. Quests: canonical quest JSON is the maintained shape. Old advancement-style quest shapes are not the beta.12 target.
+5. Quests: quest module v2 is preferred for new quests. Legacy v1 quest JSON remains supported through the compatibility adapter.
 6. Skill trades: beta.12 adds trade refresh behavior, persistent trade pools, and targetable Special Orders.
 7. Builder structures: eligible hired-builder structures are now data driven through `data/<namespace>/builder_structures/`.
 8. Builder workflow: there is no automatic beta.11 to beta.12 conversion pass.
@@ -55,30 +55,42 @@ Instead of stacking many special-purpose booleans, move new work toward:
 }
 ```
 
-### 3. Quests Now Expect Explicit Structure
+### 3. Quests Prefer Central Modules
 
-Preferred beta.12 quest shape:
+Preferred quest module v2 shape:
 
 ```json
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "my_pack:bread_delivery",
-  "display": {
+  "metadata": {
     "title": "Bread Delivery",
     "description": "Bring 16 bread to the village stores."
   },
-  "offer": {
-    "professions": ["minecraft:farmer"]
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": ["minecraft:farmer"]
+    }
   },
-  "objectives": [
+  "entry_stage": "gather",
+  "stages": [
     {
-      "id": "bring_bread",
-      "type": "item_check",
-      "item": "minecraft:bread",
-      "count": 16
+      "id": "gather",
+      "objectives": [
+        {
+          "id": "bring_bread",
+          "type": "item_check",
+          "item": "minecraft:bread",
+          "count": 16
+        }
+      ]
     }
   ]
 }
 ```
+
+V1 quest files without `schema: "villagerretaliation:quest/v2"` still load. New simple quests should start as one v2 file with inline dialogue, and only extract dialogue trees or forced dialogue when the scene is large or event-driven.
 
 ### 4. Skill Trades Can Power Special Orders
 
@@ -117,10 +129,11 @@ See [Builder Structures](Builder-Structures.md) for remove and replace examples.
 
 1. Leave the pack on beta.11 while you review it.
 2. Move dialogue into folderized beta.12 paths if the current files are large.
-3. Convert any old quest data to canonical quest files plus dialogue trees.
-4. Replace older helper-heavy logic with `conditions` where practical.
-5. Test each system separately.
-6. Only then change the pack target to beta.12.
+3. Leave working v1 quests in place unless you are intentionally migrating them.
+4. Convert new or migrated simple quests to quest module v2 first; extract dialogue trees only when needed.
+5. Replace older helper-heavy logic with `conditions` where practical.
+6. Test each system separately.
+7. Only then change the pack target to beta.12.
 
 ## What Did Not Change
 
@@ -129,6 +142,7 @@ These habits are still correct:
 - Use stable `id` values.
 - Use exact path overrides only when you really want to replace built-in content.
 - Keep notifications, dialogue, and forced dialogue in their own loaders.
+- Keep v1 quest files and dialogue trees when they are still the authoritative source.
 - Use a resource pack for GUI text and models.
 
 ## When In Doubt
