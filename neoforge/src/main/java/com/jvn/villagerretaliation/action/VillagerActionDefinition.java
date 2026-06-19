@@ -461,23 +461,7 @@ public record VillagerActionDefinition(
         }
 
         public static Kind bySerializedName(String value) {
-            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-            return switch (normalized) {
-                case "notification", "notify", "hud", "message" -> NOTIFICATION;
-                case "tracker", "quest_tracker", "flash_tracker" -> TRACKER;
-                case "forced_dialogue", "force_dialogue", "dialogue" -> FORCED_DIALOGUE;
-                case "quest", "quest_action" -> QUEST;
-                case "experience", "xp" -> EXPERIENCE;
-                case "reputation", "rep" -> REPUTATION;
-                case "gossip", "gossip_reputation" -> GOSSIP;
-                case "memory", "memory_event" -> MEMORY;
-                case "loot", "loot_table" -> LOOT;
-                case "set_tag", "quest_tag", "add_tag", "tag" -> SET_TAG;
-                case "clear_tag", "remove_tag", "unset_tag" -> CLEAR_TAG;
-                case "set_variable", "variable", "set_fact", "fact", "set_stage", "quest_stage", "stage" -> SET_VARIABLE;
-                case "counter", "increment_counter", "add_counter" -> COUNTER;
-                default -> NONE;
-            };
+            return VillagerActionRegistry.kindBySerializedName(value);
         }
 
         public boolean isQuestFact() {

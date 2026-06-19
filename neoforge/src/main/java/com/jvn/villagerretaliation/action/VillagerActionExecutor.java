@@ -33,6 +33,13 @@ public final class VillagerActionExecutor {
             DialogueContext context,
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements) {
+        return VillagerActionRegistry.execute(context, action, inheritedReplacements).legacyResult();
+    }
+
+    static VillagerActionResult executeDirect(
+            DialogueContext context,
+            VillagerActionDefinition action,
+            Map<String, String> inheritedReplacements) {
         if (context == null || action == null || action.kind() == VillagerActionDefinition.Kind.NONE) {
             return VillagerActionResult.EMPTY;
         }

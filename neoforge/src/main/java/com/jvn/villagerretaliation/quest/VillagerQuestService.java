@@ -3285,12 +3285,64 @@ public final class VillagerQuestService {
 
     private static void awardRewards(DialogueContext context, QuestDefinition definition) {
         QuestDefinition.Rewards rewards = definition.rewards();
-        VillagerActionExecutor.awardExperience(context, rewards.experience());
-        VillagerActionExecutor.changeReputation(context, rewards.reputation());
-        VillagerActionExecutor.spreadGossip(context, rewards.gossipReputation());
-        VillagerActionExecutor.rememberMemory(context, rewards.memoryEvent());
-        VillagerActionExecutor.giveLoot(context, rewards.lootTable());
+        Map<String, String> replacements = new LinkedHashMap<>(replacements(context, definition, null));
+        runRewardAction(context, rewardAction(
+                VillagerActionDefinition.Kind.EXPERIENCE,
+                rewards.experience(),
+                null,
+                null), replacements);
+        runRewardAction(context, rewardAction(
+                VillagerActionDefinition.Kind.REPUTATION,
+                rewards.reputation(),
+                null,
+                null), replacements);
+        runRewardAction(context, rewardAction(
+                VillagerActionDefinition.Kind.GOSSIP,
+                rewards.gossipReputation(),
+                null,
+                null), replacements);
+        runRewardAction(context, rewardAction(
+                VillagerActionDefinition.Kind.MEMORY,
+                0,
+                rewards.memoryEvent(),
+                null), replacements);
+        runRewardAction(context, rewardAction(
+                VillagerActionDefinition.Kind.LOOT,
+                0,
+                null,
+                rewards.lootTable()), replacements);
         context.villager().playSound(SoundEvents.PLAYER_LEVELUP, 0.55F, 1.1F);
+    }
+
+    private static void runRewardAction(
+            DialogueContext context,
+            VillagerActionDefinition action,
+            Map<String, String> replacements) {
+        VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
+        replacements.putAll(result.replacements());
+    }
+
+    private static VillagerActionDefinition rewardAction(
+            VillagerActionDefinition.Kind kind,
+            int amount,
+            ResourceLocation memoryTag,
+            ResourceLocation lootTable) {
+        return new VillagerActionDefinition(
+                kind,
+                null,
+                VillagerActionDefinition.QuestAction.NONE,
+                amount,
+                memoryTag,
+                lootTable,
+                "",
+                "",
+                "",
+                false,
+                QuestFactScope.PLAYER,
+                null,
+                "",
+                "",
+                Map.of());
     }
 
     private static void rememberQuestStoryHint(

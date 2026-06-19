@@ -4,7 +4,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.action.ActionCapability;
+import com.jvn.villagerretaliation.action.ActionResult;
+import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
@@ -360,6 +364,54 @@ public final class VillagerQuestGameTests {
                 QuestFactScope.bySerializedName("quest_giver", QuestFactScope.PLAYER),
                 QuestFactScope.VILLAGER,
                 "quest_giver fact scope alias");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void actionRegistryNormalizesAliasesAndDryRuns(GameTestHelper helper) {
+        helper.assertValueEqual(VillagerActionRegistry.canonicalTypeId("notify"), "notification", "notify action alias");
+        helper.assertValueEqual(VillagerActionRegistry.canonicalTypeId("quest_action"), "quest", "quest_action alias");
+        helper.assertValueEqual(
+                VillagerActionDefinition.Kind.bySerializedName("set_stage"),
+                VillagerActionDefinition.Kind.SET_VARIABLE,
+                "set_stage registry alias");
+        helper.assertTrue(
+                VillagerActionRegistry.descriptors().stream()
+                        .anyMatch(descriptor -> descriptor.id().equals("set_variable")
+                                && descriptor.aliases().contains("quest_stage")),
+                "set_variable descriptor did not expose quest_stage alias");
+
+        VillagerActionDefinition notification = new VillagerActionDefinition(
+                VillagerActionDefinition.Kind.NOTIFICATION,
+                null,
+                VillagerActionDefinition.QuestAction.NONE,
+                0,
+                null,
+                null,
+                "quest.test",
+                "Test",
+                "",
+                false,
+                QuestFactScope.PLAYER,
+                null,
+                "",
+                "",
+                Map.of());
+        ActionResult dryRun = VillagerActionRegistry.dryRun(null, notification, Map.of());
+        helper.assertValueEqual(dryRun.status(), ActionStatus.SKIPPED, "dry run status");
+        helper.assertValueEqual(dryRun.message(), "dry run", "dry run message");
+        helper.assertFalse(dryRun.legacyResult().ran(), "dry run executed legacy result");
+        helper.assertTrue(
+                dryRun.capabilities().contains(ActionCapability.PROVIDER_LIVE),
+                "notification provider live capability");
+
+        ActionResult missingContext = VillagerActionRegistry.execute(null, notification, Map.of());
+        helper.assertValueEqual(missingContext.status(), ActionStatus.FAILED, "missing context status");
+        helper.assertValueEqual(
+                missingContext.message(),
+                "live dialogue context unavailable",
+                "missing context message");
 
         helper.succeed();
     }
