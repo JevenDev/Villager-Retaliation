@@ -677,7 +677,7 @@ public final class VillagerQuestService {
                 continue;
             }
 
-            entry.progress().expire(gameTime, false);
+            QuestLifecycleService.expire(entry.questId(), entry.progress(), gameTime, false);
             changed = true;
             if (entry.questId().equals(data.getTrackedQuest(entry.playerId()))) {
                 data.clearTrackedQuest(entry.playerId());
@@ -875,11 +875,12 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        String initialStage = initialStage(definition);
+        QuestLifecycleService.StageTransition transition =
+                QuestLifecycleService.initializeStage(definition, progress, context.level().getGameTime());
+        String initialStage = transition.currentStage();
         if (initialStage.isBlank()) {
             return;
         }
-        progress.setCurrentStage(initialStage);
         syncQuestStageFact(context, definition, progress.currentStage());
         QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
         if (stage != null) {
@@ -889,13 +890,7 @@ public final class VillagerQuestService {
     }
 
     private static String initialStage(QuestDefinition definition) {
-        if (definition == null || definition.stages().isEmpty()) {
-            return "";
-        }
-        if (definition.stages().containsKey("started")) {
-            return "started";
-        }
-        return definition.stages().keySet().iterator().next();
+        return QuestLifecycleService.initialStage(definition);
     }
 
     private static boolean changeQuestStage(
@@ -905,12 +900,10 @@ public final class VillagerQuestService {
             String stage,
             boolean runExitActions,
             boolean runEntryActions) {
-        String nextStage = stage == null ? "" : stage.trim();
         if (context == null
                 || definition == null
                 || progress == null
-                || nextStage.isBlank()
-                || progress.currentStage().equals(nextStage)) {
+                || !QuestLifecycleService.canTransitionStage(progress, stage)) {
             return false;
         }
 
@@ -918,13 +911,15 @@ public final class VillagerQuestService {
         if (runExitActions && previous != null) {
             runStageActions(context, definition, progress, previous.exitActions());
         }
-        if (!progress.setCurrentStage(nextStage)) {
+        QuestLifecycleService.StageTransition transition =
+                QuestLifecycleService.transitionStage(definition, progress, stage, context.level().getGameTime());
+        if (!transition.changed()) {
             return false;
         }
-        syncQuestStageFact(context, definition, nextStage);
+        syncQuestStageFact(context, definition, transition.currentStage());
         dispatchStageChangedTriggers(context, definition, progress);
 
-        QuestDefinition.Stage current = definition.stages().get(nextStage);
+        QuestDefinition.Stage current = definition.stages().get(transition.currentStage());
         if (runEntryActions && current != null) {
             runStageActions(context, definition, progress, current.entryActions());
         }
@@ -1080,22 +1075,7 @@ public final class VillagerQuestService {
 
         VillagerQuestSavedData.QuestProgress started = data.getOrCreate(context.player().getUUID(), definition.id());
         QuestProviderBinding providerBinding = VillagerQuestProviderType.INSTANCE.bindingFromDialogueContext(context);
-        started.start(
-                providerBinding.providerId(),
-                target == null ? context.level().dimension() : target.dimension(),
-                target == null ? null : target.pos(),
-                context.level().getGameTime());
-        started.setIssuer(
-                providerBinding.providerId(),
-                providerBinding.displayName(),
-                providerBinding.professionId() == null ? "" : providerBinding.professionId().toString(),
-                providerBinding.level(),
-                providerBinding.dimension(),
-                providerBinding.pos(),
-                providerBinding.villageKey());
-        if (target != null && !target.objectiveId().isBlank()) {
-            started.setTarget(context.villager().getUUID(), target.dimension(), target.pos(), target.objectiveId());
-        }
+        QuestLifecycleService.start(definition.id(), started, providerBinding, target, context.level().getGameTime());
         markContinuousTriggersUsed(started, definition, context.level().getGameTime());
         if (definition.target().hasProofItem() && hasRequiredProof(context.player(), definition)) {
             started.markHasProof();
@@ -1225,7 +1205,11 @@ public final class VillagerQuestService {
         }
 
         progress.markHasProof();
-        progress.complete(context.level().getGameTime(), definition.rules().consumeOnCompletion());
+        QuestLifecycleService.complete(
+                definition.id(),
+                progress,
+                context.level().getGameTime(),
+                definition.rules().consumeOnCompletion());
         markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_COMPLETED_FACT, "completed");
         recordScopedCompletion(context, definition);
         lockBranchQuests(context, definition, QuestDefinition.BranchLockEvent.COMPLETED);
@@ -1264,7 +1248,7 @@ public final class VillagerQuestService {
 
         boolean consume = definition.rules().consumeOnAbandonment()
                 || definition.rules().abandonment() == QuestDefinition.AbandonmentMode.REMOVE_FOREVER;
-        progress.abandon(context.level().getGameTime(), consume);
+        QuestLifecycleService.abandon(definition.id(), progress, context.level().getGameTime(), consume);
         markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_ABANDONED_FACT, "abandoned");
         data.setDirty();
         clearTrackedQuestIf(data, context.player(), definition.id());
@@ -1319,7 +1303,11 @@ public final class VillagerQuestService {
 
         VillagerQuestSavedData.QuestProgress locked =
                 progress == null ? data.getOrCreate(context.player().getUUID(), definition.id()) : progress;
-        locked.consume(BRANCH_LOCK_CONSUMED_REASON);
+        QuestLifecycleService.consume(
+                definition.id(),
+                locked,
+                BRANCH_LOCK_CONSUMED_REASON,
+                context.level().getGameTime());
         markQuestBranchLockedFact(context.level(), context.player(), definition, null, null, null);
         data.setDirty();
         clearTrackedQuestIf(data, context.player(), definition.id());
@@ -1347,49 +1335,19 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             boolean bypassOfferRequirements) {
-        QuestExecutionContext executionContext =
-                QuestExecutionContext.fromDialogueContext(context, definition, "can_start");
-        if (!bypassOfferRequirements && !VillagerQuestProviderType.INSTANCE.matchesOffer(executionContext, definition)) {
-            return false;
-        }
-        if (!parentCompleted(context, definition)) {
-            return false;
-        }
-        if (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED) {
-            return withinStartLimit(definition, progress) && withinCompletionLimit(context, definition, progress);
-        }
-        if (!definition.rules().crossVillagerCompatible()
-                && progress.startedVillagerId() != null
-                && executionContext.providerBinding()
-                        .map(binding -> !binding.matchesProviderId(progress.startedVillagerId()))
-                        .orElse(true)) {
-            return false;
-        }
-        if (!withinStartLimit(definition, progress) || !withinCompletionLimit(context, definition, progress)) {
-            return false;
-        }
-        return switch (progress.state()) {
-            case ACTIVE, CONSUMED -> false;
-            case COMPLETED -> definition.rules().repeatable()
-                    && cooldownElapsed(context.level().getGameTime(), progress.completedGameTime(), definition.rules().completionCooldownTicks());
-            case EXPIRED -> definition.rules().expiration().allowRepickup();
-            case ABANDONED -> switch (definition.rules().abandonment()) {
-                case REMOVE_FOREVER -> false;
-                case ALLOW_REPICKUP -> true;
-                case COOLDOWN -> cooldownElapsed(
-                        context.level().getGameTime(),
-                        progress.abandonedGameTime(),
-                        definition.rules().abandonmentCooldownTicks());
-            };
-            case NOT_STARTED -> true;
-        };
+        return QuestAvailabilityService.canStart(
+                context,
+                definition,
+                progress,
+                bypassOfferRequirements,
+                VillagerQuestService::parentCompleted,
+                VillagerQuestService::scopedCompletionCount);
     }
 
     private static boolean withinStartLimit(
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        int maxStarts = definition.rules().maxStarts();
-        return maxStarts <= 0 || progress == null || progress.startCount() < maxStarts;
+        return QuestAvailabilityService.withinStartLimit(definition, progress);
     }
 
     private static boolean parentCompleted(DialogueContext context, QuestDefinition definition) {
@@ -1412,14 +1370,11 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        int maxCompletions = definition.rules().maxCompletions();
-        if (maxCompletions <= 0) {
-            return true;
-        }
-        if (isPlayerCompletionScope(definition.rules().completionScope())) {
-            return progress == null || progress.completionCount() < maxCompletions;
-        }
-        return scopedCompletionCount(context, definition) < maxCompletions;
+        return QuestAvailabilityService.withinCompletionLimit(
+                context,
+                definition,
+                progress,
+                VillagerQuestService::scopedCompletionCount);
     }
 
     private static int scopedCompletionCount(DialogueContext context, QuestDefinition definition) {
@@ -1464,9 +1419,7 @@ public final class VillagerQuestService {
     }
 
     private static boolean isPlayerCompletionScope(QuestDefinition.CompletionScope scope) {
-        return scope == null
-                || scope == QuestDefinition.CompletionScope.PLAYER
-                || scope == QuestDefinition.CompletionScope.PLAYER_WORLD;
+        return QuestAvailabilityService.isPlayerCompletionScope(scope);
     }
 
     private static void markQuestLifecycleFact(
@@ -1548,7 +1501,11 @@ public final class VillagerQuestService {
 
         VillagerQuestSavedData.QuestProgress locked =
                 progress == null ? data.getOrCreate(context.player().getUUID(), target.id()) : progress;
-        locked.consume(BRANCH_LOCK_CONSUMED_REASON);
+        QuestLifecycleService.consume(
+                target.id(),
+                locked,
+                BRANCH_LOCK_CONSUMED_REASON,
+                context.level().getGameTime());
         clearTrackedQuestIf(data, context.player(), target.id());
         markQuestBranchLockedFact(context.level(), context.player(), target, source, exclusiveGroup, event);
         return true;
@@ -1583,17 +1540,14 @@ public final class VillagerQuestService {
     }
 
     private static boolean cooldownElapsed(long gameTime, long eventTime, long cooldownTicks) {
-        return cooldownTicks <= 0L || eventTime <= 0L || gameTime - eventTime >= cooldownTicks;
+        return QuestAvailabilityService.cooldownElapsed(gameTime, eventTime, cooldownTicks);
     }
 
     private static boolean matchesVillagerLock(
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        return VillagerQuestProviderType.INSTANCE.matchesIssuerLock(
-                QuestExecutionContext.fromDialogueContext(context, definition, "issuer_lock"),
-                definition,
-                progress);
+        return QuestAvailabilityService.matchesProviderLock(context, definition, progress);
     }
 
     private static boolean activeConditionsMet(DialogueContext context, QuestDefinition definition) {
@@ -2338,7 +2292,7 @@ public final class VillagerQuestService {
             return false;
         }
 
-        progress.expire(gameTime, expiration.consume());
+        QuestLifecycleService.expire(definition.id(), progress, gameTime, expiration.consume());
         if (player.level() instanceof ServerLevel level) {
             markQuestLifecycleFact(level, player, definition, QUEST_EXPIRED_FACT, "expired");
         }

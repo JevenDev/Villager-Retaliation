@@ -1,0 +1,180 @@
+package com.jvn.villagerretaliation.quest;
+
+import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
+import net.minecraft.resources.ResourceLocation;
+
+final class QuestLifecycleService {
+    private QuestLifecycleService() {
+    }
+
+    static LifecycleEvent start(
+            ResourceLocation questId,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestProviderBinding providerBinding,
+            VillagerQuestTargets.LocatedTarget target,
+            long gameTime) {
+        progress.start(
+                providerBinding.providerId(),
+                target == null ? providerBinding.dimension() : target.dimension(),
+                target == null ? null : target.pos(),
+                gameTime);
+        progress.setIssuer(
+                providerBinding.providerId(),
+                providerBinding.displayName(),
+                providerBinding.professionId() == null ? "" : providerBinding.professionId().toString(),
+                providerBinding.level(),
+                providerBinding.dimension(),
+                providerBinding.pos(),
+                providerBinding.villageKey());
+        if (target != null && !target.objectiveId().isBlank()) {
+            progress.setTarget(providerBinding.providerId(), target.dimension(), target.pos(), target.objectiveId());
+        }
+        return event(LifecycleEventType.STARTED, questId, progress, gameTime, "");
+    }
+
+    static StageTransition initializeStage(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            long gameTime) {
+        String stage = initialStage(definition);
+        if (stage.isBlank()) {
+            return StageTransition.skipped(progress == null ? "" : progress.currentStage());
+        }
+        return setStage(definition, progress, stage, gameTime, true);
+    }
+
+    static String initialStage(QuestDefinition definition) {
+        if (definition == null || definition.stages().isEmpty()) {
+            return "";
+        }
+        if (definition.stages().containsKey("started")) {
+            return "started";
+        }
+        return definition.stages().keySet().iterator().next();
+    }
+
+    static boolean canTransitionStage(
+            VillagerQuestSavedData.QuestProgress progress,
+            String stage) {
+        String nextStage = normalizeStage(stage);
+        return progress != null && !nextStage.isBlank() && !progress.currentStage().equals(nextStage);
+    }
+
+    static StageTransition transitionStage(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            String stage,
+            long gameTime) {
+        String nextStage = normalizeStage(stage);
+        if (definition == null || !canTransitionStage(progress, nextStage)) {
+            return StageTransition.unchanged(progress == null ? "" : progress.currentStage());
+        }
+        return setStage(definition, progress, nextStage, gameTime, false);
+    }
+
+    private static StageTransition setStage(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            String stage,
+            long gameTime,
+            boolean allowUnchanged) {
+        String previousStage = progress.currentStage();
+        if (!progress.setCurrentStage(stage) && !allowUnchanged) {
+            return StageTransition.unchanged(progress.currentStage());
+        }
+        return new StageTransition(
+                !previousStage.equals(progress.currentStage()),
+                previousStage,
+                progress.currentStage(),
+                event(LifecycleEventType.STAGE_CHANGED, definition.id(), progress, gameTime, ""));
+    }
+
+    static LifecycleEvent complete(
+            ResourceLocation questId,
+            VillagerQuestSavedData.QuestProgress progress,
+            long gameTime,
+            boolean consume) {
+        progress.complete(gameTime, consume);
+        return event(LifecycleEventType.COMPLETED, questId, progress, gameTime, consume ? "completion" : "");
+    }
+
+    static LifecycleEvent abandon(
+            ResourceLocation questId,
+            VillagerQuestSavedData.QuestProgress progress,
+            long gameTime,
+            boolean consume) {
+        progress.abandon(gameTime, consume);
+        return event(LifecycleEventType.ABANDONED, questId, progress, gameTime, consume ? "abandonment" : "");
+    }
+
+    static LifecycleEvent expire(
+            ResourceLocation questId,
+            VillagerQuestSavedData.QuestProgress progress,
+            long gameTime,
+            boolean consume) {
+        progress.expire(gameTime, consume);
+        return event(LifecycleEventType.EXPIRED, questId, progress, gameTime, consume ? "expiration" : "");
+    }
+
+    static LifecycleEvent consume(
+            ResourceLocation questId,
+            VillagerQuestSavedData.QuestProgress progress,
+            String reason,
+            long gameTime) {
+        progress.consume(reason);
+        return event(LifecycleEventType.CONSUMED, questId, progress, gameTime, reason);
+    }
+
+    private static String normalizeStage(String stage) {
+        return stage == null ? "" : stage.trim();
+    }
+
+    private static LifecycleEvent event(
+            LifecycleEventType type,
+            ResourceLocation questId,
+            VillagerQuestSavedData.QuestProgress progress,
+            long gameTime,
+            String reason) {
+        return new LifecycleEvent(
+                type,
+                questId,
+                progress == null ? null : progress.state(),
+                gameTime,
+                progress == null ? "" : progress.currentStage(),
+                reason == null ? "" : reason);
+    }
+
+    enum LifecycleEventType {
+        STARTED,
+        COMPLETED,
+        ABANDONED,
+        EXPIRED,
+        CONSUMED,
+        STAGE_CHANGED
+    }
+
+    record LifecycleEvent(
+            LifecycleEventType type,
+            ResourceLocation questId,
+            VillagerQuestSavedData.QuestState state,
+            long gameTime,
+            String stage,
+            String reason
+    ) {
+    }
+
+    record StageTransition(
+            boolean changed,
+            String previousStage,
+            String currentStage,
+            LifecycleEvent event
+    ) {
+        private static StageTransition unchanged(String stage) {
+            return new StageTransition(false, stage == null ? "" : stage, stage == null ? "" : stage, null);
+        }
+
+        private static StageTransition skipped(String previousStage) {
+            return new StageTransition(false, previousStage == null ? "" : previousStage, "", null);
+        }
+    }
+}
