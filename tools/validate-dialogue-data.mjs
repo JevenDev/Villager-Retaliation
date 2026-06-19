@@ -825,6 +825,9 @@ const dialogueIdScopes = {
   pacify: new Map()
 };
 
+const questRegistryMetadata = await loadQuestRegistryMetadata();
+validateQuestRegistryMetadata(questRegistryMetadata);
+
 for (const [kind, relativeRoot] of Object.entries(roots)) {
   for (const file of await jsonFiles(path.join(root, relativeRoot))) {
     const data = await parseJson(file);
@@ -866,6 +869,46 @@ if (errors.length > 0) {
 if (warnings.length > 0) {
   for (const warning of warnings) {
     console.warn(warning);
+  }
+}
+
+async function loadQuestRegistryMetadata() {
+  const metadataPath = path.join(root, "tools/datapack-builder/quest-registry-metadata.json");
+  try {
+    return JSON.parse(await readFile(metadataPath, "utf8"));
+  } catch (error) {
+    errors.push(`${relative(metadataPath)}: could not read quest registry metadata: ${error.message}`);
+    return null;
+  }
+}
+
+function validateQuestRegistryMetadata(metadata) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    errors.push("tools/datapack-builder/quest-registry-metadata.json: root must be an object.");
+    return;
+  }
+  if (metadata.format_version !== 1) {
+    errors.push("tools/datapack-builder/quest-registry-metadata.json: format_version must be 1.");
+  }
+  const registries = metadata.registries;
+  if (!registries || typeof registries !== "object" || Array.isArray(registries)) {
+    errors.push("tools/datapack-builder/quest-registry-metadata.json: registries must be an object.");
+    return;
+  }
+  for (const registry of ["conditions", "actions", "objectives", "triggers", "providers"]) {
+    if (!Array.isArray(registries[registry]) || registries[registry].length === 0) {
+      errors.push(`tools/datapack-builder/quest-registry-metadata.json: registries.${registry} must be a non-empty array.`);
+    }
+  }
+  const fragments = metadata.schema_fragments;
+  if (!fragments || typeof fragments !== "object" || Array.isArray(fragments)) {
+    errors.push("tools/datapack-builder/quest-registry-metadata.json: schema_fragments must be an object.");
+    return;
+  }
+  for (const fragment of ["condition_type", "action_type", "objective_type", "trigger_event", "provider_type"]) {
+    if (!fragments[fragment] || !Array.isArray(fragments[fragment].enum) || fragments[fragment].enum.length === 0) {
+      errors.push(`tools/datapack-builder/quest-registry-metadata.json: schema_fragments.${fragment}.enum must be a non-empty array.`);
+    }
   }
 }
 

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.util;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.quest.QuestDiagnostic;
 import com.mojang.logging.LogUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -25,6 +26,14 @@ public final class DatapackDiagnostics {
         }
     }
 
+    public static List<QuestDiagnostic> structuredRecent() {
+        synchronized (RECENT) {
+            return RECENT.stream()
+                    .map(Entry::diagnostic)
+                    .toList();
+        }
+    }
+
     public static void clear() {
         synchronized (RECENT) {
             RECENT.clear();
@@ -38,7 +47,12 @@ public final class DatapackDiagnostics {
             Map<String, String> expectedPaths) {
         for (Map.Entry<String, String> entry : expectedPaths.entrySet()) {
             if (root.has(entry.getKey())) {
-                warn(
+                warnStructured(
+                        "datapack.misplaced_root_key",
+                        location,
+                        pointerForKey("file root", entry.getKey()),
+                        "Move that content to " + entry.getValue() + ".",
+                        Set.of(entry.getKey()),
                         "Villager Retaliation datapack {} is loaded as {}, but contains top-level \"{}\". Move that content to {}.",
                         location,
                         systemName,
@@ -64,7 +78,12 @@ public final class DatapackDiagnostics {
             Set<String> allowedKeys) {
         for (String key : entry.keySet()) {
             if (!allowedKeys.contains(key)) {
-                warn(
+                warnStructured(
+                        "datapack.unsupported_field",
+                        location,
+                        pointerForKey(context, key),
+                        "Remove the field or move it to a supported location.",
+                        Set.of(key),
                         "Villager Retaliation datapack {} {} contains unsupported {} field \"{}\"; it will be ignored.",
                         location,
                         context,
@@ -84,7 +103,12 @@ public final class DatapackDiagnostics {
             String replacement) {
         for (String key : entry.keySet()) {
             if (deprecatedKeys.contains(key)) {
-                warn(
+                warnStructured(
+                        "datapack.deprecated_field",
+                        location,
+                        pointerForKey(context, key),
+                        replacement,
+                        Set.of(key),
                         "Villager Retaliation datapack {} {} uses deprecated {} field \"{}\"; it will be removed in {}. {}",
                         location,
                         context,
@@ -97,7 +121,20 @@ public final class DatapackDiagnostics {
     }
 
     public static void warnInvalidDialogueCondition(ResourceLocation location, String context, String message) {
-        warn(
+        warnInvalidDialogueCondition(location, context, contextToJsonPointer(context), message);
+    }
+
+    public static void warnInvalidDialogueCondition(
+            ResourceLocation location,
+            String context,
+            String jsonPointer,
+            String message) {
+        warnStructured(
+                "datapack.invalid_dialogue_condition",
+                location,
+                jsonPointer,
+                "Check the supported condition, action, or quest field shape for this location.",
+                Set.of(),
                 "Villager Retaliation datapack {} {} has invalid dialogue condition: {}",
                 location,
                 context,
@@ -113,7 +150,12 @@ public final class DatapackDiagnostics {
         if (trigger == null || trigger.isBlank()) {
             return;
         }
-        warn(
+        warnStructured(
+                "datapack.invalid_trigger",
+                location,
+                contextToJsonPointer(context),
+                expected,
+                Set.of(trigger),
                 "Villager Retaliation datapack {} {} uses trigger \"{}\", which is not a valid {} trigger. {}",
                 location,
                 context,
@@ -126,7 +168,12 @@ public final class DatapackDiagnostics {
             ResourceLocation location,
             String systemName,
             Exception exception) {
-        warn(
+        warnStructured(
+                "datapack.skipped_file",
+                location,
+                "",
+                "Fix the JSON syntax or root schema for this file.",
+                Set.of(),
                 "Villager Retaliation datapack {} could not load {} data and will be skipped: {}",
                 location,
                 systemName,
@@ -138,7 +185,12 @@ public final class DatapackDiagnostics {
             String systemName,
             String context,
             String reason) {
-        warn(
+        warnStructured(
+                "datapack.skipped_entry",
+                location,
+                contextToJsonPointer(context),
+                reason,
+                Set.of(),
                 "Villager Retaliation datapack {} {} {} will be skipped: {}",
                 location,
                 systemName,
@@ -152,7 +204,12 @@ public final class DatapackDiagnostics {
             String context,
             String value,
             String expected) {
-        warn(
+        warnStructured(
+                "datapack.invalid_resource_location",
+                location,
+                contextToJsonPointer(context),
+                expected,
+                Set.of(value),
                 "Villager Retaliation datapack {} {} references invalid {} id \"{}\". {}",
                 location,
                 context,
@@ -166,7 +223,12 @@ public final class DatapackDiagnostics {
             String systemName,
             String id,
             ResourceLocation previousLocation) {
-        warn(
+        warnStructured(
+                "datapack.duplicate_id",
+                location,
+                "",
+                "Use a unique id or intentionally replace the earlier definition.",
+                Set.of(id, previousLocation == null ? "" : previousLocation.toString()),
                 "Villager Retaliation datapack {} replaces {} id \"{}\" that was already loaded from {}.",
                 location,
                 systemName,
@@ -184,7 +246,12 @@ public final class DatapackDiagnostics {
         String hint = profession.contains(":")
                 ? "Confirm that a loaded mod registers this profession id."
                 : "Vanilla professions may omit minecraft:, but modded professions need their full id such as modid:" + profession + ".";
-        warn(
+        warnStructured(
+                "datapack.unknown_profession",
+                location,
+                contextToJsonPointer(context),
+                hint,
+                Set.of(profession),
                 "Villager Retaliation datapack {} {} references unknown profession \"{}\". {}",
                 location,
                 context,
@@ -222,20 +289,39 @@ public final class DatapackDiagnostics {
                 "max_held_item_enchantment_level")) {
             return;
         }
-        warn(
+        warnStructured(
+                "datapack.inert_player_item_slots",
+                location,
+                contextToJsonPointer(context),
+                "Add an item, tag, durability, or enchantment filter, or remove player_item_slots.",
+                Set.of("player_item_slots"),
                 "Villager Retaliation datapack {} {} sets player_item_slots without an item, tag, durability, or enchantment filter; the slot filter will not match anything by itself.",
                 location,
                 context);
     }
 
-    private static void warn(String template, Object... args) {
+    private static void warnStructured(
+            String code,
+            ResourceLocation location,
+            String jsonPointer,
+            String suggestedFix,
+            Set<String> relevantIds,
+            String template,
+            Object... args) {
         LOGGER.warn(template, args);
-        remember(format(template, args));
+        String message = format(template, args);
+        remember(new Entry(message, QuestDiagnostic.warning(
+                code,
+                location,
+                jsonPointer,
+                message,
+                suggestedFix,
+                relevantIds)));
     }
 
-    private static void remember(String message) {
+    private static void remember(Entry entry) {
         synchronized (RECENT) {
-            RECENT.addLast(new Entry(message));
+            RECENT.addLast(entry);
             while (RECENT.size() > MAX_RECENT_DIAGNOSTICS) {
                 RECENT.removeFirst();
             }
@@ -274,6 +360,51 @@ public final class DatapackDiagnostics {
         return false;
     }
 
-    public record Entry(String message) {
+    private static String pointerForKey(String context, String key) {
+        String pointer = contextToJsonPointer(context);
+        String escaped = escapeJsonPointer(key);
+        return pointer.isBlank() ? "/" + escaped : pointer + "/" + escaped;
+    }
+
+    private static String contextToJsonPointer(String context) {
+        if (context == null || context.isBlank() || "file root".equals(context.trim())) {
+            return "";
+        }
+        String pointer = context.trim()
+                .replace('\\', '/')
+                .replace('"', ' ')
+                .replace('.', '/')
+                .replace('[', '/')
+                .replace("]", "")
+                .replaceAll("\\s+", "/")
+                .replaceAll("/+", "/")
+                .replaceAll("^/|/$", "");
+        if (pointer.isBlank()) {
+            return "";
+        }
+        StringBuilder escaped = new StringBuilder();
+        for (String segment : pointer.split("/")) {
+            if (!segment.isBlank()) {
+                escaped.append('/').append(escapeJsonPointer(segment));
+            }
+        }
+        return escaped.toString();
+    }
+
+    private static String escapeJsonPointer(String value) {
+        return value == null ? "" : value.replace("~", "~0").replace("/", "~1");
+    }
+
+    public record Entry(String message, QuestDiagnostic diagnostic) {
+        public Entry(String message) {
+            this(message, QuestDiagnostic.warning("datapack.diagnostic", null, "", message, "", Set.of()));
+        }
+
+        public Entry {
+            message = message == null ? "" : message;
+            diagnostic = diagnostic == null
+                    ? QuestDiagnostic.warning("datapack.diagnostic", null, "", message, "", Set.of())
+                    : diagnostic;
+        }
     }
 }

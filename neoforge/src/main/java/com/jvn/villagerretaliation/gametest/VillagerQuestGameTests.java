@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestDiagnostic;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestObjectiveDebugState;
@@ -26,6 +27,7 @@ import com.jvn.villagerretaliation.quest.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.QuestObjectiveRequirement;
 import com.jvn.villagerretaliation.quest.QuestObjectiveResult;
 import com.jvn.villagerretaliation.quest.QuestObjectiveQuery;
+import com.jvn.villagerretaliation.quest.QuestRegistryMetadata;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.QuestStageReadiness;
 import com.jvn.villagerretaliation.quest.QuestTriggerDispatchResult;
@@ -973,6 +975,57 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void datapackDiagnosticsExposeStructuredEntries(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ResourceLocation resourceId = VillagerRetaliation.id("diagnostics/test");
+        DatapackDiagnostics.warnInvalidDialogueCondition(
+                resourceId,
+                "root.conditions[0]",
+                "/conditions/0",
+                "condition must be an object.");
+
+        List<DatapackDiagnostics.Entry> entries = DatapackDiagnostics.recent();
+        helper.assertValueEqual(entries.size(), 1, "diagnostic entry count");
+        DatapackDiagnostics.Entry entry = entries.getFirst();
+        helper.assertTrue(
+                entry.message().contains("condition must be an object"),
+                "legacy diagnostic message was not preserved");
+        QuestDiagnostic diagnostic = entry.diagnostic();
+        helper.assertValueEqual(diagnostic.severity(), QuestDiagnostic.Severity.WARNING, "diagnostic severity");
+        helper.assertValueEqual(
+                diagnostic.code(),
+                "datapack.invalid_dialogue_condition",
+                "diagnostic code");
+        helper.assertValueEqual(diagnostic.resourceId(), resourceId, "diagnostic resource id");
+        helper.assertValueEqual(diagnostic.jsonPointer(), "/conditions/0", "diagnostic json pointer");
+        helper.assertFalse(diagnostic.suggestedFix().isBlank(), "diagnostic suggested fix");
+        helper.assertValueEqual(
+                DatapackDiagnostics.structuredRecent().getFirst(),
+                diagnostic,
+                "structured recent diagnostic");
+        DatapackDiagnostics.clear();
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questRegistryMetadataArtifactMatchesJavaExport(GameTestHelper helper) {
+        Path metadataPath = projectPath("tools", "datapack-builder", "quest-registry-metadata.json");
+        String checkedIn;
+        try {
+            checkedIn = normalizeLineEndings(Files.readString(metadataPath, StandardCharsets.UTF_8));
+        } catch (IOException exception) {
+            throw new GameTestAssertException("Could not read quest registry metadata artifact: " + exception.getMessage());
+        }
+        helper.assertValueEqual(
+                normalizeLineEndings(QuestRegistryMetadata.exportJson()),
+                checkedIn,
+                "quest registry metadata artifact drift");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questSavedDataRoundTripsV1ProgressFields(GameTestHelper helper) {
         UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000001");
         UUID villagerId = UUID.fromString("00000000-0000-0000-0000-000000000002");
@@ -1836,5 +1889,24 @@ public final class VillagerQuestGameTests {
                 return;
             }
         }
+    }
+
+    private static Path projectPath(String first, String... more) {
+        Path requested = Path.of(first, more);
+        List<Path> candidates = List.of(
+                requested,
+                Path.of("..").resolve(requested),
+                Path.of("..", "..").resolve(requested),
+                Path.of("..", "..", "..").resolve(requested));
+        for (Path candidate : candidates) {
+            if (Files.exists(candidate)) {
+                return candidate.normalize();
+            }
+        }
+        throw new GameTestAssertException("Could not find project file " + requested);
+    }
+
+    private static String normalizeLineEndings(String value) {
+        return value == null ? "" : value.replace("\r\n", "\n");
     }
 }

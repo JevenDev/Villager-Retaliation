@@ -75,6 +75,15 @@ tasks.register('gameTest') {
     onlyIf { !skipGameTests.get() }
 }
 
+tasks.register('generateQuestRegistryMetadata', JavaExec) {
+    group = 'datapack tooling'
+    description = 'Exports quest registry metadata for Node/browser datapack tooling.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.quest.QuestRegistryMetadataTool'
+    args rootProject.file('tools/datapack-builder/quest-registry-metadata.json').absolutePath
+}
+
 tasks.named('runGameTestServer') {
     onlyIf { !skipGameTests.get() }
 }

@@ -1,0 +1,815 @@
+{
+  "format_version": 1,
+  "mod_id": "villagerretaliation",
+  "generated_by": "com.jvn.villagerretaliation.quest.QuestRegistryMetadata",
+  "registries": {
+    "conditions": [
+      {
+        "id": "all",
+        "aliases": [
+          "all_of",
+          "and"
+        ],
+        "capabilities": [],
+        "implementation": "AllOf"
+      },
+      {
+        "id": "any",
+        "aliases": [
+          "any_of",
+          "or"
+        ],
+        "capabilities": [],
+        "implementation": "AnyOf"
+      },
+      {
+        "id": "not",
+        "aliases": [],
+        "capabilities": [],
+        "implementation": "Not"
+      },
+      {
+        "id": "reputation",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "Reputation"
+      },
+      {
+        "id": "memory",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot",
+          "village_known"
+        ],
+        "implementation": "Memory"
+      },
+      {
+        "id": "family",
+        "aliases": [],
+        "capabilities": [
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "Family"
+      },
+      {
+        "id": "relationship",
+        "aliases": [],
+        "capabilities": [
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "Relationship"
+      },
+      {
+        "id": "recruitment_memory",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "RecruitmentMemory"
+      },
+      {
+        "id": "villager_age",
+        "aliases": [],
+        "capabilities": [
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "VillagerAge"
+      },
+      {
+        "id": "social_attribute",
+        "aliases": [
+          "attribute",
+          "stat"
+        ],
+        "capabilities": [
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "SocialAttribute"
+      },
+      {
+        "id": "skill",
+        "aliases": [],
+        "capabilities": [
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "Skill"
+      },
+      {
+        "id": "villager_level",
+        "aliases": [
+          "trade_level"
+        ],
+        "capabilities": [
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "VillagerLevel"
+      },
+      {
+        "id": "quest",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "Quest"
+      },
+      {
+        "id": "quest_fact",
+        "aliases": [
+          "fact",
+          "quest_counter",
+          "quest_stage",
+          "quest_tag",
+          "quest_variable",
+          "stage"
+        ],
+        "capabilities": [
+          "player_live",
+          "provider_snapshot",
+          "village_known",
+          "world_known"
+        ],
+        "implementation": "QuestFact"
+      },
+      {
+        "id": "mood",
+        "aliases": [
+          "villager_mood"
+        ],
+        "capabilities": [
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "Mood"
+      },
+      {
+        "id": "weather",
+        "aliases": [],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "Weather"
+      },
+      {
+        "id": "time",
+        "aliases": [
+          "time_of_day"
+        ],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "Time"
+      }
+    ],
+    "actions": [
+      {
+        "id": "notification",
+        "aliases": [
+          "hud",
+          "message",
+          "notify"
+        ],
+        "kind": "notification",
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ]
+      },
+      {
+        "id": "tracker",
+        "aliases": [
+          "flash_tracker",
+          "quest_tracker"
+        ],
+        "kind": "tracker",
+        "capabilities": [
+          "player_live"
+        ]
+      },
+      {
+        "id": "forced_dialogue",
+        "aliases": [
+          "dialogue",
+          "force_dialogue"
+        ],
+        "kind": "forced_dialogue",
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ]
+      },
+      {
+        "id": "quest",
+        "aliases": [
+          "quest_action"
+        ],
+        "kind": "quest",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot"
+        ]
+      },
+      {
+        "id": "experience",
+        "aliases": [
+          "xp"
+        ],
+        "kind": "experience",
+        "capabilities": [
+          "player_live"
+        ]
+      },
+      {
+        "id": "reputation",
+        "aliases": [
+          "rep"
+        ],
+        "kind": "reputation",
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ]
+      },
+      {
+        "id": "gossip",
+        "aliases": [
+          "gossip_reputation"
+        ],
+        "kind": "gossip",
+        "capabilities": [
+          "player_live",
+          "provider_live"
+        ]
+      },
+      {
+        "id": "memory",
+        "aliases": [
+          "memory_event"
+        ],
+        "kind": "memory",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "world_known"
+        ]
+      },
+      {
+        "id": "loot",
+        "aliases": [
+          "loot_table"
+        ],
+        "kind": "loot",
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ]
+      },
+      {
+        "id": "set_tag",
+        "aliases": [
+          "add_tag",
+          "quest_tag",
+          "tag"
+        ],
+        "kind": "set_tag",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot",
+          "world_known"
+        ]
+      },
+      {
+        "id": "clear_tag",
+        "aliases": [
+          "remove_tag",
+          "unset_tag"
+        ],
+        "kind": "clear_tag",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot",
+          "world_known"
+        ]
+      },
+      {
+        "id": "set_variable",
+        "aliases": [
+          "fact",
+          "quest_stage",
+          "set_fact",
+          "set_stage",
+          "stage",
+          "variable"
+        ],
+        "kind": "set_variable",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot",
+          "world_known"
+        ]
+      },
+      {
+        "id": "counter",
+        "aliases": [
+          "add_counter",
+          "increment_counter"
+        ],
+        "kind": "counter",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot",
+          "world_known"
+        ]
+      }
+    ],
+    "objectives": [
+      {
+        "id": "structure_visit",
+        "aliases": [],
+        "type": "structure_visit",
+        "requirements": [
+          "player_position",
+          "polling",
+          "structure_target"
+        ],
+        "has_runtime": true,
+        "implementation": "StructureVisitObjectiveType"
+      },
+      {
+        "id": "location_visit",
+        "aliases": [
+          "coordinate",
+          "coordinates",
+          "coords",
+          "region_visit"
+        ],
+        "type": "location_visit",
+        "requirements": [
+          "player_position",
+          "polling"
+        ],
+        "has_runtime": true,
+        "implementation": "LocationVisitObjectiveType"
+      },
+      {
+        "id": "item_check",
+        "aliases": [],
+        "type": "item_check",
+        "requirements": [
+          "inventory",
+          "polling"
+        ],
+        "has_runtime": true,
+        "implementation": "ItemCheckObjectiveType"
+      },
+      {
+        "id": "mob_kill",
+        "aliases": [
+          "entity_kill",
+          "kill"
+        ],
+        "type": "mob_kill",
+        "requirements": [
+          "counter",
+          "event"
+        ],
+        "has_runtime": true,
+        "implementation": "MobKillObjectiveType"
+      },
+      {
+        "id": "block_break",
+        "aliases": [
+          "break_block",
+          "mine",
+          "mine_block"
+        ],
+        "type": "block_break",
+        "requirements": [
+          "counter",
+          "event"
+        ],
+        "has_runtime": true,
+        "implementation": "BlockObjectiveType"
+      },
+      {
+        "id": "block_place",
+        "aliases": [
+          "place",
+          "place_block"
+        ],
+        "type": "block_place",
+        "requirements": [
+          "counter",
+          "event"
+        ],
+        "has_runtime": true,
+        "implementation": "BlockObjectiveType"
+      },
+      {
+        "id": "block_interact",
+        "aliases": [
+          "block_use",
+          "interact_block",
+          "right_click_block",
+          "use_block"
+        ],
+        "type": "block_interact",
+        "requirements": [
+          "counter",
+          "event"
+        ],
+        "has_runtime": true,
+        "implementation": "BlockObjectiveType"
+      },
+      {
+        "id": "memory_event",
+        "aliases": [
+          "event",
+          "memory",
+          "village_event",
+          "village_memory"
+        ],
+        "type": "memory_event",
+        "requirements": [
+          "counter",
+          "event"
+        ],
+        "has_runtime": true,
+        "implementation": "MemoryEventObjectiveType"
+      },
+      {
+        "id": "trade",
+        "aliases": [
+          "merchant_trade",
+          "trading",
+          "villager_trade"
+        ],
+        "type": "trade",
+        "requirements": [
+          "counter",
+          "event"
+        ],
+        "has_runtime": true,
+        "implementation": "TradeObjectiveType"
+      },
+      {
+        "id": "gift",
+        "aliases": [
+          "gift_given",
+          "give_gift"
+        ],
+        "type": "gift",
+        "requirements": [
+          "counter",
+          "event"
+        ],
+        "has_runtime": true,
+        "implementation": "GiftObjectiveType"
+      },
+      {
+        "id": "reputation",
+        "aliases": [
+          "rep",
+          "reputation_level",
+          "trust"
+        ],
+        "type": "reputation",
+        "requirements": [
+          "live_context",
+          "polling"
+        ],
+        "has_runtime": true,
+        "implementation": "ReputationObjectiveType"
+      },
+      {
+        "id": "choice",
+        "aliases": [
+          "branch_choice",
+          "dialogue_choice",
+          "quest_choice"
+        ],
+        "type": "choice",
+        "requirements": [
+          "polling"
+        ],
+        "has_runtime": true,
+        "implementation": "ChoiceObjectiveType"
+      },
+      {
+        "id": "fact",
+        "aliases": [
+          "quest_counter",
+          "quest_fact",
+          "quest_stage",
+          "quest_tag",
+          "quest_variable",
+          "stage"
+        ],
+        "type": "fact",
+        "requirements": [
+          "polling"
+        ],
+        "has_runtime": true,
+        "implementation": "FactObjectiveType"
+      },
+      {
+        "id": "condition",
+        "aliases": [],
+        "type": "condition",
+        "requirements": [
+          "live_context",
+          "polling"
+        ],
+        "has_runtime": true,
+        "implementation": "ConditionObjectiveType"
+      }
+    ],
+    "triggers": [
+      {
+        "id": "player_tick",
+        "aliases": [
+          "player",
+          "tick"
+        ],
+        "event": "player_tick",
+        "continuous": true,
+        "default_cooldown_ticks": 600
+      },
+      {
+        "id": "proximity",
+        "aliases": [
+          "near_provider",
+          "nearby"
+        ],
+        "event": "proximity",
+        "continuous": true,
+        "default_cooldown_ticks": 600
+      },
+      {
+        "id": "started",
+        "aliases": [
+          "quest_started",
+          "start"
+        ],
+        "event": "started",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "progress",
+        "aliases": [
+          "quest_progress",
+          "updated"
+        ],
+        "event": "progress",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "stage_changed",
+        "aliases": [
+          "stage",
+          "stage_entered",
+          "stage_set"
+        ],
+        "event": "stage_changed",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "completed",
+        "aliases": [
+          "complete",
+          "quest_completed"
+        ],
+        "event": "completed",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "abandoned",
+        "aliases": [
+          "abandon",
+          "quest_abandoned"
+        ],
+        "event": "abandoned",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
+        "id": "expired",
+        "aliases": [
+          "expire",
+          "quest_expired"
+        ],
+        "event": "expired",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      }
+    ],
+    "providers": [
+      {
+        "id": "villagerretaliation:villager",
+        "capabilities": [
+          "villagerretaliation:dialogue_context",
+          "villagerretaliation:live_provider",
+          "villagerretaliation:saved_provider",
+          "villagerretaliation:villager_provider"
+        ]
+      }
+    ]
+  },
+  "schema_fragments": {
+    "condition_type": {
+      "type": "string",
+      "enum": [
+        "all",
+        "all_of",
+        "and",
+        "any",
+        "any_of",
+        "attribute",
+        "fact",
+        "family",
+        "memory",
+        "mood",
+        "not",
+        "or",
+        "quest",
+        "quest_counter",
+        "quest_fact",
+        "quest_stage",
+        "quest_tag",
+        "quest_variable",
+        "recruitment_memory",
+        "relationship",
+        "reputation",
+        "skill",
+        "social_attribute",
+        "stage",
+        "stat",
+        "time",
+        "time_of_day",
+        "trade_level",
+        "villager_age",
+        "villager_level",
+        "villager_mood",
+        "weather"
+      ]
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "add_counter",
+        "add_tag",
+        "clear_tag",
+        "counter",
+        "dialogue",
+        "experience",
+        "fact",
+        "flash_tracker",
+        "force_dialogue",
+        "forced_dialogue",
+        "gossip",
+        "gossip_reputation",
+        "hud",
+        "increment_counter",
+        "loot",
+        "loot_table",
+        "memory",
+        "memory_event",
+        "message",
+        "notification",
+        "notify",
+        "quest",
+        "quest_action",
+        "quest_stage",
+        "quest_tag",
+        "quest_tracker",
+        "remove_tag",
+        "rep",
+        "reputation",
+        "set_fact",
+        "set_stage",
+        "set_tag",
+        "set_variable",
+        "stage",
+        "tag",
+        "tracker",
+        "unset_tag",
+        "variable",
+        "xp"
+      ]
+    },
+    "objective_type": {
+      "type": "string",
+      "enum": [
+        "block_break",
+        "block_interact",
+        "block_place",
+        "block_use",
+        "branch_choice",
+        "break_block",
+        "choice",
+        "condition",
+        "coordinate",
+        "coordinates",
+        "coords",
+        "dialogue_choice",
+        "entity_kill",
+        "event",
+        "fact",
+        "gift",
+        "gift_given",
+        "give_gift",
+        "interact_block",
+        "item_check",
+        "kill",
+        "location_visit",
+        "memory",
+        "memory_event",
+        "merchant_trade",
+        "mine",
+        "mine_block",
+        "mob_kill",
+        "place",
+        "place_block",
+        "quest_choice",
+        "quest_counter",
+        "quest_fact",
+        "quest_stage",
+        "quest_tag",
+        "quest_variable",
+        "region_visit",
+        "rep",
+        "reputation",
+        "reputation_level",
+        "right_click_block",
+        "stage",
+        "structure_visit",
+        "trade",
+        "trading",
+        "trust",
+        "use_block",
+        "village_event",
+        "village_memory",
+        "villager_trade"
+      ]
+    },
+    "trigger_event": {
+      "type": "string",
+      "enum": [
+        "abandon",
+        "abandoned",
+        "complete",
+        "completed",
+        "expire",
+        "expired",
+        "near_provider",
+        "nearby",
+        "player",
+        "player_tick",
+        "progress",
+        "proximity",
+        "quest_abandoned",
+        "quest_completed",
+        "quest_expired",
+        "quest_progress",
+        "quest_started",
+        "stage",
+        "stage_changed",
+        "stage_entered",
+        "stage_set",
+        "start",
+        "started",
+        "tick",
+        "updated"
+      ]
+    },
+    "provider_type": {
+      "type": "string",
+      "enum": [
+        "villagerretaliation:villager"
+      ]
+    }
+  }
+}
