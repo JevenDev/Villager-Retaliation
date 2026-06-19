@@ -7,6 +7,8 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.QuestDialogueCatalog;
+import com.jvn.villagerretaliation.dialogue.QuestDialogueCompiler;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestCatalog;
 import com.jvn.villagerretaliation.quest.compiled.QuestSourcePointer;
@@ -65,6 +67,7 @@ public final class VillagerQuestResources {
         return new CachedQuests(
                 null,
                 new CompiledQuestCatalog(Map.of()),
+                QuestDialogueCatalog.empty(),
                 Map.of(),
                 Map.of(),
                 Set.of(),
@@ -98,6 +101,7 @@ public final class VillagerQuestResources {
         cachedQuests = new CachedQuests(
                 server,
                 catalog,
+                QuestDialogueCatalog.empty(),
                 frozenQuests,
                 objectiveEventQuestIds(frozenQuests),
                 objectiveQuestIds(frozenQuests, QuestDefinition.ObjectiveType.FACT),
@@ -112,6 +116,10 @@ public final class VillagerQuestResources {
 
     public static Collection<CompiledQuest> compiledQuests(MinecraftServer server) {
         return loadCache(server).compiledCatalog().quests();
+    }
+
+    public static QuestDialogueCatalog questDialogueCatalog(MinecraftServer server) {
+        return loadCache(server).dialogueCatalog();
     }
 
     public static Optional<QuestDefinition> quest(MinecraftServer server, ResourceLocation id) {
@@ -246,6 +254,7 @@ public final class VillagerQuestResources {
             CachedQuests loaded = new CachedQuests(
                     server,
                     catalog.compiledCatalog(),
+                    catalog.dialogueCatalog(),
                     quests,
                     objectiveEventQuestIds(quests),
                     objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
@@ -346,6 +355,7 @@ public final class VillagerQuestResources {
         Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
         Map<ResourceLocation, CompiledQuest> compiledQuests = new LinkedHashMap<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
+        List<QuestDialogueCatalog> dialogueCatalogs = new ArrayList<>();
         List<QuestResourceEnvelope> resources = DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT).stream()
                 .map(resource -> DatapackResourceLoader.readObject(resource.location(), "quest", resource.resource())
                         .flatMap(root -> QuestResourceEnvelope.read(resource, root)))
@@ -361,14 +371,15 @@ public final class VillagerQuestResources {
                 continue;
             }
             if (resource.schemaVersion() == QuestSchemaVersion.V2) {
-                readV2File(resource, quests, compiledQuests, sources);
+                readV2File(resource, quests, compiledQuests, sources, dialogueCatalogs);
                 continue;
             }
             readFile(resource, quests, compiledQuests, sources, replacementMode);
         }
         return new LoadedQuestCatalog(
                 freezeOrderedResourceMap(quests),
-                new CompiledQuestCatalog(compiledQuests));
+                new CompiledQuestCatalog(compiledQuests),
+                QuestDialogueCatalog.merge(dialogueCatalogs));
     }
 
     private static void readFile(
@@ -415,7 +426,8 @@ public final class VillagerQuestResources {
             QuestResourceEnvelope resource,
             Map<ResourceLocation, QuestDefinition> quests,
             Map<ResourceLocation, CompiledQuest> compiledQuests,
-            Map<ResourceLocation, ResourceLocation> sources) {
+            Map<ResourceLocation, ResourceLocation> sources,
+            List<QuestDialogueCatalog> dialogueCatalogs) {
         Optional<QuestV2Resource> parsed = QuestV2Parser.parse(resource);
         if (parsed.isEmpty()) {
             return;
@@ -431,6 +443,7 @@ public final class VillagerQuestResources {
         }
         quests.put(quest.id(), quest.asQuestDefinition());
         compiledQuests.put(quest.id(), quest);
+        dialogueCatalogs.add(QuestDialogueCompiler.compile(parsed.get(), resource));
     }
 
     private static boolean isBuiltInModResource(QuestResourceSource source) {
@@ -1782,6 +1795,7 @@ public final class VillagerQuestResources {
     private record CachedQuests(
             MinecraftServer server,
             CompiledQuestCatalog compiledCatalog,
+            QuestDialogueCatalog dialogueCatalog,
             Map<ResourceLocation, QuestDefinition> quests,
             Map<QuestObjectiveEventKind, Set<ResourceLocation>> objectiveEventQuestIds,
             Set<ResourceLocation> factQuestIds,
@@ -1792,6 +1806,7 @@ public final class VillagerQuestResources {
 
     private record LoadedQuestCatalog(
             Map<ResourceLocation, QuestDefinition> questDefinitions,
-            CompiledQuestCatalog compiledCatalog) {
+            CompiledQuestCatalog compiledCatalog,
+            QuestDialogueCatalog dialogueCatalog) {
     }
 }

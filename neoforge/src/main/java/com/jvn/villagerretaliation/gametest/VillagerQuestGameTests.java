@@ -13,6 +13,8 @@ import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
+import com.jvn.villagerretaliation.dialogue.QuestDialogueCatalog;
+import com.jvn.villagerretaliation.dialogue.QuestDialogueCompiler;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
@@ -69,6 +71,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -1194,6 +1197,55 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2DialogueCompilerGeneratesStableDefinitions(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_dialogue_fixture.json");
+        JsonObject root = dialogueQuestV2Fixture();
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
+                .orElseThrow(() -> new GameTestAssertException("v2 dialogue fixture envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("v2 dialogue fixture did not parse"));
+
+        QuestDialogueCatalog catalog = QuestDialogueCompiler.compile(parsed, envelope);
+        QuestDialogueCatalog secondCatalog = QuestDialogueCompiler.compile(parsed, envelope);
+        ResourceLocation treeId = QuestDialogueCompiler.treeId(parsed.id());
+        DialogueTreeDefinition tree = catalog.tree(treeId)
+                .orElseThrow(() -> new GameTestAssertException("v2 generated dialogue tree missing"));
+        DialogueTreeDefinition secondTree = secondCatalog.tree(treeId)
+                .orElseThrow(() -> new GameTestAssertException("second v2 generated dialogue tree missing"));
+        helper.assertValueEqual(
+                dialogueTreeSnapshot(secondTree),
+                dialogueTreeSnapshot(tree),
+                "generated dialogue tree ids drifted between compiles");
+        helper.assertValueEqual(
+                dialogueTreeSnapshot(tree),
+                """
+                tree=villagerretaliation:quest_dialogue/v2_dialogue_fixture
+                entries=lifecycle.opening->lifecycle.opening|stage.offer.offer->stage.offer.scene.offer_intro|stage.offer.ready->stage.offer.slot.ready|stage.offer.scene.details->stage.offer.scene.details|stage.offer.scene.offer_intro->stage.offer.scene.offer_intro|stage.offer.responses->stage.offer.responses
+                node=lifecycle.opening lines=[Welcome to v2 dialogue.] actions=[] conditions=0 responses=[continue[Continue] actions=[] lines=[] conditions=0]
+                node=stage.offer.responses lines=[Follow the generated dialogue.] actions=[] conditions=0 responses=[stage_help[What now?] actions=[notification:Quest updated: {quest}] lines=[Keep going.] conditions=0]
+                node=stage.offer.scene.details lines=[Bring back proof.] actions=[] conditions=1 responses=[ask[What proof?] actions=[] lines=[Anything marked.] conditions=0]
+                node=stage.offer.scene.offer_intro lines=[Can you help with this v2 errand?] actions=[tracker] conditions=0 responses=[accept[I will help.] ->stage.offer.scene.details actions=[quest:start] lines=[] conditions=0|decline[Not now.] actions=[] lines=[Maybe later.] conditions=0]
+                node=stage.offer.slot.ready lines=[You look ready.] actions=[] conditions=0 responses=[ready_done[Ready.] actions=[set_variable:quest:ready_dialogue=seen] lines=[] conditions=0]
+                """.stripTrailing(),
+                "generated v2 dialogue tree snapshot");
+
+        QuestDialogueCatalog.Binding offerBinding = catalog.bindings(parsed.id()).stream()
+                .filter(binding -> binding.stageId().equals("offer") && binding.slot().equals("offer"))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("v2 offer binding missing"));
+        helper.assertValueEqual(
+                offerBinding.source().jsonPointer(),
+                "/stages/0/dialogue/offer",
+                "v2 generated offer source pointer");
+        helper.assertValueEqual(catalog.bindings(parsed.id()).size(), 6, "v2 generated binding count");
+        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "v2 dialogue compiler emitted diagnostics");
+        DatapackDiagnostics.clear();
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2ParserReportsPreciseInvalidDiagnostics(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ResourceLocation location = VillagerRetaliation.id("quests/v2_invalid_fixture.json");
@@ -1549,6 +1601,56 @@ public final class VillagerQuestGameTests {
     private static void movePlayer(GameTestHelper helper, ServerPlayer player, BlockPos relativePos) {
         BlockPos pos = helper.absolutePos(relativePos);
         player.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
+    }
+
+    private static String dialogueTreeSnapshot(DialogueTreeDefinition tree) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("tree=").append(tree.id()).append('\n');
+        builder.append("entries=").append(tree.entries().stream()
+                .map(entry -> entry.id() + "->" + entry.start())
+                .collect(Collectors.joining("|")))
+                .append('\n');
+        tree.nodes().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    DialogueTreeDefinition.Node node = entry.getValue();
+                    builder.append("node=").append(node.id())
+                            .append(" lines=").append(node.lines())
+                            .append(" actions=").append(dialogueActionSnapshot(node.actions()))
+                            .append(" conditions=").append(node.conditions().size())
+                            .append(" responses=").append(dialogueResponseSnapshot(node.responses()))
+                            .append('\n');
+                });
+        return builder.toString().stripTrailing();
+    }
+
+    private static String dialogueResponseSnapshot(List<DialogueTreeDefinition.Response> responses) {
+        return responses.stream()
+                .map(response -> response.id()
+                        + "[" + response.label() + "]"
+                        + (response.next().isBlank() ? "" : " ->" + response.next())
+                        + " actions=" + dialogueActionSnapshot(response.actions())
+                        + " lines=" + response.lines()
+                        + " conditions=" + response.conditions().size())
+                .collect(Collectors.joining("|", "[", "]"));
+    }
+
+    private static String dialogueActionSnapshot(List<VillagerActionDefinition> actions) {
+        return actions.stream()
+                .map(VillagerQuestGameTests::dialogueActionSnapshot)
+                .collect(Collectors.joining(",", "[", "]"));
+    }
+
+    private static String dialogueActionSnapshot(VillagerActionDefinition action) {
+        return switch (action.kind()) {
+            case QUEST -> "quest:" + action.questAction().name().toLowerCase(Locale.ROOT);
+            case SET_VARIABLE -> "set_variable:"
+                    + action.factScope().name().toLowerCase(Locale.ROOT)
+                    + ":" + action.factKey()
+                    + "=" + action.factValue();
+            case NOTIFICATION -> "notification:" + action.text();
+            default -> action.kind().serializedName();
+        };
     }
 
     private static QuestDefinition.Objective registryObjective(
@@ -2196,6 +2298,150 @@ public final class VillagerQuestGameTests {
                   "ui": {
                     "tracker_text": "Prepare the v2 fixture."
                   }
+                }
+                """).getAsJsonObject();
+    }
+
+    private static JsonObject dialogueQuestV2Fixture() {
+        return JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "id": "villagerretaliation:v2_dialogue_fixture",
+                  "metadata": {
+                    "title": "Dialogue V2 Fixture",
+                    "description": "A v2 quest with embedded dialogue scenes.",
+                    "questline": "tests",
+                    "tags": [
+                      "test"
+                    ]
+                  },
+                  "provider": {
+                    "type": "villagerretaliation:villager"
+                  },
+                  "lifecycle": {
+                    "dialogue": [
+                      {
+                        "id": "opening",
+                        "text": "Welcome to v2 dialogue.",
+                        "responses": [
+                          {
+                            "id": "continue",
+                            "label": "Continue"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "entry_stage": "offer",
+                  "stages": [
+                    {
+                      "id": "offer",
+                      "objectives": [
+                        {
+                          "id": "ready",
+                          "type": "fact",
+                          "scope": "quest",
+                          "key": "ready",
+                          "value": "yes"
+                        }
+                      ],
+                      "complete_when": [
+                        "ready"
+                      ],
+                      "dialogue": {
+                        "offer": {
+                          "scene": "offer_intro",
+                          "conditions": [
+                            {
+                              "type": "quest",
+                              "state": "not_started"
+                            }
+                          ]
+                        },
+                        "ready": {
+                          "text": "You look ready.",
+                          "responses": [
+                            {
+                              "id": "ready_done",
+                              "label": "Ready.",
+                              "actions": [
+                                {
+                                  "type": "set_variable",
+                                  "scope": "quest",
+                                  "key": "ready_dialogue",
+                                  "value": "seen"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      "scenes": [
+                        {
+                          "id": "offer_intro",
+                          "text": "Can you help with this v2 errand?",
+                          "actions": [
+                            {
+                              "type": "tracker"
+                            }
+                          ],
+                          "responses": [
+                            {
+                              "id": "accept",
+                              "label": "I will help.",
+                              "actions": [
+                                {
+                                  "type": "quest",
+                                  "action": "start"
+                                }
+                              ],
+                              "scene": "details"
+                            },
+                            {
+                              "id": "decline",
+                              "label": "Not now.",
+                              "text": "Maybe later."
+                            }
+                          ]
+                        },
+                        {
+                          "id": "details",
+                          "lines": [
+                            "Bring back proof."
+                          ],
+                          "conditions": [
+                            {
+                              "type": "quest",
+                              "state": "active"
+                            }
+                          ],
+                          "responses": [
+                            {
+                              "id": "ask",
+                              "label": "What proof?",
+                              "text": "Anything marked."
+                            }
+                          ]
+                        }
+                      ],
+                      "responses": [
+                        {
+                          "id": "stage_help",
+                          "label": "What now?",
+                          "text": "Keep going.",
+                          "actions": [
+                            {
+                              "type": "notification",
+                              "text": "Quest updated: {quest}"
+                            }
+                          ]
+                        }
+                      ],
+                      "ui": {
+                        "tracker_text": "Follow the generated dialogue."
+                      }
+                    }
+                  ]
                 }
                 """).getAsJsonObject();
     }

@@ -232,6 +232,10 @@ public final class DialogueTreeResources {
         );
     }
 
+    static DialogueTreeDefinition readGeneratedTree(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
+        return readTree(location, root, fallbackId);
+    }
+
     private static List<DialogueTreeDefinition.Entry> readEntries(
             ResourceLocation location,
             JsonObject root,
