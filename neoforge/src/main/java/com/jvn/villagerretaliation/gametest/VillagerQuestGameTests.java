@@ -1,12 +1,20 @@
 package com.jvn.villagerretaliation.gametest;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -21,13 +29,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -92,6 +105,41 @@ public final class VillagerQuestGameTests {
             helper.assertFalse(quest.tags().isEmpty(), quest.id() + " has no grouping tags");
             helper.assertFalse(quest.objectives().isEmpty(), quest.id() + " has no objectives");
         }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void schemaLessBuiltInQuestResourcesKeepExplicitV1Ids(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        Map<ResourceLocation, ResourceLocation> authoredIdsByResource = new LinkedHashMap<>();
+        server.getResourceManager()
+                .listResources("quests", location -> VillagerRetaliation.MOD_ID.equals(location.getNamespace())
+                        && location.getPath().endsWith(".json"))
+                .entrySet()
+                .stream()
+                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
+                .forEach(entry -> {
+                    JsonObject root = readJsonObject(entry.getKey(), entry.getValue());
+                    helper.assertFalse(root.has("schema"), entry.getKey() + " is no longer schema-less v1");
+                    helper.assertTrue(root.has("id"), entry.getKey() + " no longer declares its stable v1 id");
+                    ResourceLocation authoredId = ResourceLocation.tryParse(root.get("id").getAsString());
+                    helper.assertTrue(authoredId != null, entry.getKey() + " declares an invalid v1 id");
+                    authoredIdsByResource.put(entry.getKey(), authoredId);
+                });
+        helper.assertValueEqual(authoredIdsByResource.size(), EXPECTED_QUEST_COUNT, "built-in quest resource count");
+
+        Set<ResourceLocation> loadedIds = quests(helper).stream()
+                .map(QuestDefinition::id)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        for (Map.Entry<ResourceLocation, ResourceLocation> entry : authoredIdsByResource.entrySet()) {
+            helper.assertTrue(
+                    loadedIds.contains(entry.getValue()),
+                    entry.getKey() + " did not load as explicit v1 id " + entry.getValue());
+        }
+        helper.assertFalse(
+                loadedIds.contains(VillagerRetaliation.id("cartographers_atlas/blank_map_promise")),
+                "v1 explicit ids must not be replaced by path-inferred questline ids");
 
         helper.succeed();
     }
@@ -194,6 +242,75 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void v1QuestAliasesRemainAccepted(GameTestHelper helper) {
+        helper.assertValueEqual(
+                QuestDefinition.ObjectiveType.bySerializedName("entity_kill"),
+                QuestDefinition.ObjectiveType.MOB_KILL,
+                "entity_kill objective alias");
+        helper.assertValueEqual(
+                QuestDefinition.ObjectiveType.bySerializedName("coords"),
+                QuestDefinition.ObjectiveType.LOCATION_VISIT,
+                "coords objective alias");
+        helper.assertValueEqual(
+                QuestDefinition.ObjectiveType.bySerializedName("quest_stage"),
+                QuestDefinition.ObjectiveType.FACT,
+                "quest_stage objective alias");
+        helper.assertValueEqual(
+                QuestDefinition.TriggerEvent.bySerializedName("stage_set"),
+                QuestDefinition.TriggerEvent.STAGE_CHANGED,
+                "stage_set trigger alias");
+        helper.assertValueEqual(
+                QuestDefinition.CompletionScope.bySerializedName("global"),
+                QuestDefinition.CompletionScope.WORLD,
+                "global completion scope alias");
+        helper.assertValueEqual(
+                QuestDefinition.BranchLockEvent.bySerializedName("accepted"),
+                QuestDefinition.BranchLockEvent.STARTED,
+                "accepted branch lock alias");
+        helper.assertValueEqual(
+                VillagerActionDefinition.Kind.bySerializedName("set_stage"),
+                VillagerActionDefinition.Kind.SET_VARIABLE,
+                "set_stage action alias");
+        helper.assertValueEqual(
+                VillagerActionDefinition.Kind.bySerializedName("notify"),
+                VillagerActionDefinition.Kind.NOTIFICATION,
+                "notify action alias");
+        helper.assertValueEqual(
+                VillagerActionDefinition.QuestAction.bySerializedName("claim"),
+                VillagerActionDefinition.QuestAction.TURN_IN,
+                "claim quest-action alias");
+        helper.assertValueEqual(
+                QuestFactScope.bySerializedName("quest_giver", QuestFactScope.PLAYER),
+                QuestFactScope.VILLAGER,
+                "quest_giver fact scope alias");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void stagedBranchQuestKeepsLegacyNextAndSetStageSemantics(GameTestHelper helper) {
+        QuestDefinition quest = quest(helper, VillagerRetaliation.id("choose_the_horizon"));
+        helper.assertValueEqual(quest.objectives().size(), 1, "choose_the_horizon objective count");
+        QuestDefinition.Objective objective = quest.objectives().getFirst();
+        helper.assertValueEqual(objective.type(), QuestDefinition.ObjectiveType.CHOICE, "branch objective type");
+        helper.assertValueEqual(objective.factScope(), QuestFactScope.QUEST, "branch objective fact scope");
+        helper.assertValueEqual(objective.factKey(), "choice", "branch objective fact key");
+        helper.assertTrue(objective.factValues().containsAll(Set.of("coast", "dark_roof")),
+                "branch objective choices changed");
+
+        helper.assertValueEqual(quest.stages().size(), 3, "choose_the_horizon stage count");
+        QuestDefinition.Stage started = quest.stages().get("started");
+        helper.assertTrue(started != null, "choose_the_horizon has no started stage");
+        helper.assertValueEqual(started.branches().size(), 2, "started branch count");
+        assertRouteBranch(helper, started, "coast", "coast_chosen", VillagerRetaliation.id("atlas_coast_route"));
+        assertRouteBranch(helper, started, "dark_roof", "dark_roof_chosen", VillagerRetaliation.id("atlas_dark_roof_route"));
+        helper.assertTrue(quest.stages().containsKey("coast_chosen"), "coast_chosen stage missing");
+        helper.assertTrue(quest.stages().containsKey("dark_roof_chosen"), "dark_roof_chosen stage missing");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questDialogueTreesCoverEveryQuest(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         for (QuestDefinition quest : quests(helper)) {
@@ -253,6 +370,61 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questSavedDataRoundTripsV1ProgressFields(GameTestHelper helper) {
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        UUID villagerId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        ResourceLocation questId = VillagerRetaliation.id("choose_the_horizon");
+        BlockPos issuerPos = new BlockPos(11, 65, 21);
+        BlockPos targetPos = new BlockPos(120, 70, -30);
+
+        VillagerQuestSavedData data = new VillagerQuestSavedData();
+        VillagerQuestSavedData.QuestProgress progress = data.getOrCreate(playerId, questId);
+        progress.start(villagerId, Level.OVERWORLD, targetPos, 1234L);
+        progress.setIssuer(
+                villagerId,
+                "Map Keeper",
+                "minecraft:cartographer",
+                3,
+                Level.OVERWORLD,
+                issuerPos,
+                "village:overworld:0:0");
+        progress.setTarget(villagerId, Level.OVERWORLD, targetPos, "route_target");
+        progress.markVisitedTarget();
+        progress.markHasProof();
+        progress.setCurrentStage("coast_chosen");
+        progress.markObjectiveComplete("choose_route");
+        progress.addObjectiveCounter("choose_route", 2);
+        progress.markTriggerUsed("completed_0", 4321L);
+        data.setTrackedQuest(playerId, questId);
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        VillagerQuestSavedData loaded = VillagerQuestSavedData.load(saved, helper.getLevel().registryAccess());
+        VillagerQuestSavedData.QuestProgress loadedProgress = loaded.get(playerId, questId);
+        helper.assertTrue(loadedProgress != null, "quest progress did not load");
+        helper.assertValueEqual(loadedProgress.state(), VillagerQuestSavedData.QuestState.ACTIVE, "saved state");
+        helper.assertValueEqual(loadedProgress.startedVillagerId(), villagerId, "started villager id");
+        helper.assertValueEqual(loadedProgress.startedGameTime(), 1234L, "started game time");
+        helper.assertTrue(loadedProgress.visitedTarget(), "visited target flag");
+        helper.assertTrue(loadedProgress.hasProof(), "proof flag");
+        helper.assertValueEqual(loadedProgress.issuerName(), "Map Keeper", "issuer name");
+        helper.assertValueEqual(loadedProgress.issuerProfession(), "minecraft:cartographer", "issuer profession");
+        helper.assertValueEqual(loadedProgress.issuerLevel(), 3, "issuer level");
+        helper.assertValueEqual(loadedProgress.issuerDimension(), Level.OVERWORLD, "issuer dimension");
+        helper.assertValueEqual(loadedProgress.issuerPos(), issuerPos, "issuer position");
+        helper.assertValueEqual(loadedProgress.issuerVillageKey(), "village:overworld:0:0", "issuer village key");
+        helper.assertValueEqual(loadedProgress.targetDimension(), Level.OVERWORLD, "target dimension");
+        helper.assertValueEqual(loadedProgress.targetPos(), targetPos, "target position");
+        helper.assertValueEqual(loadedProgress.targetObjectiveId(), "route_target", "target objective");
+        helper.assertValueEqual(loadedProgress.currentStage(), "coast_chosen", "current stage");
+        helper.assertTrue(loadedProgress.objectiveComplete("choose_route"), "completed objective");
+        helper.assertValueEqual(loadedProgress.objectiveCounter("choose_route"), 2, "objective counter");
+        helper.assertValueEqual(loadedProgress.lastTriggerGameTime("completed_0"), 4321L, "trigger time");
+        helper.assertValueEqual(loaded.getTrackedQuest(playerId), questId, "tracked quest");
+
+        helper.succeed();
+    }
+
     private static List<QuestDefinition> quests(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         VillagerQuestResources.clearCache();
@@ -262,6 +434,55 @@ public final class VillagerQuestGameTests {
                 .filter(quest -> VillagerRetaliation.MOD_ID.equals(quest.id().getNamespace()))
                 .sorted(Comparator.comparing(quest -> quest.id().toString()))
                 .toList();
+    }
+
+    private static QuestDefinition quest(GameTestHelper helper, ResourceLocation questId) {
+        return VillagerQuestResources.quest(helper.getLevel().getServer(), questId)
+                .orElseThrow(() -> new GameTestAssertException("Missing quest " + questId));
+    }
+
+    private static JsonObject readJsonObject(ResourceLocation location, Resource resource) {
+        try (Reader reader = new InputStreamReader(resource.open(), StandardCharsets.UTF_8)) {
+            return JsonParser.parseReader(reader).getAsJsonObject();
+        } catch (IOException | IllegalStateException exception) {
+            throw new GameTestAssertException("Could not read quest resource " + location + ": " + exception.getMessage());
+        }
+    }
+
+    private static void assertRouteBranch(
+            GameTestHelper helper,
+            QuestDefinition.Stage stage,
+            String branchId,
+            String nextStage,
+            ResourceLocation routeTag) {
+        QuestDefinition.StageBranch branch = stage.branches().stream()
+                .filter(candidate -> candidate.id().equals(branchId))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("Missing branch " + branchId));
+        helper.assertValueEqual(branch.next(), nextStage, branchId + " branch next stage");
+        helper.assertValueEqual(branch.actions().size(), 4, branchId + " branch action count");
+        assertSetVariableAction(helper, branch.actions().get(0), "choice", branchId, branchId + " choice action");
+        assertSetVariableAction(helper, branch.actions().get(1), "stage", nextStage, branchId + " set_stage action");
+        VillagerActionDefinition tagAction = branch.actions().get(2);
+        helper.assertValueEqual(tagAction.kind(), VillagerActionDefinition.Kind.SET_TAG, branchId + " route tag kind");
+        helper.assertValueEqual(tagAction.factScope(), QuestFactScope.PLAYER, branchId + " route tag scope");
+        helper.assertValueEqual(tagAction.factTag(), routeTag, branchId + " route tag id");
+        VillagerActionDefinition notification = branch.actions().get(3);
+        helper.assertValueEqual(notification.kind(), VillagerActionDefinition.Kind.NOTIFICATION, branchId + " notification kind");
+        helper.assertValueEqual(notification.notificationTrigger(), "quest.updated", branchId + " notification trigger");
+        helper.assertFalse(notification.text().isBlank(), branchId + " notification text");
+    }
+
+    private static void assertSetVariableAction(
+            GameTestHelper helper,
+            VillagerActionDefinition action,
+            String key,
+            String value,
+            String label) {
+        helper.assertValueEqual(action.kind(), VillagerActionDefinition.Kind.SET_VARIABLE, label + " kind");
+        helper.assertValueEqual(action.factScope(), QuestFactScope.QUEST, label + " scope");
+        helper.assertValueEqual(action.factKey(), key, label + " key");
+        helper.assertValueEqual(action.factValue(), value, label + " value");
     }
 
     private static void assertObjectiveShape(
