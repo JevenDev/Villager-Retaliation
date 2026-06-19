@@ -29,7 +29,7 @@ final class VillagerQuestTargets {
         return definition.target().hasStructureTarget()
                 || definition.objectives().stream()
                 .anyMatch(objective -> !objective.optional()
-                        && objective.type() == QuestDefinition.ObjectiveType.STRUCTURE_VISIT);
+                        && QuestObjectiveRegistry.requiresLocatedTarget(objective));
     }
 
     static Optional<LocatedTarget> locateInitialTarget(DialogueContext context, QuestDefinition definition) {
@@ -37,7 +37,7 @@ final class VillagerQuestTargets {
             return locateTarget(context.level(), context.villager().blockPosition(), definition);
         }
         return definition.objectives().stream()
-                .filter(objective -> objective.type() == QuestDefinition.ObjectiveType.STRUCTURE_VISIT)
+                .filter(QuestObjectiveRegistry::requiresLocatedTarget)
                 .findFirst()
                 .flatMap(objective -> locateTarget(context.level(), context.villager().blockPosition(), objective));
     }

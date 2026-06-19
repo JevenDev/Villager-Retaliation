@@ -551,18 +551,6 @@ public final class VillagerQuestResources {
         ReputationObjective reputationObjective = readReputationObjective(location, context, entry);
         FactObjective factObjective = readFactObjective(location, context, entry, defaultQuestId);
         List<DialogueCondition> conditions = DialogueCondition.readList(location, context, entry, defaultQuestId);
-        if (type == QuestDefinition.ObjectiveType.STRUCTURE_VISIT && structure == null) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "structure_visit objective must define structure.");
-            return Optional.empty();
-        }
-        if (type == QuestDefinition.ObjectiveType.LOCATION_VISIT && objectiveLocation == null) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "location_visit objective must define x, y, and z.");
-            return Optional.empty();
-        }
-        if (type == QuestDefinition.ObjectiveType.ITEM_CHECK && item == null) {
-            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "item_check objective must define item.");
-            return Optional.empty();
-        }
         if (type == QuestDefinition.ObjectiveType.MOB_KILL && entitySelectors.isEmpty()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "mob_kill objective must define entity, entities, entity_tag, or entity_tags.");
             return Optional.empty();
@@ -595,7 +583,7 @@ public final class VillagerQuestResources {
             return Optional.empty();
         }
 
-        return Optional.of(new QuestDefinition.Objective(
+        QuestDefinition.Objective objective = new QuestDefinition.Objective(
                 id,
                 type,
                 DatapackJsonReader.readBoolean(entry, "optional", false),
@@ -627,7 +615,13 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readBoolean(entry, "consume", true),
                 readObjectiveItemRequirements(entry),
                 conditions,
-                readObjectiveTracker(entry)));
+                readObjectiveTracker(entry));
+        Optional<String> registryValidation = QuestObjectiveRegistry.validationError(objective);
+        if (registryValidation.isPresent()) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, context, registryValidation.get());
+            return Optional.empty();
+        }
+        return Optional.of(objective);
     }
 
     private static BlockPos readLocation(JsonObject entry) {

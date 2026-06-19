@@ -324,24 +324,7 @@ public record QuestDefinition(
         CONDITION;
 
         public static ObjectiveType bySerializedName(String value) {
-            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-            return switch (normalized) {
-                case "structure_visit" -> STRUCTURE_VISIT;
-                case "location_visit", "coordinate", "coordinates", "coords", "region_visit" -> LOCATION_VISIT;
-                case "item_check" -> ITEM_CHECK;
-                case "mob_kill", "entity_kill", "kill" -> MOB_KILL;
-                case "block_break", "break_block", "mine_block", "mine" -> BLOCK_BREAK;
-                case "block_place", "place_block", "place" -> BLOCK_PLACE;
-                case "block_interact", "interact_block", "right_click_block", "use_block", "block_use" -> BLOCK_INTERACT;
-                case "memory_event", "village_event", "village_memory", "memory", "event" -> MEMORY_EVENT;
-                case "trade", "villager_trade", "trading", "merchant_trade" -> TRADE;
-                case "gift", "give_gift", "gift_given" -> GIFT;
-                case "reputation", "rep", "reputation_level", "trust" -> REPUTATION;
-                case "choice", "dialogue_choice", "branch_choice", "quest_choice" -> CHOICE;
-                case "fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage" -> FACT;
-                case "condition" -> CONDITION;
-                default -> null;
-            };
+            return QuestObjectiveRegistry.objectiveTypeBySerializedName(value);
         }
     }
 

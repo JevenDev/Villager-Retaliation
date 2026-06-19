@@ -2504,10 +2504,6 @@ public final class VillagerQuestService {
         return itemCount(player, itemId) >= Math.max(1, count);
     }
 
-    private static boolean hasItemCount(ServerPlayer player, QuestDefinition.Objective objective) {
-        return itemCount(player, objective) >= Math.max(1, objective.count());
-    }
-
     private static int itemCount(ServerPlayer player, ResourceLocation itemId) {
         if (itemId == null) {
             return 0;
@@ -2775,7 +2771,7 @@ public final class VillagerQuestService {
             if (objective.optional()) {
                 continue;
             }
-            if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK && objective.consume() && objective.item() != null) {
+            if (QuestObjectiveRegistry.requiresItemHandIn(objective)) {
                 requiredItemHandIns.add(objective);
                 continue;
             }
@@ -2796,16 +2792,35 @@ public final class VillagerQuestService {
         if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK && progress.objectiveComplete(objective.id())) {
             return true;
         }
+        Optional<QuestObjectiveResult> registryResult = QuestObjectiveRegistry.evaluate(
+                objectiveEvaluationContext(player, context, level, definition, progress),
+                objective);
+        if (registryResult.isPresent()) {
+            return registryResult.get().complete();
+        }
         return switch (objective.type()) {
-            case STRUCTURE_VISIT -> VillagerQuestTargets.isAtObjectiveTarget(level, player.blockPosition(), objective, progress);
-            case LOCATION_VISIT -> isAtLocationObjective(level, player.blockPosition(), objective);
-            case ITEM_CHECK -> hasItemCount(player, objective);
+            case STRUCTURE_VISIT, LOCATION_VISIT, ITEM_CHECK -> false;
             case MOB_KILL -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> progress != null && progress.objectiveCounter(objective.id()) >= objective.count();
             case REPUTATION -> progress != null && matchesReputationObjective(level, player, progress, objective);
             case CHOICE, FACT -> progress != null && matchesFactObjective(level, player, definition, progress, objective);
             case CONDITION -> objectiveConditionState(player, context, level, definition, progress, objective) == ConditionMatch.MET;
         };
+    }
+
+    private static QuestObjectiveEvaluationContext objectiveEvaluationContext(
+            ServerPlayer player,
+            DialogueContext context,
+            ServerLevel level,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return new QuestObjectiveEvaluationContext(
+                player,
+                context,
+                level,
+                definition,
+                progress,
+                objective -> itemCount(player, objective));
     }
 
     private static ConditionMatch objectiveConditionState(
@@ -2821,17 +2836,6 @@ public final class VillagerQuestService {
                     : ConditionMatch.UNMET;
         }
         return conditionsStateWithoutLiveContext(player, level, definition, progress, objective.conditions());
-    }
-
-    private static boolean isAtLocationObjective(ServerLevel level, BlockPos playerPos, QuestDefinition.Objective objective) {
-        if (objective.location() == null) {
-            return false;
-        }
-        if (objective.dimension() != null && level.dimension() != objective.dimension()) {
-            return false;
-        }
-        double radius = Math.max(1, objective.radius());
-        return playerPos.distSqr(objective.location()) <= radius * radius;
     }
 
     private static boolean matchesMobKillObjective(
@@ -3082,10 +3086,7 @@ public final class VillagerQuestService {
     private static ItemHandInResult handInRequiredObjectiveItems(DialogueContext context, QuestDefinition definition) {
         List<QuestDefinition.Objective> requiredItemHandIns = new ArrayList<>();
         for (QuestDefinition.Objective objective : definition.objectives()) {
-            if (!objective.optional()
-                    && objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK
-                    && objective.consume()
-                    && objective.item() != null) {
+            if (!objective.optional() && QuestObjectiveRegistry.requiresItemHandIn(objective)) {
                 requiredItemHandIns.add(objective);
             }
         }
@@ -3863,6 +3864,10 @@ public final class VillagerQuestService {
                 if (definition.tracker().steps().containsKey(objective.id())) {
                     return objective.id();
                 }
+                String registeredStep = QuestObjectiveRegistry.trackerStepKey(objective);
+                if (!registeredStep.isBlank()) {
+                    return registeredStep;
+                }
                 return switch (objective.type()) {
                     case STRUCTURE_VISIT, LOCATION_VISIT -> "travel";
                     case ITEM_CHECK -> "proof";
@@ -4165,10 +4170,14 @@ public final class VillagerQuestService {
                 && progress.objectiveComplete(objective.id())) {
             return 1.0F;
         }
+        Optional<QuestObjectiveResult> registryResult = QuestObjectiveRegistry.evaluate(
+                objectiveEvaluationContext(player, context, player.serverLevel(), definition, progress),
+                objective);
+        if (registryResult.isPresent()) {
+            return registryResult.get().progress();
+        }
         return switch (objective.type()) {
-            case ITEM_CHECK -> objective.item() == null
-                    ? 0.0F
-                    : Mth.clamp((float) itemCount(player, objective) / (float) objective.count(), 0.0F, 1.0F);
+            case ITEM_CHECK -> 0.0F;
             case MOB_KILL, BLOCK_BREAK, BLOCK_PLACE, BLOCK_INTERACT, MEMORY_EVENT, TRADE, GIFT -> progress == null
                     ? 0.0F
                     : Mth.clamp((float) progress.objectiveCounter(objective.id()) / (float) objective.count(), 0.0F, 1.0F);
@@ -4841,6 +4850,12 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             DialogueContext context,
             QuestDefinition.Objective objective) {
+        QuestObjectiveEvaluationContext objectiveContext =
+                objectiveEvaluationContext(player, context, level, definition, progress);
+        Optional<QuestObjectiveResult> registryResult = QuestObjectiveRegistry.evaluate(objectiveContext, objective);
+        QuestObjectiveDebugState registryDebug = registryResult
+                .map(result -> QuestObjectiveRegistry.debugState(objectiveContext, objective, result))
+                .orElse(QuestObjectiveDebugState.EMPTY);
         boolean complete = progress != null
                 && objectiveComplete(player, context, level, definition, progress, objective);
         int counter = progress == null ? 0 : progress.objectiveCounter(objective.id());
@@ -4859,7 +4874,8 @@ public final class VillagerQuestService {
                 new QuestDebugFormatter.ObjectiveLineState(
                         complete,
                         counter,
-                        objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK ? itemCount(player, objective) : 0,
+                        registryDebug.itemCountOr(
+                                objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK ? itemCount(player, objective) : 0),
                         objective.type() == QuestDefinition.ObjectiveType.REPUTATION
                                 ? reputationForObjective(level, player, progress)
                                 : 0,
@@ -4871,7 +4887,7 @@ public final class VillagerQuestService {
         int itemObjectives = 0;
         int exactItemObjectives = 0;
         for (QuestDefinition.Objective objective : definition.objectives()) {
-            if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK) {
+            if (!QuestObjectiveRegistry.requirements(objective).contains(QuestObjectiveRequirement.INVENTORY)) {
                 continue;
             }
             itemObjectives++;

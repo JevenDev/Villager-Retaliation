@@ -17,6 +17,10 @@ import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.quest.QuestObjectiveEvaluationContext;
+import com.jvn.villagerretaliation.quest.QuestObjectiveRegistry;
+import com.jvn.villagerretaliation.quest.QuestObjectiveRequirement;
+import com.jvn.villagerretaliation.quest.QuestObjectiveResult;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.QuestTrackerPresenter;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
@@ -412,6 +416,60 @@ public final class VillagerQuestGameTests {
                 missingContext.message(),
                 "live dialogue context unavailable",
                 "missing context message");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void objectiveRegistryNormalizesStaticObjectiveTypes(GameTestHelper helper) {
+        helper.assertValueEqual(QuestObjectiveRegistry.canonicalTypeId("coords"), "location_visit", "coords objective alias");
+        helper.assertValueEqual(
+                QuestDefinition.ObjectiveType.bySerializedName("coords"),
+                QuestDefinition.ObjectiveType.LOCATION_VISIT,
+                "coords registry objective type");
+        helper.assertTrue(
+                QuestObjectiveRegistry.descriptors().stream()
+                        .anyMatch(descriptor -> descriptor.id().equals("location_visit")
+                                && descriptor.aliases().contains("region_visit")),
+                "location_visit descriptor did not expose region_visit alias");
+
+        QuestDefinition.Objective itemObjective = registryObjective(
+                QuestDefinition.ObjectiveType.ITEM_CHECK,
+                null,
+                null,
+                ResourceLocation.fromNamespaceAndPath("minecraft", "emerald"),
+                3,
+                true);
+        helper.assertTrue(
+                QuestObjectiveRegistry.requirements(itemObjective).contains(QuestObjectiveRequirement.INVENTORY),
+                "item objective did not advertise inventory requirement");
+        helper.assertValueEqual(QuestObjectiveRegistry.trackerStepKey(itemObjective), "proof", "item tracker step hook");
+        helper.assertTrue(QuestObjectiveRegistry.requiresItemHandIn(itemObjective), "consume item objective hand-in hook");
+
+        QuestObjectiveResult result = QuestObjectiveRegistry.evaluate(
+                        new QuestObjectiveEvaluationContext(
+                                null,
+                                null,
+                                helper.getLevel(),
+                                null,
+                                null,
+                                objective -> 3),
+                        itemObjective)
+                .orElseThrow(() -> new GameTestAssertException("item objective registry did not evaluate"));
+        helper.assertTrue(result.complete(), "item objective registry did not complete at required count");
+        helper.assertValueEqual(result.progress(), 1.0F, "item objective registry progress");
+
+        QuestDefinition.Objective invalidItem = registryObjective(
+                QuestDefinition.ObjectiveType.ITEM_CHECK,
+                null,
+                null,
+                null,
+                1,
+                true);
+        helper.assertValueEqual(
+                QuestObjectiveRegistry.validationError(invalidItem).orElse(""),
+                "item_check objective must define item.",
+                "item objective validation message");
 
         helper.succeed();
     }
@@ -970,6 +1028,48 @@ public final class VillagerQuestGameTests {
     private static QuestDefinition quest(GameTestHelper helper, ResourceLocation questId) {
         return VillagerQuestResources.quest(helper.getLevel().getServer(), questId)
                 .orElseThrow(() -> new GameTestAssertException("Missing quest " + questId));
+    }
+
+    private static QuestDefinition.Objective registryObjective(
+            QuestDefinition.ObjectiveType type,
+            ResourceLocation structure,
+            BlockPos location,
+            ResourceLocation item,
+            int count,
+            boolean consume) {
+        return new QuestDefinition.Objective(
+                "registry_static",
+                type,
+                false,
+                structure,
+                Level.OVERWORLD,
+                location,
+                8,
+                List.of(),
+                16,
+                8,
+                item,
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                null,
+                null,
+                QuestFactScope.PLAYER,
+                null,
+                Set.of(),
+                "",
+                Set.of(),
+                null,
+                null,
+                count,
+                consume,
+                QuestDefinition.ItemRequirements.EMPTY,
+                List.of(),
+                QuestDefinition.ObjectiveTracker.EMPTY);
     }
 
     private static void assertCompiledQuestMatchesParsed(
