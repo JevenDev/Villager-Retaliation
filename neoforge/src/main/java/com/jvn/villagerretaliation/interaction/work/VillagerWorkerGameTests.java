@@ -262,6 +262,8 @@ public final class VillagerWorkerGameTests {
 
         setBlock(helper, new BlockPos(3, 2, 3), Blocks.STONE.defaultBlockState());
         setBlock(helper, new BlockPos(3, 3, 3), Blocks.STONE.defaultBlockState());
+        BlockPos observer = helper.absolutePos(new BlockPos(1, 2, 3));
+        villager.moveTo(observer.getX() + 0.5D, observer.getY(), observer.getZ() + 0.5D, 0.0F, 0.0F);
         Vec3 eye = villager.getEyePosition();
         Vec3 hit = Vec3.atCenterOf(helper.absolutePos(new BlockPos(4, 2, 3)));
         setBlock(helper, new BlockPos(4, 2, 3), Blocks.COAL_ORE.defaultBlockState());
