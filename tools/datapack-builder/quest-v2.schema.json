@@ -1113,6 +1113,12 @@
         "cooldown_ticks": {
           "type": "integer"
         },
+        "cooldown_seconds": {
+          "type": "integer"
+        },
+        "cooldown_days": {
+          "type": "integer"
+        },
         "radius": {
           "type": "number"
         },

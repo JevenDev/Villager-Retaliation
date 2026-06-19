@@ -353,7 +353,8 @@ public final class VillagerQuestGameTests {
                 VillagerActionDefinition.Kind.SET_TAG,
                 VillagerActionDefinition.Kind.SET_VARIABLE,
                 VillagerActionDefinition.Kind.NOTIFICATION,
-                VillagerActionDefinition.Kind.TRACKER), "trigger action kinds");
+                VillagerActionDefinition.Kind.TRACKER,
+                VillagerActionDefinition.Kind.FORCED_DIALOGUE), "trigger action kinds");
         assertContainsAll(helper, abandonmentModes, Set.of(
                 QuestDefinition.AbandonmentMode.ALLOW_REPICKUP,
                 QuestDefinition.AbandonmentMode.COOLDOWN,
@@ -1123,6 +1124,9 @@ public final class VillagerQuestGameTests {
                     continue;
                 }
                 for (VillagerActionDefinition action : trigger.actions()) {
+                    if (isAllowedDeferredForcedDialogue(quest, trigger, action)) {
+                        continue;
+                    }
                     helper.assertFalse(
                             LIVE_CONTEXT_ACTION_KINDS.contains(action.kind()),
                             quest.id() + "/" + trigger.id() + " uses " + action.kind()
@@ -1132,6 +1136,17 @@ public final class VillagerQuestGameTests {
         }
 
         helper.succeed();
+    }
+
+    private static boolean isAllowedDeferredForcedDialogue(
+            QuestDefinition quest,
+            QuestDefinition.Trigger trigger,
+            VillagerActionDefinition action) {
+        return action.kind() == VillagerActionDefinition.Kind.FORCED_DIALOGUE
+                && quest.id().equals(VillagerRetaliation.id("tales_of_a_lost_civilization"))
+                && trigger.id().equals("storm_reminder")
+                && trigger.event() == QuestDefinition.TriggerEvent.PROXIMITY
+                && action.forcedDialogue().equals("quest.lost_civilization.storm_reminder");
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
@@ -2072,6 +2087,195 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void builtInTalesLostCivilizationQuestModuleV2PreservesForcedTrigger(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        VillagerQuestResources.clearCache();
+        DialogueTreeResources.clearCache();
+        ForcedDialogueResources.clearCache();
+        ResourceLocation questId = VillagerRetaliation.id("tales_of_a_lost_civilization");
+        CompiledQuest compiled = VillagerQuestResources
+                .compiledQuest(helper.getLevel().getServer(), questId)
+                .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
+        QuestDefinition quest = compiled.asQuestDefinition();
+
+        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "lost civilization schema version");
+        helper.assertValueEqual(quest.target().structure(), ResourceLocation.fromNamespaceAndPath("minecraft", "ancient_city"), "lost civilization target structure");
+        helper.assertValueEqual(quest.target().pieces(), List.of(
+                "ancient_city/city_center/city_center_1",
+                "ancient_city/city_center/city_center_2",
+                "ancient_city/city_center/city_center_3"), "lost civilization target pieces");
+        helper.assertValueEqual(quest.target().searchRadius(), 256, "lost civilization search radius");
+        helper.assertValueEqual(quest.target().discoveryRadius(), 128, "lost civilization discovery radius");
+        helper.assertValueEqual(quest.target().proofItem(), ResourceLocation.fromNamespaceAndPath("minecraft", "echo_shard"), "lost civilization proof item");
+        helper.assertValueEqual(quest.objectives().getFirst().id(), "survey.recover_echo_shard", "lost civilization objective id");
+        helper.assertValueEqual(quest.stages().get("survey").next(), "return", "lost civilization survey next stage");
+        helper.assertValueEqual(quest.tracker().steps().get("survey").progress(), 0.25F, "lost civilization travel tracker progress");
+        helper.assertValueEqual(quest.tracker().steps().get("return").progress(), 1.0F, "lost civilization return tracker progress");
+
+        QuestDefinition.Trigger stormReminder = quest.triggers().stream()
+                .filter(trigger -> trigger.id().equals("storm_reminder"))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("lost civilization storm reminder trigger missing"));
+        helper.assertValueEqual(stormReminder.event(), QuestDefinition.TriggerEvent.PROXIMITY, "lost civilization forced trigger event");
+        helper.assertValueEqual(stormReminder.cooldownTicks(), 20L * 120L, "lost civilization forced trigger cooldown");
+        helper.assertValueEqual(stormReminder.radius(), 10.0D, "lost civilization forced trigger radius");
+        helper.assertFalse(stormReminder.repeatable(), "lost civilization forced trigger repeatable");
+        helper.assertValueEqual(
+                stormReminder.actions().stream().map(VillagerActionRegistry::canonicalTypeId).toList(),
+                List.of("tracker", "forced_dialogue"),
+                "lost civilization forced trigger action order");
+        helper.assertTrue(stormReminder.actions().getFirst().flashTracker(), "lost civilization tracker action");
+        helper.assertValueEqual(
+                stormReminder.actions().get(1).forcedDialogue(),
+                "quest.lost_civilization.storm_reminder",
+                "lost civilization forced dialogue id");
+        helper.assertTrue(
+                ForcedDialogueResources
+                        .selectCandidates(helper.getLevel().getServer(), ForcedDialogueResources.ForcedDialogueTrigger.QUEST, null)
+                        .stream()
+                        .anyMatch(definition -> definition.id().equals("quest.lost_civilization.storm_reminder")),
+                "lost civilization external forced dialogue resource missing");
+
+        DialogueTreeDefinition generatedTree = DialogueTreeResources
+                .tree(helper.getLevel().getServer(), LOCALE, QuestDialogueCompiler.treeId(questId))
+                .orElseThrow(() -> new GameTestAssertException("lost civilization generated dialogue tree missing"));
+        helper.assertValueEqual(
+                generatedTree.entry("stage.survey.offer").orElseThrow().label(),
+                "Lost Civilization",
+                "lost civilization generated offer label");
+        helper.assertValueEqual(
+                generatedTree.entry("stage.return.turn_in").orElseThrow().label(),
+                "About Lost Civilization",
+                "lost civilization generated turn-in label");
+        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "lost civilization migration emitted diagnostics");
+        DatapackDiagnostics.clear();
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void builtInTalesLostCivilizationForcedTriggerQueuesAndSkipsWithoutIssuer(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        VillagerQuestResources.clearCache();
+        DialogueTreeResources.clearCache();
+        ForcedDialogueResources.clearCache();
+        ForcedDialogueService.clearRuntimeState();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation questId = VillagerRetaliation.id("tales_of_a_lost_civilization");
+        QuestDefinition quest = quest(helper, questId);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        configureLostCivilizationProvider(level, villager);
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            level.setDayTime(18000L);
+            level.setWeatherParameters(0, 6000, true, true);
+            VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+            VillagerQuestSavedData.QuestProgress progress = data.getOrCreate(player.getUUID(), questId);
+            progress.start(villager.getUUID(), Level.OVERWORLD, new BlockPos(256, -40, -256), -2400L);
+            progress.setIssuer(
+                    villager.getUUID(),
+                    "Storm Cartographer",
+                    "minecraft:cartographer",
+                    3,
+                    Level.OVERWORLD,
+                    villager.blockPosition(),
+                    "village:minecraft:overworld:2,2,2");
+            progress.setTarget(villager.getUUID(), Level.OVERWORLD, new BlockPos(256, -40, -256), "structure_target");
+            progress.setCurrentStage("survey");
+            data.setDirty();
+
+            VillagerQuestService.DebugInspectResult fired =
+                    VillagerQuestService.debugFireTrigger(player, questId, QuestDefinition.TriggerEvent.PROXIMITY);
+            helper.assertTrue(fired.found(), "lost civilization forced trigger did not fire: " + fired.message());
+            helper.assertTrue(
+                    fired.lines().stream().anyMatch(line -> line.contains("trigger_result dirty=true")
+                            && line.contains("matched=1")
+                            && line.contains("ran=1")),
+                    "lost civilization forced trigger did not report one run: " + fired.lines());
+            helper.assertTrue(
+                    ForcedDialogueService.hasSession(player, villager),
+                    "lost civilization forced trigger did not queue a forced dialogue session");
+
+            ForcedDialogueService.endForPlayer(player);
+            VillagerQuestService.DebugInspectResult second =
+                    VillagerQuestService.debugFireTrigger(player, questId, QuestDefinition.TriggerEvent.PROXIMITY);
+            helper.assertTrue(second.found(), "lost civilization second forced trigger fire failed: " + second.message());
+            helper.assertTrue(
+                    second.lines().stream().anyMatch(line -> line.contains("not_repeatable")),
+                    "lost civilization forced trigger did not filter the second run: " + second.lines());
+            helper.assertTrue(
+                    second.lines().stream().anyMatch(line -> line.contains("ran=0")),
+                    "lost civilization forced trigger ran more than once: " + second.lines());
+
+            UUID missingIssuer = UUID.fromString("00000000-0000-0000-0000-000000000127");
+            ServerPlayer unloadedPlayer = helper.makeMockServerPlayerInLevel();
+            VillagerQuestSavedData.QuestProgress unloadedProgress = data.getOrCreate(unloadedPlayer.getUUID(), questId);
+            unloadedProgress.start(missingIssuer, Level.OVERWORLD, new BlockPos(512, -40, 512), -2400L);
+            unloadedProgress.setIssuer(
+                    missingIssuer,
+                    "Absent Cartographer",
+                    "minecraft:cartographer",
+                    3,
+                    Level.OVERWORLD,
+                    new BlockPos(512, 64, 512),
+                    "village:minecraft:overworld:512,64,512");
+            unloadedProgress.setCurrentStage("survey");
+            data.setDirty();
+
+            VillagerQuestService.DebugInspectResult unloaded =
+                    VillagerQuestService.debugFireTrigger(unloadedPlayer, questId, QuestDefinition.TriggerEvent.PROXIMITY);
+            helper.assertFalse(unloaded.found(), "lost civilization unloaded issuer unexpectedly fired trigger");
+            helper.assertTrue(
+                    unloaded.message().contains("is not loaded"),
+                    "lost civilization unloaded issuer message was not explainable: " + unloaded.message());
+
+            QuestDefinition.Trigger stormReminder = quest.triggers().stream()
+                    .filter(trigger -> trigger.id().equals("storm_reminder"))
+                    .findFirst()
+                    .orElseThrow(() -> new GameTestAssertException("lost civilization storm reminder trigger missing"));
+            VillagerActionDefinition forcedAction = stormReminder.actions().stream()
+                    .filter(action -> action.kind() == VillagerActionDefinition.Kind.FORCED_DIALOGUE)
+                    .findFirst()
+                    .orElseThrow(() -> new GameTestAssertException("lost civilization forced action missing"));
+            ActionResult missingContext = VillagerActionRegistry.execute(null, forcedAction, Map.of());
+            helper.assertValueEqual(missingContext.status(), ActionStatus.FAILED, "lost civilization missing context status");
+            helper.assertValueEqual(
+                    missingContext.message(),
+                    "live dialogue context unavailable",
+                    "lost civilization missing context message");
+
+            VillagerQuestService.DebugInspectResult dryRun =
+                    VillagerQuestService.debugDryRunTriggerActions(unloadedPlayer, questId, "storm_reminder");
+            helper.assertTrue(dryRun.found(), "lost civilization dry-run failed: " + dryRun.message());
+            helper.assertTrue(
+                    dryRun.lines().stream().anyMatch(line -> line.contains("live_context=false")),
+                    "lost civilization dry-run did not report missing live context: " + dryRun.lines());
+            helper.assertTrue(
+                    dryRun.lines().stream().anyMatch(line -> line.contains("action[1] type=forced_dialogue")
+                            && line.contains("status=skipped")),
+                    "lost civilization dry-run did not report forced dialogue action: " + dryRun.lines());
+            helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "lost civilization forced trigger emitted diagnostics");
+            DatapackDiagnostics.clear();
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            level.setWeatherParameters(6000, 0, false, false);
+            ForcedDialogueService.clearRuntimeState();
+            VillagerConversationService.endForPlayer(player, false);
+            villager.discard();
+            DialogueTreeService.clearRuntimeState();
+            DialogueTreeResources.clearCache();
+            ForcedDialogueResources.clearCache();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2ResponseTransitionsRecordChoiceHistory(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -2591,6 +2795,13 @@ public final class VillagerQuestGameTests {
                 .setProfession(VillagerProfession.CARTOGRAPHER)
                 .setLevel(2));
         VillagerProfileManager.setSkill(level, villager, VillagerSkill.CARTOGRAPHY, 14);
+    }
+
+    private static void configureLostCivilizationProvider(ServerLevel level, Villager villager) {
+        villager.setVillagerData(villager.getVillagerData()
+                .setProfession(VillagerProfession.CARTOGRAPHER)
+                .setLevel(3));
+        VillagerProfileManager.setSkill(level, villager, VillagerSkill.CARTOGRAPHY, 50);
     }
 
     private static void markQuestCompleted(ServerLevel level, UUID playerId, ResourceLocation questId) {

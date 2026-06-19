@@ -341,6 +341,8 @@ public final class QuestV2Schema {
         properties.add("next", idString());
         properties.add("cooldown", string());
         properties.add("cooldown_ticks", integer());
+        properties.add("cooldown_seconds", integer());
+        properties.add("cooldown_days", integer());
         properties.add("radius", number());
         properties.add("repeatable", booleanSchema());
         properties.add("metadata", openObject());

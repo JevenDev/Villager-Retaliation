@@ -843,7 +843,7 @@ const questV2SceneKeys = new Set(["id", "slot", "label", "request", "show_for_ba
 const questV2ExternalSceneKeys = new Set(["tree", "tree_id", "dialogue_tree", "entry", "entry_id", "metadata"]);
 const questV2ResponseKeys = new Set(["id", "label", "label_key", "text", "text_key", "lines", "conditions", "actions", "transition", "next", "stage", "scene", "response", "complete", "abandon", "fail", "request", "order", "metadata"]);
 const questV2TransitionKeys = new Set(["stage", "scene", "response", "complete", "abandon", "fail"]);
-const questV2EventKeys = new Set(["id", "event", "type", "trigger", "stage", "stages", "conditions", "actions", "transition", "next", "cooldown", "cooldown_ticks", "radius", "repeatable", "metadata"]);
+const questV2EventKeys = new Set(["id", "event", "type", "trigger", "stage", "stages", "conditions", "actions", "transition", "next", "cooldown", "cooldown_ticks", "cooldown_seconds", "cooldown_days", "radius", "repeatable", "metadata"]);
 const questV2RewardsKeys = new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event"]);
 const questV2UiKeys = new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "show_progress", "progress", "placeholders", "icon", "color", "priority", "hidden"]);
 const questV2LifecycleCoverageSlots = new Set(["offer", "reminder", "turn_in"]);
@@ -1860,6 +1860,8 @@ function checkQuestV2Events(file, events, pointer, location, questId, stageIds, 
       liveContextWarningUsage: questTriggerEventsThatMayLackLiveIssuer.has(normalizedString(trigger)) ? "quest module v2 event action" : ""
     });
     checkQuestV2OptionalInteger(file, event, eventPointer, eventLocation, "cooldown_ticks", { min: 0 });
+    checkQuestV2OptionalInteger(file, event, eventPointer, eventLocation, "cooldown_seconds", { min: 0 });
+    checkQuestV2OptionalInteger(file, event, eventPointer, eventLocation, "cooldown_days", { min: 0 });
     checkQuestV2OptionalNumber(file, event, eventPointer, eventLocation, "radius", { min: 0 });
     checkQuestV2OptionalBoolean(file, event, eventPointer, eventLocation, "repeatable");
     const transition = readQuestV2WrapperTransition(file, event, eventPointer, eventLocation);

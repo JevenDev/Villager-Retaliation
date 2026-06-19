@@ -1,56 +1,31 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:tales_of_a_lost_civilization",
-  "display": {
-    "description": "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard.",
+  "metadata": {
     "title": "Tales of a Lost Civilization",
+    "description": "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard.",
     "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.title",
-    "description_key": "quest.lost_civilization.tales_of_a_lost_civilization.description"
+    "description_key": "quest.lost_civilization.tales_of_a_lost_civilization.description",
+    "questline": "lost_civilization",
+    "tags": [
+      "group.lost_civilization"
+    ]
   },
-  "tags": [
-    "group.lost_civilization"
-  ],
-  "offer": {
-    "min_villager_level": "journeyman",
-    "professions": [
-      "minecraft:cartographer"
-    ],
-    "skills": {
-      "cartography": {
-        "min": 50
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "journeyman",
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": {
+        "cartography": {
+          "min": 50
+        }
       }
     }
   },
-  "target": {
-    "discovery_radius": 128,
-    "pieces": [
-      "ancient_city/city_center/city_center_1",
-      "ancient_city/city_center/city_center_2",
-      "ancient_city/city_center/city_center_3"
-    ],
-    "proof_item": "minecraft:echo_shard",
-    "search_radius": 256,
-    "structure": "minecraft:ancient_city"
-  },
-  "objectives": [
-    {
-      "count": 1,
-      "id": "recover_echo_shard",
-      "item": "minecraft:echo_shard",
-      "tracker": {
-        "complete_text": "Recovered {objective_item}.",
-        "metadata": {
-          "hint": "City center visited"
-        },
-        "progress": 0.66,
-        "show_progress": true,
-        "text": "Recover {objective_item} as proof of the journey.",
-        "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.text",
-        "complete_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
+  "availability": {
     "abandonment": "cooldown",
     "abandonment_cooldown_days": 1,
     "consume_on_abandonment": false,
@@ -61,69 +36,450 @@
     "max_starts": 0,
     "repeatable": false
   },
-  "tracker": {
-    "metadata": {
-      "source": "Cartographer commission"
-    },
-    "steps": {
-      "proof": {
-        "metadata": {
-          "hint": "City center visited"
-        },
-        "progress": 0.66,
-        "show_progress": true,
-        "text": "Recover {proof_item} as proof of the journey.",
-        "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.proof.text"
-      },
-      "return": {
-        "metadata": {
-          "hint": "Ready to turn in"
-        },
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the cartographer with {proof_item}.",
-        "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.return.text"
-      },
-      "travel": {
-        "metadata": {
-          "hint": "{distance} blocks {direction}"
-        },
-        "progress": 0.25,
-        "show_progress": true,
-        "text": "Reach the Ancient City center near {target_x}, {target_z}.",
-        "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.travel.text"
-      }
-    },
-    "title": "Tales of a Lost Civilization",
-    "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title"
+  "target": {
+    "structure": "minecraft:ancient_city",
+    "pieces": [
+      "ancient_city/city_center/city_center_1",
+      "ancient_city/city_center/city_center_2",
+      "ancient_city/city_center/city_center_3"
+    ],
+    "search_radius": 256,
+    "discovery_radius": 128,
+    "proof_item": "minecraft:echo_shard"
   },
-  "triggers": [
+  "events": [
     {
-      "actions": [
-        {
-          "flash_tracker": true,
-          "type": "tracker"
-        }
-      ],
+      "id": "storm_reminder",
+      "event": "proximity",
+      "radius": 10,
+      "cooldown_seconds": 120,
+      "repeatable": false,
       "conditions": [
         {
-          "state": "active",
-          "type": "quest"
+          "type": "quest",
+          "state": "active"
         },
         {
           "type": "time",
           "value": "night"
         },
         {
-          "state": "thunder",
-          "type": "weather"
+          "type": "weather",
+          "state": "thunder"
         }
       ],
-      "cooldown_seconds": 120,
-      "event": "proximity",
-      "id": "storm_reminder",
-      "radius": 10,
-      "repeatable": false
+      "actions": [
+        {
+          "type": "tracker",
+          "flash_tracker": true
+        },
+        {
+          "type": "forced_dialogue",
+          "forced_dialogue": "quest.lost_civilization.storm_reminder"
+        }
+      ]
+    }
+  ],
+  "entry_stage": "survey",
+  "stages": [
+    {
+      "id": "survey",
+      "objectives": [
+        {
+          "id": "recover_echo_shard",
+          "type": "item_check",
+          "item": "minecraft:echo_shard",
+          "count": 1,
+          "tracker": {
+            "text": "Recover {objective_item} as proof of the journey.",
+            "text_key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.text",
+            "complete_text": "Recovered {objective_item}.",
+            "complete_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.objective.recover_echo_shard.complete_text",
+            "metadata": {
+              "hint": "City center visited"
+            },
+            "show_progress": true,
+            "progress": 0.66
+          }
+        }
+      ],
+      "complete_when": [
+        "recover_echo_shard"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Lost Civilization",
+          "request": "story",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "There are old maps that refuse to stay still. One of them keeps crawling back to the same shape under the ink.",
+            "I found a mark that does not belong to any road I know. It points below the world, toward a city people stopped naming."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "Tell me where to go",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Another time",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Lost Civilization",
+          "request": "story",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "About the old city? I can mark the road again, or fold the map if you are done carrying it.",
+            "The map is still yours to follow. Ask for the mark again, or I can put the route away."
+          ],
+          "responses": [
+            {
+              "id": "directions",
+              "label": "Remind me where to go",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Abandon quest",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "never_mind",
+              "label": "Never mind",
+              "scene": "active_cancel",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "abandon_cancel",
+          "lines": [
+            "Good. A folded map remembers less than a carried one.",
+            "Then keep the mark. Some stories punish hesitation, but this one rewards care."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Folding this map means the trail goes cold for a while. Are you sure?",
+            "I can put the old mark away, but I will not pretend the place stops waiting."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put the map away",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep the quest",
+              "scene": "abandon_cancel"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "Then I will fold the route away. If the old city keeps calling, come back and we can mark it again.",
+                  "Done. The map rests for now."
+                ],
+                "abandoned_cooldown": [
+                  "Then I will fold the route away for a day. Give the ink time to dry before asking me to mark it again.",
+                  "Done. I can revisit the mark later, once the map has settled."
+                ],
+                "abandoned_forever": [
+                  "Then I will close the ledger on this one.",
+                  "Done. I will not offer that trail again."
+                ],
+                "unavailable": [
+                  "That map is not in your hands right now.",
+                  "There is no active trail here for me to fold away."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "active_cancel",
+          "lines": [
+            "Then keep the map close until the road starts speaking again.",
+            "Fair. Some maps are better carried quietly."
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Then leave the map folded. Some places are patient in ways people are not.",
+            "Fair. A city that learned to keep silent can wait a little longer."
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
+                  "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+                  "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
+                ],
+                "unavailable": [
+                  "The map is not giving me the same answer right now.",
+                  "If the mark has slipped, come back when the ink settles."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "already_completed": [
+                  "That lost city has already given us its answer.",
+                  "We have that tale now. I am still deciding how much of it should be spoken aloud."
+                ],
+                "locate_failed": [
+                  "The map table is quiet today. I cannot find a clean mark for that city.",
+                  "I can feel the old road under the ink, but not clearly enough to send you there."
+                ],
+                "started": [
+                  "One mark points {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. If you truly want the story, find the heart of {target} and bring back {proof_item}.",
+                  "I have copied this mark three times, and every copy crawls back to the same place: {target_x}, {target_z}, {direction} of us. Go carefully. The center of {target} is the part that matters, and {proof_item} will prove you reached it.",
+                  "Then listen closely: travel {direction}, about {distance} blocks, toward {target_x}, {target_z}. Stand in the city center, not just the outskirts, and return with {proof_item}."
+                ],
+                "unavailable": [
+                  "Not yet. This story needs a steadier hand with maps.",
+                  "There are marks I do not show until I trust the reading, and the reader."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Reach the Ancient City center near {target_x}, {target_z}.",
+        "tracker_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.travel.text",
+        "placeholders": {
+          "target_x": "target.x",
+          "target_z": "target.z"
+        },
+        "show_progress": true,
+        "progress": 0.25
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "reminder": {
+          "label": "About Lost Civilization",
+          "request": "story",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "About the old city? I can mark the road again, or fold the map if you are done carrying it.",
+            "The map is still yours to follow. Ask for the mark again, or I can put the route away."
+          ],
+          "responses": [
+            {
+              "id": "directions",
+              "label": "Remind me where to go",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Abandon quest",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "never_mind",
+              "label": "Never mind",
+              "scene": "active_cancel",
+              "order": 100
+            }
+          ]
+        },
+        "turn_in": {
+          "label": "About Lost Civilization",
+          "request": "story",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "You came back carrying the quiet with you. Tell me you stood in the center, not just the shadow of the place.",
+            "That look is not from a cave. That is from somewhere older. Did you bring proof?"
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Show the Echo Shard",
+              "scene": "complete_quest",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Abandon quest",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "never_mind",
+              "label": "Never mind",
+              "scene": "turn_in_wait",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "abandon_cancel",
+          "lines": [
+            "Good. A folded map remembers less than a carried one.",
+            "Then keep the mark. Some stories punish hesitation, but this one rewards care."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Folding this map means the trail goes cold for a while. Are you sure?",
+            "I can put the old mark away, but I will not pretend the place stops waiting."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put the map away",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep the quest",
+              "scene": "abandon_cancel"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "Then I will fold the route away. If the old city keeps calling, come back and we can mark it again.",
+                  "Done. The map rests for now."
+                ],
+                "abandoned_cooldown": [
+                  "Then I will fold the route away for a day. Give the ink time to dry before asking me to mark it again.",
+                  "Done. I can revisit the mark later, once the map has settled."
+                ],
+                "abandoned_forever": [
+                  "Then I will close the ledger on this one.",
+                  "Done. I will not offer that trail again."
+                ],
+                "unavailable": [
+                  "That map is not in your hands right now.",
+                  "There is no active trail here for me to fold away."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "active_cancel",
+          "lines": [
+            "Then keep the map close until the road starts speaking again.",
+            "Fair. Some maps are better carried quietly."
+          ]
+        },
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "So the stories were not just ink after all. Keep what you learned close, and let the village know you walked where silence keeps records.",
+                  "You found the center and brought proof. That is more than a map can do. This village will remember your name beside that lost place.",
+                  "An Echo Shard from the heart of {target}. I believe you. Some stories should be paid for before they are repeated."
+                ],
+                "missing_proof": [
+                  "You saw the place, then. Bring me {proof_item}, and I can call the tale complete.",
+                  "The journey needs a token. Find {proof_item} in those depths and bring it back."
+                ],
+                "missing_target": [
+                  "That shard alone is not enough. You need to stand in the central heart of {target}, not only its halls.",
+                  "The proof is half the story. The other half is the place itself: the city center near {target_x}, {target_z}."
+                ],
+                "unavailable": [
+                  "This tale is not ready to close yet.",
+                  "Something is missing from the story."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
+                  "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+                  "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
+                ],
+                "unavailable": [
+                  "The map is not giving me the same answer right now.",
+                  "If the mark has slipped, come back when the ink settles."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Then keep it safe until you are ready to let the village remember with you.",
+            "No need to force the words. Bring them back when they have settled."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the cartographer with {proof_item}.",
+        "tracker_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.return.text",
+        "placeholders": {
+          "proof_item": "target.proof_item"
+        },
+        "show_progress": true,
+        "progress": 1
+      }
     }
   ],
   "rewards": {
@@ -132,5 +488,9 @@
     "loot_table": "villagerretaliation:quest/tales_of_a_lost_civilization",
     "memory_event": "player_completed_quest",
     "reputation": 22
+  },
+  "ui": {
+    "title": "Tales of a Lost Civilization",
+    "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title"
   }
 }

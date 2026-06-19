@@ -267,6 +267,8 @@ public final class QuestV2Parser {
             "next",
             "cooldown",
             "cooldown_ticks",
+            "cooldown_seconds",
+            "cooldown_days",
             "radius",
             "repeatable",
             "metadata");

@@ -508,6 +508,8 @@ public final class QuestV2Compiler {
         }
         trigger.add("actions", actions);
         copyIfPresent(event.data(), trigger, "cooldown_ticks");
+        copyIfPresent(event.data(), trigger, "cooldown_seconds");
+        copyIfPresent(event.data(), trigger, "cooldown_days");
         copyIfPresent(event.data(), trigger, "radius");
         copyIfPresent(event.data(), trigger, "repeatable");
         triggers.add(trigger);
