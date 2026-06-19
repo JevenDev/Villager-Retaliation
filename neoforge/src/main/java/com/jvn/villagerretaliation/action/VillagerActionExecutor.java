@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
@@ -183,10 +184,10 @@ public final class VillagerActionExecutor {
             DialogueContext context,
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements) {
-        String scopeKey = action.factScope().scopeKey(context, action.questId());
+        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
         boolean changed = VillagerQuestFacts.get(context.level()).setTag(scopeKey, action.factTag());
         return changed
-                ? factResult(action, inheritedReplacements, scopeKey, "", 0)
+                ? factResult(action, inheritedReplacements, scopeKey.asString(), "", 0)
                 : VillagerActionResult.EMPTY;
     }
 
@@ -194,10 +195,10 @@ public final class VillagerActionExecutor {
             DialogueContext context,
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements) {
-        String scopeKey = action.factScope().scopeKey(context, action.questId());
+        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
         boolean changed = VillagerQuestFacts.get(context.level()).clearTag(scopeKey, action.factTag());
         return changed
-                ? factResult(action, inheritedReplacements, scopeKey, "", 0)
+                ? factResult(action, inheritedReplacements, scopeKey.asString(), "", 0)
                 : VillagerActionResult.EMPTY;
     }
 
@@ -205,14 +206,14 @@ public final class VillagerActionExecutor {
             DialogueContext context,
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements) {
-        String scopeKey = action.factScope().scopeKey(context, action.questId());
+        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
         String value = VillagerDialogueResources.resolveTemplate(action.factValue(), inheritedReplacements);
         boolean changed = VillagerQuestFacts.get(context.level()).setVariable(scopeKey, action.factKey(), value);
         boolean stageChanged = "stage".equals(action.factKey())
                 && action.factScope() == QuestFactScope.QUEST
                 && VillagerQuestService.syncQuestStage(context, action.questId(), value);
         return changed || stageChanged
-                ? factResult(action, inheritedReplacements, scopeKey, value, 0)
+                ? factResult(action, inheritedReplacements, scopeKey.asString(), value, 0)
                 : VillagerActionResult.EMPTY;
     }
 
@@ -220,9 +221,9 @@ public final class VillagerActionExecutor {
             DialogueContext context,
             VillagerActionDefinition action,
             Map<String, String> inheritedReplacements) {
-        String scopeKey = action.factScope().scopeKey(context, action.questId());
+        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
         int value = VillagerQuestFacts.get(context.level()).addCounter(scopeKey, action.factKey(), action.amount());
-        return factResult(action, inheritedReplacements, scopeKey, Integer.toString(value), value);
+        return factResult(action, inheritedReplacements, scopeKey.asString(), Integer.toString(value), value);
     }
 
     private static VillagerActionResult factResult(

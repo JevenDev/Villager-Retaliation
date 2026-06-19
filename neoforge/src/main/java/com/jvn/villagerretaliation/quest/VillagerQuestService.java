@@ -1405,13 +1405,10 @@ public final class VillagerQuestService {
     }
 
     private static String completionScopeKey(DialogueContext context, QuestDefinition definition) {
-        QuestFactScope factScope = switch (definition.rules().completionScope()) {
-            case PLAYER, PLAYER_WORLD -> QuestFactScope.PLAYER;
-            case WORLD -> QuestFactScope.WORLD;
-            case VILLAGE -> QuestFactScope.VILLAGE;
-            case VILLAGER -> QuestFactScope.VILLAGER;
-        };
-        return factScope.scopeKey(context, definition.id());
+        return QuestScopeKey.fromCompletionScope(
+                context,
+                definition.rules().completionScope(),
+                definition.id()).asString();
     }
 
     private static String completionCounterKey(QuestDefinition definition) {
@@ -1536,7 +1533,7 @@ public final class VillagerQuestService {
     private static String playerQuestScopeKey(ServerPlayer player, QuestDefinition definition) {
         return player == null || definition == null
                 ? ""
-                : "quest:" + player.getUUID() + ":" + definition.id();
+                : QuestScopeKey.quest(player.getUUID(), definition.id()).asString();
     }
 
     private static boolean cooldownElapsed(long gameTime, long eventTime, long cooldownTicks) {
@@ -2203,13 +2200,14 @@ public final class VillagerQuestService {
             ResourceLocation questId) {
         QuestFactScope resolvedScope = scope == null ? QuestFactScope.PLAYER : scope;
         ResourceLocation resolvedQuestId = questId == null && definition != null ? definition.id() : questId;
-        return switch (resolvedScope) {
-            case PLAYER -> "player:" + player.getUUID();
-            case WORLD -> "world";
-            case QUEST -> resolvedQuestId == null ? "" : "quest:" + player.getUUID() + ":" + resolvedQuestId;
-            case VILLAGER -> progress == null || progress.startedVillagerId() == null ? "" : "villager:" + progress.startedVillagerId();
-            case VILLAGE -> progress == null ? "" : factVillageScopeKey(level, progress);
+        QuestScopeKey scopeKey = switch (resolvedScope) {
+            case PLAYER -> QuestScopeKey.player(player.getUUID());
+            case WORLD -> QuestScopeKey.WORLD;
+            case QUEST -> QuestScopeKey.quest(player.getUUID(), resolvedQuestId);
+            case VILLAGER -> QuestScopeKey.villager(progress == null ? null : progress.startedVillagerId());
+            case VILLAGE -> QuestScopeKey.village(progress == null ? "" : factVillageScopeKey(level, progress));
         };
+        return scopeKey.asString();
     }
 
     private static DialogueContext.WeatherState savedWeatherState(
@@ -3060,13 +3058,14 @@ public final class VillagerQuestService {
             QuestDefinition.Objective objective) {
         QuestFactScope scope = objective.factScope();
         ResourceLocation questId = objective.factQuestId() == null ? definition.id() : objective.factQuestId();
-        return switch (scope) {
-            case PLAYER -> "player:" + player.getUUID();
-            case WORLD -> "world";
-            case QUEST -> questId == null ? "" : "quest:" + player.getUUID() + ":" + questId;
-            case VILLAGER -> progress.startedVillagerId() == null ? "" : "villager:" + progress.startedVillagerId();
-            case VILLAGE -> factVillageScopeKey(level, progress);
+        QuestScopeKey scopeKey = switch (scope) {
+            case PLAYER -> QuestScopeKey.player(player.getUUID());
+            case WORLD -> QuestScopeKey.WORLD;
+            case QUEST -> QuestScopeKey.quest(player.getUUID(), questId);
+            case VILLAGER -> QuestScopeKey.villager(progress.startedVillagerId());
+            case VILLAGE -> QuestScopeKey.village(factVillageScopeKey(level, progress));
         };
+        return scopeKey.asString();
     }
 
     private static String factVillageScopeKey(ServerLevel level, VillagerQuestSavedData.QuestProgress progress) {

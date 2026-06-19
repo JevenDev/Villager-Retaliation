@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -967,7 +968,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             Integer max) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            String scopeKey = this.scope.scopeKey(context, this.questId);
+            QuestScopeKey scopeKey = this.scope.scope(context, this.questId);
             if (scopeKey.isBlank()) {
                 return false;
             }

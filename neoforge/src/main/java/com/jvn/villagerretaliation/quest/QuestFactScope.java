@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import java.util.Locale;
 import net.minecraft.resources.ResourceLocation;
 
@@ -25,17 +24,13 @@ public enum QuestFactScope {
     }
 
     public String scopeKey(DialogueContext context, ResourceLocation questId) {
+        return scope(context, questId).asString();
+    }
+
+    public QuestScopeKey scope(DialogueContext context, ResourceLocation questId) {
         if (context == null) {
-            return "";
+            return QuestScopeKey.EMPTY;
         }
-        return switch (this) {
-            case PLAYER -> "player:" + context.player().getUUID();
-            case WORLD -> "world";
-            case QUEST -> questId == null
-                    ? ""
-                    : "quest:" + context.player().getUUID() + ":" + questId;
-            case VILLAGER -> "villager:" + context.villager().getUUID();
-            case VILLAGE -> VillageScopeKeys.forVillager(context.level(), context.villager());
-        };
+        return QuestScopeKey.fromFactScope(context, this, questId);
     }
 }

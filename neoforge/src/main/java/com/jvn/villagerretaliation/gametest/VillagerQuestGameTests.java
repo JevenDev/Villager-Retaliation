@@ -11,7 +11,9 @@ import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.QuestTrackerPresenter;
+import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
@@ -51,6 +53,9 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
@@ -610,6 +615,95 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(loadedProgress.objectiveCounter("choose_route"), 2, "objective counter");
         helper.assertValueEqual(loadedProgress.lastTriggerGameTime("completed_0"), 4321L, "trigger time");
         helper.assertValueEqual(loaded.getTrackedQuest(playerId), questId, "tracked quest");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questScopeKeysSerializeLegacyStrings(GameTestHelper helper) {
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000006");
+        UUID villagerId = UUID.fromString("00000000-0000-0000-0000-000000000007");
+        ResourceLocation questId = VillagerRetaliation.id("choose_the_horizon");
+
+        helper.assertValueEqual(QuestScopeKey.player(playerId).asString(), "player:" + playerId, "player scope");
+        helper.assertValueEqual(
+                QuestScopeKey.playerWorld(playerId).asString(),
+                "player:" + playerId,
+                "player-world scope");
+        helper.assertValueEqual(QuestScopeKey.WORLD.asString(), "world", "world scope");
+        helper.assertValueEqual(
+                QuestScopeKey.quest(playerId, questId).asString(),
+                "quest:" + playerId + ":" + questId,
+                "quest scope");
+        helper.assertValueEqual(
+                QuestScopeKey.villager(villagerId).asString(),
+                "villager:" + villagerId,
+                "villager scope");
+        helper.assertValueEqual(
+                QuestScopeKey.village("village:minecraft:overworld:4,65,-2").asString(),
+                "village:minecraft:overworld:4,65,-2",
+                "village scope");
+        helper.assertValueEqual(
+                QuestScopeKey.parse("player:" + playerId).orElseThrow().asString(),
+                "player:" + playerId,
+                "parsed player");
+        helper.assertValueEqual(
+                QuestScopeKey.parse("quest:" + playerId + ":" + questId).orElseThrow().asString(),
+                "quest:" + playerId + ":" + questId,
+                "parsed quest");
+        helper.assertValueEqual(
+                QuestScopeKey.parse("world").orElseThrow().kind(),
+                QuestScopeKey.Kind.WORLD,
+                "parsed world kind");
+        helper.assertTrue(QuestScopeKey.parse("player:not-a-uuid").isEmpty(), "bad player parsed");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questFactsRoundTripTypedAndLegacyScopeKeys(GameTestHelper helper) {
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000008");
+        ResourceLocation questId = VillagerRetaliation.id("choose_the_horizon");
+        ResourceLocation tag = VillagerRetaliation.id("scope_key_test");
+        QuestScopeKey playerKey = QuestScopeKey.player(playerId);
+        QuestScopeKey questKey = QuestScopeKey.quest(playerId, questId);
+
+        VillagerQuestFacts facts = new VillagerQuestFacts();
+        facts.setTag(playerKey, tag);
+        facts.setVariable(questKey, "stage", "started");
+        facts.addCounter(QuestScopeKey.WORLD, "completion:" + questId, 2);
+
+        CompoundTag saved = facts.save(new CompoundTag(), helper.getLevel().registryAccess());
+        ListTag entries = saved.getList("Entries", Tag.TAG_COMPOUND);
+        Set<String> scopes = new LinkedHashSet<>();
+        for (Tag rawEntry : entries) {
+            if (rawEntry instanceof CompoundTag entry) {
+                scopes.add(entry.getString("Scope"));
+            }
+        }
+        helper.assertTrue(scopes.contains(playerKey.asString()), "saved player typed scope");
+        helper.assertTrue(scopes.contains(questKey.asString()), "saved quest typed scope");
+        helper.assertTrue(scopes.contains("world"), "saved world typed scope");
+
+        VillagerQuestFacts loaded = VillagerQuestFacts.load(saved, helper.getLevel().registryAccess());
+        helper.assertTrue(loaded.hasTag(playerKey, tag), "typed player tag did not load");
+        helper.assertValueEqual(loaded.variable(questKey, "stage").orElse(""), "started", "typed quest variable");
+        helper.assertValueEqual(
+                loaded.counter(QuestScopeKey.WORLD, "completion:" + questId),
+                2,
+                "typed world counter");
+
+        CompoundTag legacy = new CompoundTag();
+        ListTag legacyEntries = new ListTag();
+        CompoundTag legacyEntry = new CompoundTag();
+        legacyEntry.putString("Scope", "player:" + playerId);
+        ListTag tags = new ListTag();
+        tags.add(StringTag.valueOf(tag.toString()));
+        legacyEntry.put("Tags", tags);
+        legacyEntries.add(legacyEntry);
+        legacy.put("Entries", legacyEntries);
+        VillagerQuestFacts legacyLoaded = VillagerQuestFacts.load(legacy, helper.getLevel().registryAccess());
+        helper.assertTrue(legacyLoaded.hasTag(playerKey, tag), "legacy player tag did not load");
 
         helper.succeed();
     }

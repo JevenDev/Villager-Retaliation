@@ -79,6 +79,10 @@ public class VillagerQuestFacts extends SavedData {
         return changed;
     }
 
+    public boolean setTag(QuestScopeKey scopeKey, ResourceLocation tag) {
+        return setTag(scopeKey == null ? "" : scopeKey.asString(), tag);
+    }
+
     public boolean clearTag(String scopeKey, ResourceLocation tag) {
         if (scopeKey == null || scopeKey.isBlank() || tag == null) {
             return false;
@@ -95,12 +99,20 @@ public class VillagerQuestFacts extends SavedData {
         return changed;
     }
 
+    public boolean clearTag(QuestScopeKey scopeKey, ResourceLocation tag) {
+        return clearTag(scopeKey == null ? "" : scopeKey.asString(), tag);
+    }
+
     public boolean hasTag(String scopeKey, ResourceLocation tag) {
         if (scopeKey == null || scopeKey.isBlank() || tag == null) {
             return false;
         }
         FactBucket bucket = this.factsByScope.get(scopeKey);
         return bucket != null && bucket.tags.contains(tag);
+    }
+
+    public boolean hasTag(QuestScopeKey scopeKey, ResourceLocation tag) {
+        return hasTag(scopeKey == null ? "" : scopeKey.asString(), tag);
     }
 
     public boolean setVariable(String scopeKey, String key, String value) {
@@ -117,6 +129,10 @@ public class VillagerQuestFacts extends SavedData {
         return changed;
     }
 
+    public boolean setVariable(QuestScopeKey scopeKey, String key, String value) {
+        return setVariable(scopeKey == null ? "" : scopeKey.asString(), key, value);
+    }
+
     public Optional<String> variable(String scopeKey, String key) {
         key = normalizeKey(key);
         if (scopeKey == null || scopeKey.isBlank() || key.isBlank()) {
@@ -124,6 +140,10 @@ public class VillagerQuestFacts extends SavedData {
         }
         FactBucket bucket = this.factsByScope.get(scopeKey);
         return bucket == null ? Optional.empty() : Optional.ofNullable(bucket.variables.get(key));
+    }
+
+    public Optional<String> variable(QuestScopeKey scopeKey, String key) {
+        return variable(scopeKey == null ? "" : scopeKey.asString(), key);
     }
 
     public int addCounter(String scopeKey, String key, int amount) {
@@ -138,6 +158,10 @@ public class VillagerQuestFacts extends SavedData {
         return next;
     }
 
+    public int addCounter(QuestScopeKey scopeKey, String key, int amount) {
+        return addCounter(scopeKey == null ? "" : scopeKey.asString(), key, amount);
+    }
+
     public int counter(String scopeKey, String key) {
         key = normalizeKey(key);
         if (scopeKey == null || scopeKey.isBlank() || key.isBlank()) {
@@ -145,6 +169,10 @@ public class VillagerQuestFacts extends SavedData {
         }
         FactBucket bucket = this.factsByScope.get(scopeKey);
         return bucket == null ? 0 : bucket.counters.getOrDefault(key, 0);
+    }
+
+    public int counter(QuestScopeKey scopeKey, String key) {
+        return counter(scopeKey == null ? "" : scopeKey.asString(), key);
     }
 
     public ScopeMergeResult mergeScope(String sourceScopeKey, String targetScopeKey) {
