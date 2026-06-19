@@ -42,7 +42,9 @@ public final class DialogueTreeResources {
     }
 
     public static List<DialogueOptionDefinition> entryOptions(DialogueContext context, DialogueDisposition disposition) {
-        return trees(context.level().getServer(), context.locale()).stream()
+        LoadedTrees loaded = load(context.level().getServer(), context.locale());
+        return loaded.trees().values().stream()
+                .filter(tree -> !isSuppressedBuiltInLegacyQuestTree(context, tree, loaded.sources().get(tree.id())))
                 .filter(tree -> tree.matches(context))
                 .flatMap(tree -> tree.entries().stream()
                         .filter(entry -> entry.matches(context, disposition))
@@ -55,22 +57,42 @@ public final class DialogueTreeResources {
         if (id == null) {
             return Optional.empty();
         }
-        DialogueTreeDefinition external = load(server, locale).get(id);
+        DialogueTreeDefinition external = load(server, locale).trees().get(id);
         if (external != null) {
             return Optional.of(external);
         }
         return VillagerQuestResources.questDialogueCatalog(server).tree(id);
     }
 
-    private static Collection<DialogueTreeDefinition> trees(MinecraftServer server, String locale) {
-        return load(server, locale).values();
+    public static void installTestTrees(
+            MinecraftServer server,
+            String locale,
+            Collection<DialogueTreeDefinition> trees,
+            Set<ResourceLocation> builtInTreeIds) {
+        String normalizedLocale = VillagerLocale.normalize(locale);
+        Map<ResourceLocation, DialogueTreeDefinition> definitions = new LinkedHashMap<>();
+        Map<ResourceLocation, TreeSource> sources = new LinkedHashMap<>();
+        if (trees != null) {
+            for (DialogueTreeDefinition tree : trees) {
+                if (tree == null) {
+                    continue;
+                }
+                definitions.put(tree.id(), tree);
+                sources.put(tree.id(), new TreeSource(
+                        ResourceLocation.fromNamespaceAndPath(tree.id().getNamespace(), "test/" + tree.id().getPath()),
+                        builtInTreeIds != null && builtInTreeIds.contains(tree.id())));
+            }
+        }
+        cachedTrees = new CachedTrees(
+                server,
+                Map.of(normalizedLocale, new LoadedTrees(Map.copyOf(definitions), Map.copyOf(sources))));
     }
 
-    private static Map<ResourceLocation, DialogueTreeDefinition> load(MinecraftServer server, String locale) {
+    private static LoadedTrees load(MinecraftServer server, String locale) {
         String normalizedLocale = VillagerLocale.normalize(locale);
         CachedTrees current = cachedTrees;
         if (current.server() == server) {
-            Map<ResourceLocation, DialogueTreeDefinition> cached = current.treesByLocale().get(normalizedLocale);
+            LoadedTrees cached = current.treesByLocale().get(normalizedLocale);
             if (cached != null) {
                 return cached;
             }
@@ -78,36 +100,36 @@ public final class DialogueTreeResources {
 
         synchronized (DialogueTreeResources.class) {
             current = cachedTrees;
-            Map<String, Map<ResourceLocation, DialogueTreeDefinition>> treesByLocale = current.server() == server
+            Map<String, LoadedTrees> treesByLocale = current.server() == server
                     ? new LinkedHashMap<>(current.treesByLocale())
                     : new LinkedHashMap<>();
-            Map<ResourceLocation, DialogueTreeDefinition> cached = treesByLocale.get(normalizedLocale);
+            LoadedTrees cached = treesByLocale.get(normalizedLocale);
             if (cached != null) {
                 return cached;
             }
 
-            Map<ResourceLocation, DialogueTreeDefinition> trees = read(server, normalizedLocale);
+            LoadedTrees trees = read(server, normalizedLocale);
             treesByLocale.put(normalizedLocale, trees);
             cachedTrees = new CachedTrees(server, Map.copyOf(treesByLocale));
             return trees;
         }
     }
 
-    private static Map<ResourceLocation, DialogueTreeDefinition> read(MinecraftServer server, String locale) {
+    private static LoadedTrees read(MinecraftServer server, String locale) {
         Map<ResourceLocation, DialogueTreeDefinition> trees = new LinkedHashMap<>();
-        Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
+        Map<ResourceLocation, TreeSource> sources = new LinkedHashMap<>();
         readLocale(server, VillagerLocale.DEFAULT_LOCALE, trees, sources);
         if (!VillagerLocale.DEFAULT_LOCALE.equals(locale)) {
             readLocale(server, locale, trees, sources);
         }
-        return Map.copyOf(trees);
+        return new LoadedTrees(Map.copyOf(trees), Map.copyOf(sources));
     }
 
     private static void readLocale(
             MinecraftServer server,
             String locale,
             Map<ResourceLocation, DialogueTreeDefinition> trees,
-            Map<ResourceLocation, ResourceLocation> sources) {
+            Map<ResourceLocation, TreeSource> sources) {
         String root = RESOURCE_ROOT + locale;
         List<LoadedTreeResource> resources = DatapackResourceLoader.jsonResources(server, root).stream()
                 .map(resource -> DatapackResourceLoader.readObject(resource.location(), "dialogue tree", resource.resource())
@@ -126,17 +148,18 @@ public final class DialogueTreeResources {
                     && !DatapackJsonReader.readBoolean(resource.root(), "replace")) {
                 continue;
             }
-            readFile(resource.resource().location(), resource.root(), locale, trees, sources, replacementMode);
+            readFile(resource.resource(), resource.root(), locale, trees, sources, replacementMode);
         }
     }
 
     private static void readFile(
-            ResourceLocation location,
+            DatapackResourceLoader.JsonResource resource,
             JsonObject root,
             String locale,
             Map<ResourceLocation, DialogueTreeDefinition> trees,
-            Map<ResourceLocation, ResourceLocation> sources,
+            Map<ResourceLocation, TreeSource> sources,
             boolean replacementMode) {
+        ResourceLocation location = resource.location();
         ResourceLocation fallbackId = fallbackTreeId(location, locale);
         if (DatapackJsonReader.readBoolean(root, "replace")) {
             if (!replacementMode) {
@@ -159,11 +182,22 @@ public final class DialogueTreeResources {
         if (definition == null) {
             return;
         }
-        ResourceLocation previous = sources.put(definition.id(), location);
+        TreeSource previous = sources.put(definition.id(), new TreeSource(location, isBuiltInModResource(resource)));
         if (previous != null) {
-            DatapackDiagnostics.warnDuplicateId(location, "dialogue tree", definition.id().toString(), previous);
+            DatapackDiagnostics.warnDuplicateId(location, "dialogue tree", definition.id().toString(), previous.location());
         }
         trees.put(definition.id(), definition);
+    }
+
+    private static boolean isSuppressedBuiltInLegacyQuestTree(
+            DialogueContext context,
+            DialogueTreeDefinition tree,
+            TreeSource source) {
+        return source != null
+                && source.builtInModResource()
+                && VillagerQuestResources
+                        .questDialogueCatalog(context.level().getServer())
+                        .hasGeneratedQuestDialogue(tree.id());
     }
 
     private static boolean isBuiltInModResource(DatapackResourceLoader.JsonResource resource) {
@@ -433,7 +467,15 @@ public final class DialogueTreeResources {
         return first == null || first.isBlank() ? fallback : first;
     }
 
-    private record CachedTrees(MinecraftServer server, Map<String, Map<ResourceLocation, DialogueTreeDefinition>> treesByLocale) {
+    private record LoadedTrees(
+            Map<ResourceLocation, DialogueTreeDefinition> trees,
+            Map<ResourceLocation, TreeSource> sources) {
+    }
+
+    private record TreeSource(ResourceLocation location, boolean builtInModResource) {
+    }
+
+    private record CachedTrees(MinecraftServer server, Map<String, LoadedTrees> treesByLocale) {
         private static CachedTrees empty() {
             return new CachedTrees(null, Map.of());
         }

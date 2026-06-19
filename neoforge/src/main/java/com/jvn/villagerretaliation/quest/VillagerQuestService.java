@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
+import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.QuestDialogueCatalog;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
@@ -353,7 +354,9 @@ public final class VillagerQuestService {
                 continue;
             }
 
-            DialogueTreeDefinition tree = catalog.tree(binding.treeId()).orElse(null);
+            DialogueTreeDefinition tree = DialogueTreeResources
+                    .tree(context.level().getServer(), context.locale(), binding.treeId())
+                    .orElse(null);
             if (tree == null || !tree.matches(context)) {
                 continue;
             }

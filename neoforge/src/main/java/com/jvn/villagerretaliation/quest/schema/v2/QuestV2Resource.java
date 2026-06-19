@@ -141,13 +141,33 @@ public record QuestV2Resource(
             String slot,
             String scene,
             Scene inlineScene,
-            ResourceLocation externalScene,
+            ExternalScene externalScene,
             JsonObject data
     ) {
         public DialogueSlot {
             slot = normalizeId(slot);
             scene = normalizeId(scene);
+            externalScene = externalScene == null ? ExternalScene.EMPTY : externalScene;
             data = copy(data);
+        }
+    }
+
+    public record ExternalScene(
+            ResourceLocation tree,
+            String entry
+    ) {
+        public static final ExternalScene EMPTY = new ExternalScene(null, "");
+
+        public ExternalScene {
+            entry = normalizeId(entry);
+        }
+
+        public boolean isEmpty() {
+            return this.tree == null;
+        }
+
+        public String entryOr(String fallback) {
+            return this.entry.isBlank() ? normalizeId(fallback) : this.entry;
         }
     }
 
@@ -155,7 +175,7 @@ public record QuestV2Resource(
             String id,
             List<String> lines,
             String textKey,
-            ResourceLocation externalScene,
+            ExternalScene externalScene,
             List<Response> responses,
             JsonObject data
     ) {
@@ -163,6 +183,7 @@ public record QuestV2Resource(
             id = normalizeId(id);
             lines = lines == null ? List.of() : List.copyOf(lines);
             textKey = textKey == null ? "" : textKey;
+            externalScene = externalScene == null ? ExternalScene.EMPTY : externalScene;
             responses = responses == null ? List.of() : List.copyOf(responses);
             data = copy(data);
         }

@@ -47,26 +47,32 @@ public final class QuestDialogueCompiler {
             addStageDialogue(resource, stage, stageSource, treeId, entries, nodes, bindings);
         }
 
-        if (entries.size() == 0 || nodes.size() == 0) {
-            return QuestDialogueCatalog.empty();
+        Map<ResourceLocation, DialogueTreeDefinition> trees = Map.of();
+        Map<ResourceLocation, QuestSourcePointer> treeSources = Map.of();
+        if (entries.size() > 0 && nodes.size() > 0) {
+            root.add("entries", entries);
+            root.add("nodes", nodes);
+            DialogueTreeDefinition tree = DialogueTreeResources.readGeneratedTree(source.resource(), root, treeId);
+            if (tree == null) {
+                DatapackDiagnostics.warnQuestV2Validation(
+                        source.resource(),
+                        "",
+                        "generated embedded dialogue tree failed structural validation.",
+                        "Check embedded dialogue scene, response, condition, and action payloads.",
+                        Set.of(resource.id().toString(), treeId.toString()));
+            } else {
+                trees = Map.of(tree.id(), tree);
+                treeSources = Map.of(tree.id(), source);
+            }
         }
-        root.add("entries", entries);
-        root.add("nodes", nodes);
-        DialogueTreeDefinition tree = DialogueTreeResources.readGeneratedTree(source.resource(), root, treeId);
-        if (tree == null) {
-            DatapackDiagnostics.warnQuestV2Validation(
-                    source.resource(),
-                    "",
-                    "generated embedded dialogue tree failed structural validation.",
-                    "Check embedded dialogue scene, response, condition, and action payloads.",
-                    Set.of(resource.id().toString(), treeId.toString()));
+        if (trees.isEmpty() && bindings.isEmpty()) {
             return QuestDialogueCatalog.empty();
         }
 
         return new QuestDialogueCatalog(
-                Map.of(tree.id(), tree),
+                trees,
                 bindings,
-                Map.of(tree.id(), source));
+                treeSources);
     }
 
     public static ResourceLocation treeId(ResourceLocation questId) {
@@ -88,6 +94,19 @@ public final class QuestDialogueCompiler {
                 continue;
             }
             QuestSourcePointer sceneSource = source.child("lifecycle", "dialogue", Integer.toString(index));
+            if (!scene.externalScene().isEmpty()) {
+                putBinding(
+                        bindings,
+                        new QuestDialogueCatalog.Binding(
+                                resource.id(),
+                                "",
+                                "lifecycle:" + scene.id(),
+                                scene.id(),
+                                scene.externalScene().tree(),
+                                scene.externalScene().entryOr(scene.id()),
+                                sceneSource));
+                continue;
+            }
             String nodeId = lifecycleNodeId(scene.id());
             String entryId = lifecycleEntryId(scene.id());
             addSceneNode(resource, "", scene, sceneSource, nodeId, null, nodes);
@@ -118,9 +137,29 @@ public final class QuestDialogueCompiler {
             QuestV2Resource.Scene scene = slot.inlineScene();
             String nodeId = stageSlotNodeId(stage.id(), slot.slot());
             String sceneId = scene == null ? slot.scene() : scene.id();
+            QuestV2Resource.ExternalScene external = slot.externalScene();
+            String externalDefaultEntry = slot.slot();
             if (scene == null && !slot.scene().isBlank()) {
                 scene = stage.scenes().get(slot.scene());
                 nodeId = stageSceneNodeId(stage.id(), slot.scene());
+                if (scene != null) {
+                    sceneId = scene.id();
+                    external = scene.externalScene();
+                    externalDefaultEntry = scene.id();
+                }
+            }
+            if (!external.isEmpty()) {
+                putBinding(
+                        bindings,
+                        new QuestDialogueCatalog.Binding(
+                                resource.id(),
+                                stage.id(),
+                                slot.slot(),
+                                sceneId,
+                                external.tree(),
+                                external.entryOr(externalDefaultEntry),
+                                slotSource));
+                continue;
             }
             if (!shouldCompile(scene)) {
                 continue;
@@ -142,10 +181,21 @@ public final class QuestDialogueCompiler {
 
         int sortedSceneIndex = 0;
         for (QuestV2Resource.Scene scene : sortedScenes(stage.scenes())) {
-            if (shouldCompile(scene)) {
-                QuestSourcePointer sceneSource = stageSource.child(
-                        "scenes",
-                        Integer.toString(sceneSourceIndex(stage, scene.id(), sortedSceneIndex)));
+            QuestSourcePointer sceneSource = stageSource.child(
+                    "scenes",
+                    Integer.toString(sceneSourceIndex(stage, scene.id(), sortedSceneIndex)));
+            if (!scene.externalScene().isEmpty()) {
+                putBinding(
+                        bindings,
+                        new QuestDialogueCatalog.Binding(
+                                resource.id(),
+                                stage.id(),
+                                "scene:" + scene.id(),
+                                scene.id(),
+                                scene.externalScene().tree(),
+                                scene.externalScene().entryOr(scene.id()),
+                                sceneSource));
+            } else if (shouldCompile(scene)) {
                 String nodeId = stageSceneNodeId(stage.id(), scene.id());
                 String entryId = stageSceneEntryId(stage.id(), scene.id());
                 addSceneNode(resource, stage.id(), scene, sceneSource, nodeId, stage, nodes);
@@ -368,7 +418,7 @@ public final class QuestDialogueCompiler {
 
     private static boolean shouldCompile(QuestV2Resource.Scene scene) {
         return scene != null
-                && scene.externalScene() == null
+                && scene.externalScene().isEmpty()
                 && (scene.hasInlineContent()
                         || hasArray(scene.data(), "actions")
                         || hasArray(scene.data(), "conditions"));

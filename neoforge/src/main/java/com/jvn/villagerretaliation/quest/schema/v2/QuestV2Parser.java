@@ -161,6 +161,7 @@ public final class QuestV2Parser {
             "scene_ref",
             "external",
             "external_scene",
+            "external_entry",
             "text",
             "text_key",
             "lines",
@@ -181,7 +182,15 @@ public final class QuestV2Parser {
             "transition",
             "external",
             "external_scene",
+            "external_entry",
             "scene_ref",
+            "metadata");
+    private static final Set<String> EXTERNAL_SCENE_KEYS = Set.of(
+            "tree",
+            "tree_id",
+            "dialogue_tree",
+            "entry",
+            "entry_id",
             "metadata");
     private static final Set<String> RESPONSE_KEYS = Set.of(
             "id",
@@ -530,12 +539,16 @@ public final class QuestV2Parser {
             }
             validator.expectKeys(slotObject, slotPointer, DIALOGUE_SLOT_KEYS);
             String scene = readString(slotObject, "scene", "scene_ref");
-            ResourceLocation external = readResourceLocation(slotObject, "external_scene", "external").orElse(null);
+            QuestV2Resource.ExternalScene external = readExternalScene(
+                    validator,
+                    slotObject,
+                    slotPointer,
+                    slot);
             QuestV2Resource.Scene inlineScene = null;
             if (hasInlineSceneContent(slotObject)) {
                 inlineScene = readScene(validator, slotObject, slotPointer, slot);
             }
-            if (inlineScene != null && (external != null || !scene.isBlank())) {
+            if (inlineScene != null && (!external.isEmpty() || !scene.isBlank())) {
                 validator.error(
                         slotPointer,
                         "dialogue slot cannot mix inline scene content with scene_ref or external_scene.",
@@ -575,7 +588,12 @@ public final class QuestV2Parser {
         validator.expectKeys(object, pointer, SCENE_KEYS);
         String id = firstNonBlank(readString(object, "id"), fallbackId);
         validateId(validator, pointer + "/id", id, "scene id");
-        ResourceLocation external = readResourceLocation(object, "external_scene", "external", "scene_ref").orElse(null);
+        QuestV2Resource.ExternalScene external = readExternalScene(
+                validator,
+                object,
+                pointer,
+                id,
+                "scene_ref");
         List<String> lines = readStringList(object.get("lines"));
         String text = readString(object, "text");
         if (!text.isBlank()) {
@@ -586,12 +604,12 @@ public final class QuestV2Parser {
         readActionObjects(validator, object.get("actions"), pointer + "/actions");
         readConditionObjects(validator, object.get("conditions"), pointer + "/conditions");
         QuestV2Resource.Scene scene = new QuestV2Resource.Scene(id, lines, textKey, external, responses, object);
-        if (scene.hasInlineContent() && external != null) {
+        if (scene.hasInlineContent() && !external.isEmpty()) {
             validator.error(
                     pointer,
                     "scene cannot mix inline dialogue content with an external scene reference.",
                     "Use either inline lines/responses or external_scene.",
-                    Set.of(id, external.toString()));
+                    Set.of(id, external.tree().toString()));
         }
         return scene;
     }
@@ -1251,6 +1269,76 @@ public final class QuestV2Parser {
         return QuestProviderRegistry.descriptors().stream()
                 .filter(descriptor -> descriptor.id().equals(id))
                 .findFirst();
+    }
+
+    private static QuestV2Resource.ExternalScene readExternalScene(
+            Validator validator,
+            JsonObject object,
+            String pointer,
+            String defaultEntry,
+            String... extraKeys) {
+        JsonElement element = null;
+        String key = "";
+        List<String> keys = new ArrayList<>();
+        keys.add("external_scene");
+        keys.add("external");
+        if (extraKeys != null) {
+            keys.addAll(List.of(extraKeys));
+        }
+        for (String candidate : keys) {
+            if (object.has(candidate)) {
+                element = object.get(candidate);
+                key = candidate;
+                break;
+            }
+        }
+        String entry = firstNonBlank(readString(object, "external_entry"), defaultEntry);
+        if (element == null || element.isJsonNull()) {
+            return QuestV2Resource.ExternalScene.EMPTY;
+        }
+        String externalPointer = pointer + "/" + escapePointer(key);
+        if (element.isJsonPrimitive()) {
+            String value = element.getAsString().trim();
+            if (value.isBlank()) {
+                return QuestV2Resource.ExternalScene.EMPTY;
+            }
+            Optional<ResourceLocation> tree = DatapackJsonReader.parseResourceLocation(value);
+            if (tree.isEmpty()) {
+                validator.error(
+                        externalPointer,
+                        "invalid external dialogue tree \"" + value + "\".",
+                        "Use a resource location such as namespace:path.",
+                        Set.of(value));
+                return QuestV2Resource.ExternalScene.EMPTY;
+            }
+            return new QuestV2Resource.ExternalScene(tree.get(), entry);
+        }
+        JsonObject external = validator.object(element, externalPointer, "external dialogue scene", true);
+        if (external == null) {
+            return QuestV2Resource.ExternalScene.EMPTY;
+        }
+        validator.expectKeys(external, externalPointer, EXTERNAL_SCENE_KEYS);
+        String treeValue = readString(external, "tree", "tree_id", "dialogue_tree");
+        if (treeValue.isBlank()) {
+            validator.error(
+                    externalPointer + "/tree",
+                    "external dialogue scene must define tree.",
+                    "Set external.tree to the dialogue tree resource id.",
+                    Set.of());
+            return QuestV2Resource.ExternalScene.EMPTY;
+        }
+        Optional<ResourceLocation> tree = DatapackJsonReader.parseResourceLocation(treeValue);
+        if (tree.isEmpty()) {
+            validator.error(
+                    externalPointer + "/tree",
+                    "invalid external dialogue tree \"" + treeValue + "\".",
+                    "Use a resource location such as namespace:path.",
+                    Set.of(treeValue));
+            return QuestV2Resource.ExternalScene.EMPTY;
+        }
+        return new QuestV2Resource.ExternalScene(
+                tree.get(),
+                firstNonBlank(readString(external, "entry", "entry_id"), entry));
     }
 
     private static Optional<ResourceLocation> readResourceLocation(

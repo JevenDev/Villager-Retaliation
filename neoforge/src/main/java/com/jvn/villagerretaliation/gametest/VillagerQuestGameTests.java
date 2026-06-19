@@ -11,15 +11,19 @@ import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.QuestDialogueCatalog;
 import com.jvn.villagerretaliation.dialogue.QuestDialogueCompiler;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
+import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
@@ -1366,6 +1370,164 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2ExternalDialogueAndForcedScenesResolve(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation externalTreeId = VillagerRetaliation.id("external/v2_mixed_tree");
+        ResourceLocation missingTreeId = VillagerRetaliation.id("external/v2_missing_tree");
+        EmbeddedDialogueQuest mixed = embeddedDialogueQuest(
+                "v2_external_mixed_runtime",
+                externalDialogueQuestV2Fixture("v2_external_mixed_runtime", externalTreeId, missingTreeId));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(mixed.quest()), mixed.dialogueCatalog());
+            DialogueTreeResources.installTestTrees(
+                    level.getServer(),
+                    LOCALE,
+                    List.of(externalDialogueTree(externalTreeId)),
+                    Set.of());
+            DialogueTreeService.clearRuntimeState();
+            ForcedDialogueService.clearRuntimeState();
+
+            helper.assertTrue(
+                    ForcedDialogueResources
+                            .selectCandidates(level.getServer(), ForcedDialogueResources.ForcedDialogueTrigger.QUEST, null)
+                            .stream()
+                            .anyMatch(definition -> definition.id().equals("quest.lost_civilization.storm_reminder")),
+                    "existing quest forced-dialogue resource disappeared");
+
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            String offerOptionId = DialogueTreeService.entryOptionId(mixed.treeId(), "stage.offer.offer");
+            helper.assertValueEqual(
+                    selectDialogueOption(helper, context, offerOptionId).text(),
+                    "Inline mixed offer.",
+                    "v2 mixed inline offer text");
+            helper.assertValueEqual(
+                    selectDialogueOption(
+                            helper,
+                            context,
+                            DialogueTreeService.responseOptionId(mixed.treeId(), "accept")).text(),
+                    "I have work that could use your hands: Mixed External Quest.",
+                    "v2 mixed inline start response");
+
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            String externalReminderOptionId = DialogueTreeService.entryOptionId(externalTreeId, "long_scene");
+            helper.assertValueEqual(
+                    selectDialogueOption(helper, context, externalReminderOptionId).text(),
+                    "External long scene.",
+                    "v2 external reminder tree text");
+            String externalSceneDefaultOptionId = DialogueTreeService.entryOptionId(externalTreeId, "external_default");
+            helper.assertValueEqual(
+                    selectDialogueOption(helper, context, externalSceneDefaultOptionId).text(),
+                    "External scene default entry.",
+                    "v2 external named scene default entry text");
+            assertMissingDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(missingTreeId, "missing"),
+                    "missing external tree option");
+            assertMissingDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(externalTreeId, "not_there"),
+                    "missing external entry option");
+
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            assertForcedSceneResponse(
+                    helper,
+                    context,
+                    mixed.dialogueCatalog(),
+                    "storm_scene",
+                    mixed.treeId(),
+                    "stage.offer.scene.storm_scene",
+                    DialogueTreeService.responseOptionId(mixed.treeId(), "storm_ack"),
+                    "Stay ready.",
+                    "inline forced scene response text");
+            assertForcedSceneResponse(
+                    helper,
+                    context,
+                    mixed.dialogueCatalog(),
+                    "external_forced",
+                    externalTreeId,
+                    "forced_entry",
+                    DialogueTreeService.responseOptionId(externalTreeId, "external_ack"),
+                    "External forced response.",
+                    "external forced scene response text");
+            helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "v2 external dialogue emitted diagnostics");
+            DatapackDiagnostics.clear();
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            VillagerConversationService.endForPlayer(player, false);
+            ForcedDialogueService.clearRuntimeState();
+            DialogueTreeService.clearRuntimeState();
+            DialogueTreeResources.clearCache();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2LegacyTreeOverridePrecedenceIsSourceAware(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation legacyTreeId = VillagerRetaliation.id("v2_legacy_override_runtime");
+        EmbeddedDialogueQuest migrated = embeddedDialogueQuest(
+                "v2_legacy_override_runtime",
+                embeddedDialogueQuestV2Fixture("v2_legacy_override_runtime"));
+        DialogueTreeDefinition legacyTree = singleEntryDialogueTree(
+                legacyTreeId,
+                "offer",
+                "Legacy Offer",
+                "Legacy built-in tree.");
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(migrated.quest()), migrated.dialogueCatalog());
+            DialogueTreeService.clearRuntimeState();
+            DialogueTreeResources.installTestTrees(level.getServer(), LOCALE, List.of(legacyTree), Set.of(legacyTreeId));
+
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            assertHasDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(migrated.treeId(), "stage.offer.offer"),
+                    "generated inline migrated offer");
+            assertMissingDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(legacyTreeId, "offer"),
+                    "built-in legacy tree option");
+
+            DialogueTreeResources.installTestTrees(level.getServer(), LOCALE, List.of(legacyTree), Set.of());
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            assertHasDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(legacyTreeId, "offer"),
+                    "higher-priority legacy tree override option");
+            helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "legacy override precedence emitted diagnostics");
+            DatapackDiagnostics.clear();
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            DialogueTreeService.clearRuntimeState();
+            DialogueTreeResources.clearCache();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2ResponseTransitionsRecordChoiceHistory(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -1933,6 +2095,19 @@ public final class VillagerQuestGameTests {
                 message + " missing");
     }
 
+    private static void assertMissingDialogueOption(
+            GameTestHelper helper,
+            DialogueContext context,
+            String optionId,
+            String message) {
+        helper.assertTrue(
+                VillagerDialogueResources
+                        .dialogueOptions(context, VillagerDialogueService.moodFor(context))
+                        .stream()
+                        .noneMatch(option -> option.id().equals(optionId)),
+                message + " unexpectedly present");
+    }
+
     private static VillagerDialogueService.DialogueResult selectDialogueOption(
             GameTestHelper helper,
             DialogueContext context,
@@ -1945,6 +2120,111 @@ public final class VillagerQuestGameTests {
                 .orElseThrow(() -> new GameTestAssertException("Missing dialogue option " + optionId));
         return DialogueTreeService.handleDialogueOption(context, option)
                 .orElseThrow(() -> new GameTestAssertException("Dialogue option did not produce a result " + optionId));
+    }
+
+    private static void assertForcedSceneResponse(
+            GameTestHelper helper,
+            DialogueContext context,
+            QuestDialogueCatalog catalog,
+            String forcedSceneId,
+            ResourceLocation expectedTreeId,
+            String expectedEntryId,
+            String responseOptionId,
+            String expectedResponseText,
+            String message) {
+        QuestDialogueCatalog.Binding binding = catalog
+                .forcedBinding(forcedSceneId)
+                .orElseThrow(() -> new GameTestAssertException("Missing forced scene binding " + forcedSceneId));
+        helper.assertValueEqual(binding.treeId(), expectedTreeId, forcedSceneId + " tree id");
+        helper.assertValueEqual(binding.entryId(), expectedEntryId, forcedSceneId + " entry id");
+        DialogueTreeService.startEntry(context, binding.treeId(), binding.entryId(), Map.of("quest", "Mixed External Quest"))
+                .orElseThrow(() -> new GameTestAssertException("Forced scene did not start " + forcedSceneId));
+        DialogueOptionDefinition option = DialogueTreeService.activeOptions(context)
+                .orElseThrow(() -> new GameTestAssertException("Forced scene had no active options " + forcedSceneId))
+                .stream()
+                .filter(candidate -> candidate.id().equals(responseOptionId))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("Missing forced scene response " + responseOptionId));
+        helper.assertValueEqual(
+                DialogueTreeService.handleDialogueOption(context, option)
+                        .orElseThrow(() -> new GameTestAssertException("Forced scene response did not produce a result " + responseOptionId))
+                        .text(),
+                expectedResponseText,
+                message);
+    }
+
+    private static DialogueTreeDefinition singleEntryDialogueTree(
+            ResourceLocation id,
+            String entryId,
+            String label,
+            String text) {
+        return new DialogueTreeDefinition(
+                id,
+                label,
+                "",
+                DialogueEntryMetadata.EMPTY,
+                List.of(),
+                List.of(dialogueEntry(entryId, label, entryId)),
+                Map.of(entryId, dialogueNode(entryId, text, List.of())));
+    }
+
+    private static DialogueTreeDefinition externalDialogueTree(ResourceLocation id) {
+        return new DialogueTreeDefinition(
+                id,
+                "External Mixed Tree",
+                "",
+                DialogueEntryMetadata.EMPTY,
+                List.of(),
+                List.of(
+                        dialogueEntry("long_scene", "External Long Scene", "long_scene"),
+                        dialogueEntry("external_default", "External Default Scene", "external_default"),
+                        dialogueEntry("forced_entry", "External Forced Scene", "forced_entry")),
+                Map.of(
+                        "long_scene", dialogueNode("long_scene", "External long scene.", List.of()),
+                        "external_default", dialogueNode("external_default", "External scene default entry.", List.of()),
+                        "forced_entry", dialogueNode(
+                                "forced_entry",
+                                "External forced scene.",
+                                List.of(new DialogueTreeDefinition.Response(
+                                        "external_ack",
+                                        "Enough",
+                                        DialogueEntryMetadata.EMPTY,
+                                        "",
+                                        DialogueRequestType.QUESTION,
+                                        List.of("External forced response."),
+                                        List.of(),
+                                        List.of(),
+                                        true,
+                                        0)))));
+    }
+
+    private static DialogueTreeDefinition.Entry dialogueEntry(String id, String label, String start) {
+        return new DialogueTreeDefinition.Entry(
+                id,
+                label,
+                DialogueEntryMetadata.EMPTY,
+                start,
+                DialogueRequestType.QUESTION,
+                true,
+                true,
+                Set.of(),
+                Set.of(),
+                List.of(),
+                false,
+                0);
+    }
+
+    private static DialogueTreeDefinition.Node dialogueNode(
+            String id,
+            String text,
+            List<DialogueTreeDefinition.Response> responses) {
+        return new DialogueTreeDefinition.Node(
+                id,
+                List.of(text),
+                List.of(),
+                List.of(),
+                responses,
+                responses.isEmpty());
     }
 
     private static EmbeddedDialogueQuest embeddedDialogueQuest(String path, boolean unavailable) {
@@ -2879,6 +3159,120 @@ public final class VillagerQuestGameTests {
                   ]
                 }
                 """).getAsJsonObject();
+        root.addProperty("id", VillagerRetaliation.id(path).toString());
+        return root;
+    }
+
+    private static JsonObject externalDialogueQuestV2Fixture(
+            String path,
+            ResourceLocation externalTreeId,
+            ResourceLocation missingTreeId) {
+        JsonObject root = JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "metadata": {
+                    "title": "Mixed External Quest",
+                    "description": "A v2 quest with inline and external dialogue.",
+                    "questline": "tests",
+                    "tags": [
+                      "test"
+                    ]
+                  },
+                  "provider": {
+                    "type": "villagerretaliation:villager"
+                  },
+                  "entry_stage": "offer",
+                  "stages": [
+                    {
+                      "id": "offer",
+                      "objectives": [
+                        {
+                          "id": "ready",
+                          "type": "fact",
+                          "scope": "quest",
+                          "key": "ready",
+                          "value": "yes"
+                        }
+                      ],
+                      "complete_when": [
+                        "ready"
+                      ],
+                      "dialogue": {
+                        "offer": {
+                          "text": "Inline mixed offer.",
+                          "responses": [
+                            {
+                              "id": "accept",
+                              "label": "Accept",
+                              "text": "Mixed quest started.",
+                              "actions": [
+                                {
+                                  "type": "quest",
+                                  "action": "start"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "reminder": {
+                          "external": {
+                            "tree": "__external_tree__",
+                            "entry": "long_scene"
+                          }
+                        },
+                        "ready": {
+                          "text": "Inline ready scene."
+                        },
+                        "named_external": {
+                          "scene": "external_default"
+                        },
+                        "missing_tree": {
+                          "external": {
+                            "tree": "__missing_tree__",
+                            "entry": "missing"
+                          }
+                        },
+                        "missing_entry": {
+                          "external": {
+                            "tree": "__external_tree__",
+                            "entry": "not_there"
+                          }
+                        }
+                      },
+                      "scenes": [
+                        {
+                          "id": "storm_scene",
+                          "text": "Inline forced scene for {quest}.",
+                          "responses": [
+                            {
+                              "id": "storm_ack",
+                              "label": "I hear you.",
+                              "text": "Stay ready."
+                            }
+                          ]
+                        },
+                        {
+                          "id": "external_default",
+                          "external": {
+                            "tree": "__external_tree__"
+                          }
+                        },
+                        {
+                          "id": "external_forced",
+                          "external": {
+                            "tree": "__external_tree__",
+                            "entry": "forced_entry"
+                          }
+                        }
+                      ],
+                      "ui": {
+                        "tracker_text": "Follow the mixed external quest."
+                      }
+                    }
+                  ]
+                }
+                """.replace("__external_tree__", externalTreeId.toString())
+                .replace("__missing_tree__", missingTreeId.toString())).getAsJsonObject();
         root.addProperty("id", VillagerRetaliation.id(path).toString());
         return root;
     }

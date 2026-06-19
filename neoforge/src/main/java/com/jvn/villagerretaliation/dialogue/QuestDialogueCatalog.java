@@ -66,6 +66,26 @@ public record QuestDialogueCatalog(
         return List.copyOf(matches);
     }
 
+    public Optional<Binding> forcedBinding(String id) {
+        if (id == null || id.isBlank()) {
+            return Optional.empty();
+        }
+        String normalized = id.trim();
+        return this.bindings.values().stream()
+                .filter(Binding::forcedScene)
+                .filter(binding -> binding.matchesForcedId(normalized))
+                .findFirst();
+    }
+
+    public boolean hasGeneratedQuestDialogue(ResourceLocation questId) {
+        if (questId == null) {
+            return false;
+        }
+        ResourceLocation generatedTreeId = QuestDialogueCompiler.treeId(questId);
+        return this.bindings.values().stream()
+                .anyMatch(binding -> questId.equals(binding.questId()) && generatedTreeId.equals(binding.treeId()));
+    }
+
     private static <K, V> Map<K, V> immutableCopy(Map<K, V> source) {
         if (source == null || source.isEmpty()) {
             return Map.of();
@@ -98,6 +118,23 @@ public record QuestDialogueCatalog(
 
         public BindingKey key() {
             return new BindingKey(this.questId, this.stageId, this.slot);
+        }
+
+        public boolean forcedScene() {
+            return this.slot.startsWith("scene:");
+        }
+
+        public boolean matchesForcedId(String id) {
+            if (id == null || id.isBlank()) {
+                return false;
+            }
+            String sceneSlot = this.slot.startsWith("scene:") ? this.slot.substring("scene:".length()) : this.slot;
+            return id.equals(this.sceneId)
+                    || id.equals(sceneSlot)
+                    || id.equals(this.questId + "#" + this.sceneId)
+                    || id.equals(this.questId + "#" + sceneSlot)
+                    || id.equals(this.treeId + "#" + this.entryId)
+                    || id.equals(this.treeId + ":" + this.entryId);
         }
     }
 }

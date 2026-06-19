@@ -478,12 +478,87 @@
           "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
         },
         "external": {
-          "type": "string",
-          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "tree": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "tree_id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "dialogue_tree": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "entry": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+                },
+                "entry_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+                },
+                "metadata": {
+                  "type": "object"
+                }
+              }
+            }
+          ]
         },
         "external_scene": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "tree": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "tree_id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "dialogue_tree": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "entry": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+                },
+                "entry_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+                },
+                "metadata": {
+                  "type": "object"
+                }
+              }
+            }
+          ]
+        },
+        "external_entry": {
           "type": "string",
-          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
         },
         "text": {
           "type": "string"
@@ -580,12 +655,87 @@
           "$ref": "#/$defs/transition"
         },
         "external": {
-          "type": "string",
-          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "tree": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "tree_id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "dialogue_tree": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "entry": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+                },
+                "entry_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+                },
+                "metadata": {
+                  "type": "object"
+                }
+              }
+            }
+          ]
         },
         "external_scene": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "tree": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "tree_id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "dialogue_tree": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "entry": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+                },
+                "entry_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+                },
+                "metadata": {
+                  "type": "object"
+                }
+              }
+            }
+          ]
+        },
+        "external_entry": {
           "type": "string",
-          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
         },
         "scene_ref": {
           "type": "string",

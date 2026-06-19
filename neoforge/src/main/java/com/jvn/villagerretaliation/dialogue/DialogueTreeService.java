@@ -97,10 +97,18 @@ public final class DialogueTreeService {
         return SESSIONS.remove(key(context)) != null;
     }
 
-    private static Optional<VillagerDialogueService.DialogueResult> startEntry(
+    public static Optional<VillagerDialogueService.DialogueResult> startEntry(
             DialogueContext context,
             ResourceLocation treeId,
             String entryId) {
+        return startEntry(context, treeId, entryId, Map.of());
+    }
+
+    public static Optional<VillagerDialogueService.DialogueResult> startEntry(
+            DialogueContext context,
+            ResourceLocation treeId,
+            String entryId,
+            Map<String, String> inheritedReplacements) {
         DialogueTreeDefinition tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), treeId).orElse(null);
         if (tree == null || !tree.matches(context)) {
             return Optional.empty();
@@ -109,7 +117,7 @@ public final class DialogueTreeService {
         if (entry == null || !entry.matches(context, VillagerDialogueService.moodFor(context))) {
             return Optional.empty();
         }
-        return Optional.of(enterNode(context, tree, entry.start(), ""));
+        return Optional.of(enterNode(context, tree, entry.start(), "", inheritedReplacements));
     }
 
     private static Optional<VillagerDialogueService.DialogueResult> selectResponse(
@@ -144,11 +152,11 @@ public final class DialogueTreeService {
             return Optional.empty();
         }
 
-        ActionText responseActionText = executeActions(context, response.actions());
+        ActionText responseActionText = executeActions(context, response.actions(), session.replacements());
         String responseLine = resolve(response.selectLine(context.random()), context, responseActionText.replacements());
         String leadingText = firstNonBlank(responseActionText.text(), responseLine);
         if (!response.next().isBlank()) {
-            return Optional.of(enterNode(context, tree, response.next(), leadingText));
+            return Optional.of(enterNode(context, tree, response.next(), leadingText, responseActionText.replacements()));
         }
 
         SESSIONS.remove(key);
@@ -162,18 +170,23 @@ public final class DialogueTreeService {
             DialogueContext context,
             DialogueTreeDefinition tree,
             String nodeId,
-            String leadingText) {
+            String leadingText,
+            Map<String, String> inheritedReplacements) {
         DialogueTreeDefinition.Node node = tree.node(nodeId).orElse(null);
         if (node == null || !node.matches(context)) {
             SESSIONS.remove(key(context));
             return result(lineId(tree.id(), nodeId, "missing"), leadingText);
         }
 
-        ActionText actionText = executeActions(context, node.actions());
+        ActionText actionText = executeActions(context, node.actions(), inheritedReplacements);
         String nodeLine = resolve(node.selectLine(context.random()), context, actionText.replacements());
         String text = firstNonBlank(leadingText, actionText.text(), nodeLine);
         if (!node.end() && node.responses().stream().anyMatch(response -> response.matches(context))) {
-            SESSIONS.put(key(context), new Session(tree.id(), node.id(), context.level().getGameTime()));
+            SESSIONS.put(key(context), new Session(
+                    tree.id(),
+                    node.id(),
+                    context.level().getGameTime(),
+                    actionText.replacements()));
         } else {
             SESSIONS.remove(key(context));
         }
@@ -181,8 +194,14 @@ public final class DialogueTreeService {
         return result(resultLineId, text);
     }
 
-    private static ActionText executeActions(DialogueContext context, List<VillagerActionDefinition> actions) {
+    private static ActionText executeActions(
+            DialogueContext context,
+            List<VillagerActionDefinition> actions,
+            Map<String, String> inheritedReplacements) {
         Map<String, String> replacements = new LinkedHashMap<>(DialoguePlaceholders.base(context));
+        if (inheritedReplacements != null) {
+            replacements.putAll(inheritedReplacements);
+        }
         List<String> texts = new ArrayList<>();
         String lineId = "";
         for (VillagerActionDefinition action : actions) {
@@ -246,13 +265,21 @@ public final class DialogueTreeService {
     private record SessionKey(UUID playerId, UUID villagerId) {
     }
 
-    private record Session(ResourceLocation treeId, String nodeId, long lastTouchedGameTime) {
+    private record Session(
+            ResourceLocation treeId,
+            String nodeId,
+            long lastTouchedGameTime,
+            Map<String, String> replacements) {
+        private Session {
+            replacements = replacements == null ? Map.of() : Map.copyOf(replacements);
+        }
+
         private boolean expired(long gameTime) {
             return gameTime - this.lastTouchedGameTime > SESSION_TTL_TICKS;
         }
 
         private Session touch(long gameTime) {
-            return new Session(this.treeId, this.nodeId, gameTime);
+            return new Session(this.treeId, this.nodeId, gameTime, this.replacements);
         }
     }
 
