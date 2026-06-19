@@ -28,6 +28,7 @@ import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestDebugTraceService;
 import com.jvn.villagerretaliation.quest.QuestDiagnostic;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
@@ -1196,7 +1197,10 @@ public final class VillagerQuestGameTests {
 
         try {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
-            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled));
+            VillagerQuestResources.installCompiledTestCatalog(
+                    level.getServer(),
+                    List.of(compiled),
+                    QuestDialogueCompiler.compile(parsed, envelope));
             int experienceBefore = player.totalExperience;
             VillagerQuestService.DebugStartResult started =
                     VillagerQuestService.debugStartQuest(player, villager, compiled.id(), true);
@@ -1276,6 +1280,116 @@ public final class VillagerQuestGameTests {
             helper.assertValueEqual(entry.questId(), compiled.id().toString(), "v2 tracker entry quest id");
         } finally {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questDebugToolsExplainTraceAndDryRun(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_debug_tools_fixture.json");
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, validQuestV2Fixture())
+                .orElseThrow(() -> new GameTestAssertException("v2 debug fixture envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("v2 debug fixture did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException("v2 debug fixture did not compile"));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled));
+
+            VillagerQuestService.DebugInspectResult availability =
+                    VillagerQuestService.debugWhyAvailable(player, villager, compiled.id());
+            helper.assertTrue(availability.found(), "debug availability result missing");
+            helper.assertTrue(
+                    availability.lines().stream().anyMatch(line -> line.contains("available=false")),
+                    "debug availability did not explain unavailable offer: " + availability.lines());
+            helper.assertTrue(
+                    availability.lines().stream().anyMatch(line -> line.contains("provider match=false")),
+                    "debug availability did not include provider failure: " + availability.lines());
+
+            VillagerQuestService.DebugStartResult started =
+                    VillagerQuestService.debugStartQuest(player, villager, compiled.id(), true);
+            helper.assertTrue(started.started(), "debug fixture quest did not force-start: " + started.message());
+
+            VillagerQuestService.DebugInspectResult objectives =
+                    VillagerQuestService.debugObjectives(player, compiled.id());
+            helper.assertTrue(
+                    objectives.lines().stream().anyMatch(line -> line.contains("objective talk")),
+                    "debug objectives omitted talk objective: " + objectives.lines());
+
+            VillagerQuestService.DebugInspectResult dryRun =
+                    VillagerQuestService.debugDryRunTriggerActions(player, compiled.id(), "progress");
+            helper.assertTrue(
+                    dryRun.lines().stream().anyMatch(line ->
+                            line.contains("type=tracker")
+                                    && line.contains("status=skipped")
+                                    && line.contains("dry run")),
+                    "debug dry-run did not report tracker action: " + dryRun.lines());
+
+            VillagerQuestService.DebugInspectResult trigger =
+                    VillagerQuestService.debugFireTrigger(player, compiled.id(), QuestDefinition.TriggerEvent.PROGRESS);
+            helper.assertTrue(
+                    trigger.lines().stream().anyMatch(line -> line.contains("trigger_result")
+                            && line.contains("candidates=1")),
+                    "debug trigger firing did not report candidate count: " + trigger.lines());
+
+            VillagerQuestService.DebugInspectResult capture =
+                    VillagerQuestService.debugTraceQuest(player, villager, compiled.id());
+            assertDebugTraceContains(helper, capture, "type=provider");
+            assertDebugTraceContains(helper, capture, "type=condition");
+            assertDebugTraceContains(helper, capture, "type=dialogue_slot");
+            assertDebugTraceContains(helper, capture, "type=response");
+            assertDebugTraceContains(helper, capture, "type=trigger");
+            assertDebugTraceContains(helper, capture, "type=objective_progress");
+            assertDebugTraceContains(helper, capture, "type=tracker_sync");
+
+            VillagerQuestService.DebugInspectResult stage =
+                    VillagerQuestService.debugSetQuestStage(player, compiled.id(), "finish");
+            helper.assertTrue(
+                    stage.lines().stream().anyMatch(line -> line.contains("changed=true")
+                            && line.contains("current=finish")),
+                    "debug set_stage did not move to finish: " + stage.lines());
+
+            QuestScopeKey scopeKey = QuestScopeKey.quest(player.getUUID(), compiled.id());
+            VillagerQuestFacts facts = VillagerQuestFacts.get(level);
+            facts.setVariable(scopeKey, "debug_key", "debug_value");
+            facts.addCounter(scopeKey, "debug_count", 2);
+            VillagerQuestService.DebugInspectResult factLines =
+                    VillagerQuestService.debugFactScope(player, scopeKey.asString());
+            helper.assertTrue(
+                    factLines.lines().stream().anyMatch(line -> line.contains("debug_key=debug_value")),
+                    "debug fact scope omitted variable: " + factLines.lines());
+            helper.assertTrue(
+                    factLines.lines().stream().anyMatch(line -> line.contains("debug_count=2")),
+                    "debug fact scope omitted counter: " + factLines.lines());
+
+            VillagerQuestService.debugTraceSetEnabled(player, true);
+            QuestDebugTraceService.clear(player);
+            for (int i = 0; i < QuestDebugTraceService.capacity() + 5; i++) {
+                QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.NOTE, compiled.id(), "bounded=" + i);
+            }
+            helper.assertValueEqual(
+                    QuestDebugTraceService.recent(player, QuestDebugTraceService.capacity() + 10).size(),
+                    QuestDebugTraceService.capacity(),
+                    "debug trace capacity");
+            helper.assertTrue(
+                    QuestDebugTraceService.recent(player, QuestDebugTraceService.capacity()).getFirst().message().contains("bounded=5"),
+                    "debug trace did not evict oldest events");
+            VillagerQuestService.debugTraceSetEnabled(player, false);
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            QuestDebugTraceService.clear(player);
+            QuestDebugTraceService.setEnabled(player, false);
             villager.discard();
             VillagerQuestResources.clearCache();
             DatapackDiagnostics.clear();
@@ -2825,6 +2939,15 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(action.factScope(), QuestFactScope.QUEST, label + " scope");
         helper.assertValueEqual(action.factKey(), key, label + " key");
         helper.assertValueEqual(action.factValue(), value, label + " value");
+    }
+
+    private static void assertDebugTraceContains(
+            GameTestHelper helper,
+            VillagerQuestService.DebugInspectResult trace,
+            String expected) {
+        helper.assertTrue(
+                trace.lines().stream().anyMatch(line -> line.contains(expected)),
+                "debug trace did not contain \"" + expected + "\": " + trace.lines());
     }
 
     private static void assertRecentDiagnosticContains(GameTestHelper helper, String expected) {

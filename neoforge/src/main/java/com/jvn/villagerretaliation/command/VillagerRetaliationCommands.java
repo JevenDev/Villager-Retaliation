@@ -19,6 +19,10 @@ import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.quest.QuestIds;
+import com.jvn.villagerretaliation.quest.QuestDebugTraceService;
+import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestDiagnostic;
+import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
@@ -47,6 +51,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.core.BlockPos;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -104,7 +109,29 @@ public final class VillagerRetaliationCommands {
                                                                         StringArgumentType.getString(context, "option"))))))))
                         .then(literal("datapack")
                                 .then(literal("diagnostics")
-                                        .executes(VillagerRetaliationCommands::showDatapackDiagnostics)))
+                                        .executes(context -> showDatapackDiagnostics(context, "", ""))
+                                        .then(literal("severity")
+                                                .then(argument("severity", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                                Arrays.stream(QuestDiagnostic.Severity.values())
+                                                                        .map(value -> value.name().toLowerCase(Locale.ROOT)),
+                                                                builder))
+                                                        .executes(context -> showDatapackDiagnostics(
+                                                                context,
+                                                                StringArgumentType.getString(context, "severity"),
+                                                                ""))
+                                                        .then(literal("resource")
+                                                                .then(argument("resource", StringArgumentType.string())
+                                                                        .executes(context -> showDatapackDiagnostics(
+                                                                                context,
+                                                                                StringArgumentType.getString(context, "severity"),
+                                                                                StringArgumentType.getString(context, "resource")))))))
+                                        .then(literal("resource")
+                                                .then(argument("resource", StringArgumentType.string())
+                                                        .executes(context -> showDatapackDiagnostics(
+                                                                context,
+                                                                "",
+                                                                StringArgumentType.getString(context, "resource")))))))
                         .then(villageDebugCommands())
                         .then(hiredDebugCommands())
                         .then(questDebugCommands())
@@ -215,6 +242,62 @@ public final class VillagerRetaliationCommands {
                         .then(literal("inspect")
                                 .then(questIdArgument()
                                         .executes(VillagerRetaliationCommands::inspectQuestDebug)))
+                        .then(literal("why_available")
+                                .then(questIdArgument()
+                                        .then(providerNameArgument()
+                                                .executes(context -> explainQuestAvailabilityDebug(
+                                                        context,
+                                                        DEFAULT_DEBUG_PROVIDER_RADIUS)))))
+                        .then(literal("why_hidden")
+                                .then(questIdArgument()
+                                        .executes(context -> explainQuestHiddenDebug(context, DEFAULT_DEBUG_PROVIDER_RADIUS, false))
+                                        .then(providerNameArgument()
+                                                .executes(context -> explainQuestHiddenDebug(
+                                                        context,
+                                                        DEFAULT_DEBUG_PROVIDER_RADIUS,
+                                                        true)))))
+                        .then(literal("trace")
+                                .then(literal("show")
+                                        .executes(context -> showQuestTraceDebug(context, QuestDebugTraceService.capacity()))
+                                        .then(argument("limit", IntegerArgumentType.integer(1, QuestDebugTraceService.capacity()))
+                                                .executes(context -> showQuestTraceDebug(
+                                                        context,
+                                                        IntegerArgumentType.getInteger(context, "limit")))))
+                                .then(literal("clear")
+                                        .executes(VillagerRetaliationCommands::clearQuestTraceDebug))
+                                .then(literal("on")
+                                        .executes(context -> setQuestTraceDebug(context, true)))
+                                .then(literal("off")
+                                        .executes(context -> setQuestTraceDebug(context, false)))
+                                .then(literal("capture")
+                                        .then(questIdArgument()
+                                                .then(providerNameArgument()
+                                                        .executes(context -> captureQuestTraceDebug(
+                                                                context,
+                                                                DEFAULT_DEBUG_PROVIDER_RADIUS))))))
+                        .then(literal("objectives")
+                                .then(questIdArgument()
+                                        .executes(VillagerRetaliationCommands::showQuestObjectivesDebug)))
+                        .then(literal("set_stage")
+                                .then(questIdArgument()
+                                        .then(argument("stage", StringArgumentType.word())
+                                                .executes(VillagerRetaliationCommands::setQuestStageDebug))))
+                        .then(literal("fire_trigger")
+                                .then(questIdArgument()
+                                        .then(argument("event", StringArgumentType.word())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                        QuestTriggerRegistry.descriptors().stream()
+                                                                .map(descriptor -> descriptor.id()),
+                                                        builder))
+                                                .executes(VillagerRetaliationCommands::fireQuestTriggerDebug))))
+                        .then(literal("actions")
+                                .then(literal("dry_run")
+                                        .then(questIdArgument()
+                                                .then(argument("trigger_id", StringArgumentType.word())
+                                                        .executes(VillagerRetaliationCommands::dryRunQuestTriggerActionsDebug)))))
+                        .then(literal("facts")
+                                .then(argument("scope_key", StringArgumentType.greedyString())
+                                        .executes(VillagerRetaliationCommands::showQuestFactsDebug)))
                         .then(literal("force_start")
                                 .then(questIdArgument()
                                         .then(providerNameArgument()
@@ -668,6 +751,198 @@ public final class VillagerRetaliationCommands {
         return result.lines().size();
     }
 
+    private static int explainQuestAvailabilityDebug(CommandContext<CommandSourceStack> context, double radius) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so nearby villagers can be resolved."));
+            return 0;
+        }
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+        ProviderResolution provider = resolveQuestDebugProvider(
+                player,
+                StringArgumentType.getString(context, "provider_name"),
+                debugProviderRadius(radius));
+        if (!provider.error().isBlank()) {
+            source.sendFailure(Component.literal(provider.error()));
+            provider.matches().forEach(match -> source.sendFailure(Component.literal(providerDebugLine(match))));
+            return 0;
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugWhyAvailable(
+                player,
+                provider.provider(),
+                quest.questId()));
+    }
+
+    private static int explainQuestHiddenDebug(
+            CommandContext<CommandSourceStack> context,
+            double radius,
+            boolean hasProvider) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
+            return 0;
+        }
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+        Villager provider = null;
+        if (hasProvider) {
+            ProviderResolution resolvedProvider = resolveQuestDebugProvider(
+                    player,
+                    StringArgumentType.getString(context, "provider_name"),
+                    debugProviderRadius(radius));
+            if (!resolvedProvider.error().isBlank()) {
+                source.sendFailure(Component.literal(resolvedProvider.error()));
+                resolvedProvider.matches().forEach(match -> source.sendFailure(Component.literal(providerDebugLine(match))));
+                return 0;
+            }
+            provider = resolvedProvider.provider();
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugWhyHidden(player, provider, quest.questId()));
+    }
+
+    private static int captureQuestTraceDebug(CommandContext<CommandSourceStack> context, double radius) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so nearby villagers can be resolved."));
+            return 0;
+        }
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+        ProviderResolution provider = resolveQuestDebugProvider(
+                player,
+                StringArgumentType.getString(context, "provider_name"),
+                debugProviderRadius(radius));
+        if (!provider.error().isBlank()) {
+            source.sendFailure(Component.literal(provider.error()));
+            provider.matches().forEach(match -> source.sendFailure(Component.literal(providerDebugLine(match))));
+            return 0;
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugTraceQuest(player, provider.provider(), quest.questId()));
+    }
+
+    private static int showQuestTraceDebug(CommandContext<CommandSourceStack> context, int limit) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so trace state can be resolved."));
+            return 0;
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugTraceRecent(player, limit));
+    }
+
+    private static int clearQuestTraceDebug(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so trace state can be resolved."));
+            return 0;
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugTraceClear(player));
+    }
+
+    private static int setQuestTraceDebug(CommandContext<CommandSourceStack> context, boolean enabled) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so trace state can be resolved."));
+            return 0;
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugTraceSetEnabled(player, enabled));
+    }
+
+    private static int showQuestObjectivesDebug(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
+            return 0;
+        }
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugObjectives(player, quest.questId()));
+    }
+
+    private static int setQuestStageDebug(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
+            return 0;
+        }
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugSetQuestStage(
+                player,
+                quest.questId(),
+                StringArgumentType.getString(context, "stage")));
+    }
+
+    private static int fireQuestTriggerDebug(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
+            return 0;
+        }
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+        QuestDefinition.TriggerEvent event = QuestTriggerRegistry.eventBySerializedName(
+                StringArgumentType.getString(context, "event"));
+        return sendQuestDebugLines(source, VillagerQuestService.debugFireTrigger(player, quest.questId(), event));
+    }
+
+    private static int dryRunQuestTriggerActionsDebug(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so quest state can be resolved."));
+            return 0;
+        }
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugDryRunTriggerActions(
+                player,
+                quest.questId(),
+                StringArgumentType.getString(context, "trigger_id")));
+    }
+
+    private static int showQuestFactsDebug(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This debug command must be run by a player so fact state can be resolved."));
+            return 0;
+        }
+        return sendQuestDebugLines(source, VillagerQuestService.debugFactScope(
+                player,
+                StringArgumentType.getString(context, "scope_key")));
+    }
+
+    private static int sendQuestDebugLines(
+            CommandSourceStack source,
+            VillagerQuestService.DebugInspectResult result) {
+        if (!result.found()) {
+            source.sendFailure(Component.literal(result.message()));
+            return 0;
+        }
+        result.lines().forEach(line -> source.sendSuccess(() -> Component.literal(line), false));
+        return Math.max(1, result.lines().size());
+    }
+
     private static QuestResolution resolveQuestDebugQuest(CommandSourceStack source, String rawQuestId) {
         String query = unquote(rawQuestId);
         if (query.isBlank()) {
@@ -1017,7 +1292,10 @@ public final class VillagerRetaliationCommands {
         }
     }
 
-    private static int showDatapackDiagnostics(CommandContext<CommandSourceStack> context) {
+    private static int showDatapackDiagnostics(
+            CommandContext<CommandSourceStack> context,
+            String severityFilter,
+            String resourceFilter) {
         List<DatapackDiagnostics.Entry> diagnostics = DatapackDiagnostics.recent();
         CommandSourceStack source = context.getSource();
         if (diagnostics.isEmpty()) {
@@ -1025,13 +1303,54 @@ public final class VillagerRetaliationCommands {
             return 1;
         }
 
+        QuestDiagnostic.Severity severity = parseSeverity(severityFilter);
+        String resource = unquote(resourceFilter);
+        List<DatapackDiagnostics.Entry> filtered = diagnostics.stream()
+                .filter(entry -> severity == null || entry.diagnostic().severity() == severity)
+                .filter(entry -> resource.isBlank()
+                        || entry.diagnostic().resourceId() != null
+                        && (entry.diagnostic().resourceId().toString().equals(resource)
+                        || entry.diagnostic().resourceId().getPath().equals(resource)))
+                .toList();
+
+        if (filtered.isEmpty()) {
+            String severityText = severity == null ? "any severity" : severity.name().toLowerCase(Locale.ROOT);
+            String resourceText = resource.isBlank() ? "any resource" : resource;
+            source.sendFailure(Component.literal("No Villager Retaliation datapack diagnostics matched severity="
+                    + severityText + ", resource=" + resourceText + "."));
+            return 0;
+        }
+
         source.sendSuccess(() -> Component.literal("Villager Retaliation datapack diagnostics: "
-                + diagnostics.size() + " warning" + (diagnostics.size() == 1 ? "" : "s")
-                + " since the last resource reload. Showing latest 10."), false);
-        diagnostics.stream()
-                .skip(Math.max(0, diagnostics.size() - 10))
-                .forEach(entry -> source.sendSuccess(() -> Component.literal("- " + entry.message()), false));
-        return diagnostics.size();
+                + filtered.size() + " of " + diagnostics.size()
+                + " matched since the last resource reload. Showing latest 10."), false);
+        filtered.stream()
+                .skip(Math.max(0, filtered.size() - 10))
+                .forEach(entry -> source.sendSuccess(() -> Component.literal("- " + diagnosticLine(entry.diagnostic())), false));
+        return filtered.size();
+    }
+
+    private static QuestDiagnostic.Severity parseSeverity(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return QuestDiagnostic.Severity.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private static String diagnosticLine(QuestDiagnostic diagnostic) {
+        String resource = diagnostic.resourceId() == null ? "unknown" : diagnostic.resourceId().toString();
+        String pointer = diagnostic.jsonPointer().isBlank() ? "" : " " + diagnostic.jsonPointer();
+        String fix = diagnostic.suggestedFix().isBlank() ? "" : " suggestion=" + diagnostic.suggestedFix();
+        return "[" + diagnostic.severity().name().toLowerCase(Locale.ROOT) + "] "
+                + diagnostic.code()
+                + " resource=" + resource
+                + pointer
+                + " message=" + diagnostic.message()
+                + fix;
     }
 
     private static void sendDialogueExplanation(

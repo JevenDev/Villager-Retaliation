@@ -175,6 +175,15 @@ public class VillagerQuestFacts extends SavedData {
         return counter(scopeKey == null ? "" : scopeKey.asString(), key);
     }
 
+    public FactSnapshot debugSnapshot(String scopeKey) {
+        scopeKey = scopeKey == null ? "" : scopeKey.trim();
+        if (scopeKey.isBlank()) {
+            return FactSnapshot.EMPTY;
+        }
+        FactBucket bucket = this.factsByScope.get(scopeKey);
+        return bucket == null ? FactSnapshot.EMPTY : bucket.snapshot();
+    }
+
     public ScopeMergeResult mergeScope(String sourceScopeKey, String targetScopeKey) {
         sourceScopeKey = sourceScopeKey == null ? "" : sourceScopeKey.trim();
         targetScopeKey = targetScopeKey == null ? "" : targetScopeKey.trim();
@@ -246,6 +255,24 @@ public class VillagerQuestFacts extends SavedData {
         }
     }
 
+    public record FactSnapshot(
+            Set<ResourceLocation> tags,
+            Map<String, String> variables,
+            Map<String, Integer> counters
+    ) {
+        public static final FactSnapshot EMPTY = new FactSnapshot(Set.of(), Map.of(), Map.of());
+
+        public FactSnapshot {
+            tags = tags == null ? Set.of() : Set.copyOf(tags);
+            variables = variables == null ? Map.of() : Map.copyOf(variables);
+            counters = counters == null ? Map.of() : Map.copyOf(counters);
+        }
+
+        public boolean empty() {
+            return this.tags.isEmpty() && this.variables.isEmpty() && this.counters.isEmpty();
+        }
+    }
+
     private static final class FactBucket {
         private final Set<ResourceLocation> tags = new HashSet<>();
         private final Map<String, String> variables = new HashMap<>();
@@ -287,6 +314,10 @@ public class VillagerQuestFacts extends SavedData {
 
         private boolean isEmpty() {
             return this.tags.isEmpty() && this.variables.isEmpty() && this.counters.isEmpty();
+        }
+
+        private FactSnapshot snapshot() {
+            return new FactSnapshot(this.tags, this.variables, this.counters);
         }
 
         private static void readStringMap(ListTag entries, Map<String, String> values) {

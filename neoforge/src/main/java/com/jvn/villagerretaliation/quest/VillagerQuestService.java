@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionExecutor;
+import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
@@ -32,6 +34,7 @@ import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -1142,6 +1145,343 @@ public final class VillagerQuestService {
         if (!inventoryCacheLine.isBlank()) {
             lines.add(inventoryCacheLine);
         }
+        return new DebugInspectResult(true, lines, "");
+    }
+
+    public static DebugInspectResult debugWhyAvailable(ServerPlayer player, Villager provider, ResourceLocation questId) {
+        if (player == null || provider == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player with a nearby provider.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugInspectResult(false, List.of(), "Unknown quest: " + questId);
+        }
+
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, provider);
+        VillagerQuestSavedData.QuestProgress progress =
+                VillagerQuestSavedData.get(level).get(player.getUUID(), definition.id());
+        boolean offerMatches = VillagerQuestProviderType.INSTANCE.matchesOffer(
+                QuestExecutionContext.fromDialogueContext(context, definition, "debug_why_available"),
+                definition);
+        boolean available = canStart(context, definition, progress);
+        String status = available ? "available" : startBlockedStatus(context, definition, progress);
+
+        List<String> lines = new ArrayList<>();
+        lines.add("why_available quest=" + definition.id() + " available=" + available + " status=" + status);
+        lines.add("provider match=" + offerMatches
+                + " issuer_lock=" + (progress == null ? "n/a" : matchesVillagerLock(context, definition, progress))
+                + " cross_villager_locked=" + crossVillagerLocked(context, definition, progress)
+                + " provider=" + debugProvider(provider));
+        lines.add("limits parent_completed=" + parentCompleted(context, definition)
+                + " start_limit=" + withinStartLimit(definition, progress)
+                + " completion_limit=" + withinCompletionLimit(context, definition, progress)
+                + " repeatable=" + definition.rules().repeatable()
+                + " completion_cooldown_active=" + completionCooldownActive(context, definition, progress));
+        lines.add("state saved=" + (progress != null)
+                + " state=" + debugEnum(progress == null ? VillagerQuestSavedData.QuestState.NOT_STARTED : progress.state())
+                + " starts=" + (progress == null ? 0 : progress.startCount())
+                + " completions=" + (progress == null ? 0 : progress.completionCount()));
+        appendActiveConditionDebugLines(lines, player, level, context, definition, progress);
+
+        QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.PROVIDER, definition.id(),
+                "offer_match=" + offerMatches + " provider=" + debugProvider(provider));
+        recordConditionDebugTrace(player, definition, context, "available");
+        return new DebugInspectResult(true, lines, "");
+    }
+
+    public static DebugInspectResult debugWhyHidden(ServerPlayer player, Villager provider, ResourceLocation questId) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so quest state can be resolved.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugInspectResult(false, List.of(), "Unknown quest: " + questId);
+        }
+
+        VillagerQuestSavedData.QuestProgress progress =
+                VillagerQuestSavedData.get(level).get(player.getUUID(), definition.id());
+        DialogueContext context = provider == null
+                ? contextForStartedVillager(level, player, progress).orElse(null)
+                : VillagerInteractionService.createDialogueContext(level, player, provider);
+        ConditionMatch activeConditions = activeConditionsState(context, player, level, definition, progress);
+        boolean rawActive = progress != null
+                && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && (context == null || matchesVillagerLock(context, definition, progress));
+        boolean hiddenByActiveConditions = rawActive
+                && activeConditions == ConditionMatch.UNMET
+                && definition.rules().activeState().hideWhenUnmet();
+        boolean available = context != null && canStart(context, definition, progress);
+        String reason = hiddenByActiveConditions
+                ? "active_conditions_unmet"
+                : rawActive ? "visible_active"
+                : available ? "available_to_start"
+                : context == null ? "no_live_provider_context" : startBlockedStatus(context, definition, progress);
+
+        List<String> lines = new ArrayList<>();
+        lines.add("why_hidden quest=" + definition.id()
+                + " hidden=" + hiddenByActiveConditions
+                + " reason=" + reason
+                + " active_conditions=" + debugEnum(activeConditions)
+                + " hide_when_unmet=" + definition.rules().activeState().hideWhenUnmet());
+        lines.add("state saved=" + (progress != null)
+                + " state=" + debugEnum(progress == null ? VillagerQuestSavedData.QuestState.NOT_STARTED : progress.state())
+                + " stage=" + (progress == null ? "none" : progress.currentStage())
+                + " provider=" + (provider == null ? "started_or_none" : debugProvider(provider)));
+        appendActiveConditionDebugLines(lines, player, level, context, definition, progress);
+
+        QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.PROVIDER, definition.id(),
+                "hidden_context=" + (context == null ? "missing" : "live") + " provider="
+                        + (provider == null ? "started_or_none" : debugProvider(provider)));
+        recordConditionDebugTrace(player, definition, context, "hidden");
+        return new DebugInspectResult(true, lines, "");
+    }
+
+    public static DebugInspectResult debugTraceQuest(ServerPlayer player, Villager provider, ResourceLocation questId) {
+        if (player == null || provider == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player with a nearby provider.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugInspectResult(false, List.of(), "Unknown quest: " + questId);
+        }
+
+        QuestDebugTraceService.clear(player);
+        QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.NOTE, definition.id(), "capture started");
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, provider);
+        VillagerQuestSavedData.QuestProgress progress =
+                VillagerQuestSavedData.get(level).get(player.getUUID(), definition.id());
+        debugWhyAvailable(player, provider, definition.id());
+        debugWhyHidden(player, provider, definition.id());
+        recordDialogueSlotTrace(player, context, definition, progress);
+        recordResponseTrace(player, context, definition, progress);
+        recordObjectiveTrace(player, context, level, definition, progress);
+        recordTriggerTrace(player, context, definition, progress);
+        QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.TRACKER_SYNC, definition.id(),
+                "reason=debug_capture bounded_capacity=" + QuestDebugTraceService.capacity());
+        QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.NOTE, definition.id(), "capture complete");
+        return debugTraceRecent(player, QuestDebugTraceService.capacity());
+    }
+
+    public static DebugInspectResult debugTraceRecent(ServerPlayer player, int limit) {
+        if (player == null) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so trace state can be resolved.");
+        }
+        List<QuestDebugTraceService.Event> events = QuestDebugTraceService.recent(player, limit);
+        List<String> lines = new ArrayList<>();
+        lines.add("trace enabled=" + QuestDebugTraceService.isEnabled(player)
+                + " events=" + events.size()
+                + " capacity=" + QuestDebugTraceService.capacity());
+        QuestDebugTraceService.counts(player).entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> lines.add("trace_count type="
+                        + entry.getKey().name().toLowerCase(Locale.ROOT)
+                        + " count=" + entry.getValue()));
+        events.forEach(event -> lines.add(event.line()));
+        return new DebugInspectResult(true, lines, "");
+    }
+
+    public static DebugInspectResult debugTraceClear(ServerPlayer player) {
+        if (player == null) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so trace state can be resolved.");
+        }
+        QuestDebugTraceService.clear(player);
+        return new DebugInspectResult(true, List.of("trace cleared"), "");
+    }
+
+    public static DebugInspectResult debugTraceSetEnabled(ServerPlayer player, boolean enabled) {
+        if (!QuestDebugTraceService.setEnabled(player, enabled)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so trace state can be resolved.");
+        }
+        return new DebugInspectResult(true, List.of("trace enabled=" + QuestDebugTraceService.isEnabled(player)
+                + " capacity=" + QuestDebugTraceService.capacity()), "");
+    }
+
+    public static DebugInspectResult debugObjectives(ServerPlayer player, ResourceLocation questId) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so quest state can be resolved.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugInspectResult(false, List.of(), "Unknown quest: " + questId);
+        }
+        VillagerQuestSavedData.QuestProgress progress =
+                VillagerQuestSavedData.get(level).get(player.getUUID(), definition.id());
+        DialogueContext context = contextForStartedVillager(level, player, progress).orElse(null);
+        List<String> lines = new ArrayList<>();
+        lines.add("objectives quest=" + definition.id()
+                + " count=" + definition.objectives().size()
+                + " active_context=" + (context != null));
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            lines.add(debugObjectiveLine(player, level, definition, progress, context, objective));
+        }
+        return new DebugInspectResult(true, lines, "");
+    }
+
+    public static DebugInspectResult debugSetQuestStage(ServerPlayer player, ResourceLocation questId, String stage) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so quest state can be resolved.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugInspectResult(false, List.of(), "Unknown quest: " + questId);
+        }
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), definition.id());
+        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
+            return new DebugInspectResult(false, List.of(), "Quest is not active for " + player.getGameProfile().getName() + ".");
+        }
+        String targetStage = stage == null ? "" : stage.trim();
+        if (!definition.stages().containsKey(targetStage)) {
+            return new DebugInspectResult(false, List.of(), "Unknown stage \"" + targetStage + "\" for quest " + definition.id() + ".");
+        }
+        DialogueContext context = contextForStartedVillager(level, player, progress).orElse(null);
+        if (context == null) {
+            return new DebugInspectResult(false, List.of(), "The started villager for " + definition.id() + " is not loaded.");
+        }
+        String previous = progress.currentStage();
+        QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.STAGE_TRANSITION, definition.id(),
+                "attempt from=" + previous + " to=" + targetStage);
+        boolean changed = changeQuestStage(context, definition, progress, targetStage, true, true);
+        if (changed) {
+            changed |= advanceStageIfComplete(context, definition, progress);
+            data.setDirty();
+        }
+        QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.STAGE_TRANSITION, definition.id(),
+                "result changed=" + changed + " from=" + previous + " to=" + progress.currentStage());
+        return new DebugInspectResult(true, List.of("set_stage quest=" + definition.id()
+                + " changed=" + changed
+                + " previous=" + previous
+                + " current=" + progress.currentStage()), "");
+    }
+
+    public static DebugInspectResult debugFireTrigger(
+            ServerPlayer player,
+            ResourceLocation questId,
+            QuestDefinition.TriggerEvent event) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so quest state can be resolved.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugInspectResult(false, List.of(), "Unknown quest: " + questId);
+        }
+        if (event == null) {
+            return new DebugInspectResult(false, List.of(), "Trigger event is not recognized.");
+        }
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), definition.id());
+        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
+            return new DebugInspectResult(false, List.of(), "Quest is not active for " + player.getGameProfile().getName() + ".");
+        }
+        DialogueContext context = contextForStartedVillager(level, player, progress).orElse(null);
+        if (context == null) {
+            return new DebugInspectResult(false, List.of(), "The started villager for " + definition.id() + " is not loaded.");
+        }
+        CompiledQuest compiled = VillagerQuestResources.compiledQuest(level.getServer(), definition.id()).orElse(null);
+        if (compiled == null) {
+            return new DebugInspectResult(false, List.of(), "Compiled quest is missing for " + definition.id() + ".");
+        }
+
+        List<String> lines = new ArrayList<>();
+        List<CompiledQuestTrigger> candidates = compiled.triggerIndex().candidates(event, progress.currentStage());
+        lines.add("fire_trigger quest=" + definition.id()
+                + " event=" + QuestTriggerRegistry.canonicalEventId(event)
+                + " stage=" + progress.currentStage()
+                + " candidates=" + candidates.size());
+        long gameTime = level.getGameTime();
+        for (CompiledQuestTrigger compiledTrigger : candidates) {
+            lines.add(debugTriggerFilterLine(context, gameTime, progress, compiledTrigger.definition(), event));
+        }
+        QuestTriggerDispatchResult result = QuestTriggerDispatcher.dispatch(
+                context,
+                compiled,
+                progress,
+                event,
+                VillagerQuestService::runQuestTriggerActions);
+        if (result.dirty()) {
+            data.setDirty();
+            sendTrackerSync(player, true);
+        }
+        lines.add("trigger_result dirty=" + result.dirty()
+                + " candidates=" + result.trace().candidateTriggers()
+                + " evaluated=" + result.trace().evaluatedTriggers()
+                + " matched=" + result.trace().matchedTriggers()
+                + " ran=" + result.trace().ranTriggers());
+        QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.TRIGGER, definition.id(),
+                "fire event=" + QuestTriggerRegistry.canonicalEventId(event)
+                        + " matched=" + result.trace().matchedTriggers()
+                        + " ran=" + result.trace().ranTriggers());
+        return new DebugInspectResult(true, lines, "");
+    }
+
+    public static DebugInspectResult debugDryRunTriggerActions(
+            ServerPlayer player,
+            ResourceLocation questId,
+            String triggerId) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so quest state can be resolved.");
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), questId).orElse(null);
+        if (definition == null) {
+            return new DebugInspectResult(false, List.of(), "Unknown quest: " + questId);
+        }
+        VillagerQuestSavedData.QuestProgress progress =
+                VillagerQuestSavedData.get(level).get(player.getUUID(), definition.id());
+        DialogueContext context = contextForStartedVillager(level, player, progress).orElse(null);
+        String id = triggerId == null ? "" : triggerId.trim();
+        List<QuestDefinition.Trigger> triggers = definition.triggers().stream()
+                .filter(trigger -> trigger.id().equals(id))
+                .toList();
+        if (triggers.isEmpty()) {
+            return new DebugInspectResult(false, List.of(), "Unknown trigger \"" + id + "\" for quest " + definition.id() + ".");
+        }
+
+        List<String> lines = new ArrayList<>();
+        Map<String, String> replacements = new LinkedHashMap<>(context == null ? Map.of() : replacements(context, definition, progress));
+        for (QuestDefinition.Trigger trigger : triggers) {
+            lines.add("actions dry_run quest=" + definition.id()
+                    + " trigger=" + trigger.id()
+                    + " count=" + trigger.actions().size()
+                    + " live_context=" + (context != null));
+            for (int i = 0; i < trigger.actions().size(); i++) {
+                VillagerActionDefinition action = trigger.actions().get(i);
+                ActionResult result = VillagerActionRegistry.dryRun(context, action, replacements);
+                String line = "action[" + i + "] type=" + VillagerActionRegistry.canonicalTypeId(action)
+                        + " status=" + result.status().name().toLowerCase(Locale.ROOT)
+                        + " message=" + blankAs(result.message(), "none")
+                        + " capabilities=" + result.capabilities();
+                lines.add(line);
+                QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.ACTION, definition.id(), line);
+            }
+        }
+        return new DebugInspectResult(true, lines, "");
+    }
+
+    public static DebugInspectResult debugFactScope(ServerPlayer player, String scopeKey) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return new DebugInspectResult(false, List.of(), "This debug command must be run by a player so fact state can be resolved.");
+        }
+        String key = scopeKey == null ? "" : scopeKey.trim();
+        if (key.isBlank()) {
+            return new DebugInspectResult(false, List.of(), "Fact scope cannot be blank.");
+        }
+        VillagerQuestFacts.FactSnapshot snapshot = VillagerQuestFacts.get(level).debugSnapshot(key);
+        List<String> lines = new ArrayList<>();
+        lines.add("facts scope=" + key
+                + " empty=" + snapshot.empty()
+                + " tags=" + snapshot.tags().size()
+                + " variables=" + snapshot.variables().size()
+                + " counters=" + snapshot.counters().size());
+        snapshot.tags().stream()
+                .map(ResourceLocation::toString)
+                .sorted()
+                .forEach(tag -> lines.add("fact tag=" + tag));
+        snapshot.variables().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> lines.add("fact variable " + entry.getKey() + "=" + entry.getValue()));
+        snapshot.counters().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> lines.add("fact counter " + entry.getKey() + "=" + entry.getValue()));
         return new DebugInspectResult(true, lines, "");
     }
 
@@ -2961,6 +3301,8 @@ public final class VillagerQuestService {
         QuestObjectiveEvaluationContext objectiveContext =
                 objectiveEvaluationContext(player, null, level, definition, progress);
         for (QuestDefinition.Objective objective : definition.objectives()) {
+            int previousCounter = progress.objectiveCounter(objective.id());
+            boolean previouslyComplete = progress.objectiveComplete(objective.id());
             if (progress.objectiveComplete(objective.id())
                     || !QuestObjectiveRegistry.eventKinds(objective).contains(event.kind())
                     || !QuestObjectiveRegistry.matchesEvent(objectiveContext, objective, event)) {
@@ -2979,6 +3321,15 @@ public final class VillagerQuestService {
             }
             if (objective.id().equals(progress.targetObjectiveId()) && progress.objectiveComplete(objective.id())) {
                 progress.setTarget(progress.startedVillagerId(), progress.targetDimension(), null, "");
+            }
+            if (QuestDebugTraceService.isEnabled(player)) {
+                int nextCounter = progress.objectiveCounter(objective.id());
+                boolean complete = progress.objectiveComplete(objective.id());
+                QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.OBJECTIVE_PROGRESS, definition.id(),
+                        "objective=" + objective.id()
+                                + " event=" + event.kind().name().toLowerCase(Locale.ROOT)
+                                + " counter_delta=" + (nextCounter - previousCounter)
+                                + " complete_delta=" + (!previouslyComplete && complete));
             }
         }
         return changed;
@@ -3002,6 +3353,9 @@ public final class VillagerQuestService {
         }
 
         Set<ResourceLocation> candidateQuestIds = objectiveEventQuestIds(level, event);
+        QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.OBJECTIVE_EVENT, null,
+                "event=" + event.kind().name().toLowerCase(Locale.ROOT)
+                        + " candidate_quests=" + candidateQuestIds.size());
         if (candidateQuestIds.isEmpty()) {
             return;
         }
@@ -3440,36 +3794,42 @@ public final class VillagerQuestService {
                 VillagerActionDefinition.Kind.EXPERIENCE,
                 rewards.experience(),
                 null,
-                null), replacements);
+                null), replacements, definition.id());
         runRewardAction(context, rewardAction(
                 VillagerActionDefinition.Kind.REPUTATION,
                 rewards.reputation(),
                 null,
-                null), replacements);
+                null), replacements, definition.id());
         runRewardAction(context, rewardAction(
                 VillagerActionDefinition.Kind.GOSSIP,
                 rewards.gossipReputation(),
                 null,
-                null), replacements);
+                null), replacements, definition.id());
         runRewardAction(context, rewardAction(
                 VillagerActionDefinition.Kind.MEMORY,
                 0,
                 rewards.memoryEvent(),
-                null), replacements);
+                null), replacements, definition.id());
         runRewardAction(context, rewardAction(
                 VillagerActionDefinition.Kind.LOOT,
                 0,
                 null,
-                rewards.lootTable()), replacements);
+                rewards.lootTable()), replacements, definition.id());
         context.villager().playSound(SoundEvents.PLAYER_LEVELUP, 0.55F, 1.1F);
     }
 
     private static void runRewardAction(
             DialogueContext context,
             VillagerActionDefinition action,
-            Map<String, String> replacements) {
+            Map<String, String> replacements,
+            ResourceLocation questId) {
         VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
         replacements.putAll(result.replacements());
+        if (context != null) {
+            QuestDebugTraceService.recordIfEnabled(context.player(), QuestDebugTraceService.EventType.REWARD, questId,
+                    "reward type=" + VillagerActionRegistry.canonicalTypeId(action)
+                            + " result=" + (result.ran() ? "success" : "skipped"));
+        }
     }
 
     private static VillagerActionDefinition rewardAction(
@@ -3558,13 +3918,22 @@ public final class VillagerQuestService {
         if (progress == null || compiled == null || !compiled.triggerIndex().hasEvent(event)) {
             return false;
         }
-        return QuestTriggerDispatcher.dispatch(
-                        context,
-                        compiled,
-                        progress,
-                        event,
-                        VillagerQuestService::runQuestTriggerActions)
-                .dirty();
+        QuestTriggerDispatchResult result = QuestTriggerDispatcher.dispatch(
+                context,
+                compiled,
+                progress,
+                event,
+                VillagerQuestService::runQuestTriggerActions);
+        if (context != null) {
+            QuestDebugTraceService.recordIfEnabled(context.player(), QuestDebugTraceService.EventType.TRIGGER, compiled.id(),
+                    "dispatch event=" + QuestTriggerRegistry.canonicalEventId(event)
+                            + " candidates=" + result.trace().candidateTriggers()
+                            + " evaluated=" + result.trace().evaluatedTriggers()
+                            + " matched=" + result.trace().matchedTriggers()
+                            + " ran=" + result.trace().ranTriggers()
+                            + " dirty=" + result.dirty());
+        }
+        return result.dirty();
     }
 
     private static boolean dispatchStageChangedTriggers(
@@ -3780,8 +4149,13 @@ public final class VillagerQuestService {
                 && previous != null
                 && previous.signature().equals(signature)
                 && !heartbeatDue) {
+            QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
+                    "result=skipped reason=unchanged entries=" + entries.size());
             return;
         }
+        String syncReason = flash ? "flash" : force ? "force" : previous == null ? "initial" : heartbeatDue ? "heartbeat" : "changed";
+        QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
+                "result=sent reason=" + syncReason + " entries=" + entries.size());
         PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(
                 entries,
                 trackedQuestId == null ? "" : trackedQuestId.toString(),
@@ -3845,6 +4219,221 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             boolean activeConditionsMet) {
         return trackerEntry(player, context, definition, progress, activeConditionsMet ? ConditionMatch.MET : ConditionMatch.UNMET);
+    }
+
+    private static void appendActiveConditionDebugLines(
+            List<String> lines,
+            ServerPlayer player,
+            ServerLevel level,
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        QuestDefinition.ActiveState activeState = definition.rules().activeState();
+        ConditionMatch state = activeConditionsState(context, player, level, definition, progress);
+        lines.add("active_conditions count=" + activeState.conditions().size()
+                + " state=" + debugEnum(state)
+                + " hide_when_unmet=" + activeState.hideWhenUnmet()
+                + " pause_progress_when_unmet=" + activeState.pauseProgressWhenUnmet());
+        if (activeState.conditions().isEmpty()) {
+            return;
+        }
+        if (context == null) {
+            lines.add("condition trace=unknown live_context=false");
+            return;
+        }
+        for (DialogueCondition condition : activeState.conditions()) {
+            lines.add("condition " + formatConditionTrace(DialogueCondition.trace(context, condition)));
+        }
+    }
+
+    private static void recordConditionDebugTrace(
+            ServerPlayer player,
+            QuestDefinition definition,
+            DialogueContext context,
+            String source) {
+        QuestDefinition.ActiveState activeState = definition.rules().activeState();
+        if (activeState.conditions().isEmpty()) {
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.CONDITION, definition.id(),
+                    "source=" + source + " active_conditions=none outcome=true");
+            return;
+        }
+        if (context == null) {
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.CONDITION, definition.id(),
+                    "source=" + source + " active_conditions=unknown live_context=false");
+            return;
+        }
+        for (DialogueCondition condition : activeState.conditions()) {
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.CONDITION, definition.id(),
+                    "source=" + source + " " + formatConditionTrace(DialogueCondition.trace(context, condition)));
+        }
+    }
+
+    private static void recordDialogueSlotTrace(
+            ServerPlayer player,
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        QuestDialogueCatalog catalog = VillagerQuestResources.questDialogueCatalog(context.level().getServer());
+        for (QuestDialogueCatalog.Binding binding : catalog.bindings().values()) {
+            if (!definition.id().equals(binding.questId())) {
+                continue;
+            }
+            boolean selected = matchesEmbeddedDialogueBinding(context, definition, progress, binding);
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.DIALOGUE_SLOT, definition.id(),
+                    "slot=" + blankAs(binding.slot(), "none")
+                            + " stage=" + blankAs(binding.stageId(), "initial")
+                            + " tree=" + binding.treeId()
+                            + " entry=" + blankAs(binding.entryId(), "none")
+                            + " selected=" + selected);
+        }
+    }
+
+    private static void recordResponseTrace(
+            ServerPlayer player,
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.RESPONSE, definition.id(),
+                    "responses hidden reason=quest_not_active");
+            return;
+        }
+        QuestDefinition.Stage stage = definition.stages().get(progress.currentStage());
+        if (stage == null || stage.branches().isEmpty()) {
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.RESPONSE, definition.id(),
+                    "responses hidden reason=no_stage_branches stage=" + progress.currentStage());
+            return;
+        }
+        for (QuestDefinition.StageBranch branch : stage.branches()) {
+            QuestDefinition.StageBranchBlocker blocker = matchingStageBranchBlocker(context, branch).orElse(null);
+            boolean conditionsMet = stageBranchConditionsMet(context, branch);
+            boolean visible = shouldShowStageBranchOption(context, branch);
+            String state = !visible ? "hidden" : blocker != null ? "disabled" : conditionsMet ? "visible" : "hidden";
+            String reason = !visible ? "show_conditions_unmet" : blocker != null ? "blocked" : conditionsMet ? "conditions_met" : "conditions_unmet";
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.RESPONSE, definition.id(),
+                    "response=" + branch.id() + " state=" + state + " reason=" + reason);
+        }
+    }
+
+    private static void recordObjectiveTrace(
+            ServerPlayer player,
+            DialogueContext context,
+            ServerLevel level,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null) {
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.OBJECTIVE_PROGRESS, definition.id(),
+                    "progress_delta=none reason=no_saved_progress");
+            return;
+        }
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            boolean complete = objectiveComplete(player, context, level, definition, progress, objective);
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.OBJECTIVE_PROGRESS, definition.id(),
+                    "objective=" + objective.id()
+                            + " type=" + debugEnum(objective.type())
+                            + " complete=" + complete
+                            + " counter=" + progress.objectiveCounter(objective.id())
+                            + " progress_delta=0");
+        }
+    }
+
+    private static void recordTriggerTrace(
+            ServerPlayer player,
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        CompiledQuest compiled = VillagerQuestResources.compiledQuest(context.level().getServer(), definition.id()).orElse(null);
+        if (compiled == null || progress == null) {
+            QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.TRIGGER, definition.id(),
+                    "trigger_filter skipped reason=" + (compiled == null ? "compiled_missing" : "no_progress"));
+            return;
+        }
+        long gameTime = context.level().getGameTime();
+        for (QuestDefinition.TriggerEvent event : compiled.triggerIndex().events()) {
+            for (CompiledQuestTrigger compiledTrigger : compiled.triggerIndex().candidates(event, progress.currentStage())) {
+                QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.TRIGGER, definition.id(),
+                        debugTriggerFilterLine(context, gameTime, progress, compiledTrigger.definition(), event));
+            }
+        }
+    }
+
+    private static String debugTriggerFilterLine(
+            DialogueContext context,
+            long gameTime,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Trigger trigger,
+            QuestDefinition.TriggerEvent event) {
+        if (trigger == null) {
+            return "trigger_filter id=none result=failed reason=missing_trigger";
+        }
+        if (trigger.event() != event) {
+            return "trigger_filter id=" + trigger.id() + " result=filtered reason=event_mismatch expected="
+                    + QuestTriggerRegistry.canonicalEventId(trigger.event())
+                    + " actual=" + QuestTriggerRegistry.canonicalEventId(event);
+        }
+        if (trigger.event() == QuestDefinition.TriggerEvent.PROXIMITY) {
+            if (context == null || context.player() == null || context.villager() == null) {
+                return "trigger_filter id=" + trigger.id() + " result=filtered reason=provider_context_missing";
+            }
+            double radius = trigger.radius();
+            if (context.player().distanceToSqr(context.villager()) > radius * radius) {
+                return "trigger_filter id=" + trigger.id() + " result=filtered reason=provider_out_of_radius radius=" + radius;
+            }
+        }
+        if (!trigger.stages().isEmpty() && !trigger.stages().contains(progress.currentStage())) {
+            return "trigger_filter id=" + trigger.id() + " result=filtered reason=stage current="
+                    + progress.currentStage() + " allowed=" + trigger.stages();
+        }
+        long lastTriggered = progress.lastTriggerGameTime(trigger.id());
+        if (!trigger.repeatable() && lastTriggered > 0L) {
+            return "trigger_filter id=" + trigger.id() + " result=filtered reason=not_repeatable last=" + lastTriggered;
+        }
+        if (trigger.cooldownTicks() > 0L) {
+            if (lastTriggered > 0L && gameTime - lastTriggered < trigger.cooldownTicks()) {
+                return "trigger_filter id=" + trigger.id() + " result=filtered reason=cooldown remaining="
+                        + (trigger.cooldownTicks() - (gameTime - lastTriggered));
+            }
+            if (lastTriggered <= 0L
+                    && QuestTriggerRegistry.isContinuous(trigger.event())
+                    && progress.startedGameTime() > 0L
+                    && gameTime - progress.startedGameTime() < trigger.cooldownTicks()) {
+                return "trigger_filter id=" + trigger.id() + " result=filtered reason=initial_continuous_cooldown remaining="
+                        + (trigger.cooldownTicks() - (gameTime - progress.startedGameTime()));
+            }
+        }
+        if (!trigger.conditions().isEmpty()) {
+            if (context == null) {
+                return "trigger_filter id=" + trigger.id() + " result=filtered reason=conditions_unknown";
+            }
+            Optional<DialogueCondition.ConditionEvaluationTrace> unmatched =
+                    DialogueCondition.firstUnmatched(context, trigger.conditions());
+            if (unmatched.isPresent()) {
+                return "trigger_filter id=" + trigger.id() + " result=filtered reason=condition "
+                        + formatConditionTrace(unmatched.get());
+            }
+        }
+        return "trigger_filter id=" + trigger.id() + " result=matched reason=all_filters_passed cooldown="
+                + trigger.cooldownTicks();
+    }
+
+    private static String formatConditionTrace(DialogueCondition.ConditionEvaluationTrace trace) {
+        if (trace == null) {
+            return "type=unknown outcome=unknown message=missing";
+        }
+        return "type=" + trace.canonicalTypeId()
+                + " outcome=" + trace.outcome().name().toLowerCase(Locale.ROOT)
+                + (trace.message().isBlank() ? "" : " message=" + trace.message())
+                + " children=" + trace.children().size();
+    }
+
+    private static String debugProvider(Villager villager) {
+        if (villager == null) {
+            return "none";
+        }
+        BlockPos pos = villager.blockPosition();
+        return VillagerPresetNameRegistry.resolveDisplayName(villager).getString()
+                + "/" + VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "villager")
+                + "@" + pos.getX() + "," + pos.getY() + "," + pos.getZ();
     }
 
     private static QuestTrackerSyncPayload.Entry trackerEntry(
