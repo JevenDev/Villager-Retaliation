@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.toucanlib.client.ToucanScrollbarThumb;
 import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.toucanlib.client.ToucanScrollbars;
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.reputation.VillagerReputationIconSet;
@@ -48,6 +49,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.ChatFormatting;
@@ -60,10 +62,12 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.Entity;
@@ -164,6 +168,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_ICON_SIZE = 16;
     private static final int INTERACTION_ICON_TEXT_GAP = 4;
     private static final int INTERACTION_TOOLTIP_MAX_WIDTH = 220;
+    private static final ResourceLocation DIALOGUE_BLIP_SOUND_ID = VillagerRetaliation.id("dialogue");
+    private static final SoundEvent DIALOGUE_BLIP_SOUND = SoundEvent.createVariableRangeEvent(DIALOGUE_BLIP_SOUND_ID);
+    private static final int DIALOGUE_BLIP_MIN_VISIBLE_CHARACTERS = 1;
+    private static final int DIALOGUE_BLIP_MAX_VISIBLE_CHARACTERS = 3;
     private static final int INTERACTION_NAME_COLOR = 0xFFF3CA55;
     private static final int INTERACTION_DIALOGUE_COLOR = 0xFF35291C;
     private static final int INTERACTION_REPUTATION_TEXT_COLOR = 0xFFFFFF55;
@@ -247,6 +255,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private String villagerDialogueText = "";
     private long dialogueTextAnimationStartMillis;
     private boolean dialogueTextAnimationSkipped;
+    private final Random dialogueBlipRandom = new Random();
+    private float dialogueBlipPitch = 1.0F;
+    private int nextDialogueBlipVisibleCharacter = Integer.MAX_VALUE;
+    private int lastDialogueBlipVisibleCharacters;
     private final GiftPageContext giftPageContext = new GiftPageContext();
     private final OptionListContext optionListContext = new OptionListContext();
     private final NavigationChromeContext navigationChromeContext = new NavigationChromeContext();
@@ -426,6 +438,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.villagerDialogueText = text.strip();
         this.dialogueTextAnimationStartMillis = Util.getMillis();
         this.dialogueTextAnimationSkipped = dialogueTextSpeed().instant();
+        this.dialogueBlipPitch = randomDialogueBlipPitch();
+        this.lastDialogueBlipVisibleCharacters = 0;
+        this.nextDialogueBlipVisibleCharacter = this.dialogueTextAnimationSkipped
+                ? Integer.MAX_VALUE
+                : randomDialogueBlipGap();
     }
 
     @Override
@@ -1953,6 +1970,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (displayedDialogue.isBlank()) {
             return;
         }
+        maybePlayDialogueBlip();
         List<FormattedCharSequence> lines = this.font.split(
                 Component.literal(displayedDialogue),
                 INTERACTION_DIALOGUE_RIGHT - INTERACTION_DIALOGUE_LEFT
@@ -2024,6 +2042,73 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         long elapsedMillis = Math.max(0L, Util.getMillis() - this.dialogueTextAnimationStartMillis);
         return Math.max(1, (int) (elapsedMillis / speed.millisPerCharacter()) + 1);
+    }
+
+    private void maybePlayDialogueBlip() {
+        if (this.dialogueTextAnimationSkipped || this.villagerDialogueText.isBlank()
+                || !VillagerRetaliationConfig.ENABLE_DIALOGUE_BLIP_AUDIO.get()) {
+            return;
+        }
+
+        int totalCharacters = this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length());
+        int visibleCharacters = Math.min(visibleDialogueTextCharacters(), totalCharacters);
+        if (visibleCharacters <= this.lastDialogueBlipVisibleCharacters
+                || visibleCharacters < this.nextDialogueBlipVisibleCharacter) {
+            return;
+        }
+
+        float volume = dialogueBlipVolume();
+        if (volume > 0.0F && hasAudibleDialogueCharacter(this.lastDialogueBlipVisibleCharacters, visibleCharacters)) {
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(
+                    DIALOGUE_BLIP_SOUND,
+                    this.dialogueBlipPitch,
+                    volume
+            ));
+        }
+        this.lastDialogueBlipVisibleCharacters = visibleCharacters;
+        this.nextDialogueBlipVisibleCharacter = visibleCharacters + randomDialogueBlipGap();
+    }
+
+    private boolean hasAudibleDialogueCharacter(int startCodePoint, int endCodePoint) {
+        int totalCharacters = this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length());
+        int safeStart = Math.max(0, startCodePoint);
+        int safeEnd = Math.min(endCodePoint, totalCharacters);
+        for (int index = safeStart; index < safeEnd; index++) {
+            int charIndex = this.villagerDialogueText.offsetByCodePoints(0, index);
+            int codePoint = this.villagerDialogueText.codePointAt(charIndex);
+            if (!Character.isWhitespace(codePoint)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private float randomDialogueBlipPitch() {
+        float minPitch = dialogueBlipMinPitch();
+        float maxPitch = dialogueBlipMaxPitch();
+        if (maxPitch < minPitch) {
+            float swap = minPitch;
+            minPitch = maxPitch;
+            maxPitch = swap;
+        }
+        return minPitch + this.dialogueBlipRandom.nextFloat() * (maxPitch - minPitch);
+    }
+
+    private int randomDialogueBlipGap() {
+        return DIALOGUE_BLIP_MIN_VISIBLE_CHARACTERS
+                + this.dialogueBlipRandom.nextInt(DIALOGUE_BLIP_MAX_VISIBLE_CHARACTERS - DIALOGUE_BLIP_MIN_VISIBLE_CHARACTERS + 1);
+    }
+
+    private static float dialogueBlipVolume() {
+        return Mth.clamp(VillagerRetaliationConfig.DIALOGUE_BLIP_VOLUME.get().floatValue(), 0.0F, 1.0F);
+    }
+
+    private static float dialogueBlipMinPitch() {
+        return Mth.clamp(VillagerRetaliationConfig.DIALOGUE_BLIP_MIN_PITCH.get().floatValue(), 0.5F, 2.0F);
+    }
+
+    private static float dialogueBlipMaxPitch() {
+        return Mth.clamp(VillagerRetaliationConfig.DIALOGUE_BLIP_MAX_PITCH.get().floatValue(), 0.5F, 2.0F);
     }
 
     private static DialogueTextSpeed dialogueTextSpeed() {

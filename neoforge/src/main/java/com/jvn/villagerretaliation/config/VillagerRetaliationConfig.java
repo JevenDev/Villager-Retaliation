@@ -42,6 +42,10 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> SEPARATE_VILLAGER_CHAT_SPEAKERS = bind("dialogue.separateVillagerChatSpeakers", Boolean.class);
     public static final ConfigValue<InteractionChatPosition> INTERACTION_CHAT_POSITION = bind("dialogue.interactionChatPosition", InteractionChatPosition.class);
     public static final ConfigValue<DialogueTextSpeed> DIALOGUE_TEXT_SPEED = bind("dialogue.dialogueTextSpeed", DialogueTextSpeed.class);
+    public static final ConfigValue<Boolean> ENABLE_DIALOGUE_BLIP_AUDIO = bind("dialogue.enableDialogueBlipAudio", Boolean.class);
+    public static final ConfigValue<Double> DIALOGUE_BLIP_VOLUME = bind("dialogue.dialogueBlipVolume", Double.class);
+    public static final ConfigValue<Double> DIALOGUE_BLIP_MIN_PITCH = bind("dialogue.dialogueBlipMinPitch", Double.class);
+    public static final ConfigValue<Double> DIALOGUE_BLIP_MAX_PITCH = bind("dialogue.dialogueBlipMaxPitch", Double.class);
     public static final ConfigValue<Double> DIALOGUE_CAMERA_ZOOM_AMOUNT = bind("dialogue.dialogueCameraZoomAmount", Double.class);
     public static final ConfigValue<Integer> DIALOGUE_CAMERA_TRANSITION_TICKS = bind("dialogue.dialogueCameraTransitionTicks", Integer.class);
     public static final ConfigValue<Boolean> FREEZE_VILLAGER_DURING_DIALOGUE = bind("dialogue.freezeVillagerDuringDialogue", Boolean.class);

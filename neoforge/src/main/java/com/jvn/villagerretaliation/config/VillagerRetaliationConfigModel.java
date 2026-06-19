@@ -125,6 +125,17 @@ public final class VillagerRetaliationConfigModel {
 
         public DialogueTextSpeed dialogueTextSpeed = DialogueTextSpeed.MEDIUM;
 
+        public boolean enableDialogueBlipAudio = true;
+
+        @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
+        public double dialogueBlipVolume = 0.5D;
+
+        @RangeConstraint(min = 0.5D, max = 2.0D, decimalPlaces = 2)
+        public double dialogueBlipMinPitch = 0.55D;
+
+        @RangeConstraint(min = 0.5D, max = 2.0D, decimalPlaces = 2)
+        public double dialogueBlipMaxPitch = 0.65D;
+
         @RangeConstraint(min = 0.0D, max = 0.25D, decimalPlaces = 2)
         public double dialogueCameraZoomAmount = 0.15D;
 
