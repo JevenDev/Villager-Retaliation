@@ -7,6 +7,9 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestCatalog;
+import com.jvn.villagerretaliation.quest.compiler.QuestV1Compiler;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
@@ -19,6 +22,7 @@ import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -49,10 +53,26 @@ public final class VillagerQuestResources {
     private static final int DEFAULT_STRUCTURE_SEARCH_RADIUS = 256;
     private static final int DEFAULT_DISCOVERY_RADIUS = 128;
 
-    private static volatile CachedQuests cachedQuests =
-            new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+    private static volatile CachedQuests cachedQuests = emptyCache();
 
     private VillagerQuestResources() {
+    }
+
+    private static CachedQuests emptyCache() {
+        return new CachedQuests(
+                null,
+                new CompiledQuestCatalog(Map.of()),
+                Map.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Map.of(),
+                Map.of(),
+                Map.of());
     }
 
     public static void warm(MinecraftServer server) {
@@ -60,11 +80,15 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
-        cachedQuests = new CachedQuests(null, Map.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of(), Map.of(), Map.of());
+        cachedQuests = emptyCache();
     }
 
     public static Collection<QuestDefinition> quests(MinecraftServer server) {
         return loadCache(server).quests().values();
+    }
+
+    public static Collection<CompiledQuest> compiledQuests(MinecraftServer server) {
+        return loadCache(server).compiledCatalog().quests();
     }
 
     public static Optional<QuestDefinition> quest(MinecraftServer server, ResourceLocation id) {
@@ -72,6 +96,13 @@ public final class VillagerQuestResources {
             return Optional.empty();
         }
         return Optional.ofNullable(loadCache(server).quests().get(id));
+    }
+
+    public static Optional<CompiledQuest> compiledQuest(MinecraftServer server, ResourceLocation id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return loadCache(server).compiledCatalog().quest(id);
     }
 
     public static boolean hasMobKillObjectives(MinecraftServer server, ResourceLocation id) {
@@ -150,9 +181,11 @@ public final class VillagerQuestResources {
                 return current;
             }
 
-            Map<ResourceLocation, QuestDefinition> quests = read(server);
+            LoadedQuestCatalog catalog = read(server);
+            Map<ResourceLocation, QuestDefinition> quests = catalog.questDefinitions();
             CachedQuests loaded = new CachedQuests(
                     server,
+                    catalog.compiledCatalog(),
                     quests,
                     mobKillQuestIds(quests),
                     blockObjectiveQuestIds(quests, QuestDefinition.ObjectiveType.BLOCK_BREAK),
@@ -255,8 +288,9 @@ public final class VillagerQuestResources {
         return Map.copyOf(frozen);
     }
 
-    private static Map<ResourceLocation, QuestDefinition> read(MinecraftServer server) {
+    private static LoadedQuestCatalog read(MinecraftServer server) {
         Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
+        Map<ResourceLocation, CompiledQuest> compiledQuests = new LinkedHashMap<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
         List<QuestResourceEnvelope> resources = DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT).stream()
                 .map(resource -> DatapackResourceLoader.readObject(resource.location(), "quest", resource.resource())
@@ -280,21 +314,26 @@ public final class VillagerQuestResources {
                     && !DatapackJsonReader.readBoolean(resource.root(), "replace")) {
                 continue;
             }
-            readFile(resource.location(), resource.root(), quests, sources, replacementMode);
+            readFile(resource, quests, compiledQuests, sources, replacementMode);
         }
-        return Map.copyOf(quests);
+        return new LoadedQuestCatalog(
+                freezeOrderedResourceMap(quests),
+                new CompiledQuestCatalog(compiledQuests));
     }
 
     private static void readFile(
-            ResourceLocation location,
-            JsonObject root,
+            QuestResourceEnvelope resource,
             Map<ResourceLocation, QuestDefinition> quests,
+            Map<ResourceLocation, CompiledQuest> compiledQuests,
             Map<ResourceLocation, ResourceLocation> sources,
             boolean replacementMode) {
+        ResourceLocation location = resource.location();
+        JsonObject root = resource.root();
         ResourceLocation fallbackId = fallbackQuestId(location);
         if (DatapackJsonReader.readBoolean(root, "replace")) {
             if (!replacementMode) {
                 quests.clear();
+                compiledQuests.clear();
                 sources.clear();
             }
             if (isControlOnly(root, "replace", "metadata")) {
@@ -305,6 +344,7 @@ public final class VillagerQuestResources {
             ResourceLocation removeId = DatapackJsonReader.readResourceLocation(root, "id").orElse(fallbackId);
             if (removeId != null) {
                 quests.remove(removeId);
+                compiledQuests.remove(removeId);
                 sources.remove(removeId);
             }
             return;
@@ -318,6 +358,7 @@ public final class VillagerQuestResources {
             DatapackDiagnostics.warnDuplicateId(location, "quest", definition.id().toString(), previous);
         }
         quests.put(definition.id(), definition);
+        compiledQuests.put(definition.id(), QuestV1Compiler.compile(definition, resource));
     }
 
     private static boolean isBuiltInModResource(QuestResourceSource source) {
@@ -1626,6 +1667,13 @@ public final class VillagerQuestResources {
         return first == null || first.isBlank() ? second : first;
     }
 
+    private static <T> Map<ResourceLocation, T> freezeOrderedResourceMap(Map<ResourceLocation, T> values) {
+        if (values == null || values.isEmpty()) {
+            return Map.of();
+        }
+        return Collections.unmodifiableMap(new LinkedHashMap<>(values));
+    }
+
     private static String firstString(JsonObject object, String... keys) {
         if (object == null) {
             return "";
@@ -1694,6 +1742,7 @@ public final class VillagerQuestResources {
 
     private record CachedQuests(
             MinecraftServer server,
+            CompiledQuestCatalog compiledCatalog,
             Map<ResourceLocation, QuestDefinition> quests,
             Set<ResourceLocation> mobKillQuestIds,
             Set<ResourceLocation> blockBreakQuestIds,
@@ -1705,5 +1754,10 @@ public final class VillagerQuestResources {
             Map<ResourceLocation, Set<ResourceLocation>> memoryEventQuestIds,
             Map<ResourceLocation, Set<ResourceLocation>> exclusiveGroupQuestIds,
             Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds) {
+    }
+
+    private record LoadedQuestCatalog(
+            Map<ResourceLocation, QuestDefinition> questDefinitions,
+            CompiledQuestCatalog compiledCatalog) {
     }
 }

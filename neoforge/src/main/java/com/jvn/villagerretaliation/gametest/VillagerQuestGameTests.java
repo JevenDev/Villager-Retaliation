@@ -9,6 +9,10 @@ import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestStage;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
@@ -107,6 +111,29 @@ public final class VillagerQuestGameTests {
             helper.assertFalse(quest.questline().isBlank(), quest.id() + " has no questline");
             helper.assertFalse(quest.tags().isEmpty(), quest.id() + " has no grouping tags");
             helper.assertFalse(quest.objectives().isEmpty(), quest.id() + " has no objectives");
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void compiledV1CatalogMatchesParsedBuiltIns(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        List<QuestDefinition> quests = quests(helper);
+        Map<ResourceLocation, CompiledQuest> compiledById = VillagerQuestResources.compiledQuests(server).stream()
+                .filter(quest -> VillagerRetaliation.MOD_ID.equals(quest.id().getNamespace()))
+                .sorted(Comparator.comparing(quest -> quest.id().toString()))
+                .collect(Collectors.toMap(
+                        CompiledQuest::id,
+                        quest -> quest,
+                        (first, second) -> first,
+                        LinkedHashMap::new));
+
+        helper.assertValueEqual(compiledById.size(), quests.size(), "compiled built-in quest count");
+        for (QuestDefinition quest : quests) {
+            CompiledQuest compiled = compiledById.get(quest.id());
+            helper.assertTrue(compiled != null, "Missing compiled quest " + quest.id());
+            assertCompiledQuestMatchesParsed(helper, quest, compiled);
         }
 
         helper.succeed();
@@ -474,6 +501,121 @@ public final class VillagerQuestGameTests {
     private static QuestDefinition quest(GameTestHelper helper, ResourceLocation questId) {
         return VillagerQuestResources.quest(helper.getLevel().getServer(), questId)
                 .orElseThrow(() -> new GameTestAssertException("Missing quest " + questId));
+    }
+
+    private static void assertCompiledQuestMatchesParsed(
+            GameTestHelper helper,
+            QuestDefinition quest,
+            CompiledQuest compiled) {
+        helper.assertValueEqual(compiled.id(), quest.id(), quest.id() + " compiled id");
+        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V1, quest.id() + " schema");
+        helper.assertValueEqual(compiled.asQuestDefinition(), quest, quest.id() + " compatibility definition");
+        helper.assertValueEqual(compiled.source().jsonPointer(), "", quest.id() + " source pointer");
+        helper.assertValueEqual(compiled.source().resource().getNamespace(), VillagerRetaliation.MOD_ID,
+                quest.id() + " source namespace");
+
+        helper.assertValueEqual(compiled.metadata().title(), quest.title(), quest.id() + " title");
+        helper.assertValueEqual(compiled.metadata().description(), quest.description(), quest.id() + " description");
+        helper.assertValueEqual(compiled.metadata().titleKey(), quest.titleKey(), quest.id() + " title key");
+        helper.assertValueEqual(compiled.metadata().descriptionKey(), quest.descriptionKey(),
+                quest.id() + " description key");
+        helper.assertValueEqual(compiled.metadata().questline(), quest.questline(), quest.id() + " questline");
+        helper.assertValueEqual(compiled.metadata().tags(), quest.tags(), quest.id() + " tags");
+        helper.assertTrue(Objects.equals(compiled.metadata().parent(), quest.parent()), quest.id() + " parent");
+        helper.assertValueEqual(compiled.metadata().dialogue(), quest.metadata(), quest.id() + " dialogue metadata");
+        helper.assertValueEqual(compiled.provider().offer(), quest.offer(), quest.id() + " provider");
+        helper.assertValueEqual(compiled.target(), quest.target(), quest.id() + " target");
+        helper.assertValueEqual(compiled.rules(), quest.rules(), quest.id() + " rules");
+        helper.assertValueEqual(compiled.rewards().definition(), quest.rewards(), quest.id() + " rewards");
+        helper.assertValueEqual(compiled.ui().tracker(), quest.tracker(), quest.id() + " tracker");
+        helper.assertValueEqual(compiled.ui().dialogue(), quest.dialogue(), quest.id() + " dialogue");
+        helper.assertValueEqual(compiled.ui().links(), quest.links(), quest.id() + " links");
+
+        assertCompiledObjectivesMatchParsed(helper, quest, compiled);
+        assertCompiledStagesMatchParsed(helper, quest, compiled);
+        assertCompiledTriggersMatchParsed(helper, quest, compiled);
+    }
+
+    private static void assertCompiledObjectivesMatchParsed(
+            GameTestHelper helper,
+            QuestDefinition quest,
+            CompiledQuest compiled) {
+        List<String> parsedObjectiveIds = quest.objectives().stream()
+                .map(QuestDefinition.Objective::id)
+                .toList();
+        helper.assertValueEqual(
+                compiled.objectives().stream().map(CompiledQuestObjective::id).toList(),
+                parsedObjectiveIds,
+                quest.id() + " objective order");
+        helper.assertValueEqual(
+                new ArrayList<>(compiled.objectivesById().keySet()),
+                parsedObjectiveIds,
+                quest.id() + " objective index order");
+
+        for (int index = 0; index < quest.objectives().size(); index++) {
+            QuestDefinition.Objective parsed = quest.objectives().get(index);
+            CompiledQuestObjective compiledObjective = compiled.objectives().get(index);
+            helper.assertValueEqual(compiledObjective.index(), index, quest.id() + "/" + parsed.id() + " objective index");
+            helper.assertValueEqual(compiledObjective.definition(), parsed, quest.id() + "/" + parsed.id() + " objective");
+            helper.assertTrue(compiledObjective.source().jsonPointer().startsWith("/objectives/"),
+                    quest.id() + "/" + parsed.id() + " objective source pointer");
+        }
+    }
+
+    private static void assertCompiledStagesMatchParsed(
+            GameTestHelper helper,
+            QuestDefinition quest,
+            CompiledQuest compiled) {
+        List<String> parsedStageIds = new ArrayList<>(quest.stages().keySet());
+        helper.assertValueEqual(
+                compiled.stages().stream().map(CompiledQuestStage::id).toList(),
+                parsedStageIds,
+                quest.id() + " stage order");
+        helper.assertValueEqual(
+                new ArrayList<>(compiled.stagesById().keySet()),
+                parsedStageIds,
+                quest.id() + " stage index order");
+
+        int index = 0;
+        for (Map.Entry<String, QuestDefinition.Stage> entry : quest.stages().entrySet()) {
+            CompiledQuestStage stage = compiled.stages().get(index);
+            helper.assertValueEqual(stage.index(), index, quest.id() + "/" + entry.getKey() + " stage index");
+            helper.assertValueEqual(stage.definition(), entry.getValue(), quest.id() + "/" + entry.getKey() + " stage");
+            helper.assertValueEqual(
+                    stage.objectives().stream().map(CompiledQuestObjective::id).toList(),
+                    entry.getValue().objectives().stream()
+                            .filter(compiled.objectivesById()::containsKey)
+                            .toList(),
+                    quest.id() + "/" + entry.getKey() + " stage objectives");
+            helper.assertTrue(stage.source().jsonPointer().startsWith("/stages/"),
+                    quest.id() + "/" + entry.getKey() + " stage source pointer");
+            index++;
+        }
+    }
+
+    private static void assertCompiledTriggersMatchParsed(
+            GameTestHelper helper,
+            QuestDefinition quest,
+            CompiledQuest compiled) {
+        List<String> parsedTriggerIds = quest.triggers().stream()
+                .map(QuestDefinition.Trigger::id)
+                .toList();
+        helper.assertValueEqual(
+                compiled.triggers().stream().map(CompiledQuestTrigger::id).toList(),
+                parsedTriggerIds,
+                quest.id() + " trigger order");
+
+        for (int index = 0; index < quest.triggers().size(); index++) {
+            QuestDefinition.Trigger parsed = quest.triggers().get(index);
+            CompiledQuestTrigger trigger = compiled.triggers().get(index);
+            helper.assertValueEqual(trigger.index(), index, quest.id() + "/" + parsed.id() + " trigger index");
+            helper.assertValueEqual(trigger.definition(), parsed, quest.id() + "/" + parsed.id() + " trigger");
+            helper.assertTrue(
+                    compiled.triggersByEvent().getOrDefault(parsed.event(), List.of()).contains(trigger),
+                    quest.id() + "/" + parsed.id() + " trigger event index");
+            helper.assertTrue(trigger.source().jsonPointer().startsWith("/triggers/"),
+                    quest.id() + "/" + parsed.id() + " trigger source pointer");
+        }
     }
 
     private static JsonObject readJsonObject(ResourceLocation location, Resource resource) {
