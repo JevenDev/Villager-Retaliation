@@ -26,13 +26,14 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
+import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
-import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -1078,19 +1079,20 @@ public final class VillagerQuestService {
         }
 
         VillagerQuestSavedData.QuestProgress started = data.getOrCreate(context.player().getUUID(), definition.id());
+        QuestProviderBinding providerBinding = VillagerQuestProviderType.INSTANCE.bindingFromDialogueContext(context);
         started.start(
-                context.villager().getUUID(),
+                providerBinding.providerId(),
                 target == null ? context.level().dimension() : target.dimension(),
                 target == null ? null : target.pos(),
                 context.level().getGameTime());
         started.setIssuer(
-                context.villager().getUUID(),
-                VillagerPresetNameRegistry.resolveDisplayName(context.villager()).getString(),
-                VillagerProfessionUtil.id(context.profession()).toString(),
-                context.villager().getVillagerData().getLevel(),
-                context.level().dimension(),
-                context.villager().blockPosition(),
-                VillageScopeKeys.forVillager(context.level(), context.villager()));
+                providerBinding.providerId(),
+                providerBinding.displayName(),
+                providerBinding.professionId() == null ? "" : providerBinding.professionId().toString(),
+                providerBinding.level(),
+                providerBinding.dimension(),
+                providerBinding.pos(),
+                providerBinding.villageKey());
         if (target != null && !target.objectiveId().isBlank()) {
             started.setTarget(context.villager().getUUID(), target.dimension(), target.pos(), target.objectiveId());
         }
@@ -1345,7 +1347,9 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             boolean bypassOfferRequirements) {
-        if (!bypassOfferRequirements && !definition.offer().matches(context)) {
+        QuestExecutionContext executionContext =
+                QuestExecutionContext.fromDialogueContext(context, definition, "can_start");
+        if (!bypassOfferRequirements && !VillagerQuestProviderType.INSTANCE.matchesOffer(executionContext, definition)) {
             return false;
         }
         if (!parentCompleted(context, definition)) {
@@ -1356,7 +1360,9 @@ public final class VillagerQuestService {
         }
         if (!definition.rules().crossVillagerCompatible()
                 && progress.startedVillagerId() != null
-                && !progress.startedVillagerId().equals(context.villager().getUUID())) {
+                && executionContext.providerBinding()
+                        .map(binding -> !binding.matchesProviderId(progress.startedVillagerId()))
+                        .orElse(true)) {
             return false;
         }
         if (!withinStartLimit(definition, progress) || !withinCompletionLimit(context, definition, progress)) {
@@ -1584,10 +1590,10 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        return progress == null
-                || !definition.rules().lockedToVillager()
-                || progress.startedVillagerId() == null
-                || progress.startedVillagerId().equals(context.villager().getUUID());
+        return VillagerQuestProviderType.INSTANCE.matchesIssuerLock(
+                QuestExecutionContext.fromDialogueContext(context, definition, "issuer_lock"),
+                definition,
+                progress);
     }
 
     private static boolean activeConditionsMet(DialogueContext context, QuestDefinition definition) {

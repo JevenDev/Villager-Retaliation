@@ -7,18 +7,22 @@ import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
-import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestDebugFormatter;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestExecutionContext;
+import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestTrackerPresenter;
+import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestStage;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
+import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
+import com.jvn.villagerretaliation.quest.provider.QuestProviderType;
+import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
-import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import java.io.IOException;
@@ -59,6 +63,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class VillagerQuestGameTests {
     private static final String EMPTY_TEMPLATE = "empty";
     private static final String LOCALE = "en_us";
+    private static final ResourceLocation FAKE_PROVIDER_CAPABILITY = VillagerRetaliation.id("fake_provider");
     private static final EnumSet<QuestDefinition.TriggerEvent> DEFERRED_TRIGGER_EVENTS = EnumSet.of(
             QuestDefinition.TriggerEvent.PLAYER_TICK,
             QuestDefinition.TriggerEvent.PROXIMITY,
@@ -605,6 +610,138 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(loadedProgress.objectiveCounter("choose_route"), 2, "objective counter");
         helper.assertValueEqual(loadedProgress.lastTriggerGameTime("completed_0"), 4321L, "trigger time");
         helper.assertValueEqual(loaded.getTrackedQuest(playerId), questId, "tracked quest");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questExecutionContextUsesSavedVillagerProviderSnapshot(GameTestHelper helper) {
+        QuestDefinition quest = quest(helper, VillagerRetaliation.id("tales_of_a_lost_civilization"));
+        UUID providerId = UUID.fromString("00000000-0000-0000-0000-000000000003");
+        BlockPos providerPos = new BlockPos(4, 65, -2);
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(providerId, Level.OVERWORLD, new BlockPos(10, 64, 10), 5L);
+        progress.setIssuer(
+                providerId,
+                "Lore Keeper",
+                "minecraft:cartographer",
+                3,
+                Level.OVERWORLD,
+                providerPos,
+                "village:minecraft:overworld:4,65,-2");
+
+        QuestProviderBinding binding = VillagerQuestProviderType.INSTANCE
+                .bindingFromProgress(helper.getLevel(), progress)
+                .orElseThrow(() -> new GameTestAssertException("saved provider snapshot was not restored"));
+        QuestExecutionContext execution = QuestExecutionContext.fromSavedProvider(
+                helper.getLevel(),
+                null,
+                quest,
+                "snapshot_test",
+                VillagerQuestProviderType.INSTANCE,
+                binding);
+
+        helper.assertValueEqual(binding.providerType(), VillagerQuestProviderType.ID, "provider type");
+        helper.assertValueEqual(binding.providerId(), providerId, "provider id");
+        helper.assertValueEqual(binding.displayName(), "Lore Keeper", "provider display name");
+        helper.assertValueEqual(binding.professionId(), ResourceLocation.tryParse("minecraft:cartographer"), "provider profession");
+        helper.assertValueEqual(binding.level(), 3, "provider level");
+        helper.assertValueEqual(binding.dimension(), Level.OVERWORLD, "provider dimension");
+        helper.assertValueEqual(binding.pos(), providerPos, "provider position");
+        helper.assertValueEqual(binding.villageKey(), "village:minecraft:overworld:4,65,-2", "provider village key");
+        helper.assertFalse(binding.live(), "saved provider marked live");
+        helper.assertTrue(execution.hasCapability(QuestExecutionContext.SAVED_PROVIDER), "saved provider capability");
+        helper.assertTrue(execution.liveProviderEntity().isEmpty(), "saved provider has live entity");
+        helper.assertTrue(execution.dialogueContext().isEmpty(), "saved provider has dialogue context");
+        helper.assertTrue(
+                VillagerQuestProviderType.INSTANCE.matchesIssuerLock(execution, quest, progress),
+                "saved provider did not satisfy issuer lock");
+
+        QuestProviderBinding otherBinding = new QuestProviderBinding(
+                VillagerQuestProviderType.ID,
+                UUID.fromString("00000000-0000-0000-0000-000000000004"),
+                "Other Keeper",
+                ResourceLocation.tryParse("minecraft:cartographer"),
+                3,
+                Level.OVERWORLD,
+                providerPos,
+                "village:minecraft:overworld:4,65,-2",
+                Map.of(),
+                false);
+        QuestExecutionContext otherExecution = QuestExecutionContext.fromSavedProvider(
+                helper.getLevel(),
+                null,
+                quest,
+                "snapshot_test",
+                VillagerQuestProviderType.INSTANCE,
+                otherBinding);
+        helper.assertFalse(
+                VillagerQuestProviderType.INSTANCE.matchesIssuerLock(otherExecution, quest, progress),
+                "different saved provider satisfied issuer lock");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void fakeQuestProviderTypeProvesContextIsNotVillagerSpecific(GameTestHelper helper) {
+        QuestDefinition quest = quest(helper, VillagerRetaliation.id("choose_the_horizon"));
+        ResourceLocation fakeProviderId = VillagerRetaliation.id("fake_provider_type");
+        QuestProviderType fakeProvider = new QuestProviderType() {
+            @Override
+            public ResourceLocation id() {
+                return fakeProviderId;
+            }
+
+            @Override
+            public boolean matchesOffer(QuestExecutionContext context, QuestDefinition definition) {
+                return context != null
+                        && context.hasCapability(FAKE_PROVIDER_CAPABILITY)
+                        && context.providerBinding()
+                                .map(binding -> fakeProviderId.equals(binding.providerType()))
+                                .orElse(false);
+            }
+
+            @Override
+            public boolean matchesIssuerLock(
+                    QuestExecutionContext context,
+                    QuestDefinition definition,
+                    VillagerQuestSavedData.QuestProgress progress) {
+                return context != null
+                        && context.providerBinding()
+                                .map(binding -> fakeProviderId.equals(binding.providerType()))
+                                .orElse(false);
+            }
+        };
+        QuestProviderBinding binding = new QuestProviderBinding(
+                fakeProvider.id(),
+                UUID.fromString("00000000-0000-0000-0000-000000000005"),
+                "Notice Board",
+                VillagerRetaliation.id("notice_board"),
+                0,
+                Level.OVERWORLD,
+                new BlockPos(0, 64, 0),
+                "village:test",
+                Map.of(),
+                false);
+        QuestExecutionContext context = new QuestExecutionContext(
+                helper.getLevel(),
+                null,
+                quest,
+                "fake_provider_test",
+                fakeProvider,
+                binding,
+                null,
+                binding.villageKey(),
+                Set.of(FAKE_PROVIDER_CAPABILITY),
+                null);
+
+        helper.assertTrue(context.liveProviderEntity().isEmpty(), "fake provider has live entity");
+        helper.assertTrue(context.dialogueContext().isEmpty(), "fake provider has dialogue context");
+        helper.assertTrue(context.hasCapability(FAKE_PROVIDER_CAPABILITY), "fake provider capability");
+        helper.assertTrue(fakeProvider.matchesOffer(context, quest), "fake provider did not match offer");
+        helper.assertTrue(
+                fakeProvider.matchesIssuerLock(context, quest, new VillagerQuestSavedData.QuestProgress()),
+                "fake provider did not match issuer lock");
 
         helper.succeed();
     }
