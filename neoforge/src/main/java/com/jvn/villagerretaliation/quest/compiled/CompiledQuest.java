@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.quest.compiled;
 
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestTriggerIndex;
+import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -24,6 +26,7 @@ public record CompiledQuest(
         Map<String, CompiledQuestStage> stagesById,
         List<CompiledQuestTrigger> triggers,
         Map<QuestDefinition.TriggerEvent, List<CompiledQuestTrigger>> triggersByEvent,
+        QuestTriggerIndex triggerIndex,
         CompiledQuestRewards rewards
 ) {
     public CompiledQuest {
@@ -46,7 +49,10 @@ public record CompiledQuest(
         stages = stages == null ? List.of() : List.copyOf(stages);
         stagesById = freezeOrderedMap(stagesById);
         triggers = triggers == null ? List.of() : List.copyOf(triggers);
-        triggersByEvent = freezeTriggerMap(triggersByEvent);
+        triggerIndex = triggerIndex == null ? QuestTriggerRegistry.index(triggers) : triggerIndex;
+        triggersByEvent = freezeTriggerMap(triggersByEvent == null || triggersByEvent.isEmpty()
+                ? triggerIndex.triggersByEvent()
+                : triggersByEvent);
         rewards = rewards == null ? new CompiledQuestRewards(null) : rewards;
     }
 

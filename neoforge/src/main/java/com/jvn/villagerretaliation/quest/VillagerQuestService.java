@@ -28,6 +28,7 @@ import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
@@ -1022,7 +1023,7 @@ public final class VillagerQuestService {
         VillagerQuestSavedData.QuestProgress started = data.getOrCreate(context.player().getUUID(), definition.id());
         QuestProviderBinding providerBinding = VillagerQuestProviderType.INSTANCE.bindingFromDialogueContext(context);
         QuestLifecycleService.start(definition.id(), started, providerBinding, target, context.level().getGameTime());
-        markContinuousTriggersUsed(started, definition, context.level().getGameTime());
+        markContinuousTriggersUsed(started, context, definition);
         if (definition.target().hasProofItem() && hasRequiredProof(context.player(), definition)) {
             started.markHasProof();
         }
@@ -3163,8 +3164,11 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.TriggerEvent event) {
-        if (!(player.level() instanceof ServerLevel level)
-                || !VillagerQuestResources.hasQuestTrigger(level.getServer(), definition.id(), event)) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        CompiledQuest compiled = VillagerQuestResources.compiledQuest(level.getServer(), definition.id()).orElse(null);
+        if (compiled == null || !compiled.triggerIndex().hasEvent(event)) {
             return false;
         }
         Villager villager = startedVillager(level, progress);
@@ -3172,7 +3176,7 @@ public final class VillagerQuestService {
             return false;
         }
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
-        return dispatchQuestTriggers(context, definition, progress, event);
+        return dispatchQuestTriggers(context, compiled, progress, event);
     }
 
     private static boolean dispatchQuestTriggers(
@@ -3180,22 +3184,28 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.TriggerEvent event) {
-        if (progress == null
-                || !VillagerQuestResources.hasQuestTrigger(context.level().getServer(), definition.id(), event)) {
+        if (context == null || definition == null) {
             return false;
         }
+        CompiledQuest compiled = VillagerQuestResources.compiledQuest(context.level().getServer(), definition.id()).orElse(null);
+        return dispatchQuestTriggers(context, compiled, progress, event);
+    }
 
-        boolean dirty = false;
-        for (QuestDefinition.Trigger trigger : definition.triggers()) {
-            if (trigger.event() != event || !questTriggerMatches(context, progress, trigger)) {
-                continue;
-            }
-            if (runQuestTriggerActions(context, definition, progress, trigger)) {
-                progress.markTriggerUsed(trigger.id(), context.level().getGameTime());
-                dirty = true;
-            }
+    private static boolean dispatchQuestTriggers(
+            DialogueContext context,
+            CompiledQuest compiled,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.TriggerEvent event) {
+        if (progress == null || compiled == null || !compiled.triggerIndex().hasEvent(event)) {
+            return false;
         }
-        return dirty;
+        return QuestTriggerDispatcher.dispatch(
+                        context,
+                        compiled,
+                        progress,
+                        event,
+                        VillagerQuestService::runQuestTriggerActions)
+                .dirty();
     }
 
     private static boolean dispatchStageChangedTriggers(
@@ -3215,44 +3225,16 @@ public final class VillagerQuestService {
 
     private static void markContinuousTriggersUsed(
             VillagerQuestSavedData.QuestProgress progress,
-            QuestDefinition definition,
-            long gameTime) {
-        for (QuestDefinition.Trigger trigger : definition.triggers()) {
-            if (trigger.repeatable() && trigger.event().isContinuous() && trigger.cooldownTicks() > 0L) {
-                progress.markTriggerUsed(trigger.id(), gameTime);
-            }
-        }
-    }
-
-    private static boolean questTriggerMatches(
             DialogueContext context,
-            VillagerQuestSavedData.QuestProgress progress,
-            QuestDefinition.Trigger trigger) {
-        if (trigger.event() == QuestDefinition.TriggerEvent.PROXIMITY) {
-            double radius = trigger.radius();
-            if (context.player().distanceToSqr(context.villager()) > radius * radius) {
-                return false;
-            }
+            QuestDefinition definition) {
+        if (context == null || definition == null) {
+            return;
         }
-        if (!trigger.stages().isEmpty() && !trigger.stages().contains(progress.currentStage())) {
-            return false;
-        }
-        long lastTriggered = progress.lastTriggerGameTime(trigger.id());
-        if (!trigger.repeatable() && lastTriggered > 0L) {
-            return false;
-        }
-        if (trigger.cooldownTicks() > 0L) {
-            if (lastTriggered > 0L && context.level().getGameTime() - lastTriggered < trigger.cooldownTicks()) {
-                return false;
-            }
-            if (lastTriggered <= 0L
-                    && trigger.event().isContinuous()
-                    && progress.startedGameTime() > 0L
-                    && context.level().getGameTime() - progress.startedGameTime() < trigger.cooldownTicks()) {
-                return false;
-            }
-        }
-        return DialogueCondition.matchesAll(context, trigger.conditions());
+        VillagerQuestResources.questTriggerIndex(context.level().getServer(), definition.id())
+                .ifPresent(index -> QuestTriggerDispatcher.markContinuousTriggersUsed(
+                        progress,
+                        index,
+                        context.level().getGameTime()));
     }
 
     private static boolean runQuestTriggerActions(

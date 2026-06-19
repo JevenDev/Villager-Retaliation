@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.quest.compiler;
 
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestTriggerIndex;
+import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestMetadata;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
@@ -12,7 +14,6 @@ import com.jvn.villagerretaliation.quest.compiled.CompiledQuestUi;
 import com.jvn.villagerretaliation.quest.compiled.QuestSourcePointer;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ public final class QuestV1Compiler {
         List<CompiledQuestStage> stages = compileStages(definition, objectivesById, source);
         Map<String, CompiledQuestStage> stagesById = indexStages(stages);
         List<CompiledQuestTrigger> triggers = compileTriggers(definition, source);
+        QuestTriggerIndex triggerIndex = QuestTriggerRegistry.index(triggers);
 
         return new CompiledQuest(
                 definition.id(),
@@ -59,7 +61,8 @@ public final class QuestV1Compiler {
                 stages,
                 stagesById,
                 triggers,
-                indexTriggersByEvent(triggers),
+                triggerIndex.triggersByEvent(),
+                triggerIndex,
                 new CompiledQuestRewards(definition.rewards()));
     }
 
@@ -138,13 +141,4 @@ public final class QuestV1Compiler {
         return List.copyOf(triggers);
     }
 
-    private static Map<QuestDefinition.TriggerEvent, List<CompiledQuestTrigger>> indexTriggersByEvent(
-            List<CompiledQuestTrigger> triggers) {
-        Map<QuestDefinition.TriggerEvent, List<CompiledQuestTrigger>> byEvent =
-                new EnumMap<>(QuestDefinition.TriggerEvent.class);
-        for (CompiledQuestTrigger trigger : triggers) {
-            byEvent.computeIfAbsent(trigger.definition().event(), ignored -> new ArrayList<>()).add(trigger);
-        }
-        return byEvent;
-    }
 }

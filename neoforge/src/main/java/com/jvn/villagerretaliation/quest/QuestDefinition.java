@@ -654,22 +654,11 @@ public record QuestDefinition(
         EXPIRED;
 
         public static TriggerEvent bySerializedName(String value) {
-            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-            return switch (normalized) {
-                case "player_tick" -> PLAYER_TICK;
-                case "proximity" -> PROXIMITY;
-                case "started" -> STARTED;
-                case "progress" -> PROGRESS;
-                case "stage", "stage_changed", "stage_entered", "stage_set" -> STAGE_CHANGED;
-                case "completed" -> COMPLETED;
-                case "abandoned" -> ABANDONED;
-                case "expired" -> EXPIRED;
-                default -> null;
-            };
+            return QuestTriggerRegistry.eventBySerializedName(value);
         }
 
         public boolean isContinuous() {
-            return this == PLAYER_TICK || this == PROXIMITY;
+            return QuestTriggerRegistry.isContinuous(this);
         }
     }
 

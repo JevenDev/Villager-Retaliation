@@ -113,6 +113,10 @@ public final class VillagerQuestResources {
                 .map(objective -> objective == null ? null : objective.source());
     }
 
+    public static Optional<QuestTriggerIndex> questTriggerIndex(MinecraftServer server, ResourceLocation id) {
+        return compiledQuest(server, id).map(CompiledQuest::triggerIndex);
+    }
+
     public static boolean hasMobKillObjectives(MinecraftServer server, ResourceLocation id) {
         return id != null && loadCache(server).objectiveEventQuestIds()
                 .getOrDefault(QuestObjectiveEventKind.MOB_KILL, Set.of())
@@ -220,7 +224,7 @@ public final class VillagerQuestResources {
                     objectiveQuestIds(quests, QuestDefinition.ObjectiveType.FACT),
                     memoryEventQuestIds(quests),
                     exclusiveGroupQuestIds(quests),
-                    triggerEventQuestIds(quests));
+                    triggerEventQuestIds(catalog.compiledCatalog()));
             cachedQuests = loaded;
             return loaded;
         }
@@ -294,12 +298,12 @@ public final class VillagerQuestResources {
     }
 
     private static Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> triggerEventQuestIds(
-            Map<ResourceLocation, QuestDefinition> quests) {
+            CompiledQuestCatalog catalog) {
         Map<QuestDefinition.TriggerEvent, Set<ResourceLocation>> idsByEvent =
                 new EnumMap<>(QuestDefinition.TriggerEvent.class);
-        for (Map.Entry<ResourceLocation, QuestDefinition> entry : quests.entrySet()) {
-            for (QuestDefinition.Trigger trigger : entry.getValue().triggers()) {
-                idsByEvent.computeIfAbsent(trigger.event(), ignored -> new LinkedHashSet<>()).add(entry.getKey());
+        for (CompiledQuest quest : catalog.quests()) {
+            for (QuestDefinition.TriggerEvent event : quest.triggerIndex().events()) {
+                idsByEvent.computeIfAbsent(event, ignored -> new LinkedHashSet<>()).add(quest.id());
             }
         }
 
@@ -1517,7 +1521,7 @@ public final class VillagerQuestResources {
     }
 
     private static long defaultTriggerCooldown(QuestDefinition.TriggerEvent event) {
-        return event.isContinuous() ? 20L * 30L : 0L;
+        return QuestTriggerRegistry.defaultCooldownTicks(event);
     }
 
     private static ResourceLocation readMemoryEvent(JsonObject rewards) {

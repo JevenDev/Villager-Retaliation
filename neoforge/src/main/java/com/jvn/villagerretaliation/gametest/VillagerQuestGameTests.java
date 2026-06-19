@@ -28,6 +28,10 @@ import com.jvn.villagerretaliation.quest.QuestObjectiveResult;
 import com.jvn.villagerretaliation.quest.QuestObjectiveQuery;
 import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.QuestStageReadiness;
+import com.jvn.villagerretaliation.quest.QuestTriggerDispatchResult;
+import com.jvn.villagerretaliation.quest.QuestTriggerDispatcher;
+import com.jvn.villagerretaliation.quest.QuestTriggerIndex;
+import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.QuestTrackerPresenter;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
@@ -582,6 +586,124 @@ public final class VillagerQuestGameTests {
                 objective -> objective.id().equals(choiceObjective.id()));
         helper.assertTrue(ready.ready(), "stage readiness did not accept complete objective");
         helper.assertValueEqual(ready.nextStage(), "done", "stage readiness next stage");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void triggerRegistryNormalizesEventsAndIndexesStages(GameTestHelper helper) {
+        helper.assertValueEqual(
+                QuestTriggerRegistry.canonicalEventId("stage_set"),
+                "stage_changed",
+                "stage_set trigger alias");
+        helper.assertValueEqual(
+                QuestDefinition.TriggerEvent.bySerializedName("stage_entered"),
+                QuestDefinition.TriggerEvent.STAGE_CHANGED,
+                "stage_entered trigger event");
+        helper.assertValueEqual(
+                QuestTriggerRegistry.defaultCooldownTicks(QuestDefinition.TriggerEvent.PLAYER_TICK),
+                600L,
+                "player_tick default cooldown");
+
+        List<QuestDefinition.Trigger> triggers = List.of(
+                registryTrigger("tick_global", QuestDefinition.TriggerEvent.PLAYER_TICK, Set.of(), 600L, true),
+                registryTrigger("tick_started", QuestDefinition.TriggerEvent.PLAYER_TICK, Set.of("started"), 0L, true),
+                registryTrigger("completed_once", QuestDefinition.TriggerEvent.COMPLETED, Set.of(), 0L, false),
+                registryTrigger("tick_done", QuestDefinition.TriggerEvent.PLAYER_TICK, Set.of("done"), 20L, true));
+        QuestTriggerIndex index = QuestTriggerRegistry.index(compiledTriggers(triggers));
+
+        helper.assertValueEqual(
+                index.candidates(QuestDefinition.TriggerEvent.PLAYER_TICK, "started").stream()
+                        .map(CompiledQuestTrigger::id)
+                        .toList(),
+                List.of("tick_global", "tick_started"),
+                "started trigger candidates");
+        helper.assertValueEqual(
+                index.candidates(QuestDefinition.TriggerEvent.PLAYER_TICK, "done").stream()
+                        .map(CompiledQuestTrigger::id)
+                        .toList(),
+                List.of("tick_global", "tick_done"),
+                "done trigger candidates");
+        helper.assertTrue(
+                index.candidates(QuestDefinition.TriggerEvent.PROGRESS, "started").isEmpty(),
+                "unrelated event returned candidates");
+        helper.assertValueEqual(index.continuousTriggers().size(), 3, "continuous trigger index size");
+
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        QuestTriggerDispatcher.markContinuousTriggersUsed(progress, index, 777L);
+        helper.assertValueEqual(progress.lastTriggerGameTime("tick_global"), 777L, "global continuous mark");
+        helper.assertValueEqual(progress.lastTriggerGameTime("tick_started"), 0L, "zero-cooldown continuous mark");
+        helper.assertValueEqual(progress.lastTriggerGameTime("tick_done"), 777L, "stage continuous mark");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void triggerDispatcherReportsIndexedDispatchMetrics(GameTestHelper helper) {
+        List<QuestDefinition.Trigger> triggers = List.of(
+                registryTrigger("progress_global", QuestDefinition.TriggerEvent.PROGRESS, Set.of(), 0L, true),
+                registryTrigger("progress_started", QuestDefinition.TriggerEvent.PROGRESS, Set.of("started"), 30L, true),
+                registryTrigger("progress_done", QuestDefinition.TriggerEvent.PROGRESS, Set.of("done"), 0L, true),
+                registryTrigger("completed_once", QuestDefinition.TriggerEvent.COMPLETED, Set.of(), 0L, false));
+        QuestDefinition quest = registryTriggerQuest(triggers);
+        QuestTriggerIndex index = QuestTriggerRegistry.index(compiledTriggers(triggers));
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, BlockPos.ZERO, 100L);
+        progress.setCurrentStage("started");
+
+        List<String> ranTriggers = new ArrayList<>();
+        QuestTriggerDispatchResult first = QuestTriggerDispatcher.dispatchAtGameTime(
+                null,
+                200L,
+                quest,
+                index,
+                progress,
+                QuestDefinition.TriggerEvent.PROGRESS,
+                (context, definition, activeProgress, trigger) -> {
+                    ranTriggers.add(trigger.id());
+                    return true;
+                });
+        helper.assertTrue(first.dirty(), "first dispatch did not dirty progress");
+        helper.assertValueEqual(first.trace().candidateTriggers(), 2, "first dispatch candidate count");
+        helper.assertValueEqual(first.trace().evaluatedTriggers(), 2, "first dispatch evaluated count");
+        helper.assertValueEqual(first.trace().matchedTriggers(), 2, "first dispatch matched count");
+        helper.assertValueEqual(first.trace().ranTriggers(), 2, "first dispatch ran count");
+        helper.assertValueEqual(ranTriggers, List.of("progress_global", "progress_started"), "first dispatch order");
+        helper.assertValueEqual(progress.lastTriggerGameTime("progress_global"), 200L, "global trigger time");
+        helper.assertValueEqual(progress.lastTriggerGameTime("progress_started"), 200L, "started trigger time");
+
+        ranTriggers.clear();
+        QuestTriggerDispatchResult cooldown = QuestTriggerDispatcher.dispatchAtGameTime(
+                null,
+                210L,
+                quest,
+                index,
+                progress,
+                QuestDefinition.TriggerEvent.PROGRESS,
+                (context, definition, activeProgress, trigger) -> {
+                    ranTriggers.add(trigger.id());
+                    return true;
+                });
+        helper.assertTrue(cooldown.dirty(), "cooldown dispatch did not run eligible trigger");
+        helper.assertValueEqual(cooldown.trace().candidateTriggers(), 2, "cooldown dispatch candidate count");
+        helper.assertValueEqual(cooldown.trace().evaluatedTriggers(), 2, "cooldown dispatch evaluated count");
+        helper.assertValueEqual(cooldown.trace().matchedTriggers(), 1, "cooldown dispatch matched count");
+        helper.assertValueEqual(cooldown.trace().ranTriggers(), 1, "cooldown dispatch ran count");
+        helper.assertValueEqual(ranTriggers, List.of("progress_global"), "cooldown dispatch order");
+        helper.assertValueEqual(progress.lastTriggerGameTime("progress_global"), 210L, "updated global trigger time");
+        helper.assertValueEqual(progress.lastTriggerGameTime("progress_started"), 200L, "cooldown trigger time");
+
+        QuestTriggerDispatchResult unrelated = QuestTriggerDispatcher.dispatchAtGameTime(
+                null,
+                220L,
+                quest,
+                index,
+                progress,
+                QuestDefinition.TriggerEvent.ABANDONED,
+                (context, definition, activeProgress, trigger) -> true);
+        helper.assertFalse(unrelated.dirty(), "unrelated dispatch dirtied progress");
+        helper.assertValueEqual(unrelated.trace().candidateTriggers(), 0, "unrelated dispatch candidate count");
+        helper.assertValueEqual(unrelated.trace().evaluatedTriggers(), 0, "unrelated dispatch evaluated count");
 
         helper.succeed();
     }
@@ -1342,6 +1464,55 @@ public final class VillagerQuestGameTests {
                 QuestDefinition.Links.EMPTY);
     }
 
+    private static QuestDefinition.Trigger registryTrigger(
+            String id,
+            QuestDefinition.TriggerEvent event,
+            Set<String> stages,
+            long cooldownTicks,
+            boolean repeatable) {
+        return new QuestDefinition.Trigger(
+                id,
+                event,
+                List.of(),
+                List.of(),
+                stages,
+                cooldownTicks,
+                10.0D,
+                repeatable);
+    }
+
+    private static QuestDefinition registryTriggerQuest(List<QuestDefinition.Trigger> triggers) {
+        return new QuestDefinition(
+                VillagerRetaliation.id("registry_triggers"),
+                "Registry Triggers",
+                "",
+                "",
+                "",
+                "",
+                Set.of("test"),
+                null,
+                null,
+                QuestDefinition.Target.EMPTY,
+                List.of(),
+                QuestDefinition.Rules.DEFAULT,
+                QuestDefinition.Tracker.EMPTY,
+                Map.of(),
+                triggers,
+                QuestDefinition.Rewards.EMPTY,
+                QuestDefinition.Dialogue.EMPTY,
+                null,
+                QuestDefinition.Links.EMPTY);
+    }
+
+    private static List<CompiledQuestTrigger> compiledTriggers(List<QuestDefinition.Trigger> triggers) {
+        List<CompiledQuestTrigger> compiled = new ArrayList<>();
+        for (int index = 0; index < triggers.size(); index++) {
+            QuestDefinition.Trigger trigger = triggers.get(index);
+            compiled.add(new CompiledQuestTrigger(trigger.id(), index, trigger, null));
+        }
+        return List.copyOf(compiled);
+    }
+
     private static void assertCompiledQuestMatchesParsed(
             GameTestHelper helper,
             QuestDefinition quest,
@@ -1448,6 +1619,10 @@ public final class VillagerQuestGameTests {
                 compiled.triggers().stream().map(CompiledQuestTrigger::id).toList(),
                 parsedTriggerIds,
                 quest.id() + " trigger order");
+        helper.assertValueEqual(
+                compiled.triggerIndex().triggers().stream().map(CompiledQuestTrigger::id).toList(),
+                parsedTriggerIds,
+                quest.id() + " trigger index order");
 
         for (int index = 0; index < quest.triggers().size(); index++) {
             QuestDefinition.Trigger parsed = quest.triggers().get(index);
@@ -1457,6 +1632,14 @@ public final class VillagerQuestGameTests {
             helper.assertTrue(
                     compiled.triggersByEvent().getOrDefault(parsed.event(), List.of()).contains(trigger),
                     quest.id() + "/" + parsed.id() + " trigger event index");
+            helper.assertTrue(
+                    compiled.triggerIndex().triggersByEvent().getOrDefault(parsed.event(), List.of()).contains(trigger),
+                    quest.id() + "/" + parsed.id() + " compiled trigger event index");
+            if (parsed.event().isContinuous()) {
+                helper.assertTrue(
+                        compiled.triggerIndex().continuousTriggers().contains(trigger),
+                        quest.id() + "/" + parsed.id() + " continuous trigger index");
+            }
             helper.assertTrue(trigger.source().jsonPointer().startsWith("/triggers/"),
                     quest.id() + "/" + parsed.id() + " trigger source pointer");
         }
