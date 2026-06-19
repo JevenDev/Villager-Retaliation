@@ -146,6 +146,31 @@
         "implementation": "QuestFact"
       },
       {
+        "id": "selected_choice",
+        "aliases": [
+          "choice_selected",
+          "quest_choice_selected",
+          "response_selected"
+        ],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "SelectedChoice"
+      },
+      {
+        "id": "stage_history",
+        "aliases": [
+          "quest_stage_history",
+          "visited_stage"
+        ],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "StageHistory"
+      },
+      {
         "id": "mood",
         "aliases": [
           "villager_mood"
@@ -222,6 +247,20 @@
           "player_live",
           "provider_live",
           "provider_snapshot"
+        ]
+      },
+      {
+        "id": "quest_transition",
+        "aliases": [
+          "branch_transition",
+          "quest_response_transition",
+          "response_transition"
+        ],
+        "kind": "quest_transition",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "world_known"
         ]
       },
       {
@@ -648,6 +687,7 @@
         "any",
         "any_of",
         "attribute",
+        "choice_selected",
         "fact",
         "family",
         "memory",
@@ -655,17 +695,22 @@
         "not",
         "or",
         "quest",
+        "quest_choice_selected",
         "quest_counter",
         "quest_fact",
         "quest_stage",
+        "quest_stage_history",
         "quest_tag",
         "quest_variable",
         "recruitment_memory",
         "relationship",
         "reputation",
+        "response_selected",
+        "selected_choice",
         "skill",
         "social_attribute",
         "stage",
+        "stage_history",
         "stat",
         "time",
         "time_of_day",
@@ -673,6 +718,7 @@
         "villager_age",
         "villager_level",
         "villager_mood",
+        "visited_stage",
         "weather"
       ]
     },
@@ -681,6 +727,7 @@
       "enum": [
         "add_counter",
         "add_tag",
+        "branch_transition",
         "clear_tag",
         "counter",
         "dialogue",
@@ -702,12 +749,15 @@
         "notify",
         "quest",
         "quest_action",
+        "quest_response_transition",
         "quest_stage",
         "quest_tag",
         "quest_tracker",
+        "quest_transition",
         "remove_tag",
         "rep",
         "reputation",
+        "response_transition",
         "set_fact",
         "set_stage",
         "set_tag",

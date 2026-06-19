@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.quest.QuestIds;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -29,7 +30,9 @@ public record VillagerActionDefinition(
         ResourceLocation factTag,
         String factKey,
         String factValue,
-        Map<String, List<String>> linesByStatus) {
+        Map<String, List<String>> linesByStatus,
+        CompiledQuestTransition questTransition,
+        boolean required) {
     public VillagerActionDefinition {
         kind = kind == null ? Kind.NONE : kind;
         questAction = questAction == null ? QuestAction.NONE : questAction;
@@ -40,6 +43,7 @@ public record VillagerActionDefinition(
         factKey = factKey == null ? "" : factKey;
         factValue = factValue == null ? "" : factValue;
         linesByStatus = linesByStatus == null ? Map.of() : copyLines(linesByStatus);
+        questTransition = questTransition == null ? CompiledQuestTransition.EMPTY : questTransition;
     }
 
     public static List<VillagerActionDefinition> readList(ResourceLocation location, String context, JsonObject entry) {
@@ -110,7 +114,11 @@ public record VillagerActionDefinition(
                 || entry.has("gossip")
                 || entry.has("gossip_reputation")
                 || entry.has("memory_event")
-                || entry.has("loot_table");
+                || entry.has("loot_table")
+                || entry.has("target_stage")
+                || entry.has("from_stage")
+                || entry.has("scene_path")
+                || entry.has("source_pointer");
     }
 
     private static java.util.Optional<VillagerActionDefinition> read(
@@ -126,7 +134,7 @@ public record VillagerActionDefinition(
 
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
-        if (questId == null && (kind == Kind.QUEST || kind.isQuestFact()) && !hasExplicitQuestId) {
+        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind.isQuestFact()) && !hasExplicitQuestId) {
             questId = defaultQuestId;
         }
         QuestAction questAction = QuestAction.bySerializedName(
@@ -144,6 +152,10 @@ public record VillagerActionDefinition(
         ResourceLocation factTag = readFactTag(location, context, entry, kind);
         String factKey = readFactKey(entry, kind);
         String factValue = readFactValue(entry, kind);
+        CompiledQuestTransition questTransition = kind == Kind.QUEST_TRANSITION
+                ? CompiledQuestTransition.read(location, entry, questId)
+                : CompiledQuestTransition.EMPTY;
+        boolean required = DatapackJsonReader.readBoolean(entry, "required", false);
 
         if (!hasRequiredFields(
                 location,
@@ -158,7 +170,8 @@ public record VillagerActionDefinition(
                 forcedDialogue,
                 factTag,
                 factKey,
-                factValue)) {
+                factValue,
+                questTransition)) {
             return java.util.Optional.empty();
         }
         return java.util.Optional.of(new VillagerActionDefinition(
@@ -176,7 +189,9 @@ public record VillagerActionDefinition(
                 factTag,
                 factKey,
                 factValue,
-                readLinesByStatus(entry)));
+                readLinesByStatus(entry),
+                questTransition,
+                required));
     }
 
     private static Kind inferKind(JsonObject entry, ResourceLocation defaultQuestId) {
@@ -195,6 +210,9 @@ public record VillagerActionDefinition(
         }
         if (entry.has("stage")) {
             return Kind.SET_VARIABLE;
+        }
+        if (entry.has("target_stage") || entry.has("from_stage") || entry.has("scene_path") || entry.has("source_pointer")) {
+            return Kind.QUEST_TRANSITION;
         }
         if (entry.has("counter") || entry.has("increment_counter")) {
             return Kind.COUNTER;
@@ -282,9 +300,11 @@ public record VillagerActionDefinition(
             String forcedDialogue,
             ResourceLocation factTag,
             String factKey,
-            String factValue) {
+            String factValue,
+            CompiledQuestTransition questTransition) {
         boolean valid = switch (kind) {
             case QUEST -> questId != null && questAction != QuestAction.NONE;
+            case QUEST_TRANSITION -> questTransition != null && !questTransition.isEmpty();
             case MEMORY -> memoryTag != null;
             case LOOT -> lootTable != null;
             case FORCED_DIALOGUE -> !forcedDialogue.isBlank();
@@ -440,6 +460,7 @@ public record VillagerActionDefinition(
         TRACKER("tracker"),
         FORCED_DIALOGUE("forced_dialogue"),
         QUEST("quest"),
+        QUEST_TRANSITION("quest_transition"),
         EXPERIENCE("experience"),
         REPUTATION("reputation"),
         GOSSIP("gossip"),

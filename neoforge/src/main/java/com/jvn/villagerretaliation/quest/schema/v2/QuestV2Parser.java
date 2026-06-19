@@ -636,6 +636,7 @@ public final class QuestV2Parser {
             QuestV2Resource.TextSpec label = readTextSpec(object);
             QuestV2Resource.Transition transition = readTransition(validator, object, responsePointer);
             List<JsonObject> actions = readActionObjects(validator, object.get("actions"), responsePointer + "/actions");
+            validateResponseTransitionActionConflicts(validator, responsePointer, transition, actions);
             responses.add(new QuestV2Resource.Response(id, label, transition, actions, object));
         }
         return List.copyOf(responses);
@@ -946,6 +947,55 @@ public final class QuestV2Parser {
                     "Reference a scene id from this stage.",
                     Set.of(stage.id(), transition.scene()));
         }
+    }
+
+    private static void validateResponseTransitionActionConflicts(
+            Validator validator,
+            String pointer,
+            QuestV2Resource.Transition transition,
+            List<JsonObject> actions) {
+        if (transition == null
+                || transition.isEmpty()
+                || !transition.scene().isBlank()
+                || !transition.response().isBlank()
+                || actions == null
+                || actions.isEmpty()) {
+            return;
+        }
+        for (int index = 0; index < actions.size(); index++) {
+            if (isStageChangingAction(actions.get(index))) {
+                validator.error(
+                        pointer + "/actions/" + index,
+                        "response cannot define both a transition and a stage-changing action.",
+                        "Use transition or next for branch flow, and keep actions for side effects.",
+                        Set.of());
+            }
+        }
+    }
+
+    private static boolean isStageChangingAction(JsonObject action) {
+        if (action == null) {
+            return false;
+        }
+        String type = VillagerActionRegistry.canonicalTypeId(readString(action, "type", "action"));
+        if ("quest_transition".equals(type)) {
+            return true;
+        }
+        if ("set_variable".equals(type)) {
+            String key = firstNonBlank(
+                    readString(action, "variable"),
+                    firstNonBlank(readString(action, "key"), readString(action, "fact")));
+            return action.has("stage") || "stage".equals(key);
+        }
+        if (!"quest".equals(type)) {
+            return false;
+        }
+        VillagerActionDefinition.QuestAction questAction =
+                VillagerActionDefinition.QuestAction.bySerializedName(readString(action, "action"));
+        return questAction == VillagerActionDefinition.QuestAction.START
+                || questAction == VillagerActionDefinition.QuestAction.TURN_IN
+                || questAction == VillagerActionDefinition.QuestAction.ABANDON
+                || questAction == VillagerActionDefinition.QuestAction.BLOCK;
     }
 
     private static void validateReachability(Validator validator, QuestV2Resource resource) {

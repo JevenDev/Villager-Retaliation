@@ -102,6 +102,19 @@ public final class QuestDebugFormatter {
                 + " consumed_reason=" + blankAs(progress.consumedReason(), "none");
     }
 
+    public static String choiceHistoryLine(VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null || progress.choiceHistory().isEmpty()) {
+            return "choice_history entries=0";
+        }
+        VillagerQuestSavedData.ChoiceHistoryEntry latest = progress.lastChoice();
+        return "choice_history entries=" + progress.choiceHistory().size()
+                + " latest_scene=" + blankAs(latest.scenePath(), "none")
+                + " latest_response=" + blankAs(latest.responseId(), "none")
+                + " latest_prior_stage=" + blankAs(latest.priorStage(), "none")
+                + " latest_next_stage=" + blankAs(latest.nextStage(), "none")
+                + " latest_time=" + latest.gameTime();
+    }
+
     public static String targetDefinitionLine(QuestDefinition.Target target) {
         return "target_definition structure=" + target.structure()
                 + " dimension=" + dimension(target.dimension())

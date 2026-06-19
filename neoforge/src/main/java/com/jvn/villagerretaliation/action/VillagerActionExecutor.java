@@ -53,6 +53,7 @@ public final class VillagerActionExecutor {
             case TRACKER -> VillagerActionResult.tracker(action.flashTracker());
             case FORCED_DIALOGUE -> executeForcedDialogue(context, action, replacements);
             case QUEST -> executeQuestAction(context, action, replacements);
+            case QUEST_TRANSITION -> VillagerQuestService.applyCompiledTransition(context, action.questTransition(), replacements);
             case EXPERIENCE -> awardExperience(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case REPUTATION -> changeReputation(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case GOSSIP -> spreadGossip(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;

@@ -174,7 +174,13 @@ public final class QuestDialogueCompiler {
             if (lines.size() > 0) {
                 node.add("lines", lines);
             }
-            node.add("responses", responseArray(resource, stage.id(), stage.responses(), stage, responsesSource));
+            node.add("responses", responseArray(
+                    resource,
+                    stage.id(),
+                    stage.responses(),
+                    stage,
+                    responsesSource,
+                    stageResponsesEntryId(stage.id())));
             addNode(nodes, nodeId, node);
             addEntry(resource, stage.id(), entryId, titleCase(stage.id()), nodeId, responsesSource, null, entries);
             putBinding(
@@ -206,7 +212,13 @@ public final class QuestDialogueCompiler {
         }
         copyArrayIfPresent(scene.data(), node, "actions");
         copyArrayIfPresent(scene.data(), node, "conditions");
-        JsonArray responses = responseArray(resource, stageId, scene.responses(), stage, sceneSource.child("responses"));
+        JsonArray responses = responseArray(
+                resource,
+                stageId,
+                scene.responses(),
+                stage,
+                sceneSource.child("responses"),
+                stageSceneEntryId(stageId, scene.id()));
         if (responses.size() > 0) {
             node.add("responses", responses);
         }
@@ -218,7 +230,8 @@ public final class QuestDialogueCompiler {
             String stageId,
             List<QuestV2Resource.Response> responses,
             QuestV2Resource.Stage stage,
-            QuestSourcePointer source) {
+            QuestSourcePointer source,
+            String scenePath) {
         JsonArray array = new JsonArray();
         for (int index = 0; index < responses.size(); index++) {
             QuestV2Resource.Response response = responses.get(index);
@@ -239,7 +252,10 @@ public final class QuestDialogueCompiler {
                     "quest_module_v2_response",
                     source.child(Integer.toString(index))));
             copyArrayIfPresent(response.data(), object, "conditions");
-            copyActionObjects(object, response.actions());
+            copyResponseActionObjects(
+                    object,
+                    response.actions(),
+                    transitionAction(resource, stageId, scenePath, response, source.child(Integer.toString(index))));
             String next = nextSceneNodeId(stage, response.transition());
             if (!next.isBlank()) {
                 object.addProperty("next", next);
@@ -270,6 +286,39 @@ public final class QuestDialogueCompiler {
             return "";
         }
         return stage.scenes().containsKey(transition.scene()) ? stageSceneNodeId(stage.id(), transition.scene()) : "";
+    }
+
+    private static JsonObject transitionAction(
+            QuestV2Resource resource,
+            String stageId,
+            String scenePath,
+            QuestV2Resource.Response response,
+            QuestSourcePointer source) {
+        QuestV2Resource.Transition transition = response.transition();
+        if (transition == null
+                || transition.isEmpty()
+                || !transition.scene().isBlank()
+                || !transition.response().isBlank()) {
+            return null;
+        }
+        JsonObject action = new JsonObject();
+        action.addProperty("type", "quest_transition");
+        action.addProperty("quest", resource.id().toString());
+        action.addProperty("from_stage", stageId);
+        action.addProperty("scene_path", scenePath);
+        action.addProperty("response_id", response.id());
+        action.addProperty("source_pointer", source.jsonPointer());
+        if (!transition.stage().isBlank()) {
+            action.addProperty("target", "stage");
+            action.addProperty("target_stage", transition.stage());
+        } else if (transition.complete()) {
+            action.addProperty("target", "complete");
+        } else if (transition.abandon()) {
+            action.addProperty("target", "abandon");
+        } else if (transition.fail()) {
+            action.addProperty("target", "fail");
+        }
+        return action;
     }
 
     private static void addEntry(
@@ -379,6 +428,25 @@ public final class QuestDialogueCompiler {
         JsonArray array = new JsonArray();
         for (JsonObject action : actions) {
             array.add(action.deepCopy());
+        }
+        target.add("actions", array);
+    }
+
+    private static void copyResponseActionObjects(
+            JsonObject target,
+            List<JsonObject> actions,
+            JsonObject transitionAction) {
+        if ((actions == null || actions.isEmpty()) && transitionAction == null) {
+            return;
+        }
+        JsonArray array = new JsonArray();
+        if (actions != null) {
+            for (JsonObject action : actions) {
+                array.add(action.deepCopy());
+            }
+        }
+        if (transitionAction != null) {
+            array.add(transitionAction);
         }
         target.add("actions", array);
     }

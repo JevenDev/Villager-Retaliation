@@ -1,7 +1,8 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
-import com.jvn.villagerretaliation.action.VillagerActionExecutor;
+import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import java.util.ArrayList;
@@ -185,7 +186,8 @@ public final class DialogueTreeService {
         List<String> texts = new ArrayList<>();
         String lineId = "";
         for (VillagerActionDefinition action : actions) {
-            VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
+            ActionResult actionResult = VillagerActionRegistry.execute(context, action, replacements);
+            VillagerActionResult result = actionResult.legacyResult();
             replacements.putAll(result.replacements());
             if (result.flashTracker()) {
                 VillagerQuestService.flashTracker(context.player(), true);
@@ -195,6 +197,9 @@ public final class DialogueTreeService {
             }
             if (!result.lineId().isBlank()) {
                 lineId = result.lineId();
+            }
+            if (action.required() && !actionResult.success()) {
+                break;
             }
         }
         return new ActionText(lineId, String.join(" ", texts), Map.copyOf(replacements));

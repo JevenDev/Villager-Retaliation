@@ -32,6 +32,11 @@ public final class VillagerActionRegistry {
                     aliases("quest_action"),
                     capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE, ActionCapability.PROVIDER_SNAPSHOT)),
             register(
+                    "quest_transition",
+                    VillagerActionDefinition.Kind.QUEST_TRANSITION,
+                    aliases("response_transition", "quest_response_transition", "branch_transition"),
+                    capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE, ActionCapability.WORLD_KNOWN)),
+            register(
                     "experience",
                     VillagerActionDefinition.Kind.EXPERIENCE,
                     aliases("xp"),

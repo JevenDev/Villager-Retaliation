@@ -32,6 +32,7 @@ import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
@@ -242,6 +243,51 @@ public final class VillagerQuestService {
             }
         }
         return false;
+    }
+
+    public static boolean hasSelectedChoice(
+            DialogueContext context,
+            ResourceLocation questId,
+            String scenePath,
+            String responseId,
+            String priorStage,
+            String nextStage) {
+        return choiceHistory(context, questId).stream().anyMatch(choice ->
+                matchesChoiceValue(scenePath, choice.scenePath())
+                        && matchesChoiceValue(responseId, choice.responseId())
+                        && matchesChoiceValue(priorStage, choice.priorStage())
+                        && matchesChoiceValue(nextStage, choice.nextStage()));
+    }
+
+    public static boolean hasStageHistory(
+            DialogueContext context,
+            ResourceLocation questId,
+            String stage,
+            String priorStage,
+            String nextStage) {
+        return choiceHistory(context, questId).stream().anyMatch(choice -> {
+            boolean stageMatches = stage == null || stage.isBlank()
+                    || choice.priorStage().equals(stage)
+                    || choice.nextStage().equals(stage);
+            return stageMatches
+                    && matchesChoiceValue(priorStage, choice.priorStage())
+                    && matchesChoiceValue(nextStage, choice.nextStage());
+        });
+    }
+
+    private static List<VillagerQuestSavedData.ChoiceHistoryEntry> choiceHistory(
+            DialogueContext context,
+            ResourceLocation questId) {
+        if (context == null || questId == null) {
+            return List.of();
+        }
+        VillagerQuestSavedData.QuestProgress progress =
+                VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), questId);
+        return progress == null ? List.of() : progress.choiceHistory();
+    }
+
+    private static boolean matchesChoiceValue(String expected, String actual) {
+        return expected == null || expected.isBlank() || expected.trim().equals(actual);
     }
 
     public static List<DialogueOptionDefinition> stageBranchOptions(DialogueContext context) {
@@ -648,6 +694,150 @@ public final class VillagerQuestService {
         });
     }
 
+    public static VillagerActionResult applyCompiledTransition(
+            DialogueContext context,
+            CompiledQuestTransition transition,
+            Map<String, String> inheritedReplacements) {
+        if (context == null || transition == null || transition.isEmpty()) {
+            return VillagerActionResult.EMPTY;
+        }
+        QuestDefinition definition = VillagerQuestResources
+                .quest(context.level().getServer(), transition.questId())
+                .orElse(null);
+        if (definition == null) {
+            return transitionActionResult(
+                    "missing",
+                    "Quest transition target is missing.",
+                    inheritedReplacements,
+                    context,
+                    null,
+                    null,
+                    transition,
+                    false);
+        }
+
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
+        VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
+        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE || !matchesVillagerLock(context, definition, progress)) {
+            return transitionActionResult(
+                    "unavailable",
+                    "That choice is not available right now.",
+                    inheritedReplacements,
+                    context,
+                    definition,
+                    progress,
+                    transition,
+                    false);
+        }
+        if (progress.hasChoice(transition.scenePath(), transition.responseId(), transition.stageId())) {
+            return transitionActionResult(
+                    "duplicate",
+                    "That choice has already been recorded.",
+                    inheritedReplacements,
+                    context,
+                    definition,
+                    progress,
+                    transition,
+                    false);
+        }
+        if (!progress.currentStage().equals(transition.stageId())) {
+            return transitionActionResult(
+                    "stale",
+                    "That choice is no longer available.",
+                    inheritedReplacements,
+                    context,
+                    definition,
+                    progress,
+                    transition,
+                    false);
+        }
+
+        String priorStage = progress.currentStage();
+        String selectedNextStage = transition.target() == CompiledQuestTransition.Target.STAGE
+                ? transition.targetStage()
+                : transition.target().name().toLowerCase(Locale.ROOT);
+        boolean changed = switch (transition.target()) {
+            case STAGE -> changeQuestStage(context, definition, progress, transition.targetStage(), true, true);
+            case COMPLETE -> transitionTerminalAction(context, definition, progress, VillagerActionDefinition.QuestAction.TURN_IN);
+            case ABANDON, FAIL -> transitionTerminalAction(context, definition, progress, VillagerActionDefinition.QuestAction.ABANDON);
+            case NONE -> false;
+        };
+        if (!changed) {
+            return transitionActionResult(
+                    "blocked",
+                    "",
+                    inheritedReplacements,
+                    context,
+                    definition,
+                    progress,
+                    transition,
+                    false);
+        }
+
+        progress.recordChoice(
+                transition.scenePath(),
+                transition.responseId(),
+                priorStage,
+                selectedNextStage,
+                context.level().getGameTime());
+        markQuestChoiceFacts(context, definition, transition, priorStage, selectedNextStage);
+        if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
+            advanceStageIfComplete(context, definition, progress);
+        }
+        data.setDirty();
+        sendTrackerSync(context.player(), true);
+        return transitionActionResult(
+                "selected",
+                "",
+                inheritedReplacements,
+                context,
+                definition,
+                progress,
+                transition,
+                true);
+    }
+
+    private static boolean transitionTerminalAction(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            VillagerActionDefinition.QuestAction action) {
+        VillagerQuestSavedData.QuestState previousState = progress.state();
+        String previousStage = progress.currentStage();
+        QuestActionOutcome outcome = performAction(context, definition.id(), action)
+                .orElse(null);
+        return outcome != null
+                && (progress.state() != previousState || !progress.currentStage().equals(previousStage));
+    }
+
+    private static VillagerActionResult transitionActionResult(
+            String status,
+            String text,
+            Map<String, String> inheritedReplacements,
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            CompiledQuestTransition transition,
+            boolean flashTracker) {
+        Map<String, String> values = new LinkedHashMap<>();
+        if (inheritedReplacements != null) {
+            values.putAll(inheritedReplacements);
+        }
+        if (context != null && definition != null) {
+            values.putAll(replacements(context, definition, progress));
+        }
+        values.put("quest_transition_status", status == null ? "" : status);
+        values.put("quest_transition_scene", transition == null ? "" : transition.scenePath());
+        values.put("quest_transition_response", transition == null ? "" : transition.responseId());
+        values.put("quest_transition_prior_stage", transition == null ? "" : transition.stageId());
+        values.put("quest_transition_next_stage", transition == null ? "" : transition.targetStage());
+        values.put("quest_transition_source", transition == null ? "" : transition.sourcePointer());
+        String lineId = definition == null
+                ? ""
+                : lineId(definition, "response_transition_" + values.get("quest_transition_response"));
+        return new VillagerActionResult(true, lineId, text, values, flashTracker);
+    }
+
     private static VillagerActionDefinition.QuestAction fromDialogueAction(DialogueQuestAction.Action action) {
         if (action == null) {
             return VillagerActionDefinition.QuestAction.NONE;
@@ -937,6 +1127,7 @@ public final class VillagerQuestService {
                     debugDimension(progress.targetDimension()),
                     debugPos(progress.targetPos()))));
             lines.add(QuestDebugFormatter.timesLine(progress));
+            lines.add(QuestDebugFormatter.choiceHistoryLine(progress));
         }
         if (definition.target().hasStructureTarget()) {
             lines.add(QuestDebugFormatter.targetDefinitionLine(definition.target()));
@@ -1495,6 +1686,29 @@ public final class VillagerQuestService {
         facts.setTag(scopeKey, tag);
         facts.setVariable(scopeKey, "state", state);
         facts.setVariable(scopeKey, "stage", state);
+    }
+
+    private static void markQuestChoiceFacts(
+            DialogueContext context,
+            QuestDefinition definition,
+            CompiledQuestTransition transition,
+            String priorStage,
+            String nextStage) {
+        if (context == null || definition == null || transition == null) {
+            return;
+        }
+        String scopeKey = playerQuestScopeKey(context.player(), definition);
+        if (scopeKey.isBlank()) {
+            return;
+        }
+        VillagerQuestFacts facts = VillagerQuestFacts.get(context.level());
+        facts.setTag(scopeKey, QUEST_BRANCH_SELECTED_FACT);
+        facts.setVariable(scopeKey, "last_choice_scene", transition.scenePath());
+        facts.setVariable(scopeKey, "last_choice_response", transition.responseId());
+        facts.setVariable(scopeKey, "last_choice_prior_stage", priorStage);
+        facts.setVariable(scopeKey, "last_choice_next_stage", nextStage);
+        facts.setVariable(scopeKey, "last_choice_source", transition.sourcePointer());
+        facts.addCounter(scopeKey, "choice_count", 1);
     }
 
     private static void markQuestObjectiveFact(
@@ -3250,7 +3464,9 @@ public final class VillagerQuestService {
                 null,
                 "",
                 "",
-                Map.of());
+                Map.of(),
+                CompiledQuestTransition.EMPTY,
+                false);
     }
 
     private static void rememberQuestStoryHint(

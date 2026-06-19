@@ -33,6 +33,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
         DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact,
+        DialogueCondition.SelectedChoice, DialogueCondition.StageHistory,
         DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time {
 
     boolean matches(DialogueContext context);
@@ -395,6 +396,51 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             return Optional.empty();
         }
         return Optional.of(new QuestFact(scope, questId, tags, key, values, min, max));
+    }
+
+    private static Optional<DialogueCondition> readSelectedChoice(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = readQuestReference(location, context, condition, defaultQuestId);
+        if (questId == null) {
+            warnInvalid(location, context, "selected_choice condition must define quest or have a default quest.");
+            return Optional.empty();
+        }
+        String responseId = firstNonBlank(
+                readString(condition, "response"),
+                firstNonBlank(readString(condition, "response_id"), readString(condition, "choice")));
+        if (responseId.isBlank()) {
+            warnInvalid(location, context, "selected_choice condition must define response, response_id, or choice.");
+            return Optional.empty();
+        }
+        return Optional.of(new SelectedChoice(
+                questId,
+                firstNonBlank(readString(condition, "scene_path"), readString(condition, "scene")),
+                responseId,
+                firstNonBlank(readString(condition, "prior_stage"), readString(condition, "from_stage")),
+                firstNonBlank(readString(condition, "next_stage"), readString(condition, "to_stage"))));
+    }
+
+    private static Optional<DialogueCondition> readStageHistory(
+            ResourceLocation location,
+            String context,
+            JsonObject condition,
+            ResourceLocation defaultQuestId) {
+        ResourceLocation questId = readQuestReference(location, context, condition, defaultQuestId);
+        if (questId == null) {
+            warnInvalid(location, context, "stage_history condition must define quest or have a default quest.");
+            return Optional.empty();
+        }
+        String stage = readString(condition, "stage");
+        String priorStage = firstNonBlank(readString(condition, "prior_stage"), readString(condition, "from_stage"));
+        String nextStage = firstNonBlank(readString(condition, "next_stage"), readString(condition, "to_stage"));
+        if (stage.isBlank() && priorStage.isBlank() && nextStage.isBlank()) {
+            warnInvalid(location, context, "stage_history condition must define stage, prior_stage, from_stage, next_stage, or to_stage.");
+            return Optional.empty();
+        }
+        return Optional.of(new StageHistory(questId, stage, priorStage, nextStage));
     }
 
     private static Optional<DialogueCondition> readMood(ResourceLocation location, String context, JsonObject condition) {
@@ -804,6 +850,18 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
                         capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN,
                                 ConditionCapability.PROVIDER_SNAPSHOT, ConditionCapability.VILLAGE_KNOWN),
                         DialogueCondition::readQuestFact),
+                register(
+                        "selected_choice",
+                        SelectedChoice.class,
+                        aliases("choice_selected", "response_selected", "quest_choice_selected"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        DialogueCondition::readSelectedChoice),
+                register(
+                        "stage_history",
+                        StageHistory.class,
+                        aliases("quest_stage_history", "visited_stage"),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        DialogueCondition::readStageHistory),
                 register(
                         "mood",
                         Mood.class,
@@ -1414,6 +1472,63 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         @Override
         public int specificityScore() {
             return 8;
+        }
+    }
+
+    record SelectedChoice(
+            ResourceLocation questId,
+            String scenePath,
+            String responseId,
+            String priorStage,
+            String nextStage) implements DialogueCondition {
+        public SelectedChoice {
+            scenePath = scenePath == null ? "" : scenePath.trim();
+            responseId = responseId == null ? "" : responseId.trim();
+            priorStage = priorStage == null ? "" : priorStage.trim();
+            nextStage = nextStage == null ? "" : nextStage.trim();
+        }
+
+        @Override
+        public boolean matches(DialogueContext context) {
+            return VillagerQuestService.hasSelectedChoice(
+                    context,
+                    this.questId,
+                    this.scenePath,
+                    this.responseId,
+                    this.priorStage,
+                    this.nextStage);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 9;
+        }
+    }
+
+    record StageHistory(
+            ResourceLocation questId,
+            String stage,
+            String priorStage,
+            String nextStage) implements DialogueCondition {
+        public StageHistory {
+            stage = stage == null ? "" : stage.trim();
+            priorStage = priorStage == null ? "" : priorStage.trim();
+            nextStage = nextStage == null ? "" : nextStage.trim();
+        }
+
+        @Override
+        public boolean matches(DialogueContext context) {
+            return VillagerQuestService.hasStageHistory(
+                    context,
+                    this.questId,
+                    this.stage,
+                    this.priorStage,
+                    this.nextStage);
+        }
+
+        @Override
+        public int specificityScore() {
+            return 9;
         }
     }
 

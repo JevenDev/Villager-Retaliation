@@ -52,6 +52,12 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_ABANDON_COUNT = "AbandonCount";
     private static final String TAG_CONSUMED_REASON = "ConsumedReason";
     private static final String TAG_TRIGGER_TIMES = "TriggerTimes";
+    private static final String TAG_CHOICE_HISTORY = "ChoiceHistory";
+    private static final String TAG_SCENE_PATH = "ScenePath";
+    private static final String TAG_RESPONSE = "Response";
+    private static final String TAG_PRIOR_STAGE = "PriorStage";
+    private static final String TAG_NEXT_STAGE = "NextStage";
+    private static final String TAG_GAME_TIME = "GameTime";
 
     private final Map<UUID, Map<ResourceLocation, QuestProgress>> entries = new HashMap<>();
     private final Map<UUID, ResourceLocation> trackedQuests = new HashMap<>();
@@ -284,6 +290,7 @@ public class VillagerQuestSavedData extends SavedData {
         private int abandonCount;
         private String consumedReason = "";
         private final Map<String, Long> triggerTimes = new HashMap<>();
+        private final List<ChoiceHistoryEntry> choiceHistory = new ArrayList<>();
 
         private static QuestProgress load(CompoundTag tag) {
             QuestProgress progress = new QuestProgress();
@@ -326,6 +333,14 @@ public class VillagerQuestSavedData extends SavedData {
                 CompoundTag triggerTimesTag = tag.getCompound(TAG_TRIGGER_TIMES);
                 for (String key : triggerTimesTag.getAllKeys()) {
                     progress.triggerTimes.put(key, triggerTimesTag.getLong(key));
+                }
+            }
+            if (tag.contains(TAG_CHOICE_HISTORY, Tag.TAG_LIST)) {
+                ListTag historyTag = tag.getList(TAG_CHOICE_HISTORY, Tag.TAG_COMPOUND);
+                for (Tag rawChoice : historyTag) {
+                    if (rawChoice instanceof CompoundTag choiceTag) {
+                        progress.choiceHistory.add(ChoiceHistoryEntry.load(choiceTag));
+                    }
                 }
             }
             NbtDataUtil.readResourceLocation(tag, TAG_ISSUER_DIMENSION)
@@ -397,6 +412,13 @@ public class VillagerQuestSavedData extends SavedData {
                     triggerTimesTag.putLong(entry.getKey(), entry.getValue());
                 }
                 tag.put(TAG_TRIGGER_TIMES, triggerTimesTag);
+            }
+            if (!this.choiceHistory.isEmpty()) {
+                ListTag historyTag = new ListTag();
+                for (ChoiceHistoryEntry entry : this.choiceHistory) {
+                    historyTag.add(entry.save());
+                }
+                tag.put(TAG_CHOICE_HISTORY, historyTag);
             }
             if (this.targetDimension != null) {
                 NbtDataUtil.putResourceLocation(tag, TAG_TARGET_DIMENSION, this.targetDimension.location());
@@ -521,6 +543,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.triggerTimes.clear();
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
+            this.choiceHistory.clear();
             this.startCount++;
         }
 
@@ -673,5 +696,85 @@ public class VillagerQuestSavedData extends SavedData {
             }
             this.triggerTimes.put(triggerId, gameTime);
         }
+
+        public List<ChoiceHistoryEntry> choiceHistory() {
+            return List.copyOf(this.choiceHistory);
+        }
+
+        public ChoiceHistoryEntry lastChoice() {
+            return this.choiceHistory.isEmpty() ? null : this.choiceHistory.getLast();
+        }
+
+        public boolean hasChoice(String scenePath, String responseId, String priorStage) {
+            String normalizedScene = normalizeChoiceValue(scenePath);
+            String normalizedResponse = normalizeChoiceValue(responseId);
+            String normalizedStage = normalizeChoiceValue(priorStage);
+            return this.choiceHistory.stream().anyMatch(entry ->
+                    entry.scenePath().equals(normalizedScene)
+                            && entry.responseId().equals(normalizedResponse)
+                            && entry.priorStage().equals(normalizedStage));
+        }
+
+        public ChoiceHistoryEntry recordChoice(
+                String scenePath,
+                String responseId,
+                String priorStage,
+                String nextStage,
+                long gameTime) {
+            ChoiceHistoryEntry entry = new ChoiceHistoryEntry(
+                    scenePath,
+                    responseId,
+                    priorStage,
+                    nextStage,
+                    gameTime);
+            this.choiceHistory.add(entry);
+            return entry;
+        }
+    }
+
+    public record ChoiceHistoryEntry(
+            String scenePath,
+            String responseId,
+            String priorStage,
+            String nextStage,
+            long gameTime
+    ) {
+        public ChoiceHistoryEntry {
+            scenePath = normalizeChoiceValue(scenePath);
+            responseId = normalizeChoiceValue(responseId);
+            priorStage = normalizeChoiceValue(priorStage);
+            nextStage = normalizeChoiceValue(nextStage);
+        }
+
+        private static ChoiceHistoryEntry load(CompoundTag tag) {
+            return new ChoiceHistoryEntry(
+                    tag.getString(TAG_SCENE_PATH),
+                    tag.getString(TAG_RESPONSE),
+                    tag.getString(TAG_PRIOR_STAGE),
+                    tag.getString(TAG_NEXT_STAGE),
+                    tag.getLong(TAG_GAME_TIME));
+        }
+
+        private CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            if (!this.scenePath.isBlank()) {
+                tag.putString(TAG_SCENE_PATH, this.scenePath);
+            }
+            if (!this.responseId.isBlank()) {
+                tag.putString(TAG_RESPONSE, this.responseId);
+            }
+            if (!this.priorStage.isBlank()) {
+                tag.putString(TAG_PRIOR_STAGE, this.priorStage);
+            }
+            if (!this.nextStage.isBlank()) {
+                tag.putString(TAG_NEXT_STAGE, this.nextStage);
+            }
+            tag.putLong(TAG_GAME_TIME, this.gameTime);
+            return tag;
+        }
+    }
+
+    private static String normalizeChoiceValue(String value) {
+        return value == null ? "" : value.trim();
     }
 }

@@ -52,6 +52,7 @@ import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestStage;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderType;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
@@ -117,6 +118,7 @@ public final class VillagerQuestGameTests {
             QuestDefinition.TriggerEvent.PROGRESS);
     private static final EnumSet<VillagerActionDefinition.Kind> LIVE_CONTEXT_ACTION_KINDS = EnumSet.of(
             VillagerActionDefinition.Kind.QUEST,
+            VillagerActionDefinition.Kind.QUEST_TRANSITION,
             VillagerActionDefinition.Kind.REPUTATION,
             VillagerActionDefinition.Kind.GOSSIP,
             VillagerActionDefinition.Kind.MEMORY,
@@ -433,7 +435,9 @@ public final class VillagerQuestGameTests {
                 null,
                 "",
                 "",
-                Map.of());
+                Map.of(),
+                CompiledQuestTransition.EMPTY,
+                false);
         ActionResult dryRun = VillagerActionRegistry.dryRun(null, notification, Map.of());
         helper.assertValueEqual(dryRun.status(), ActionStatus.SKIPPED, "dry run status");
         helper.assertValueEqual(dryRun.message(), "dry run", "dry run message");
@@ -1362,6 +1366,152 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2ResponseTransitionsRecordChoiceHistory(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ServerLevel level = helper.getLevel();
+        EmbeddedDialogueQuest branch = embeddedDialogueQuest(
+                "v2_branch_transition_runtime",
+                branchTransitionQuestV2Fixture("v2_branch_transition_runtime"));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(branch.quest()), branch.dialogueCatalog());
+            DialogueTreeResources.clearCache();
+            DialogueTreeService.clearRuntimeState();
+
+            VillagerQuestService.DebugStartResult started =
+                    VillagerQuestService.debugStartQuest(player, villager, branch.quest().id(), true);
+            helper.assertTrue(started.started(), "v2 branch transition quest did not start: " + started.message());
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            selectDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(branch.treeId(), "stage.choose.responses"));
+            helper.assertValueEqual(
+                    selectDialogueOption(
+                            helper,
+                            context,
+                            DialogueTreeService.responseOptionId(branch.treeId(), "alpha")).text(),
+                    "Alpha selected.",
+                    "v2 alpha response text");
+
+            VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+            VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), branch.quest().id());
+            helper.assertValueEqual(progress.currentStage(), "alpha", "v2 alpha transition stage");
+            helper.assertValueEqual(progress.choiceHistory().size(), 1, "v2 alpha choice history count");
+            VillagerQuestSavedData.ChoiceHistoryEntry choice = progress.choiceHistory().getFirst();
+            helper.assertValueEqual(choice.scenePath(), "stage.choose.responses", "v2 alpha choice scene path");
+            helper.assertValueEqual(choice.responseId(), "alpha", "v2 alpha choice response");
+            helper.assertValueEqual(choice.priorStage(), "choose", "v2 alpha choice prior stage");
+            helper.assertValueEqual(choice.nextStage(), "alpha", "v2 alpha choice next stage");
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level)
+                            .variable(QuestScopeKey.quest(player.getUUID(), branch.quest().id()), "branch")
+                            .orElse(""),
+                    "alpha",
+                    "v2 fact action before transition");
+
+            JsonObject conditionsRoot = JsonParser.parseString("""
+                    {
+                      "conditions": [
+                        {
+                          "type": "selected_choice",
+                          "response": "alpha",
+                          "scene_path": "stage.choose.responses",
+                          "prior_stage": "choose",
+                          "next_stage": "alpha"
+                        },
+                        {
+                          "type": "stage_history",
+                          "next_stage": "alpha"
+                        }
+                      ]
+                    }
+                    """).getAsJsonObject();
+            List<DialogueCondition> conditions = DialogueCondition.readList(
+                    VillagerRetaliation.id("test/v2_branch_conditions"),
+                    "v2 branch conditions",
+                    conditionsRoot,
+                    branch.quest().id());
+            helper.assertTrue(DialogueCondition.matchesAll(context, conditions), "v2 branch history conditions did not match");
+
+            CompoundTag saved = data.save(new CompoundTag(), level.registryAccess());
+            VillagerQuestSavedData loaded = VillagerQuestSavedData.load(saved, level.registryAccess());
+            VillagerQuestSavedData.QuestProgress loadedProgress = loaded.get(player.getUUID(), branch.quest().id());
+            helper.assertTrue(loadedProgress != null, "v2 branch choice history did not reload");
+            helper.assertValueEqual(loadedProgress.choiceHistory().getFirst().responseId(), "alpha", "v2 reloaded choice response");
+
+            var duplicate = VillagerQuestService.applyCompiledTransition(
+                    context,
+                    new CompiledQuestTransition(
+                            branch.quest().id(),
+                            "choose",
+                            "stage.choose.responses",
+                            "alpha",
+                            CompiledQuestTransition.Target.STAGE,
+                            "alpha",
+                            "/stages/0/responses/0"),
+                    Map.of());
+            helper.assertTrue(duplicate.text().contains("already"), "v2 duplicate response replay was not reported");
+            helper.assertValueEqual(progress.currentStage(), "alpha", "v2 duplicate replay changed stage");
+
+            VillagerQuestService.DebugInspectResult inspect =
+                    VillagerQuestService.debugInspectQuest(player, branch.quest().id());
+            helper.assertTrue(
+                    inspect.lines().stream().anyMatch(line ->
+                            line.contains("choice_history entries=1")
+                                    && line.contains("latest_response=alpha")
+                                    && line.contains("latest_next_stage=alpha")),
+                    "v2 debug inspect did not include choice history");
+
+            started = VillagerQuestService.debugStartQuest(player, villager, branch.quest().id(), true);
+            helper.assertTrue(started.started(), "v2 branch transition quest did not restart for blocked path");
+            DialogueTreeService.clearRuntimeState();
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            selectDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(branch.treeId(), "stage.choose.responses"));
+            selectDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.responseOptionId(branch.treeId(), "blocked"));
+            progress = data.get(player.getUUID(), branch.quest().id());
+            helper.assertValueEqual(progress.currentStage(), "choose", "v2 required failed action allowed transition");
+            helper.assertTrue(progress.choiceHistory().isEmpty(), "v2 blocked transition recorded choice history");
+
+            started = VillagerQuestService.debugStartQuest(player, villager, branch.quest().id(), true);
+            helper.assertTrue(started.started(), "v2 branch transition quest did not restart for beta path");
+            DialogueTreeService.clearRuntimeState();
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            selectDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(branch.treeId(), "stage.choose.responses"));
+            selectDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.responseOptionId(branch.treeId(), "beta"));
+            progress = data.get(player.getUUID(), branch.quest().id());
+            helper.assertValueEqual(progress.currentStage(), "beta", "v2 beta transition stage");
+            helper.assertValueEqual(progress.choiceHistory().getFirst().responseId(), "beta", "v2 beta choice history");
+            helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "v2 branch transition emitted diagnostics");
+            DatapackDiagnostics.clear();
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            DialogueTreeService.clearRuntimeState();
+            DialogueTreeResources.clearCache();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2ParserReportsPreciseInvalidDiagnostics(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ResourceLocation location = VillagerRetaliation.id("quests/v2_invalid_fixture.json");
@@ -1382,6 +1532,7 @@ public final class VillagerQuestGameTests {
         assertRecentDiagnosticPointer(helper, "/stages/0/objectives/2/id", "duplicate objective id");
         assertRecentDiagnosticPointer(helper, "/stages/0/scenes/0", "external scene reference");
         assertRecentDiagnosticPointer(helper, "/stages/0/scenes/0/responses/0/id", "response id is required");
+        assertRecentDiagnosticPointer(helper, "/stages/0/scenes/0/responses/0/actions/0", "cannot define both a transition");
         assertRecentDiagnosticPointer(helper, "/stages/0/dialogue/offer/scene", "missing local scene");
         assertRecentDiagnosticPointer(helper, "/stages/0/ui/tracker_text", "undefined UI placeholder");
         assertRecentDiagnosticPointer(helper, "/stages/1/id", "is unreachable");
@@ -1797,7 +1948,6 @@ public final class VillagerQuestGameTests {
     }
 
     private static EmbeddedDialogueQuest embeddedDialogueQuest(String path, boolean unavailable) {
-        ResourceLocation location = VillagerRetaliation.id("quests/" + path + ".json");
         JsonObject root = embeddedDialogueQuestV2Fixture(path);
         if (unavailable) {
             JsonObject availability = new JsonObject();
@@ -1810,6 +1960,11 @@ public final class VillagerQuestGameTests {
             availability.add("conditions", conditions);
             root.add("availability", availability);
         }
+        return embeddedDialogueQuest(path, root);
+    }
+
+    private static EmbeddedDialogueQuest embeddedDialogueQuest(String path, JsonObject root) {
+        ResourceLocation location = VillagerRetaliation.id("quests/" + path + ".json");
         QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
                 .orElseThrow(() -> new GameTestAssertException(path + " envelope did not parse"));
         QuestV2Resource parsed = QuestV2Parser.parse(envelope)
@@ -2728,6 +2883,96 @@ public final class VillagerQuestGameTests {
         return root;
     }
 
+    private static JsonObject branchTransitionQuestV2Fixture(String path) {
+        JsonObject root = JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "metadata": {
+                    "title": "Branch Transition Quest",
+                    "description": "A v2 quest that records response-driven branch choices.",
+                    "questline": "tests",
+                    "tags": [
+                      "test"
+                    ]
+                  },
+                  "provider": {
+                    "type": "villagerretaliation:villager"
+                  },
+                  "entry_stage": "choose",
+                  "stages": [
+                    {
+                      "id": "choose",
+                      "objectives": [],
+                      "responses": [
+                        {
+                          "id": "alpha",
+                          "label": "Take alpha.",
+                          "text": "Alpha selected.",
+                          "actions": [
+                            {
+                              "type": "set_variable",
+                              "scope": "quest",
+                              "key": "branch",
+                              "value": "alpha"
+                            }
+                          ],
+                          "transition": "alpha"
+                        },
+                        {
+                          "id": "beta",
+                          "label": "Take beta.",
+                          "text": "Beta selected.",
+                          "next": "beta"
+                        },
+                        {
+                          "id": "blocked",
+                          "label": "Try blocked.",
+                          "text": "Blocked selected.",
+                          "actions": [
+                            {
+                              "type": "loot",
+                              "loot_table": "villagerretaliation:missing_required_transition_loot",
+                              "required": true
+                            }
+                          ],
+                          "transition": "beta"
+                        }
+                      ],
+                      "ui": {
+                        "tracker_text": "Choose a deterministic branch."
+                      }
+                    },
+                    {
+                      "id": "alpha",
+                      "objectives": [],
+                      "dialogue": {
+                        "reminder": {
+                          "text": "Alpha branch active."
+                        }
+                      },
+                      "ui": {
+                        "tracker_text": "Alpha branch."
+                      }
+                    },
+                    {
+                      "id": "beta",
+                      "objectives": [],
+                      "dialogue": {
+                        "reminder": {
+                          "text": "Beta branch active."
+                        }
+                      },
+                      "ui": {
+                        "tracker_text": "Beta branch."
+                      }
+                    }
+                  ]
+                }
+                """).getAsJsonObject();
+        root.addProperty("id", VillagerRetaliation.id(path).toString());
+        return root;
+    }
+
     private static JsonObject invalidQuestV2Fixture() {
         return JsonParser.parseString("""
                 {
@@ -2788,6 +3033,13 @@ public final class VillagerQuestGameTests {
                           "responses": [
                             {
                               "label": "No id",
+                              "actions": [
+                                {
+                                  "type": "set_variable",
+                                  "scope": "quest",
+                                  "stage": "orphan"
+                                }
+                              ],
                               "transition": {
                                 "stage": "missing_stage",
                                 "complete": true
