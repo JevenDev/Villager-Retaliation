@@ -827,6 +827,8 @@ const dialogueIdScopes = {
 
 const questRegistryMetadata = await loadQuestRegistryMetadata();
 validateQuestRegistryMetadata(questRegistryMetadata);
+const questV2Schema = await loadQuestV2Schema();
+validateQuestV2Schema(questV2Schema);
 
 for (const [kind, relativeRoot] of Object.entries(roots)) {
   for (const file of await jsonFiles(path.join(root, relativeRoot))) {
@@ -908,6 +910,47 @@ function validateQuestRegistryMetadata(metadata) {
   for (const fragment of ["condition_type", "action_type", "objective_type", "trigger_event", "provider_type"]) {
     if (!fragments[fragment] || !Array.isArray(fragments[fragment].enum) || fragments[fragment].enum.length === 0) {
       errors.push(`tools/datapack-builder/quest-registry-metadata.json: schema_fragments.${fragment}.enum must be a non-empty array.`);
+    }
+  }
+}
+
+async function loadQuestV2Schema() {
+  const schemaPath = path.join(root, "tools/datapack-builder/quest-v2.schema.json");
+  try {
+    return JSON.parse(await readFile(schemaPath, "utf8"));
+  } catch (error) {
+    errors.push(`${relative(schemaPath)}: could not read quest module v2 schema: ${error.message}`);
+    return null;
+  }
+}
+
+function validateQuestV2Schema(schema) {
+  const schemaPath = "tools/datapack-builder/quest-v2.schema.json";
+  if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+    errors.push(`${schemaPath}: root must be an object.`);
+    return;
+  }
+  if (schema.$schema !== "https://json-schema.org/draft/2020-12/schema") {
+    errors.push(`${schemaPath}: $schema must be draft 2020-12.`);
+  }
+  if (schema?.properties?.schema?.const !== "villagerretaliation:quest/v2") {
+    errors.push(`${schemaPath}: properties.schema.const must be villagerretaliation:quest/v2.`);
+  }
+  const defs = schema.$defs;
+  if (!defs || typeof defs !== "object" || Array.isArray(defs)) {
+    errors.push(`${schemaPath}: $defs must be an object.`);
+    return;
+  }
+  for (const [definition, property] of [
+    ["provider", "type"],
+    ["objective", "type"],
+    ["event", "event"],
+    ["condition", "type"],
+    ["action", "type"]
+  ]) {
+    const enumValues = defs?.[definition]?.properties?.[property]?.enum;
+    if (!Array.isArray(enumValues) || enumValues.length === 0) {
+      errors.push(`${schemaPath}: $defs.${definition}.properties.${property}.enum must be a non-empty array.`);
     }
   }
 }

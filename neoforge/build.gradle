@@ -84,6 +84,15 @@ tasks.register('generateQuestRegistryMetadata', JavaExec) {
     args rootProject.file('tools/datapack-builder/quest-registry-metadata.json').absolutePath
 }
 
+tasks.register('generateQuestV2Schema', JavaExec) {
+    group = 'datapack tooling'
+    description = 'Exports the quest module v2 JSON Schema for Node/browser datapack tooling.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.quest.schema.v2.QuestV2SchemaTool'
+    args rootProject.file('tools/datapack-builder/quest-v2.schema.json').absolutePath
+}
+
 tasks.named('runGameTestServer') {
     onlyIf { !skipGameTests.get() }
 }

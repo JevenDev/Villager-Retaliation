@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.quest.compiler.QuestV1Compiler;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
+import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -329,11 +330,11 @@ public final class VillagerQuestResources {
                 .anyMatch(resource -> DatapackJsonReader.readBoolean(resource.root(), "replace"));
         for (QuestResourceEnvelope resource : resources) {
             if (resource.schemaVersion() == QuestSchemaVersion.V2) {
-                DatapackDiagnostics.warnSkippedEntry(
-                        resource.location(),
-                        "quest",
-                        "schema " + resource.schemaVersion().schemaId(),
-                        "quest module v2 is recognized but not playable until the v2 compiler is enabled.");
+                QuestV2Parser.parse(resource).ifPresent(ignored -> DatapackDiagnostics.warnSkippedEntry(
+                                resource.location(),
+                                "quest",
+                                "schema " + resource.schemaVersion().schemaId(),
+                                "quest module v2 is recognized and validated but not playable until the v2 compiler is enabled."));
                 continue;
             }
             if (replacementMode

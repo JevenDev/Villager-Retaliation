@@ -141,6 +141,26 @@ public final class DatapackDiagnostics {
                 message);
     }
 
+    public static void warnQuestV2Validation(
+            ResourceLocation location,
+            String jsonPointer,
+            String message,
+            String suggestedFix,
+            Set<String> relevantIds) {
+        warnStructured(
+                "quest.v2.validation",
+                location,
+                jsonPointer,
+                suggestedFix == null || suggestedFix.isBlank()
+                        ? "Update the quest module v2 resource to match the supported schema."
+                        : suggestedFix,
+                relevantIds,
+                "Villager Retaliation datapack {} quest module v2 {} is invalid: {}",
+                location,
+                jsonPointer == null || jsonPointer.isBlank() ? "root" : jsonPointer,
+                message);
+    }
+
     public static void warnInvalidTrigger(
             ResourceLocation location,
             String systemName,

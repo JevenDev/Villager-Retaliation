@@ -47,6 +47,9 @@ import com.jvn.villagerretaliation.quest.provider.QuestProviderType;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
+import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
+import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Resource;
+import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import java.io.IOException;
@@ -1026,6 +1029,71 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2ParserAcceptsValidFixture(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_valid_fixture.json");
+        QuestV2Resource parsed = QuestV2Parser.parse(location, validQuestV2Fixture())
+                .orElseThrow(() -> new GameTestAssertException("valid quest module v2 fixture did not parse"));
+
+        helper.assertValueEqual(parsed.id(), VillagerRetaliation.id("v2_valid_fixture"), "v2 fixture id");
+        helper.assertValueEqual(parsed.entryStage(), "offer", "v2 entry stage");
+        helper.assertValueEqual(parsed.stages().size(), 2, "v2 stage count");
+        helper.assertTrue(parsed.stagesById().containsKey("finish"), "v2 finish stage indexed");
+        helper.assertTrue(
+                VillagerQuestResources.compiledQuest(helper.getLevel().getServer(), parsed.id()).isEmpty(),
+                "validated v2 fixture leaked into compiled quest listings before compiler pass");
+        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "valid v2 parser emitted diagnostics");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2ParserReportsPreciseInvalidDiagnostics(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_invalid_fixture.json");
+
+        helper.assertTrue(
+                QuestV2Parser.parse(location, invalidQuestV2Fixture()).isEmpty(),
+                "invalid quest module v2 fixture parsed");
+        helper.assertTrue(
+                QuestV2Parser.parse(VillagerRetaliation.id("quests/v2_missing_entry_fixture.json"), invalidQuestV2MissingEntryFixture()).isEmpty(),
+                "invalid missing-entry quest module v2 fixture parsed");
+
+        assertRecentDiagnosticPointer(helper, "/provider/required_capabilities", "does not support live capability");
+        assertRecentDiagnosticPointer(helper, "/entry_stage", "entry_stage references missing stage");
+        assertRecentDiagnosticPointer(helper, "/lifecycle/on_start", "cannot define both actions and a transition");
+        assertRecentDiagnosticPointer(helper, "/stages/0/surprise", "unsupported field");
+        assertRecentDiagnosticPointer(helper, "/stages/0/objectives/0/id", "reserved generated-id space");
+        assertRecentDiagnosticPointer(helper, "/stages/0/objectives/0/type", "unknown objective type");
+        assertRecentDiagnosticPointer(helper, "/stages/0/objectives/2/id", "duplicate objective id");
+        assertRecentDiagnosticPointer(helper, "/stages/0/scenes/0", "external scene reference");
+        assertRecentDiagnosticPointer(helper, "/stages/0/scenes/0/responses/0/id", "response id is required");
+        assertRecentDiagnosticPointer(helper, "/stages/0/dialogue/offer/scene", "missing local scene");
+        assertRecentDiagnosticPointer(helper, "/stages/0/ui/tracker_text", "undefined UI placeholder");
+        assertRecentDiagnosticPointer(helper, "/stages/1/id", "is unreachable");
+        DatapackDiagnostics.clear();
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2SchemaArtifactMatchesJavaExport(GameTestHelper helper) {
+        Path schemaPath = projectPath("tools", "datapack-builder", "quest-v2.schema.json");
+        String checkedIn;
+        try {
+            checkedIn = normalizeLineEndings(Files.readString(schemaPath, StandardCharsets.UTF_8));
+        } catch (IOException exception) {
+            throw new GameTestAssertException("Could not read quest module v2 schema artifact: " + exception.getMessage());
+        }
+        helper.assertValueEqual(
+                normalizeLineEndings(QuestV2Schema.exportJson()),
+                checkedIn,
+                "quest module v2 schema artifact drift");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questSavedDataRoundTripsV1ProgressFields(GameTestHelper helper) {
         UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000001");
         UUID villagerId = UUID.fromString("00000000-0000-0000-0000-000000000002");
@@ -1747,6 +1815,270 @@ public final class VillagerQuestGameTests {
                 DatapackDiagnostics.recent().stream().anyMatch(entry -> entry.message().contains(expected)),
                 "recent diagnostics did not contain \"" + expected + "\": "
                         + DatapackDiagnostics.recent().stream().map(DatapackDiagnostics.Entry::message).toList());
+    }
+
+    private static void assertRecentDiagnosticPointer(GameTestHelper helper, String pointer, String expectedMessage) {
+        helper.assertTrue(
+                DatapackDiagnostics.structuredRecent().stream().anyMatch(diagnostic ->
+                        "quest.v2.validation".equals(diagnostic.code())
+                                && pointer.equals(diagnostic.jsonPointer())
+                                && diagnostic.message().contains(expectedMessage)),
+                "recent structured diagnostics did not contain " + pointer + " / \"" + expectedMessage + "\": "
+                        + DatapackDiagnostics.structuredRecent().stream()
+                                .map(diagnostic -> diagnostic.jsonPointer() + " :: " + diagnostic.message())
+                                .toList());
+    }
+
+    private static JsonObject validQuestV2Fixture() {
+        return JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "id": "villagerretaliation:v2_valid_fixture",
+                  "metadata": {
+                    "title": "A Clean V2 Fixture",
+                    "questline": "tests"
+                  },
+                  "provider": {
+                    "type": "villagerretaliation:villager",
+                    "required_capabilities": [
+                      "villagerretaliation:saved_provider"
+                    ]
+                  },
+                  "availability": {
+                    "conditions": [
+                      {
+                        "type": "quest_fact",
+                        "tag": "ready"
+                      }
+                    ]
+                  },
+                  "lifecycle": {
+                    "on_start": {
+                      "actions": [
+                        {
+                          "type": "notification",
+                          "text": "Started"
+                        }
+                      ]
+                    }
+                  },
+                  "entry_stage": "offer",
+                  "stages": [
+                    {
+                      "id": "offer",
+                      "objectives": [
+                        {
+                          "id": "talk",
+                          "type": "choice"
+                        }
+                      ],
+                      "complete_when": [
+                        "talk"
+                      ],
+                      "dialogue": {
+                        "offer": {
+                          "lines": [
+                            "Can you help?"
+                          ],
+                          "responses": [
+                            {
+                              "id": "accept",
+                              "label": "Yes",
+                              "transition": {
+                                "stage": "finish"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "scenes": [
+                        {
+                          "id": "intro",
+                          "lines": [
+                            "Hello."
+                          ],
+                          "responses": [
+                            {
+                              "id": "continue",
+                              "label": "Continue",
+                              "transition": {
+                                "stage": "finish"
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "responses": [
+                        {
+                          "id": "skip",
+                          "label": "Skip",
+                          "transition": "finish"
+                        }
+                      ],
+                      "next": "finish"
+                    },
+                    {
+                      "id": "finish",
+                      "objectives": [
+                        {
+                          "id": "done",
+                          "type": "condition",
+                          "conditions": [
+                            {
+                              "type": "quest_fact",
+                              "tag": "done"
+                            }
+                          ]
+                        }
+                      ],
+                      "complete_when": [
+                        "done"
+                      ],
+                      "ui": {
+                        "tracker_text": "Return to {issuer}",
+                        "placeholders": {
+                          "issuer": "provider.name"
+                        }
+                      }
+                    }
+                  ],
+                  "events": [
+                    {
+                      "id": "progress",
+                      "event": "progress",
+                      "stages": [
+                        "offer"
+                      ],
+                      "actions": [
+                        {
+                          "type": "tracker"
+                        }
+                      ]
+                    }
+                  ],
+                  "rewards": {
+                    "actions": [
+                      {
+                        "type": "experience",
+                        "amount": 5
+                      }
+                    ]
+                  },
+                  "ui": {
+                    "tracker_text": "Talk to {issuer}",
+                    "placeholders": {
+                      "issuer": "provider.name"
+                    }
+                  }
+                }
+                """).getAsJsonObject();
+    }
+
+    private static JsonObject invalidQuestV2Fixture() {
+        return JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "id": "villagerretaliation:v2_invalid_fixture",
+                  "provider": {
+                    "type": "villagerretaliation:villager",
+                    "required_capabilities": [
+                      "villagerretaliation:fake_live"
+                    ]
+                  },
+                  "lifecycle": {
+                    "on_start": {
+                      "actions": [
+                        {
+                          "type": "notification"
+                        }
+                      ],
+                      "transition": {
+                        "stage": "start"
+                      }
+                    }
+                  },
+                  "entry_stage": "start",
+                  "stages": [
+                    {
+                      "id": "start",
+                      "surprise": true,
+                      "objectives": [
+                        {
+                          "id": "__generated_auto",
+                          "type": "not_real"
+                        },
+                        {
+                          "id": "same",
+                          "type": "choice"
+                        },
+                        {
+                          "id": "same",
+                          "type": "choice"
+                        }
+                      ],
+                      "complete_when": [
+                        "missing_objective"
+                      ],
+                      "dialogue": {
+                        "offer": {
+                          "scene": "missing_scene"
+                        }
+                      },
+                      "scenes": [
+                        {
+                          "id": "intro",
+                          "lines": [
+                            "Inline text"
+                          ],
+                          "external_scene": "villagerretaliation:intro",
+                          "responses": [
+                            {
+                              "label": "No id",
+                              "transition": {
+                                "stage": "missing_stage",
+                                "complete": true
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "next": {
+                        "stage": "missing_stage",
+                        "complete": true
+                      },
+                      "events": [
+                        {
+                          "id": "stage_event",
+                          "event": "unknown_event",
+                          "stages": [
+                            "missing_stage"
+                          ]
+                        }
+                      ],
+                      "ui": {
+                        "tracker_text": "Hi {missing}",
+                        "placeholders": {}
+                      }
+                    },
+                    {
+                      "id": "orphan",
+                      "objectives": [
+                        {
+                          "id": "orphan_obj",
+                          "type": "choice"
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """).getAsJsonObject();
+    }
+
+    private static JsonObject invalidQuestV2MissingEntryFixture() {
+        JsonObject root = validQuestV2Fixture();
+        root.addProperty("id", "villagerretaliation:v2_missing_entry_fixture");
+        root.addProperty("entry_stage", "missing_stage");
+        return root;
     }
 
     private static void assertObjectiveShape(

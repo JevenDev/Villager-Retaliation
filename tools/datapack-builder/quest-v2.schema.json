@@ -1,0 +1,1076 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://villagerretaliation.dev/schema/quest-v2.schema.json",
+  "title": "Villager Retaliation Quest Module v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "provider",
+    "entry_stage",
+    "stages"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "villagerretaliation:quest/v2"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "provider": {
+      "$ref": "#/$defs/provider"
+    },
+    "availability": {
+      "$ref": "#/$defs/availability"
+    },
+    "lifecycle": {
+      "$ref": "#/$defs/lifecycle"
+    },
+    "dialogue": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/dialogue_slot"
+      }
+    },
+    "entry_stage": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/stage"
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/event"
+      }
+    },
+    "rewards": {
+      "$ref": "#/$defs/rewards"
+    },
+    "ui": {
+      "$ref": "#/$defs/ui"
+    },
+    "external_scenes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+      }
+    }
+  },
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "title_key": {
+          "type": "string"
+        },
+        "description_key": {
+          "type": "string"
+        },
+        "questline": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parent": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "author": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "villagerretaliation:villager"
+          ]
+        },
+        "required_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "villagerretaliation:dialogue_context",
+              "villagerretaliation:live_provider",
+              "villagerretaliation:saved_provider",
+              "villagerretaliation:villager_provider"
+            ]
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "villagerretaliation:dialogue_context",
+              "villagerretaliation:live_provider",
+              "villagerretaliation:saved_provider",
+              "villagerretaliation:villager_provider"
+            ]
+          }
+        },
+        "filters": {
+          "type": "object"
+        },
+        "data": {
+          "type": "object"
+        }
+      }
+    },
+    "availability": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "cooldown": {
+          "type": "string"
+        },
+        "cooldown_ticks": {
+          "type": "integer"
+        },
+        "exclusive_group": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "repeatable": {
+          "type": "boolean"
+        },
+        "prerequisites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "on_start": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_complete": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_abandon": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_expire": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_fail": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_stage_enter": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "on_stage_exit": {
+          "$ref": "#/$defs/lifecycle_hook"
+        },
+        "dialogue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scene"
+          }
+        }
+      }
+    },
+    "lifecycle_hook": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "next": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "scene": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "abandon": {
+          "type": "boolean"
+        },
+        "fail": {
+          "type": "boolean"
+        }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "objectives"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "title": {
+          "type": "string"
+        },
+        "title_key": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "description_key": {
+          "type": "string"
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/objective"
+          }
+        },
+        "complete_when": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+          }
+        },
+        "next": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+            },
+            {
+              "$ref": "#/$defs/transition"
+            }
+          ]
+        },
+        "dialogue": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/dialogue_slot"
+          }
+        },
+        "scenes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scene"
+          }
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response"
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        },
+        "on_enter": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "on_exit": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "entry_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "exit_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "rewards": {
+          "$ref": "#/$defs/rewards"
+        },
+        "ui": {
+          "$ref": "#/$defs/ui"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "objective": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "block_break",
+            "block_interact",
+            "block_place",
+            "block_use",
+            "branch_choice",
+            "break_block",
+            "choice",
+            "condition",
+            "coordinate",
+            "coordinates",
+            "coords",
+            "dialogue_choice",
+            "entity_kill",
+            "event",
+            "fact",
+            "gift",
+            "gift_given",
+            "give_gift",
+            "interact_block",
+            "item_check",
+            "kill",
+            "location_visit",
+            "memory",
+            "memory_event",
+            "merchant_trade",
+            "mine",
+            "mine_block",
+            "mob_kill",
+            "place",
+            "place_block",
+            "quest_choice",
+            "quest_counter",
+            "quest_fact",
+            "quest_stage",
+            "quest_tag",
+            "quest_variable",
+            "region_visit",
+            "rep",
+            "reputation",
+            "reputation_level",
+            "right_click_block",
+            "stage",
+            "structure_visit",
+            "trade",
+            "trading",
+            "trust",
+            "use_block",
+            "village_event",
+            "village_memory",
+            "villager_trade"
+          ]
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "count": {
+          "type": "integer"
+        },
+        "consume": {
+          "type": "boolean"
+        },
+        "tracker": {
+          "type": "object"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "ui": {
+          "$ref": "#/$defs/ui"
+        }
+      }
+    },
+    "dialogue_slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scene": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "scene_ref": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "external": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "external_scene": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "text": {
+          "type": "string"
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response"
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "slot": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "text": {
+          "type": "string"
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "next": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+            },
+            {
+              "$ref": "#/$defs/transition"
+            }
+          ]
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "external": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "external_scene": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "scene_ref": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "label": {
+          "type": "string"
+        },
+        "label_key": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "next": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "scene": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "response": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "abandon": {
+          "type": "boolean"
+        },
+        "fail": {
+          "type": "boolean"
+        },
+        "request": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "scene": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "response": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "abandon": {
+          "type": "boolean"
+        },
+        "fail": {
+          "type": "boolean"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "event": {
+          "type": "string",
+          "enum": [
+            "abandon",
+            "abandoned",
+            "complete",
+            "completed",
+            "expire",
+            "expired",
+            "near_provider",
+            "nearby",
+            "player",
+            "player_tick",
+            "progress",
+            "proximity",
+            "quest_abandoned",
+            "quest_completed",
+            "quest_expired",
+            "quest_progress",
+            "quest_started",
+            "stage",
+            "stage_changed",
+            "stage_entered",
+            "stage_set",
+            "start",
+            "started",
+            "tick",
+            "updated"
+          ]
+        },
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "abandon",
+            "abandoned",
+            "complete",
+            "completed",
+            "expire",
+            "expired",
+            "near_provider",
+            "nearby",
+            "player",
+            "player_tick",
+            "progress",
+            "proximity",
+            "quest_abandoned",
+            "quest_completed",
+            "quest_expired",
+            "quest_progress",
+            "quest_started",
+            "stage",
+            "stage_changed",
+            "stage_entered",
+            "stage_set",
+            "start",
+            "started",
+            "tick",
+            "updated"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "abandon",
+            "abandoned",
+            "complete",
+            "completed",
+            "expire",
+            "expired",
+            "near_provider",
+            "nearby",
+            "player",
+            "player_tick",
+            "progress",
+            "proximity",
+            "quest_abandoned",
+            "quest_completed",
+            "quest_expired",
+            "quest_progress",
+            "quest_started",
+            "stage",
+            "stage_changed",
+            "stage_entered",
+            "stage_set",
+            "start",
+            "started",
+            "tick",
+            "updated"
+          ]
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "next": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "cooldown": {
+          "type": "string"
+        },
+        "cooldown_ticks": {
+          "type": "integer"
+        },
+        "radius": {
+          "type": "number"
+        },
+        "repeatable": {
+          "type": "boolean"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "rewards": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "experience": {
+          "type": "integer"
+        },
+        "reputation": {
+          "type": "integer"
+        },
+        "gossip_reputation": {
+          "type": "integer"
+        },
+        "loot_table": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "memory_event": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "title_key": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "description_key": {
+          "type": "string"
+        },
+        "tracker_text": {
+          "type": "string"
+        },
+        "tracker_text_key": {
+          "type": "string"
+        },
+        "placeholders": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "color": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "hidden": {
+          "type": "boolean"
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "all",
+            "all_of",
+            "and",
+            "any",
+            "any_of",
+            "attribute",
+            "fact",
+            "family",
+            "memory",
+            "mood",
+            "not",
+            "or",
+            "quest",
+            "quest_counter",
+            "quest_fact",
+            "quest_stage",
+            "quest_tag",
+            "quest_variable",
+            "recruitment_memory",
+            "relationship",
+            "reputation",
+            "skill",
+            "social_attribute",
+            "stage",
+            "stat",
+            "time",
+            "time_of_day",
+            "trade_level",
+            "villager_age",
+            "villager_level",
+            "villager_mood",
+            "weather"
+          ]
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "add_counter",
+            "add_tag",
+            "clear_tag",
+            "counter",
+            "dialogue",
+            "experience",
+            "fact",
+            "flash_tracker",
+            "force_dialogue",
+            "forced_dialogue",
+            "gossip",
+            "gossip_reputation",
+            "hud",
+            "increment_counter",
+            "loot",
+            "loot_table",
+            "memory",
+            "memory_event",
+            "message",
+            "notification",
+            "notify",
+            "quest",
+            "quest_action",
+            "quest_stage",
+            "quest_tag",
+            "quest_tracker",
+            "remove_tag",
+            "rep",
+            "reputation",
+            "set_fact",
+            "set_stage",
+            "set_tag",
+            "set_variable",
+            "stage",
+            "tag",
+            "tracker",
+            "unset_tag",
+            "variable",
+            "xp"
+          ]
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "add_counter",
+            "add_tag",
+            "clear_tag",
+            "counter",
+            "dialogue",
+            "experience",
+            "fact",
+            "flash_tracker",
+            "force_dialogue",
+            "forced_dialogue",
+            "gossip",
+            "gossip_reputation",
+            "hud",
+            "increment_counter",
+            "loot",
+            "loot_table",
+            "memory",
+            "memory_event",
+            "message",
+            "notification",
+            "notify",
+            "quest",
+            "quest_action",
+            "quest_stage",
+            "quest_tag",
+            "quest_tracker",
+            "remove_tag",
+            "rep",
+            "reputation",
+            "set_fact",
+            "set_stage",
+            "set_tag",
+            "set_variable",
+            "stage",
+            "tag",
+            "tracker",
+            "unset_tag",
+            "variable",
+            "xp"
+          ]
+        }
+      }
+    }
+  }
+}
