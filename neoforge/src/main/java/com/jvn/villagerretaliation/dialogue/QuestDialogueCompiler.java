@@ -296,6 +296,7 @@ public final class QuestDialogueCompiler {
             if (!request.isBlank()) {
                 object.addProperty("request", request);
             }
+            copyIfPresent(response.data(), object, "order");
             object.add("metadata", metadata(
                     resource,
                     stageId,
@@ -382,9 +383,13 @@ public final class QuestDialogueCompiler {
             JsonArray entries) {
         JsonObject entry = new JsonObject();
         entry.addProperty("id", entryId);
-        entry.addProperty("label", label);
+        String explicitLabel = entryData == null ? "" : DatapackJsonReader.readString(entryData, "label");
+        entry.addProperty("label", explicitLabel.isBlank() ? label : explicitLabel);
         entry.addProperty("start", nodeId);
         entry.add("metadata", metadata(resource, stageId, "quest_module_v2_entry", source));
+        copyIfPresent(entryData, entry, "request");
+        copyIfPresent(entryData, entry, "show_for_babies");
+        copyIfPresent(entryData, entry, "order");
         copyArrayIfPresent(entryData, entry, "conditions");
         entries.add(entry);
     }
@@ -504,6 +509,13 @@ public final class QuestDialogueCompiler {
     private static void copyArrayIfPresent(JsonObject source, JsonObject target, String key) {
         JsonElement element = source == null ? null : source.get(key);
         if (element != null && element.isJsonArray()) {
+            target.add(key, element.deepCopy());
+        }
+    }
+
+    private static void copyIfPresent(JsonObject source, JsonObject target, String key) {
+        JsonElement element = source == null ? null : source.get(key);
+        if (element != null) {
             target.add(key, element.deepCopy());
         }
     }

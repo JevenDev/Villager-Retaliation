@@ -168,6 +168,25 @@ public final class QuestV2Compiler {
             copyIfPresent(availability, rules, "repeatable");
         }
         copyIfPresent(availability, rules, "cooldown_ticks", "completion_cooldown_ticks");
+        copyIfPresent(availability, rules, "cooldown_days", "completion_cooldown_days");
+        copyIfPresent(availability, rules, "cooldown_seconds", "completion_cooldown_seconds");
+        copyIfPresent(availability, rules, "completion_cooldown");
+        copyIfPresent(availability, rules, "completion_cooldown_ticks");
+        copyIfPresent(availability, rules, "completion_cooldown_days");
+        copyIfPresent(availability, rules, "completion_cooldown_seconds");
+        copyIfPresent(availability, rules, "max_starts");
+        copyIfPresent(availability, rules, "max_completions");
+        copyIfPresent(availability, rules, "completion_scope");
+        copyIfPresent(availability, rules, "scope");
+        copyIfPresent(availability, rules, "abandonment");
+        copyIfPresent(availability, rules, "abandonment_cooldown");
+        copyIfPresent(availability, rules, "abandonment_cooldown_ticks");
+        copyIfPresent(availability, rules, "abandonment_cooldown_days");
+        copyIfPresent(availability, rules, "abandonment_cooldown_seconds");
+        copyIfPresent(availability, rules, "consume_on_completion");
+        copyIfPresent(availability, rules, "consume_on_abandonment");
+        copyIfPresent(availability, rules, "locked_to_villager");
+        copyIfPresent(availability, rules, "cross_villager_compatible");
         if (availability.has("exclusive_group")) {
             JsonObject branch = new JsonObject();
             copyIfPresent(availability, branch, "exclusive_group");

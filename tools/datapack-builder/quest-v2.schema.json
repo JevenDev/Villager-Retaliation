@@ -171,11 +171,68 @@
         "cooldown_ticks": {
           "type": "integer"
         },
+        "cooldown_days": {
+          "type": "integer"
+        },
+        "cooldown_seconds": {
+          "type": "integer"
+        },
+        "completion_cooldown": {
+          "type": "string"
+        },
+        "completion_cooldown_ticks": {
+          "type": "integer"
+        },
+        "completion_cooldown_days": {
+          "type": "integer"
+        },
+        "completion_cooldown_seconds": {
+          "type": "integer"
+        },
         "exclusive_group": {
           "type": "string",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
         },
         "repeatable": {
+          "type": "boolean"
+        },
+        "max_starts": {
+          "type": "integer"
+        },
+        "max_completions": {
+          "type": "integer"
+        },
+        "completion_scope": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "abandonment": {
+          "type": "string"
+        },
+        "abandonment_cooldown": {
+          "type": "string"
+        },
+        "abandonment_cooldown_ticks": {
+          "type": "integer"
+        },
+        "abandonment_cooldown_days": {
+          "type": "integer"
+        },
+        "abandonment_cooldown_seconds": {
+          "type": "integer"
+        },
+        "consume_on_completion": {
+          "type": "boolean"
+        },
+        "consume_on_abandonment": {
+          "type": "boolean"
+        },
+        "locked_to_villager": {
+          "type": "boolean"
+        },
+        "cross_villager_compatible": {
           "type": "boolean"
         },
         "prerequisites": {
@@ -560,6 +617,18 @@
           "minLength": 1,
           "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
         },
+        "label": {
+          "type": "string"
+        },
+        "request": {
+          "type": "string"
+        },
+        "show_for_babies": {
+          "type": "boolean"
+        },
+        "order": {
+          "type": "integer"
+        },
         "text": {
           "type": "string"
         },
@@ -608,6 +677,18 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+        },
+        "label": {
+          "type": "string"
+        },
+        "request": {
+          "type": "string"
+        },
+        "show_for_babies": {
+          "type": "boolean"
+        },
+        "order": {
+          "type": "integer"
         },
         "text": {
           "type": "string"
@@ -822,6 +903,9 @@
         },
         "request": {
           "type": "string"
+        },
+        "order": {
+          "type": "integer"
         },
         "metadata": {
           "type": "object"

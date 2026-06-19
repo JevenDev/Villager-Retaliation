@@ -832,15 +832,15 @@ const questV2IdPattern = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
 const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]);
 const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "author", "version"]);
 const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "filters", "data"]);
-const questV2AvailabilityKeys = new Set(["conditions", "active", "cooldown", "cooldown_ticks", "exclusive_group", "repeatable", "prerequisites"]);
+const questV2AvailabilityKeys = new Set(["conditions", "active", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "exclusive_group", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
 const questV2LifecycleKeys = new Set(["on_start", "on_complete", "on_abandon", "on_expire", "on_fail", "on_stage_enter", "on_stage_exit", "dialogue"]);
 const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stage", "scene", "complete", "abandon", "fail"]);
 const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
 const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "target", "targets", "structure", "dimension", "location", "radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
-const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
-const questV2SceneKeys = new Set(["id", "slot", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "external", "external_scene", "external_entry", "scene_ref", "metadata"]);
+const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
+const questV2SceneKeys = new Set(["id", "slot", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "external", "external_scene", "external_entry", "scene_ref", "metadata"]);
 const questV2ExternalSceneKeys = new Set(["tree", "tree_id", "dialogue_tree", "entry", "entry_id", "metadata"]);
-const questV2ResponseKeys = new Set(["id", "label", "label_key", "text", "text_key", "lines", "conditions", "actions", "transition", "next", "stage", "scene", "response", "complete", "abandon", "fail", "request", "metadata"]);
+const questV2ResponseKeys = new Set(["id", "label", "label_key", "text", "text_key", "lines", "conditions", "actions", "transition", "next", "stage", "scene", "response", "complete", "abandon", "fail", "request", "order", "metadata"]);
 const questV2TransitionKeys = new Set(["stage", "scene", "response", "complete", "abandon", "fail"]);
 const questV2EventKeys = new Set(["id", "event", "type", "trigger", "stage", "stages", "conditions", "actions", "transition", "next", "cooldown", "cooldown_ticks", "radius", "repeatable", "metadata"]);
 const questV2RewardsKeys = new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event"]);
@@ -1456,8 +1456,27 @@ function checkQuestV2Availability(file, availability, pointer, location, questId
   checkQuestV2OptionalBoolean(file, availability, pointer, location, "active");
   checkQuestV2OptionalString(file, availability, pointer, location, "cooldown");
   checkQuestV2OptionalInteger(file, availability, pointer, location, "cooldown_ticks", { min: 0 });
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "cooldown_days", { min: 0 });
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "cooldown_seconds", { min: 0 });
+  checkQuestV2OptionalString(file, availability, pointer, location, "completion_cooldown");
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "completion_cooldown_ticks", { min: 0 });
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "completion_cooldown_days", { min: 0 });
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "completion_cooldown_seconds", { min: 0 });
   checkQuestV2OptionalString(file, availability, pointer, location, "exclusive_group");
   checkQuestV2OptionalBoolean(file, availability, pointer, location, "repeatable");
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "max_starts", { min: 0 });
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "max_completions", { min: 0 });
+  checkQuestV2OptionalString(file, availability, pointer, location, "completion_scope");
+  checkQuestV2OptionalString(file, availability, pointer, location, "scope");
+  checkQuestV2OptionalString(file, availability, pointer, location, "abandonment");
+  checkQuestV2OptionalString(file, availability, pointer, location, "abandonment_cooldown");
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "abandonment_cooldown_ticks", { min: 0 });
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "abandonment_cooldown_days", { min: 0 });
+  checkQuestV2OptionalInteger(file, availability, pointer, location, "abandonment_cooldown_seconds", { min: 0 });
+  checkQuestV2OptionalBoolean(file, availability, pointer, location, "consume_on_completion");
+  checkQuestV2OptionalBoolean(file, availability, pointer, location, "consume_on_abandonment");
+  checkQuestV2OptionalBoolean(file, availability, pointer, location, "locked_to_villager");
+  checkQuestV2OptionalBoolean(file, availability, pointer, location, "cross_villager_compatible");
   checkQuestV2StringArray(file, availability.prerequisites, `${pointer}/prerequisites`, `${location}.prerequisites`, "quest prerequisite");
   for (const prerequisite of readValues(availability, ["prerequisites"])) {
     if (typeof prerequisite === "string" && prerequisite.trim()) {
@@ -1664,6 +1683,10 @@ function checkQuestV2DialogueSlot(file, slot, pointer, location, questId, slotId
   if (scene && sceneIds.size > 0 && !sceneIds.has(scene)) {
     questV2Error(file, `${pointer}/scene`, `${location}.scene`, `dialogue slot references missing local scene "${scene}".`, "Reference a scene id from this stage's scenes array.");
   }
+  checkQuestV2OptionalString(file, slot, pointer, location, "label");
+  checkQuestV2OptionalString(file, slot, pointer, location, "request");
+  checkQuestV2OptionalBoolean(file, slot, pointer, location, "show_for_babies");
+  checkQuestV2OptionalInteger(file, slot, pointer, location, "order");
   const hasInline = hasAnyKey(slot, ["text", "text_key", "lines", "responses"]);
   const hasExternal = hasAnyKey(slot, ["external", "external_scene"]);
   if (hasInline && (scene || hasExternal)) {
@@ -1706,6 +1729,10 @@ function checkQuestV2InlineScene(file, scene, pointer, location, questId, fallba
   checkQuestV2UnknownKeys(file, scene, pointer, location, questV2SceneKeys);
   const id = stringValue(scene.id) || fallbackId || "";
   checkQuestV2Id(file, id, `${pointer}/id`, `${location}.id`, "scene id");
+  checkQuestV2OptionalString(file, scene, pointer, location, "label");
+  checkQuestV2OptionalString(file, scene, pointer, location, "request");
+  checkQuestV2OptionalBoolean(file, scene, pointer, location, "show_for_babies");
+  checkQuestV2OptionalInteger(file, scene, pointer, location, "order");
   checkQuestV2StringArray(file, scene.lines, `${pointer}/lines`, `${location}.lines`, "scene line");
   checkQuestV2OptionalString(file, scene, pointer, location, "text");
   checkQuestV2OptionalString(file, scene, pointer, location, "text_key");
@@ -1751,6 +1778,7 @@ function checkQuestV2Responses(file, responses, pointer, location, questId, tran
     checkQuestV2OptionalString(file, response, responsePointer, responseLocation, "text");
     checkQuestV2OptionalString(file, response, responsePointer, responseLocation, "text_key");
     checkQuestV2StringArray(file, response.lines, `${responsePointer}/lines`, `${responseLocation}.lines`, "response line");
+    checkQuestV2OptionalInteger(file, response, responsePointer, responseLocation, "order");
     checkQuestV2Conditions(file, response.conditions, `${responsePointer}/conditions`, `${responseLocation}.conditions`, questId, "quest module v2 response");
     checkQuestV2Actions(file, response.actions, `${responsePointer}/actions`, `${responseLocation}.actions`, questId);
     const transition = readQuestV2WrapperTransition(file, response, responsePointer, responseLocation);
@@ -2084,17 +2112,47 @@ function warnQuestV2UnreachableScenes(file, model) {
       continue;
     }
     const reachable = new Set();
+    const queue = [];
+    const rawScenes = new Map();
+    if (Array.isArray(stage.raw.scenes)) {
+      for (const scene of stage.raw.scenes) {
+        const id = stringValue(scene?.id);
+        if (id) {
+          rawScenes.set(id, scene);
+        }
+      }
+    }
+    const enqueueScene = (scene) => {
+      if (scene && scenes.has(scene) && !reachable.has(scene)) {
+        reachable.add(scene);
+        queue.push(scene);
+      }
+    };
+    const enqueueResponseScenes = (responses) => {
+      if (!Array.isArray(responses)) {
+        return;
+      }
+      for (const response of responses) {
+        if (!response || typeof response !== "object" || Array.isArray(response)) {
+          continue;
+        }
+        enqueueScene(questV2ResponseSceneTarget(response));
+      }
+    };
     const dialogue = stage.raw.dialogue && typeof stage.raw.dialogue === "object" && !Array.isArray(stage.raw.dialogue) ? stage.raw.dialogue : {};
     for (const slot of Object.values(dialogue)) {
       const scene = firstString(slot?.scene, slot?.scene_ref);
-      if (scene && scenes.has(scene)) {
-        reachable.add(scene);
-      }
+      enqueueScene(scene);
+      enqueueResponseScenes(slot?.responses);
     }
     for (const entry of model.transitions) {
       if (entry.stageId === stage.id && entry.transition.scene && scenes.has(entry.transition.scene)) {
-        reachable.add(entry.transition.scene);
+        enqueueScene(entry.transition.scene);
       }
+    }
+    while (queue.length > 0) {
+      const sceneId = queue.shift();
+      enqueueResponseScenes(rawScenes.get(sceneId)?.responses);
     }
     for (const scene of scenes) {
       if (!reachable.has(scene)) {
@@ -2125,6 +2183,16 @@ function warnQuestV2LifecycleCoverage(file, data, model) {
   if (!covered.has("on_complete") && !covered.has("turn_in")) {
     questV2Warning(file, "/lifecycle", "lifecycle", "quest module v2 has no completion lifecycle hook or turn_in dialogue slot.", "Add lifecycle.on_complete or a dialogue.turn_in slot so completion behavior is explicit.");
   }
+}
+
+function questV2ResponseSceneTarget(response) {
+  if (!response || typeof response !== "object" || Array.isArray(response)) {
+    return "";
+  }
+  if (response.transition && typeof response.transition === "object" && !Array.isArray(response.transition)) {
+    return stringValue(response.transition.scene);
+  }
+  return stringValue(response.scene);
 }
 
 function readQuestV2Transition(file, value, pointer, location) {

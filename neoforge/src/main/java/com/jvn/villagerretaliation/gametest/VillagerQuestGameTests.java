@@ -66,8 +66,11 @@ import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Resource;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
+import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -105,6 +108,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -1766,6 +1770,107 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void builtInEggBasketsQuestModuleV2MatchesLegacySemantics(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        VillagerQuestResources.clearCache();
+        DialogueTreeResources.clearCache();
+        ResourceLocation questId = VillagerRetaliation.id("egg_baskets");
+        CompiledQuest compiled = VillagerQuestResources
+                .compiledQuest(helper.getLevel().getServer(), questId)
+                .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
+        QuestDefinition quest = compiled.asQuestDefinition();
+
+        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "egg baskets schema version");
+        assertEggBasketsLegacySemantics(helper, quest, legacyEggBasketsQuestV1Fixture());
+        helper.assertTrue(
+                VillagerQuestResources.questDialogueCatalog(helper.getLevel().getServer()).hasGeneratedQuestDialogue(questId),
+                "egg baskets did not compile generated v2 dialogue");
+        DialogueTreeDefinition generatedTree = DialogueTreeResources
+                .tree(helper.getLevel().getServer(), LOCALE, QuestDialogueCompiler.treeId(questId))
+                .orElseThrow(() -> new GameTestAssertException("egg baskets generated dialogue tree missing"));
+        DialogueTreeDefinition.Entry offerEntry = generatedTree
+                .entry("stage.collect.offer")
+                .orElseThrow(() -> new GameTestAssertException("egg baskets generated offer entry missing"));
+        helper.assertValueEqual(offerEntry.label(), "Egg Baskets", "egg baskets generated offer label");
+        helper.assertValueEqual(offerEntry.order(), -20, "egg baskets generated offer order");
+        helper.assertFalse(offerEntry.showForBabies(), "egg baskets generated offer baby visibility");
+        DialogueTreeDefinition.Entry readyEntry = generatedTree
+                .entry("stage.return.turn_in")
+                .orElseThrow(() -> new GameTestAssertException("egg baskets generated ready entry missing"));
+        helper.assertValueEqual(readyEntry.label(), "About Egg Baskets", "egg baskets generated ready label");
+        helper.assertValueEqual(readyEntry.order(), -20, "egg baskets generated ready order");
+        DialogueTreeDefinition.Node reminderNode = generatedTree
+                .node("stage.collect.slot.reminder")
+                .orElseThrow(() -> new GameTestAssertException("egg baskets generated reminder node missing"));
+        helper.assertValueEqual(
+                reminderNode.responses().stream().map(DialogueTreeDefinition.Response::order).toList(),
+                List.of(0, 90, 100),
+                "egg baskets generated reminder response order");
+        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "egg baskets migration emitted diagnostics");
+        DatapackDiagnostics.clear();
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void builtInEggBasketsLegacyTreeOverrideRemainsSourceAware(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        VillagerQuestResources.clearCache();
+        DialogueTreeResources.clearCache();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation questId = VillagerRetaliation.id("egg_baskets");
+        CompiledQuest compiled = VillagerQuestResources
+                .compiledQuest(level.getServer(), questId)
+                .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
+        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "egg baskets schema version");
+
+        DialogueTreeDefinition legacyTree = singleEntryDialogueTree(
+                questId,
+                "offer",
+                "Legacy Egg Baskets",
+                "Legacy Egg Baskets override.");
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        configureEggBasketsProvider(level, villager);
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            DialogueTreeResources.installTestTrees(level.getServer(), LOCALE, List.of(legacyTree), Set.of(questId));
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            assertHasDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(QuestDialogueCompiler.treeId(questId), "stage.collect.offer"),
+                    "generated egg baskets offer");
+            assertMissingDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(questId, "offer"),
+                    "built-in legacy egg baskets tree");
+
+            DialogueTreeResources.installTestTrees(level.getServer(), LOCALE, List.of(legacyTree), Set.of());
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            assertHasDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(questId, "offer"),
+                    "higher-priority legacy egg baskets override");
+            helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "egg baskets legacy override emitted diagnostics");
+            DatapackDiagnostics.clear();
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            DialogueTreeService.clearRuntimeState();
+            DialogueTreeResources.clearCache();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2ResponseTransitionsRecordChoiceHistory(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -2263,6 +2368,125 @@ public final class VillagerQuestGameTests {
     private static QuestDefinition quest(GameTestHelper helper, ResourceLocation questId) {
         return VillagerQuestResources.quest(helper.getLevel().getServer(), questId)
                 .orElseThrow(() -> new GameTestAssertException("Missing quest " + questId));
+    }
+
+    private static void configureEggBasketsProvider(ServerLevel level, Villager villager) {
+        villager.setVillagerData(villager.getVillagerData()
+                .setProfession(VillagerProfession.FARMER)
+                .setLevel(1));
+        VillagerProfileManager.setSkill(level, villager, VillagerSkill.ANIMAL_HANDLING, 5);
+        VillagerProfileManager.setSkill(level, villager, VillagerSkill.COOKING, 4);
+    }
+
+    private static void assertEggBasketsLegacySemantics(
+            GameTestHelper helper,
+            QuestDefinition quest,
+            JsonObject legacy) {
+        JsonObject display = legacy.getAsJsonObject("display");
+        helper.assertValueEqual(quest.id().toString(), DatapackJsonReader.readString(legacy, "id"), "egg baskets id");
+        helper.assertValueEqual(quest.title(), DatapackJsonReader.readString(display, "title"), "egg baskets title");
+        helper.assertValueEqual(quest.description(), DatapackJsonReader.readString(display, "description"), "egg baskets description");
+        helper.assertValueEqual(quest.titleKey(), DatapackJsonReader.readString(display, "title_key"), "egg baskets title key");
+        helper.assertValueEqual(quest.descriptionKey(), DatapackJsonReader.readString(display, "description_key"), "egg baskets description key");
+        helper.assertValueEqual(quest.questline(), "village_supply", "egg baskets questline");
+        helper.assertValueEqual(quest.tags(), Set.of("group.village_supply"), "egg baskets tags");
+
+        helper.assertValueEqual(
+                quest.offer().professions(),
+                Set.of(VillagerProfession.FARMER, VillagerProfession.BUTCHER),
+                "egg baskets offer professions");
+        helper.assertValueEqual(quest.offer().minVillagerLevel(), 1, "egg baskets offer level");
+        helper.assertValueEqual(
+                quest.offer().minSkills(),
+                Map.of(VillagerSkill.ANIMAL_HANDLING, 5, VillagerSkill.COOKING, 4),
+                "egg baskets offer skills");
+
+        JsonObject legacyObjective = legacy.getAsJsonArray("objectives").get(0).getAsJsonObject();
+        QuestDefinition.Objective objective = quest.objectives().getFirst();
+        String legacyObjectiveId = DatapackJsonReader.readString(legacyObjective, "id");
+        helper.assertTrue(
+                objective.id().endsWith("." + legacyObjectiveId),
+                "egg baskets local objective id was not preserved in flattened v2 id");
+        helper.assertValueEqual(objective.type(), QuestDefinition.ObjectiveType.ITEM_CHECK, "egg baskets objective type");
+        helper.assertValueEqual(objective.item(), ResourceLocation.fromNamespaceAndPath("minecraft", "egg"), "egg baskets item");
+        helper.assertValueEqual(objective.count(), DatapackJsonReader.readInt(legacyObjective, "count", 0), "egg baskets count");
+        JsonObject legacyObjectiveTracker = legacyObjective.getAsJsonObject("tracker");
+        helper.assertValueEqual(
+                objective.tracker().text(),
+                DatapackJsonReader.readString(legacyObjectiveTracker, "text"),
+                "egg baskets objective tracker text");
+        helper.assertValueEqual(
+                objective.tracker().completeText(),
+                DatapackJsonReader.readString(legacyObjectiveTracker, "complete_text"),
+                "egg baskets objective complete text");
+        helper.assertValueEqual(
+                objective.tracker().textKey(),
+                DatapackJsonReader.readString(legacyObjectiveTracker, "text_key"),
+                "egg baskets objective text key");
+        helper.assertValueEqual(
+                objective.tracker().completeTextKey(),
+                DatapackJsonReader.readString(legacyObjectiveTracker, "complete_text_key"),
+                "egg baskets objective complete text key");
+
+        helper.assertValueEqual(new ArrayList<>(quest.stages().keySet()), List.of("collect", "return"), "egg baskets stages");
+        QuestDefinition.Stage collectStage = quest.stages().get("collect");
+        helper.assertValueEqual(collectStage.objectives(), List.of(objective.id()), "egg baskets collect objectives");
+        helper.assertValueEqual(collectStage.completeWhen().getFirst().objective(), objective.id(), "egg baskets collect predicate");
+        helper.assertValueEqual(collectStage.next(), "return", "egg baskets collect next stage");
+
+        JsonObject legacyTracker = legacy.getAsJsonObject("tracker");
+        JsonObject legacyTrackerSteps = legacyTracker.getAsJsonObject("steps");
+        helper.assertValueEqual(
+                quest.tracker().title(),
+                DatapackJsonReader.readString(legacyTracker, "title"),
+                "egg baskets tracker title");
+        helper.assertValueEqual(
+                quest.tracker().titleKey(),
+                DatapackJsonReader.readString(legacyTracker, "title_key"),
+                "egg baskets tracker title key");
+        assertTrackerStepMatches(helper, quest.tracker().steps().get("collect"), legacyTrackerSteps.getAsJsonObject("proof"), "egg baskets proof");
+        assertTrackerStepMatches(helper, quest.tracker().steps().get("return"), legacyTrackerSteps.getAsJsonObject("return"), "egg baskets return");
+
+        JsonObject rules = legacy.getAsJsonObject("rules");
+        helper.assertValueEqual(quest.rules().repeatable(), DatapackJsonReader.readBoolean(rules, "repeatable"), "egg baskets repeatable");
+        helper.assertValueEqual(quest.rules().maxStarts(), DatapackJsonReader.readInt(rules, "max_starts", -1), "egg baskets max starts");
+        helper.assertValueEqual(quest.rules().maxCompletions(), DatapackJsonReader.readInt(rules, "max_completions", -1), "egg baskets max completions");
+        helper.assertValueEqual(quest.rules().completionCooldownTicks(), 24000L, "egg baskets completion cooldown");
+        helper.assertValueEqual(quest.rules().abandonment(), QuestDefinition.AbandonmentMode.ALLOW_REPICKUP, "egg baskets abandonment");
+        helper.assertValueEqual(
+                quest.rules().consumeOnCompletion(),
+                DatapackJsonReader.readBoolean(rules, "consume_on_completion"),
+                "egg baskets consume on completion");
+        helper.assertValueEqual(
+                quest.rules().lockedToVillager(),
+                DatapackJsonReader.readBoolean(rules, "locked_to_villager"),
+                "egg baskets issuer lock");
+        helper.assertValueEqual(
+                quest.rules().crossVillagerCompatible(),
+                DatapackJsonReader.readBoolean(rules, "cross_villager_compatible"),
+                "egg baskets cross-villager compatibility");
+
+        JsonObject rewards = legacy.getAsJsonObject("rewards");
+        helper.assertValueEqual(quest.rewards().experience(), DatapackJsonReader.readInt(rewards, "experience", 0), "egg baskets reward xp");
+        helper.assertValueEqual(quest.rewards().reputation(), DatapackJsonReader.readInt(rewards, "reputation", 0), "egg baskets reward reputation");
+        helper.assertValueEqual(quest.rewards().gossipReputation(), DatapackJsonReader.readInt(rewards, "gossip_reputation", 0), "egg baskets reward gossip");
+        helper.assertValueEqual(quest.rewards().lootTable().toString(), DatapackJsonReader.readString(rewards, "loot_table"), "egg baskets reward loot");
+        helper.assertValueEqual(
+                quest.rewards().memoryEvent(),
+                VillagerRetaliation.id(DatapackJsonReader.readString(rewards, "memory_event")),
+                "egg baskets reward memory event");
+    }
+
+    private static void assertTrackerStepMatches(
+            GameTestHelper helper,
+            QuestDefinition.Step actual,
+            JsonObject legacy,
+            String label) {
+        helper.assertTrue(actual != null, label + " tracker step missing");
+        helper.assertValueEqual(actual.text(), DatapackJsonReader.readString(legacy, "text"), label + " tracker text");
+        helper.assertValueEqual(actual.textKey(), DatapackJsonReader.readString(legacy, "text_key"), label + " tracker key");
+        helper.assertValueEqual(actual.showProgress(), DatapackJsonReader.readBoolean(legacy, "show_progress"), label + " tracker progress visibility");
+        helper.assertValueEqual(actual.progress(), legacy.get("progress").getAsFloat(), label + " tracker progress");
     }
 
     private static Villager spawnVillager(GameTestHelper helper, BlockPos relativePos) {
@@ -2967,6 +3191,89 @@ public final class VillagerQuestGameTests {
                         + DatapackDiagnostics.structuredRecent().stream()
                                 .map(diagnostic -> diagnostic.jsonPointer() + " :: " + diagnostic.message())
                                 .toList());
+    }
+
+    private static JsonObject legacyEggBasketsQuestV1Fixture() {
+        return JsonParser.parseString("""
+                {
+                  "id": "villagerretaliation:egg_baskets",
+                  "display": {
+                    "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
+                    "title": "Egg Baskets",
+                    "title_key": "quest.village_supply.egg_baskets.title",
+                    "description_key": "quest.village_supply.egg_baskets.description"
+                  },
+                  "tags": [
+                    "group.village_supply"
+                  ],
+                  "offer": {
+                    "min_villager_level": "novice",
+                    "professions": [
+                      "minecraft:farmer",
+                      "minecraft:butcher"
+                    ],
+                    "skills": {
+                      "animal_handling": {
+                        "min": 5
+                      },
+                      "cooking": {
+                        "min": 4
+                      }
+                    }
+                  },
+                  "objectives": [
+                    {
+                      "count": 12,
+                      "id": "bring_eggs",
+                      "item": "minecraft:egg",
+                      "tracker": {
+                        "complete_text": "The egg baskets are full and ready.",
+                        "progress": 0.7,
+                        "show_progress": true,
+                        "text": "Bring 12 eggs for the kitchen baskets.",
+                        "text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.text",
+                        "complete_text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.complete_text"
+                      },
+                      "type": "item_check"
+                    }
+                  ],
+                  "rules": {
+                    "abandonment": "allow_repickup",
+                    "completion_cooldown_days": 1,
+                    "consume_on_completion": true,
+                    "cross_villager_compatible": true,
+                    "locked_to_villager": true,
+                    "max_completions": 0,
+                    "max_starts": 0,
+                    "repeatable": true
+                  },
+                  "tracker": {
+                    "steps": {
+                      "proof": {
+                        "progress": 0.7,
+                        "show_progress": true,
+                        "text": "Bring 12 eggs for the kitchen baskets.",
+                        "text_key": "quest.village_supply.egg_baskets.tracker.proof.text"
+                      },
+                      "return": {
+                        "progress": 1,
+                        "show_progress": true,
+                        "text": "Return to the quest giver with the eggs.",
+                        "text_key": "quest.village_supply.egg_baskets.tracker.return.text"
+                      }
+                    },
+                    "title": "Egg Baskets",
+                    "title_key": "quest.village_supply.egg_baskets.tracker.title"
+                  },
+                  "rewards": {
+                    "experience": 45,
+                    "gossip_reputation": 2,
+                    "loot_table": "villagerretaliation:quest/egg_baskets",
+                    "memory_event": "player_completed_quest",
+                    "reputation": 4
+                  }
+                }
+                """).getAsJsonObject();
     }
 
     private static JsonObject validQuestV2Fixture() {

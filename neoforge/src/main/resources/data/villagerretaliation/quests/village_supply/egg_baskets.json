@@ -1,46 +1,35 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:egg_baskets",
-  "display": {
-    "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
+  "metadata": {
     "title": "Egg Baskets",
+    "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
     "title_key": "quest.village_supply.egg_baskets.title",
-    "description_key": "quest.village_supply.egg_baskets.description"
+    "description_key": "quest.village_supply.egg_baskets.description",
+    "questline": "village_supply",
+    "tags": [
+      "group.village_supply"
+    ]
   },
-  "tags": [
-    "group.village_supply"
-  ],
-  "offer": {
-    "min_villager_level": "novice",
-    "professions": [
-      "minecraft:farmer",
-      "minecraft:butcher"
-    ],
-    "skills": {
-      "animal_handling": {
-        "min": 5
-      },
-      "cooking": {
-        "min": 4
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "novice",
+      "professions": [
+        "minecraft:farmer",
+        "minecraft:butcher"
+      ],
+      "skills": {
+        "animal_handling": {
+          "min": 5
+        },
+        "cooking": {
+          "min": 4
+        }
       }
     }
   },
-  "objectives": [
-    {
-      "count": 12,
-      "id": "bring_eggs",
-      "item": "minecraft:egg",
-      "tracker": {
-        "complete_text": "The egg baskets are full and ready.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 eggs for the kitchen baskets.",
-        "text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.text",
-        "complete_text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
+  "availability": {
     "abandonment": "allow_repickup",
     "completion_cooldown_days": 1,
     "consume_on_completion": true,
@@ -50,27 +39,316 @@
     "max_starts": 0,
     "repeatable": true
   },
-  "tracker": {
-    "metadata": {
-      "source": "Egg Baskets"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 eggs for the kitchen baskets.",
-        "text_key": "quest.village_supply.egg_baskets.tracker.proof.text"
+  "entry_stage": "collect",
+  "stages": [
+    {
+      "id": "collect",
+      "objectives": [
+        {
+          "id": "bring_eggs",
+          "type": "item_check",
+          "item": "minecraft:egg",
+          "count": 12,
+          "tracker": {
+            "complete_text": "The egg baskets are full and ready.",
+            "progress": 0.7,
+            "show_progress": true,
+            "text": "Bring 12 eggs for the kitchen baskets.",
+            "text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.text",
+            "complete_text_key": "quest.village_supply.egg_baskets.objective.bring_eggs.complete_text"
+          }
+        }
+      ],
+      "complete_when": [
+        "bring_eggs"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Egg Baskets",
+          "request": "question",
+          "show_for_babies": false,
+          "order": -20,
+          "lines": [
+            "We are shorter on eggs than we are on patience.",
+            "That usually ends with breakfast becoming a rumor."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can fill the egg baskets",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Another time",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Egg Baskets",
+          "request": "question",
+          "show_for_babies": false,
+          "order": -20,
+          "lines": [
+            "Egg Baskets is still open. I can repeat the details, or close my notes if you are done."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Remind me what to do",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Abandon quest",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "never_mind",
+              "label": "Never mind",
+              "scene": "active_cancel",
+              "order": 100
+            }
+          ]
+        }
       },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the eggs.",
-        "text_key": "quest.village_supply.egg_baskets.tracker.return.text"
+      "scenes": [
+        {
+          "id": "abandon_cancel",
+          "lines": [
+            "Good. The pans will stay hopeful a little longer."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Egg Baskets aside for now?"
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Abandon quest",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep the quest",
+              "scene": "abandon_cancel"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                ],
+                "abandoned_cooldown": [
+                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                ],
+                "abandoned_forever": [
+                  "Then the egg request is closed for good."
+                ],
+                "unavailable": [
+                  "There is no egg count here for me to close."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "active_cancel",
+          "lines": [
+            "Then keep the shells uncracked until you are ready."
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Then I will keep negotiating with empty pans."
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "inactive": [
+                  "The kitchen has no active egg count at the moment."
+                ],
+                "reminder": [
+                  "Egg Baskets: I still need the eggs. Bring the full count back to me."
+                ],
+                "unavailable": [
+                  "That egg-basket request is not in your hands right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "already_completed": [
+                  "The egg baskets are already settled."
+                ],
+                "locate_failed": [
+                  "Egg Baskets cannot be posted from here right now."
+                ],
+                "started": [
+                  "Egg Baskets is yours now. Bring the eggs back when the count is ready."
+                ],
+                "unavailable": [
+                  "The kitchen is not asking you for eggs right now."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 12 eggs for the kitchen baskets.",
+        "tracker_text_key": "quest.village_supply.egg_baskets.tracker.proof.text"
       }
     },
-    "title": "Egg Baskets",
-    "title_key": "quest.village_supply.egg_baskets.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Egg Baskets",
+          "request": "question",
+          "show_for_babies": false,
+          "order": -20,
+          "lines": [
+            "If you have the eggs, we can settle Egg Baskets."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Show what I brought",
+              "scene": "complete_quest",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Abandon quest",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "never_mind",
+              "label": "Never mind",
+              "scene": "turn_in_wait",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "abandon_cancel",
+          "lines": [
+            "Good. The pans will stay hopeful a little longer."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Egg Baskets aside for now?"
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Abandon quest",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep the quest",
+              "scene": "abandon_cancel"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                ],
+                "abandoned_cooldown": [
+                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                ],
+                "abandoned_forever": [
+                  "Then the egg request is closed for good."
+                ],
+                "unavailable": [
+                  "There is no egg count here for me to close."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Egg Baskets is complete. The village can use this, and you have earned the reward."
+                ],
+                "inactive": [
+                  "The kitchen is not accepting eggs right now."
+                ],
+                "missing_objectives": [
+                  "Egg Baskets is still short. The tracker has the exact count."
+                ],
+                "missing_proof": [
+                  "Egg Baskets still needs the eggs in your pack before I can close it."
+                ],
+                "missing_target": [
+                  "Egg Baskets is not at the right count yet; bring the rest before turning it in."
+                ],
+                "unavailable": [
+                  "This egg count is not ready to close yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Keep the eggs safe, then bring them back when you are ready."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver with the eggs.",
+        "tracker_text_key": "quest.village_supply.egg_baskets.tracker.return.text"
+      }
+    }
+  ],
   "rewards": {
     "experience": 45,
     "gossip_reputation": 2,
@@ -78,42 +356,8 @@
     "memory_event": "player_completed_quest",
     "reputation": 4
   },
-  "dialogue": {
-    "already_completed": [
-      "Egg Baskets is already settled."
-    ],
-    "inactive": [
-      "The breakfast baskets are not being counted right now."
-    ],
-    "locate_failed": [
-      "No kitchen slate is ready for another egg request yet."
-    ],
-    "missing_proof": [
-      "Bring the eggs before I call the baskets full."
-    ],
-    "missing_target": [
-      "The kitchen still needs 12 eggs."
-    ],
-    "reminder": [
-      "Twelve eggs for the kitchen. Fragile, useful, and always somehow more urgent than they sound."
-    ],
-    "start": [
-      "Bring 12 eggs. A quiet morning starts with full baskets."
-    ],
-    "turn_in": [
-      "Good. That is breakfast, broth, and one less complaint before dawn."
-    ],
-    "unavailable": [
-      "The egg request is closed for now."
-    ],
-    "start_key": "quest.village_supply.egg_baskets.dialogue.start",
-    "reminder_key": "quest.village_supply.egg_baskets.dialogue.reminder",
-    "turn_in_key": "quest.village_supply.egg_baskets.dialogue.turn_in",
-    "already_completed_key": "quest.village_supply.egg_baskets.dialogue.already_completed",
-    "unavailable_key": "quest.village_supply.egg_baskets.dialogue.unavailable",
-    "inactive_key": "quest.village_supply.egg_baskets.dialogue.inactive",
-    "missing_target_key": "quest.village_supply.egg_baskets.dialogue.missing_target",
-    "missing_proof_key": "quest.village_supply.egg_baskets.dialogue.missing_proof",
-    "locate_failed_key": "quest.village_supply.egg_baskets.dialogue.locate_failed"
+  "ui": {
+    "title": "Egg Baskets",
+    "title_key": "quest.village_supply.egg_baskets.tracker.title"
   }
 }
