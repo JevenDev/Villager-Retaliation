@@ -7,6 +7,9 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
+import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
+import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -255,20 +258,29 @@ public final class VillagerQuestResources {
     private static Map<ResourceLocation, QuestDefinition> read(MinecraftServer server) {
         Map<ResourceLocation, QuestDefinition> quests = new LinkedHashMap<>();
         Map<ResourceLocation, ResourceLocation> sources = new LinkedHashMap<>();
-        List<LoadedQuestResource> resources = DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT).stream()
+        List<QuestResourceEnvelope> resources = DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT).stream()
                 .map(resource -> DatapackResourceLoader.readObject(resource.location(), "quest", resource.resource())
-                        .map(root -> new LoadedQuestResource(resource, root)))
+                        .flatMap(root -> QuestResourceEnvelope.read(resource, root)))
                 .flatMap(Optional::stream)
                 .toList();
         boolean replacementMode = resources.stream()
+                .filter(resource -> resource.schemaVersion() == QuestSchemaVersion.V1)
                 .anyMatch(resource -> DatapackJsonReader.readBoolean(resource.root(), "replace"));
-        for (LoadedQuestResource resource : resources) {
+        for (QuestResourceEnvelope resource : resources) {
+            if (resource.schemaVersion() == QuestSchemaVersion.V2) {
+                DatapackDiagnostics.warnSkippedEntry(
+                        resource.location(),
+                        "quest",
+                        "schema " + resource.schemaVersion().schemaId(),
+                        "quest module v2 is recognized but not playable until the v2 compiler is enabled.");
+                continue;
+            }
             if (replacementMode
-                    && isBuiltInModResource(resource.resource())
+                    && isBuiltInModResource(resource.source())
                     && !DatapackJsonReader.readBoolean(resource.root(), "replace")) {
                 continue;
             }
-            readFile(resource.resource().location(), resource.root(), quests, sources, replacementMode);
+            readFile(resource.location(), resource.root(), quests, sources, replacementMode);
         }
         return Map.copyOf(quests);
     }
@@ -308,12 +320,9 @@ public final class VillagerQuestResources {
         quests.put(definition.id(), definition);
     }
 
-    private static boolean isBuiltInModResource(DatapackResourceLoader.JsonResource resource) {
-        return VillagerRetaliation.MOD_ID.equals(resource.location().getNamespace())
-                && resource.isFromPack(VillagerRetaliation.MOD_ID);
-    }
-
-    private record LoadedQuestResource(DatapackResourceLoader.JsonResource resource, JsonObject root) {
+    private static boolean isBuiltInModResource(QuestResourceSource source) {
+        return VillagerRetaliation.MOD_ID.equals(source.location().getNamespace())
+                && source.isFromPack(VillagerRetaliation.MOD_ID);
     }
 
     private static boolean isControlOnly(JsonObject root, String... allowedKeys) {

@@ -9,8 +9,11 @@ import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
+import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -140,6 +143,38 @@ public final class VillagerQuestGameTests {
         helper.assertFalse(
                 loadedIds.contains(VillagerRetaliation.id("cartographers_atlas/blank_map_promise")),
                 "v1 explicit ids must not be replaced by path-inferred questline ids");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questResourceEnvelopeRoutesVersionedSchemas(GameTestHelper helper) {
+        ResourceLocation location = VillagerRetaliation.id("quests/test/envelope.json");
+
+        DatapackDiagnostics.clear();
+        JsonObject absentSchema = new JsonObject();
+        QuestResourceEnvelope v1 = QuestResourceEnvelope.read(location, absentSchema)
+                .orElseThrow(() -> new GameTestAssertException("schema-less quest did not route as v1"));
+        helper.assertValueEqual(v1.schemaVersion(), QuestSchemaVersion.V1, "absent schema version");
+        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "schema-less v1 produced diagnostics");
+
+        JsonObject validV2 = new JsonObject();
+        validV2.addProperty("schema", QuestSchemaVersion.V2.schemaId());
+        QuestResourceEnvelope v2 = QuestResourceEnvelope.read(location, validV2)
+                .orElseThrow(() -> new GameTestAssertException("v2 quest schema was not recognized"));
+        helper.assertValueEqual(v2.schemaVersion(), QuestSchemaVersion.V2, "v2 schema version");
+        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "valid v2 schema produced diagnostics");
+
+        JsonObject malformed = new JsonObject();
+        malformed.add("schema", new JsonObject());
+        helper.assertTrue(QuestResourceEnvelope.read(location, malformed).isEmpty(), "malformed schema was not skipped");
+        assertRecentDiagnosticContains(helper, "schema must be a string");
+
+        DatapackDiagnostics.clear();
+        JsonObject unknown = new JsonObject();
+        unknown.addProperty("schema", "example:quest/v9");
+        helper.assertTrue(QuestResourceEnvelope.read(location, unknown).isEmpty(), "unknown schema was not skipped");
+        assertRecentDiagnosticContains(helper, "unsupported schema \"example:quest/v9\"");
 
         helper.succeed();
     }
@@ -483,6 +518,13 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(action.factScope(), QuestFactScope.QUEST, label + " scope");
         helper.assertValueEqual(action.factKey(), key, label + " key");
         helper.assertValueEqual(action.factValue(), value, label + " value");
+    }
+
+    private static void assertRecentDiagnosticContains(GameTestHelper helper, String expected) {
+        helper.assertTrue(
+                DatapackDiagnostics.recent().stream().anyMatch(entry -> entry.message().contains(expected)),
+                "recent diagnostics did not contain \"" + expected + "\": "
+                        + DatapackDiagnostics.recent().stream().map(DatapackDiagnostics.Entry::message).toList());
     }
 
     private static void assertObjectiveShape(
