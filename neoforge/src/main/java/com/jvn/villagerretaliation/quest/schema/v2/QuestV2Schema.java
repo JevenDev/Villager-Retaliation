@@ -47,6 +47,7 @@ public final class QuestV2Schema {
         properties.add("availability", ref("#/$defs/availability"));
         properties.add("lifecycle", ref("#/$defs/lifecycle"));
         properties.add("dialogue", objectMap(ref("#/$defs/dialogue_slot")));
+        properties.add("target", ref("#/$defs/target"));
         properties.add("entry_stage", idString());
         properties.add("stages", arrayOf(ref("#/$defs/stage")));
         properties.add("events", arrayOf(ref("#/$defs/event")));
@@ -61,6 +62,7 @@ public final class QuestV2Schema {
         defs.add("availability", availability());
         defs.add("lifecycle", lifecycle());
         defs.add("lifecycle_hook", lifecycleHook());
+        defs.add("target", target());
         defs.add("stage", stage());
         defs.add("objective", objective());
         defs.add("dialogue_slot", dialogueSlot());
@@ -173,6 +175,19 @@ public final class QuestV2Schema {
         properties.add("complete", booleanSchema());
         properties.add("abandon", booleanSchema());
         properties.add("fail", booleanSchema());
+        schema.add("properties", properties);
+        return schema;
+    }
+
+    private static JsonObject target() {
+        JsonObject schema = typedObject();
+        JsonObject properties = object();
+        properties.add("structure", resourceLocation());
+        properties.add("dimension", resourceLocation());
+        properties.add("pieces", arrayOf(string()));
+        properties.add("search_radius", integer());
+        properties.add("discovery_radius", integer());
+        properties.add("proof_item", resourceLocation());
         schema.add("properties", properties);
         return schema;
     }

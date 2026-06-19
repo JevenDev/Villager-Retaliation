@@ -38,6 +38,9 @@
         "$ref": "#/$defs/dialogue_slot"
       }
     },
+    "target": {
+      "$ref": "#/$defs/target"
+    },
     "entry_stage": {
       "type": "string",
       "minLength": 1,
@@ -313,6 +316,36 @@
         },
         "fail": {
           "type": "boolean"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "structure": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "dimension": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        "pieces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "search_radius": {
+          "type": "integer"
+        },
+        "discovery_radius": {
+          "type": "integer"
+        },
+        "proof_item": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
         }
       }
     },

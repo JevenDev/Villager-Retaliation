@@ -40,6 +40,7 @@ public final class QuestV2Parser {
             "availability",
             "lifecycle",
             "dialogue",
+            "target",
             "entry_stage",
             "stages",
             "events",
@@ -56,6 +57,13 @@ public final class QuestV2Parser {
             "parent",
             "author",
             "version");
+    private static final Set<String> TARGET_KEYS = Set.of(
+            "structure",
+            "dimension",
+            "pieces",
+            "search_radius",
+            "discovery_radius",
+            "proof_item");
     private static final Set<String> PROVIDER_KEYS = Set.of(
             "type",
             "capabilities",
@@ -319,6 +327,7 @@ public final class QuestV2Parser {
         QuestV2Resource.Provider provider = readProvider(validator, root.get("provider"));
         QuestV2Resource.Availability availability = readAvailability(validator, root.get("availability"));
         QuestV2Resource.Lifecycle lifecycle = readLifecycle(validator, root.get("lifecycle"));
+        JsonObject target = readTarget(validator, root.get("target"), "/target");
         String entryStage = readString(root, "entry_stage");
 
         List<QuestV2Resource.Stage> stages = readStages(validator, root.get("stages"));
@@ -336,6 +345,7 @@ public final class QuestV2Parser {
                         provider,
                         availability,
                         lifecycle,
+                        target,
                         entryStage,
                         stages,
                         stagesById,
@@ -358,6 +368,21 @@ public final class QuestV2Parser {
         }
         validator.expectKeys(object, "/metadata", METADATA_KEYS);
         return new LinkedHashMap<>(object.asMap());
+    }
+
+    private static JsonObject readTarget(Validator validator, JsonElement element, String pointer) {
+        if (element == null || element.isJsonNull()) {
+            return new JsonObject();
+        }
+        JsonObject object = validator.object(element, pointer, "target", true);
+        if (object == null) {
+            return new JsonObject();
+        }
+        validator.expectKeys(object, pointer, TARGET_KEYS);
+        readResourceLocation(validator, object, pointer + "/structure", "structure");
+        readResourceLocation(validator, object, pointer + "/dimension", "dimension");
+        readResourceLocation(validator, object, pointer + "/proof_item", "proof_item");
+        return object;
     }
 
     private static QuestV2Resource.Provider readProvider(Validator validator, JsonElement element) {

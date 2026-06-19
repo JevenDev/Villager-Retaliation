@@ -60,6 +60,7 @@ public final class QuestV2Compiler {
         addDisplay(root, resource);
         addQuestIdentity(root, resource);
         addOffer(root, resource);
+        addTarget(root, resource);
         addRules(root, resource);
         addTracker(root, resource);
 
@@ -158,6 +159,12 @@ public final class QuestV2Compiler {
         }
         if (offer.size() > 0) {
             root.add("offer", offer);
+        }
+    }
+
+    private static void addTarget(JsonObject root, QuestV2Resource resource) {
+        if (resource.target().size() > 0) {
+            root.add("target", resource.target().deepCopy());
         }
     }
 

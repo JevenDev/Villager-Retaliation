@@ -1958,6 +1958,120 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void builtInFirstFarMarkerQuestModuleV2PreservesTargetSemantics(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        VillagerQuestResources.clearCache();
+        DialogueTreeResources.clearCache();
+        ResourceLocation questId = VillagerRetaliation.id("first_far_marker");
+        CompiledQuest compiled = VillagerQuestResources
+                .compiledQuest(helper.getLevel().getServer(), questId)
+                .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
+        QuestDefinition quest = compiled.asQuestDefinition();
+
+        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "first_far_marker schema version");
+        helper.assertValueEqual(quest.target().structure(), ResourceLocation.fromNamespaceAndPath("minecraft", "trail_ruins"), "first marker target structure");
+        helper.assertValueEqual(quest.target().searchRadius(), 192, "first marker search radius");
+        helper.assertValueEqual(quest.target().discoveryRadius(), 96, "first marker discovery radius");
+        helper.assertValueEqual(quest.target().proofItem(), ResourceLocation.fromNamespaceAndPath("minecraft", "brush"), "first marker proof item");
+        helper.assertValueEqual(quest.objectives().getFirst().id(), "survey.bring_copper", "first marker objective id");
+        helper.assertValueEqual(quest.stages().get("survey").next(), "return", "first marker survey next stage");
+        helper.assertValueEqual(quest.tracker().steps().get("survey").text(), "Reach the Trail Ruins near {target_x}, {target_z}.", "first marker travel tracker");
+        helper.assertValueEqual(quest.tracker().steps().get("return").progress(), 1.0F, "first marker return tracker progress");
+
+        DialogueTreeDefinition generatedTree = DialogueTreeResources
+                .tree(helper.getLevel().getServer(), LOCALE, QuestDialogueCompiler.treeId(questId))
+                .orElseThrow(() -> new GameTestAssertException("first_far_marker generated dialogue tree missing"));
+        helper.assertValueEqual(
+                generatedTree.entry("stage.survey.offer").orElseThrow().label(),
+                "First Far Marker",
+                "first marker generated offer label");
+        helper.assertValueEqual(
+                generatedTree.entry("stage.return.turn_in").orElseThrow().label(),
+                "About First Far Marker",
+                "first marker generated turn-in label");
+
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000026");
+        UUID villagerId = UUID.fromString("00000000-0000-0000-0000-000000000027");
+        BlockPos targetPos = new BlockPos(384, 72, -144);
+        VillagerQuestSavedData data = new VillagerQuestSavedData();
+        VillagerQuestSavedData.QuestProgress progress = data.getOrCreate(playerId, questId);
+        progress.start(villagerId, Level.OVERWORLD, targetPos, 26L);
+        progress.setTarget(villagerId, Level.OVERWORLD, targetPos, "structure_target");
+        progress.markVisitedTarget();
+        progress.setCurrentStage("return");
+        progress.markObjectiveComplete("survey.bring_copper");
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        VillagerQuestSavedData loaded = VillagerQuestSavedData.load(saved, helper.getLevel().registryAccess());
+        VillagerQuestSavedData.QuestProgress loadedProgress = loaded.get(playerId, questId);
+        helper.assertTrue(loadedProgress != null, "first marker target progress did not reload");
+        helper.assertValueEqual(loadedProgress.currentStage(), "return", "first marker reloaded stage");
+        helper.assertTrue(loadedProgress.visitedTarget(), "first marker reloaded visited target");
+        helper.assertValueEqual(loadedProgress.targetDimension(), Level.OVERWORLD, "first marker reloaded target dimension");
+        helper.assertValueEqual(loadedProgress.targetPos(), targetPos, "first marker reloaded target position");
+        helper.assertValueEqual(loadedProgress.targetObjectiveId(), "structure_target", "first marker reloaded target objective");
+        helper.assertTrue(loadedProgress.objectiveComplete("survey.bring_copper"), "first marker reloaded objective");
+        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "first marker migration emitted diagnostics");
+        DatapackDiagnostics.clear();
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void builtInFirstFarMarkerLegacyTreeOverrideRemainsSourceAware(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        VillagerQuestResources.clearCache();
+        DialogueTreeResources.clearCache();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation questId = VillagerRetaliation.id("first_far_marker");
+        DialogueTreeDefinition legacyTree = singleEntryDialogueTree(
+                questId,
+                "offer",
+                "Legacy First Marker",
+                "Legacy First Marker override.");
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        configureFirstFarMarkerProvider(level, villager);
+        markQuestCompleted(level, player.getUUID(), VillagerRetaliation.id("blank_map_promise"));
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            DialogueTreeResources.installTestTrees(level.getServer(), LOCALE, List.of(legacyTree), Set.of(questId));
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            assertHasDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(QuestDialogueCompiler.treeId(questId), "stage.survey.offer"),
+                    "generated first marker offer");
+            assertMissingDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(questId, "offer"),
+                    "built-in legacy first marker tree");
+
+            DialogueTreeResources.installTestTrees(level.getServer(), LOCALE, List.of(legacyTree), Set.of());
+            context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            assertHasDialogueOption(
+                    helper,
+                    context,
+                    DialogueTreeService.entryOptionId(questId, "offer"),
+                    "higher-priority legacy first marker override");
+            helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "first marker legacy override emitted diagnostics");
+            DatapackDiagnostics.clear();
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            DialogueTreeService.clearRuntimeState();
+            DialogueTreeResources.clearCache();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2ResponseTransitionsRecordChoiceHistory(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         ServerLevel level = helper.getLevel();
@@ -2470,6 +2584,19 @@ public final class VillagerQuestGameTests {
                 .setProfession(VillagerProfession.CARTOGRAPHER)
                 .setLevel(2));
         VillagerProfileManager.setSkill(level, villager, VillagerSkill.CARTOGRAPHY, 20);
+    }
+
+    private static void configureFirstFarMarkerProvider(ServerLevel level, Villager villager) {
+        villager.setVillagerData(villager.getVillagerData()
+                .setProfession(VillagerProfession.CARTOGRAPHER)
+                .setLevel(2));
+        VillagerProfileManager.setSkill(level, villager, VillagerSkill.CARTOGRAPHY, 14);
+    }
+
+    private static void markQuestCompleted(ServerLevel level, UUID playerId, ResourceLocation questId) {
+        VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(level).getOrCreate(playerId, questId);
+        progress.complete(level.getGameTime(), false);
+        VillagerQuestSavedData.get(level).setDirty();
     }
 
     private static void assertEggBasketsLegacySemantics(

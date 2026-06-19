@@ -17,6 +17,7 @@ public record QuestV2Resource(
         Provider provider,
         Availability availability,
         Lifecycle lifecycle,
+        JsonObject target,
         String entryStage,
         List<Stage> stages,
         Map<String, Stage> stagesById,
@@ -33,6 +34,7 @@ public record QuestV2Resource(
         provider = provider == null ? Provider.EMPTY : provider;
         availability = availability == null ? Availability.EMPTY : availability;
         lifecycle = lifecycle == null ? Lifecycle.EMPTY : lifecycle;
+        target = copy(target);
         entryStage = normalizeId(entryStage);
         stages = stages == null ? List.of() : List.copyOf(stages);
         stagesById = stagesById == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(stagesById));

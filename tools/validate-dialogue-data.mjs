@@ -829,8 +829,9 @@ const dialogueIdScopes = {
 const questV2SchemaId = "villagerretaliation:quest/v2";
 const resourceLocationPattern = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
 const questV2IdPattern = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
-const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]);
+const questV2RootKeys = new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]);
 const questV2MetadataKeys = new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "author", "version"]);
+const questV2TargetKeys = new Set(["structure", "dimension", "pieces", "search_radius", "discovery_radius", "proof_item"]);
 const questV2ProviderKeys = new Set(["type", "capabilities", "required_capabilities", "filters", "data"]);
 const questV2AvailabilityKeys = new Set(["conditions", "active", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "exclusive_group", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]);
 const questV2LifecycleKeys = new Set(["on_start", "on_complete", "on_abandon", "on_expire", "on_fail", "on_stage_enter", "on_stage_exit", "dialogue"]);
@@ -1372,6 +1373,7 @@ function checkQuestV2(file, data) {
   checkQuestV2Provider(file, data.provider, "/provider", "provider");
   checkQuestV2Availability(file, data.availability, "/availability", "availability", questId);
   checkQuestV2Lifecycle(file, data.lifecycle, "/lifecycle", "lifecycle", questId);
+  checkQuestV2Target(file, data.target, "/target", "target");
   checkQuestV2RootDialogue(file, data.dialogue, "/dialogue", "dialogue", questId);
   const model = checkQuestV2Stages(file, data.stages, "/stages", "stages", questId);
   checkQuestV2Events(file, data.events, "/events", "events", questId, model.stageIds, "");
@@ -1441,6 +1443,27 @@ function checkQuestV2Provider(file, provider, pointer, location) {
   }
   checkQuestV2OptionalObject(file, provider.filters, `${pointer}/filters`, `${location}.filters`, "provider filters");
   checkQuestV2OptionalObject(file, provider.data, `${pointer}/data`, `${location}.data`, "provider data");
+}
+
+function checkQuestV2Target(file, target, pointer, location) {
+  if (target === undefined) {
+    return;
+  }
+  if (!target || typeof target !== "object" || Array.isArray(target)) {
+    questV2Error(file, pointer, location, "target must be an object.", "Use structure, dimension, search_radius, discovery_radius, or proof_item fields.");
+    return;
+  }
+  checkQuestV2UnknownKeys(file, target, pointer, location, questV2TargetKeys);
+  for (const key of ["structure", "dimension", "proof_item"]) {
+    checkQuestV2OptionalString(file, target, pointer, location, key);
+    const value = stringValue(target[key]);
+    if (value && !isResourceLocation(value)) {
+      questV2Error(file, `${pointer}/${key}`, `${location}.${key}`, `${key} "${value}" is not a valid resource location.`, "Use namespace:path with lowercase characters.");
+    }
+  }
+  checkQuestV2StringArray(file, target.pieces, `${pointer}/pieces`, `${location}.pieces`, "target piece");
+  checkQuestV2OptionalInteger(file, target, pointer, location, "search_radius", { min: 1 });
+  checkQuestV2OptionalInteger(file, target, pointer, location, "discovery_radius", { min: 1 });
 }
 
 function checkQuestV2Availability(file, availability, pointer, location, questId) {
