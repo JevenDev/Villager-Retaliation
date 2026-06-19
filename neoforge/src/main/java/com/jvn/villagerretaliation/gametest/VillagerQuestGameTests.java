@@ -855,6 +855,48 @@ public final class VillagerQuestGameTests {
                 QuestTrackerPresenter.syncSignature(List.of(entry), quest.id()).contains(entry.questId()),
                 "presenter signature omitted quest id");
 
+        List<QuestTrackerSyncPayload.QuestItem> manyItems = new ArrayList<>();
+        for (int i = 0; i < QuestTrackerSyncPayload.MAX_QUEST_ITEMS + 4; i++) {
+            manyItems.add(new QuestTrackerSyncPayload.QuestItem("minecraft:stone_" + i, "Stone " + i, i + 1));
+        }
+        QuestTrackerSyncPayload.Entry itemCappedEntry = new QuestTrackerSyncPayload.Entry(
+                "villagerretaliation:item_cap",
+                "Item Cap",
+                "Objective",
+                "Metadata",
+                0.25F,
+                true,
+                "active",
+                "Active",
+                "Issuer",
+                "Location",
+                manyItems);
+        helper.assertValueEqual(
+                itemCappedEntry.questItems().size(),
+                QuestTrackerSyncPayload.MAX_QUEST_ITEMS,
+                "tracker entry did not cap quest items");
+
+        List<QuestTrackerSyncPayload.Entry> manyEntries = new ArrayList<>();
+        for (int i = 0; i < QuestTrackerSyncPayload.MAX_SYNC_ENTRIES + 4; i++) {
+            manyEntries.add(new QuestTrackerSyncPayload.Entry(
+                    "villagerretaliation:entry_" + i,
+                    "Entry " + i,
+                    "Objective",
+                    "Metadata",
+                    0.0F,
+                    false,
+                    "active",
+                    "Active",
+                    "",
+                    "",
+                    List.of()));
+        }
+        QuestTrackerSyncPayload payload = new QuestTrackerSyncPayload(manyEntries, quest.id().toString(), false);
+        helper.assertValueEqual(
+                payload.entries().size(),
+                QuestTrackerSyncPayload.MAX_SYNC_ENTRIES,
+                "tracker sync payload did not cap entries");
+
         helper.succeed();
     }
 
@@ -1109,13 +1151,21 @@ public final class VillagerQuestGameTests {
                 "/events/0",
                 "v2 event source pointer");
         helper.assertValueEqual(compiled.rewards().definition().experience(), 5, "v2 reward action folded into XP");
+        QuestDefinition compiledDefinition = compiled.asQuestDefinition();
+        helper.assertValueEqual(
+                compiledDefinition.tracker().steps().get("finish").text(),
+                "Return to {issuer}",
+                "v2 stage ui did not compile to a stage tracker step");
+        helper.assertFalse(
+                compiledDefinition.objectives().get(1).tracker().hasActiveDisplay(),
+                "v2 stage ui leaked into objective tracker display");
 
         VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
         progress.setCurrentStage("offer");
         QuestTriggerDispatchResult dispatch = QuestTriggerDispatcher.dispatchAtGameTime(
                 null,
                 200L,
-                compiled.asQuestDefinition(),
+                compiledDefinition,
                 compiled.triggerIndex(),
                 progress,
                 QuestDefinition.TriggerEvent.PROGRESS,
@@ -1151,6 +1201,7 @@ public final class VillagerQuestGameTests {
             VillagerQuestService.DebugStartResult started =
                     VillagerQuestService.debugStartQuest(player, villager, compiled.id(), true);
             helper.assertTrue(started.started(), "v2 debug start failed: " + started.message());
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
 
             VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
             VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), compiled.id());
@@ -1158,6 +1209,14 @@ public final class VillagerQuestGameTests {
             helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.ACTIVE, "v2 started state");
             helper.assertValueEqual(progress.currentStage(), "offer", "v2 initial stage");
             helper.assertValueEqual(data.getTrackedQuest(player.getUUID()), compiled.id(), "v2 tracked quest after start");
+            QuestTrackerSyncPayload.Entry activeEntry = VillagerQuestService.debugTrackerEntryForTests(
+                    player,
+                    context,
+                    compiled.asQuestDefinition(),
+                    progress,
+                    true);
+            helper.assertValueEqual(activeEntry.objective(), "Prepare the v2 fixture.", "v2 objective tracker text");
+            helper.assertValueEqual(activeEntry.status(), "Active", "v2 active journal status");
 
             VillagerQuestFacts.get(level).setVariable(
                     QuestScopeKey.quest(player.getUUID(), compiled.id()),
@@ -1167,8 +1226,24 @@ public final class VillagerQuestGameTests {
             VillagerQuestService.onPlayerTick(player);
             helper.assertValueEqual(progress.currentStage(), "done", "v2 stage advanced through runtime scan");
             helper.assertTrue(progress.objectiveComplete("offer.ready"), "v2 fact objective did not complete");
+            QuestTrackerSyncPayload.Entry doneEntry = VillagerQuestService.debugTrackerEntryForTests(
+                    player,
+                    context,
+                    compiled.asQuestDefinition(),
+                    progress,
+                    true);
+            helper.assertValueEqual(doneEntry.objective(), "Return to the issuer.", "v2 stage tracker text");
+            helper.assertValueEqual(doneEntry.status(), "Ready to turn in", "v2 journal ready status");
+            helper.assertTrue(doneEntry.metadata().contains("Ready to turn in"), "v2 journal metadata omitted status");
+            helper.assertValueEqual(doneEntry.progress(), 1.0F, "v2 ready tracker progress");
 
-            var context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            CompoundTag activeSaved = data.save(new CompoundTag(), level.registryAccess());
+            VillagerQuestSavedData activeLoaded = VillagerQuestSavedData.load(activeSaved, level.registryAccess());
+            VillagerQuestSavedData.QuestProgress activeLoadedProgress = activeLoaded.get(player.getUUID(), compiled.id());
+            helper.assertTrue(activeLoadedProgress != null, "v2 active progress did not reload");
+            helper.assertValueEqual(activeLoadedProgress.currentStage(), "done", "v2 active reload stage");
+            helper.assertValueEqual(activeLoaded.getTrackedQuest(player.getUUID()), compiled.id(), "v2 tracked quest after reload");
+
             VillagerQuestService.performAction(
                     context,
                     compiled.id(),
@@ -1199,6 +1274,55 @@ public final class VillagerQuestGameTests {
                     true,
                     loadedProgress.state()));
             helper.assertValueEqual(entry.questId(), compiled.id().toString(), "v2 tracker entry quest id");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            VillagerQuestResources.clearCache();
+            DatapackDiagnostics.clear();
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2OptionalTrackerDisplayDoesNotBlockReadyStatus(GameTestHelper helper) {
+        DatapackDiagnostics.clear();
+        ServerLevel level = helper.getLevel();
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_optional_tracker_fixture.json");
+        JsonObject root = optionalTrackerQuestV2Fixture();
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
+                .orElseThrow(() -> new GameTestAssertException("v2 optional tracker fixture envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("v2 optional tracker fixture did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException("v2 optional tracker fixture did not compile"));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled));
+            VillagerQuestService.DebugStartResult started =
+                    VillagerQuestService.debugStartQuest(player, villager, compiled.id(), true);
+            helper.assertTrue(started.started(), "v2 optional tracker quest did not start: " + started.message());
+            VillagerQuestFacts.get(level).setVariable(
+                    QuestScopeKey.quest(player.getUUID(), compiled.id()),
+                    "ready",
+                    "yes");
+
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            VillagerQuestSavedData.QuestProgress progress =
+                    VillagerQuestSavedData.get(level).get(player.getUUID(), compiled.id());
+            QuestTrackerSyncPayload.Entry entry = VillagerQuestService.debugTrackerEntryForTests(
+                    player,
+                    context,
+                    compiled.asQuestDefinition(),
+                    progress,
+                    true);
+            helper.assertValueEqual(entry.objective(), "Optional fact optional_done", "v2 optional objective tracker text");
+            helper.assertValueEqual(entry.status(), "Ready to turn in", "v2 optional objective blocked ready status");
+            helper.assertValueEqual(entry.progress(), 1.0F, "v2 optional objective blocked ready progress");
         } finally {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
             villager.discard();
@@ -1771,6 +1895,21 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(loadedProgress.objectiveCounter("choose_route"), 2, "objective counter");
         helper.assertValueEqual(loadedProgress.lastTriggerGameTime("completed_0"), 4321L, "trigger time");
         helper.assertValueEqual(loaded.getTrackedQuest(playerId), questId, "tracked quest");
+
+        CompoundTag legacyRoot = new CompoundTag();
+        ListTag legacyEntries = new ListTag();
+        CompoundTag legacyEntry = new CompoundTag();
+        legacyEntry.putUUID("Player", playerId);
+        legacyEntry.putString("Quest", questId.toString());
+        legacyEntry.putString("State", "ACTIVE");
+        legacyEntry.putUUID("StartedVillager", villagerId);
+        legacyEntries.add(legacyEntry);
+        legacyRoot.put("Entries", legacyEntries);
+        VillagerQuestSavedData legacyLoaded = VillagerQuestSavedData.load(legacyRoot, helper.getLevel().registryAccess());
+        VillagerQuestSavedData.QuestProgress legacyProgress = legacyLoaded.get(playerId, questId);
+        helper.assertTrue(legacyProgress != null, "legacy v1 quest progress did not load");
+        helper.assertValueEqual(legacyProgress.currentStage(), "started", "legacy missing stage fallback");
+        helper.assertTrue(legacyProgress.choiceHistory().isEmpty(), "legacy missing choice history fallback");
 
         helper.succeed();
     }
@@ -2908,6 +3047,52 @@ public final class VillagerQuestGameTests {
                   "ui": {
                     "tracker_text": "Prepare the v2 fixture."
                   }
+                }
+                """).getAsJsonObject();
+    }
+
+    private static JsonObject optionalTrackerQuestV2Fixture() {
+        return JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "id": "villagerretaliation:v2_optional_tracker_fixture",
+                  "metadata": {
+                    "title": "Optional Tracker V2 Fixture",
+                    "description": "A v2 quest that keeps optional tracker text non-blocking.",
+                    "questline": "tests"
+                  },
+                  "provider": {
+                    "type": "villagerretaliation:villager"
+                  },
+                  "entry_stage": "offer",
+                  "stages": [
+                    {
+                      "id": "offer",
+                      "objectives": [
+                        {
+                          "id": "required",
+                          "type": "fact",
+                          "scope": "quest",
+                          "key": "ready",
+                          "value": "yes"
+                        },
+                        {
+                          "id": "optional_hint",
+                          "type": "fact",
+                          "optional": true,
+                          "scope": "quest",
+                          "key": "optional_done",
+                          "value": "yes",
+                          "ui": {
+                            "tracker_text": "Optional fact {objective_fact_key}"
+                          }
+                        }
+                      ],
+                      "complete_when": [
+                        "required"
+                      ]
+                    }
+                  ]
                 }
                 """).getAsJsonObject();
     }

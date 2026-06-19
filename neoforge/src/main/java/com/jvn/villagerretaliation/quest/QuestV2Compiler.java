@@ -193,6 +193,12 @@ public final class QuestV2Compiler {
             steps.add("fact", rootStep.deepCopy());
             steps.add("inactive", rootStep.deepCopy());
         }
+        for (QuestV2Resource.Stage stage : orderedStages(resource)) {
+            JsonObject stageStep = trackerStep(stage.ui());
+            if (stageStep.size() > 0) {
+                steps.add(stage.id(), stageStep);
+            }
+        }
         if (steps.size() > 0) {
             tracker.add("steps", steps);
         }
@@ -273,7 +279,7 @@ public final class QuestV2Compiler {
         flattenNestedObject(canonical, "target");
         flattenNestedObject(canonical, "location");
         addChoiceRuntimeDefault(canonical, objective);
-        addObjectiveTracker(canonical, stage.ui());
+        addObjectiveTracker(canonical);
         if ((objective.type().equals("fact") || objective.type().equals("choice")) && !canonical.has("quest")) {
             canonical.addProperty("quest", resource.id().toString());
         }
@@ -308,7 +314,7 @@ public final class QuestV2Compiler {
                 "max");
     }
 
-    private static void addObjectiveTracker(JsonObject canonical, QuestV2Resource.UiHints stageUi) {
+    private static void addObjectiveTracker(JsonObject canonical) {
         JsonObject tracker = optionalObject(canonical.get("tracker"));
         if (tracker == null) {
             tracker = new JsonObject();
@@ -318,8 +324,6 @@ public final class QuestV2Compiler {
         JsonObject objectiveUi = optionalObject(canonical.get("ui"));
         putStringIfBlank(tracker, "text", uiString(objectiveUi, "tracker_text"));
         putStringIfBlank(tracker, "text_key", uiString(objectiveUi, "tracker_text_key"));
-        putStringIfBlank(tracker, "text", stageUi.trackerText());
-        putStringIfBlank(tracker, "text_key", stageUi.trackerTextKey());
         if (tracker.size() > 0) {
             canonical.add("tracker", tracker);
         }
