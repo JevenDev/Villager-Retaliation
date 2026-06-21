@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -21,6 +22,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -119,6 +121,15 @@ public final class LoggingWorker extends AbstractBlockWorker {
             "sapling_scan_partial_",
             "sapling_target_found",
             NO_TARGET_SCAN_COOLDOWN_TICKS);
+    private static final List<TagKey<Block>> LOG_FAMILY_TAGS = List.of(
+            BlockTags.OAK_LOGS,
+            BlockTags.SPRUCE_LOGS,
+            BlockTags.BIRCH_LOGS,
+            BlockTags.JUNGLE_LOGS,
+            BlockTags.ACACIA_LOGS,
+            BlockTags.DARK_OAK_LOGS,
+            BlockTags.MANGROVE_LOGS,
+            BlockTags.CHERRY_LOGS);
 
     @Override
     public HiredVillagerRole role() {
@@ -2045,8 +2056,12 @@ public final class LoggingWorker extends AbstractBlockWorker {
             ServerLevel level,
             BlockPos origin,
             Set<ResourceLocation> filters) {
-        List<BlockPos> logs = connectedLogs(level, origin, filters, true);
-        return isLikelyNaturalTree(level, logs) ? logs : List.of();
+        BlockPos root = treeSearchRoot(level, origin, filters);
+        List<BlockPos> logs = connectedLogs(level, root, filters, true);
+        if (!isLikelyNaturalTree(level, logs)) {
+            return List.of();
+        }
+        return orderedTreeLogs(logs);
     }
 
     private static List<BlockPos> connectedLogs(
@@ -2067,6 +2082,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (!isMatchingLog(level.getBlockState(origin), filters)) {
             return List.of();
         }
+        BlockState originState = level.getBlockState(origin);
         List<BlockPos> logs = new ArrayList<>();
         Queue<BlockPos> queue = new ArrayDeque<>();
         Queue<LeafBridgeNode> leafQueue = new ArrayDeque<>();
@@ -2083,11 +2099,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     continue;
                 }
                 BlockState state = level.getBlockState(current);
-                if (!isMatchingLog(state, filters) || !isInsideTreeSearch(origin, current)) {
+                if (!isMatchingTreeLog(state, filters, originState) || !isInsideTreeSearch(origin, current)) {
                     continue;
                 }
                 logs.add(current);
-                enqueueNearbyTreeLogs(level, origin, current, filters, visited, queue, 1);
+                enqueueNearbyTreeLogs(level, origin, current, filters, originState, visited, queue, 1);
                 if (includeLeafAttachedLogs) {
                     enqueueNearbyTreeLeaves(level, origin, current, 0, visitedLeaves, leafQueue, TREE_LEAF_LOG_ATTACHMENT_RADIUS);
                 }
@@ -2099,7 +2115,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             if (!level.hasChunkAt(leaf) || !isInsideTreeSearch(origin, leaf) || !isNaturalLeaf(level.getBlockState(leaf))) {
                 continue;
             }
-            enqueueNearbyTreeLogs(level, origin, leaf, filters, visited, queue, TREE_LEAF_LOG_ATTACHMENT_RADIUS);
+            enqueueNearbyTreeLogs(level, origin, leaf, filters, originState, visited, queue, TREE_LEAF_LOG_ATTACHMENT_RADIUS);
             if (node.distance() < MAX_TREE_LEAF_BRIDGE_DISTANCE) {
                 enqueueNearbyTreeLeaves(level, origin, leaf, node.distance() + 1, visitedLeaves, leafQueue, 1);
             }
@@ -2112,6 +2128,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             BlockPos origin,
             BlockPos center,
             Set<ResourceLocation> filters,
+            BlockState originState,
             Set<Long> visited,
             Queue<BlockPos> queue,
             int radius) {
@@ -2120,7 +2137,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             if (pos.equals(center)
                     || !isInsideTreeSearch(origin, pos)
                     || !level.hasChunkAt(pos)
-                    || !isMatchingLog(level.getBlockState(pos), filters)) {
+                    || !isMatchingTreeLog(level.getBlockState(pos), filters, originState)) {
                 continue;
             }
             if (visited.add(pos.asLong())) {
@@ -2172,6 +2189,55 @@ public final class LoggingWorker extends AbstractBlockWorker {
 
     private static boolean isMatchingLog(BlockState state, Set<ResourceLocation> filters) {
         return state.is(BlockTags.LOGS) && HiredLoggingFilters.matches(state, filters);
+    }
+
+    private static boolean isMatchingTreeLog(BlockState state, Set<ResourceLocation> filters, BlockState originState) {
+        return isMatchingLog(state, filters) && sameLogFamily(originState, state);
+    }
+
+    private static boolean sameLogFamily(BlockState reference, BlockState candidate) {
+        if (reference.is(candidate.getBlock())) {
+            return true;
+        }
+        for (TagKey<Block> family : LOG_FAMILY_TAGS) {
+            if (reference.is(family)) {
+                return candidate.is(family);
+            }
+        }
+        return logFamilyKey(reference).equals(logFamilyKey(candidate));
+    }
+
+    private static String logFamilyKey(BlockState state) {
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        String path = id.getPath().toLowerCase(Locale.ROOT);
+        if (path.startsWith("stripped_")) {
+            path = path.substring("stripped_".length());
+        }
+        for (String suffix : List.of("_log", "_wood", "_stem", "_hyphae")) {
+            if (path.endsWith(suffix)) {
+                path = path.substring(0, path.length() - suffix.length());
+                break;
+            }
+        }
+        return id.getNamespace() + ":" + path;
+    }
+
+    private static BlockPos treeSearchRoot(
+            ServerLevel level,
+            BlockPos origin,
+            Set<ResourceLocation> filters) {
+        List<BlockPos> connected = connectedLogs(level, origin, filters);
+        BlockPos root = treeRoot(connected);
+        return root == null ? origin : root;
+    }
+
+    private static List<BlockPos> orderedTreeLogs(List<BlockPos> logs) {
+        List<BlockPos> ordered = new ArrayList<>(logs);
+        ordered.sort((left, right) -> {
+            int y = Integer.compare(left.getY(), right.getY());
+            return y != 0 ? y : Long.compare(left.asLong(), right.asLong());
+        });
+        return ordered;
     }
 
     private static boolean isInsideTreeSearch(BlockPos origin, BlockPos pos) {

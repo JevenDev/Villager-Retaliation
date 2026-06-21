@@ -573,6 +573,64 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void loggingWorkerKeepsLeafConnectedTreeFamiliesSeparate(GameTestHelper helper) {
+        buildFloor(helper, 0, 10, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerLoggingFamilies");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        BlockPos oakRootRel = new BlockPos(4, 2, 3);
+        BlockPos birchRootRel = new BlockPos(7, 2, 3);
+        setBlock(helper, new BlockPos(4, 1, 3), Blocks.DIRT.defaultBlockState());
+        setBlock(helper, new BlockPos(7, 1, 3), Blocks.DIRT.defaultBlockState());
+        for (int y = 2; y <= 4; y++) {
+            setBlock(helper, new BlockPos(4, y, 3), Blocks.OAK_LOG.defaultBlockState());
+            setBlock(helper, new BlockPos(7, y, 3), Blocks.BIRCH_LOG.defaultBlockState());
+        }
+
+        BlockState oakLeaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
+        for (BlockPos rel : List.of(
+                new BlockPos(4, 5, 3),
+                new BlockPos(3, 5, 3),
+                new BlockPos(5, 5, 3),
+                new BlockPos(4, 5, 2),
+                new BlockPos(4, 5, 4),
+                new BlockPos(3, 4, 3),
+                new BlockPos(5, 4, 3),
+                new BlockPos(4, 4, 2),
+                new BlockPos(4, 4, 4))) {
+            setBlock(helper, rel, oakLeaves);
+        }
+        BlockState birchLeaves = Blocks.BIRCH_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
+        for (BlockPos rel : List.of(
+                new BlockPos(7, 5, 3),
+                new BlockPos(6, 5, 3),
+                new BlockPos(8, 5, 3),
+                new BlockPos(7, 5, 2),
+                new BlockPos(7, 5, 4),
+                new BlockPos(6, 4, 3),
+                new BlockPos(8, 4, 3),
+                new BlockPos(7, 4, 2),
+                new BlockPos(7, 4, 4))) {
+            setBlock(helper, rel, birchLeaves);
+        }
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(9, 6, 5), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
+        LoggingWorker worker = new LoggingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 160, () ->
+                !level.getBlockState(helper.absolutePos(oakRootRel)).is(BlockTags.OAK_LOGS));
+
+        helper.assertFalse(level.getBlockState(helper.absolutePos(oakRootRel)).is(BlockTags.OAK_LOGS), "logger should harvest the selected oak tree");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(birchRootRel)).is(BlockTags.BIRCH_LOGS), "leaf-connected birch should remain for a separate harvest");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.OAK_LOG)), "oak drops should be stored as output");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void hiredAiSuppressionStartsOnlyForActiveWorkAndClearsAfterDisableOrContractEnd(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);
