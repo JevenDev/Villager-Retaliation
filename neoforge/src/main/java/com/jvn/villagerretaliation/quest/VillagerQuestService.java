@@ -4395,7 +4395,7 @@ public final class VillagerQuestService {
         String issuer = providerSummary(context.villager());
         BlockPos pos = context.villager().blockPosition();
         String issuerLocation = "Current location: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()
-                + " in " + context.level().dimension().location();
+                + " in " + dimensionDisplayName(context.level().dimension());
         Map<String, String> replacements = new LinkedHashMap<>();
         replacements.put("quest", definition.title());
         replacements.put("issuer", issuer);
@@ -4558,7 +4558,7 @@ public final class VillagerQuestService {
 
     private static String completionIssuerDimensionText(VillagerQuestSavedData.CompletionHistoryEntry history) {
         ResourceKey<Level> dimension = history == null ? null : history.issuerDimension();
-        return dimension == null ? "unknown" : dimension.location().toString();
+        return dimensionDisplayName(dimension);
     }
 
     private static String providerSummary(Villager villager) {
@@ -5748,7 +5748,7 @@ public final class VillagerQuestService {
         if (live != null && live.isAlive()) {
             BlockPos livePos = live.blockPosition();
             return "Current location: " + livePos.getX() + ", " + livePos.getY() + ", " + livePos.getZ()
-                    + " in " + live.level().dimension().location();
+                    + " in " + dimensionDisplayName(live.level().dimension());
         }
         BlockPos pos = progress == null ? null : progress.issuerPos();
         if (pos == null) {
@@ -5770,15 +5770,49 @@ public final class VillagerQuestService {
     private static String issuerDimensionText(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
         Villager villager = liveStartedVillager(player, progress);
         if (villager != null) {
-            return villager.level().dimension().location().toString();
+            return dimensionDisplayName(villager.level().dimension());
         }
         ResourceKey<Level> dimension = progress == null ? null : progress.issuerDimension();
-        return dimension == null ? "unknown" : dimension.location().toString();
+        return dimensionDisplayName(dimension);
     }
 
     private static String targetDimensionText(VillagerQuestSavedData.QuestProgress progress) {
         ResourceKey<Level> dimension = progress == null ? null : progress.targetDimension();
-        return dimension == null ? "unknown" : dimension.location().toString();
+        return dimensionDisplayName(dimension);
+    }
+
+    private static String dimensionDisplayName(ResourceKey<Level> dimension) {
+        if (dimension == null) {
+            return "unknown";
+        }
+        if (Level.OVERWORLD.equals(dimension)) {
+            return "Overworld";
+        }
+        if (Level.NETHER.equals(dimension)) {
+            return "The Nether";
+        }
+        if (Level.END.equals(dimension)) {
+            return "The End";
+        }
+        String path = dimension.location().getPath().replace('_', ' ');
+        if (path.isBlank()) {
+            return dimension.location().toString();
+        }
+        StringBuilder builder = new StringBuilder(path.length());
+        boolean capitalizeNext = true;
+        for (int index = 0; index < path.length(); index++) {
+            char character = path.charAt(index);
+            if (Character.isWhitespace(character)) {
+                builder.append(character);
+                capitalizeNext = true;
+            } else if (capitalizeNext) {
+                builder.append(Character.toUpperCase(character));
+                capitalizeNext = false;
+            } else {
+                builder.append(character);
+            }
+        }
+        return builder.toString();
     }
 
     private static String issuerStatus(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
