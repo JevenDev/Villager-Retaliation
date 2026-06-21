@@ -52,7 +52,7 @@ public final class VillagerInteractionScreenOpener {
         VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
         trySendToPlayer(player, payload);
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
-        VillagerInteractionService.broadcastVillagerChat(level, villager, greetingText);
+        VillagerInteractionService.sendPersonalVillagerChat(player, villager, greetingText);
     }
 
     public static void openForced(

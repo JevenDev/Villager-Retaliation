@@ -118,7 +118,7 @@ public final class VillagerGiftRequestHandler {
         DialogueContext giftContext = VillagerInteractionService.createDialogueContext(level, player, villager);
         String responseText = giftResponseText(giftContext, giftPreference, giftedStack, takenItemOwner, villager);
         VillagerInteractionService.sendDialogueReputation(player, villager, level);
-        VillagerInteractionService.broadcastVillagerChat(level, villager, responseText);
+        VillagerInteractionService.sendPersonalVillagerChat(player, villager, responseText);
     }
 
     private static void reduceDialogueAnnoyanceFromGift(ServerLevel level, Villager villager, ServerPlayer player, int reputationValue) {

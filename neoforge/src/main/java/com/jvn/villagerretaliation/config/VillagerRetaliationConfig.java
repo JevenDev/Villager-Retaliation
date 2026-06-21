@@ -41,6 +41,9 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> SEPARATE_VILLAGER_CHAT_MESSAGES = bind("dialogue.separateVillagerChatMessages", Boolean.class);
     public static final ConfigValue<Boolean> SEPARATE_VILLAGER_CHAT_SPEAKERS = bind("dialogue.separateVillagerChatSpeakers", Boolean.class);
     public static final ConfigValue<InteractionChatPosition> INTERACTION_CHAT_POSITION = bind("dialogue.interactionChatPosition", InteractionChatPosition.class);
+    public static final ConfigValue<VillagerChatBroadcastMode> VILLAGER_CHAT_BROADCAST_MODE = bind("dialogue.villagerChatBroadcastMode", VillagerChatBroadcastMode.class);
+    public static final ConfigValue<Integer> VILLAGER_CHAT_BROADCAST_RADIUS = bind("dialogue.villagerChatBroadcastRadius", Integer.class);
+    public static final ConfigValue<Boolean> SHOW_PERSONAL_INTERACTION_DIALOGUE_TO_NEARBY_PLAYERS = bind("dialogue.showPersonalInteractionDialogueToNearbyPlayers", Boolean.class);
     public static final ConfigValue<DialogueTextSpeed> DIALOGUE_TEXT_SPEED = bind("dialogue.dialogueTextSpeed", DialogueTextSpeed.class);
     public static final ConfigValue<Boolean> ENABLE_DIALOGUE_BLIP_AUDIO = bind("dialogue.enableDialogueBlipAudio", Boolean.class);
     public static final ConfigValue<Double> DIALOGUE_BLIP_VOLUME = bind("dialogue.dialogueBlipVolume", Double.class);

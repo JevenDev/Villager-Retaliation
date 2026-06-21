@@ -87,7 +87,7 @@ public final class VillagerDialogueRequestHandler {
                         itemPayment.removal().replacements()
                 );
                 VillagerInteractionService.sendDialogueReputation(player, villager, level);
-                VillagerInteractionService.broadcastVillagerChat(level, villager, failureText);
+                VillagerInteractionService.sendPersonalVillagerChat(player, villager, failureText);
                 return;
             }
             itemPaymentResult = paymentResult.get();
@@ -129,7 +129,7 @@ public final class VillagerDialogueRequestHandler {
                 reputationEffect,
                 dialogueOption.forceCameraTowardsVillager()
         );
-        VillagerInteractionService.broadcastVillagerChat(level, villager, responseText, responseSegments);
+        VillagerInteractionService.sendPersonalVillagerChat(player, villager, responseText, responseSegments);
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
         }

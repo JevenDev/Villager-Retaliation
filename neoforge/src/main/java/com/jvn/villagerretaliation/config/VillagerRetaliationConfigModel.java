@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.ReputationChangeDisplayMode;
 import com.jvn.villagerretaliation.config.ReputationChangeHudPosition;
 import com.jvn.villagerretaliation.config.ReputationChangeNotificationStyle;
+import com.jvn.villagerretaliation.config.VillagerChatBroadcastMode;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 
 @Modmenu(modId = VillagerRetaliation.MOD_ID)
@@ -122,6 +123,13 @@ public final class VillagerRetaliationConfigModel {
         public boolean separateVillagerChatSpeakers = true;
 
         public InteractionChatPosition interactionChatPosition = InteractionChatPosition.BOTTOM_LEFT;
+
+        public VillagerChatBroadcastMode villagerChatBroadcastMode = VillagerChatBroadcastMode.LOCAL;
+
+        @RangeConstraint(min = 1, max = 64)
+        public int villagerChatBroadcastRadius = 16;
+
+        public boolean showPersonalInteractionDialogueToNearbyPlayers = true;
 
         public DialogueTextSpeed dialogueTextSpeed = DialogueTextSpeed.MEDIUM;
 

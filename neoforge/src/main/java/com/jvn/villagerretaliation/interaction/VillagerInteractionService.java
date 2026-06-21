@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.config.VillagerChatBroadcastMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
@@ -2033,10 +2034,7 @@ public final class VillagerInteractionService {
         if (villager.level() instanceof ServerLevel level) {
             resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text).orElse(text);
         }
-        trySendToPlayer(
-                player,
-                new VillagerInteractionNoticePayload(villager.getId(), resolvedText, "")
-        );
+        sendPersonalVillagerChat(player, villager, resolvedText);
     }
 
     public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text, Map<String, String> replacements) {
@@ -2044,10 +2042,7 @@ public final class VillagerInteractionService {
         if (villager.level() instanceof ServerLevel level) {
             resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text, replacements).orElse(text);
         }
-        trySendToPlayer(
-                player,
-                new VillagerInteractionNoticePayload(villager.getId(), resolvedText, "")
-        );
+        sendPersonalVillagerChat(player, villager, resolvedText);
     }
 
     public static void sendReceivedItemNotice(ServerPlayer player, Villager villager, ItemStack stack) {
@@ -2074,7 +2069,7 @@ public final class VillagerInteractionService {
         String responseText = VillagerDialogueResources
                 .professionPriorityMessage(context, "gift_given", Map.of("gift_item", itemName(stack)))
                 .orElse("");
-        broadcastVillagerChat(level, villager, responseText);
+        sendPersonalVillagerChat(player, villager, responseText);
     }
 
     public static void sendGiftTakenBackDialogue(ServerPlayer player, Villager villager, ItemStack stack, int count, boolean stolen) {
@@ -2093,7 +2088,7 @@ public final class VillagerInteractionService {
                 .orElse("");
         focusVillagerOnPlayer(villager, player);
         playGiftFeedback(level, villager, -1);
-        broadcastVillagerChat(level, villager, responseText);
+        sendPersonalVillagerChat(player, villager, responseText);
     }
 
     public static void sendTradePaymentTakenBackDialogue(ServerPlayer player, Villager villager, ItemStack stack, int count, boolean stolen) {
@@ -2112,7 +2107,7 @@ public final class VillagerInteractionService {
                 .orElse("");
         focusVillagerOnPlayer(villager, player);
         playGiftFeedback(level, villager, -1);
-        broadcastVillagerChat(level, villager, responseText);
+        sendPersonalVillagerChat(player, villager, responseText);
     }
 
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text) {
@@ -2124,11 +2119,44 @@ public final class VillagerInteractionService {
     }
 
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, List<DialogueTextSegment> textSegments) {
-        broadcastVillagerChat(level, villager, text, "", VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get(), textSegments);
+        broadcastVillagerChat(level, villager, text, "", configuredVillagerChatBroadcastRadius(), textSegments);
     }
 
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel) {
-        broadcastVillagerChat(level, villager, text, speakerLabel, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+        broadcastVillagerChat(level, villager, text, speakerLabel, configuredVillagerChatBroadcastRadius());
+    }
+
+    public static void sendPersonalVillagerChat(ServerPlayer player, Villager villager, String text) {
+        sendPersonalVillagerChat(player, villager, text, DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
+    }
+
+    public static void sendPersonalVillagerChat(
+            ServerPlayer player,
+            Villager villager,
+            String text,
+            List<DialogueTextSegment> textSegments) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        VillagerInteractionNoticePayload payload = new VillagerInteractionNoticePayload(
+                villager.getId(),
+                text,
+                "",
+                textSegments
+        );
+        trySendToPlayer(player, payload);
+        if (VillagerRetaliationConfig.SHOW_PERSONAL_INTERACTION_DIALOGUE_TO_NEARBY_PLAYERS.get()
+                && villager.level() instanceof ServerLevel level) {
+            broadcastVillagerChat(
+                    level,
+                    villager,
+                    text,
+                    "",
+                    configuredVillagerChatBroadcastRadius(),
+                    textSegments,
+                    player.getUUID()
+            );
+        }
     }
 
     public static void broadcastForcedVillagerChat(ServerLevel level, Villager villager, String text) {
@@ -2168,7 +2196,27 @@ public final class VillagerInteractionService {
             return;
         }
 
-        double radiusSqr = radius * radius;
+        broadcastVillagerChat(level, villager, text, speakerLabel, radius, textSegments, null);
+    }
+
+    private static void broadcastVillagerChat(
+            ServerLevel level,
+            Villager villager,
+            String text,
+            String speakerLabel,
+            double radius,
+            List<DialogueTextSegment> textSegments,
+            UUID excludedPlayerId) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+
+        VillagerChatBroadcastMode mode = villagerChatBroadcastMode();
+        if (!mode.enabled()) {
+            return;
+        }
+
+        double radiusSqr = effectiveVillagerChatBroadcastRadius(radius) * effectiveVillagerChatBroadcastRadius(radius);
         VillagerInteractionNoticePayload payload = new VillagerInteractionNoticePayload(
                 villager.getId(),
                 text,
@@ -2178,11 +2226,26 @@ public final class VillagerInteractionService {
         for (ServerPlayer nearbyPlayer : level.players()) {
             if (!nearbyPlayer.isAlive()
                     || nearbyPlayer.isSpectator()
-                    || nearbyPlayer.distanceToSqr(villager) > radiusSqr) {
+                    || (excludedPlayerId != null && nearbyPlayer.getUUID().equals(excludedPlayerId))
+                    || (mode.usesDistance() && nearbyPlayer.distanceToSqr(villager) > radiusSqr)) {
                 continue;
             }
             trySendToPlayer(nearbyPlayer, payload);
         }
+    }
+
+    private static VillagerChatBroadcastMode villagerChatBroadcastMode() {
+        VillagerChatBroadcastMode mode = VillagerRetaliationConfig.VILLAGER_CHAT_BROADCAST_MODE.get();
+        return mode == null ? VillagerChatBroadcastMode.LOCAL : mode;
+    }
+
+    private static int configuredVillagerChatBroadcastRadius() {
+        return Math.clamp(VillagerRetaliationConfig.VILLAGER_CHAT_BROADCAST_RADIUS.get(), 1, 64);
+    }
+
+    private static double effectiveVillagerChatBroadcastRadius(double requestedRadius) {
+        double clampedRequested = Math.clamp(requestedRadius, 1.0D, 64.0D);
+        return Math.min(clampedRequested, configuredVillagerChatBroadcastRadius());
     }
 
     private static void trySendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
