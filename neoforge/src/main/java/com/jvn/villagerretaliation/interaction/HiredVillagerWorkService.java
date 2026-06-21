@@ -29,6 +29,7 @@ import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -60,6 +61,7 @@ public final class HiredVillagerWorkService {
     private static final String WORK_AREA_RETURN_STUCK_CHECKS_TAG = "WorkAreaReturnStuckChecks";
     private static final String STORAGE_FULL_NOTICE_SHOWN_TAG = "StorageFullNoticeShown";
     private static final String STATUS_REPLACEMENTS_TAG = "StatusReplacements";
+    private static final String COMPLETED_TASKS_TAG = "CompletedTasks";
     private static final String STORAGE_FULL_NOTICE = "interaction.work.status.storage_full";
     private static final String PAUSED_FOR_COMMAND_STATUS = "interaction.work.status.paused_for_command";
     private static final long DAY_TICKS = 24000L;
@@ -163,8 +165,17 @@ public final class HiredVillagerWorkService {
             HiredWorkSkillGrowthService.onWorkCompleted(level, villager, hirer, session.role(), session.state());
         }
         if (result.completed()) {
+            recordCompletedTask(session.state());
             session.state().putLong("NextWorkGameTime", level.getGameTime() + nextTaskCooldownTicks(session.efficiency()));
-            maybeNotify(level, villager, hirer, session.state(), result.status(), result.replacements(), hiredWorkNoticeCooldownTicks());
+            HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
+            maybeNotify(
+                    level,
+                    villager,
+                    hirer,
+                    session.state(),
+                    HiredVillagerRoleSettings.workFinalReportMessageKey(session.role()),
+                    workReportReplacements(hirer, level, villager, session, snapshot),
+                    hiredWorkNoticeCooldownTicks());
         }
     }
 
@@ -693,18 +704,11 @@ public final class HiredVillagerWorkService {
     public static void sendStatus(ServerPlayer player, ServerLevel level, Villager villager) {
         HiredWorkSession session = HiredWorkSession.active(level, villager);
         HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
-        String targetDescription = describeCurrentTarget(player, level, villager, snapshot);
         VillagerInteractionService.sendVillagerNotice(
                 player,
                 villager,
                 HiredVillagerRoleSettings.workReportMessageKey(session.role()),
-                Map.of(
-                        "activity", describeWorkActivity(player, level, villager, session, snapshot, targetDescription),
-                        "status_detail", describeStatusDetail(player, level, villager, session, targetDescription),
-                        "work_area", describeWorkArea(player, level, villager, session.area()),
-                        "efficiency", Integer.toString(session.efficiency()),
-                        "target", targetDescription
-                )
+                workReportReplacements(player, level, villager, session, snapshot)
         );
     }
 
@@ -757,12 +761,19 @@ public final class HiredVillagerWorkService {
         state.putBoolean("Enabled", true);
         state.remove("NextWorkGameTime");
         state.remove("ProgressTicks");
+        resetReportProgress(state);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         int radius = HiredVillagerRoleSettings.defaultHorizontalRadius(role, MIN_WORK_RADIUS, maxWorkRadius(level, villager, role));
         int verticalRadius = HiredVillagerRoleSettings.defaultVerticalRadius(role, maxWorkRadius(level, villager, role));
         BlockPos center = villager.blockPosition();
         HiredWorkArea.fromCenter(center, radius, verticalRadius, false).save(state);
         stopWork(level, villager, role, "interaction.work.status.no_work_area");
+    }
+
+    public static void resetReportProgress(ServerLevel level, Villager villager) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        resetReportProgress(state);
     }
 
     public static void stopWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
@@ -1216,6 +1227,54 @@ public final class HiredVillagerWorkService {
         for (String key : replacementTag.getAllKeys()) {
             replacements.put(key, replacementTag.getString(key));
         }
+        return replacements;
+    }
+
+    private static void recordCompletedTask(CompoundTag state) {
+        state.putInt(COMPLETED_TASKS_TAG, Math.max(0, state.getInt(COMPLETED_TASKS_TAG)) + 1);
+    }
+
+    private static void resetReportProgress(CompoundTag state) {
+        state.remove(COMPLETED_TASKS_TAG);
+    }
+
+    private static int completedTasks(CompoundTag state) {
+        return Math.max(0, state.getInt(COMPLETED_TASKS_TAG));
+    }
+
+    private static String completedTasksPhrase(int count) {
+        return count == 1 ? "1 completed task" : count + " completed tasks";
+    }
+
+    private static String outputSummary(HiredWorkSession session) {
+        List<HiredJobInventory.OutputStack> outputs = session.inventory().collectOutputItems();
+        int outputItems = outputs.stream().mapToInt(output -> output.stack().getCount()).sum();
+        if (outputItems <= 0) {
+            return "no output waiting";
+        }
+        return outputItems == 1 ? "1 output item waiting" : outputItems + " output items waiting";
+    }
+
+    private static Map<String, String> workReportReplacements(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            HiredWorkSession session,
+            HiredWorkerBrain.Snapshot snapshot) {
+        String targetDescription = describeCurrentTarget(player, level, villager, snapshot);
+        int completedTasks = completedTasks(session.state());
+        Map<String, String> replacements = new LinkedHashMap<>();
+        replacements.put("activity", describeWorkActivity(player, level, villager, session, snapshot, targetDescription));
+        replacements.put("status_detail", describeStatusDetail(player, level, villager, session, targetDescription));
+        replacements.put("work_area", describeWorkArea(player, level, villager, session.area()));
+        replacements.put("efficiency", Integer.toString(session.efficiency()));
+        replacements.put("target", targetDescription);
+        replacements.put("role", session.role().label());
+        replacements.put("completed_tasks", Integer.toString(completedTasks));
+        replacements.put("completed_tasks_phrase", completedTasksPhrase(completedTasks));
+        replacements.put("completed_tasks_plural", completedTasks == 1 ? "" : "s");
+        replacements.put("progress_summary", "So far I have finished " + completedTasksPhrase(completedTasks) + ".");
+        replacements.put("output_summary", outputSummary(session));
         return replacements;
     }
 

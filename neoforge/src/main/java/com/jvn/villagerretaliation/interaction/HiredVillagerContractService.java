@@ -251,6 +251,7 @@ public final class HiredVillagerContractService {
         HiredVillagerRole currentRole = roleFromContract(level, villager, tag);
         if (currentRole != role) {
             HiredVillagerWorkService.stopWork(level, villager, currentRole, "Work stopped. Role changed.");
+            HiredVillagerWorkService.resetReportProgress(level, villager);
         }
         tag.putString(ROLE_TAG, role.serializedName());
         villager.setPersistenceRequired();

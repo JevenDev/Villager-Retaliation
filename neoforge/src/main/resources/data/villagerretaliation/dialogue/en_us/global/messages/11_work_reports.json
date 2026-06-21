@@ -12,146 +12,290 @@
     {
       "key": "interaction.work_report.combat",
       "lines": [
-        "I am guarding {work_area} and currently {activity}. {status_detail}",
-        "My watch is set around {work_area}. Right now I am {activity}.",
-        "I am keeping trouble away from {work_area}; my focus is {target}. {status_detail}",
-        "Guard duty is steady in {work_area}. I am {activity}.",
-        "I am holding the line at {work_area}, watching {target}.",
-        "My patrol stays centered on {work_area}. Efficiency is near {efficiency} percent.",
-        "I am still on combat duty in {work_area}, {activity}. {status_detail}",
-        "The area is under watch. I am {activity} in {work_area}.",
-        "I have {work_area} covered for now. My task is {activity}.",
-        "Nothing gets ignored on my watch in {work_area}. I am {activity}. {status_detail}"
+        "I am guarding {work_area} right now, mostly {activity}. {status_detail} {progress_summary}",
+        "My watch is still set around {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am keeping trouble away from {work_area}. My eyes are on {target}. {status_detail} {progress_summary}",
+        "Guard duty is steady in {work_area}. I am {activity}. {progress_summary}",
+        "I am holding the line at {work_area} and watching {target}. {progress_summary}",
+        "I am keeping my patrol centered on {work_area}. I am working at about {efficiency} percent. {progress_summary}",
+        "I am still on combat duty in {work_area}, and I am {activity}. {status_detail} {progress_summary}",
+        "The area is under watch. I am {activity} in {work_area}. {progress_summary}",
+        "I have {work_area} covered for now. I am {activity}. {progress_summary}",
+        "I am not ignoring anything in {work_area}. I am {activity}. {status_detail} {progress_summary}"
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.combat.000"
     },
     {
       "key": "interaction.work_report.mining",
       "lines": [
-        "I am working the ground in {work_area}, currently {activity}. {status_detail}",
-        "My mining job is focused on {work_area}. Right now I am {activity}.",
-        "I am reading the stone around {target} and keeping to {work_area}.",
-        "Mining continues in {work_area}; I am {activity}. {status_detail}",
-        "I am checking the rock in {work_area}. Efficiency is about {efficiency} percent.",
-        "My pick is busy in {work_area}, and the current step is {activity}.",
-        "I am staying inside the mining bounds at {work_area}.",
-        "Work below ground is moving along near {target}. I am {activity}.",
-        "I am still on the mining job in {work_area}. {status_detail}",
-        "The excavation is under way in {work_area}; for now I am {activity}."
+        "I am working the ground in {work_area} right now, mostly {activity}. {status_detail} {progress_summary}",
+        "My mining work is focused on {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am reading the stone around {target} and keeping inside {work_area}. {progress_summary}",
+        "Mining is still moving in {work_area}. I am {activity}. {status_detail} {progress_summary}",
+        "I am checking the rock in {work_area}. I am working at about {efficiency} percent. {progress_summary}",
+        "My pick is busy in {work_area}, and right now I am {activity}. {progress_summary}",
+        "I am staying inside the mining bounds at {work_area}. {progress_summary}",
+        "Work below ground is moving along near {target}. I am {activity}. {progress_summary}",
+        "I am still on the mining job in {work_area}. {status_detail} {progress_summary}",
+        "The digging is under way in {work_area}. For now I am {activity}. {progress_summary}"
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.mining.001"
     },
     {
       "key": "interaction.work_report.logging",
       "lines": [
-        "I am logging in {work_area}, currently {activity}. {status_detail}",
-        "My logging route runs through {work_area}. Right now I am {activity}.",
-        "I am working the timber near {target}.",
-        "The logging job continues in {work_area}. I am {activity}.",
-        "I am moving through {work_area} for wood. {status_detail}",
-        "Axe work keeps me in {work_area}; efficiency is near {efficiency} percent.",
-        "I am still on logging duty in {work_area}, {activity}.",
-        "The timber work is moving along. My current task is {activity}.",
-        "I am handling the next tree near {target} in {work_area}.",
-        "Woodcutting keeps me busy in {work_area}. I am {activity}. {status_detail}"
+        "I am logging in {work_area} right now, mostly {activity}. {status_detail} {progress_summary}",
+        "My logging route runs through {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am working the timber near {target}. {progress_summary}",
+        "The logging job is still going in {work_area}. I am {activity}. {progress_summary}",
+        "I am moving through {work_area} for wood. {status_detail} {progress_summary}",
+        "Axe work keeps me in {work_area}. I am working at about {efficiency} percent. {progress_summary}",
+        "I am still on logging duty in {work_area}, and I am {activity}. {progress_summary}",
+        "The timber work is moving along. Right now I am {activity}. {progress_summary}",
+        "I am handling the next tree near {target} in {work_area}. {progress_summary}",
+        "Woodcutting keeps me busy in {work_area}. I am {activity}. {status_detail} {progress_summary}"
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.logging.002"
     },
     {
       "key": "interaction.work_report.farming",
       "lines": [
-        "I am tending the fields in {work_area}, currently {activity}. {status_detail}",
-        "My farming work is set in {work_area}. Right now I am {activity}.",
-        "I am looking after the crops near {target}.",
-        "Field work continues in {work_area}. I am {activity}.",
-        "The farm is moving along; efficiency is about {efficiency} percent.",
-        "My hands are in the soil at {work_area}.",
-        "I am keeping to the farm bounds and working on {activity}.",
-        "The crops still need me in {work_area}. {status_detail}",
-        "I am carrying on with the farming, with my attention on {target}.",
-        "Work in the fields is steady. I am {activity} in {work_area}."
+        "I am tending the fields in {work_area} right now, mostly {activity}. {status_detail} {progress_summary}",
+        "My farming work is set in {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am looking after the crops near {target}. {progress_summary}",
+        "Field work is still going in {work_area}. I am {activity}. {progress_summary}",
+        "The farm is moving along. I am working at about {efficiency} percent. {progress_summary}",
+        "My hands are in the soil at {work_area}. {progress_summary}",
+        "I am keeping to the farm bounds and working on {activity}. {progress_summary}",
+        "The crops still need me in {work_area}. {status_detail} {progress_summary}",
+        "I am carrying on with the farming, with my attention on {target}. {progress_summary}",
+        "Work in the fields is steady. I am {activity} in {work_area}. {progress_summary}"
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.farming.003"
     },
     {
       "key": "interaction.work_report.fishing",
       "lines": [
-        "I am fishing in {work_area}, currently {activity}. {status_detail}",
-        "My fishing spot is set around {work_area}. Right now I am {activity}.",
-        "I am watching the water near {target}.",
-        "The fishing work continues in {work_area}.",
-        "I am working the bank at {work_area}; efficiency is about {efficiency} percent.",
-        "My line is out in {work_area}. The current task is {activity}.",
-        "I am keeping to the fishing bounds and watching the water.",
-        "The water still needs patience in {work_area}. {status_detail}",
-        "I am carrying on with the fishing, focused on {target}.",
-        "Fishing is moving along. I am {activity} in {work_area}."
+        "I am fishing in {work_area} right now, mostly {activity}. {status_detail} {progress_summary}",
+        "My fishing spot is set around {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am watching the water near {target}. {progress_summary}",
+        "The fishing work is still going in {work_area}. {progress_summary}",
+        "I am working the bank at {work_area}. I am working at about {efficiency} percent. {progress_summary}",
+        "My line is out in {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am keeping to the fishing bounds and watching the water. {progress_summary}",
+        "The water still needs patience in {work_area}. {status_detail} {progress_summary}",
+        "I am carrying on with the fishing, focused on {target}. {progress_summary}",
+        "Fishing is moving along. I am {activity} in {work_area}. {progress_summary}"
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.fishing.004"
     },
     {
       "key": "interaction.work_report.brewing",
       "lines": [
-        "I am handling brewing work in {work_area}, currently {activity}. {status_detail}",
-        "My brewing assignment is tied to {work_area}. Right now I am {activity}.",
-        "I am watching the brew near {target}.",
-        "The brewing duty continues in {work_area}.",
-        "I am set to potion work in {work_area}. {status_detail}",
-        "Brewing is my charge in {work_area}; efficiency is near {efficiency} percent.",
-        "I am still on brewing duty. My current task is {activity}.",
-        "The potion work is not forgotten in {work_area}.",
-        "I am tending the brewing setup with my attention on {target}.",
-        "My brewing report is simple: in {work_area}, I am {activity}. {status_detail}"
+        "I am handling the brewing work in {work_area} right now, mostly {activity}. {status_detail} {progress_summary}",
+        "My brewing work is tied to {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am watching the brew near {target}. {progress_summary}",
+        "The brewing work is still going in {work_area}. {progress_summary}",
+        "I am set to potion work in {work_area}. {status_detail} {progress_summary}",
+        "Brewing has me in {work_area}. I am working at about {efficiency} percent. {progress_summary}",
+        "I am still on brewing duty. Right now I am {activity}. {progress_summary}",
+        "The potion work is not forgotten in {work_area}. {progress_summary}",
+        "I am tending the brewing setup with my attention on {target}. {progress_summary}",
+        "For brewing, I am in {work_area} and I am {activity}. {status_detail} {progress_summary}"
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.brewing.005"
     },
     {
       "key": "interaction.work_report.builder",
       "lines": [
-        "I am building in {work_area}, currently {activity}. {status_detail}",
-        "My construction work is centered on {work_area}. Right now I am {activity}.",
-        "I am keeping the build moving, with my focus on {target}.",
-        "The construction job continues in {work_area}.",
-        "I am working through the structure step by step. {status_detail}",
-        "Builder duty has me at {work_area}; efficiency is about {efficiency} percent.",
-        "I am still on construction duty. My current task is {activity}.",
-        "The build is not finished yet, so I am {activity}.",
-        "I am handling the next part of the structure near {target}.",
-        "Construction report: I am {activity} in {work_area}. {status_detail}"
+        "I am building in {work_area} right now, mostly {activity}. {status_detail} {progress_summary}",
+        "My construction work is centered on {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am keeping the build moving, with my focus on {target}. {progress_summary}",
+        "The construction job is still going in {work_area}. {progress_summary}",
+        "I am working through the structure step by step. {status_detail} {progress_summary}",
+        "Building has me at {work_area}. I am working at about {efficiency} percent. {progress_summary}",
+        "I am still on construction duty. Right now I am {activity}. {progress_summary}",
+        "The build is not finished yet, so I am {activity}. {progress_summary}",
+        "I am handling the next part of the structure near {target}. {progress_summary}",
+        "I am {activity} in {work_area}. {status_detail} {progress_summary}"
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.builder.006"
     },
     {
       "key": "interaction.work_report.animal_handling",
       "lines": [
-        "I am tending the stock in {work_area}, currently {activity}. {status_detail}",
-        "My handling work belongs to {work_area}. Right now I am {activity}.",
-        "I am looking after the pen near {target}.",
-        "The animal-handling duty continues in {work_area}.",
-        "I am keeping the herd settled while I work on {activity}.",
-        "My handling duties remain in {work_area}; efficiency is about {efficiency} percent.",
-        "I am still busy with the stock. My current task is {activity}.",
-        "Animal work keeps me in {work_area}. {status_detail}",
-        "I am managing the pen and keeping attention on {target}.",
-        "My handling report is this: in {work_area}, I am {activity}. {status_detail}"
+        "I am tending the stock in {work_area} right now, mostly {activity}. {status_detail} {progress_summary}",
+        "My animal work belongs to {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am looking after the pen near {target}. {progress_summary}",
+        "The animal work is still going in {work_area}. {progress_summary}",
+        "I am keeping the herd settled while I work on {activity}. {progress_summary}",
+        "My handling work keeps me in {work_area}. I am working at about {efficiency} percent. {progress_summary}",
+        "I am still busy with the stock. Right now I am {activity}. {progress_summary}",
+        "Animal work keeps me in {work_area}. {status_detail} {progress_summary}",
+        "I am managing the pen and keeping attention on {target}. {progress_summary}",
+        "I am in {work_area}, and I am {activity}. {status_detail} {progress_summary}"
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.animal_handling.007"
     },
     {
       "key": "interaction.work_report.nitwit",
       "lines": [
-        "I am doing my best in {work_area}, currently {activity}. {status_detail}",
-        "My odd-job duties keep me in {work_area}. Right now I am {activity}.",
-        "I am occupied near {target}, which feels official enough.",
-        "The important work of being useful continues in {work_area}.",
-        "I am still busy in {work_area}; efficiency is somehow {efficiency} percent.",
-        "My report is that I am {activity}. {status_detail}",
-        "I am handling matters in my own fashion around {work_area}.",
-        "Work, of a sort, continues. I am {activity}.",
-        "I am keeping to my assignment, with attention on {target}.",
-        "If you must know, I am {activity} in {work_area}. {status_detail}"
+        "I am doing my best in {work_area} right now, mostly {activity}. {status_detail} {progress_summary}",
+        "My odd jobs keep me in {work_area}. Right now I am {activity}. {progress_summary}",
+        "I am occupied near {target}, which feels official enough. {progress_summary}",
+        "The important work of being useful continues in {work_area}. {progress_summary}",
+        "I am still busy in {work_area}. Somehow I am working at {efficiency} percent. {progress_summary}",
+        "I am {activity}. {status_detail} {progress_summary}",
+        "I am handling matters in my own fashion around {work_area}. {progress_summary}",
+        "Work, of a sort, continues. I am {activity}. {progress_summary}",
+        "I am keeping to my assignment, with attention on {target}. {progress_summary}",
+        "If you must know, I am {activity} in {work_area}. {status_detail} {progress_summary}"
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.nitwit.008"
+    },
+    {
+      "key": "interaction.work_final_report.combat",
+      "lines": [
+        "I am done with that bit of guard work for now. I completed {completed_tasks_phrase}. {status_detail}",
+        "The watch is settled for the moment. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "I finished that round of guard work around {work_area}. That makes {completed_tasks_phrase}.",
+        "That combat duty is handled. I ended at {target}. {status_detail}",
+        "I am finished for now. I covered {work_area}, and my last focus was {target}.",
+        "That pass of combat work is done. {progress_summary} Last thing I had was {status_detail}",
+        "I finished {completed_tasks} task{completed_tasks_plural} on watch, and I am still working at about {efficiency} percent.",
+        "Nothing else needs my attention on that guard pass right now. {progress_summary}",
+        "The patrol has a stopping point now. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "Combat work is complete for the moment. I was last {activity}. {progress_summary}"
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.combat.009"
+    },
+    {
+      "key": "interaction.work_final_report.mining",
+      "lines": [
+        "I am done with that bit of mining for now. I completed {completed_tasks_phrase}. {status_detail}",
+        "The mining is settled for the moment. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "I finished that pass through {work_area}. That makes {completed_tasks_phrase}.",
+        "That stone work is handled. I ended near {target}. {status_detail}",
+        "I am finished for now. I worked {work_area}, and my last focus was {target}.",
+        "That pass through the ground is done. {progress_summary} Last thing I had was {status_detail}",
+        "I finished {completed_tasks} mining task{completed_tasks_plural}, and I am still working at about {efficiency} percent.",
+        "Nothing else needs my pick on that pass right now. {progress_summary}",
+        "The digging has a stopping point now. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "Mining work is complete for the moment. I was last {activity}. {progress_summary}"
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.mining.010"
+    },
+    {
+      "key": "interaction.work_final_report.logging",
+      "lines": [
+        "I am done with that bit of logging for now. I completed {completed_tasks_phrase}. {status_detail}",
+        "The logging is settled for the moment. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "I finished that timber pass in {work_area}. That makes {completed_tasks_phrase}.",
+        "That tree work is handled. I ended near {target}. {status_detail}",
+        "I am finished for now. I worked {work_area}, and my last focus was {target}.",
+        "That pass through the wood is done. {progress_summary} Last thing I had was {status_detail}",
+        "I finished {completed_tasks} logging task{completed_tasks_plural}, and I am still working at about {efficiency} percent.",
+        "Nothing else needs my axe on that pass right now. {progress_summary}",
+        "The woodcutting has a stopping point now. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "Logging work is complete for the moment. I was last {activity}. {progress_summary}"
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.logging.011"
+    },
+    {
+      "key": "interaction.work_final_report.farming",
+      "lines": [
+        "I am done with that bit of farming for now. I completed {completed_tasks_phrase}. {status_detail}",
+        "The field work is settled for the moment. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "I finished that pass through {work_area}. That makes {completed_tasks_phrase}.",
+        "That crop work is handled. I ended near {target}. {status_detail}",
+        "I am finished for now. I worked {work_area}, and my last focus was {target}.",
+        "That pass through the fields is done. {progress_summary} Last thing I had was {status_detail}",
+        "I finished {completed_tasks} farming task{completed_tasks_plural}, and I am still working at about {efficiency} percent.",
+        "Nothing else needs my hands in the soil right now. {progress_summary}",
+        "The field work has a stopping point now. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "Farming work is complete for the moment. I was last {activity}. {progress_summary}"
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.farming.012"
+    },
+    {
+      "key": "interaction.work_final_report.fishing",
+      "lines": [
+        "I am done with that bit of fishing for now. I completed {completed_tasks_phrase}. {status_detail}",
+        "The fishing is settled for the moment. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "I finished that pass by the water in {work_area}. That makes {completed_tasks_phrase}.",
+        "That catch is handled. I ended near {target}. {status_detail}",
+        "I am finished for now. I worked {work_area}, and my last focus was {target}.",
+        "That pass by the water is done. {progress_summary} Last thing I had was {status_detail}",
+        "I finished {completed_tasks} fishing task{completed_tasks_plural}, and I am still working at about {efficiency} percent.",
+        "Nothing else needs my line right now. {progress_summary}",
+        "The water work has a stopping point now. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "Fishing work is complete for the moment. I was last {activity}. {progress_summary}"
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.fishing.013"
+    },
+    {
+      "key": "interaction.work_final_report.brewing",
+      "lines": [
+        "I am done with that bit of brewing for now. I completed {completed_tasks_phrase}. {status_detail}",
+        "The brewing is settled for the moment. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "I finished that brewing pass in {work_area}. That makes {completed_tasks_phrase}.",
+        "That potion work is handled. I ended near {target}. {status_detail}",
+        "I am finished for now. I worked {work_area}, and my last focus was {target}.",
+        "That batch of brewing is done. {progress_summary} Last thing I had was {status_detail}",
+        "I finished {completed_tasks} brewing task{completed_tasks_plural}, and I am still working at about {efficiency} percent.",
+        "Nothing else needs stirring right now. {progress_summary}",
+        "The potion work has a stopping point now. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "Brewing work is complete for the moment. I was last {activity}. {progress_summary}"
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.brewing.014"
+    },
+    {
+      "key": "interaction.work_final_report.builder",
+      "lines": [
+        "I am done with that bit of building for now. I completed {completed_tasks_phrase}. {status_detail}",
+        "The construction is settled for the moment. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "I finished that building pass in {work_area}. That makes {completed_tasks_phrase}.",
+        "That build step is handled. I ended near {target}. {status_detail}",
+        "I am finished for now. I worked {work_area}, and my last focus was {target}.",
+        "That construction pass is done. {progress_summary} Last thing I had was {status_detail}",
+        "I finished {completed_tasks} building task{completed_tasks_plural}, and I am still working at about {efficiency} percent.",
+        "Nothing else needs placing right now. {progress_summary}",
+        "The construction has a stopping point now. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "Builder work is complete for the moment. I was last {activity}. {progress_summary}"
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.builder.015"
+    },
+    {
+      "key": "interaction.work_final_report.animal_handling",
+      "lines": [
+        "I am done with that bit of animal work for now. I completed {completed_tasks_phrase}. {status_detail}",
+        "The animal work is settled for the moment. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "I finished that pass through {work_area}. That makes {completed_tasks_phrase}.",
+        "That pen work is handled. I ended near {target}. {status_detail}",
+        "I am finished for now. I worked {work_area}, and my last focus was {target}.",
+        "That pass among the stock is done. {progress_summary} Last thing I had was {status_detail}",
+        "I finished {completed_tasks} animal task{completed_tasks_plural}, and I am still working at about {efficiency} percent.",
+        "Nothing else needs tending right now. {progress_summary}",
+        "The pen work has a stopping point now. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "Animal work is complete for the moment. I was last {activity}. {progress_summary}"
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.animal_handling.016"
+    },
+    {
+      "key": "interaction.work_final_report.nitwit",
+      "lines": [
+        "I am done with that bit of work for now. I completed {completed_tasks_phrase}. {status_detail}",
+        "The odd jobs are settled for the moment. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "I finished that very serious pass in {work_area}. That makes {completed_tasks_phrase}.",
+        "That odd job is handled. I ended near {target}. {status_detail}",
+        "I am finished for now. I worked {work_area}, and my last focus was {target}.",
+        "That particular kind of usefulness is done. {progress_summary} Last thing I had was {status_detail}",
+        "I finished {completed_tasks} task{completed_tasks_plural}, and somehow I am still working at about {efficiency} percent.",
+        "Nothing else needs my special attention right now. {progress_summary}",
+        "The important work has a stopping point now. I finished {completed_tasks_phrase}, with {output_summary}.",
+        "Nitwit work is complete for the moment. I was last {activity}. {progress_summary}"
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.nitwit.017"
     }
   ]
 }

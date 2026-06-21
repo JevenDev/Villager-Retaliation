@@ -43,6 +43,20 @@ public final class HiredVillagerRoleSettings {
         };
     }
 
+    public static String workFinalReportMessageKey(HiredVillagerRole role) {
+        return switch (role) {
+            case COMBAT -> "interaction.work_final_report.combat";
+            case MINING -> "interaction.work_final_report.mining";
+            case LOGGING -> "interaction.work_final_report.logging";
+            case FARMING -> "interaction.work_final_report.farming";
+            case FISHING -> "interaction.work_final_report.fishing";
+            case BREWING -> "interaction.work_final_report.brewing";
+            case BUILDER -> "interaction.work_final_report.builder";
+            case ANIMAL_HANDLING -> "interaction.work_final_report.animal_handling";
+            case NITWIT -> "interaction.work_final_report.nitwit";
+        };
+    }
+
     public static int foodCost(HiredVillagerRole role) {
         int base = Math.max(0, VillagerRetaliationConfig.HIRED_WORK_BASE_FOOD_PER_DAY.get());
         int roleCost = switch (role) {
