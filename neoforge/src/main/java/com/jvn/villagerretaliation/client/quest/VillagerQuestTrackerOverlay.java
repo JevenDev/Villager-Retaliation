@@ -187,6 +187,10 @@ public final class VillagerQuestTrackerOverlay {
         return entry != null && entry.trackable() && trackedQuestIds.contains(entry.questId());
     }
 
+    public static int trackedIndex(QuestTrackerSyncPayload.Entry entry) {
+        return entry == null || !entry.trackable() ? -1 : trackedQuestIds.indexOf(entry.questId());
+    }
+
     public static void toggleTracking(QuestTrackerSyncPayload.Entry entry) {
         if (entry == null || !entry.trackable()) {
             return;

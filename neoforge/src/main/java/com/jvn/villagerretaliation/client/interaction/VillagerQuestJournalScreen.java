@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -100,6 +101,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private float visualDetailsScroll;
     private long lastScrollRenderMillis;
     private int detailsSelectedOption = Integer.MIN_VALUE;
+    private String selectedQuestId = "";
     private QuestJournalTab selectedTab = QuestJournalTab.AVAILABLE;
     private boolean closingWithAnimation;
     private boolean openedSoundPlayed;
@@ -116,6 +118,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         this.visualDetailsScroll = this.state.detailsScroll();
         this.lastScrollRenderMillis = Util.getMillis();
         this.detailsSelectedOption = this.state.selectedOption();
+        rememberSelectedQuestId();
         this.closingWithAnimation = false;
         this.animationStartMillis = Util.getMillis();
         if (!this.openedSoundPlayed) {
@@ -206,12 +209,12 @@ public final class VillagerQuestJournalScreen extends Screen {
             if (hovered != this.state.selectedOption()) {
                 setSelectedOption(hovered);
                 acknowledgeSelectedQuestUpdate();
-                ensureSelectedVisible();
+                ensureSelectedVisible(false);
                 return true;
             }
             acknowledgeSelectedQuestUpdate();
             VillagerQuestTrackerOverlay.toggleTracking(visibleEntries().get(hovered));
-            ensureSelectedVisible();
+            ensureSelectedVisible(false);
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -548,7 +551,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         playBookSound(0.72F);
     }
 
-    private void ensureSelectedVisible() {
+    private void ensureSelectedVisible(boolean jumpToTarget) {
         if (this.state.selectedOption() < 0 || this.state.selectedOption() >= visibleEntries().size()) {
             return;
         }
@@ -558,10 +561,17 @@ public final class VillagerQuestJournalScreen extends Screen {
         float viewportTop = this.state.targetOptionScroll();
         float viewportBottom = viewportTop + optionViewportHeight();
         int padding = 5;
+        boolean scrollChanged = false;
         if (optionTop < viewportTop + padding) {
             setTargetOptionScroll(optionTop - padding);
+            scrollChanged = true;
         } else if (optionBottom > viewportBottom - padding) {
             setTargetOptionScroll(optionBottom - optionViewportHeight() + padding);
+            scrollChanged = true;
+        }
+        if (jumpToTarget && scrollChanged) {
+            this.state.jumpOptionScrollToTarget();
+            this.visualOptionScroll = this.state.optionScroll();
         }
     }
 
@@ -571,7 +581,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
         setSelectedOption(Mth.positiveModulo(this.state.selectedOption() + direction, visibleEntries().size()));
         acknowledgeSelectedQuestUpdate();
-        ensureSelectedVisible();
+        ensureSelectedVisible(false);
     }
 
     private void selectTab(QuestJournalTab tab) {
@@ -604,6 +614,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         this.visualOptionScroll = this.state.optionScroll();
         this.visualDetailsScroll = this.state.detailsScroll();
         this.detailsSelectedOption = this.state.selectedOption();
+        rememberSelectedQuestId();
     }
 
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
@@ -656,11 +667,25 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private void clampSelectedOption() {
-        if (visibleEntries().isEmpty()) {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        if (visibleEntries.isEmpty()) {
             this.state.resetOptions(false);
+            this.selectedQuestId = "";
             return;
         }
-        setSelectedOption(Mth.clamp(this.state.selectedOption(), 0, visibleEntries().size() - 1));
+        if (!this.selectedQuestId.isBlank()) {
+            int selectedIndex = indexOfQuestId(visibleEntries, this.selectedQuestId);
+            if (selectedIndex >= 0) {
+                if (selectedIndex != this.state.selectedOption()) {
+                    setSelectedOption(selectedIndex, true);
+                    ensureSelectedVisible(true);
+                }
+                clampTargetOptionScroll();
+                clampTargetDetailsScroll();
+                return;
+            }
+        }
+        setSelectedOption(Mth.clamp(this.state.selectedOption(), 0, visibleEntries.size() - 1));
         clampTargetOptionScroll();
         clampTargetDetailsScroll();
     }
@@ -680,12 +705,19 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private void setSelectedOption(int selectedOption) {
+        setSelectedOption(selectedOption, false);
+    }
+
+    private void setSelectedOption(int selectedOption, boolean preserveDetailsScroll) {
         if (this.state.selectedOption() != selectedOption) {
             this.detailsSelectedOption = selectedOption;
-            this.state.resetDetailsScroll();
-            this.visualDetailsScroll = 0.0F;
+            if (!preserveDetailsScroll) {
+                this.state.resetDetailsScroll();
+                this.visualDetailsScroll = 0.0F;
+            }
         }
         this.state.setSelectedOption(selectedOption);
+        rememberSelectedQuestId();
     }
 
     private void acknowledgeSelectedQuestUpdate() {
@@ -710,6 +742,23 @@ public final class VillagerQuestJournalScreen extends Screen {
             return null;
         }
         return visibleEntries.get(this.state.selectedOption());
+    }
+
+    private void rememberSelectedQuestId() {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        this.selectedQuestId = selected == null ? "" : selected.questId();
+    }
+
+    private static int indexOfQuestId(List<QuestTrackerSyncPayload.Entry> visibleEntries, String questId) {
+        if (questId == null || questId.isBlank()) {
+            return -1;
+        }
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            if (questId.equals(visibleEntries.get(index).questId())) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private void setTargetOptionScroll(float scroll) {
@@ -871,7 +920,16 @@ public final class VillagerQuestJournalScreen extends Screen {
     private List<QuestTrackerSyncPayload.Entry> visibleEntries() {
         return entries().stream()
                 .filter(entry -> this.selectedTab.includes(QuestJournalEntryState.from(entry)))
+                .sorted(Comparator.comparingInt(VillagerQuestJournalScreen::activeTrackedSortKey))
                 .toList();
+    }
+
+    private static int activeTrackedSortKey(QuestTrackerSyncPayload.Entry entry) {
+        if (QuestJournalEntryState.from(entry) != QuestJournalEntryState.ACTIVE) {
+            return Integer.MAX_VALUE;
+        }
+        int trackedIndex = VillagerQuestTrackerOverlay.trackedIndex(entry);
+        return trackedIndex < 0 ? Integer.MAX_VALUE : trackedIndex;
     }
 
     private static boolean hasQuestUpdate(QuestTrackerSyncPayload.Entry entry) {
