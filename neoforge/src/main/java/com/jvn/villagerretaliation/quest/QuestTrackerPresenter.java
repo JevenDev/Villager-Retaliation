@@ -40,22 +40,65 @@ public final class QuestTrackerPresenter {
         StringBuilder builder = new StringBuilder();
         builder.append(trackedQuestId == null ? "" : trackedQuestId.toString()).append('\n');
         for (QuestTrackerSyncPayload.Entry entry : entries) {
-            builder.append(entry.questId()).append('|')
-                    .append(entry.title()).append('|')
-                    .append(entry.objective()).append('|')
-                    .append(entry.metadata()).append('|')
-                    .append(entry.progress()).append('|')
-                    .append(entry.showProgress()).append('|')
-                    .append(entry.state()).append('|')
-                    .append(entry.status()).append('|')
-                    .append(entry.issuer()).append('|')
-                    .append(entry.issuerLocation()).append('|');
-            for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
-                builder.append(item.itemId()).append(',')
-                        .append(item.label()).append(',')
-                        .append(item.count()).append(';');
+            builder.append(entrySignature(entry)).append('\n');
+        }
+        return builder.toString();
+    }
+
+    public static Map<String, String> entrySignatures(List<QuestTrackerSyncPayload.Entry> entries) {
+        Map<String, String> signatures = new LinkedHashMap<>();
+        if (entries == null || entries.isEmpty()) {
+            return Map.of();
+        }
+        for (QuestTrackerSyncPayload.Entry entry : entries) {
+            if (entry != null && !entry.questId().isBlank() && !entry.questAvailable()) {
+                signatures.put(entry.questId(), questProgressSignature(entry));
             }
-            builder.append('\n');
+        }
+        return Map.copyOf(signatures);
+    }
+
+    public static String questProgressSignature(QuestTrackerSyncPayload.Entry entry) {
+        if (entry == null) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(entry.questId()).append('|')
+                .append(entry.title()).append('|')
+                .append(entry.objective()).append('|')
+                .append(entry.metadata()).append('|')
+                .append(entry.progress()).append('|')
+                .append(entry.showProgress()).append('|')
+                .append(entry.state()).append('|')
+                .append(entry.status()).append('|')
+                .append(entry.issuer()).append('|');
+        for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
+            builder.append(item.itemId()).append(',')
+                    .append(item.label()).append(',')
+                    .append(item.count()).append(';');
+        }
+        return builder.toString();
+    }
+
+    public static String entrySignature(QuestTrackerSyncPayload.Entry entry) {
+        if (entry == null) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(entry.questId()).append('|')
+                .append(entry.title()).append('|')
+                .append(entry.objective()).append('|')
+                .append(entry.metadata()).append('|')
+                .append(entry.progress()).append('|')
+                .append(entry.showProgress()).append('|')
+                .append(entry.state()).append('|')
+                .append(entry.status()).append('|')
+                .append(entry.issuer()).append('|')
+                .append(entry.issuerLocation()).append('|');
+        for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
+            builder.append(item.itemId()).append(',')
+                    .append(item.label()).append(',')
+                    .append(item.count()).append(';');
         }
         return builder.toString();
     }

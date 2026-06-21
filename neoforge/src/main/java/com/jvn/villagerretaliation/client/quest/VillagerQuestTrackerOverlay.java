@@ -7,8 +7,10 @@ import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,6 +25,7 @@ public final class VillagerQuestTrackerOverlay {
     private static final int FLASH_LIFETIME_TICKS = 180;
 
     private static List<QuestTrackerSyncPayload.Entry> entries = List.of();
+    private static final Set<String> questUpdateQuestIds = new HashSet<>();
     private static int flashTicks;
     private static int notificationAge;
     private static int age;
@@ -30,13 +33,26 @@ public final class VillagerQuestTrackerOverlay {
     private static float trackerAlpha;
     private static boolean trackerVisible;
     private static int ignoredJournalToggleTicks;
+    private static int pendingJournalOpenTicks;
     private static String trackedQuestId = "";
 
     private VillagerQuestTrackerOverlay() {
     }
 
     public static void accept(QuestTrackerSyncPayload payload) {
-        entries = payload.entries();
+        for (QuestTrackerSyncPayload.Entry entry : payload.entries()) {
+            if (entry.questUpdate() && !entry.questAvailable() && !entry.questId().isBlank()) {
+                questUpdateQuestIds.add(entry.questId());
+            }
+        }
+        Set<String> acceptedQuestIds = new HashSet<>();
+        for (QuestTrackerSyncPayload.Entry entry : payload.entries()) {
+            if (!entry.questAvailable() && !entry.questId().isBlank()) {
+                acceptedQuestIds.add(entry.questId());
+            }
+        }
+        questUpdateQuestIds.removeIf(questId -> !acceptedQuestIds.contains(questId));
+        entries = applyQuestUpdateCache(payload.entries());
         trackedQuestId = payload.trackedQuestId();
         if (payload.flash() && trackedEntry().isPresent()) {
             flashTicks = FLASH_LIFETIME_TICKS;
@@ -53,6 +69,9 @@ public final class VillagerQuestTrackerOverlay {
             if (Minecraft.getInstance().screen instanceof VillagerQuestJournalScreen) {
                 Minecraft.getInstance().setScreen(null);
             }
+        } else if (pendingJournalOpenTicks > 0 && Minecraft.getInstance().screen == null) {
+            pendingJournalOpenTicks = 0;
+            Minecraft.getInstance().setScreen(new VillagerQuestJournalScreen());
         }
     }
 
@@ -126,11 +145,22 @@ public final class VillagerQuestTrackerOverlay {
         trackerAlpha = 0.0F;
         trackerVisible = false;
         ignoredJournalToggleTicks = 0;
+        pendingJournalOpenTicks = 0;
         trackedQuestId = "";
+        questUpdateQuestIds.clear();
     }
 
     public static List<QuestTrackerSyncPayload.Entry> entries() {
         return entries;
+    }
+
+    public static void acknowledgeQuestUpdate(QuestTrackerSyncPayload.Entry entry) {
+        if (entry == null || entry.questAvailable() || entry.questId().isBlank()) {
+            return;
+        }
+        if (questUpdateQuestIds.remove(entry.questId())) {
+            entries = applyQuestUpdateCache(entries);
+        }
     }
 
     public static Optional<QuestTrackerSyncPayload.Entry> trackedEntry() {
@@ -213,6 +243,9 @@ public final class VillagerQuestTrackerOverlay {
         if (ignoredJournalToggleTicks > 0) {
             ignoredJournalToggleTicks--;
         }
+        if (pendingJournalOpenTicks > 0) {
+            pendingJournalOpenTicks--;
+        }
     }
 
     private static void toggleJournal() {
@@ -223,7 +256,10 @@ public final class VillagerQuestTrackerOverlay {
         }
         if (!entries.isEmpty()) {
             minecraft.setScreen(new VillagerQuestJournalScreen());
+            return;
         }
+        pendingJournalOpenTicks = 40;
+        PacketDistributor.sendToServer(new QuestTrackerRequestPayload("", QuestTrackerRequestPayload.Action.REFRESH));
     }
 
     private static List<QuestTrackerSyncPayload.Entry> trackerEntries(boolean showRecentQuests) {
@@ -242,6 +278,15 @@ public final class VillagerQuestTrackerOverlay {
             }
         }
         return List.copyOf(ordered);
+    }
+
+    private static List<QuestTrackerSyncPayload.Entry> applyQuestUpdateCache(List<QuestTrackerSyncPayload.Entry> source) {
+        if (source == null || source.isEmpty()) {
+            return List.of();
+        }
+        return source.stream()
+                .map(entry -> entry.withQuestUpdate(!entry.questAvailable() && questUpdateQuestIds.contains(entry.questId())))
+                .toList();
     }
 
     private static float approach(float value, boolean visible) {

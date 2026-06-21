@@ -41,6 +41,8 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
                 buffer.writeUtf(item.label(), 128);
                 buffer.writeVarInt(item.count());
             }
+            buffer.writeBoolean(entry.questUpdate());
+            buffer.writeBoolean(entry.questAvailable());
         }
         buffer.writeUtf(payload.trackedQuestId(), 128);
         buffer.writeBoolean(payload.flash());
@@ -61,7 +63,9 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
                     buffer.readUtf(96),
                     buffer.readUtf(160),
                     buffer.readUtf(192),
-                    readQuestItems(buffer)
+                    readQuestItems(buffer),
+                    buffer.readBoolean(),
+                    buffer.readBoolean()
             );
             entries.add(entry);
         }
@@ -98,7 +102,40 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
             String status,
             String issuer,
             String issuerLocation,
-            List<QuestItem> questItems) {
+            List<QuestItem> questItems,
+            boolean questUpdate,
+            boolean questAvailable) {
+        public Entry(
+                String questId,
+                String title,
+                String objective,
+                String metadata,
+                float progress,
+                boolean showProgress,
+                String state,
+                String status,
+                String issuer,
+                String issuerLocation,
+                List<QuestItem> questItems,
+                boolean questUpdate) {
+            this(questId, title, objective, metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, questUpdate, false);
+        }
+
+        public Entry(
+                String questId,
+                String title,
+                String objective,
+                String metadata,
+                float progress,
+                boolean showProgress,
+                String state,
+                String status,
+                String issuer,
+                String issuerLocation,
+                List<QuestItem> questItems) {
+            this(questId, title, objective, metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, false, false);
+        }
+
         public Entry {
             questId = questId == null ? "" : questId;
             title = title == null ? "" : title;
@@ -112,6 +149,40 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
             questItems = questItems == null
                     ? List.of()
                     : List.copyOf(questItems.stream().filter(Objects::nonNull).limit(MAX_QUEST_ITEMS).toList());
+        }
+
+        public Entry withQuestUpdate(boolean questUpdate) {
+            return new Entry(
+                    this.questId,
+                    this.title,
+                    this.objective,
+                    this.metadata,
+                    this.progress,
+                    this.showProgress,
+                    this.state,
+                    this.status,
+                    this.issuer,
+                    this.issuerLocation,
+                    this.questItems,
+                    questUpdate,
+                    this.questAvailable);
+        }
+
+        public Entry withQuestAvailable(boolean questAvailable) {
+            return new Entry(
+                    this.questId,
+                    this.title,
+                    this.objective,
+                    this.metadata,
+                    this.progress,
+                    this.showProgress,
+                    this.state,
+                    this.status,
+                    this.issuer,
+                    this.issuerLocation,
+                    this.questItems,
+                    this.questUpdate,
+                    questAvailable);
         }
 
         public boolean trackable() {

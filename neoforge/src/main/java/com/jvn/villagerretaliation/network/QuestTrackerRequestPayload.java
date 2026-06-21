@@ -32,7 +32,8 @@ public record QuestTrackerRequestPayload(String questId, Action action) implemen
     public enum Action {
         TRACK,
         UNTRACK,
-        TOGGLE;
+        TOGGLE,
+        REFRESH;
 
         public static Action byName(String value) {
             if (value == null || value.isBlank()) {

@@ -892,6 +892,22 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(
                 QuestTrackerPresenter.syncSignature(List.of(entry), quest.id()).contains(entry.questId()),
                 "presenter signature omitted quest id");
+        QuestTrackerSyncPayload.Entry movedIssuerEntry = new QuestTrackerSyncPayload.Entry(
+                entry.questId(),
+                entry.title(),
+                entry.objective(),
+                entry.metadata(),
+                entry.progress(),
+                entry.showProgress(),
+                entry.state(),
+                entry.status(),
+                entry.issuer(),
+                "minecraft:overworld 6,65,-2",
+                entry.questItems());
+        helper.assertValueEqual(
+                QuestTrackerPresenter.questProgressSignature(movedIssuerEntry),
+                QuestTrackerPresenter.questProgressSignature(entry),
+                "presenter progress signature changed for issuer location drift");
 
         List<QuestTrackerSyncPayload.QuestItem> manyItems = new ArrayList<>();
         for (int i = 0; i < QuestTrackerSyncPayload.MAX_QUEST_ITEMS + 4; i++) {
@@ -1767,6 +1783,7 @@ public final class VillagerQuestGameTests {
         EmbeddedDialogueQuest unavailable = embeddedDialogueQuest("v2_embedded_unavailable", true);
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager otherVillager = spawnVillager(helper, new BlockPos(4, 2, 2));
         movePlayer(helper, player, new BlockPos(1, 2, 2));
 
         try {
@@ -1812,6 +1829,23 @@ public final class VillagerQuestGameTests {
             helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.ACTIVE, "embedded v2 active state");
             helper.assertValueEqual(progress.currentStage(), "offer", "embedded v2 initial stage");
 
+            DialogueContext otherContext = VillagerInteractionService.createDialogueContext(level, player, otherVillager);
+            assertMissingDialogueOption(
+                    helper,
+                    otherContext,
+                    offerOptionId,
+                    "v2 embedded offer from second villager after start");
+            assertMissingDialogueOption(
+                    helper,
+                    otherContext,
+                    DialogueTreeService.entryOptionId(playable.treeId(), "stage.offer.reminder"),
+                    "v2 embedded reminder from second villager");
+            assertMissingDialogueOption(
+                    helper,
+                    otherContext,
+                    DialogueTreeService.entryOptionId(playable.treeId(), "stage.offer.unavailable"),
+                    "v2 embedded unavailable fallback from second villager");
+
             context = VillagerInteractionService.createDialogueContext(level, player, villager);
             helper.assertValueEqual(
                     selectDialogueOption(
@@ -1825,6 +1859,12 @@ public final class VillagerQuestGameTests {
                     QuestScopeKey.quest(player.getUUID(), playable.quest().id()),
                     "ready",
                     "yes");
+            otherContext = VillagerInteractionService.createDialogueContext(level, player, otherVillager);
+            assertMissingDialogueOption(
+                    helper,
+                    otherContext,
+                    DialogueTreeService.entryOptionId(playable.treeId(), "stage.offer.ready"),
+                    "v2 embedded ready turn-in from second villager");
             context = VillagerInteractionService.createDialogueContext(level, player, villager);
             helper.assertValueEqual(
                     selectDialogueOption(
@@ -1861,6 +1901,8 @@ public final class VillagerQuestGameTests {
             DatapackDiagnostics.clear();
         } finally {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            otherVillager.discard();
             DialogueTreeService.clearRuntimeState();
             DialogueTreeResources.clearCache();
             VillagerQuestResources.clearCache();

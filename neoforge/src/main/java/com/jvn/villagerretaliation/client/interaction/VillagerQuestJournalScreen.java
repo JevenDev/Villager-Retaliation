@@ -1,21 +1,23 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.toucanlib.client.ToucanScrollbarThumb;
 import com.jvn.toucanlib.client.ToucanScrollState;
-import com.jvn.toucanlib.client.ToucanScrollbars;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings;
-import com.jvn.villagerretaliation.client.quest.VillagerQuestUi;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
@@ -24,22 +26,84 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
     private static final float DETAIL_SCROLL_STEP = 16.0F;
-    private static final float OPTION_HOVER_SCALE = 0.055F;
-    private static final float OPTION_SELECTED_SCALE = 0.02F;
-    private static final int QUEST_OPTION_GAP = 4;
+    private static final float JOURNAL_ANIMATION_DURATION_MILLIS = 280.0F;
+
+    private static final int JOURNAL_WIDTH = 351;
+    private static final int JOURNAL_HEIGHT = 215;
+    private static final int BOOKMARK_WIDTH = 25;
+    private static final int BOOKMARK_HEIGHT = 30;
+    private static final int BOOKMARK_LEFT_OFFSET = 13;
+    private static final int BOOKMARK_TOP_OFFSET = 206;
+    private static final int BOOKMARK_GAP = 1;
+    private static final int INACTIVE_BOOKMARK_OFFSET_Y = -5;
+    private static final int TAB_TITLE_LEFT_OFFSET = 28;
+    private static final int TAB_TITLE_BOTTOM_OFFSET = 37;
+
+    private static final int QUEST_OPTION_LEFT_OFFSET = 23;
+    private static final int QUEST_OPTION_TOP_OFFSET = 41;
+    private static final int QUEST_OPTION_RIGHT_OFFSET = 150;
+    private static final int QUEST_OPTION_BOTTOM_OFFSET = 191;
+    private static final int QUEST_OPTION_WIDTH = QUEST_OPTION_RIGHT_OFFSET - QUEST_OPTION_LEFT_OFFSET;
+    private static final int QUEST_OPTION_HEIGHT = 19;
+    private static final int QUEST_OPTION_GAP = 0;
+    private static final int QUEST_OPTION_VIEWPORT_HEIGHT = QUEST_OPTION_BOTTOM_OFFSET - QUEST_OPTION_TOP_OFFSET;
+    private static final int QUEST_OPTION_TEXT_LEFT_PADDING = 15;
+    private static final int QUEST_OPTION_TEXT_RIGHT_PADDING = 18;
+    private static final int QUEST_OPTION_TEXT_TOP_PADDING = 6;
+    private static final int QUEST_OPTION_TEXT_LINE_GAP = 2;
+    private static final int QUEST_OPTION_SELECTED_OVERHANG_X = 3;
+    private static final int QUEST_OPTION_SELECTED_OVERHANG_Y = 2;
+    private static final int QUEST_OPTION_STATE_ICON_LEFT_PADDING = 3;
+    private static final int QUEST_OPTION_STATE_ICON_TOP_PADDING = 5;
+    private static final int QUEST_OPTION_STATE_ICON_SIZE = 9;
+    private static final int QUEST_OPTION_UPDATE_ICON_RIGHT_PADDING = 6;
+    private static final int QUEST_OPTION_UPDATE_ICON_TOP_PADDING = 3;
+    private static final int QUEST_OPTION_UPDATE_ICON_WIDTH = 6;
+    private static final int QUEST_OPTION_UPDATE_ICON_HEIGHT = 13;
+
+    private static final int DETAILS_LEFT_OFFSET = 194;
+    private static final int DETAILS_TOP_OFFSET = 40;
+    private static final int DETAILS_WIDTH = 132;
+    private static final int DETAILS_HEIGHT = 146;
+    private static final int DETAILS_LINE_STEP = 11;
+    private static final int DETAILS_PROGRESS_RESERVED_HEIGHT = 15;
+    private static final int DETAILS_PROGRESS_HEIGHT = 3;
+
+    private static final int TEXT_COLOR = 0xFF3A2A1B;
+    private static final int TITLE_COLOR = 0xFF4E2114;
+    private static final int MUTED_TEXT_COLOR = 0xFF6D5843;
+    private static final int SELECTED_TEXT_COLOR = 0xFFFFFFFF;
+    private static final int HOVERED_TEXT_COLOR = 0xFF512B17;
+    private static final int PROGRESS_BACKGROUND_COLOR = 0x553A2A1B;
+    private static final int PROGRESS_FILL_COLOR = 0xFF9C3B22;
+
+    // Prepared for the next quest journal pass; the scrollbar widgets are not rendered yet.
+    private static final JournalNineSlice QUEST_JOURNAL_SCROLLBAR_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLBAR_TEXTURE, 4, 6, 1, 1, 2, 2);
+    private static final JournalNineSlice QUEST_JOURNAL_SCROLLER_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLER_TEXTURE, 4, 6, 1, 1, 2, 2);
+    private static final JournalNineSlice QUEST_JOURNAL_SCROLLER_HIGHLIGHT_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLER_HIGHLIGHT_TEXTURE, 4, 6, 1, 1, 2, 2);
+    private static final JournalNineSlice QUEST_JOURNAL_QUEST_NUMBER_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_QUEST_NUMBER_TEXTURE, 11, 11, 3, 3, 3, 3);
+    private static final JournalNineSlice QUEST_JOURNAL_ENTRY_1_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_1_TEXTURE, 3, 3, 1, 1, 1, 1);
+    private static final JournalNineSlice QUEST_JOURNAL_ENTRY_2_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_2_TEXTURE, 3, 3, 1, 1, 1, 1);
+    private static final JournalNineSlice QUEST_JOURNAL_SELECTED_QUEST_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SELECTED_QUEST_TEXTURE, 134, 23, 3, 3, 2, 2);
 
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
-    private final OptionListContext optionListContext = new OptionListContext();
-    private boolean draggingScrollbar;
-    private boolean draggingDetailsScrollbar;
-    private float scrollbarDragOffset;
-    private float detailsScrollbarDragOffset;
+    private final EnumMap<QuestJournalTab, VillagerInteractionScreenState.OptionListPosition> tabPositions =
+            new EnumMap<>(QuestJournalTab.class);
     private float visualOptionScroll;
     private float visualDetailsScroll;
     private long lastScrollRenderMillis;
     private int detailsSelectedOption = Integer.MIN_VALUE;
-    private long detailsAnimationStartMillis = -1L;
+    private QuestJournalTab selectedTab = QuestJournalTab.AVAILABLE;
     private boolean closingWithAnimation;
+    private boolean openedSoundPlayed;
+    private long animationStartMillis = -1L;
 
     public VillagerQuestJournalScreen() {
         super(Component.literal("Active Quests"));
@@ -47,16 +111,27 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     @Override
     protected void init() {
-        this.state.resetOptions(!entries().isEmpty());
+        this.state.resetOptions(!visibleEntries().isEmpty());
         this.visualOptionScroll = this.state.optionScroll();
         this.visualDetailsScroll = this.state.detailsScroll();
         this.lastScrollRenderMillis = Util.getMillis();
-        this.detailsAnimationStartMillis = Util.getMillis();
-        VillagerInteractionExperimentalChrome.resetAnimation();
+        this.detailsSelectedOption = this.state.selectedOption();
+        this.closingWithAnimation = false;
+        this.animationStartMillis = Util.getMillis();
+        if (!this.openedSoundPlayed) {
+            this.openedSoundPlayed = true;
+            playBookSound(0.9F);
+        }
     }
 
     @Override
     public void tick() {
+        if (this.closingWithAnimation) {
+            if (animationElapsedMillis() >= JOURNAL_ANIMATION_DURATION_MILLIS) {
+                Minecraft.getInstance().setScreen(null);
+            }
+            return;
+        }
         clampSelectedOption();
         resetDetailsScrollAfterSelectionChange();
         this.state.tickOptionScroll(OPTION_SCROLL_LERP);
@@ -72,16 +147,25 @@ public final class VillagerQuestJournalScreen extends Screen {
         clampSelectedOption();
         updateVisualScrolls();
 
+        int slideOffset = slideOffsetY();
+        int journalMouseY = mouseY - slideOffset;
+
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.screenLayerZ());
-        renderExperimentalBackdrop(graphics, mouseX, mouseY);
-        VillagerInteractionOptionList.render(this.optionListContext, graphics, mouseX, mouseY);
-        renderSelectedUnderlineClipped(graphics, mouseX, mouseY);
-        renderQuestDetails(graphics);
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, slideOffset, 0.0F);
+        renderJournalContainer(graphics);
+        renderTabTitle(graphics);
+        renderQuestOptions(graphics, mouseX, journalMouseY, slideOffset);
+        renderQuestDetails(graphics, slideOffset);
+        graphics.pose().popPose();
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.closingWithAnimation) {
+            return true;
+        }
         if (VillagerQuestKeyMappings.OPEN_JOURNAL.matches(keyCode, scanCode)) {
             VillagerQuestTrackerOverlay.ignorePendingJournalToggle();
             closeJournal();
@@ -106,88 +190,45 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            return super.mouseClicked(mouseX, mouseY, button);
+        if (this.closingWithAnimation || button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            return this.closingWithAnimation || super.mouseClicked(mouseX, mouseY, button);
         }
 
-        int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
+        double journalMouseY = mouseY - slideOffsetY();
+        QuestJournalTab clickedTab = bookmarkAt(mouseX, journalMouseY);
+        if (clickedTab != null) {
+            selectTab(clickedTab);
+            return true;
+        }
+
+        int hovered = questOptionAt(mouseX, journalMouseY);
         if (hovered >= 0) {
             if (hovered != this.state.selectedOption()) {
                 setSelectedOption(hovered);
+                acknowledgeSelectedQuestUpdate();
                 ensureSelectedVisible();
                 return true;
             }
-            VillagerQuestTrackerOverlay.toggleTracking(entries().get(hovered));
+            acknowledgeSelectedQuestUpdate();
+            VillagerQuestTrackerOverlay.toggleTracking(visibleEntries().get(hovered));
             ensureSelectedVisible();
-            return true;
-        }
-
-        ToucanScrollbarThumb scrollbarThumb = scrollbarThumb();
-        if (scrollbarThumb != null && scrollbarThumb.contains(mouseX, mouseY)) {
-            this.draggingScrollbar = true;
-            this.scrollbarDragOffset = ToucanScrollbars.dragOffset(mouseY, scrollbarThumb);
-            return true;
-        }
-        ToucanScrollbarThumb detailsScrollbarThumb = detailsScrollbarThumb();
-        if (detailsScrollbarThumb != null && detailsScrollbarThumb.contains(mouseX, mouseY)) {
-            this.draggingDetailsScrollbar = true;
-            this.detailsScrollbarDragOffset = ToucanScrollbars.dragOffset(mouseY, detailsScrollbarThumb);
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingScrollbar) {
-            ToucanScrollbarThumb scrollbarThumb = scrollbarThumb();
-            if (scrollbarThumb == null) {
-                this.draggingScrollbar = false;
-                return false;
-            }
-            setTargetOptionScroll(ToucanScrollbars.scrollFromThumbDrag(mouseY, this.scrollbarDragOffset, scrollbarThumb, maxOptionScroll()));
-            this.state.jumpOptionScrollToTarget();
-            this.visualOptionScroll = this.state.targetOptionScroll();
-            return true;
-        }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingDetailsScrollbar) {
-            ToucanScrollbarThumb detailsScrollbarThumb = detailsScrollbarThumb();
-            if (detailsScrollbarThumb == null) {
-                this.draggingDetailsScrollbar = false;
-                return false;
-            }
-            setTargetDetailsScroll(ToucanScrollbars.scrollFromThumbDrag(
-                    mouseY,
-                    this.detailsScrollbarDragOffset,
-                    detailsScrollbarThumb,
-                    maxDetailsScroll()));
-            this.state.jumpDetailsScrollToTarget();
-            this.visualDetailsScroll = this.state.targetDetailsScroll();
-            return true;
-        }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingScrollbar) {
-            this.draggingScrollbar = false;
-            return true;
-        }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingDetailsScrollbar) {
-            this.draggingDetailsScrollbar = false;
-            return true;
-        }
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (maxDetailsScroll() > 0.0F && isPointInsideDetailsScrollArea(mouseX, mouseY)) {
+        if (this.closingWithAnimation) {
+            return true;
+        }
+
+        double journalMouseY = mouseY - slideOffsetY();
+        if (maxDetailsScroll() > 0.0F && isPointInsideDetailsScrollArea(mouseX, journalMouseY)) {
             setTargetDetailsScroll(this.state.targetDetailsScroll() - (float) scrollY * DETAIL_SCROLL_STEP);
             return true;
         }
-        if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, mouseY)) {
+        if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, journalMouseY)) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
         setTargetOptionScroll(this.state.targetOptionScroll() - (float) scrollY * OPTION_SCROLL_STEP);
@@ -204,167 +245,248 @@ public final class VillagerQuestJournalScreen extends Screen {
         closeJournal();
     }
 
-    private void renderExperimentalBackdrop(GuiGraphics graphics, int mouseX, int mouseY) {
-        renderExperimentalSkillsBackdrop(graphics, mouseX, mouseY);
+    private void renderJournalContainer(GuiGraphics graphics) {
+        int left = journalLeft();
+        int top = journalTop();
+        graphics.blit(
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_CONTAINER_TEXTURE,
+                left,
+                top,
+                0,
+                0,
+                JOURNAL_WIDTH,
+                JOURNAL_HEIGHT,
+                JOURNAL_WIDTH,
+                JOURNAL_HEIGHT);
+        renderBookmarks(graphics, left, top);
+        graphics.blit(
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_CONTAINER_OVERLAY_TEXTURE,
+                left,
+                top,
+                0,
+                0,
+                JOURNAL_WIDTH,
+                JOURNAL_HEIGHT,
+                JOURNAL_WIDTH,
+                JOURNAL_HEIGHT);
     }
 
-    private void renderExperimentalSkillsBackdrop(GuiGraphics graphics, int mouseX, int mouseY) {
-        VillagerInteractionScreenShaderRenderer.renderExperimentalSkillsPanel(
-                graphics,
-                skillsBackdropLeft(),
-                skillsBackdropTop(),
-                skillsBackdropRight(),
-                skillsBackdropBottom(),
-                VillagerInteractionExperimentalChrome.chromeAlpha(),
-                experimentalTicks(),
-                detailsElapsedMillis(),
-                -1.0F,
-                VillagerInteractionExperimentalChrome.backdropElapsedMillis(),
-                VillagerInteractionExperimentalChrome.backdropExitElapsedMillis(),
-                this.width,
-                this.height,
-                mouseX,
-                mouseY,
+    private void renderTabTitle(GuiGraphics graphics) {
+        graphics.drawString(
+                this.font,
+                this.selectedTab.title(),
+                journalLeft() + TAB_TITLE_LEFT_OFFSET,
+                journalTop() + TAB_TITLE_BOTTOM_OFFSET - this.font.lineHeight,
+                TITLE_COLOR,
                 false);
     }
 
-    private void renderSelectedUnderline(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= entries().size()) {
-            return;
+    private void renderBookmarks(GuiGraphics graphics, int journalLeft, int journalTop) {
+        int left = journalLeft + BOOKMARK_LEFT_OFFSET;
+        for (QuestJournalTab tab : QuestJournalTab.values()) {
+            renderBookmark(graphics, tab.texture(), bookmarkLeft(left, tab), bookmarkTop(journalTop, tab));
         }
-        QuestTrackerSyncPayload.Entry selected = entries().get(this.state.selectedOption());
-        if (!"active".equalsIgnoreCase(selected.state())) {
-            return;
-        }
-
-        int rowHeight = VillagerInteractionOptionList.optionHeight(this.optionListContext, this.state.selectedOption());
-        float rowTop = optionsTop() + VillagerInteractionOptionList.optionOffset(this.optionListContext, this.state.selectedOption()) - optionRenderScroll();
-        int viewportTop = optionsTop();
-        int viewportBottom = viewportTop + optionViewportHeight();
-        if (rowTop + rowHeight < viewportTop || rowTop > viewportBottom) {
-            return;
-        }
-
-        int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
-        float hoverMix = hovered == this.state.selectedOption() ? this.optionListContext.hoverIntensity(mouseX, mouseY, optionsLeft(), rowTop) : 0.0F;
-        float textScale = VillagerInteractionExperimentalLayout.scaleFactor();
-        float shiftX = hoverMix > 0.0F ? this.optionListContext.hoverShift(mouseX, optionsLeft(), optionWidth(), 3.2F * textScale) * hoverMix : 0.0F;
-        float shiftY = hoverMix > 0.0F ? this.optionListContext.hoverShift(mouseY, rowTop, rowHeight, 1.6F * textScale) * hoverMix : 0.0F;
-        int left = Mth.floor(optionsLeft() - experimentalUnitAtLeast(12, 8) + shiftX);
-        int top = Mth.floor(rowTop + rowHeight - experimentalUnitAtLeast(1, 1) + shiftY) + experimentalUnitAtLeast(3, 2);
-        int right = Mth.floor(Math.min(optionsScrollbarLeft() - experimentalUnitAtLeast(8, 5), optionsLeft() + optionWidth() - experimentalUnitAtLeast(8, 5)) + shiftX);
-        int bottom = top + experimentalUnitAtLeast(2, 1);
-        if (right <= left) {
-            return;
-        }
-        if (top < viewportTop || bottom > viewportBottom) {
-            return;
-        }
-        float alpha = VillagerInteractionUiUtil.edgeFadeAlpha(
-                optionRenderScroll(),
-                maxOptionScroll(),
-                top,
-                bottom,
-                viewportTop,
-                viewportBottom,
-                26.0F);
-        VillagerQuestUi.renderAccentBar(graphics, left, top, right, bottom, alpha, experimentalTicks(), false);
     }
 
-    private void renderSelectedUnderlineClipped(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderBookmark(GuiGraphics graphics, ResourceLocation texture, int left, int top) {
+        graphics.blit(texture, left, top, 0, 0, BOOKMARK_WIDTH, BOOKMARK_HEIGHT, BOOKMARK_WIDTH, BOOKMARK_HEIGHT);
+    }
+
+    private int bookmarkLeft(int firstBookmarkLeft, QuestJournalTab tab) {
+        return firstBookmarkLeft + tab.index() * (BOOKMARK_WIDTH + BOOKMARK_GAP);
+    }
+
+    private int bookmarkTop(int journalTop, QuestJournalTab tab) {
+        int selectedOffset = tab == this.selectedTab ? 0 : INACTIVE_BOOKMARK_OFFSET_Y;
+        return journalTop + BOOKMARK_TOP_OFFSET + selectedOffset;
+    }
+
+    private void renderQuestOptions(GuiGraphics graphics, int mouseX, int journalMouseY, int slideOffset) {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        int left = optionsLeft();
         int top = optionsTop();
-        int bottom = top + optionViewportHeight();
-        graphics.enableScissor(Math.max(0, optionsLeft() - optionWidth()), top, optionsScrollbarLeft() - 4, bottom);
-        renderSelectedUnderline(graphics, mouseX, mouseY);
+        int viewportBottom = top + optionViewportHeight();
+        int hovered = questOptionAt(mouseX, journalMouseY);
+        graphics.enableScissor(
+                left - QUEST_OPTION_SELECTED_OVERHANG_X,
+                top - QUEST_OPTION_SELECTED_OVERHANG_Y + slideOffset,
+                left + QUEST_OPTION_WIDTH + QUEST_OPTION_SELECTED_OVERHANG_X,
+                viewportBottom + QUEST_OPTION_SELECTED_OVERHANG_Y + slideOffset);
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            int optionTop = Mth.floor(top + optionOffset(index) - optionRenderScroll());
+            int optionHeight = questOptionHeight(index);
+            int optionBottom = optionTop + optionHeight;
+            if (optionBottom < top || optionTop > viewportBottom) {
+                continue;
+            }
+            renderQuestOptionBackground(graphics, index, left, optionTop, optionHeight);
+        }
+        int selectedIndex = this.state.selectedOption();
+        if (selectedIndex >= 0 && selectedIndex < visibleEntries.size()) {
+            int selectedTop = Mth.floor(top + optionOffset(selectedIndex) - optionRenderScroll());
+            int selectedHeight = questOptionHeight(selectedIndex);
+            int selectedBottom = selectedTop + selectedHeight;
+            if (selectedBottom >= top && selectedTop <= viewportBottom) {
+                renderSelectedQuestOption(graphics, left, selectedTop, selectedHeight);
+            }
+        }
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            int optionTop = Mth.floor(top + optionOffset(index) - optionRenderScroll());
+            int optionHeight = questOptionHeight(index);
+            int optionBottom = optionTop + optionHeight;
+            if (optionBottom < top || optionTop > viewportBottom) {
+                continue;
+            }
+            renderQuestOptionIcon(graphics, visibleEntries.get(index), index == selectedIndex, left, optionTop);
+        }
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            int optionTop = Mth.floor(top + optionOffset(index) - optionRenderScroll());
+            int optionHeight = questOptionHeight(index);
+            int optionBottom = optionTop + optionHeight;
+            if (optionBottom < top || optionTop > viewportBottom) {
+                continue;
+            }
+            renderQuestOptionTitle(graphics, index, hovered, left, optionTop);
+        }
         graphics.disableScissor();
     }
 
-    private void renderQuestDetails(GuiGraphics graphics) {
+    private void renderQuestOptionBackground(GuiGraphics graphics, int index, int left, int top, int height) {
+        entryNineSlice(index).render(graphics, left, top, QUEST_OPTION_WIDTH, height);
+    }
+
+    private void renderSelectedQuestOption(GuiGraphics graphics, int left, int top, int height) {
+        QUEST_JOURNAL_SELECTED_QUEST_NINE_SLICE.render(
+                graphics,
+                left - QUEST_OPTION_SELECTED_OVERHANG_X,
+                top - QUEST_OPTION_SELECTED_OVERHANG_Y,
+                QUEST_OPTION_WIDTH + QUEST_OPTION_SELECTED_OVERHANG_X * 2,
+                height + QUEST_OPTION_SELECTED_OVERHANG_Y * 2);
+    }
+
+    private void renderQuestOptionIcon(GuiGraphics graphics, QuestTrackerSyncPayload.Entry entry, boolean selected, int left, int top) {
+        QuestJournalEntryState state = QuestJournalEntryState.from(entry);
+        int iconLeft = left + QUEST_OPTION_STATE_ICON_LEFT_PADDING;
+        int iconTop = top + QUEST_OPTION_STATE_ICON_TOP_PADDING;
+        renderQuestOptionIcon(graphics, state.texture(), iconLeft, iconTop);
+        if (selected) {
+            renderQuestOptionIcon(graphics, state.selectedTexture(), iconLeft, iconTop);
+        }
+        if (hasQuestUpdate(entry)) {
+            int updateIconLeft = left + QUEST_OPTION_WIDTH - QUEST_OPTION_UPDATE_ICON_RIGHT_PADDING - QUEST_OPTION_UPDATE_ICON_WIDTH;
+            int updateIconTop = top + QUEST_OPTION_UPDATE_ICON_TOP_PADDING;
+            renderQuestOptionIcon(
+                    graphics,
+                    VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_UPDATE_TEXTURE,
+                    updateIconLeft,
+                    updateIconTop,
+                    QUEST_OPTION_UPDATE_ICON_WIDTH,
+                    QUEST_OPTION_UPDATE_ICON_HEIGHT);
+            if (selected) {
+                renderQuestOptionIcon(
+                        graphics,
+                        VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_UPDATE_SELECTED_QUEST_TEXTURE,
+                        updateIconLeft,
+                        updateIconTop,
+                        QUEST_OPTION_UPDATE_ICON_WIDTH,
+                        QUEST_OPTION_UPDATE_ICON_HEIGHT);
+            }
+        }
+    }
+
+    private void renderQuestOptionIcon(GuiGraphics graphics, ResourceLocation texture, int left, int top) {
+        renderQuestOptionIcon(graphics, texture, left, top, QUEST_OPTION_STATE_ICON_SIZE, QUEST_OPTION_STATE_ICON_SIZE);
+    }
+
+    private void renderQuestOptionIcon(GuiGraphics graphics, ResourceLocation texture, int left, int top, int width, int height) {
+        graphics.blit(
+                texture,
+                left,
+                top,
+                0,
+                0,
+                width,
+                height,
+                width,
+                height);
+    }
+
+    private void renderQuestOptionTitle(GuiGraphics graphics, int index, int hovered, int left, int top) {
+        boolean selected = index == this.state.selectedOption();
+        int textColor = selected ? SELECTED_TEXT_COLOR : index == hovered ? HOVERED_TEXT_COLOR : TEXT_COLOR;
+        int textLeft = left + QUEST_OPTION_TEXT_LEFT_PADDING;
+        int textTop = top + QUEST_OPTION_TEXT_TOP_PADDING;
+        int lineStep = this.font.lineHeight + QUEST_OPTION_TEXT_LINE_GAP;
+        for (FormattedCharSequence line : questOptionTitleLines(index)) {
+            graphics.drawString(this.font, line, textLeft, textTop, textColor, false);
+            textTop += lineStep;
+        }
+    }
+
+    private JournalNineSlice entryNineSlice(int index) {
+        return index % 2 == 0 ? QUEST_JOURNAL_ENTRY_1_NINE_SLICE : QUEST_JOURNAL_ENTRY_2_NINE_SLICE;
+    }
+
+    private void renderQuestDetails(GuiGraphics graphics, int slideOffset) {
         QuestTrackerSyncPayload.Entry selected = selectedEntry();
         if (selected == null) {
             return;
         }
 
-        int left = skillsPanelLeft();
-        int top = skillsPanelTop() + skillsContainerPaddingY();
-        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), left + skillsPanelWidth());
-        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
-        if (right <= left || bottom <= top) {
-            return;
-        }
-
-        float alpha = VillagerInteractionExperimentalChrome.textFadeInAlpha();
-        if (!VillagerInteractionExperimentalChrome.shouldDrawText(alpha)) {
-            return;
-        }
-        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
-        int contentRight = detailsContentRight(right);
-        int wrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(contentRight - left, scale);
-        int lineStep = VillagerInteractionUiUtil.scaledLineStep(this.font, scale);
-        int progressReservedHeight = selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0;
-        int textBottom = Math.max(top + lineStep, bottom - progressReservedHeight);
+        int left = detailsLeft();
+        int top = detailsTop();
+        int right = left + DETAILS_WIDTH;
+        int bottom = top + DETAILS_HEIGHT;
+        int textBottom = selected.showProgress() ? bottom - DETAILS_PROGRESS_RESERVED_HEIGHT : bottom;
         int viewportHeight = Math.max(1, textBottom - top);
-        List<QuestDetailLine> detailLines = buildQuestDetailLines(selected, wrapWidth, lineStep);
-        int contentHeight = detailContentHeight(detailLines, lineStep);
+        List<QuestDetailLine> detailLines = buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP);
+        int contentHeight = detailContentHeight(detailLines, DETAILS_LINE_STEP);
         float maxScroll = ToucanScrollState.maxScroll(contentHeight, viewportHeight);
-        setTargetDetailsScroll(this.state.targetDetailsScroll());
         float scroll = Mth.clamp(detailsRenderScroll(), 0.0F, maxScroll);
 
-        graphics.enableScissor(left - skillsContainerPaddingX(), top, right + experimentalUnitAtLeast(4, 2), textBottom);
+        graphics.enableScissor(left, top + slideOffset, right, textBottom + slideOffset);
         for (QuestDetailLine line : detailLines) {
             float lineTop = top + line.top() - scroll;
-            float lineBottom = lineTop + lineStep;
+            float lineBottom = lineTop + DETAILS_LINE_STEP;
             if (lineBottom < top || lineTop > textBottom) {
                 continue;
             }
-            float edgeAlpha = VillagerInteractionUiUtil.edgeFadeAlpha(
-                    scroll,
-                    maxScroll,
-                    lineTop,
-                    lineBottom,
-                    top,
-                    textBottom,
-                    experimentalUnitAtLeast(18, 10));
-            if (!VillagerInteractionExperimentalChrome.shouldDrawText(edgeAlpha * alpha)) {
-                continue;
-            }
-            VillagerInteractionUiUtil.drawScaledString(
-                    graphics,
-                    this.font,
-                    line.text(),
-                    left,
-                    Mth.floor(lineTop),
-                    VillagerInteractionUiUtil.withAlpha(line.color(), edgeAlpha * alpha),
-                    scale);
+            graphics.drawString(this.font, line.text(), left, Mth.floor(lineTop), line.color(), false);
         }
         graphics.disableScissor();
 
-        renderDetailsScrollbar(graphics, top, viewportHeight, contentHeight, maxScroll, alpha);
         if (selected.showProgress()) {
-            int barHeight = experimentalUnitAtLeast(2, 1);
-            int barTop = bottom - barHeight - experimentalUnitAtLeast(2, 1);
-            VillagerQuestUi.renderProgressBar(graphics, left, barTop, contentRight, barHeight, selected.progress(), alpha, experimentalTicks(), true, false);
+            int progressTop = bottom - DETAILS_PROGRESS_HEIGHT - 2;
+            renderProgressBar(graphics, left, progressTop, right, DETAILS_PROGRESS_HEIGHT, selected.progress());
+        }
+    }
+
+    private void renderProgressBar(GuiGraphics graphics, int left, int top, int right, int height, float progress) {
+        graphics.fill(left, top, right, top + height, PROGRESS_BACKGROUND_COLOR);
+        int fillRight = left + Math.round((right - left) * Mth.clamp(progress, 0.0F, 1.0F));
+        if (fillRight > left) {
+            graphics.fill(left, top, fillRight, top + height, PROGRESS_FILL_COLOR);
         }
     }
 
     private List<QuestDetailLine> buildQuestDetailLines(QuestTrackerSyncPayload.Entry selected, int wrapWidth, int lineStep) {
         List<QuestDetailLine> lines = new ArrayList<>();
         int y = 0;
-        y = addWrappedDetailLines(lines, selected.title(), wrapWidth, VillagerQuestUi.TITLE_COLOR, y, lineStep, experimentalUnitAtLeast(8, 4));
-        y = addWrappedDetailLines(lines, selected.objective(), wrapWidth, VillagerQuestUi.TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(6, 3));
-        y = addWrappedDetailLines(lines, statusLine(selected), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+        y = addWrappedDetailLines(lines, selected.title(), wrapWidth, TITLE_COLOR, y, lineStep, 7);
+        y = addWrappedDetailLines(lines, selected.objective(), wrapWidth, TEXT_COLOR, y, lineStep, 5);
+        y = addWrappedDetailLines(lines, statusLine(selected), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 2);
         if (!selected.issuer().isBlank()) {
-            y = addWrappedDetailLines(lines, "Issued by: " + selected.issuer(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+            y = addWrappedDetailLines(lines, "Issued by: " + selected.issuer(), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 2);
         }
         if (!selected.issuerLocation().isBlank()) {
-            y = addWrappedDetailLines(lines, selected.issuerLocation(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+            y = addWrappedDetailLines(lines, selected.issuerLocation(), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 2);
         }
         if (!selected.questItems().isEmpty()) {
-            y = addWrappedDetailLines(lines, questItemsLine(selected), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, experimentalUnitAtLeast(2, 1));
+            y = addWrappedDetailLines(lines, questItemsLine(selected), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 2);
         }
         if (!selected.metadata().isBlank()) {
-            y += experimentalUnitAtLeast(6, 3);
-            addWrappedDetailLines(lines, selected.metadata(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, y, lineStep, 0);
+            y += 4;
+            addWrappedDetailLines(lines, selected.metadata(), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 0);
         }
         return lines;
     }
@@ -421,123 +543,21 @@ public final class VillagerQuestJournalScreen extends Screen {
             return;
         }
         this.closingWithAnimation = true;
+        this.animationStartMillis = Util.getMillis();
         VillagerQuestTrackerOverlay.dismissJournalFlash();
-        VillagerInteractionExperimentalChrome.startExitAnimation(
-                buildExitTextElements(),
-                buildExitFadeTextElements(),
-                buildExitFadeRectElements(),
-                new VillagerInteractionExperimentalChrome.ExitSkillsPanel(
-                        skillsBackdropLeft(),
-                        skillsBackdropTop(),
-                        skillsBackdropRight(),
-                        skillsBackdropBottom(),
-                        detailsElapsedMillis()));
-        Minecraft.getInstance().setScreen(null);
-    }
-
-    private List<VillagerInteractionExperimentalChrome.ExitTextElement> buildExitTextElements() {
-        List<VillagerInteractionExperimentalChrome.ExitTextElement> textElements = new ArrayList<>();
-        float textScale = VillagerInteractionExperimentalLayout.scaleFactor();
-        int listLeft = optionsLeft();
-        int textLeft = listLeft + optionTextInset();
-        int top = optionsTop();
-        int viewportTop = top;
-        int viewportBottom = top + optionViewportHeight();
-        for (int index = 0; index < entries().size(); index++) {
-            int rowHeight = VillagerInteractionOptionList.optionHeight(this.optionListContext, index);
-            float y = top + VillagerInteractionOptionList.optionOffset(this.optionListContext, index) - optionRenderScroll();
-            if (y + rowHeight < viewportTop || y > viewportBottom) {
-                continue;
-            }
-
-            boolean selected = index == this.state.selectedOption();
-            int color = selected ? 0xFFF8F8F4 : 0xCFC7C8C5;
-            float scale = (1.48F + (selected ? OPTION_SELECTED_SCALE : 0.0F)) * textScale;
-            float delay = 120.0F + index * 28.0F;
-            int textY = Mth.floor(y + optionHeight() * (5.0F / 18.0F));
-            if (selected) {
-                int arrowX = textLeft - optionTextInset() - 7;
-                textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                        ">",
-                        arrowX,
-                        textY,
-                        0xFFFFFFFF,
-                        scale,
-                        delay,
-                        this.width - arrowX + 72.0F,
-                        0.0F,
-                        false));
-            }
-            List<String> labelLines = VillagerInteractionOptionList.wrappedOptionLabelLines(this.optionListContext, entries().get(index).title(), scale);
-            for (int lineIndex = 0; lineIndex < labelLines.size(); lineIndex++) {
-                int lineY = textY + lineIndex * optionHeight();
-                textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                        labelLines.get(lineIndex),
-                        textLeft,
-                        lineY,
-                        color,
-                        scale,
-                        delay + 24.0F,
-                        this.width - textLeft + 88.0F,
-                        0.0F,
-                        false));
-            }
-        }
-
-        return textElements;
-    }
-
-    private List<VillagerInteractionExperimentalChrome.ExitFadeTextElement> buildExitFadeTextElements() {
-        return List.of();
-    }
-
-    private List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> buildExitFadeRectElements() {
-        List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements = new ArrayList<>();
-        addScrollbarExitFadeRects(rectElements, scrollbarThumb(), optionRenderScroll(), maxOptionScroll());
-        addScrollbarExitFadeRects(rectElements, detailsScrollbarThumb(), detailsRenderScroll(), maxDetailsScroll());
-        return rectElements;
-    }
-
-    private void addScrollbarExitFadeRects(
-            List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements,
-            ToucanScrollbarThumb scrollbarThumb,
-            float currentScroll,
-            float maxScroll) {
-        if (scrollbarThumb == null) {
-            return;
-        }
-
-        boolean canScrollUp = currentScroll > 0.75F;
-        boolean canScrollDown = currentScroll < maxScroll - 0.75F;
-        int fadeLength = Math.min(8, Math.max(3, scrollbarThumb.height() / 3));
-        for (int y = scrollbarThumb.top(); y < scrollbarThumb.bottom(); y++) {
-            float alphaFactor = 1.0F;
-            if (canScrollUp && y < scrollbarThumb.top() + fadeLength) {
-                alphaFactor = Math.min(alphaFactor, (y - scrollbarThumb.top() + 1.0F) / fadeLength);
-            }
-            if (canScrollDown && y >= scrollbarThumb.bottom() - fadeLength) {
-                alphaFactor = Math.min(alphaFactor, (scrollbarThumb.bottom() - y) / (float) fadeLength);
-            }
-            rectElements.add(new VillagerInteractionExperimentalChrome.ExitFadeRectElement(
-                    scrollbarThumb.left(),
-                    y,
-                    scrollbarThumb.right(),
-                    y + 1,
-                    0xBFFFFFFF,
-                    alphaFactor));
-        }
+        playBookSound(0.72F);
     }
 
     private void ensureSelectedVisible() {
-        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= entries().size()) {
+        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= visibleEntries().size()) {
             return;
         }
 
-        float optionTop = VillagerInteractionOptionList.optionOffset(this.optionListContext, this.state.selectedOption());
-        float optionBottom = optionTop + VillagerInteractionOptionList.optionHeight(this.optionListContext, this.state.selectedOption());
+        float optionTop = optionOffset(this.state.selectedOption());
+        float optionBottom = optionTop + questOptionHeight(this.state.selectedOption());
         float viewportTop = this.state.targetOptionScroll();
         float viewportBottom = viewportTop + optionViewportHeight();
-        int padding = experimentalUnitAtLeast(6, 3);
+        int padding = 5;
         if (optionTop < viewportTop + padding) {
             setTargetOptionScroll(optionTop - padding);
         } else if (optionBottom > viewportBottom - padding) {
@@ -546,36 +566,101 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private void moveSelection(int direction) {
-        if (entries().isEmpty()) {
+        if (visibleEntries().isEmpty()) {
             return;
         }
-        this.state.moveSelectedOption(direction, entries().size());
+        setSelectedOption(Mth.positiveModulo(this.state.selectedOption() + direction, visibleEntries().size()));
+        acknowledgeSelectedQuestUpdate();
         ensureSelectedVisible();
     }
 
+    private void selectTab(QuestJournalTab tab) {
+        playBookSound(1.0F);
+        if (this.selectedTab == tab) {
+            return;
+        }
+
+        rememberSelectedTabPosition();
+        this.selectedTab = tab;
+        restoreSelectedTabPosition();
+    }
+
+    private void rememberSelectedTabPosition() {
+        this.tabPositions.put(this.selectedTab, this.state.captureOptionListPosition());
+    }
+
+    private void restoreSelectedTabPosition() {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        VillagerInteractionScreenState.OptionListPosition position = this.tabPositions.get(this.selectedTab);
+        if (position == null) {
+            this.state.resetOptions(!visibleEntries.isEmpty());
+        } else {
+            this.state.restoreOptionListPosition(position, visibleEntries.size(), maxOptionScroll());
+            if (visibleEntries.isEmpty()) {
+                this.state.resetOptions(false);
+            }
+        }
+        this.state.resetDetailsScroll();
+        this.visualOptionScroll = this.state.optionScroll();
+        this.visualDetailsScroll = this.state.detailsScroll();
+        this.detailsSelectedOption = this.state.selectedOption();
+    }
+
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
-        int left = optionsLeft() - experimentalUnitAtLeast(18, 10);
-        int right = optionsLeft() + optionWidth() + experimentalUnitAtLeast(4, 2);
+        int left = optionsLeft();
         int top = optionsTop();
         int bottom = top + optionViewportHeight();
-        int verticalPadding = experimentalUnitAtLeast(4, 2);
-        return mouseX >= left && mouseX <= right && mouseY >= top - verticalPadding && mouseY <= bottom + verticalPadding;
+        return mouseX >= left
+                && mouseX <= left + QUEST_OPTION_WIDTH
+                && mouseY >= top
+                && mouseY <= bottom;
     }
 
     private boolean isPointInsideDetailsScrollArea(double mouseX, double mouseY) {
-        int left = skillsPanelLeft() - experimentalUnitAtLeast(6, 3);
-        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), skillsPanelLeft() + skillsPanelWidth()) + experimentalUnitAtLeast(6, 3);
-        int top = skillsPanelTop() + skillsContainerPaddingY();
-        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
-        return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
+        int left = detailsLeft();
+        int top = detailsTop();
+        return mouseX >= left
+                && mouseX <= left + DETAILS_WIDTH
+                && mouseY >= top
+                && mouseY <= top + DETAILS_HEIGHT;
+    }
+
+    private QuestJournalTab bookmarkAt(double mouseX, double mouseY) {
+        int journalTop = journalTop();
+        int firstBookmarkLeft = journalLeft() + BOOKMARK_LEFT_OFFSET;
+        for (QuestJournalTab tab : QuestJournalTab.values()) {
+            int left = bookmarkLeft(firstBookmarkLeft, tab);
+            int top = bookmarkTop(journalTop, tab);
+            if (mouseX >= left
+                    && mouseX <= left + BOOKMARK_WIDTH
+                    && mouseY >= top
+                    && mouseY <= top + BOOKMARK_HEIGHT) {
+                return tab;
+            }
+        }
+        return null;
+    }
+
+    private int questOptionAt(double mouseX, double mouseY) {
+        if (!isPointInsideOptionScrollArea(mouseX, mouseY)) {
+            return -1;
+        }
+        int top = optionsTop();
+        for (int index = 0; index < visibleEntries().size(); index++) {
+            float optionTop = top + optionOffset(index) - optionRenderScroll();
+            if (mouseY >= optionTop && mouseY <= optionTop + questOptionHeight(index)) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private void clampSelectedOption() {
-        if (entries().isEmpty()) {
+        if (visibleEntries().isEmpty()) {
             this.state.resetOptions(false);
             return;
         }
-        setSelectedOption(Mth.clamp(this.state.selectedOption(), 0, entries().size() - 1));
+        setSelectedOption(Mth.clamp(this.state.selectedOption(), 0, visibleEntries().size() - 1));
         clampTargetOptionScroll();
         clampTargetDetailsScroll();
     }
@@ -603,6 +688,13 @@ public final class VillagerQuestJournalScreen extends Screen {
         this.state.setSelectedOption(selectedOption);
     }
 
+    private void acknowledgeSelectedQuestUpdate() {
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (selected != null) {
+            VillagerQuestTrackerOverlay.acknowledgeQuestUpdate(selected);
+        }
+    }
+
     private void resetDetailsScrollAfterSelectionChange() {
         if (this.detailsSelectedOption == this.state.selectedOption()) {
             return;
@@ -613,10 +705,11 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private QuestTrackerSyncPayload.Entry selectedEntry() {
-        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= entries().size()) {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= visibleEntries.size()) {
             return null;
         }
-        return entries().get(this.state.selectedOption());
+        return visibleEntries.get(this.state.selectedOption());
     }
 
     private void setTargetOptionScroll(float scroll) {
@@ -625,90 +718,6 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private void setTargetDetailsScroll(float scroll) {
         this.state.setTargetDetailsScroll(scroll, maxDetailsScroll());
-    }
-
-    private float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
-        return VillagerInteractionUiUtil.edgeFadeAlpha(
-                optionRenderScroll(),
-                maxOptionScroll(),
-                optionY,
-                optionY + optionHeight(),
-                viewportTop,
-                viewportBottom,
-                26.0F
-        );
-    }
-
-    private void renderScrollbar(GuiGraphics graphics) {
-        ToucanScrollbars.renderFadedThumb(
-                graphics,
-                scrollbarThumb(),
-                optionRenderScroll(),
-                maxOptionScroll(),
-                0xBFFFFFFF,
-                VillagerInteractionExperimentalChrome.chromeAlpha());
-    }
-
-    private void renderDetailsScrollbar(
-            GuiGraphics graphics,
-            int viewportTop,
-            int viewportHeight,
-            int contentHeight,
-            float maxScroll,
-            float alpha) {
-        ToucanScrollbars.renderFadedThumb(
-                graphics,
-                detailsScrollbarThumb(viewportTop, viewportHeight, contentHeight, maxScroll),
-                detailsRenderScroll(),
-                maxScroll,
-                0xAFFFFFFF,
-                alpha);
-    }
-
-    private ToucanScrollbarThumb scrollbarThumb() {
-        return VillagerInteractionUiUtil.buildScrollbarThumb(
-                optionsTop(),
-                optionViewportHeight(),
-                optionsScrollbarLeft(),
-                optionScrollbarWidth(),
-                optionScrollbarHitWidth(),
-                optionHeight(),
-                optionRenderScroll(),
-                maxOptionScroll(),
-                optionContentHeight()
-        );
-    }
-
-    private ToucanScrollbarThumb detailsScrollbarThumb() {
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
-        if (selected == null) {
-            return null;
-        }
-        int top = skillsPanelTop() + skillsContainerPaddingY();
-        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
-        if (bottom <= top) {
-            return null;
-        }
-        int viewportHeight = Math.max(1, bottom - top - (selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0));
-        float maxScroll = maxDetailsScroll(selected, viewportHeight);
-        int contentHeight = detailsContentHeight(selected);
-        return detailsScrollbarThumb(top, viewportHeight, contentHeight, maxScroll);
-    }
-
-    private ToucanScrollbarThumb detailsScrollbarThumb(int viewportTop, int viewportHeight, int contentHeight, float maxScroll) {
-        if (maxScroll <= 0.0F) {
-            return null;
-        }
-        return VillagerInteractionUiUtil.buildScrollbarThumb(
-                viewportTop,
-                viewportHeight,
-                detailsScrollbarLeft(),
-                optionScrollbarWidth(),
-                optionScrollbarHitWidth(),
-                experimentalUnitAtLeast(18, 10),
-                detailsRenderScroll(),
-                maxScroll,
-                contentHeight);
     }
 
     private void updateVisualScrolls() {
@@ -746,286 +755,260 @@ public final class VillagerQuestJournalScreen extends Screen {
         if (selected == null) {
             return 0.0F;
         }
-        int top = skillsPanelTop() + skillsContainerPaddingY();
-        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
-        int viewportHeight = Math.max(1, bottom - top - (selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0));
-        return maxDetailsScroll(selected, viewportHeight);
-    }
-
-    private float maxDetailsScroll(QuestTrackerSyncPayload.Entry selected, int viewportHeight) {
-        return ToucanScrollState.maxScroll(detailsContentHeight(selected), viewportHeight);
-    }
-
-    private float optionContentHeight() {
-        return VillagerInteractionOptionList.optionContentHeight(this.optionListContext);
+        return ToucanScrollState.maxScroll(detailsContentHeight(selected), detailsViewportHeight(selected));
     }
 
     private int detailsContentHeight(QuestTrackerSyncPayload.Entry selected) {
-        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
-        int left = skillsPanelLeft();
-        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), left + skillsPanelWidth());
-        int wrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(detailsContentRight(right) - left, scale);
-        int lineStep = VillagerInteractionUiUtil.scaledLineStep(this.font, scale);
-        return detailContentHeight(buildQuestDetailLines(selected, wrapWidth, lineStep), lineStep);
+        return detailContentHeight(buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP), DETAILS_LINE_STEP);
     }
 
-    private int optionWidth() {
-        return VillagerInteractionLayoutMetrics.optionWidth();
+    private int detailsViewportHeight(QuestTrackerSyncPayload.Entry selected) {
+        return selected.showProgress() ? DETAILS_HEIGHT - DETAILS_PROGRESS_RESERVED_HEIGHT : DETAILS_HEIGHT;
     }
 
-    private int optionHeight() {
-        return VillagerInteractionLayoutMetrics.optionHeight();
+    private float optionContentHeight() {
+        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        if (visibleEntries.isEmpty()) {
+            return 0.0F;
+        }
+        float contentHeight = 0.0F;
+        for (int index = 0; index < visibleEntries.size(); index++) {
+            contentHeight += questOptionHeight(index);
+            if (index < visibleEntries.size() - 1) {
+                contentHeight += QUEST_OPTION_GAP;
+            }
+        }
+        return contentHeight;
     }
 
-    private int optionTextInset() {
-        return VillagerInteractionLayoutMetrics.optionTextInset();
+    private float optionOffset(int optionIndex) {
+        float offset = 0.0F;
+        for (int index = 0; index < optionIndex; index++) {
+            offset += questOptionHeight(index) + QUEST_OPTION_GAP;
+        }
+        return offset;
+    }
+
+    private int questOptionHeight(int index) {
+        int lineCount = Math.max(1, questOptionTitleLines(index).size());
+        if (lineCount <= 1) {
+            return QUEST_OPTION_HEIGHT;
+        }
+        return QUEST_OPTION_HEIGHT + (lineCount - 1) * (this.font.lineHeight + QUEST_OPTION_TEXT_LINE_GAP);
+    }
+
+    private List<FormattedCharSequence> questOptionTitleLines(int index) {
+        return this.font.split(Component.literal(visibleEntries().get(index).title()), questOptionTextWidth());
+    }
+
+    private int questOptionTextWidth() {
+        return Math.max(1, QUEST_OPTION_WIDTH - QUEST_OPTION_TEXT_LEFT_PADDING - QUEST_OPTION_TEXT_RIGHT_PADDING);
     }
 
     private int optionViewportHeight() {
-        return VillagerInteractionLayoutMetrics.fullOptionViewportHeight();
+        return QUEST_OPTION_VIEWPORT_HEIGHT;
     }
 
-    private int optionStride() {
-        return VillagerInteractionLayoutMetrics.optionHeight()
-                + VillagerInteractionExperimentalLayout.unitAtLeast(QUEST_OPTION_GAP, 2);
+    private int journalLeft() {
+        return (this.width - JOURNAL_WIDTH) / 2;
+    }
+
+    private int journalTop() {
+        return Math.max(4, (this.height - JOURNAL_HEIGHT) / 2);
     }
 
     private int optionsLeft() {
-        return VillagerInteractionExperimentalLayout.optionsLeft(this.width, optionWidth());
+        return journalLeft() + QUEST_OPTION_LEFT_OFFSET;
     }
 
     private int optionsTop() {
-        return VillagerInteractionExperimentalLayout.optionsTop(this.height, optionViewportHeight());
+        return journalTop() + QUEST_OPTION_TOP_OFFSET;
     }
 
-    private int optionsScrollbarLeft() {
-        return VillagerInteractionExperimentalLayout.scrollbarLeft(
-                this.width,
-                optionsLeft(),
-                optionWidth(),
-                optionScrollbarOffset(),
-                optionScrollbarWidth());
+    private int detailsLeft() {
+        return journalLeft() + DETAILS_LEFT_OFFSET;
     }
 
-    private int scrollbarRight() {
-        return optionsScrollbarLeft() + optionScrollbarWidth();
+    private int detailsTop() {
+        return journalTop() + DETAILS_TOP_OFFSET;
     }
 
-    private int detailsScrollbarLeft() {
-        int left = skillsPanelLeft();
-        int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), left + skillsPanelWidth());
-        return Math.max(left, right - optionScrollbarWidth());
+    private int slideOffsetY() {
+        float visibility = journalVisibility();
+        int offscreenDistance = this.height - journalTop() + 12;
+        return Math.round((1.0F - visibility) * offscreenDistance);
     }
 
-    private int detailsContentRight(int panelRight) {
-        return Math.max(skillsPanelLeft() + experimentalUnitAtLeast(48, 32), panelRight - experimentalUnitAtLeast(12, 7));
+    private float journalVisibility() {
+        float progress = Mth.clamp(animationElapsedMillis() / JOURNAL_ANIMATION_DURATION_MILLIS, 0.0F, 1.0F);
+        return this.closingWithAnimation ? 1.0F - easeInCubic(progress) : easeOutCubic(progress);
     }
 
-    private int skillsPanelTop() {
-        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, skillsContainerHeight());
-    }
-
-    private int skillsPanelLeft() {
-        int panelWidth = skillsPanelWidth();
-        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, scrollbarRight() - panelWidth);
-    }
-
-    private int skillsPanelWidth() {
-        return optionWidth();
-    }
-
-    private int skillsContainerHeight() {
-        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight());
-    }
-
-    private int skillsPanelHeight() {
-        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font);
-    }
-
-    private int skillsContainerPaddingX() {
-        return VillagerInteractionLayoutMetrics.skillsContainerPaddingX();
-    }
-
-    private int skillsContainerPaddingY() {
-        return VillagerInteractionLayoutMetrics.skillsContainerPaddingY();
-    }
-
-    private int skillsBackdropLeft() {
-        return Math.max(0, skillsPanelLeft() - skillsContainerPaddingX() - experimentalUnit(118));
-    }
-
-    private int skillsBackdropTop() {
-        return Math.max(0, skillsPanelTop() - experimentalUnit(26));
-    }
-
-    private int skillsBackdropRight() {
-        return this.width;
-    }
-
-    private int skillsBackdropBottom() {
-        return this.height;
-    }
-
-    private int optionScrollbarOffset() {
-        return VillagerInteractionLayoutMetrics.optionScrollbarOffset();
-    }
-
-    private int optionScrollbarWidth() {
-        return VillagerInteractionLayoutMetrics.optionScrollbarWidth();
-    }
-
-    private int optionScrollbarHitWidth() {
-        return VillagerInteractionLayoutMetrics.optionScrollbarHitWidth();
-    }
-
-    private int experimentalUnit(int value) {
-        return VillagerInteractionExperimentalLayout.unit(value);
-    }
-
-    private int experimentalUnitAtLeast(int value, int minimum) {
-        return VillagerInteractionExperimentalLayout.unitAtLeast(value, minimum);
-    }
-
-    private int experimentalTicks() {
-        return (int) ((Util.getMillis() % 1_000_000L) / 50L);
-    }
-
-    private float detailsElapsedMillis() {
-        long now = Util.getMillis();
-        if (this.detailsAnimationStartMillis < 0L) {
-            this.detailsAnimationStartMillis = now;
+    private float animationElapsedMillis() {
+        if (this.animationStartMillis < 0L) {
+            return JOURNAL_ANIMATION_DURATION_MILLIS;
         }
-        return now - this.detailsAnimationStartMillis;
+        return Util.getMillis() - this.animationStartMillis;
+    }
+
+    private static float easeOutCubic(float value) {
+        float inverse = 1.0F - value;
+        return 1.0F - inverse * inverse * inverse;
+    }
+
+    private static float easeInCubic(float value) {
+        return value * value * value;
+    }
+
+    private void playBookSound(float pitch) {
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F, pitch));
     }
 
     private static List<QuestTrackerSyncPayload.Entry> entries() {
         return VillagerQuestTrackerOverlay.entries();
     }
 
+    private List<QuestTrackerSyncPayload.Entry> visibleEntries() {
+        return entries().stream()
+                .filter(entry -> this.selectedTab.includes(QuestJournalEntryState.from(entry)))
+                .toList();
+    }
+
+    private static boolean hasQuestUpdate(QuestTrackerSyncPayload.Entry entry) {
+        return entry.questUpdate() && !entry.questAvailable();
+    }
+
+    private static String normalized(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private enum QuestJournalTab {
+        AVAILABLE(0, "Available", VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_RED_TEXTURE),
+        ACTIVE(1, "Active", VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_PURPLE_TEXTURE),
+        COMPLETED(2, "Completed", VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_TEAL_TEXTURE);
+
+        private final int index;
+        private final String title;
+        private final ResourceLocation texture;
+
+        QuestJournalTab(int index, String title, ResourceLocation texture) {
+            this.index = index;
+            this.title = title;
+            this.texture = texture;
+        }
+
+        int index() {
+            return this.index;
+        }
+
+        String title() {
+            return this.title;
+        }
+
+        ResourceLocation texture() {
+            return this.texture;
+        }
+
+        boolean includes(QuestJournalEntryState state) {
+            return switch (this) {
+                case AVAILABLE -> state == QuestJournalEntryState.AVAILABLE || state == QuestJournalEntryState.ACTIVE;
+                case ACTIVE -> state == QuestJournalEntryState.ACTIVE;
+                case COMPLETED -> state == QuestJournalEntryState.COMPLETED;
+            };
+        }
+    }
+
+    private enum QuestJournalEntryState {
+        AVAILABLE(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_AVAILABLE_TEXTURE),
+        ACTIVE(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_ACTIVE_TEXTURE),
+        INACTIVE(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_INACTIVE_TEXTURE),
+        COMPLETED(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_COMPLETED_TEXTURE);
+
+        private final ResourceLocation texture;
+
+        QuestJournalEntryState(ResourceLocation texture) {
+            this.texture = texture;
+        }
+
+        static QuestJournalEntryState from(QuestTrackerSyncPayload.Entry entry) {
+            if (entry.questAvailable()) {
+                return AVAILABLE;
+            }
+            String state = normalized(entry.state());
+            return switch (state) {
+                case "active", "accepted", "ready", "ready_to_turn_in" -> ACTIVE;
+                case "completed", "complete", "done" -> COMPLETED;
+                case "inactive", "locked", "unavailable", "abandoned", "expired" -> INACTIVE;
+                default -> AVAILABLE;
+            };
+        }
+
+        ResourceLocation texture() {
+            return this.texture;
+        }
+
+        ResourceLocation selectedTexture() {
+            return this == COMPLETED
+                    ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_SELECTED_QUEST_COMPLETED_TEXTURE
+                    : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_SELECTED_QUEST_TEXTURE;
+        }
+    }
+
     private record QuestDetailLine(FormattedCharSequence text, int color, int top) {
     }
 
-    private final class OptionListContext implements VillagerInteractionOptionList.Context {
-        @Override
-        public Font font() {
-            return VillagerQuestJournalScreen.this.font;
+    private record JournalNineSlice(
+            ResourceLocation texture,
+            int textureWidth,
+            int textureHeight,
+            int sliceLeft,
+            int sliceRight,
+            int sliceTop,
+            int sliceBottom) {
+        private void render(GuiGraphics graphics, int left, int top, int width, int height) {
+            int centerSourceWidth = this.textureWidth - this.sliceLeft - this.sliceRight;
+            int centerSourceHeight = this.textureHeight - this.sliceTop - this.sliceBottom;
+            int centerWidth = Math.max(0, width - this.sliceLeft - this.sliceRight);
+            int centerHeight = Math.max(0, height - this.sliceTop - this.sliceBottom);
+
+            blit(graphics, left, top, this.sliceLeft, this.sliceTop, 0, 0, this.sliceLeft, this.sliceTop);
+            blit(graphics, left + this.sliceLeft, top, centerWidth, this.sliceTop, this.sliceLeft, 0, centerSourceWidth, this.sliceTop);
+            blit(graphics, left + width - this.sliceRight, top, this.sliceRight, this.sliceTop, this.textureWidth - this.sliceRight, 0, this.sliceRight, this.sliceTop);
+
+            blit(graphics, left, top + this.sliceTop, this.sliceLeft, centerHeight, 0, this.sliceTop, this.sliceLeft, centerSourceHeight);
+            blit(graphics, left + this.sliceLeft, top + this.sliceTop, centerWidth, centerHeight, this.sliceLeft, this.sliceTop, centerSourceWidth, centerSourceHeight);
+            blit(graphics, left + width - this.sliceRight, top + this.sliceTop, this.sliceRight, centerHeight, this.textureWidth - this.sliceRight, this.sliceTop, this.sliceRight, centerSourceHeight);
+
+            blit(graphics, left, top + height - this.sliceBottom, this.sliceLeft, this.sliceBottom, 0, this.textureHeight - this.sliceBottom, this.sliceLeft, this.sliceBottom);
+            blit(graphics, left + this.sliceLeft, top + height - this.sliceBottom, centerWidth, this.sliceBottom, this.sliceLeft, this.textureHeight - this.sliceBottom, centerSourceWidth, this.sliceBottom);
+            blit(graphics, left + width - this.sliceRight, top + height - this.sliceBottom, this.sliceRight, this.sliceBottom, this.textureWidth - this.sliceRight, this.textureHeight - this.sliceBottom, this.sliceRight, this.sliceBottom);
         }
 
-        @Override
-        public int optionsLeft() {
-            return VillagerQuestJournalScreen.this.optionsLeft();
-        }
-
-        @Override
-        public int optionsTop() {
-            return VillagerQuestJournalScreen.this.optionsTop();
-        }
-
-        @Override
-        public int optionWidth() {
-            return VillagerQuestJournalScreen.this.optionWidth();
-        }
-
-        @Override
-        public int optionHeight() {
-            return VillagerQuestJournalScreen.this.optionHeight();
-        }
-
-        @Override
-        public int optionTextInset() {
-            return VillagerQuestJournalScreen.this.optionTextInset();
-        }
-
-        @Override
-        public int optionCount() {
-            return entries().size();
-        }
-
-        @Override
-        public String optionLabel(int index) {
-            QuestTrackerSyncPayload.Entry entry = entries().get(index);
-            if (!entry.trackable() && !entry.status().isBlank()) {
-                return entry.title() + " [" + entry.status() + "]";
+        private void blit(
+                GuiGraphics graphics,
+                int destLeft,
+                int destTop,
+                int destWidth,
+                int destHeight,
+                int sourceLeft,
+                int sourceTop,
+                int sourceWidth,
+                int sourceHeight) {
+            if (destWidth <= 0 || destHeight <= 0 || sourceWidth <= 0 || sourceHeight <= 0) {
+                return;
             }
-            return entry.title();
-        }
-
-        @Override
-        public int selectedOption() {
-            return VillagerQuestJournalScreen.this.state.selectedOption();
-        }
-
-        @Override
-        public float optionScroll() {
-            return VillagerQuestJournalScreen.this.optionRenderScroll();
-        }
-
-        @Override
-        public int optionViewportHeight() {
-            return VillagerQuestJournalScreen.this.optionViewportHeight();
-        }
-
-        @Override
-        public int optionStride() {
-            return VillagerQuestJournalScreen.this.optionStride();
-        }
-
-        @Override
-        public float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
-            return VillagerQuestJournalScreen.this.edgeFadeAlpha(optionY, viewportTop, viewportBottom);
-        }
-
-        @Override
-        public float hoverIntensity(double mouseX, double mouseY, int left, float top) {
-            double normalizedX = Math.abs(((mouseX - left) / optionWidth()) * 2.0D - 1.0D);
-            double normalizedY = Math.abs(((mouseY - top) / optionHeight()) * 2.0D - 1.0D);
-            double distance = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
-            return (float) Mth.clamp(1.0D - distance / Math.sqrt(2.0D), 0.0D, 1.0D);
-        }
-
-        @Override
-        public float hoverShift(double mouse, float start, float size, float strength) {
-            return (float) ((((mouse - start) / size) * 2.0D) - 1.0D) * strength;
-        }
-
-        @Override
-        public float optionHoverScale() {
-            return OPTION_HOVER_SCALE;
-        }
-
-        @Override
-        public float optionSelectedScale() {
-            return OPTION_SELECTED_SCALE;
-        }
-
-        @Override
-        public float experimentalTextScale() {
-            return VillagerInteractionExperimentalLayout.scaleFactor();
-        }
-
-        @Override
-        public int experimentalUnit(int value) {
-            return VillagerQuestJournalScreen.this.experimentalUnit(value);
-        }
-
-        @Override
-        public int experimentalUnitAtLeast(int value, int minimum) {
-            return VillagerQuestJournalScreen.this.experimentalUnitAtLeast(value, minimum);
-        }
-
-        @Override
-        public int optionsScrollbarLeft() {
-            return VillagerQuestJournalScreen.this.optionsScrollbarLeft();
-        }
-
-        @Override
-        public float textAlpha() {
-            return VillagerInteractionExperimentalChrome.textFadeInAlpha();
-        }
-
-        @Override
-        public void renderScrollbar(GuiGraphics graphics) {
-            VillagerQuestJournalScreen.this.renderScrollbar(graphics);
+            graphics.blit(
+                    this.texture,
+                    destLeft,
+                    destTop,
+                    destWidth,
+                    destHeight,
+                    (float) sourceLeft,
+                    (float) sourceTop,
+                    sourceWidth,
+                    sourceHeight,
+                    this.textureWidth,
+                    this.textureHeight);
         }
     }
 }

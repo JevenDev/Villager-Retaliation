@@ -55,6 +55,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -86,6 +87,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerQuestService {
     private static final int QUEST_PROGRESS_SCAN_INTERVAL_TICKS = 20;
+    private static final int NEARBY_AVAILABLE_QUEST_RADIUS = 32;
+    private static final int MAX_NEARBY_AVAILABLE_QUEST_VILLAGERS = 16;
+    private static final int NEARBY_AVAILABLE_QUEST_CACHE_TICKS = QUEST_PROGRESS_SCAN_INTERVAL_TICKS * 2;
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;
     private static final int QUEST_TRACKER_HEARTBEAT_TICKS = 20 * 30;
@@ -114,6 +118,7 @@ public final class VillagerQuestService {
             ThreadLocal.withInitial(() -> false);
     private static final Set<UUID> CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS = new HashSet<>();
     private static final Map<UUID, TrackerSyncState> LAST_TRACKER_SYNCS = new HashMap<>();
+    private static final Map<UUID, NearbyAvailableQuestCache> NEARBY_AVAILABLE_QUEST_CACHES = new HashMap<>();
     private static final Map<UUID, InventoryItemCountCache> INVENTORY_ITEM_COUNT_CACHES = new HashMap<>();
 
     private VillagerQuestService() {
@@ -220,12 +225,14 @@ public final class VillagerQuestService {
 
     public static void clearRuntimeState() {
         LAST_TRACKER_SYNCS.clear();
+        NEARBY_AVAILABLE_QUEST_CACHES.clear();
         INVENTORY_ITEM_COUNT_CACHES.clear();
     }
 
     public static void clearRuntimeState(ServerPlayer player) {
         if (player != null) {
             LAST_TRACKER_SYNCS.remove(player.getUUID());
+            NEARBY_AVAILABLE_QUEST_CACHES.remove(player.getUUID());
             INVENTORY_ITEM_COUNT_CACHES.remove(player.getUUID());
         }
     }
@@ -381,6 +388,9 @@ public final class VillagerQuestService {
         if (slot.isBlank() || slot.startsWith("scene:")) {
             return false;
         }
+        if (activeQuestLockedToDifferentProvider(context, definition, progress)) {
+            return false;
+        }
         boolean activeStage = matchesEmbeddedDialogueStage(definition, progress, binding);
         return switch (slot) {
             case "offer", "start", "begin" ->
@@ -407,6 +417,15 @@ public final class VillagerQuestService {
                     matchesState(context, definition, progress, "branch_locked");
             default -> !binding.stageId().isBlank() && activeStage && activeConditionsMet(context, definition);
         };
+    }
+
+    private static boolean activeQuestLockedToDifferentProvider(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return progress != null
+                && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && !matchesVillagerLock(context, definition, progress);
     }
 
     private static boolean matchesEmbeddedDialogueStage(
@@ -1013,6 +1032,10 @@ public final class VillagerQuestService {
         }
         ResourceLocation questId = ResourceLocation.tryParse(questIdText);
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
+        if (action == QuestTrackerRequestPayload.Action.REFRESH) {
+            sendTrackerSync(player, false, true);
+            return;
+        }
         if (questId == null || !canTrackQuest(level, player, questId)) {
             sendTrackerSync(player, false, true);
             return;
@@ -4138,7 +4161,9 @@ public final class VillagerQuestService {
                 entries.add(trackerEntry(player, questContext, definition, entry.getValue(), activeConditions));
             }
         }
+        appendNearbyAvailableQuestEntries(level, player, data, entries);
         String signature = QuestTrackerPresenter.syncSignature(entries, trackedQuestId);
+        Map<String, String> entrySignatures = QuestTrackerPresenter.entrySignatures(entries);
         long gameTime = level.getGameTime();
         TrackerSyncState previous = LAST_TRACKER_SYNCS.get(player.getUUID());
         boolean heartbeatDue = previous == null
@@ -4156,16 +4181,211 @@ public final class VillagerQuestService {
         String syncReason = flash ? "flash" : force ? "force" : previous == null ? "initial" : heartbeatDue ? "heartbeat" : "changed";
         QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
                 "result=sent reason=" + syncReason + " entries=" + entries.size());
+        List<QuestTrackerSyncPayload.Entry> syncEntries =
+                markQuestUpdateEntries(entries, entrySignatures, previous, flash, trackedQuestId);
         try {
             PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(
-                    entries,
+                    syncEntries,
                     trackedQuestId == null ? "" : trackedQuestId.toString(),
                     flash));
         } catch (UnsupportedOperationException ignored) {
             QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
                     "result=skipped reason=unsupported_connection entries=" + entries.size());
         }
-        LAST_TRACKER_SYNCS.put(player.getUUID(), new TrackerSyncState(signature, gameTime));
+        LAST_TRACKER_SYNCS.put(player.getUUID(), new TrackerSyncState(signature, gameTime, entrySignatures));
+    }
+
+    private static List<QuestTrackerSyncPayload.Entry> markQuestUpdateEntries(
+            List<QuestTrackerSyncPayload.Entry> entries,
+            Map<String, String> entrySignatures,
+            TrackerSyncState previous,
+            boolean flash,
+            ResourceLocation trackedQuestId) {
+        if (entries.isEmpty()) {
+            return entries;
+        }
+        String trackedId = trackedQuestId == null ? "" : trackedQuestId.toString();
+        List<QuestTrackerSyncPayload.Entry> updated = new ArrayList<>(entries.size());
+        for (QuestTrackerSyncPayload.Entry entry : entries) {
+            String currentSignature = entrySignatures.getOrDefault(entry.questId(), "");
+            boolean questUpdate = !entry.questAvailable() && (previous == null
+                    ? flash && !trackedId.isBlank() && trackedId.equals(entry.questId())
+                    : !Objects.equals(previous.entrySignatures().get(entry.questId()), currentSignature));
+            updated.add(entry.withQuestUpdate(questUpdate));
+        }
+        return List.copyOf(updated);
+    }
+
+    private static void appendNearbyAvailableQuestEntries(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerQuestSavedData data,
+            List<QuestTrackerSyncPayload.Entry> entries) {
+        if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES || level.getServer() == null) {
+            return;
+        }
+        Set<String> includedQuestIds = new HashSet<>();
+        for (QuestTrackerSyncPayload.Entry entry : entries) {
+            if (!entry.questId().isBlank()) {
+                includedQuestIds.add(entry.questId());
+            }
+        }
+        for (QuestTrackerSyncPayload.Entry entry : nearbyAvailableQuestEntries(level, player, data)) {
+            if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
+                return;
+            }
+            if (includedQuestIds.add(entry.questId())) {
+                entries.add(entry);
+            }
+        }
+    }
+
+    private static List<QuestTrackerSyncPayload.Entry> nearbyAvailableQuestEntries(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerQuestSavedData data) {
+        UUID playerId = player.getUUID();
+        long gameTime = level.getGameTime();
+        NearbyAvailableQuestCache cached = NEARBY_AVAILABLE_QUEST_CACHES.get(playerId);
+        if (cached != null
+                && cached.dimension().equals(level.dimension())
+                && cached.playerPos().equals(player.blockPosition())
+                && gameTime >= cached.gameTime()
+                && gameTime - cached.gameTime() < NEARBY_AVAILABLE_QUEST_CACHE_TICKS) {
+            return cached.entries();
+        }
+        List<QuestTrackerSyncPayload.Entry> entries = buildNearbyAvailableQuestEntries(level, player, data);
+        NEARBY_AVAILABLE_QUEST_CACHES.put(playerId, new NearbyAvailableQuestCache(
+                level.dimension(),
+                player.blockPosition(),
+                gameTime,
+                entries));
+        return entries;
+    }
+
+    private static List<QuestTrackerSyncPayload.Entry> buildNearbyAvailableQuestEntries(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerQuestSavedData data) {
+        double radiusSqr = NEARBY_AVAILABLE_QUEST_RADIUS * NEARBY_AVAILABLE_QUEST_RADIUS;
+        List<Villager> nearbyVillagers = new ArrayList<>(level.getEntitiesOfClass(
+                Villager.class,
+                player.getBoundingBox().inflate(NEARBY_AVAILABLE_QUEST_RADIUS),
+                villager -> villager.isAlive()
+                        && !villager.isBaby()
+                        && player.distanceToSqr(villager) <= radiusSqr));
+        nearbyVillagers.sort(Comparator.comparingDouble(player::distanceToSqr));
+        if (nearbyVillagers.size() > MAX_NEARBY_AVAILABLE_QUEST_VILLAGERS) {
+            nearbyVillagers = new ArrayList<>(nearbyVillagers.subList(0, MAX_NEARBY_AVAILABLE_QUEST_VILLAGERS));
+        }
+
+        List<QuestTrackerSyncPayload.Entry> entries = new ArrayList<>();
+        Set<String> includedQuestIds = new HashSet<>();
+        for (Villager villager : nearbyVillagers) {
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            appendDialogueAvailableQuestEntries(level, player, data, context, entries, includedQuestIds);
+            for (QuestDefinition definition : VillagerQuestResources.quests(level.getServer())) {
+                if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
+                    return List.copyOf(entries);
+                }
+                String questId = definition.id().toString();
+                if (includedQuestIds.contains(questId)) {
+                    continue;
+                }
+                VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), definition.id());
+                if (!canStart(context, definition, progress)) {
+                    continue;
+                }
+                entries.add(availableTrackerEntry(player, context, definition));
+                includedQuestIds.add(questId);
+            }
+        }
+        return List.copyOf(entries);
+    }
+
+    private static void appendDialogueAvailableQuestEntries(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerQuestSavedData data,
+            DialogueContext context,
+            List<QuestTrackerSyncPayload.Entry> entries,
+            Set<String> includedQuestIds) {
+        DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
+        for (DialogueOptionDefinition option : VillagerDialogueResources.dialogueOptions(context, disposition)) {
+            if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
+                return;
+            }
+            DialogueQuestAction questAction = option.questAction();
+            if (questAction.action() != DialogueQuestAction.Action.START || questAction.questId() == null) {
+                continue;
+            }
+            QuestDefinition definition = VillagerQuestResources
+                    .quest(level.getServer(), questAction.questId())
+                    .orElse(null);
+            if (definition == null) {
+                continue;
+            }
+            String questId = definition.id().toString();
+            if (includedQuestIds.contains(questId)) {
+                continue;
+            }
+            VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), definition.id());
+            if (!canStart(context, definition, progress, true)) {
+                continue;
+            }
+            entries.add(availableTrackerEntry(player, context, definition));
+            includedQuestIds.add(questId);
+        }
+    }
+
+    private static QuestTrackerSyncPayload.Entry availableTrackerEntry(
+            ServerPlayer player,
+            DialogueContext context,
+            QuestDefinition definition) {
+        String issuer = providerSummary(context.villager());
+        BlockPos pos = context.villager().blockPosition();
+        String issuerLocation = "Current location: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()
+                + " in " + context.level().dimension().location();
+        Map<String, String> replacements = new LinkedHashMap<>();
+        replacements.put("quest", definition.title());
+        replacements.put("issuer", issuer);
+        replacements.put("issuer_name", VillagerPresetNameRegistry.resolveDisplayName(context.villager()).getString());
+        replacements.put("issuer_profession", VillagerInteractionTextUtil.professionName(
+                context.villager().getVillagerData().getProfession(),
+                "villager"));
+        String fallbackObjective = definition.description().isBlank()
+                ? "Talk to {issuer} to accept this quest."
+                : definition.description();
+        QuestDefinition.Step step = new QuestDefinition.Step(
+                fallbackObjective,
+                definition.descriptionKey(),
+                false,
+                0.0F,
+                Map.of());
+        String status = resolveGlobalText(player, "quest.tracker.status.available", "Available", replacements);
+        return QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+                player,
+                definition,
+                new QuestDefinition.SelectedText(definition.title(), definition.titleKey()),
+                step,
+                replacements,
+                status,
+                issuer,
+                issuerLocation,
+                List.of(),
+                0.0F,
+                false,
+                VillagerQuestSavedData.QuestState.NOT_STARTED))
+                .withQuestAvailable(true);
+    }
+
+    private static String providerSummary(Villager villager) {
+        String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        String profession = VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "villager");
+        if (profession.isBlank() || "villager".equalsIgnoreCase(profession)) {
+            return name;
+        }
+        return name + " the " + profession;
     }
 
     private static boolean clientEffectsSuppressedForTests(ServerPlayer player) {
@@ -5609,7 +5829,21 @@ public final class VillagerQuestService {
         }
     }
 
-    private record TrackerSyncState(String signature, long gameTime) {
+    private record TrackerSyncState(String signature, long gameTime, Map<String, String> entrySignatures) {
+        private TrackerSyncState {
+            entrySignatures = entrySignatures == null ? Map.of() : Map.copyOf(entrySignatures);
+        }
+    }
+
+    private record NearbyAvailableQuestCache(
+            ResourceKey<Level> dimension,
+            BlockPos playerPos,
+            long gameTime,
+            List<QuestTrackerSyncPayload.Entry> entries) {
+        private NearbyAvailableQuestCache {
+            playerPos = playerPos == null ? BlockPos.ZERO : playerPos.immutable();
+            entries = entries == null ? List.of() : List.copyOf(entries);
+        }
     }
 
     private enum ItemHandInResult {

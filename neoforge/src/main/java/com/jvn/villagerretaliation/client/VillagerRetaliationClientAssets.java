@@ -68,6 +68,58 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/trade/reroll_icon_highlighted");
     public static final ResourceLocation TRADE_REROLL_REQUEST_SENT_ICON_TEXTURE =
             texture("gui/trade/reroll_request_sent_icon");
+    public static final ResourceLocation QUEST_JOURNAL_CONTAINER_TEXTURE =
+            texture("gui/quest_journal/quest_journal_container");
+    public static final ResourceLocation QUEST_JOURNAL_CONTAINER_OVERLAY_TEXTURE =
+            texture("gui/quest_journal/quest_journal_container_overlay");
+    public static final ResourceLocation QUEST_JOURNAL_BOOKMARK_RED_TEXTURE =
+            texture("gui/quest_journal/quest_journal_bookmark_red");
+    public static final ResourceLocation QUEST_JOURNAL_BOOKMARK_PURPLE_TEXTURE =
+            texture("gui/quest_journal/quest_journal_bookmark_purple");
+    public static final ResourceLocation QUEST_JOURNAL_BOOKMARK_TEAL_TEXTURE =
+            texture("gui/quest_journal/quest_journal_bookmark_teal");
+    public static final ResourceLocation QUEST_JOURNAL_BOOKMARK_ICON_ACTIVE_TEXTURE =
+            texture("gui/quest_journal/quest_journal_bookmark_icon_active");
+    public static final ResourceLocation QUEST_JOURNAL_BOOKMARK_ICON_AVAILABLE_TEXTURE =
+            texture("gui/quest_journal/quest_journal_bookmark_icon_available");
+    public static final ResourceLocation QUEST_JOURNAL_BOOKMARK_ICON_COMPLETED_TEXTURE =
+            texture("gui/quest_journal/quest_journal_bookmark_icon_completed");
+    public static final ResourceLocation QUEST_JOURNAL_DIVIDER_TEXTURE =
+            texture("gui/quest_journal/quest_journal_divider");
+    public static final ResourceLocation QUEST_JOURNAL_ENTRY_1_TEXTURE =
+            texture("gui/quest_journal/quest_journal_entry_1");
+    public static final ResourceLocation QUEST_JOURNAL_ENTRY_2_TEXTURE =
+            texture("gui/quest_journal/quest_journal_entry_2");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_ACTIVE_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_active");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_AVAILABLE_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_available");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_COMPLETED_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_completed");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_INACTIVE_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_inactive");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_QUEST_STEP_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_quest_step");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_QUEST_STEP_COMPLETED_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_quest_step_completed");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_SELECTED_QUEST_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_selected_quest");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_SELECTED_QUEST_COMPLETED_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_selected_quest_completed");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_UPDATE_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_update");
+    public static final ResourceLocation QUEST_JOURNAL_ICON_UPDATE_SELECTED_QUEST_TEXTURE =
+            texture("gui/quest_journal/quest_journal_icon_update_selected_quest");
+    public static final ResourceLocation QUEST_JOURNAL_QUEST_NUMBER_TEXTURE =
+            texture("gui/quest_journal/quest_journal_quest_number");
+    public static final ResourceLocation QUEST_JOURNAL_SCROLLBAR_TEXTURE =
+            texture("gui/quest_journal/quest_journal_scrollbar");
+    public static final ResourceLocation QUEST_JOURNAL_SCROLLER_TEXTURE =
+            texture("gui/quest_journal/quest_journal_scroller");
+    public static final ResourceLocation QUEST_JOURNAL_SCROLLER_HIGHLIGHT_TEXTURE =
+            texture("gui/quest_journal/quest_journal_scroller_highlight");
+    public static final ResourceLocation QUEST_JOURNAL_SELECTED_QUEST_TEXTURE =
+            texture("gui/quest_journal/quest_journal_selected_quest");
 
     public static final ResourceLocation COMBAT_VILLAGER_MODEL =
             VillagerRetaliation.id("models/entity/villager/combat_villager.json");
