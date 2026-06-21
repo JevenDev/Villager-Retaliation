@@ -470,6 +470,20 @@ public final class VillagerQuestService {
                 .map(QuestActionOutcome::dialogueResult);
     }
 
+    public static boolean isQuestDialogueOption(DialogueOptionDefinition option) {
+        if (option == null) {
+            return false;
+        }
+        if (QuestStageBranchOptionIds.parse(option.id()).isPresent()) {
+            return true;
+        }
+        if (!option.questAction().isEmpty()) {
+            return true;
+        }
+        return !option.metadata().quest().isBlank()
+                || option.metadata().tags().contains("quest_v2");
+    }
+
     private static Optional<VillagerDialogueService.DialogueResult> handleStageBranchOption(
             DialogueContext context,
             String optionId) {

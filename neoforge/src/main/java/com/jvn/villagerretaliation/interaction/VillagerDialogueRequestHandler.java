@@ -93,7 +93,9 @@ public final class VillagerDialogueRequestHandler {
             itemPaymentResult = paymentResult.get();
         }
 
-        var reputationEffect = com.jvn.villagerretaliation.dialogue.DialogueReputationService.apply(context, requestType, interactionState);
+        var reputationEffect = VillagerQuestService.isQuestDialogueOption(dialogueOption)
+                ? com.jvn.villagerretaliation.dialogue.DialogueReputationEffect.none(requestType)
+                : com.jvn.villagerretaliation.dialogue.DialogueReputationService.apply(context, requestType, interactionState);
         VillagerMoodService.recordDialogueEffect(context, requestType, reputationEffect);
         VillagerInteractionService.playDialogueFeedback(level, villager, reputationEffect);
         VillagerAmbientIndicatorService.onDialogueResponse(level, villager, player, optionId, requestType, reputationEffect);
