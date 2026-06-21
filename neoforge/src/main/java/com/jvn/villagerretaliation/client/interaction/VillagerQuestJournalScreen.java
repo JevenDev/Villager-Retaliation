@@ -61,6 +61,9 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int QUEST_OPTION_UPDATE_ICON_TOP_PADDING = 3;
     private static final int QUEST_OPTION_UPDATE_ICON_WIDTH = 6;
     private static final int QUEST_OPTION_UPDATE_ICON_HEIGHT = 13;
+    private static final int QUEST_OPTION_SCROLLBAR_GAP = 5;
+    private static final int QUEST_OPTION_SCROLLBAR_WIDTH = 4;
+    private static final int QUEST_OPTION_SCROLLER_MIN_HEIGHT = 6;
 
     private static final int DETAILS_LEFT_OFFSET = 194;
     private static final int DETAILS_TOP_OFFSET = 40;
@@ -70,15 +73,14 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int DETAILS_PROGRESS_RESERVED_HEIGHT = 15;
     private static final int DETAILS_PROGRESS_HEIGHT = 3;
 
-    private static final int TEXT_COLOR = 0xFF3A2A1B;
-    private static final int TITLE_COLOR = 0xFF4E2114;
-    private static final int MUTED_TEXT_COLOR = 0xFF6D5843;
+    private static final int TEXT_COLOR = 0xFF000000;
+    private static final int TITLE_COLOR = 0xFF000000;
+    private static final int MUTED_TEXT_COLOR = 0xFF000000;
     private static final int SELECTED_TEXT_COLOR = 0xFFFFFFFF;
-    private static final int HOVERED_TEXT_COLOR = 0xFF512B17;
+    private static final int HOVERED_TEXT_COLOR = 0xFF000000;
     private static final int PROGRESS_BACKGROUND_COLOR = 0x553A2A1B;
     private static final int PROGRESS_FILL_COLOR = 0xFF9C3B22;
 
-    // Prepared for the next quest journal pass; the scrollbar widgets are not rendered yet.
     private static final JournalNineSlice QUEST_JOURNAL_SCROLLBAR_NINE_SLICE =
             new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLBAR_TEXTURE, 4, 6, 1, 1, 2, 2);
     private static final JournalNineSlice QUEST_JOURNAL_SCROLLER_NINE_SLICE =
@@ -91,6 +93,8 @@ public final class VillagerQuestJournalScreen extends Screen {
             new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_1_TEXTURE, 3, 3, 1, 1, 1, 1);
     private static final JournalNineSlice QUEST_JOURNAL_ENTRY_2_NINE_SLICE =
             new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_2_TEXTURE, 3, 3, 1, 1, 1, 1);
+    private static final JournalNineSlice QUEST_JOURNAL_ENTRY_HIGHLIGHT_NINE_SLICE =
+            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_HIGHLIGHT_TEXTURE, 3, 3, 1, 1, 1, 1);
     private static final JournalNineSlice QUEST_JOURNAL_SELECTED_QUEST_NINE_SLICE =
             new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SELECTED_QUEST_TEXTURE, 134, 23, 3, 3, 2, 2);
 
@@ -103,6 +107,8 @@ public final class VillagerQuestJournalScreen extends Screen {
     private int detailsSelectedOption = Integer.MIN_VALUE;
     private String selectedQuestId = "";
     private QuestJournalTab selectedTab = QuestJournalTab.AVAILABLE;
+    private boolean draggingOptionScrollbar;
+    private float optionScrollbarDragOffset;
     private boolean closingWithAnimation;
     private boolean openedSoundPlayed;
     private long animationStartMillis = -1L;
@@ -204,6 +210,10 @@ public final class VillagerQuestJournalScreen extends Screen {
             return true;
         }
 
+        if (tryBeginOptionScrollbarDrag(mouseX, journalMouseY)) {
+            return true;
+        }
+
         int hovered = questOptionAt(mouseX, journalMouseY);
         if (hovered >= 0) {
             if (hovered != this.state.selectedOption()) {
@@ -231,11 +241,30 @@ public final class VillagerQuestJournalScreen extends Screen {
             setTargetDetailsScroll(this.state.targetDetailsScroll() - (float) scrollY * DETAIL_SCROLL_STEP);
             return true;
         }
-        if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, journalMouseY)) {
+        if (maxOptionScroll() <= 0.0F
+                || (!isPointInsideOptionScrollArea(mouseX, journalMouseY)
+                        && !isPointInsideOptionScrollbarArea(mouseX, journalMouseY))) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
         setTargetOptionScroll(this.state.targetOptionScroll() - (float) scrollY * OPTION_SCROLL_STEP);
         return true;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingOptionScrollbar) {
+            return dragOptionScrollbar(mouseY - slideOffsetY());
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingOptionScrollbar) {
+            this.draggingOptionScrollbar = false;
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
@@ -322,7 +351,7 @@ public final class VillagerQuestJournalScreen extends Screen {
             if (optionBottom < top || optionTop > viewportBottom) {
                 continue;
             }
-            renderQuestOptionBackground(graphics, index, left, optionTop, optionHeight);
+            renderQuestOptionBackground(graphics, index, hovered, left, optionTop, optionHeight);
         }
         int selectedIndex = this.state.selectedOption();
         if (selectedIndex >= 0 && selectedIndex < visibleEntries.size()) {
@@ -352,10 +381,105 @@ public final class VillagerQuestJournalScreen extends Screen {
             renderQuestOptionTitle(graphics, index, hovered, left, optionTop);
         }
         graphics.disableScissor();
+        renderQuestOptionScrollbar(graphics, mouseX, journalMouseY);
     }
 
-    private void renderQuestOptionBackground(GuiGraphics graphics, int index, int left, int top, int height) {
+    private void renderQuestOptionScrollbar(GuiGraphics graphics, int mouseX, int journalMouseY) {
+        float maxScroll = maxOptionScroll();
+        if (maxScroll <= 0.0F) {
+            return;
+        }
+
+        int left = optionScrollbarLeft();
+        int top = optionsTop();
+        int height = optionViewportHeight();
+        int scrollerHeight = optionScrollerHeight(height);
+        int scrollerTop = optionScrollerTop(top, height, scrollerHeight, maxScroll);
+        JournalNineSlice scroller =
+                isPointInside(
+                                mouseX,
+                                journalMouseY,
+                                left,
+                                scrollerTop,
+                                left + QUEST_OPTION_SCROLLBAR_WIDTH,
+                                scrollerTop + scrollerHeight)
+                        ? QUEST_JOURNAL_SCROLLER_HIGHLIGHT_NINE_SLICE
+                        : QUEST_JOURNAL_SCROLLER_NINE_SLICE;
+
+        QUEST_JOURNAL_SCROLLBAR_NINE_SLICE.render(graphics, left, top, QUEST_OPTION_SCROLLBAR_WIDTH, height);
+        scroller.render(graphics, left, scrollerTop, QUEST_OPTION_SCROLLBAR_WIDTH, scrollerHeight);
+    }
+
+    private int optionScrollerHeight(int trackHeight) {
+        float contentHeight = optionContentHeight();
+        if (contentHeight <= 0.0F) {
+            return trackHeight;
+        }
+        int scrollerHeight = Mth.floor(trackHeight * (trackHeight / contentHeight));
+        return Mth.clamp(scrollerHeight, QUEST_OPTION_SCROLLER_MIN_HEIGHT, trackHeight);
+    }
+
+    private int optionScrollerTop(int trackTop, int trackHeight, int scrollerHeight, float maxScroll) {
+        int travel = Math.max(0, trackHeight - scrollerHeight);
+        if (travel <= 0 || maxScroll <= 0.0F) {
+            return trackTop;
+        }
+        float scrollProgress = Mth.clamp(optionRenderScroll() / maxScroll, 0.0F, 1.0F);
+        return trackTop + Math.round(travel * scrollProgress);
+    }
+
+    private boolean tryBeginOptionScrollbarDrag(double mouseX, double journalMouseY) {
+        float maxScroll = maxOptionScroll();
+        if (maxScroll <= 0.0F || !isPointInsideOptionScrollbarArea(mouseX, journalMouseY)) {
+            return false;
+        }
+
+        int trackTop = optionsTop();
+        int trackHeight = optionViewportHeight();
+        int scrollerHeight = optionScrollerHeight(trackHeight);
+        int scrollerTop = optionScrollerTop(trackTop, trackHeight, scrollerHeight, maxScroll);
+        if (journalMouseY >= scrollerTop && journalMouseY <= scrollerTop + scrollerHeight) {
+            this.optionScrollbarDragOffset = (float) journalMouseY - scrollerTop;
+        } else {
+            this.optionScrollbarDragOffset = scrollerHeight / 2.0F;
+            setOptionScrollFromScrollbarDrag(journalMouseY);
+        }
+        this.draggingOptionScrollbar = true;
+        return true;
+    }
+
+    private boolean dragOptionScrollbar(double journalMouseY) {
+        if (maxOptionScroll() <= 0.0F) {
+            this.draggingOptionScrollbar = false;
+            return true;
+        }
+        setOptionScrollFromScrollbarDrag(journalMouseY);
+        return true;
+    }
+
+    private void setOptionScrollFromScrollbarDrag(double journalMouseY) {
+        int trackTop = optionsTop();
+        int trackHeight = optionViewportHeight();
+        int scrollerHeight = optionScrollerHeight(trackHeight);
+        int travel = Math.max(0, trackHeight - scrollerHeight);
+        if (travel <= 0) {
+            setTargetOptionScroll(0.0F);
+            this.visualOptionScroll = 0.0F;
+            return;
+        }
+
+        float scrollerTop = Mth.clamp((float) journalMouseY - this.optionScrollbarDragOffset, trackTop, trackTop + travel);
+        float scrollProgress = (scrollerTop - trackTop) / travel;
+        float scroll = Mth.clamp(scrollProgress * maxOptionScroll(), 0.0F, maxOptionScroll());
+        setTargetOptionScroll(scroll);
+        this.visualOptionScroll = scroll;
+    }
+
+    private void renderQuestOptionBackground(GuiGraphics graphics, int index, int hovered, int left, int top, int height) {
         entryNineSlice(index).render(graphics, left, top, QUEST_OPTION_WIDTH, height);
+        if (index == hovered && index != this.state.selectedOption()) {
+            QUEST_JOURNAL_ENTRY_HIGHLIGHT_NINE_SLICE.render(graphics, left, top, QUEST_OPTION_WIDTH, height);
+        }
     }
 
     private void renderSelectedQuestOption(GuiGraphics graphics, int left, int top, int height) {
@@ -546,6 +670,7 @@ public final class VillagerQuestJournalScreen extends Screen {
             return;
         }
         this.closingWithAnimation = true;
+        this.draggingOptionScrollbar = false;
         this.animationStartMillis = Util.getMillis();
         VillagerQuestTrackerOverlay.dismissJournalFlash();
         playBookSound(0.72F);
@@ -625,6 +750,22 @@ public final class VillagerQuestJournalScreen extends Screen {
                 && mouseX <= left + QUEST_OPTION_WIDTH
                 && mouseY >= top
                 && mouseY <= bottom;
+    }
+
+    private static boolean isPointInside(double mouseX, double mouseY, int left, int top, int right, int bottom) {
+        return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
+    }
+
+    private boolean isPointInsideOptionScrollbarArea(double mouseX, double mouseY) {
+        int left = optionsLeft() + QUEST_OPTION_WIDTH;
+        int top = optionsTop();
+        return isPointInside(
+                mouseX,
+                mouseY,
+                left,
+                top,
+                optionScrollbarLeft() + QUEST_OPTION_SCROLLBAR_WIDTH,
+                top + optionViewportHeight());
     }
 
     private boolean isPointInsideDetailsScrollArea(double mouseX, double mouseY) {
@@ -872,6 +1013,10 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private int optionsTop() {
         return journalTop() + QUEST_OPTION_TOP_OFFSET;
+    }
+
+    private int optionScrollbarLeft() {
+        return optionsLeft() + QUEST_OPTION_WIDTH + QUEST_OPTION_SCROLLBAR_GAP;
     }
 
     private int detailsLeft() {

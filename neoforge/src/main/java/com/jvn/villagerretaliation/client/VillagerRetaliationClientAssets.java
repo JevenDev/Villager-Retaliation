@@ -90,6 +90,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/quest_journal/quest_journal_entry_1");
     public static final ResourceLocation QUEST_JOURNAL_ENTRY_2_TEXTURE =
             texture("gui/quest_journal/quest_journal_entry_2");
+    public static final ResourceLocation QUEST_JOURNAL_ENTRY_HIGHLIGHT_TEXTURE =
+            texture("gui/quest_journal/quest_journal_entry_highlight");
     public static final ResourceLocation QUEST_JOURNAL_ICON_ACTIVE_TEXTURE =
             texture("gui/quest_journal/quest_journal_icon_active");
     public static final ResourceLocation QUEST_JOURNAL_ICON_AVAILABLE_TEXTURE =
