@@ -174,8 +174,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
                 boolean physicalLeafTarget = isPendingLeafTarget(context, active.blockPos())
                         || isTreeAccessLeaf(level, active.blockPos(), filters);
+                boolean saplingTarget = isBonemealableSapling(level, active.blockPos());
                 boolean canWork = physicalLeafTarget
                         ? canBreakAccessLeafFromCurrentPosition(level, villager, context, active)
+                        : saplingTarget
+                        ? canBonemealSaplingFromCurrentPosition(level, villager, context, active)
                         : canWorkFromCurrentPosition(level, villager, context, active);
                 if (canWork) {
                     holdWorkPosition(villager, active);
@@ -634,7 +637,35 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (!hasSaplingPlan(context)) {
             return null;
         }
-        return plannedTarget(level, villager, context, validator, MAX_PLANNED_SAPLING_TARGETS);
+        Predicate<BlockPos> safeValidator = validator == null ? ignored -> true : validator;
+        HiredWorkPlan.retainMatching(context, safeValidator, MAX_PLANNED_SAPLING_TARGETS);
+        for (BlockPos planned : HiredWorkPlan.targets(context)) {
+            HiredPathTarget target = bestSaplingTarget(level, villager, context, planned);
+            if (target != null && safeValidator.test(target.blockPos())) {
+                return target;
+            }
+        }
+        HiredWorkPlan.clear(context);
+        return null;
+    }
+
+    private HiredPathTarget bestSaplingTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos target) {
+        if (!context.isInsideWorkArea(target)) {
+            return null;
+        }
+        return new HiredMoveToBlockFaceJob(
+                level,
+                villager,
+                List.of(target),
+                MAX_LOGGING_TARGETS_TO_PATHFIND,
+                context::isInsideWorkArea,
+                pos -> canUseSaplingMovementPosition(level, context, pos),
+                pos -> canUseSaplingPathPosition(level, villager, context, pos),
+                ignored -> false).search().target();
     }
 
     private static boolean hasTreePlan(HiredWorkContext context) {
@@ -1111,10 +1142,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
         }
 
         prepareBreakingTarget(level, context, villager, target);
-        if (!canWorkFromCurrentPosition(level, villager, context, target)) {
+        if (!canBonemealSaplingFromCurrentPosition(level, villager, context, target)) {
             context.setProgressTicks(0);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target.blockPos());
-            if (!moveToTarget(level, villager, context, target, 0.55D)) {
+            if (!moveToSaplingTarget(level, villager, context, target, 0.55D)) {
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
                     clearActiveBreakingTarget(level, context, villager);
                     HiredWorkerBrain.setFailure(context, "sapling_unreachable", level.getGameTime() + 20L * 30L);
@@ -1148,6 +1179,83 @@ public final class LoggingWorker extends AbstractBlockWorker {
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
         return WorkResult.progressed("interaction.work.logging.bonemealing_sapling");
+    }
+
+    private static boolean canBonemealSaplingFromCurrentPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredPathTarget target) {
+        return canUseSaplingMovementPosition(level, context, villager.blockPosition())
+                && context.isInsideWorkArea(target.blockPos())
+                && context.isLoaded(level, target.blockPos())
+                && context.isLoaded(level, target.approachPos())
+                && HiredMoveToBlockFaceJob.canReachFromCurrentPosition(level, villager, target);
+    }
+
+    private boolean moveToSaplingTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredPathTarget target,
+            double speed) {
+        if (!context.isInsideWorkArea(target.blockPos())
+                || !canUseSaplingMovementPosition(level, context, target.approachPos())
+                || !context.isLoaded(level, target.blockPos())
+                || !context.isLoaded(level, target.approachPos())) {
+            return false;
+        }
+        if (canBonemealSaplingFromCurrentPosition(level, villager, context, target)) {
+            holdWorkPosition(villager, target);
+            return true;
+        }
+
+        Path currentPath = villager.getNavigation().getPath();
+        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, pos -> canUseSaplingPathPosition(level, villager, context, pos))) {
+            stopWorkNavigation(villager);
+            return false;
+        }
+
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (!villager.getNavigation().isDone() && target.approachPos().equals(navigationTarget)) {
+            if (HiredPathMemory.isNavigationBlocked(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()))) {
+                stopWorkNavigation(villager);
+                return false;
+            }
+            return true;
+        }
+
+        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, pos -> canUseSaplingPathPosition(level, villager, context, pos))) {
+            villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target.blockPos()));
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target.approachPos(), speed, 0);
+            if (moved) {
+                HiredPathMemory.rememberNavigationProgress(
+                        level,
+                        villager,
+                        target.approachPos(),
+                        villager.distanceToSqr(target.approachPos().getCenter()));
+            } else {
+                HiredPathMemory.clearNavigationProgress(villager);
+            }
+            return moved;
+        }
+
+        if (villager.distanceToSqr(target.approachPos().getCenter()) <= 2.25D
+                && settleIntoApproach(villager, target, speed)) {
+            HiredPathMemory.rememberNavigationProgress(
+                    level,
+                    villager,
+                    target.approachPos(),
+                    villager.distanceToSqr(target.approachPos().getCenter()));
+            return true;
+        }
+        HiredPathMemory.clearNavigationProgress(villager);
+        return false;
     }
 
     private HiredPathTarget findSaplingToBonemeal(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -1213,6 +1321,29 @@ public final class LoggingWorker extends AbstractBlockWorker {
 
     private static boolean isSaplingScanInProgress(HiredWorkContext context) {
         return HiredWorkAreaScan.isInProgress(context, SAPLING_SCAN_CURSOR_TAG);
+    }
+
+    private static boolean canUseSaplingMovementPosition(ServerLevel level, HiredWorkContext context, BlockPos pos) {
+        return context.isInsideWorkArea(pos)
+                && context.isLoaded(level, pos)
+                && context.isLoaded(level, pos.above())
+                && !isSaplingStandingPosition(level, pos);
+    }
+
+    private static boolean canUseSaplingPathPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos pos) {
+        return pos.equals(villager.blockPosition()) || canUseSaplingMovementPosition(level, context, pos);
+    }
+
+    private static boolean isSaplingStandingPosition(ServerLevel level, BlockPos pos) {
+        return isSaplingBlock(level, pos) || isSaplingBlock(level, pos.above());
+    }
+
+    private static boolean isSaplingBlock(ServerLevel level, BlockPos pos) {
+        return level.hasChunkAt(pos) && level.getBlockState(pos).is(BlockTags.SAPLINGS);
     }
 
     private static boolean isBonemealableSapling(ServerLevel level, BlockPos pos) {

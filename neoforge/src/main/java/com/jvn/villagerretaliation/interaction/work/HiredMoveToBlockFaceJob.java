@@ -33,7 +33,9 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     private static final double TRANSPARENT_LOS_STEP = 0.25D;
     private static final double FACE_INSET = 0.01D;
     private final Iterable<BlockPos> candidatePositions;
+    private final Predicate<BlockPos> targetFilter;
     private final Predicate<BlockPos> approachFilter;
+    private final Predicate<BlockPos> pathFilter;
     private final Predicate<BlockState> sightTransparent;
 
     HiredMoveToBlockFaceJob(ServerLevel level, Villager villager, Iterable<BlockPos> candidatePositions, int maxCandidates) {
@@ -45,8 +47,8 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             Villager villager,
             Iterable<BlockPos> candidatePositions,
             int maxCandidates,
-            Predicate<BlockPos> approachFilter) {
-        this(level, villager, candidatePositions, maxCandidates, approachFilter, ignored -> false);
+            Predicate<BlockPos> positionFilter) {
+        this(level, villager, candidatePositions, maxCandidates, positionFilter, positionFilter, ignored -> false);
     }
 
     HiredMoveToBlockFaceJob(
@@ -54,11 +56,36 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             Villager villager,
             Iterable<BlockPos> candidatePositions,
             int maxCandidates,
+            Predicate<BlockPos> positionFilter,
+            Predicate<BlockState> sightTransparent) {
+        this(level, villager, candidatePositions, maxCandidates, positionFilter, positionFilter, sightTransparent);
+    }
+
+    HiredMoveToBlockFaceJob(
+            ServerLevel level,
+            Villager villager,
+            Iterable<BlockPos> candidatePositions,
+            int maxCandidates,
+            Predicate<BlockPos> targetFilter,
             Predicate<BlockPos> approachFilter,
+            Predicate<BlockState> sightTransparent) {
+        this(level, villager, candidatePositions, maxCandidates, targetFilter, approachFilter, approachFilter, sightTransparent);
+    }
+
+    HiredMoveToBlockFaceJob(
+            ServerLevel level,
+            Villager villager,
+            Iterable<BlockPos> candidatePositions,
+            int maxCandidates,
+            Predicate<BlockPos> targetFilter,
+            Predicate<BlockPos> approachFilter,
+            Predicate<BlockPos> pathFilter,
             Predicate<BlockState> sightTransparent) {
         super(level, villager, maxCandidates);
         this.candidatePositions = candidatePositions;
+        this.targetFilter = targetFilter == null ? ignored -> true : targetFilter;
         this.approachFilter = approachFilter == null ? ignored -> true : approachFilter;
+        this.pathFilter = pathFilter == null ? this.approachFilter : pathFilter;
         this.sightTransparent = sightTransparent == null ? ignored -> false : sightTransparent;
     }
 
@@ -74,7 +101,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
 
     @Override
     protected HiredPathResult evaluate(BlockPos target) {
-        if (!this.approachFilter.test(target) || !isLoaded(this.level, target)) {
+        if (!this.targetFilter.test(target) || !isLoaded(this.level, target)) {
             return HiredPathResult.blocked();
         }
         HiredPathTarget current = targetFromCurrentPosition(target);
@@ -94,7 +121,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                     && !this.sightTransparent.test(exposedState)) {
                 continue;
             }
-            Vec3 hit = faceHitPosition(target, direction);
+            Vec3 hit = hitPosition(target, direction);
             for (BlockPos rawCandidate : BlockPos.betweenClosed(
                     exposedNeighbor.offset(-FACE_APPROACH_RADIUS, -1, -FACE_APPROACH_RADIUS),
                     exposedNeighbor.offset(FACE_APPROACH_RADIUS, 1, FACE_APPROACH_RADIUS))) {
@@ -128,7 +155,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             }
             evaluated++;
             Path path = this.villager.getNavigation().createPath(approach.pos(), 0);
-            if (path != null && path.canReach() && pathStaysInsideFilter(this.level, path, this.approachFilter)) {
+            if (path != null && path.canReach() && pathStaysInsideFilter(this.level, path, this.pathFilter)) {
                 double score = approach.score() + pathTraversalCost(this.level, path);
                 HiredPathResult result = new HiredPathResult(
                         new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()),
@@ -271,7 +298,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                     && !transparent.test(neighborState)) {
                 continue;
             }
-            Vec3 hit = faceHitPosition(target, direction);
+            Vec3 hit = hitPosition(level, target, direction);
             if (!hasLineOfSightToBlock(level, villager, start, target, hit, transparent)) {
                 continue;
             }
@@ -383,6 +410,22 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             cost += 120.0D;
         }
         return cost;
+    }
+
+    private Vec3 hitPosition(BlockPos target, Direction direction) {
+        return this.level.getBlockState(target)
+                .getCollisionShape(this.level, target, CollisionContext.empty())
+                .isEmpty()
+                ? target.getCenter()
+                : faceHitPosition(target, direction);
+    }
+
+    private static Vec3 hitPosition(ServerLevel level, BlockPos target, Direction direction) {
+        return level.getBlockState(target)
+                .getCollisionShape(level, target, CollisionContext.empty())
+                .isEmpty()
+                ? target.getCenter()
+                : faceHitPosition(target, direction);
     }
 
     private static Vec3 faceHitPosition(BlockPos target, Direction direction) {

@@ -276,6 +276,38 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void pathingCanTargetSaplingsWithoutStandingOnSaplings(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        ServerLevel level = helper.getLevel();
+        tickVillager(level, villager, 20);
+
+        BlockPos sapling = helper.absolutePos(new BlockPos(3, 2, 3));
+        setBlock(helper, new BlockPos(3, 2, 3), Blocks.OAK_SAPLING.defaultBlockState());
+        villager.moveTo(sapling.getX() + 0.5D, sapling.getY(), sapling.getZ() + 0.5D, 0.0F, 0.0F);
+
+        HiredPathResult result = new HiredMoveToBlockFaceJob(
+                level,
+                villager,
+                List.of(sapling),
+                16,
+                ignored -> true,
+                pos -> !level.getBlockState(pos).is(BlockTags.SAPLINGS),
+                pos -> pos.equals(villager.blockPosition()) || !level.getBlockState(pos).is(BlockTags.SAPLINGS),
+                ignored -> false).search();
+
+        helper.assertTrue(result.reachesDestination(), "sapling target should still be reachable");
+        helper.assertTrue(result.target() != null, "sapling target should have an approach");
+        helper.assertFalse(result.target().approachPos().equals(sapling), "approach should not be the sapling block");
+        helper.assertFalse(
+                level.getBlockState(result.target().approachPos()).is(BlockTags.SAPLINGS),
+                "approach should not stand inside any sapling");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void pathingCanRouteAroundSimpleObstaclesWithoutLeavingTheWorkArea(GameTestHelper helper) {
         buildFloor(helper, 0, 10, 0, 8, 1);
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 4));
