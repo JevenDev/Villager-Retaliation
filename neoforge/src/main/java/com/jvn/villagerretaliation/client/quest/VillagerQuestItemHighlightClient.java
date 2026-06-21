@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.quest;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.config.QuestItemHighlightMode;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import java.util.List;
 import java.util.Optional;
@@ -132,11 +133,6 @@ public final class VillagerQuestItemHighlightClient {
         return false;
     }
 
-    private static Optional<QuestTrackerSyncPayload.Entry> activeTrackedEntry() {
-        Optional<QuestTrackerSyncPayload.Entry> tracked = VillagerQuestTrackerOverlay.trackedEntry();
-        return tracked.filter(VillagerQuestItemHighlightClient::isActiveTrackedEntry);
-    }
-
     private static Optional<QuestTrackerSyncPayload.Entry> questEntryForStack(ItemStack stack) {
         return questEntryForStack(stack, activeQuestItemEntries());
     }
@@ -144,25 +140,28 @@ public final class VillagerQuestItemHighlightClient {
     private static Optional<QuestTrackerSyncPayload.Entry> questEntryForStack(
             ItemStack stack,
             List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries) {
-        Optional<QuestTrackerSyncPayload.Entry> tracked = activeTrackedEntry()
-                .filter(entry -> matchesTrackedQuestItem(stack, entry));
-        if (tracked.isPresent()) {
-            return tracked;
-        }
         return activeQuestItemEntries.stream()
                 .filter(entry -> matchesTrackedQuestItem(stack, entry))
                 .findFirst();
     }
 
     private static List<QuestTrackerSyncPayload.Entry> activeQuestItemEntries() {
-        return VillagerQuestTrackerOverlay.entries().stream()
-                .filter(VillagerQuestItemHighlightClient::isActiveTrackedEntry)
+        List<QuestTrackerSyncPayload.Entry> source = highlightMode() == QuestItemHighlightMode.SELECTED_ACTIVE_QUESTS
+                ? VillagerQuestTrackerOverlay.trackedEntries()
+                : VillagerQuestTrackerOverlay.entries();
+        return source.stream()
+                .filter(VillagerQuestItemHighlightClient::isActiveQuestEntry)
                 .filter(entry -> !entry.questItems().isEmpty())
                 .toList();
     }
 
-    private static boolean isActiveTrackedEntry(QuestTrackerSyncPayload.Entry entry) {
-        return "active".equalsIgnoreCase(entry.state());
+    private static QuestItemHighlightMode highlightMode() {
+        QuestItemHighlightMode mode = VillagerRetaliationConfig.QUEST_ITEM_HIGHLIGHT_MODE.get();
+        return mode == null ? QuestItemHighlightMode.ALL_ACTIVE_QUESTS : mode;
+    }
+
+    private static boolean isActiveQuestEntry(QuestTrackerSyncPayload.Entry entry) {
+        return entry != null && !entry.questAvailable() && "active".equalsIgnoreCase(entry.state());
     }
 
     private static boolean isHeldDisplayContext(ItemDisplayContext displayContext) {

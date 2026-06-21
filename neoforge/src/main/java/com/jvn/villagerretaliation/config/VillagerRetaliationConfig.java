@@ -255,6 +255,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Double> WANDERER_RANDOM_TRADE_DROP_CHANCE = bind("wanderer.randomTradeDropChance", Double.class);
     public static final ConfigValue<Boolean> DISABLE_DIALOGUE_TEXT_EFFECTS = bind("dialogue.disableDialogueTextEffects", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_QUEST_ITEM_SHADER_HIGHLIGHTS = bind("quest.enableQuestItemShaderHighlights", Boolean.class);
+    public static final ConfigValue<QuestItemHighlightMode> QUEST_ITEM_HIGHLIGHT_MODE = bind("quest.questItemHighlightMode", QuestItemHighlightMode.class);
 
     private VillagerRetaliationConfig() {
     }

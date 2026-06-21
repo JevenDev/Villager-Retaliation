@@ -37,8 +37,21 @@ public final class QuestTrackerPresenter {
     public static String syncSignature(
             List<QuestTrackerSyncPayload.Entry> entries,
             ResourceLocation trackedQuestId) {
+        return syncSignature(entries, trackedQuestId == null ? List.of() : List.of(trackedQuestId));
+    }
+
+    public static String syncSignature(
+            List<QuestTrackerSyncPayload.Entry> entries,
+            List<ResourceLocation> trackedQuestIds) {
         StringBuilder builder = new StringBuilder();
-        builder.append(trackedQuestId == null ? "" : trackedQuestId.toString()).append('\n');
+        if (trackedQuestIds != null) {
+            for (ResourceLocation trackedQuestId : trackedQuestIds) {
+                if (trackedQuestId != null) {
+                    builder.append(trackedQuestId).append(';');
+                }
+            }
+        }
+        builder.append('\n');
         for (QuestTrackerSyncPayload.Entry entry : entries) {
             builder.append(entrySignature(entry)).append('\n');
         }

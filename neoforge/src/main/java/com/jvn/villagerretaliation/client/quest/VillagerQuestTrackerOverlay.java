@@ -34,7 +34,7 @@ public final class VillagerQuestTrackerOverlay {
     private static boolean trackerVisible;
     private static int ignoredJournalToggleTicks;
     private static int pendingJournalOpenTicks;
-    private static String trackedQuestId = "";
+    private static List<String> trackedQuestIds = List.of();
 
     private VillagerQuestTrackerOverlay() {
     }
@@ -53,7 +53,7 @@ public final class VillagerQuestTrackerOverlay {
         }
         questUpdateQuestIds.removeIf(questId -> !acceptedQuestIds.contains(questId));
         entries = applyQuestUpdateCache(payload.entries());
-        trackedQuestId = payload.trackedQuestId();
+        trackedQuestIds = payload.trackedQuestIds();
         if (payload.flash() && trackedEntry().isPresent()) {
             flashTicks = FLASH_LIFETIME_TICKS;
             notificationAge = 0;
@@ -65,7 +65,7 @@ public final class VillagerQuestTrackerOverlay {
         if (entries.isEmpty()) {
             flashTicks = 0;
             notificationAge = 0;
-            trackedQuestId = "";
+            trackedQuestIds = List.of();
             if (Minecraft.getInstance().screen instanceof VillagerQuestJournalScreen) {
                 Minecraft.getInstance().setScreen(null);
             }
@@ -128,7 +128,7 @@ public final class VillagerQuestTrackerOverlay {
             return;
         }
 
-        renderTrackerLayer(graphics, font, screenWidth, screenHeight, trackerAlpha, false, age);
+        renderTrackerLayer(graphics, font, screenWidth, screenHeight, trackerAlpha, true, age);
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
@@ -146,7 +146,7 @@ public final class VillagerQuestTrackerOverlay {
         trackerVisible = false;
         ignoredJournalToggleTicks = 0;
         pendingJournalOpenTicks = 0;
-        trackedQuestId = "";
+        trackedQuestIds = List.of();
         questUpdateQuestIds.clear();
     }
 
@@ -164,16 +164,27 @@ public final class VillagerQuestTrackerOverlay {
     }
 
     public static Optional<QuestTrackerSyncPayload.Entry> trackedEntry() {
-        if (trackedQuestId.isBlank()) {
-            return Optional.empty();
+        return trackedEntries().stream().findFirst();
+    }
+
+    public static List<QuestTrackerSyncPayload.Entry> trackedEntries() {
+        if (trackedQuestIds.isEmpty()) {
+            return List.of();
         }
-        return entries.stream()
-                .filter(entry -> entry.trackable() && trackedQuestId.equals(entry.questId()))
-                .findFirst();
+        List<QuestTrackerSyncPayload.Entry> tracked = new ArrayList<>();
+        for (String questId : trackedQuestIds) {
+            for (QuestTrackerSyncPayload.Entry entry : entries) {
+                if (entry.trackable() && questId.equals(entry.questId())) {
+                    tracked.add(entry);
+                    break;
+                }
+            }
+        }
+        return List.copyOf(tracked);
     }
 
     public static boolean isTracked(QuestTrackerSyncPayload.Entry entry) {
-        return entry != null && entry.trackable() && entry.questId().equals(trackedQuestId);
+        return entry != null && entry.trackable() && trackedQuestIds.contains(entry.questId());
     }
 
     public static void toggleTracking(QuestTrackerSyncPayload.Entry entry) {
@@ -263,21 +274,14 @@ public final class VillagerQuestTrackerOverlay {
     }
 
     private static List<QuestTrackerSyncPayload.Entry> trackerEntries(boolean showRecentQuests) {
-        Optional<QuestTrackerSyncPayload.Entry> tracked = trackedEntry();
+        List<QuestTrackerSyncPayload.Entry> tracked = trackedEntries();
         if (tracked.isEmpty()) {
             return List.of();
         }
         if (!showRecentQuests) {
-            return List.of(tracked.get());
+            return List.of(tracked.getFirst());
         }
-        List<QuestTrackerSyncPayload.Entry> ordered = new ArrayList<>();
-        ordered.add(tracked.get());
-        for (QuestTrackerSyncPayload.Entry entry : entries) {
-            if (entry.trackable() && !entry.questId().equals(tracked.get().questId())) {
-                ordered.add(entry);
-            }
-        }
-        return List.copyOf(ordered);
+        return tracked;
     }
 
     private static List<QuestTrackerSyncPayload.Entry> applyQuestUpdateCache(List<QuestTrackerSyncPayload.Entry> source) {

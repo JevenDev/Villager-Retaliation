@@ -995,9 +995,7 @@ public final class VillagerQuestService {
 
             QuestLifecycleService.expire(entry.questId(), entry.progress(), gameTime, false);
             changed = true;
-            if (entry.questId().equals(data.getTrackedQuest(entry.playerId()))) {
-                data.clearTrackedQuest(entry.playerId());
-            }
+            data.removeTrackedQuest(entry.playerId(), entry.questId());
 
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(entry.playerId());
             if (player != null) {
@@ -1043,11 +1041,7 @@ public final class VillagerQuestService {
 
         switch (action == null ? QuestTrackerRequestPayload.Action.TOGGLE : action) {
             case TRACK -> data.setTrackedQuest(player.getUUID(), questId);
-            case UNTRACK -> {
-                if (questId.equals(data.getTrackedQuest(player.getUUID()))) {
-                    data.clearTrackedQuest(player.getUUID());
-                }
-            }
+            case UNTRACK -> data.removeTrackedQuest(player.getUUID(), questId);
             case TOGGLE -> data.toggleTrackedQuest(player.getUUID(), questId);
         }
         sendTrackerSync(player, false, true);
@@ -4130,11 +4124,19 @@ public final class VillagerQuestService {
             return;
         }
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
-        ResourceLocation trackedQuestId = data.getTrackedQuest(player.getUUID());
-        if (trackedQuestId != null && !canTrackQuest(level, player, trackedQuestId)) {
-            data.clearTrackedQuest(player.getUUID());
-            trackedQuestId = null;
+        List<ResourceLocation> trackedQuestIds = new ArrayList<>(data.getTrackedQuests(player.getUUID()));
+        boolean trackedChanged = false;
+        for (ResourceLocation trackedQuestId : List.copyOf(trackedQuestIds)) {
+            if (!canTrackQuest(level, player, trackedQuestId)) {
+                data.removeTrackedQuest(player.getUUID(), trackedQuestId);
+                trackedQuestIds.remove(trackedQuestId);
+                trackedChanged = true;
+            }
         }
+        if (trackedChanged) {
+            trackedQuestIds = new ArrayList<>(data.getTrackedQuests(player.getUUID()));
+        }
+        ResourceLocation trackedQuestId = trackedQuestIds.isEmpty() ? null : trackedQuestIds.getFirst();
         List<Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress>> visible =
                 new ArrayList<>(data.progress(player.getUUID()));
         visible.removeIf(entry -> !shouldSyncTrackerEntry(level, entry.getKey(), entry.getValue()));
@@ -4179,7 +4181,7 @@ public final class VillagerQuestService {
         }
         appendNearbyAvailableQuestEntries(level, player, data, entries);
         appendEntries(entries, completionEntries);
-        String signature = QuestTrackerPresenter.syncSignature(entries, trackedQuestId);
+        String signature = QuestTrackerPresenter.syncSignature(entries, trackedQuestIds);
         Map<String, String> entrySignatures = QuestTrackerPresenter.entrySignatures(entries);
         long gameTime = level.getGameTime();
         TrackerSyncState previous = LAST_TRACKER_SYNCS.get(player.getUUID());
@@ -4199,11 +4201,11 @@ public final class VillagerQuestService {
         QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
                 "result=sent reason=" + syncReason + " entries=" + entries.size());
         List<QuestTrackerSyncPayload.Entry> syncEntries =
-                markQuestUpdateEntries(entries, entrySignatures, previous, flash, trackedQuestId);
+                markQuestUpdateEntries(entries, entrySignatures, previous, flash, trackedQuestIds);
         try {
             PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(
                     syncEntries,
-                    trackedQuestId == null ? "" : trackedQuestId.toString(),
+                    trackedQuestIds.stream().map(ResourceLocation::toString).toList(),
                     flash));
         } catch (UnsupportedOperationException ignored) {
             QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
@@ -4217,16 +4219,21 @@ public final class VillagerQuestService {
             Map<String, String> entrySignatures,
             TrackerSyncState previous,
             boolean flash,
-            ResourceLocation trackedQuestId) {
+            List<ResourceLocation> trackedQuestIds) {
         if (entries.isEmpty()) {
             return entries;
         }
-        String trackedId = trackedQuestId == null ? "" : trackedQuestId.toString();
+        Set<String> trackedIds = trackedQuestIds == null
+                ? Set.of()
+                : trackedQuestIds.stream()
+                        .filter(Objects::nonNull)
+                        .map(ResourceLocation::toString)
+                        .collect(java.util.stream.Collectors.toUnmodifiableSet());
         List<QuestTrackerSyncPayload.Entry> updated = new ArrayList<>(entries.size());
         for (QuestTrackerSyncPayload.Entry entry : entries) {
             String currentSignature = entrySignatures.getOrDefault(entry.questId(), "");
             boolean questUpdate = !entry.questAvailable() && (previous == null
-                    ? flash && !trackedId.isBlank() && trackedId.equals(entry.questId())
+                    ? flash && trackedIds.contains(entry.questId())
                     : !Objects.equals(previous.entrySignatures().get(entry.questId()), currentSignature));
             updated.add(entry.withQuestUpdate(questUpdate));
         }
@@ -4608,8 +4615,8 @@ public final class VillagerQuestService {
             VillagerQuestSavedData data,
             ServerPlayer player,
             ResourceLocation questId) {
-        if (questId != null && questId.equals(data.getTrackedQuest(player.getUUID()))) {
-            data.clearTrackedQuest(player.getUUID());
+        if (questId != null && player != null) {
+            data.removeTrackedQuest(player.getUUID(), questId);
         }
     }
 

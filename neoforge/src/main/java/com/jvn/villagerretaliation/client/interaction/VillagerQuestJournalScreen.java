@@ -365,7 +365,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private void renderQuestOptionIcon(GuiGraphics graphics, QuestTrackerSyncPayload.Entry entry, boolean selected, int left, int top) {
-        QuestJournalEntryState state = QuestJournalEntryState.from(entry);
+        QuestJournalEntryState state = QuestJournalEntryState.iconFor(entry);
         int iconLeft = left + QUEST_OPTION_STATE_ICON_LEFT_PADDING;
         int iconTop = top + QUEST_OPTION_STATE_ICON_TOP_PADDING;
         renderQuestOptionIcon(graphics, state.texture(), iconLeft, iconTop);
@@ -941,6 +941,14 @@ public final class VillagerQuestJournalScreen extends Screen {
                 case "inactive", "locked", "unavailable", "abandoned", "expired" -> INACTIVE;
                 default -> AVAILABLE;
             };
+        }
+
+        static QuestJournalEntryState iconFor(QuestTrackerSyncPayload.Entry entry) {
+            QuestJournalEntryState state = from(entry);
+            if (state == ACTIVE && !VillagerQuestTrackerOverlay.isTracked(entry)) {
+                return INACTIVE;
+            }
+            return state;
         }
 
         ResourceLocation texture() {

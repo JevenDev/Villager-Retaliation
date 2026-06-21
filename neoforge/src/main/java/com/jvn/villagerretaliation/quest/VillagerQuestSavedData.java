@@ -62,7 +62,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_GAME_TIME = "GameTime";
 
     private final Map<UUID, Map<ResourceLocation, QuestProgress>> entries = new HashMap<>();
-    private final Map<UUID, ResourceLocation> trackedQuests = new HashMap<>();
+    private final Map<UUID, List<ResourceLocation>> trackedQuests = new HashMap<>();
 
     public static VillagerQuestSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -98,7 +98,7 @@ public class VillagerQuestSavedData extends SavedData {
 
             ResourceLocation questId = ResourceLocation.tryParse(entryTag.getString(TAG_QUEST));
             if (questId != null) {
-                data.trackedQuests.put(entryTag.getUUID(TAG_PLAYER), questId);
+                data.trackQuest(entryTag.getUUID(TAG_PLAYER), questId, false, false);
             }
         }
         return data;
@@ -117,11 +117,13 @@ public class VillagerQuestSavedData extends SavedData {
         }
         tag.put(TAG_ENTRIES, entriesTag);
         ListTag trackedTag = new ListTag();
-        for (Map.Entry<UUID, ResourceLocation> entry : this.trackedQuests.entrySet()) {
-            CompoundTag entryTag = new CompoundTag();
-            entryTag.putUUID(TAG_PLAYER, entry.getKey());
-            entryTag.putString(TAG_QUEST, entry.getValue().toString());
-            trackedTag.add(entryTag);
+        for (Map.Entry<UUID, List<ResourceLocation>> entry : this.trackedQuests.entrySet()) {
+            for (ResourceLocation questId : entry.getValue()) {
+                CompoundTag entryTag = new CompoundTag();
+                entryTag.putUUID(TAG_PLAYER, entry.getKey());
+                entryTag.putString(TAG_QUEST, questId.toString());
+                trackedTag.add(entryTag);
+            }
         }
         tag.put(TAG_TRACKED_QUESTS, trackedTag);
         return tag;
@@ -191,15 +193,17 @@ public class VillagerQuestSavedData extends SavedData {
     }
 
     public ResourceLocation getTrackedQuest(UUID playerId) {
-        return this.trackedQuests.get(playerId);
+        List<ResourceLocation> questIds = this.trackedQuests.get(playerId);
+        return questIds == null || questIds.isEmpty() ? null : questIds.getFirst();
+    }
+
+    public List<ResourceLocation> getTrackedQuests(UUID playerId) {
+        List<ResourceLocation> questIds = this.trackedQuests.get(playerId);
+        return questIds == null || questIds.isEmpty() ? List.of() : List.copyOf(questIds);
     }
 
     public void setTrackedQuest(UUID playerId, ResourceLocation questId) {
-        if (playerId == null || questId == null) {
-            return;
-        }
-        this.trackedQuests.put(playerId, questId);
-        setDirty();
+        trackQuest(playerId, questId, true, true);
     }
 
     public void clearTrackedQuest(UUID playerId) {
@@ -208,18 +212,56 @@ public class VillagerQuestSavedData extends SavedData {
         }
     }
 
+    public boolean removeTrackedQuest(UUID playerId, ResourceLocation questId) {
+        if (playerId == null || questId == null) {
+            return false;
+        }
+        List<ResourceLocation> questIds = this.trackedQuests.get(playerId);
+        if (questIds == null || !questIds.remove(questId)) {
+            return false;
+        }
+        if (questIds.isEmpty()) {
+            this.trackedQuests.remove(playerId);
+        }
+        setDirty();
+        return true;
+    }
+
     public boolean toggleTrackedQuest(UUID playerId, ResourceLocation questId) {
         if (playerId == null || questId == null) {
             return false;
         }
-        if (questId.equals(this.trackedQuests.get(playerId))) {
-            this.trackedQuests.remove(playerId);
-            setDirty();
+        List<ResourceLocation> questIds = this.trackedQuests.get(playerId);
+        if (questIds != null && questIds.contains(questId)) {
+            removeTrackedQuest(playerId, questId);
             return false;
         }
-        this.trackedQuests.put(playerId, questId);
-        setDirty();
-        return true;
+        return trackQuest(playerId, questId, true, true);
+    }
+
+    private boolean trackQuest(UUID playerId, ResourceLocation questId, boolean primary, boolean markDirty) {
+        if (playerId == null || questId == null) {
+            return false;
+        }
+        List<ResourceLocation> questIds = this.trackedQuests.computeIfAbsent(playerId, ignored -> new ArrayList<>());
+        boolean changed = questIds.remove(questId);
+        if (primary) {
+            questIds.addFirst(questId);
+            changed = true;
+        } else if (!changed) {
+            questIds.add(questId);
+            changed = true;
+        } else {
+            questIds.add(questId);
+        }
+        while (questIds.size() > QuestTrackerLimits.MAX_TRACKED_QUESTS) {
+            questIds.removeLast();
+            changed = true;
+        }
+        if (markDirty && changed) {
+            setDirty();
+        }
+        return changed;
     }
 
     public int replaceIssuerVillageKey(String sourceKey, String targetKey) {

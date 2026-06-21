@@ -1325,7 +1325,7 @@ public final class VillagerQuestGameTests {
                     "issuer location",
                     manyItems));
         }
-        QuestTrackerSyncPayload payload = new QuestTrackerSyncPayload(manyEntries, null, false);
+        QuestTrackerSyncPayload payload = new QuestTrackerSyncPayload(manyEntries, "", false);
         helper.assertValueEqual(
                 payload.entries().size(),
                 QuestTrackerSyncPayload.MAX_SYNC_ENTRIES,
@@ -2800,6 +2800,38 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(legacyProgress != null, "legacy v1 quest progress did not load");
         helper.assertValueEqual(legacyProgress.currentStage(), "started", "legacy missing stage fallback");
         helper.assertTrue(legacyProgress.choiceHistory().isEmpty(), "legacy missing choice history fallback");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questSavedDataLimitsTrackedQuestsToThree(GameTestHelper helper) {
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000301");
+        ResourceLocation first = VillagerRetaliation.id("tracked_first");
+        ResourceLocation second = VillagerRetaliation.id("tracked_second");
+        ResourceLocation third = VillagerRetaliation.id("tracked_third");
+        ResourceLocation fourth = VillagerRetaliation.id("tracked_fourth");
+
+        VillagerQuestSavedData data = new VillagerQuestSavedData();
+        data.setTrackedQuest(playerId, first);
+        data.setTrackedQuest(playerId, second);
+        data.setTrackedQuest(playerId, third);
+        data.setTrackedQuest(playerId, fourth);
+
+        helper.assertValueEqual(data.getTrackedQuests(playerId).size(), 3, "tracked quest cap");
+        helper.assertValueEqual(data.getTrackedQuest(playerId), fourth, "primary tracked quest");
+        helper.assertFalse(data.getTrackedQuests(playerId).contains(first), "oldest tracked quest was not evicted");
+        helper.assertTrue(data.getTrackedQuests(playerId).contains(second), "second tracked quest missing");
+        helper.assertTrue(data.getTrackedQuests(playerId).contains(third), "third tracked quest missing");
+
+        data.toggleTrackedQuest(playerId, third);
+        helper.assertFalse(data.getTrackedQuests(playerId).contains(third), "toggle did not remove tracked quest");
+        data.toggleTrackedQuest(playerId, first);
+        helper.assertValueEqual(data.getTrackedQuest(playerId), first, "toggle did not promote newly tracked quest");
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        VillagerQuestSavedData loaded = VillagerQuestSavedData.load(saved, helper.getLevel().registryAccess());
+        helper.assertValueEqual(loaded.getTrackedQuests(playerId), data.getTrackedQuests(playerId), "tracked quest order after reload");
 
         helper.succeed();
     }

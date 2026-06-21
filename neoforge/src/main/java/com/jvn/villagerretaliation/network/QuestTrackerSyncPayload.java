@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.network;
 
+import com.jvn.villagerretaliation.quest.QuestTrackerLimits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -7,19 +8,32 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId, boolean flash) implements CustomPacketPayload {
+public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQuestIds, boolean flash) implements CustomPacketPayload {
     public static final int MAX_TRACKER_ENTRIES = 3;
+    public static final int MAX_TRACKED_QUESTS = QuestTrackerLimits.MAX_TRACKED_QUESTS;
     public static final int MAX_SYNC_ENTRIES = 32;
     public static final int MAX_QUEST_ITEMS = 16;
     public static final Type<QuestTrackerSyncPayload> TYPE = VillagerPayloads.type("quest_tracker_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, QuestTrackerSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(QuestTrackerSyncPayload::encode, QuestTrackerSyncPayload::decode);
 
+    public QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId, boolean flash) {
+        this(entries, trackedQuestId == null || trackedQuestId.isBlank() ? List.of() : List.of(trackedQuestId), flash);
+    }
+
     public QuestTrackerSyncPayload {
         entries = entries == null
                 ? List.of()
                 : List.copyOf(entries.stream().filter(Objects::nonNull).limit(MAX_SYNC_ENTRIES).toList());
-        trackedQuestId = trackedQuestId == null ? "" : trackedQuestId;
+        trackedQuestIds = trackedQuestIds == null
+                ? List.of()
+                : List.copyOf(trackedQuestIds.stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(questId -> !questId.isBlank())
+                        .distinct()
+                        .limit(MAX_TRACKED_QUESTS)
+                        .toList());
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, QuestTrackerSyncPayload payload) {
@@ -44,7 +58,10 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
             buffer.writeBoolean(entry.questUpdate());
             buffer.writeBoolean(entry.questAvailable());
         }
-        buffer.writeUtf(payload.trackedQuestId(), 128);
+        buffer.writeVarInt(Math.min(MAX_TRACKED_QUESTS, payload.trackedQuestIds().size()));
+        for (String questId : payload.trackedQuestIds()) {
+            buffer.writeUtf(questId, 128);
+        }
         buffer.writeBoolean(payload.flash());
     }
 
@@ -69,7 +86,12 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
             );
             entries.add(entry);
         }
-        return new QuestTrackerSyncPayload(entries, buffer.readUtf(128), buffer.readBoolean());
+        int trackedSize = VillagerPayloads.readCollectionSize(buffer, MAX_TRACKED_QUESTS, "tracked quests");
+        List<String> trackedQuestIds = new ArrayList<>(trackedSize);
+        for (int i = 0; i < trackedSize; i++) {
+            trackedQuestIds.add(buffer.readUtf(128));
+        }
+        return new QuestTrackerSyncPayload(entries, trackedQuestIds, buffer.readBoolean());
     }
 
     private static List<QuestItem> readQuestItems(RegistryFriendlyByteBuf buffer) {
@@ -89,6 +111,10 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
+    }
+
+    public String trackedQuestId() {
+        return this.trackedQuestIds.isEmpty() ? "" : this.trackedQuestIds.getFirst();
     }
 
     public record Entry(
