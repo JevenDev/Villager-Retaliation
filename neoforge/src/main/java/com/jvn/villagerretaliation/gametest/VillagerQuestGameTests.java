@@ -955,6 +955,57 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questProgressPersistsDistinctCompletionHistory(GameTestHelper helper) {
+        VillagerQuestSavedData data = new VillagerQuestSavedData();
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000101");
+        UUID firstIssuer = UUID.fromString("00000000-0000-0000-0000-000000000201");
+        UUID secondIssuer = UUID.fromString("00000000-0000-0000-0000-000000000202");
+        ResourceLocation questId = VillagerRetaliation.id("repeatable_history_fixture");
+
+        VillagerQuestSavedData.QuestProgress progress = data.getOrCreate(playerId, questId);
+        progress.start(firstIssuer, Level.OVERWORLD, new BlockPos(1, 64, 1), 10L);
+        progress.setIssuer(
+                firstIssuer,
+                "First Keeper",
+                "minecraft:librarian",
+                2,
+                Level.OVERWORLD,
+                new BlockPos(3, 65, 3),
+                "village:first");
+        progress.complete(20L, false);
+        progress.start(secondIssuer, Level.OVERWORLD, new BlockPos(8, 64, 8), 30L);
+        progress.setIssuer(
+                secondIssuer,
+                "Second Keeper",
+                "minecraft:cleric",
+                4,
+                Level.OVERWORLD,
+                new BlockPos(9, 66, 9),
+                "village:second");
+        progress.complete(40L, false);
+
+        helper.assertValueEqual(progress.completionCount(), 2, "completion count");
+        helper.assertValueEqual(progress.completionHistory().size(), 2, "completion history count");
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        VillagerQuestSavedData loaded = VillagerQuestSavedData.load(saved, helper.getLevel().registryAccess());
+        VillagerQuestSavedData.QuestProgress loadedProgress = loaded.get(playerId, questId);
+        helper.assertTrue(loadedProgress != null, "completion history progress did not reload");
+        List<VillagerQuestSavedData.CompletionHistoryEntry> history = loadedProgress.completionHistory();
+        helper.assertValueEqual(history.size(), 2, "reloaded completion history count");
+        helper.assertValueEqual(history.getFirst().completionIndex(), 1, "first completion index");
+        helper.assertValueEqual(history.getFirst().issuerId(), firstIssuer, "first completion issuer");
+        helper.assertValueEqual(history.getFirst().issuerName(), "First Keeper", "first completion issuer name");
+        helper.assertValueEqual(history.getFirst().completedGameTime(), 20L, "first completion time");
+        helper.assertValueEqual(history.get(1).completionIndex(), 2, "second completion index");
+        helper.assertValueEqual(history.get(1).issuerId(), secondIssuer, "second completion issuer");
+        helper.assertValueEqual(history.get(1).issuerName(), "Second Keeper", "second completion issuer name");
+        helper.assertValueEqual(history.get(1).issuerPos(), new BlockPos(9, 66, 9), "second completion issuer position");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questDebugFormatterOutputsStableInspectLines(GameTestHelper helper) {
         QuestDefinition quest = quest(helper, VillagerRetaliation.id("choose_the_horizon"));
         VillagerQuestSavedData.QuestProgress parentProgress = new VillagerQuestSavedData.QuestProgress();

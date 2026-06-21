@@ -4147,21 +4147,38 @@ public final class VillagerQuestService {
                         .reversed()));
 
         List<QuestTrackerSyncPayload.Entry> entries = new ArrayList<>();
+        List<QuestTrackerSyncPayload.Entry> completionEntries = new ArrayList<>();
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : visible) {
             if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
                 break;
             }
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
             if (definition != null) {
+                VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+                if (definition.rules().repeatable() && !progress.completionHistory().isEmpty()) {
+                    appendArchivedCompletionEntries(player, definition, progress, completionEntries);
+                    if (progress.state() == VillagerQuestSavedData.QuestState.COMPLETED) {
+                        continue;
+                    }
+                }
                 DialogueContext questContext = contextForStartedVillager(level, player, entry.getValue()).orElse(null);
                 ConditionMatch activeConditions = activeConditionsState(questContext, player, level, definition, entry.getValue());
                 if (activeConditions == ConditionMatch.UNMET && definition.rules().activeState().hideWhenUnmet()) {
                     continue;
                 }
-                entries.add(trackerEntry(player, questContext, definition, entry.getValue(), activeConditions));
+                QuestTrackerSyncPayload.Entry trackerEntry =
+                        trackerEntry(player, questContext, definition, entry.getValue(), activeConditions);
+                if (progress.state() == VillagerQuestSavedData.QuestState.COMPLETED) {
+                    if (completionEntries.size() < QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
+                        completionEntries.add(trackerEntry);
+                    }
+                } else {
+                    entries.add(trackerEntry);
+                }
             }
         }
         appendNearbyAvailableQuestEntries(level, player, data, entries);
+        appendEntries(entries, completionEntries);
         String signature = QuestTrackerPresenter.syncSignature(entries, trackedQuestId);
         Map<String, String> entrySignatures = QuestTrackerPresenter.entrySignatures(entries);
         long gameTime = level.getGameTime();
@@ -4224,20 +4241,46 @@ public final class VillagerQuestService {
         if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES || level.getServer() == null) {
             return;
         }
-        Set<String> includedQuestIds = new HashSet<>();
+        Set<String> activeQuestIds = new HashSet<>();
+        Set<String> availableQuestIds = new HashSet<>();
         for (QuestTrackerSyncPayload.Entry entry : entries) {
             if (!entry.questId().isBlank()) {
-                includedQuestIds.add(entry.questId());
+                if (entry.questAvailable()) {
+                    availableQuestIds.add(entry.questId());
+                } else if (entryState(entry) == VillagerQuestSavedData.QuestState.ACTIVE) {
+                    activeQuestIds.add(entry.questId());
+                }
             }
         }
         for (QuestTrackerSyncPayload.Entry entry : nearbyAvailableQuestEntries(level, player, data)) {
             if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
                 return;
             }
-            if (includedQuestIds.add(entry.questId())) {
+            if (!activeQuestIds.contains(entry.questId()) && availableQuestIds.add(entry.questId())) {
                 entries.add(entry);
             }
         }
+    }
+
+    private static void appendEntries(
+            List<QuestTrackerSyncPayload.Entry> entries,
+            List<QuestTrackerSyncPayload.Entry> additions) {
+        if (additions.isEmpty()) {
+            return;
+        }
+        for (QuestTrackerSyncPayload.Entry entry : additions) {
+            if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
+                return;
+            }
+            entries.add(entry);
+        }
+    }
+
+    private static VillagerQuestSavedData.QuestState entryState(QuestTrackerSyncPayload.Entry entry) {
+        if (entry == null || entry.state().isBlank()) {
+            return VillagerQuestSavedData.QuestState.NOT_STARTED;
+        }
+        return VillagerQuestSavedData.QuestState.byName(entry.state());
     }
 
     private static List<QuestTrackerSyncPayload.Entry> nearbyAvailableQuestEntries(
@@ -4379,6 +4422,138 @@ public final class VillagerQuestService {
                 .withQuestAvailable(true);
     }
 
+    private static void appendArchivedCompletionEntries(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            List<QuestTrackerSyncPayload.Entry> entries) {
+        List<VillagerQuestSavedData.CompletionHistoryEntry> history = progress.completionHistory();
+        for (int index = history.size() - 1; index >= 0; index--) {
+            if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
+                return;
+            }
+            entries.add(completedHistoryTrackerEntry(player, definition, history.get(index)));
+        }
+    }
+
+    private static QuestTrackerSyncPayload.Entry completedHistoryTrackerEntry(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.CompletionHistoryEntry history) {
+        String issuer = completionIssuerSummary(history);
+        String issuerLocation = completionIssuerLocationSummary(history);
+        Map<String, String> replacements = completionHistoryReplacements(player, definition, history, issuer, issuerLocation);
+        QuestDefinition.Step fallback = QuestTrackerPresenter.fallbackStep("completed", VillagerQuestSavedData.QuestState.COMPLETED);
+        QuestDefinition.Step step = definition.tracker().step("completed", fallback);
+        QuestDefinition.SelectedText title = definition.tracker().title().isBlank() && definition.tracker().titleKey().isBlank()
+                ? new QuestDefinition.SelectedText(definition.title(), definition.titleKey())
+                : new QuestDefinition.SelectedText(definition.tracker().title(), definition.tracker().titleKey());
+        String status = resolveGlobalText(player, "quest.tracker.status.completed", "Completed", replacements);
+        return QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+                player,
+                definition,
+                title,
+                step,
+                replacements,
+                status,
+                issuer,
+                issuerLocation,
+                List.of(),
+                QuestTrackerPresenter.fallbackProgress("completed"),
+                false,
+                VillagerQuestSavedData.QuestState.COMPLETED))
+                .withQuestId(completedHistoryQuestId(definition.id(), history.completionIndex()));
+    }
+
+    private static Map<String, String> completionHistoryReplacements(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.CompletionHistoryEntry history,
+            String issuer,
+            String issuerLocation) {
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("quest", questTitle(player, definition, Map.of()));
+        values.put("quest_id", definition.id().toString());
+        values.put("target", targetName(definition));
+        values.put("proof_item", questItemName(definition, null));
+        values.put("quest_stage", "completed");
+        values.put("current_stage", "completed");
+        values.put("visited_target", "yes");
+        values.put("has_proof", "yes");
+        values.put("active_conditions", "met");
+        values.put("objective", "");
+        values.put("issuer", issuer);
+        values.put("issuer_name", completionIssuerName(history));
+        values.put("issuer_profession", completionIssuerProfessionName(history));
+        values.put("issuer_dimension", completionIssuerDimensionText(history));
+        values.put("issuer_location", issuerLocation);
+        values.put("issuer_status", "completed");
+        values.put("completion_count", Integer.toString(history.completionIndex()));
+        values.put("completed_time", Long.toString(history.completedGameTime()));
+        values.put("started_time", Long.toString(history.startedGameTime()));
+        BlockPos issuerPos = history.issuerPos();
+        if (issuerPos == null) {
+            values.put("issuer_x", "unknown");
+            values.put("issuer_y", "unknown");
+            values.put("issuer_z", "unknown");
+        } else {
+            values.put("issuer_x", Integer.toString(issuerPos.getX()));
+            values.put("issuer_y", Integer.toString(issuerPos.getY()));
+            values.put("issuer_z", Integer.toString(issuerPos.getZ()));
+        }
+        return Map.copyOf(values);
+    }
+
+    private static String completedHistoryQuestId(ResourceLocation questId, int completionIndex) {
+        String suffix = "#completed/" + Math.max(1, completionIndex);
+        String base = questId == null ? "" : questId.toString();
+        if (base.length() + suffix.length() <= 128) {
+            return base + suffix;
+        }
+        return base.substring(0, Math.max(0, 128 - suffix.length())) + suffix;
+    }
+
+    private static String completionIssuerSummary(VillagerQuestSavedData.CompletionHistoryEntry history) {
+        String name = completionIssuerName(history);
+        String profession = completionIssuerProfessionName(history);
+        if (profession.isBlank() || "villager".equalsIgnoreCase(profession)) {
+            return name;
+        }
+        return name + " the " + profession;
+    }
+
+    private static String completionIssuerName(VillagerQuestSavedData.CompletionHistoryEntry history) {
+        if (history != null && !history.issuerName().isBlank()) {
+            return history.issuerName();
+        }
+        return "Unknown villager";
+    }
+
+    private static String completionIssuerProfessionName(VillagerQuestSavedData.CompletionHistoryEntry history) {
+        if (history != null && !history.issuerProfession().isBlank()) {
+            ResourceLocation professionId = ResourceLocation.tryParse(history.issuerProfession());
+            if (professionId != null) {
+                return VillagerInteractionTextUtil.resourcePathName(professionId);
+            }
+        }
+        return "villager";
+    }
+
+    private static String completionIssuerLocationSummary(VillagerQuestSavedData.CompletionHistoryEntry history) {
+        BlockPos pos = history == null ? null : history.issuerPos();
+        if (pos == null) {
+            return "Completion issuer location unknown";
+        }
+        String dimension = completionIssuerDimensionText(history);
+        return "Completed near " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()
+                + (dimension.isBlank() || "unknown".equals(dimension) ? "" : " in " + dimension);
+    }
+
+    private static String completionIssuerDimensionText(VillagerQuestSavedData.CompletionHistoryEntry history) {
+        ResourceKey<Level> dimension = history == null ? null : history.issuerDimension();
+        return dimension == null ? "unknown" : dimension.location().toString();
+    }
+
     private static String providerSummary(Villager villager) {
         String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
         String profession = VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "villager");
@@ -4408,7 +4583,8 @@ public final class VillagerQuestService {
             case ABANDONED -> definition.rules().abandonment() != QuestDefinition.AbandonmentMode.REMOVE_FOREVER
                     && !definition.rules().consumeOnAbandonment();
             case EXPIRED -> definition.rules().expiration().allowRepickup();
-            case NOT_STARTED, COMPLETED, CONSUMED -> false;
+            case COMPLETED -> true;
+            case NOT_STARTED, CONSUMED -> false;
         };
     }
 

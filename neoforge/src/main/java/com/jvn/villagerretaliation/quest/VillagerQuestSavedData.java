@@ -29,6 +29,8 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_STARTED_VILLAGER = "StartedVillager";
     private static final String TAG_STARTED_TIME = "StartedGameTime";
     private static final String TAG_COMPLETED_TIME = "CompletedGameTime";
+    private static final String TAG_COMPLETION_HISTORY = "CompletionHistory";
+    private static final String TAG_COMPLETION_INDEX = "CompletionIndex";
     private static final String TAG_ABANDONED_TIME = "AbandonedGameTime";
     private static final String TAG_EXPIRED_TIME = "ExpiredGameTime";
     private static final String TAG_VISITED_TARGET = "VisitedTarget";
@@ -264,6 +266,73 @@ public class VillagerQuestSavedData extends SavedData {
     public record QuestEntry(UUID playerId, ResourceLocation questId, QuestProgress progress) {
     }
 
+    public record CompletionHistoryEntry(
+            int completionIndex,
+            UUID issuerId,
+            long startedGameTime,
+            long completedGameTime,
+            String issuerName,
+            String issuerProfession,
+            int issuerLevel,
+            ResourceKey<Level> issuerDimension,
+            BlockPos issuerPos,
+            String issuerVillageKey
+    ) {
+        public CompletionHistoryEntry {
+            completionIndex = Math.max(1, completionIndex);
+            issuerName = issuerName == null ? "" : issuerName;
+            issuerProfession = issuerProfession == null ? "" : issuerProfession;
+            issuerLevel = Math.max(0, issuerLevel);
+            issuerPos = issuerPos == null ? null : issuerPos.immutable();
+            issuerVillageKey = issuerVillageKey == null ? "" : issuerVillageKey;
+        }
+
+        private static CompletionHistoryEntry load(CompoundTag tag) {
+            UUID issuerId = tag.hasUUID(TAG_STARTED_VILLAGER) ? tag.getUUID(TAG_STARTED_VILLAGER) : null;
+            ResourceKey<Level> issuerDimension = NbtDataUtil.readResourceLocation(tag, TAG_ISSUER_DIMENSION)
+                    .map(id -> ResourceKey.create(Registries.DIMENSION, id))
+                    .orElse(null);
+            return new CompletionHistoryEntry(
+                    tag.getInt(TAG_COMPLETION_INDEX),
+                    issuerId,
+                    tag.getLong(TAG_STARTED_TIME),
+                    tag.getLong(TAG_COMPLETED_TIME),
+                    tag.getString(TAG_ISSUER_NAME),
+                    tag.getString(TAG_ISSUER_PROFESSION),
+                    tag.getInt(TAG_ISSUER_LEVEL),
+                    issuerDimension,
+                    NbtDataUtil.readBlockPos(tag, TAG_ISSUER_POS).orElse(null),
+                    tag.getString(TAG_ISSUER_VILLAGE_KEY));
+        }
+
+        private CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putInt(TAG_COMPLETION_INDEX, this.completionIndex);
+            if (this.issuerId != null) {
+                tag.putUUID(TAG_STARTED_VILLAGER, this.issuerId);
+            }
+            tag.putLong(TAG_STARTED_TIME, this.startedGameTime);
+            tag.putLong(TAG_COMPLETED_TIME, this.completedGameTime);
+            if (!this.issuerName.isBlank()) {
+                tag.putString(TAG_ISSUER_NAME, this.issuerName);
+            }
+            if (!this.issuerProfession.isBlank()) {
+                tag.putString(TAG_ISSUER_PROFESSION, this.issuerProfession);
+            }
+            if (this.issuerLevel > 0) {
+                tag.putInt(TAG_ISSUER_LEVEL, this.issuerLevel);
+            }
+            if (this.issuerDimension != null) {
+                NbtDataUtil.putResourceLocation(tag, TAG_ISSUER_DIMENSION, this.issuerDimension.location());
+            }
+            NbtDataUtil.putBlockPos(tag, TAG_ISSUER_POS, this.issuerPos);
+            if (!this.issuerVillageKey.isBlank()) {
+                tag.putString(TAG_ISSUER_VILLAGE_KEY, this.issuerVillageKey);
+            }
+            return tag;
+        }
+    }
+
     public static class QuestProgress {
         private QuestState state = QuestState.NOT_STARTED;
         private UUID startedVillagerId;
@@ -291,6 +360,7 @@ public class VillagerQuestSavedData extends SavedData {
         private String consumedReason = "";
         private final Map<String, Long> triggerTimes = new HashMap<>();
         private final List<ChoiceHistoryEntry> choiceHistory = new ArrayList<>();
+        private final List<CompletionHistoryEntry> completionHistory = new ArrayList<>();
 
         private static QuestProgress load(CompoundTag tag) {
             QuestProgress progress = new QuestProgress();
@@ -340,6 +410,14 @@ public class VillagerQuestSavedData extends SavedData {
                 for (Tag rawChoice : historyTag) {
                     if (rawChoice instanceof CompoundTag choiceTag) {
                         progress.choiceHistory.add(ChoiceHistoryEntry.load(choiceTag));
+                    }
+                }
+            }
+            if (tag.contains(TAG_COMPLETION_HISTORY, Tag.TAG_LIST)) {
+                ListTag historyTag = tag.getList(TAG_COMPLETION_HISTORY, Tag.TAG_COMPOUND);
+                for (Tag rawCompletion : historyTag) {
+                    if (rawCompletion instanceof CompoundTag completionTag) {
+                        progress.completionHistory.add(CompletionHistoryEntry.load(completionTag));
                     }
                 }
             }
@@ -419,6 +497,13 @@ public class VillagerQuestSavedData extends SavedData {
                     historyTag.add(entry.save());
                 }
                 tag.put(TAG_CHOICE_HISTORY, historyTag);
+            }
+            if (!this.completionHistory.isEmpty()) {
+                ListTag historyTag = new ListTag();
+                for (CompletionHistoryEntry entry : this.completionHistory) {
+                    historyTag.add(entry.save());
+                }
+                tag.put(TAG_COMPLETION_HISTORY, historyTag);
             }
             if (this.targetDimension != null) {
                 NbtDataUtil.putResourceLocation(tag, TAG_TARGET_DIMENSION, this.targetDimension.location());
@@ -517,6 +602,10 @@ public class VillagerQuestSavedData extends SavedData {
             return this.completionCount;
         }
 
+        public List<CompletionHistoryEntry> completionHistory() {
+            return List.copyOf(this.completionHistory);
+        }
+
         public int abandonCount() {
             return this.abandonCount;
         }
@@ -585,6 +674,17 @@ public class VillagerQuestSavedData extends SavedData {
             this.state = consume ? QuestState.CONSUMED : QuestState.COMPLETED;
             this.completedGameTime = gameTime;
             this.completionCount++;
+            this.completionHistory.add(new CompletionHistoryEntry(
+                    this.completionCount,
+                    this.startedVillagerId,
+                    this.startedGameTime,
+                    gameTime,
+                    this.issuerName,
+                    this.issuerProfession,
+                    this.issuerLevel,
+                    this.issuerDimension,
+                    this.issuerPos,
+                    this.issuerVillageKey));
             this.consumedReason = consume ? "completion" : "";
             this.currentStage = "completed";
         }

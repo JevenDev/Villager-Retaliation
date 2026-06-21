@@ -168,6 +168,23 @@ public record QuestTrackerSyncPayload(List<Entry> entries, String trackedQuestId
                     this.questAvailable);
         }
 
+        public Entry withQuestId(String questId) {
+            return new Entry(
+                    questId,
+                    this.title,
+                    this.objective,
+                    this.metadata,
+                    this.progress,
+                    this.showProgress,
+                    this.state,
+                    this.status,
+                    this.issuer,
+                    this.issuerLocation,
+                    this.questItems,
+                    this.questUpdate,
+                    this.questAvailable);
+        }
+
         public Entry withQuestAvailable(boolean questAvailable) {
             return new Entry(
                     this.questId,
