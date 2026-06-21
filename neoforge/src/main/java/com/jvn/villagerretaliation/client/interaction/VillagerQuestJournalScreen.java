@@ -17,6 +17,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
@@ -90,6 +91,10 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int HOVERED_TEXT_COLOR = 0xFF000000;
     private static final int QUEST_COUNT_TEXT_COLOR = 0xFFFFFFFF;
     private static final int PAGE_TEXT_COLOR = 0xFFE1DAC7;
+    private static final Style QUEST_COUNT_ACTIVE_STYLE = Style.EMPTY.withColor(0xF9CB5F);
+    private static final Style QUEST_COUNT_ACCEPTED_STYLE = Style.EMPTY.withColor(0xE1DAC7);
+    private static final Style QUEST_COUNT_COMPLETED_STYLE = Style.EMPTY.withColor(0xB5F45B);
+    private static final Style QUEST_COUNT_NEARBY_STYLE = Style.EMPTY.withColor(0x5C96EF);
 
     private static final JournalNineSlice QUEST_JOURNAL_SCROLLBAR_NINE_SLICE =
             new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLBAR_TEXTURE, 4, 6, 1, 1, 2, 2);
@@ -179,6 +184,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         renderQuestOptions(graphics, mouseX, journalMouseY, slideOffset);
         renderQuestDetails(graphics, slideOffset);
         graphics.pose().popPose();
+        renderQuestCountTooltip(graphics, mouseX, mouseY, slideOffset);
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
@@ -327,11 +333,9 @@ public final class VillagerQuestJournalScreen extends Screen {
     private void renderQuestCountBadge(GuiGraphics graphics) {
         String count = Integer.toString(visibleEntries().size());
         int textWidth = this.font.width(count);
-        int badgeWidth = Math.max(
-                QUEST_COUNT_BADGE_WIDTH,
-                textWidth + QUEST_COUNT_BADGE_HORIZONTAL_PADDING * 2 + QUEST_COUNT_BADGE_INNER_INSET);
-        int badgeLeft = optionsLeft() + QUEST_OPTION_WIDTH - badgeWidth;
-        int badgeTop = optionsTop() - QUEST_COUNT_BADGE_BOTTOM_GAP - QUEST_COUNT_BADGE_HEIGHT;
+        int badgeWidth = questCountBadgeWidth(textWidth);
+        int badgeLeft = questCountBadgeLeft(badgeWidth);
+        int badgeTop = questCountBadgeTop();
         int innerLeft = badgeLeft + QUEST_COUNT_BADGE_INNER_INSET;
         int innerWidth = badgeWidth - QUEST_COUNT_BADGE_INNER_INSET * 2;
         QUEST_JOURNAL_QUEST_NUMBER_NINE_SLICE.render(
@@ -347,6 +351,69 @@ public final class VillagerQuestJournalScreen extends Screen {
                 badgeTop + 2,
                 QUEST_COUNT_TEXT_COLOR,
                 false);
+    }
+
+    private void renderQuestCountTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        String count = Integer.toString(visibleEntries().size());
+        int badgeWidth = questCountBadgeWidth(this.font.width(count));
+        int badgeLeft = questCountBadgeLeft(badgeWidth);
+        int badgeTop = questCountBadgeTop() + slideOffset;
+        if (!isPointInside(mouseX, mouseY, badgeLeft, badgeTop, badgeLeft + badgeWidth, badgeTop + QUEST_COUNT_BADGE_HEIGHT)) {
+            return;
+        }
+        graphics.renderComponentTooltip(this.font, questCountTooltip(), mouseX, mouseY);
+    }
+
+    private int questCountBadgeWidth(int textWidth) {
+        return Math.max(
+                QUEST_COUNT_BADGE_WIDTH,
+                textWidth + QUEST_COUNT_BADGE_HORIZONTAL_PADDING * 2 + QUEST_COUNT_BADGE_INNER_INSET);
+    }
+
+    private int questCountBadgeLeft(int badgeWidth) {
+        return optionsLeft() + QUEST_OPTION_WIDTH - badgeWidth;
+    }
+
+    private int questCountBadgeTop() {
+        return optionsTop() - QUEST_COUNT_BADGE_BOTTOM_GAP - QUEST_COUNT_BADGE_HEIGHT;
+    }
+
+    private List<Component> questCountTooltip() {
+        QuestCountSummary summary = questCountSummary();
+        return switch (this.selectedTab) {
+            case AVAILABLE -> List.of(
+                    Component.literal("Quest counts").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    Component.literal("Active: " + summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
+                    Component.literal("Accepted: " + summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE),
+                    Component.literal("Nearby: " + summary.nearby()).withStyle(QUEST_COUNT_NEARBY_STYLE));
+            case ACTIVE -> List.of(
+                    Component.literal("Quest counts").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    Component.literal("Active: " + summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
+                    Component.literal("Accepted: " + summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE));
+            case COMPLETED -> List.of(
+                    Component.literal("Quest counts").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    Component.literal("Completed: " + summary.completed()).withStyle(QUEST_COUNT_COMPLETED_STYLE));
+        };
+    }
+
+    private static QuestCountSummary questCountSummary() {
+        int active = 0;
+        int accepted = 0;
+        int nearby = 0;
+        int completed = 0;
+        for (QuestTrackerSyncPayload.Entry entry : entries()) {
+            QuestJournalEntryState state = QuestJournalEntryState.from(entry);
+            if (entry.questAvailable()) {
+                nearby++;
+            } else if (state == QuestJournalEntryState.ACTIVE && VillagerQuestTrackerOverlay.isTracked(entry)) {
+                active++;
+            } else if (state == QuestJournalEntryState.ACTIVE) {
+                accepted++;
+            } else if (state == QuestJournalEntryState.COMPLETED) {
+                completed++;
+            }
+        }
+        return new QuestCountSummary(active, accepted, nearby, completed);
     }
 
     private void renderBookmarks(GuiGraphics graphics, int journalLeft, int journalTop) {
@@ -1412,6 +1479,9 @@ public final class VillagerQuestJournalScreen extends Screen {
             boolean centered,
             boolean divider,
             boolean titleIcon) {
+    }
+
+    private record QuestCountSummary(int active, int accepted, int nearby, int completed) {
     }
 
     private record JournalNineSlice(
