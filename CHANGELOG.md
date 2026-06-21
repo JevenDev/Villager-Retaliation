@@ -1,32 +1,72 @@
 # Changelog
 
-## 1.0.0-beta.13 - 2026-06-07
+## 1.0.0-beta.13 - 2026-06-21
 
-Beta.13 is the Hired Help update. It expands recruitment into a full hired-worker system with contracts, roles, storage, work areas, wallets, payment tooling, and broader workforce behavior support after beta.12.
+The Hired Help update turns recruitment into a full hired-worker system with contracts, job roles, assigned storage, work areas, payment boxes, wallets, and workforce management, while also expanding quests, dialogue authoring, villager AI, UI, and pack-development tooling.
 
 ### Added
 
-- Added hired villager contracts with duration selection, hired-role selection, daily pricing, early-end refunds, and dedicated interaction submenus.
-- Added clipboard-based hired storage management with assigned storage tracking, protected job inventory handling, clipboard-specific villager actions, storage syncing, and world-space storage outlines for worker logistics.
-- Added split villager inventory management with separate Personal and Job views, dedicated job equipment and storage slots, and safeguards for preserving displaced equipment when hired workers swap or restore gear.
-- Added persistent villager wallets, deposited-earnings tracking, wallet UI, wallet-capacity tuning, and an optional unlimited-wallet config for servers that do not want worker savings capped.
-- Added data-driven currency resources under `data/villagerretaliation/currency/`, making wallet labels, default trade currency, refunds, deposits, payment-box behavior, and other hire/trade payments configurable instead of hardcoded to emerald only.
-- Added payment boxes with block, menu, screen, recipe, loot-table, and currency-tag support, plus auto-payment handling for depositing worker pay and other configured currency items.
-- Added hired work sessions, work plans, worker registry/focus tracking, bounded work-area assignment, and profession-linked hired roles for Combat, Mining, Logging, Farming, Brewing, Navigation, Animal Handling, and Nitwit work.
-- Added hired combat-role support with combat worker behavior and multiple combat modes for guarding, roaming, sweeping the area for non-villager threats, or hunting animals inside an assigned work zone.
-- Added functional hired-worker automation for Mining, Logging, and Farming, including ore-targeting or excavation mining modes, natural-tree harvesting, mature-crop harvesting, and field replanting support.
-- Added profession/skill-based hired-role availability so villagers surface preferred jobs immediately and can unlock broader hired roles once their relevant skill scores are high enough.
-- Added hired-work role scoring and optional skill growth so worker efficiency and role unlocks reflect a villager's actual skill profile and can improve gradually through paid work.
-- Added clipboard workforce UI pages with synced workforce snapshots, overview/status views, warnings, and in-game management for hired villagers and their assigned workspaces.
-- Added workforce status reporting for common hired-worker problems such as missing work areas, missing storage, full inventories, unpaid contracts, and workers straying too far from their assigned job zones.
-- Added Stay Here recruit behavior so a recruited villager can hold position when ordered, instead of only following the player.
+- Added hired villager contracts with role and duration selection, reputation/skill-based daily pricing, early-end refunds, recurring payment handling, unpaid/loaded-chunk status tracking, and dedicated hire menus.
+- Added hired roles for Combat, Mining, Logging, Farming, Fishing, Brewing, Builder, Animal Handling, and Nitwit, with profession preferences, skill unlock thresholds, role scoring, optional skill growth, per-role food costs, and configurable efficiency.
+- Added hired worker sessions, work plans, focus tracking, bounded work areas, path reservations, blacklisting, stall detection, return-to-area behavior, storage navigation, and batched target scans so jobs can run with bounded server work instead of constant world scans.
+- Added split villager inventory management with Personal and Job views, job equipment slots, protected worker gear, supply and output slots, full-output handling, assigned output storage, and safeguards for preserving or displacing gear without duplication.
+- Added persistent villager wallets, lifetime earnings/spending/deposits, natural worker income, assigned-storage deposits, wallet UI, wallet-capacity tuning, and optional unlimited wallets.
+- Added payment boxes in every supported wood family with block, item, menu, screen, recipe, loot-table, and currency-tag support for recurring worker pay and stored currency.
+- Added clipboard workforce management with assigned storage, payment storage, work-area drafting, move/resize/clear controls, storage and work-area previews, synced workforce snapshots, status pages, and warnings for missing storage, missing areas, full inventories, unpaid contracts, or straying workers.
+- Added Stay Here recruit behavior so recruited villagers can hold position when ordered instead of only following the player.
+- Added hired combat work with guard, roaming, attack-all, and hunting modes for patrolling assigned areas and targeting non-villager threats or animals without treating players, villagers, golems, or tamed animals as job targets.
+- Added mining, logging, and farming workers with exposed-ore and excavation mining modes, support placement, natural-tree harvesting, log filters, optional stripping/leaf handling/sapling replanting, mature-crop harvesting, replanting, and output delivery.
+- Added fishing, brewing, builder, animal-handling, and nitwit hired work, including villager fishing hooks, brewing orders and potion variants, construction blueprint placement/previews, data-driven build sites, animal breeding and product gathering, and lightweight nitwit job status behavior.
+- Added construction blueprints, builder placement controls, material and tool checks, paid build jobs, block-entity sanitization, material-storage lookup, and a data-driven default structure catalog based on vanilla village houses.
+- Added 14 built-in quests, bringing the built-in quest set to 35 with the Cartographer's Atlas questline, Standing Watch, and additional Village Supply requests for beetroots, bottles, eggs, feathers, and torches.
+- Added quest module v2 support with one-file quest modules, providers, availability rules, lifecycle data, stages, stage aliases, branching responses, inline or extracted quest scenes, rewards, scoped completion limits, and legacy v1 compatibility.
+- Added new quest objective, trigger, fact, condition, and action support for locations, structure visits, mob kills, block break/place/interact tasks, memory events, trades, gifts, reputation checks, choices, facts, and condition-backed progress.
+- Added quest journal and HUD support for completion history, multiple tracked quests, selected-quest highlight mode, persisted quest selection and scroll position, tab-specific empty states, count badges, bookmarks, status styling, and scrollbar/highlight assets.
+- Added shared dialogue and quest action execution support, localized text keys, message prefixes, dialogue control flags, forced-dialogue replacement/removal controls, configurable dialogue text speed, dialogue blip audio, and configurable villager chat broadcasting.
+- Added non-binary villager gender support, broader deterministic name selection, opposite-gender breeding configuration, and `/villagerretaliation profile set_gender` for operator profile correction.
+- Added villager rendering and resource-pack support for dual-arm layouts, combat-capable model behavior, profession/type/level overlays, and vanilla OptiFine CEM/EMF-style model compatibility.
 
 ### Changed
 
-- Expanded recruitment from beta.11/beta.12's simpler follow-and-inventory flow into a contract-driven hired-help system with role, duration, job inventory, assigned storage, work-area, and workforce-management support surfaced directly in the interaction UI.
-- Villager trades, wallet deposits, payment boxes, villager drops, and other currency-sensitive systems now read from the shared currency resource and `villagerretaliation:currency` item tag instead of assuming an emerald-only economy.
-- The villager interaction and merchant presentation now better reflect beta.13 systems, including hired-role support in the interaction UI, synced name-tag config, and extended merchant background rendering for the expanded trade-leveling display.
-- The `despised` reputation threshold now defaults to `-400`, making the most hostile reputation tier easier to reach than in older betas.
+- Expanded recruitment from follow/inventory management into contract-driven hired help with role selection, job inventory, assigned storage, payment, work areas, status pages, and workforce controls in the interaction UI.
+- Changed villager trades, wallets, deposits, payment boxes, villager drops, hire refunds, worker deposits, and trade costs to use the shared currency resource and `villagerretaliation:currency` item tag instead of assuming an emerald-only economy.
+- Reworked the villager interaction screen with new container art, currency icons, pixel option buttons, portrait/nameplate ornament assets, expanded work pages, synced status text, and currency-colored wallet labels.
+- Changed merchant trade leveling to support skill-based trade XP scaling, persisted fractional progress, synced profile payloads, and adjusted client-side merchant XP displays.
+- Reworked the quest runtime and tracker around staged progress, branch locking, current-stage persistence, blocker reasons, village-scoped facts, deterministic response transitions, choice history, and saved-condition evaluation without requiring a live issuer.
+- Changed the quest journal from the older single-surface tracker into a tabbed journal with better active/completed/history views, tracked-quest selection, scrolling behavior, status badges, and highlight rendering.
+- Reworked forced dialogue, quest dialogue, and authored dialogue trees to share localized text metadata, action execution, dry-run support, payload codecs, and runtime clear/reload behavior.
+- Changed villager AI and combat suppression so armed, angered, hired, or actively controlled villagers can avoid conflicting vanilla panic, flee, hide, bell, raid, food-sharing, hero-gift, and trader-avoidance behaviors when custom retaliation or work logic should be in charge.
+- Reworked retaliation and support behavior with extracted combat tactics, hostile-tier harassment throws, armorer/smith/golem repair support, passive cleric ally healing line-of-sight, and throttled natural hostile targeting.
+- Changed villager job, chest, pickup, and storage behavior so workers prefer assigned storage, recover from missing or blocked containers, extract dropped items more reliably, and keep job supplies/outputs separate from personal inventory.
+- Changed villager social and profile behavior with non-binary gender labels, breeding compatibility controls, persisted gender overrides, and expanded profile command support.
+- Changed the `despised` reputation threshold default to `-400`, making the most hostile reputation tier easier to reach than in older betas.
+- Changed config coverage with hire balance, worker food, per-role efficiency, skill growth, builder, storage, currency, dialogue animation, dialogue audio, and villager chat broadcast options.
+- Changed player and pack documentation for the larger feature surface, including updated README/wiki counts, quest authoring guidance, builder structure notes, resource-pack model notes, and generated datapack-builder metadata.
+
+### Fixed
+
+- Fixed duplicate skill-trade registration paths so repeated registration no longer appends duplicate villager or wandering-trader offers.
+- Fixed UI scale, text scale, tooltip bounds, hover regions, gift-page controls, profile/options hit detection, and merchant-screen XP display drift across common GUI scale settings.
+- Fixed merchant trade XP desync and fractional adjusted-progress loss after trades, offer refreshes, and merchant result/container updates.
+- Fixed hired worker inventory edge cases around protected gear, trade previews, hero gifts, food sharing, legacy overflow migration, output deposits, missing supplies, full storage, and equipment restoration.
+- Fixed worker pathing and job reliability issues around water, ladders, unreachable targets, blocked storage, returning to assigned areas, stale targets, storage recovery, pickup extraction, leaf bridges, and farming/logging/mining flow interruptions.
+- Fixed quest tracker, completion-history, objective-count, trigger-index, branch-locking, action-result, diagnostic-buffer, and payload-size edge cases that could leave progress stale, hidden, overreported, or unsafe to sync.
+- Fixed forced-dialogue and dialogue reload cases involving global replacement, removal files, localized text metadata, control-only dialogue entries, payload codec clearing, and action execution diagnostics.
+- Fixed villager AI compatibility issues where vanilla flee, avoid, panic, hide, raid, bell, gift, and food-sharing behaviors could fight custom combat, anger, retaliation, or hired-work behavior.
+- Fixed performance hot spots with spread tick work, gossip-distance checks, item-count caches, storage scans, hostile target polling, work-area scans, and worker target searches.
+- Fixed resource-pack and rendering compatibility around villager name rendering, profession/type/level overlays, combat model layout, and OptiFine CEM/EMF-style model behavior.
+
+### Technical / Pack Dev
+
+- Added data-driven currency definitions at `data/villagerretaliation/currency/`, currency item tags, configurable currency text color, and shared lookup paths for wallets, trades, drops, payment boxes, refunds, deposits, and hire costs.
+- Added data-driven builder structure definitions at `data/<namespace>/builder_structures/`, synced builder structure catalogs, placement/material diagnostics, and default generated village-house structure entries.
+- Added quest module v2 schemas, docs, migration helpers, diagnostics, trace/explain tooling, datapack-builder support, embedded/extracted scene handling, and compatibility adapters so v1 quests continue to load while new packs can target v2.
+- Added or expanded `/villagerretaliation` debug commands for hired-worker previews and target lines, quest provider/start/inspect/availability/trace/objective/stage/action/fact diagnostics, village registry inspection/merge tools, dialogue diagnostics, and profile gender overrides.
+- Added networking and save support for hired-worker, quest, dialogue, and builder systems, including protocol version `25`, server config sync, builder catalog sync, quest tracker sync, clipboard storage/work-area/workforce previews, construction blueprint placement, hired role settings, dialogue responses, completion history, choice history, current quest stages, and bounded payload collection reads.
+- Added structured quest, dialogue, action, objective, trigger, condition, village-scope, and builder validation warnings so datapacks fail with clearer diagnostics instead of silent partial loads.
+- Added GameTest and lightweight regression coverage for hired workers, villager inventories, quest v1/v2 compatibility, quest registries, completion history, tracker presentation, deterministic choices, suppressing vanilla trade/gift behavior, and worker storage/job flows.
+- Added pack-facing language keys, assets, GUI textures, tooltip text, config comments, and wiki snapshots for hired workers, quest v2 authoring, builder structures, villager models, dialogue controls, and the expanded quest journal.
+
 ## 1.0.0-beta.12-hotfix.2 - 2026-06-06
 
 Beta.12-hotfix.2 expands the beta.13 follow-up with broader gender support, new Village Supply quest content, operator gender correction tooling, and refined skill-based villager trade leveling with synced merchant-screen feedback.
