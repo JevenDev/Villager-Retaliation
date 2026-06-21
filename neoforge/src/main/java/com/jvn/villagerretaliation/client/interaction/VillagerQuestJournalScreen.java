@@ -65,6 +65,11 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int QUEST_OPTION_SCROLLBAR_GAP = 5;
     private static final int QUEST_OPTION_SCROLLBAR_WIDTH = 4;
     private static final int QUEST_OPTION_SCROLLER_MIN_HEIGHT = 6;
+    private static final int QUEST_COUNT_BADGE_WIDTH = 11;
+    private static final int QUEST_COUNT_BADGE_HEIGHT = 11;
+    private static final int QUEST_COUNT_BADGE_HORIZONTAL_PADDING = 2;
+    private static final int QUEST_COUNT_BADGE_INNER_INSET = 1;
+    private static final int QUEST_COUNT_BADGE_BOTTOM_GAP = 4;
 
     private static final int DETAILS_LEFT_OFFSET = 194;
     private static final int DETAILS_TOP_OFFSET = 40;
@@ -79,6 +84,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int MUTED_TEXT_COLOR = 0xFF000000;
     private static final int SELECTED_TEXT_COLOR = 0xFFFFFFFF;
     private static final int HOVERED_TEXT_COLOR = 0xFF000000;
+    private static final int QUEST_COUNT_TEXT_COLOR = 0xFFFFFFFF;
     private static final int PROGRESS_BACKGROUND_COLOR = 0x553A2A1B;
     private static final int PROGRESS_FILL_COLOR = 0xFF9C3B22;
 
@@ -165,6 +171,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         graphics.pose().translate(0.0F, slideOffset, 0.0F);
         renderJournalContainer(graphics);
         renderTabTitle(graphics);
+        renderQuestCountBadge(graphics);
         renderQuestOptions(graphics, mouseX, journalMouseY, slideOffset);
         renderQuestDetails(graphics, slideOffset);
         graphics.pose().popPose();
@@ -311,6 +318,31 @@ public final class VillagerQuestJournalScreen extends Screen {
                 journalLeft() + TAB_TITLE_LEFT_OFFSET,
                 journalTop() + TAB_TITLE_BOTTOM_OFFSET - this.font.lineHeight,
                 TITLE_COLOR,
+                false);
+    }
+
+    private void renderQuestCountBadge(GuiGraphics graphics) {
+        String count = Integer.toString(visibleEntries().size());
+        int textWidth = this.font.width(count);
+        int badgeWidth = Math.max(
+                QUEST_COUNT_BADGE_WIDTH,
+                textWidth + QUEST_COUNT_BADGE_HORIZONTAL_PADDING * 2 + QUEST_COUNT_BADGE_INNER_INSET);
+        int badgeLeft = optionsLeft() + QUEST_OPTION_WIDTH - badgeWidth;
+        int badgeTop = optionsTop() - QUEST_COUNT_BADGE_BOTTOM_GAP - QUEST_COUNT_BADGE_HEIGHT;
+        int innerLeft = badgeLeft + QUEST_COUNT_BADGE_INNER_INSET;
+        int innerWidth = badgeWidth - QUEST_COUNT_BADGE_INNER_INSET * 2;
+        QUEST_JOURNAL_QUEST_NUMBER_NINE_SLICE.render(
+                graphics,
+                badgeLeft,
+                badgeTop,
+                badgeWidth,
+                QUEST_COUNT_BADGE_HEIGHT);
+        graphics.drawString(
+                this.font,
+                count,
+                innerLeft + Math.round((innerWidth - textWidth) / 2.0F),
+                badgeTop + 2,
+                QUEST_COUNT_TEXT_COLOR,
                 false);
     }
 
