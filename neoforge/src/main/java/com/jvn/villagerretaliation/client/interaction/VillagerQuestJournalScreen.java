@@ -52,6 +52,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int QUEST_OPTION_TEXT_RIGHT_PADDING = 18;
     private static final int QUEST_OPTION_TEXT_TOP_PADDING = 6;
     private static final int QUEST_OPTION_TEXT_LINE_GAP = 2;
+    private static final int QUEST_OPTION_EMPTY_TEXT_TOP_PADDING = 8;
     private static final int QUEST_OPTION_SELECTED_OVERHANG_X = 3;
     private static final int QUEST_OPTION_SELECTED_OVERHANG_Y = 2;
     private static final int QUEST_OPTION_STATE_ICON_LEFT_PADDING = 3;
@@ -339,6 +340,16 @@ public final class VillagerQuestJournalScreen extends Screen {
         int top = optionsTop();
         int viewportBottom = top + optionViewportHeight();
         int hovered = questOptionAt(mouseX, journalMouseY);
+        if (visibleEntries.isEmpty()) {
+            graphics.drawString(
+                    this.font,
+                    this.selectedTab.emptyMessage(),
+                    left,
+                    top + QUEST_OPTION_EMPTY_TEXT_TOP_PADDING,
+                    TEXT_COLOR,
+                    false);
+            return;
+        }
         graphics.enableScissor(
                 left - QUEST_OPTION_SELECTED_OVERHANG_X,
                 top - QUEST_OPTION_SELECTED_OVERHANG_Y + slideOffset,
@@ -1106,6 +1117,14 @@ public final class VillagerQuestJournalScreen extends Screen {
 
         String title() {
             return this.title;
+        }
+
+        String emptyMessage() {
+            return switch (this) {
+                case AVAILABLE -> "No available quests";
+                case ACTIVE -> "No active quests";
+                case COMPLETED -> "No completed quests";
+            };
         }
 
         ResourceLocation texture() {
