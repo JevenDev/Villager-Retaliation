@@ -12,308 +12,704 @@
     {
       "key": "interaction.work.mining.scan_excavation",
       "lines": [
-        "I am still checking the excavation area for reachable blocks."
+        "I am still checking the excavation area for reachable blocks.",
+        "Right now, that is my focus. I am still checking the excavation area for reachable blocks.",
+        "That is my current step. I am still checking the excavation area for reachable blocks.",
+        "I am keeping the job moving. I am still checking the excavation area for reachable blocks.",
+        "This is where I am in the work. I am still checking the excavation area for reachable blocks.",
+        "I am staying with the task. I am still checking the excavation area for reachable blocks.",
+        "For the moment, I am busy with this. I am still checking the excavation area for reachable blocks.",
+        "I will keep going from here. I am still checking the excavation area for reachable blocks.",
+        "The work is still moving. I am still checking the excavation area for reachable blocks.",
+        "I am working through it. I am still checking the excavation area for reachable blocks."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.scan_excavation.000"
     },
     {
       "key": "interaction.work.mining.output_full_depositing",
       "lines": [
-        "My packs are full, so I am taking the mined output to storage before I continue."
+        "My packs are full, so I am taking the mined output to storage before I continue.",
+        "Right now, that is my focus. My packs are full, so I am taking the mined output to storage before I continue.",
+        "That is my current step. My packs are full, so I am taking the mined output to storage before I continue.",
+        "I am keeping the job moving. My packs are full, so I am taking the mined output to storage before I continue.",
+        "This is where I am in the work. My packs are full, so I am taking the mined output to storage before I continue.",
+        "I am staying with the task. My packs are full, so I am taking the mined output to storage before I continue.",
+        "For the moment, I am busy with this. My packs are full, so I am taking the mined output to storage before I continue.",
+        "I will keep going from here. My packs are full, so I am taking the mined output to storage before I continue.",
+        "The work is still moving. My packs are full, so I am taking the mined output to storage before I continue.",
+        "I am working through it. My packs are full, so I am taking the mined output to storage before I continue."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.output_full_depositing.001"
     },
     {
       "key": "interaction.work.mining.output_full_blocked",
       "lines": [
-        "I cannot carry more ore, and I have nowhere to stow it."
+        "I cannot carry more ore, and I have nowhere to stow it.",
+        "I am held up for now. I cannot carry more ore, and I have nowhere to stow it.",
+        "This is stopping the job for the moment. I cannot carry more ore, and I have nowhere to stow it.",
+        "I cannot move on yet. I cannot carry more ore, and I have nowhere to stow it.",
+        "I will continue once this is fixed. I cannot carry more ore, and I have nowhere to stow it.",
+        "That needs attention before I can keep working. I cannot carry more ore, and I have nowhere to stow it.",
+        "I am waiting on a fix. I cannot carry more ore, and I have nowhere to stow it.",
+        "The work is paused until this changes. I cannot carry more ore, and I have nowhere to stow it.",
+        "This is the problem right now. I cannot carry more ore, and I have nowhere to stow it.",
+        "I am stuck here for the moment. I cannot carry more ore, and I have nowhere to stow it."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.output_full_blocked.002"
     },
     {
       "key": "interaction.work.mining.post_clear_scan",
       "lines": [
-        "I cleared that block and am checking the assigned area for the next reachable face."
+        "I cleared that block and am checking the assigned area for the next reachable face.",
+        "Right now, that is my focus. I cleared that block and am checking the assigned area for the next reachable face.",
+        "That is my current step. I cleared that block and am checking the assigned area for the next reachable face.",
+        "I am keeping the job moving. I cleared that block and am checking the assigned area for the next reachable face.",
+        "This is where I am in the work. I cleared that block and am checking the assigned area for the next reachable face.",
+        "I am staying with the task. I cleared that block and am checking the assigned area for the next reachable face.",
+        "For the moment, I am busy with this. I cleared that block and am checking the assigned area for the next reachable face.",
+        "I will keep going from here. I cleared that block and am checking the assigned area for the next reachable face.",
+        "The work is still moving. I cleared that block and am checking the assigned area for the next reachable face.",
+        "I am working through it. I cleared that block and am checking the assigned area for the next reachable face."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.post_clear_scan.003"
     },
     {
       "key": "interaction.work.mining.post_clear_depositing",
       "lines": [
-        "I have gathered the mined output and am taking it to storage."
+        "I have gathered the mined output and am taking it to storage.",
+        "Right now, that is my focus. I have gathered the mined output and am taking it to storage.",
+        "That is my current step. I have gathered the mined output and am taking it to storage.",
+        "I am keeping the job moving. I have gathered the mined output and am taking it to storage.",
+        "This is where I am in the work. I have gathered the mined output and am taking it to storage.",
+        "I am staying with the task. I have gathered the mined output and am taking it to storage.",
+        "For the moment, I am busy with this. I have gathered the mined output and am taking it to storage.",
+        "I will keep going from here. I have gathered the mined output and am taking it to storage.",
+        "The work is still moving. I have gathered the mined output and am taking it to storage.",
+        "I am working through it. I have gathered the mined output and am taking it to storage."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.post_clear_depositing.004"
     },
     {
       "key": "interaction.work.mining.deposited_checking_packs",
       "lines": [
-        "I put away my mined output and am checking my packs before I continue."
+        "I put away my mined output and am checking my packs before I continue.",
+        "That part is handled. I put away my mined output and am checking my packs before I continue.",
+        "Here is the update: I put away my mined output and am checking my packs before I continue.",
+        "That moved things along: I put away my mined output and am checking my packs before I continue.",
+        "That step is finished. I put away my mined output and am checking my packs before I continue.",
+        "I have that sorted. I put away my mined output and am checking my packs before I continue.",
+        "That is taken care of. I put away my mined output and am checking my packs before I continue.",
+        "The work moved forward. I put away my mined output and am checking my packs before I continue.",
+        "I can report this much. I put away my mined output and am checking my packs before I continue.",
+        "That part is done: I put away my mined output and am checking my packs before I continue."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.deposited_checking_packs.005"
     },
     {
       "key": "interaction.work.mining.support.moving",
       "lines": [
-        "I am moving into position to place excavation supports."
+        "I am moving into position to place excavation supports.",
+        "Right now, that is my focus. I am moving into position to place excavation supports.",
+        "That is my current step. I am moving into position to place excavation supports.",
+        "I am keeping the job moving. I am moving into position to place excavation supports.",
+        "This is where I am in the work. I am moving into position to place excavation supports.",
+        "I am staying with the task. I am moving into position to place excavation supports.",
+        "For the moment, I am busy with this. I am moving into position to place excavation supports.",
+        "I will keep going from here. I am moving into position to place excavation supports.",
+        "The work is still moving. I am moving into position to place excavation supports.",
+        "I am working through it. I am moving into position to place excavation supports."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.moving.006"
     },
     {
       "key": "interaction.work.mining.support.placed_ladder",
       "lines": [
-        "I placed the next ladder support for the excavation."
+        "I placed the next ladder support for the excavation.",
+        "That part is handled. I placed the next ladder support for the excavation.",
+        "Here is the update: I placed the next ladder support for the excavation.",
+        "That moved things along: I placed the next ladder support for the excavation.",
+        "That step is finished. I placed the next ladder support for the excavation.",
+        "I have that sorted. I placed the next ladder support for the excavation.",
+        "That is taken care of. I placed the next ladder support for the excavation.",
+        "The work moved forward. I placed the next ladder support for the excavation.",
+        "I can report this much. I placed the next ladder support for the excavation.",
+        "That part is done: I placed the next ladder support for the excavation."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.placed_ladder.007"
     },
     {
       "key": "interaction.work.mining.support.placed_torch",
       "lines": [
-        "I placed a torch for the excavation."
+        "I placed a torch for the excavation.",
+        "That part is handled. I placed a torch for the excavation.",
+        "Here is the update: I placed a torch for the excavation.",
+        "That moved things along: I placed a torch for the excavation.",
+        "That step is finished. I placed a torch for the excavation.",
+        "I have that sorted. I placed a torch for the excavation.",
+        "That is taken care of. I placed a torch for the excavation.",
+        "The work moved forward. I placed a torch for the excavation.",
+        "I can report this much. I placed a torch for the excavation.",
+        "That part is done: I placed a torch for the excavation."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.placed_torch.008"
     },
     {
       "key": "interaction.work.mining.support.missing_ladders",
       "lines": [
-        "I need ladders in my job supplies or assigned storage before I can excavate safely."
+        "I need ladders in my job supplies or assigned storage before I can excavate safely.",
+        "I am held up for now. I need ladders in my job supplies or assigned storage before I can excavate safely.",
+        "This is stopping the job for the moment. I need ladders in my job supplies or assigned storage before I can excavate safely.",
+        "I cannot move on yet. I need ladders in my job supplies or assigned storage before I can excavate safely.",
+        "I will continue once this is fixed. I need ladders in my job supplies or assigned storage before I can excavate safely.",
+        "That needs attention before I can keep working. I need ladders in my job supplies or assigned storage before I can excavate safely.",
+        "I am waiting on a fix. I need ladders in my job supplies or assigned storage before I can excavate safely.",
+        "The work is paused until this changes. I need ladders in my job supplies or assigned storage before I can excavate safely.",
+        "This is the problem right now. I need ladders in my job supplies or assigned storage before I can excavate safely.",
+        "I am stuck here for the moment. I need ladders in my job supplies or assigned storage before I can excavate safely."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.missing_ladders.009"
     },
     {
       "key": "interaction.work.mining.support.gathering_supplies",
       "lines": [
-        "I am heading to assigned storage for excavation supplies."
+        "I am heading to assigned storage for excavation supplies.",
+        "Right now, that is my focus. I am heading to assigned storage for excavation supplies.",
+        "That is my current step. I am heading to assigned storage for excavation supplies.",
+        "I am keeping the job moving. I am heading to assigned storage for excavation supplies.",
+        "This is where I am in the work. I am heading to assigned storage for excavation supplies.",
+        "I am staying with the task. I am heading to assigned storage for excavation supplies.",
+        "For the moment, I am busy with this. I am heading to assigned storage for excavation supplies.",
+        "I will keep going from here. I am heading to assigned storage for excavation supplies.",
+        "The work is still moving. I am heading to assigned storage for excavation supplies.",
+        "I am working through it. I am heading to assigned storage for excavation supplies."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.gathering_supplies.010"
     },
     {
       "key": "interaction.work.mining.support.gathered_supplies",
       "lines": [
-        "I gathered excavation supplies from storage and am returning to the job site."
+        "I gathered excavation supplies from storage and am returning to the job site.",
+        "That part is handled. I gathered excavation supplies from storage and am returning to the job site.",
+        "Here is the update: I gathered excavation supplies from storage and am returning to the job site.",
+        "That moved things along: I gathered excavation supplies from storage and am returning to the job site.",
+        "That step is finished. I gathered excavation supplies from storage and am returning to the job site.",
+        "I have that sorted. I gathered excavation supplies from storage and am returning to the job site.",
+        "That is taken care of. I gathered excavation supplies from storage and am returning to the job site.",
+        "The work moved forward. I gathered excavation supplies from storage and am returning to the job site.",
+        "I can report this much. I gathered excavation supplies from storage and am returning to the job site.",
+        "That part is done: I gathered excavation supplies from storage and am returning to the job site."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.gathered_supplies.011"
     },
     {
       "key": "interaction.work.mining.no_target_deposit.excavate_area",
       "lines": [
-        "There are no reachable excavation blocks right now, so I am heading to storage for now."
+        "There are no reachable excavation blocks right now, so I am heading to storage for now.",
+        "I am held up for now. There are no reachable excavation blocks right now, so I am heading to storage for now.",
+        "This is stopping the job for the moment. There are no reachable excavation blocks right now, so I am heading to storage for now.",
+        "I cannot move on yet. There are no reachable excavation blocks right now, so I am heading to storage for now.",
+        "I will continue once this is fixed. There are no reachable excavation blocks right now, so I am heading to storage for now.",
+        "That needs attention before I can keep working. There are no reachable excavation blocks right now, so I am heading to storage for now.",
+        "I am waiting on a fix. There are no reachable excavation blocks right now, so I am heading to storage for now.",
+        "The work is paused until this changes. There are no reachable excavation blocks right now, so I am heading to storage for now.",
+        "This is the problem right now. There are no reachable excavation blocks right now, so I am heading to storage for now.",
+        "I am stuck here for the moment. There are no reachable excavation blocks right now, so I am heading to storage for now."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.no_target_deposit.excavate_area.012"
     },
     {
       "key": "interaction.work.mining.no_target_deposit.exposed_ores",
       "lines": [
-        "There is no exposed ore in this pocket, so I am heading to storage for now."
+        "There is no exposed ore in this pocket, so I am heading to storage for now.",
+        "I am held up for now. There is no exposed ore in this pocket, so I am heading to storage for now.",
+        "This is stopping the job for the moment. There is no exposed ore in this pocket, so I am heading to storage for now.",
+        "I cannot move on yet. There is no exposed ore in this pocket, so I am heading to storage for now.",
+        "I will continue once this is fixed. There is no exposed ore in this pocket, so I am heading to storage for now.",
+        "That needs attention before I can keep working. There is no exposed ore in this pocket, so I am heading to storage for now.",
+        "I am waiting on a fix. There is no exposed ore in this pocket, so I am heading to storage for now.",
+        "The work is paused until this changes. There is no exposed ore in this pocket, so I am heading to storage for now.",
+        "This is the problem right now. There is no exposed ore in this pocket, so I am heading to storage for now.",
+        "I am stuck here for the moment. There is no exposed ore in this pocket, so I am heading to storage for now."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.no_target_deposit.exposed_ores.013"
     },
     {
       "key": "interaction.work.mining.searching.excavate_area",
       "lines": [
-        "I see no reachable block face yet, so I am searching the excavation area."
+        "I see no reachable block face yet, so I am searching the excavation area.",
+        "Right now, that is my focus. I see no reachable block face yet, so I am searching the excavation area.",
+        "That is my current step. I see no reachable block face yet, so I am searching the excavation area.",
+        "I am keeping the job moving. I see no reachable block face yet, so I am searching the excavation area.",
+        "This is where I am in the work. I see no reachable block face yet, so I am searching the excavation area.",
+        "I am staying with the task. I see no reachable block face yet, so I am searching the excavation area.",
+        "For the moment, I am busy with this. I see no reachable block face yet, so I am searching the excavation area.",
+        "I will keep going from here. I see no reachable block face yet, so I am searching the excavation area.",
+        "The work is still moving. I see no reachable block face yet, so I am searching the excavation area.",
+        "I am working through it. I see no reachable block face yet, so I am searching the excavation area."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.searching.excavate_area.014"
     },
     {
       "key": "interaction.work.mining.searching.exposed_ores",
       "lines": [
-        "I see no exposed ore nearby, so I am searching the work area."
+        "I see no exposed ore nearby, so I am searching the work area.",
+        "Right now, that is my focus. I see no exposed ore nearby, so I am searching the work area.",
+        "That is my current step. I see no exposed ore nearby, so I am searching the work area.",
+        "I am keeping the job moving. I see no exposed ore nearby, so I am searching the work area.",
+        "This is where I am in the work. I see no exposed ore nearby, so I am searching the work area.",
+        "I am staying with the task. I see no exposed ore nearby, so I am searching the work area.",
+        "For the moment, I am busy with this. I see no exposed ore nearby, so I am searching the work area.",
+        "I will keep going from here. I see no exposed ore nearby, so I am searching the work area.",
+        "The work is still moving. I see no exposed ore nearby, so I am searching the work area.",
+        "I am working through it. I see no exposed ore nearby, so I am searching the work area."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.searching.exposed_ores.015"
     },
     {
       "key": "interaction.work.mining.deposited_waiting.excavate_area",
       "lines": [
-        "I am putting away what I mined while I wait for another reachable block face."
+        "I am putting away what I mined while I wait for another reachable block face.",
+        "That part is handled. I am putting away what I mined while I wait for another reachable block face.",
+        "Here is the update: I am putting away what I mined while I wait for another reachable block face.",
+        "That moved things along: I am putting away what I mined while I wait for another reachable block face.",
+        "That step is finished. I am putting away what I mined while I wait for another reachable block face.",
+        "I have that sorted. I am putting away what I mined while I wait for another reachable block face.",
+        "That is taken care of. I am putting away what I mined while I wait for another reachable block face.",
+        "The work moved forward. I am putting away what I mined while I wait for another reachable block face.",
+        "I can report this much. I am putting away what I mined while I wait for another reachable block face.",
+        "That part is done: I am putting away what I mined while I wait for another reachable block face."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.deposited_waiting.excavate_area.016"
     },
     {
       "key": "interaction.work.mining.deposited_waiting.exposed_ores",
       "lines": [
-        "I am putting away what I mined while I wait for fresh ore to show itself."
+        "I am putting away what I mined while I wait for fresh ore to show itself.",
+        "That part is handled. I am putting away what I mined while I wait for fresh ore to show itself.",
+        "Here is the update: I am putting away what I mined while I wait for fresh ore to show itself.",
+        "That moved things along: I am putting away what I mined while I wait for fresh ore to show itself.",
+        "That step is finished. I am putting away what I mined while I wait for fresh ore to show itself.",
+        "I have that sorted. I am putting away what I mined while I wait for fresh ore to show itself.",
+        "That is taken care of. I am putting away what I mined while I wait for fresh ore to show itself.",
+        "The work moved forward. I am putting away what I mined while I wait for fresh ore to show itself.",
+        "I can report this much. I am putting away what I mined while I wait for fresh ore to show itself.",
+        "That part is done: I am putting away what I mined while I wait for fresh ore to show itself."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.deposited_waiting.exposed_ores.017"
     },
     {
       "key": "interaction.work.mining.no_targets.excavate_area",
       "lines": [
-        "There are no reachable excavation blocks within the assigned area just now."
+        "There are no reachable excavation blocks within the assigned area just now.",
+        "I am held up for now. There are no reachable excavation blocks within the assigned area just now.",
+        "This is stopping the job for the moment. There are no reachable excavation blocks within the assigned area just now.",
+        "I cannot move on yet. There are no reachable excavation blocks within the assigned area just now.",
+        "I will continue once this is fixed. There are no reachable excavation blocks within the assigned area just now.",
+        "That needs attention before I can keep working. There are no reachable excavation blocks within the assigned area just now.",
+        "I am waiting on a fix. There are no reachable excavation blocks within the assigned area just now.",
+        "The work is paused until this changes. There are no reachable excavation blocks within the assigned area just now.",
+        "This is the problem right now. There are no reachable excavation blocks within the assigned area just now.",
+        "I am stuck here for the moment. There are no reachable excavation blocks within the assigned area just now."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.no_targets.excavate_area.018"
     },
     {
       "key": "interaction.work.mining.no_targets.exposed_ores",
       "lines": [
-        "There is no exposed ore within reach just now."
+        "There is no exposed ore within reach just now.",
+        "I am held up for now. There is no exposed ore within reach just now.",
+        "This is stopping the job for the moment. There is no exposed ore within reach just now.",
+        "I cannot move on yet. There is no exposed ore within reach just now.",
+        "I will continue once this is fixed. There is no exposed ore within reach just now.",
+        "That needs attention before I can keep working. There is no exposed ore within reach just now.",
+        "I am waiting on a fix. There is no exposed ore within reach just now.",
+        "The work is paused until this changes. There is no exposed ore within reach just now.",
+        "This is the problem right now. There is no exposed ore within reach just now.",
+        "I am stuck here for the moment. There is no exposed ore within reach just now."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.no_targets.exposed_ores.019"
     },
     {
       "key": "interaction.work.mining.missing_tool.excavate_area",
       "lines": [
-        "I need a better pickaxe, shovel, or axe before I can excavate that block."
+        "I need a better pickaxe, shovel, or axe before I can excavate that block.",
+        "I am held up for now. I need a better pickaxe, shovel, or axe before I can excavate that block.",
+        "This is stopping the job for the moment. I need a better pickaxe, shovel, or axe before I can excavate that block.",
+        "I cannot move on yet. I need a better pickaxe, shovel, or axe before I can excavate that block.",
+        "I will continue once this is fixed. I need a better pickaxe, shovel, or axe before I can excavate that block.",
+        "That needs attention before I can keep working. I need a better pickaxe, shovel, or axe before I can excavate that block.",
+        "I am waiting on a fix. I need a better pickaxe, shovel, or axe before I can excavate that block.",
+        "The work is paused until this changes. I need a better pickaxe, shovel, or axe before I can excavate that block.",
+        "This is the problem right now. I need a better pickaxe, shovel, or axe before I can excavate that block.",
+        "I am stuck here for the moment. I need a better pickaxe, shovel, or axe before I can excavate that block."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.missing_tool.excavate_area.020"
     },
     {
       "key": "interaction.work.mining.missing_tool.exposed_ores",
       "lines": [
-        "I need a better pickaxe before I can break that ore."
+        "I need a better pickaxe before I can break that ore.",
+        "I am held up for now. I need a better pickaxe before I can break that ore.",
+        "This is stopping the job for the moment. I need a better pickaxe before I can break that ore.",
+        "I cannot move on yet. I need a better pickaxe before I can break that ore.",
+        "I will continue once this is fixed. I need a better pickaxe before I can break that ore.",
+        "That needs attention before I can keep working. I need a better pickaxe before I can break that ore.",
+        "I am waiting on a fix. I need a better pickaxe before I can break that ore.",
+        "The work is paused until this changes. I need a better pickaxe before I can break that ore.",
+        "This is the problem right now. I need a better pickaxe before I can break that ore.",
+        "I am stuck here for the moment. I need a better pickaxe before I can break that ore."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.missing_tool.exposed_ores.021"
     },
     {
       "key": "interaction.work.mining.blocked_target.excavate_area",
       "lines": [
-        "That block face is blocked off. I am looking for another reachable part of the area."
+        "That block face is blocked off. I am looking for another reachable part of the area.",
+        "I am held up for now. That block face is blocked off. I am looking for another reachable part of the area.",
+        "This is stopping the job for the moment. That block face is blocked off. I am looking for another reachable part of the area.",
+        "I cannot move on yet. That block face is blocked off. I am looking for another reachable part of the area.",
+        "I will continue once this is fixed. That block face is blocked off. I am looking for another reachable part of the area.",
+        "That needs attention before I can keep working. That block face is blocked off. I am looking for another reachable part of the area.",
+        "I am waiting on a fix. That block face is blocked off. I am looking for another reachable part of the area.",
+        "The work is paused until this changes. That block face is blocked off. I am looking for another reachable part of the area.",
+        "This is the problem right now. That block face is blocked off. I am looking for another reachable part of the area.",
+        "I am stuck here for the moment. That block face is blocked off. I am looking for another reachable part of the area."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.blocked_target.excavate_area.022"
     },
     {
       "key": "interaction.work.mining.blocked_target.exposed_ores",
       "lines": [
-        "That ore is blocked off. I am looking for another vein I can reach."
+        "That ore is blocked off. I am looking for another vein I can reach.",
+        "I am held up for now. That ore is blocked off. I am looking for another vein I can reach.",
+        "This is stopping the job for the moment. That ore is blocked off. I am looking for another vein I can reach.",
+        "I cannot move on yet. That ore is blocked off. I am looking for another vein I can reach.",
+        "I will continue once this is fixed. That ore is blocked off. I am looking for another vein I can reach.",
+        "That needs attention before I can keep working. That ore is blocked off. I am looking for another vein I can reach.",
+        "I am waiting on a fix. That ore is blocked off. I am looking for another vein I can reach.",
+        "The work is paused until this changes. That ore is blocked off. I am looking for another vein I can reach.",
+        "This is the problem right now. That ore is blocked off. I am looking for another vein I can reach.",
+        "I am stuck here for the moment. That ore is blocked off. I am looking for another vein I can reach."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.blocked_target.exposed_ores.023"
     },
     {
       "key": "interaction.work.mining.repositioning.excavate_area",
       "lines": [
-        "That block is awkward from here, so I am changing my position."
+        "That block is awkward from here, so I am changing my position.",
+        "Right now, that is my focus. That block is awkward from here, so I am changing my position.",
+        "That is my current step. That block is awkward from here, so I am changing my position.",
+        "I am keeping the job moving. That block is awkward from here, so I am changing my position.",
+        "This is where I am in the work. That block is awkward from here, so I am changing my position.",
+        "I am staying with the task. That block is awkward from here, so I am changing my position.",
+        "For the moment, I am busy with this. That block is awkward from here, so I am changing my position.",
+        "I will keep going from here. That block is awkward from here, so I am changing my position.",
+        "The work is still moving. That block is awkward from here, so I am changing my position.",
+        "I am working through it. That block is awkward from here, so I am changing my position."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.repositioning.excavate_area.024"
     },
     {
       "key": "interaction.work.mining.repositioning.exposed_ores",
       "lines": [
-        "That ore is awkward from here, so I am changing my position."
+        "That ore is awkward from here, so I am changing my position.",
+        "Right now, that is my focus. That ore is awkward from here, so I am changing my position.",
+        "That is my current step. That ore is awkward from here, so I am changing my position.",
+        "I am keeping the job moving. That ore is awkward from here, so I am changing my position.",
+        "This is where I am in the work. That ore is awkward from here, so I am changing my position.",
+        "I am staying with the task. That ore is awkward from here, so I am changing my position.",
+        "For the moment, I am busy with this. That ore is awkward from here, so I am changing my position.",
+        "I will keep going from here. That ore is awkward from here, so I am changing my position.",
+        "The work is still moving. That ore is awkward from here, so I am changing my position.",
+        "I am working through it. That ore is awkward from here, so I am changing my position."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.repositioning.exposed_ores.025"
     },
     {
       "key": "interaction.work.mining.blocked_swing.excavate_area",
       "lines": [
-        "I cannot get a clean swing at that block yet, so I am repositioning."
+        "I cannot get a clean swing at that block yet, so I am repositioning.",
+        "I am held up for now. I cannot get a clean swing at that block yet, so I am repositioning.",
+        "This is stopping the job for the moment. I cannot get a clean swing at that block yet, so I am repositioning.",
+        "I cannot move on yet. I cannot get a clean swing at that block yet, so I am repositioning.",
+        "I will continue once this is fixed. I cannot get a clean swing at that block yet, so I am repositioning.",
+        "That needs attention before I can keep working. I cannot get a clean swing at that block yet, so I am repositioning.",
+        "I am waiting on a fix. I cannot get a clean swing at that block yet, so I am repositioning.",
+        "The work is paused until this changes. I cannot get a clean swing at that block yet, so I am repositioning.",
+        "This is the problem right now. I cannot get a clean swing at that block yet, so I am repositioning.",
+        "I am stuck here for the moment. I cannot get a clean swing at that block yet, so I am repositioning."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.blocked_swing.excavate_area.026"
     },
     {
       "key": "interaction.work.mining.blocked_swing.exposed_ores",
       "lines": [
-        "I cannot get a clean swing at that ore yet, so I am repositioning."
+        "I cannot get a clean swing at that ore yet, so I am repositioning.",
+        "I am held up for now. I cannot get a clean swing at that ore yet, so I am repositioning.",
+        "This is stopping the job for the moment. I cannot get a clean swing at that ore yet, so I am repositioning.",
+        "I cannot move on yet. I cannot get a clean swing at that ore yet, so I am repositioning.",
+        "I will continue once this is fixed. I cannot get a clean swing at that ore yet, so I am repositioning.",
+        "That needs attention before I can keep working. I cannot get a clean swing at that ore yet, so I am repositioning.",
+        "I am waiting on a fix. I cannot get a clean swing at that ore yet, so I am repositioning.",
+        "The work is paused until this changes. I cannot get a clean swing at that ore yet, so I am repositioning.",
+        "This is the problem right now. I cannot get a clean swing at that ore yet, so I am repositioning.",
+        "I am stuck here for the moment. I cannot get a clean swing at that ore yet, so I am repositioning."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.blocked_swing.exposed_ores.027"
     },
     {
       "key": "interaction.work.mining.moving_to_target.excavate_area",
       "lines": [
-        "I am moving toward the excavation face now."
+        "I am moving toward the excavation face now.",
+        "Right now, that is my focus. I am moving toward the excavation face now.",
+        "That is my current step. I am moving toward the excavation face now.",
+        "I am keeping the job moving. I am moving toward the excavation face now.",
+        "This is where I am in the work. I am moving toward the excavation face now.",
+        "I am staying with the task. I am moving toward the excavation face now.",
+        "For the moment, I am busy with this. I am moving toward the excavation face now.",
+        "I will keep going from here. I am moving toward the excavation face now.",
+        "The work is still moving. I am moving toward the excavation face now.",
+        "I am working through it. I am moving toward the excavation face now."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.moving_to_target.excavate_area.028"
     },
     {
       "key": "interaction.work.mining.moving_to_target.exposed_ores",
       "lines": [
-        "I am moving toward the ore now."
+        "I am moving toward the ore now.",
+        "Right now, that is my focus. I am moving toward the ore now.",
+        "That is my current step. I am moving toward the ore now.",
+        "I am keeping the job moving. I am moving toward the ore now.",
+        "This is where I am in the work. I am moving toward the ore now.",
+        "I am staying with the task. I am moving toward the ore now.",
+        "For the moment, I am busy with this. I am moving toward the ore now.",
+        "I will keep going from here. I am moving toward the ore now.",
+        "The work is still moving. I am moving toward the ore now.",
+        "I am working through it. I am moving toward the ore now."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.moving_to_target.exposed_ores.029"
     },
     {
       "key": "interaction.work.mining.working_target.excavate_area",
       "lines": [
-        "I am cutting into the assigned area now."
+        "I am cutting into the assigned area now.",
+        "Right now, that is my focus. I am cutting into the assigned area now.",
+        "That is my current step. I am cutting into the assigned area now.",
+        "I am keeping the job moving. I am cutting into the assigned area now.",
+        "This is where I am in the work. I am cutting into the assigned area now.",
+        "I am staying with the task. I am cutting into the assigned area now.",
+        "For the moment, I am busy with this. I am cutting into the assigned area now.",
+        "I will keep going from here. I am cutting into the assigned area now.",
+        "The work is still moving. I am cutting into the assigned area now.",
+        "I am working through it. I am cutting into the assigned area now."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.working_target.excavate_area.030"
     },
     {
       "key": "interaction.work.mining.working_target.exposed_ores",
       "lines": [
-        "I am working the ore face now."
+        "I am working the ore face now.",
+        "Right now, that is my focus. I am working the ore face now.",
+        "That is my current step. I am working the ore face now.",
+        "I am keeping the job moving. I am working the ore face now.",
+        "This is where I am in the work. I am working the ore face now.",
+        "I am staying with the task. I am working the ore face now.",
+        "For the moment, I am busy with this. I am working the ore face now.",
+        "I will keep going from here. I am working the ore face now.",
+        "The work is still moving. I am working the ore face now.",
+        "I am working through it. I am working the ore face now."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.working_target.exposed_ores.031"
     },
     {
       "key": "interaction.work.mining.next_target.excavate_area",
       "lines": [
-        "That block is cleared, and I am moving on to the next reachable face."
+        "That block is cleared, and I am moving on to the next reachable face.",
+        "All right. That block is cleared, and I am moving on to the next reachable face.",
+        "Here's where I am with it: That block is cleared, and I am moving on to the next reachable face.",
+        "For now, that is the situation. That block is cleared, and I am moving on to the next reachable face.",
+        "Just so you know. That block is cleared, and I am moving on to the next reachable face.",
+        "Plainly put: That block is cleared, and I am moving on to the next reachable face.",
+        "That's all I have for now: That block is cleared, and I am moving on to the next reachable face.",
+        "Understood. That block is cleared, and I am moving on to the next reachable face.",
+        "Nothing else to add yet. That block is cleared, and I am moving on to the next reachable face.",
+        "For the moment: That block is cleared, and I am moving on to the next reachable face."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.next_target.excavate_area.032"
     },
     {
       "key": "interaction.work.mining.next_target.exposed_ores",
       "lines": [
-        "That ore is mined out, and I am moving on to the next exposed vein."
+        "That ore is mined out, and I am moving on to the next exposed vein.",
+        "All right. That ore is mined out, and I am moving on to the next exposed vein.",
+        "Here's where I am with it: That ore is mined out, and I am moving on to the next exposed vein.",
+        "For now, that is the situation. That ore is mined out, and I am moving on to the next exposed vein.",
+        "Just so you know. That ore is mined out, and I am moving on to the next exposed vein.",
+        "Plainly put: That ore is mined out, and I am moving on to the next exposed vein.",
+        "That's all I have for now: That ore is mined out, and I am moving on to the next exposed vein.",
+        "Understood. That ore is mined out, and I am moving on to the next exposed vein.",
+        "Nothing else to add yet. That ore is mined out, and I am moving on to the next exposed vein.",
+        "For the moment: That ore is mined out, and I am moving on to the next exposed vein."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.next_target.exposed_ores.033"
     },
     {
       "key": "interaction.work.mining.completed_searching.excavate_area",
       "lines": [
-        "I have gathered what I could, and I am searching the area for another reachable face."
+        "I have gathered what I could, and I am searching the area for another reachable face.",
+        "That part is handled. I have gathered what I could, and I am searching the area for another reachable face.",
+        "Here is the update: I have gathered what I could, and I am searching the area for another reachable face.",
+        "That moved things along: I have gathered what I could, and I am searching the area for another reachable face.",
+        "That step is finished. I have gathered what I could, and I am searching the area for another reachable face.",
+        "I have that sorted. I have gathered what I could, and I am searching the area for another reachable face.",
+        "That is taken care of. I have gathered what I could, and I am searching the area for another reachable face.",
+        "The work moved forward. I have gathered what I could, and I am searching the area for another reachable face.",
+        "I can report this much. I have gathered what I could, and I am searching the area for another reachable face.",
+        "That part is done: I have gathered what I could, and I am searching the area for another reachable face."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_searching.excavate_area.034"
     },
     {
       "key": "interaction.work.mining.completed_searching.exposed_ores",
       "lines": [
-        "I have gathered what I could, and I am searching the area for more ore."
+        "I have gathered what I could, and I am searching the area for more ore.",
+        "That part is handled. I have gathered what I could, and I am searching the area for more ore.",
+        "Here is the update: I have gathered what I could, and I am searching the area for more ore.",
+        "That moved things along: I have gathered what I could, and I am searching the area for more ore.",
+        "That step is finished. I have gathered what I could, and I am searching the area for more ore.",
+        "I have that sorted. I have gathered what I could, and I am searching the area for more ore.",
+        "That is taken care of. I have gathered what I could, and I am searching the area for more ore.",
+        "The work moved forward. I have gathered what I could, and I am searching the area for more ore.",
+        "I can report this much. I have gathered what I could, and I am searching the area for more ore.",
+        "That part is done: I have gathered what I could, and I am searching the area for more ore."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_searching.exposed_ores.035"
     },
     {
       "key": "interaction.work.mining.completed_deposited.excavate_area",
       "lines": [
-        "I cleared that block, gathered it, and put it away."
+        "I cleared that block, gathered it, and put it away.",
+        "That part is handled. I cleared that block, gathered it, and put it away.",
+        "Here is the update: I cleared that block, gathered it, and put it away.",
+        "That moved things along: I cleared that block, gathered it, and put it away.",
+        "That step is finished. I cleared that block, gathered it, and put it away.",
+        "I have that sorted. I cleared that block, gathered it, and put it away.",
+        "That is taken care of. I cleared that block, gathered it, and put it away.",
+        "The work moved forward. I cleared that block, gathered it, and put it away.",
+        "I can report this much. I cleared that block, gathered it, and put it away.",
+        "That part is done: I cleared that block, gathered it, and put it away."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_deposited.excavate_area.036"
     },
     {
       "key": "interaction.work.mining.completed_deposited.exposed_ores",
       "lines": [
-        "I mined the ore, gathered it, and put it away."
+        "I mined the ore, gathered it, and put it away.",
+        "That part is handled. I mined the ore, gathered it, and put it away.",
+        "Here is the update: I mined the ore, gathered it, and put it away.",
+        "That moved things along: I mined the ore, gathered it, and put it away.",
+        "That step is finished. I mined the ore, gathered it, and put it away.",
+        "I have that sorted. I mined the ore, gathered it, and put it away.",
+        "That is taken care of. I mined the ore, gathered it, and put it away.",
+        "The work moved forward. I mined the ore, gathered it, and put it away.",
+        "I can report this much. I mined the ore, gathered it, and put it away.",
+        "That part is done: I mined the ore, gathered it, and put it away."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_deposited.exposed_ores.037"
     },
     {
       "key": "interaction.work.mining.completed_no_next.excavate_area",
       "lines": [
-        "I cleared that block and gathered it, but there is no other reachable face nearby."
+        "I cleared that block and gathered it, but there is no other reachable face nearby.",
+        "That part is handled. I cleared that block and gathered it, but there is no other reachable face nearby.",
+        "Here is the update: I cleared that block and gathered it, but there is no other reachable face nearby.",
+        "That moved things along: I cleared that block and gathered it, but there is no other reachable face nearby.",
+        "That step is finished. I cleared that block and gathered it, but there is no other reachable face nearby.",
+        "I have that sorted. I cleared that block and gathered it, but there is no other reachable face nearby.",
+        "That is taken care of. I cleared that block and gathered it, but there is no other reachable face nearby.",
+        "The work moved forward. I cleared that block and gathered it, but there is no other reachable face nearby.",
+        "I can report this much. I cleared that block and gathered it, but there is no other reachable face nearby.",
+        "That part is done: I cleared that block and gathered it, but there is no other reachable face nearby."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_no_next.excavate_area.038"
     },
     {
       "key": "interaction.work.mining.completed_no_next.exposed_ores",
       "lines": [
-        "I mined the ore and gathered it, but there is no other exposed vein nearby."
+        "I mined the ore and gathered it, but there is no other exposed vein nearby.",
+        "That part is handled. I mined the ore and gathered it, but there is no other exposed vein nearby.",
+        "Here is the update: I mined the ore and gathered it, but there is no other exposed vein nearby.",
+        "That moved things along: I mined the ore and gathered it, but there is no other exposed vein nearby.",
+        "That step is finished. I mined the ore and gathered it, but there is no other exposed vein nearby.",
+        "I have that sorted. I mined the ore and gathered it, but there is no other exposed vein nearby.",
+        "That is taken care of. I mined the ore and gathered it, but there is no other exposed vein nearby.",
+        "The work moved forward. I mined the ore and gathered it, but there is no other exposed vein nearby.",
+        "I can report this much. I mined the ore and gathered it, but there is no other exposed vein nearby.",
+        "That part is done: I mined the ore and gathered it, but there is no other exposed vein nearby."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_no_next.exposed_ores.039"
     },
     {
       "key": "interaction.work.mining.continuing_excavation.deposited",
       "lines": [
-        "I cleared that block, gathered it, put it away, and am checking for the next reachable face."
+        "I cleared that block, gathered it, put it away, and am checking for the next reachable face.",
+        "That part is handled. I cleared that block, gathered it, put it away, and am checking for the next reachable face.",
+        "Here is the update: I cleared that block, gathered it, put it away, and am checking for the next reachable face.",
+        "That moved things along: I cleared that block, gathered it, put it away, and am checking for the next reachable face.",
+        "That step is finished. I cleared that block, gathered it, put it away, and am checking for the next reachable face.",
+        "I have that sorted. I cleared that block, gathered it, put it away, and am checking for the next reachable face.",
+        "That is taken care of. I cleared that block, gathered it, put it away, and am checking for the next reachable face.",
+        "The work moved forward. I cleared that block, gathered it, put it away, and am checking for the next reachable face.",
+        "I can report this much. I cleared that block, gathered it, put it away, and am checking for the next reachable face.",
+        "That part is done: I cleared that block, gathered it, put it away, and am checking for the next reachable face."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.continuing_excavation.deposited.040"
     },
     {
       "key": "interaction.work.mining.continuing_excavation.default",
       "lines": [
-        "I cleared that block and gathered it. I am checking the assigned area for the next reachable face."
+        "I cleared that block and gathered it. I am checking the assigned area for the next reachable face.",
+        "All right. I cleared that block and gathered it. I am checking the assigned area for the next reachable face.",
+        "Here's where I am with it: I cleared that block and gathered it. I am checking the assigned area for the next reachable face.",
+        "For now, that is the situation. I cleared that block and gathered it. I am checking the assigned area for the next reachable face.",
+        "Just so you know. I cleared that block and gathered it. I am checking the assigned area for the next reachable face.",
+        "Plainly put: I cleared that block and gathered it. I am checking the assigned area for the next reachable face.",
+        "That's all I have for now: I cleared that block and gathered it. I am checking the assigned area for the next reachable face.",
+        "Understood. I cleared that block and gathered it. I am checking the assigned area for the next reachable face.",
+        "Nothing else to add yet. I cleared that block and gathered it. I am checking the assigned area for the next reachable face.",
+        "For the moment: I cleared that block and gathered it. I am checking the assigned area for the next reachable face."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.continuing_excavation.default.041"
     },
     {
       "key": "interaction.work.mining.completed_excavation.deposited",
       "lines": [
-        "The assigned excavation is finished, and I put the last of the output away."
+        "The assigned excavation is finished, and I put the last of the output away.",
+        "That part is handled. The assigned excavation is finished, and I put the last of the output away.",
+        "Here is the update: The assigned excavation is finished, and I put the last of the output away.",
+        "That moved things along: The assigned excavation is finished, and I put the last of the output away.",
+        "That step is finished. The assigned excavation is finished, and I put the last of the output away.",
+        "I have that sorted. The assigned excavation is finished, and I put the last of the output away.",
+        "That is taken care of. The assigned excavation is finished, and I put the last of the output away.",
+        "The work moved forward. The assigned excavation is finished, and I put the last of the output away.",
+        "I can report this much. The assigned excavation is finished, and I put the last of the output away.",
+        "That part is done: The assigned excavation is finished, and I put the last of the output away."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_excavation.deposited.042"
     },
     {
       "key": "interaction.work.mining.completed_excavation.default",
       "lines": [
-        "The assigned excavation is finished. I do not see another block to clear."
+        "The assigned excavation is finished. I do not see another block to clear.",
+        "That part is handled. The assigned excavation is finished. I do not see another block to clear.",
+        "Here is the update: The assigned excavation is finished. I do not see another block to clear.",
+        "That moved things along: The assigned excavation is finished. I do not see another block to clear.",
+        "That step is finished. The assigned excavation is finished. I do not see another block to clear.",
+        "I have that sorted. The assigned excavation is finished. I do not see another block to clear.",
+        "That is taken care of. The assigned excavation is finished. I do not see another block to clear.",
+        "The work moved forward. The assigned excavation is finished. I do not see another block to clear.",
+        "I can report this much. The assigned excavation is finished. I do not see another block to clear.",
+        "That part is done: The assigned excavation is finished. I do not see another block to clear."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_excavation.default.043"
     }

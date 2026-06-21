@@ -164,7 +164,7 @@ public final class HiredVillagerWorkService {
         }
         if (result.completed()) {
             session.state().putLong("NextWorkGameTime", level.getGameTime() + nextTaskCooldownTicks(session.efficiency()));
-            maybeNotify(level, villager, hirer, session.state(), result.status(), result.replacements(), 20L * 30L);
+            maybeNotify(level, villager, hirer, session.state(), result.status(), result.replacements(), hiredWorkNoticeCooldownTicks());
         }
     }
 
@@ -1468,11 +1468,11 @@ public final class HiredVillagerWorkService {
         return Mth.clamp(Math.round(80.0F * 100.0F / Math.max(25.0F, efficiency)), 10, 200);
     }
 
-    private static void maybeNotify(ServerLevel level, Villager villager, ServerPlayer hirer, CompoundTag state, String message, long cooldownTicks) {
-        maybeNotify(level, villager, hirer, state, message, Map.of(), cooldownTicks);
+    private static boolean maybeNotify(ServerLevel level, Villager villager, ServerPlayer hirer, CompoundTag state, String message, long cooldownTicks) {
+        return maybeNotify(level, villager, hirer, state, message, Map.of(), cooldownTicks);
     }
 
-    private static void maybeNotify(
+    private static boolean maybeNotify(
             ServerLevel level,
             Villager villager,
             ServerPlayer hirer,
@@ -1481,11 +1481,12 @@ public final class HiredVillagerWorkService {
             Map<String, String> replacements,
             long cooldownTicks) {
         long now = level.getGameTime();
-        if (now - state.getLong("LastNoticeTick") < cooldownTicks) {
-            return;
+        if (state.contains("LastNoticeTick", Tag.TAG_LONG) && now - state.getLong("LastNoticeTick") < cooldownTicks) {
+            return false;
         }
         state.putLong("LastNoticeTick", now);
         VillagerInteractionService.sendVillagerNotice(hirer, villager, message, replacements);
+        return true;
     }
 
     private static void maybeNotifyStorageFull(
@@ -1508,7 +1509,13 @@ public final class HiredVillagerWorkService {
         if (state.getBoolean(STORAGE_FULL_NOTICE_SHOWN_TAG)) {
             return;
         }
-        state.putBoolean(STORAGE_FULL_NOTICE_SHOWN_TAG, true);
-        VillagerInteractionService.sendVillagerNotice(hirer, villager, STORAGE_FULL_NOTICE);
+        if (maybeNotify(level, villager, hirer, state, STORAGE_FULL_NOTICE, hiredWorkNoticeCooldownTicks())) {
+            state.putBoolean(STORAGE_FULL_NOTICE_SHOWN_TAG, true);
+        }
+    }
+
+    private static long hiredWorkNoticeCooldownTicks() {
+        int seconds = Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_NOTICE_COOLDOWN_SECONDS.get(), 0, 600);
+        return 20L * seconds;
     }
 }

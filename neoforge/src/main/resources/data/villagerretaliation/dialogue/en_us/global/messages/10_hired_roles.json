@@ -76,7 +76,16 @@
     {
       "key": "interaction.role.manage_requires_hirer",
       "lines": [
-        "Only the hiring player can manage my role."
+        "Only the one who hired me can change my role.",
+        "My duties are for my hirer to decide.",
+        "You are not the one who hired me for this work.",
+        "I need my hirer before I change what I am doing.",
+        "The person paying me has to give that order.",
+        "I cannot change roles for someone else.",
+        "Bring my hirer here, and I will listen.",
+        "That order has to come from the one who hired me.",
+        "My contract does not let you change my duties.",
+        "No. My hirer decides my work."
       ],
       "id": "global.messages.10_hired_roles.messages.interaction.role.manage_requires_hirer.004"
     }

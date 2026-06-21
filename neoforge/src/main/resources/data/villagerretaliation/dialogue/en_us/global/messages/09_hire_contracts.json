@@ -204,14 +204,32 @@
     {
       "key": "interaction.hire.end_requires_hirer",
       "lines": [
-        "Only the hiring player can end this contract."
+        "Only the one who hired me can end this contract.",
+        "This agreement is not yours to end.",
+        "I can only end this contract with the person who hired me.",
+        "The one who made this agreement has to end it.",
+        "You are not the one I signed with.",
+        "I cannot let someone else dismiss me from this contract.",
+        "Bring me the one who hired me, and we can settle it.",
+        "This contract answers to my hirer, not just any passerby.",
+        "I need my actual employer for that.",
+        "No. The one who hired me must be the one to end it."
       ],
       "id": "global.messages.09_hire_contracts.messages.interaction.hire.end_requires_hirer.012"
     },
     {
       "key": "interaction.hire.extend_requires_hirer",
       "lines": [
-        "Only the hiring player can extend this contract."
+        "Only the one who hired me can extend this contract.",
+        "This agreement can only be extended by my hirer.",
+        "I need the person who hired me before I add more time.",
+        "You are not the one who made this contract with me.",
+        "The one paying me has to approve the extension.",
+        "I cannot lengthen the contract for someone else.",
+        "Bring my hirer here, and we can talk about more days.",
+        "That decision belongs to the one who hired me.",
+        "I will not add time unless my hirer asks for it.",
+        "No. My hirer has to be the one to extend it."
       ],
       "id": "global.messages.09_hire_contracts.messages.interaction.hire.extend_requires_hirer.013"
     },
