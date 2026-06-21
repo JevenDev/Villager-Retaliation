@@ -34,9 +34,12 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int BOOKMARK_WIDTH = 25;
     private static final int BOOKMARK_HEIGHT = 30;
     private static final int BOOKMARK_LEFT_OFFSET = 13;
-    private static final int BOOKMARK_TOP_OFFSET = 206;
+    private static final int BOOKMARK_TOP_OFFSET = 207;
     private static final int BOOKMARK_GAP = 1;
     private static final int INACTIVE_BOOKMARK_OFFSET_Y = -5;
+    private static final int BOOKMARK_ICON_SIZE = 17;
+    private static final int SELECTED_BOOKMARK_ICON_OFFSET_Y = -2;
+    private static final int INACTIVE_BOOKMARK_ICON_OFFSET_Y = 1;
     private static final int TAB_TITLE_LEFT_OFFSET = 28;
     private static final int TAB_TITLE_BOTTOM_OFFSET = 37;
 
@@ -419,12 +422,36 @@ public final class VillagerQuestJournalScreen extends Screen {
     private void renderBookmarks(GuiGraphics graphics, int journalLeft, int journalTop) {
         int left = journalLeft + BOOKMARK_LEFT_OFFSET;
         for (QuestJournalTab tab : QuestJournalTab.values()) {
-            renderBookmark(graphics, tab.texture(), bookmarkLeft(left, tab), bookmarkTop(journalTop, tab));
+            int bookmarkLeft = bookmarkLeft(left, tab);
+            int bookmarkTop = bookmarkTop(journalTop, tab);
+            renderBookmark(graphics, tab.texture(), bookmarkLeft, bookmarkTop);
+            renderBookmarkIcon(graphics, tab.iconTexture(), bookmarkLeft, bookmarkTop, tab == this.selectedTab);
         }
     }
 
     private void renderBookmark(GuiGraphics graphics, ResourceLocation texture, int left, int top) {
         graphics.blit(texture, left, top, 0, 0, BOOKMARK_WIDTH, BOOKMARK_HEIGHT, BOOKMARK_WIDTH, BOOKMARK_HEIGHT);
+    }
+
+    private void renderBookmarkIcon(
+            GuiGraphics graphics,
+            ResourceLocation texture,
+            int bookmarkLeft,
+            int bookmarkTop,
+            boolean selected) {
+        int left = bookmarkLeft + (BOOKMARK_WIDTH - BOOKMARK_ICON_SIZE) / 2;
+        int top = bookmarkTop + (BOOKMARK_HEIGHT - BOOKMARK_ICON_SIZE) / 2;
+        top += selected ? SELECTED_BOOKMARK_ICON_OFFSET_Y : INACTIVE_BOOKMARK_ICON_OFFSET_Y;
+        graphics.blit(
+                texture,
+                left,
+                top,
+                0,
+                0,
+                BOOKMARK_ICON_SIZE,
+                BOOKMARK_ICON_SIZE,
+                BOOKMARK_ICON_SIZE,
+                BOOKMARK_ICON_SIZE);
     }
 
     private int bookmarkLeft(int firstBookmarkLeft, QuestJournalTab tab) {
@@ -1383,18 +1410,32 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private enum QuestJournalTab {
-        AVAILABLE(0, "Available", VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_RED_TEXTURE),
-        ACTIVE(1, "Active", VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_PURPLE_TEXTURE),
-        COMPLETED(2, "Completed", VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_TEAL_TEXTURE);
+        AVAILABLE(
+                0,
+                "Available",
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_RED_TEXTURE,
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_AVAILABLE_TEXTURE),
+        ACTIVE(
+                1,
+                "Active",
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_PURPLE_TEXTURE,
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_ACTIVE_TEXTURE),
+        COMPLETED(
+                2,
+                "Completed",
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_TEAL_TEXTURE,
+                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_COMPLETED_TEXTURE);
 
         private final int index;
         private final String title;
         private final ResourceLocation texture;
+        private final ResourceLocation iconTexture;
 
-        QuestJournalTab(int index, String title, ResourceLocation texture) {
+        QuestJournalTab(int index, String title, ResourceLocation texture, ResourceLocation iconTexture) {
             this.index = index;
             this.title = title;
             this.texture = texture;
+            this.iconTexture = iconTexture;
         }
 
         int index() {
@@ -1415,6 +1456,10 @@ public final class VillagerQuestJournalScreen extends Screen {
 
         ResourceLocation texture() {
             return this.texture;
+        }
+
+        ResourceLocation iconTexture() {
+            return this.iconTexture;
         }
 
         boolean includes(QuestJournalEntryState state) {
