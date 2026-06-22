@@ -8,7 +8,10 @@ import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
@@ -26,6 +29,7 @@ public final class VillagerQuestTrackerOverlay {
 
     private static List<QuestTrackerSyncPayload.Entry> entries = List.of();
     private static final Set<String> questUpdateQuestIds = new HashSet<>();
+    private static final Map<String, QuestTrackerSyncPayload.Entry> completedEntryCache = new LinkedHashMap<>();
     private static int flashTicks;
     private static int notificationAge;
     private static int age;
@@ -52,7 +56,7 @@ public final class VillagerQuestTrackerOverlay {
             }
         }
         questUpdateQuestIds.removeIf(questId -> !acceptedQuestIds.contains(questId));
-        entries = applyQuestUpdateCache(payload.entries());
+        entries = applyQuestUpdateCache(mergeCompletedEntries(payload.entries()));
         trackedQuestIds = payload.trackedQuestIds();
         if (payload.flash() && trackedEntry().isPresent()) {
             flashTicks = FLASH_LIFETIME_TICKS;
@@ -148,6 +152,7 @@ public final class VillagerQuestTrackerOverlay {
         pendingJournalOpenTicks = 0;
         trackedQuestIds = List.of();
         questUpdateQuestIds.clear();
+        completedEntryCache.clear();
     }
 
     public static List<QuestTrackerSyncPayload.Entry> entries() {
@@ -295,6 +300,46 @@ public final class VillagerQuestTrackerOverlay {
         return source.stream()
                 .map(entry -> entry.withQuestUpdate(!entry.questAvailable() && questUpdateQuestIds.contains(entry.questId())))
                 .toList();
+    }
+
+    private static List<QuestTrackerSyncPayload.Entry> mergeCompletedEntries(List<QuestTrackerSyncPayload.Entry> source) {
+        if (source != null) {
+            for (QuestTrackerSyncPayload.Entry entry : source) {
+                if (isCompletedEntry(entry) && !entry.questId().isBlank()) {
+                    completedEntryCache.remove(entry.questId());
+                    completedEntryCache.put(entry.questId(), entry);
+                }
+            }
+        }
+        if (completedEntryCache.isEmpty()) {
+            return source == null ? List.of() : List.copyOf(source);
+        }
+        List<QuestTrackerSyncPayload.Entry> merged = new ArrayList<>();
+        Set<String> includedCompleted = new HashSet<>();
+        if (source != null) {
+            for (QuestTrackerSyncPayload.Entry entry : source) {
+                merged.add(entry);
+                if (isCompletedEntry(entry) && !entry.questId().isBlank()) {
+                    includedCompleted.add(entry.questId());
+                }
+            }
+        }
+        for (QuestTrackerSyncPayload.Entry entry : completedEntryCache.values()) {
+            if (!includedCompleted.contains(entry.questId())) {
+                merged.add(entry);
+            }
+        }
+        return List.copyOf(merged);
+    }
+
+    private static boolean isCompletedEntry(QuestTrackerSyncPayload.Entry entry) {
+        if (entry == null || entry.questAvailable()) {
+            return false;
+        }
+        return switch (entry.state().trim().toLowerCase(Locale.ROOT)) {
+            case "completed", "complete", "done" -> true;
+            default -> false;
+        };
     }
 
     private static float approach(float value, boolean visible) {

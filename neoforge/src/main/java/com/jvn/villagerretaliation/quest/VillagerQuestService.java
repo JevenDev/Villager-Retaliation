@@ -4153,7 +4153,7 @@ public final class VillagerQuestService {
         ResourceLocation trackedQuestId = trackedQuestIds.isEmpty() ? null : trackedQuestIds.getFirst();
         List<Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress>> visible =
                 new ArrayList<>(data.progress(player.getUUID()));
-        visible.removeIf(entry -> !shouldSyncTrackerEntry(level, entry.getKey(), entry.getValue()));
+        visible.removeIf(entry -> VillagerQuestResources.quest(level.getServer(), entry.getKey()).isEmpty());
         visible.sort(Comparator
                 .comparingInt((Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry) ->
                         entry.getValue().state() == VillagerQuestSavedData.QuestState.ACTIVE ? 0 : 1)
@@ -4171,11 +4171,15 @@ public final class VillagerQuestService {
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
             if (definition != null) {
                 VillagerQuestSavedData.QuestProgress progress = entry.getValue();
-                if (definition.rules().repeatable() && !progress.completionHistory().isEmpty()) {
+                if (!progress.completionHistory().isEmpty()) {
                     appendArchivedCompletionEntries(player, definition, progress, completionEntries);
-                    if (progress.state() == VillagerQuestSavedData.QuestState.COMPLETED) {
+                    if (progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
+                            || progress.state() == VillagerQuestSavedData.QuestState.CONSUMED) {
                         continue;
                     }
+                }
+                if (!shouldSyncTrackerEntry(level, entry.getKey(), progress)) {
+                    continue;
                 }
                 DialogueContext questContext = contextForStartedVillager(level, player, entry.getValue()).orElse(null);
                 ConditionMatch activeConditions = activeConditionsState(questContext, player, level, definition, entry.getValue());
@@ -4193,8 +4197,8 @@ public final class VillagerQuestService {
                 }
             }
         }
-        appendNearbyAvailableQuestEntries(level, player, data, entries);
         appendEntries(entries, completionEntries);
+        appendNearbyAvailableQuestEntries(level, player, data, entries);
         String signature = QuestTrackerPresenter.syncSignature(entries, trackedQuestIds);
         Map<String, String> entrySignatures = QuestTrackerPresenter.entrySignatures(entries);
         long gameTime = level.getGameTime();
