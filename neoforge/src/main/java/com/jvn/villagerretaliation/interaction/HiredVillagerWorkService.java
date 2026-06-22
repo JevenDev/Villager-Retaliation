@@ -65,6 +65,9 @@ public final class HiredVillagerWorkService {
     private static final String STORAGE_FULL_NOTICE = "interaction.work.status.storage_full";
     private static final String PAUSED_FOR_COMMAND_STATUS = "interaction.work.status.paused_for_command";
     private static final long DAY_TICKS = 24000L;
+    private static final double HIRED_WORK_NOTICE_RADIUS = 32.0D;
+    private static final double HIRED_WORK_NOTICE_RADIUS_SQR = HIRED_WORK_NOTICE_RADIUS * HIRED_WORK_NOTICE_RADIUS;
+    private static final int MIN_ROUTINE_REPORT_COOLDOWN_SECONDS = 300;
     private static final int MIN_WORK_RADIUS = 4;
     private static final int SKILL_RADIUS_BASELINE = 50;
     private static final int MAX_SKILLED_WORK_RADIUS = 32;
@@ -175,7 +178,7 @@ public final class HiredVillagerWorkService {
                     session.state(),
                     HiredVillagerRoleSettings.workFinalReportMessageKey(session.role()),
                     workReportReplacements(hirer, level, villager, session, snapshot),
-                    hiredWorkNoticeCooldownTicks());
+                    hiredWorkReportNoticeCooldownTicks());
         }
     }
 
@@ -1580,12 +1583,19 @@ public final class HiredVillagerWorkService {
             Map<String, String> replacements,
             long cooldownTicks) {
         long now = level.getGameTime();
+        if (!canHearHiredWorkNotice(level, villager, hirer)) {
+            return false;
+        }
         if (state.contains("LastNoticeTick", Tag.TAG_LONG) && now - state.getLong("LastNoticeTick") < cooldownTicks) {
             return false;
         }
         state.putLong("LastNoticeTick", now);
-        VillagerInteractionService.sendVillagerNotice(hirer, villager, message, replacements);
+        VillagerInteractionService.sendVillagerNotice(hirer, villager, message, replacements, HIRED_WORK_NOTICE_RADIUS);
         return true;
+    }
+
+    private static boolean canHearHiredWorkNotice(ServerLevel level, Villager villager, ServerPlayer hirer) {
+        return hirer.serverLevel() == level && hirer.distanceToSqr(villager) <= HIRED_WORK_NOTICE_RADIUS_SQR;
     }
 
     private static void maybeNotifyStorageFull(
@@ -1615,6 +1625,12 @@ public final class HiredVillagerWorkService {
 
     private static long hiredWorkNoticeCooldownTicks() {
         int seconds = Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_NOTICE_COOLDOWN_SECONDS.get(), 0, 600);
+        return 20L * seconds;
+    }
+
+    private static long hiredWorkReportNoticeCooldownTicks() {
+        int configuredSeconds = Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_NOTICE_COOLDOWN_SECONDS.get(), 0, 600);
+        int seconds = configuredSeconds <= 0 ? 0 : Math.max(MIN_ROUTINE_REPORT_COOLDOWN_SECONDS, configuredSeconds);
         return 20L * seconds;
     }
 }

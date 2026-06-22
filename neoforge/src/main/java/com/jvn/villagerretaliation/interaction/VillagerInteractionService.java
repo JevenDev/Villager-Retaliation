@@ -2045,6 +2045,20 @@ public final class VillagerInteractionService {
         sendPersonalVillagerChat(player, villager, resolvedText);
     }
 
+    public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text, Map<String, String> replacements, double nearbyBroadcastRadius) {
+        String resolvedText = text;
+        if (villager.level() instanceof ServerLevel level) {
+            resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text, replacements).orElse(text);
+        }
+        sendPersonalVillagerChat(
+                player,
+                villager,
+                resolvedText,
+                DialogueTextSegment.parse(resolvedText, DialogueTextEffects.NONE),
+                nearbyBroadcastRadius,
+                true);
+    }
+
     public static void sendReceivedItemNotice(ServerPlayer player, Villager villager, ItemStack stack) {
         if (stack.isEmpty()) {
             return;
@@ -2135,6 +2149,16 @@ public final class VillagerInteractionService {
             Villager villager,
             String text,
             List<DialogueTextSegment> textSegments) {
+        sendPersonalVillagerChat(player, villager, text, textSegments, configuredVillagerChatBroadcastRadius(), false);
+    }
+
+    private static void sendPersonalVillagerChat(
+            ServerPlayer player,
+            Villager villager,
+            String text,
+            List<DialogueTextSegment> textSegments,
+            double nearbyBroadcastRadius,
+            boolean forceLocalBroadcast) {
         if (text == null || text.isBlank()) {
             return;
         }
@@ -2152,9 +2176,10 @@ public final class VillagerInteractionService {
                     villager,
                     text,
                     "",
-                    configuredVillagerChatBroadcastRadius(),
+                    nearbyBroadcastRadius,
                     textSegments,
-                    player.getUUID()
+                    player.getUUID(),
+                    forceLocalBroadcast
             );
         }
     }
@@ -2207,6 +2232,18 @@ public final class VillagerInteractionService {
             double radius,
             List<DialogueTextSegment> textSegments,
             UUID excludedPlayerId) {
+        broadcastVillagerChat(level, villager, text, speakerLabel, radius, textSegments, excludedPlayerId, false);
+    }
+
+    private static void broadcastVillagerChat(
+            ServerLevel level,
+            Villager villager,
+            String text,
+            String speakerLabel,
+            double radius,
+            List<DialogueTextSegment> textSegments,
+            UUID excludedPlayerId,
+            boolean forceLocalDistance) {
         if (text == null || text.isBlank()) {
             return;
         }
@@ -2217,6 +2254,7 @@ public final class VillagerInteractionService {
         }
 
         double radiusSqr = effectiveVillagerChatBroadcastRadius(radius) * effectiveVillagerChatBroadcastRadius(radius);
+        boolean usesDistance = forceLocalDistance || mode.usesDistance();
         VillagerInteractionNoticePayload payload = new VillagerInteractionNoticePayload(
                 villager.getId(),
                 text,
@@ -2227,7 +2265,7 @@ public final class VillagerInteractionService {
             if (!nearbyPlayer.isAlive()
                     || nearbyPlayer.isSpectator()
                     || (excludedPlayerId != null && nearbyPlayer.getUUID().equals(excludedPlayerId))
-                    || (mode.usesDistance() && nearbyPlayer.distanceToSqr(villager) > radiusSqr)) {
+                    || (usesDistance && nearbyPlayer.distanceToSqr(villager) > radiusSqr)) {
                 continue;
             }
             trySendToPlayer(nearbyPlayer, payload);
