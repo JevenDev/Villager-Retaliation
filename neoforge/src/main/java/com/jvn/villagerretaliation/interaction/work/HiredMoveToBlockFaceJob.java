@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.villager.VillagerContainerClimbGuard;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -37,6 +38,8 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     private final Predicate<BlockPos> approachFilter;
     private final Predicate<BlockPos> pathFilter;
     private final Predicate<BlockState> sightTransparent;
+    private final BiPredicate<BlockPos, BlockPos> alternateApproachReachable;
+    private final BiPredicate<BlockPos, BlockPos> targetApproachFilter;
 
     HiredMoveToBlockFaceJob(ServerLevel level, Villager villager, Iterable<BlockPos> candidatePositions, int maxCandidates) {
         this(level, villager, candidatePositions, maxCandidates, ignored -> true);
@@ -81,12 +84,41 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             Predicate<BlockPos> approachFilter,
             Predicate<BlockPos> pathFilter,
             Predicate<BlockState> sightTransparent) {
+        this(level, villager, candidatePositions, maxCandidates, targetFilter, approachFilter, pathFilter, sightTransparent, null);
+    }
+
+    HiredMoveToBlockFaceJob(
+            ServerLevel level,
+            Villager villager,
+            Iterable<BlockPos> candidatePositions,
+            int maxCandidates,
+            Predicate<BlockPos> targetFilter,
+            Predicate<BlockPos> approachFilter,
+            Predicate<BlockPos> pathFilter,
+            Predicate<BlockState> sightTransparent,
+            BiPredicate<BlockPos, BlockPos> alternateApproachReachable) {
+        this(level, villager, candidatePositions, maxCandidates, targetFilter, approachFilter, pathFilter, sightTransparent, alternateApproachReachable, null);
+    }
+
+    HiredMoveToBlockFaceJob(
+            ServerLevel level,
+            Villager villager,
+            Iterable<BlockPos> candidatePositions,
+            int maxCandidates,
+            Predicate<BlockPos> targetFilter,
+            Predicate<BlockPos> approachFilter,
+            Predicate<BlockPos> pathFilter,
+            Predicate<BlockState> sightTransparent,
+            BiPredicate<BlockPos, BlockPos> alternateApproachReachable,
+            BiPredicate<BlockPos, BlockPos> targetApproachFilter) {
         super(level, villager, maxCandidates);
         this.candidatePositions = candidatePositions;
         this.targetFilter = targetFilter == null ? ignored -> true : targetFilter;
         this.approachFilter = approachFilter == null ? ignored -> true : approachFilter;
         this.pathFilter = pathFilter == null ? this.approachFilter : pathFilter;
         this.sightTransparent = sightTransparent == null ? ignored -> false : sightTransparent;
+        this.alternateApproachReachable = alternateApproachReachable == null ? (target, approach) -> false : alternateApproachReachable;
+        this.targetApproachFilter = targetApproachFilter == null ? (target, approach) -> true : targetApproachFilter;
     }
 
     @Override
@@ -128,6 +160,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 BlockPos approach = rawCandidate.immutable();
                 if (approach.equals(currentPos)
                         || !this.approachFilter.test(approach)
+                        || !this.targetApproachFilter.test(target, approach)
                         || !isAdjacentApproach(approach, target)
                         || !isValidApproachPosition(this.level, approach)) {
                     continue;
@@ -169,6 +202,20 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 if (reachableApproaches >= MAX_REACHABLE_APPROACHES_TO_COMPARE) {
                     break;
                 }
+            } else if (this.alternateApproachReachable.test(target, approach.pos())) {
+                double score = approach.score() + this.villager.distanceToSqr(approach.pos().getCenter());
+                HiredPathResult result = new HiredPathResult(
+                        new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()),
+                        null,
+                        true,
+                        score);
+                if (bestResult == null || result.score() < bestResult.score()) {
+                    bestResult = result;
+                }
+                reachableApproaches++;
+                if (reachableApproaches >= MAX_REACHABLE_APPROACHES_TO_COMPARE) {
+                    break;
+                }
             }
         }
         return bestResult != null ? bestResult : HiredPathResult.blocked();
@@ -176,7 +223,10 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
 
     private HiredPathTarget targetFromCurrentPosition(BlockPos target) {
         BlockPos currentPos = this.villager.blockPosition().immutable();
-        if (!isLoaded(this.level, target) || !this.approachFilter.test(currentPos) || !isAdjacentApproach(currentPos, target)) {
+        if (!isLoaded(this.level, target)
+                || !this.approachFilter.test(currentPos)
+                || !this.targetApproachFilter.test(target, currentPos)
+                || !isAdjacentApproach(currentPos, target)) {
             return null;
         }
         Vec3 hit = visibleHitPosition(this.level, this.villager, this.villager.getEyePosition(), target, this.sightTransparent);

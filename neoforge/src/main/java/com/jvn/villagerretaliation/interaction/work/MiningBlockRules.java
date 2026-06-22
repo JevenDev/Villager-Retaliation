@@ -50,20 +50,24 @@ final class MiningBlockRules {
         if (MiningWorkerState.hasFreshExcavationLayerCache(level, context)) {
             return MiningWorkerState.cachedExcavationLayer(context);
         }
-        Integer layerY = null;
-        for (BlockPos rawPos : context.workAreaPositions()) {
-            BlockPos pos = rawPos.immutable();
-            if (isMineableExcavationBlock(level, pos)
-                    && !hasAdjacentExcavationFluid(level, context, pos)
-                    && (layerY == null || pos.getY() > layerY)) {
-                layerY = pos.getY();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int y = context.workMax().getY(); y >= context.workMin().getY(); y--) {
+            for (int x = context.workMin().getX(); x <= context.workMax().getX(); x++) {
+                for (int z = context.workMin().getZ(); z <= context.workMax().getZ(); z++) {
+                    pos.set(x, y, z);
+                    if (isMineableExcavationBlock(level, pos)
+                            && !hasAdjacentExcavationFluid(level, pos)) {
+                        MiningWorkerState.rememberExcavationLayer(level, context, y);
+                        return y;
+                    }
+                }
             }
         }
-        MiningWorkerState.rememberExcavationLayer(level, context, layerY);
-        return layerY;
+        MiningWorkerState.rememberExcavationLayer(level, context, null);
+        return null;
     }
 
-    static boolean hasAdjacentExcavationFluid(ServerLevel level, HiredWorkContext context, BlockPos pos) {
+    static boolean hasAdjacentExcavationFluid(ServerLevel level, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = pos.relative(direction);
             if (level.hasChunkAt(neighbor) && !level.getFluidState(neighbor).isEmpty()) {

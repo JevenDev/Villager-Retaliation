@@ -88,6 +88,18 @@ final class HiredPathMemory {
         }
     }
 
+    static void clearAvoided(Villager villager, BlockPos pos) {
+        UUID villagerId = villager.getUUID();
+        Map<Long, Long> avoided = AVOIDED_TARGETS.get(villagerId);
+        if (avoided != null) {
+            avoided.remove(pos.asLong());
+            if (avoided.isEmpty()) {
+                AVOIDED_TARGETS.remove(villagerId);
+            }
+        }
+        clearFailure(villager, pos);
+    }
+
     static boolean isAvoided(ServerLevel level, Villager villager, BlockPos pos) {
         Map<Long, Long> avoided = AVOIDED_TARGETS.get(villager.getUUID());
         if (avoided == null) {
@@ -194,6 +206,10 @@ final class HiredPathMemory {
                 stuckChecks,
                 now + TARGET_BLACKLIST_TICKS));
         return stuckChecks >= STUCK_LIMIT;
+    }
+
+    static boolean observeNavigationProgress(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {
+        return !isNavigationBlocked(level, villager, targetPos, distanceSqr);
     }
 
     static void rememberNavigationProgress(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {

@@ -1,12 +1,17 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
+import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.mojang.authlib.GameProfile;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -25,11 +31,13 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
@@ -313,6 +321,10 @@ public final class VillagerWorkerGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 4));
         ServerLevel level = helper.getLevel();
         tickVillager(level, villager, 20);
+        BlockPos start = helper.absolutePos(new BlockPos(1, 2, 4));
+        villager.moveTo(start.getX() + 0.5D, start.getY(), start.getZ() + 0.5D, 0.0F, 0.0F);
+        villager.setDeltaMovement(Vec3.ZERO);
+        villager.getNavigation().stop();
         for (int z = 3; z <= 5; z++) {
             setBlock(helper, new BlockPos(4, 2, z), Blocks.STONE.defaultBlockState());
             setBlock(helper, new BlockPos(4, 3, z), Blocks.STONE.defaultBlockState());
@@ -497,6 +509,59 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 420)
+    public static void miningWorkerDepositsAndReturnsToExposedOreWorkArea(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerExposedDeposit");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredOreBlockTracker.clearRuntimeState();
+        HiredRoleWorkerRegistry.clearRuntimeState();
+
+        BlockPos firstOreRel = new BlockPos(3, 2, 2);
+        BlockPos secondOreRel = new BlockPos(4, 2, 2);
+        BlockPos chestRel = new BlockPos(7, 2, 2);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, firstOreRel, Blocks.COAL_ORE.defaultBlockState());
+        setBlock(helper, secondOreRel, Blocks.COAL_ORE.defaultBlockState());
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        for (int slot = 18; slot < HiredJobInventory.SLOT_COUNT; slot++) {
+            context.inventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        context.inventory().setItem(18, new ItemStack(Items.COAL, 63));
+        MiningWorker worker = new MiningWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 360, () ->
+                level.getBlockState(helper.absolutePos(firstOreRel)).isAir()
+                        && level.getBlockState(helper.absolutePos(secondOreRel)).isAir()
+                        && countItem(container(level, chest), Items.COAL) > 0);
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(firstOreRel)).isAir(),
+                "exposed miner should break the first ore before depositing");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(secondOreRel)).isAir(),
+                "exposed miner should return from storage and break the queued ore");
+        helper.assertTrue(countItem(container(level, chest), Items.COAL) > 0,
+                "exposed miner should deposit filled output to the assigned chest");
+        helper.assertTrue(context.isInsideWorkArea(villager.blockPosition()),
+                "exposed miner should resume from inside the assigned work area");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        HiredOreBlockTracker.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void miningWorkerPausesSafelyForMissingToolsAndFullOutput(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 5, 1);
@@ -517,6 +582,651 @@ public final class VillagerWorkerGameTests {
             context.inventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
         }
         helper.assertFalse(context.hasOutputSpace(), "filled output inventory should report no output space");
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        WorkResult fullOutput = new MiningWorker().tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot fullOutputState = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(fullOutputState.taskState(), HiredWorkerTaskState.PAUSED_FULL_INVENTORY, "full output state");
+        helper.assertValueEqual(fullOutputState.failureReason(), "output_inventory_full", "full output reason");
+        helper.assertValueEqual(fullOutput.status(), "interaction.work.mining.output_full_blocked", "full output status");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(new BlockPos(3, 2, 2))).is(Blocks.COAL_ORE),
+                "miner should not break ore when output cannot fit");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void miningWorkerExcavatesTopLayerWithoutLadders(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerExcavateTop");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        MiningWorker worker = new MiningWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 80, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(), "top excavation layer should be mined without ladders");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.COBBLESTONE)), "excavation drops should be stored as output");
+        helper.assertFalse(
+                HiredWorkerBrain.snapshot(state, level.getGameTime()).failureReason().equals("missing_ladders"),
+                "top layer excavation should not pause for missing ladders");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void miningWorkerDoesNotPlaceTopLayerLadderSupportWhenSupplied(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerTopNoLadder");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos ladderRel = new BlockPos(2, 1, 2);
+        BlockPos backingRel = new BlockPos(2, 1, 1);
+        setBlock(helper, ladderRel, Blocks.AIR.defaultBlockState());
+        setBlock(helper, backingRel, Blocks.AIR.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 1, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.LADDER, 8));
+        context.inventory().insertOutput(new ItemStack(Items.COBBLESTONE, 4));
+
+        WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
+        helper.assertFalse(level.getBlockState(helper.absolutePos(ladderRel)).is(Blocks.LADDER),
+                "top excavation layer should not place a ladder even when ladders are supplied");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(backingRel)).isAir(),
+                "top excavation layer should not spend mined blocks on ladder backing");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.LADDER), 8, "top layer ladder supply count");
+        helper.assertTrue(result.progressed(), "top layer miner should keep working instead of placing support");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void miningWorkerDoesNotPlaceTopLayerTorchSupportWhenSupplied(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerTopNoTorch");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos torchRel = new BlockPos(3, 1, 2);
+        BlockPos backingRel = new BlockPos(3, 1, 1);
+        setBlock(helper, torchRel, Blocks.AIR.defaultBlockState());
+        setBlock(helper, backingRel, Blocks.AIR.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 1, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.TORCH, 8));
+        context.inventory().insertOutput(new ItemStack(Items.COBBLESTONE, 4));
+
+        WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
+        helper.assertFalse(level.getBlockState(helper.absolutePos(torchRel)).is(Blocks.WALL_TORCH),
+                "top excavation layer should not place a wall torch support");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(backingRel)).isAir(),
+                "top excavation layer should not spend mined blocks on torch backing");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.TORCH), 8, "top layer torch supply count");
+        helper.assertTrue(result.progressed(), "top layer miner should keep working instead of placing support");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void miningWorkerRequiresLaddersBeforeExcavatingBelowTopLayer(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerExcavateDeep");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, new BlockPos(3, 2, 3), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+
+        WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(snapshot.taskState(), HiredWorkerTaskState.WAITING_FOR_MATERIALS, "missing ladder task state");
+        helper.assertValueEqual(snapshot.failureReason(), "missing_ladders", "missing ladder reason");
+        helper.assertValueEqual(result.status(), "interaction.work.mining.support.missing_ladders", "missing ladder status");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).is(Blocks.STONE),
+                "miner should not dig deeper excavation layers without ladder access");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void miningWorkerPlacesLadderSupportBeforeExcavatingBelowTopLayer(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerDeepLadder");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 3, 3));
+        BlockPos ladderRel = new BlockPos(2, 2, 2);
+        setBlock(helper, ladderRel, Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(2, 1, 2), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 1, 3), Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 2, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.LADDER, 8));
+        context.inventory().insertOutput(new ItemStack(Items.COBBLESTONE, 4));
+
+        WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
+        helper.assertValueEqual(result.status(), "interaction.work.mining.support.placed_ladder", "deep layer ladder support status");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(ladderRel)).is(Blocks.LADDER),
+                "lower excavation layer should place ladder support before mining downward");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(new BlockPos(2, 2, 1))).is(Blocks.COBBLESTONE),
+                "lower excavation ladder may spend a mined block on needed backing");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.LADDER), 7, "deep layer ladder supply count");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void miningWorkerStopsLadderSupportAtSurfaceWhenWorkAreaExtendsAbove(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerSurfaceLadder");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 3, 3));
+        BlockPos surfaceLadderRel = new BlockPos(2, 2, 2);
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+        for (int y = 2; y <= 5; y++) {
+            setBlock(helper, new BlockPos(2, y, 2), Blocks.AIR.defaultBlockState());
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.AIR.defaultBlockState());
+        }
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 5, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.LADDER, 8));
+        context.inventory().insertOutput(new ItemStack(Items.COBBLESTONE, 4));
+
+        WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
+        helper.assertValueEqual(result.status(), "interaction.work.mining.support.placed_ladder", "surface-clamped ladder status");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(surfaceLadderRel)).is(Blocks.LADDER),
+                "ladder support should start at the first surface dismount");
+        for (int y = 3; y <= 5; y++) {
+            helper.assertFalse(level.getBlockState(helper.absolutePos(new BlockPos(2, y, 2))).is(Blocks.LADDER),
+                    "ladder support should not be placed above the surface dismount at y=" + y);
+        }
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.LADDER), 7, "surface-clamped ladder supply count");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void miningWorkerReplansLowerExcavationTargetInsteadOfMiningFromOutsideWorkArea(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        buildFloor(helper, 0, 6, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerExcavateBounds");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 3));
+        tickVillager(level, villager, 20);
+        BlockPos outsideStart = helper.absolutePos(new BlockPos(1, 2, 3));
+        villager.moveTo(outsideStart.getX() + 0.5D, outsideStart.getY(), outsideStart.getZ() + 0.5D, 0.0F, 0.0F);
+        BlockPos targetRel = new BlockPos(2, 1, 3);
+
+        for (int y = 1; y <= 3; y++) {
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(2, y, 2),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+        }
+        setBlock(helper, new BlockPos(2, 2, 3), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(2, 3, 3), Blocks.AIR.defaultBlockState());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 3, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        MiningWorker worker = new MiningWorker();
+        BlockPos target = helper.absolutePos(targetRel);
+        BlockPos pathOrigin = villager.blockPosition().immutable();
+
+        helper.assertTrue(MiningBlockRules.isMineableExcavationBlock(level, target), "fixture target should be mineable");
+        helper.assertTrue(MiningBlockRules.isCurrentExcavationLayer(level, context, target), "fixture target should be the current layer");
+        BlockPos insideApproach = helper.absolutePos(new BlockPos(2, 2, 3));
+        helper.assertTrue(HiredMoveToBlockFaceJob.isValidApproachPosition(level, insideApproach), "fixture inside approach should be walkable");
+        HiredPathResult constrainedPath = new HiredMoveToBlockFaceJob(
+                level,
+                villager,
+                List.of(target),
+                20,
+                context::isInsideWorkArea,
+                context::isInsideWorkArea,
+                pos -> context.isInsideWorkArea(pos) || pos.equals(pathOrigin),
+                ignored -> false,
+                (candidateTarget, approach) -> MiningExcavationSupport.hasCompleteLadderRouteToLayer(
+                        level,
+                        context,
+                        candidateTarget.getY())
+                        && MiningExcavationSupport.entryTarget(level, context) != null
+                        && MiningExcavationSupport.shouldUseLadderFallback(
+                                context,
+                                villager,
+                                new HiredPathTarget(candidateTarget.immutable(), approach.immutable(), candidateTarget.getCenter()))).search();
+        helper.assertTrue(constrainedPath.reachesDestination(), "fixture target should have an inside lower-layer approach");
+
+        WorkResult firstTick = worker.tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot firstSnapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertTrue(
+                firstTick.progressed(),
+                "outside lower-layer target should be converted into movement progress, status=" + firstTick.status());
+        helper.assertTrue(
+                firstSnapshot.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA
+                        || firstSnapshot.taskState() == HiredWorkerTaskState.MOVING_TO_TARGET,
+                "outside lower-layer task state should return or resume safely, state=" + firstSnapshot.taskState());
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).is(Blocks.STONE),
+                "miner should not start breaking a lower excavation layer while standing outside the work area");
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        helper.assertTrue(navigationTarget == null
+                        || context.isInsideWorkArea(navigationTarget)
+                        || navigationTarget.getY() == context.workMax().getY() + 1,
+                "lower excavation navigation target should stay inside the assigned work area or on the ladder return landing");
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 100, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir());
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "miner should still recover and mine the lower target from a valid approach");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.COBBLESTONE)),
+                "recovered excavation should store drops as output");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 260)
+    public static void miningWorkerDescendsLadderAndMinesLowerExcavationTarget(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        buildFloor(helper, 0, 6, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerDescendMine");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 4, 2));
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+
+        for (int y = 1; y <= 3; y++) {
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(2, y, 2),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+        }
+        for (int x = 2; x <= 4; x++) {
+            for (int z = 2; z <= 4; z++) {
+                if (x == 2 && z == 2) {
+                    continue;
+                }
+                setBlock(helper, new BlockPos(x, 1, z), Blocks.AIR.defaultBlockState());
+            }
+        }
+        setBlock(helper, new BlockPos(2, 1, 3), Blocks.BEDROCK.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 1, 2), Blocks.BEDROCK.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 2, 3), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 3, 3), Blocks.AIR.defaultBlockState());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 3, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        MiningWorker worker = new MiningWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 180, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "miner should descend the ladder and mine the lower excavation target");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.COBBLESTONE)),
+                "descended excavation should store drops as output");
+        helper.assertTrue(context.isInsideWorkArea(villager.blockPosition()),
+                "miner should end the downward path inside the excavation work area");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 260)
+    public static void miningWorkerDescendsAfterBeingPushedToUpperLadderLanding(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerPushDescend");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 5, 3));
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+
+        for (int y = 1; y <= 4; y++) {
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(2, y, 2),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+        }
+        for (int y = 1; y <= 4; y++) {
+            for (int x = 2; x <= 4; x++) {
+                for (int z = 2; z <= 4; z++) {
+                    if (x == 2 && z == 2) {
+                        continue;
+                    }
+                    setBlock(helper, new BlockPos(x, y, z), Blocks.AIR.defaultBlockState());
+                }
+            }
+        }
+        setBlock(helper, new BlockPos(2, 4, 3), Blocks.BEDROCK.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 2, 2), Blocks.BEDROCK.defaultBlockState());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 4, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        MiningWorker worker = new MiningWorker();
+        BlockPos target = helper.absolutePos(targetRel);
+
+        WorkResult firstTick = worker.tick(level, villager, hirer, context);
+        helper.assertTrue(firstTick.progressed(), "lower target recovery should start movement");
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 120, () ->
+                state.contains("ActiveWorkApproachPos"));
+        helper.assertTrue(state.contains("ActiveWorkApproachPos"),
+                "miner should select a lower-layer approach after descending from the upper landing");
+        BlockPos activeApproach = BlockPos.of(state.getLong("ActiveWorkApproachPos"));
+        helper.assertTrue(activeApproach.getY() <= target.getY() + 1,
+                "lower excavation target should not use the upper ladder landing as its mining stance");
+        helper.assertTrue(level.getBlockState(target).is(Blocks.STONE),
+                "lower target should still exist before the forced displacement recovery step");
+
+        BlockPos pushedRel = new BlockPos(2, 5, 3);
+        BlockPos pushed = helper.absolutePos(pushedRel);
+        villager.moveTo(pushed.getX() + 0.5D, pushed.getY(), pushed.getZ() + 0.5D, 0.0F, 0.0F);
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 200, () ->
+                level.getBlockState(target).isAir());
+
+        helper.assertTrue(level.getBlockState(target).isAir(),
+                "miner pushed to the upper landing should descend and mine the lower excavation target");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.COBBLESTONE)),
+                "pushed descent excavation should store drops as output");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 220)
+    public static void ladderNavigationAllowsImmediateDescentAfterSurfaceDismount(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 0);
+        ServerLevel level = helper.getLevel();
+
+        for (int y = 1; y <= 3; y++) {
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(2, y, 2),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+        }
+        setBlock(helper, new BlockPos(3, 0, 2), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 1, 2), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 2, 2), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 3, 2), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 4, 2), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 5, 2), Blocks.AIR.defaultBlockState());
+
+        Villager villager = spawnVillager(helper, new BlockPos(3, 1, 2));
+        BlockPos topDismount = helper.absolutePos(new BlockPos(3, 4, 2));
+        BlockPos lowerDismount = helper.absolutePos(new BlockPos(3, 1, 2));
+
+        for (int tick = 0; tick < 100 && !villager.blockPosition().equals(topDismount); tick++) {
+            helper.assertTrue(
+                    VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, topDismount, 0.55D),
+                    "ladder helper should keep climbing toward the surface dismount");
+            VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+            level.tickNonPassenger(villager);
+        }
+        helper.assertValueEqual(villager.blockPosition(), topDismount, "villager should reach the top ladder dismount");
+
+        helper.assertTrue(
+                VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, lowerDismount, 0.55D),
+                "recent top dismount should allow intentional immediate descent");
+
+        for (int tick = 0; tick < 100 && !villager.blockPosition().equals(lowerDismount); tick++) {
+            helper.assertTrue(
+                    VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, lowerDismount, 0.55D),
+                    "ladder helper should keep descending after reversing from storage height");
+            VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+            level.tickNonPassenger(villager);
+        }
+        helper.assertValueEqual(villager.blockPosition(), lowerDismount, "villager should return to the lower ladder dismount");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 420)
+    public static void miningWorkerDepositsAndReturnsToLowerExcavationByLadder(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 3);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerDepositReturnMine");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos firstTargetRel = new BlockPos(3, 1, 3);
+        BlockPos secondTargetRel = new BlockPos(4, 1, 3);
+        BlockPos chestRel = new BlockPos(6, 4, 3);
+        BlockPos chest = helper.absolutePos(chestRel);
+
+        for (int x = 2; x <= 4; x++) {
+            for (int z = 2; z <= 4; z++) {
+                setBlock(helper, new BlockPos(x, 1, z), Blocks.BEDROCK.defaultBlockState());
+                setBlock(helper, new BlockPos(x, 2, z), Blocks.AIR.defaultBlockState());
+                setBlock(helper, new BlockPos(x, 3, z), Blocks.AIR.defaultBlockState());
+                setBlock(helper, new BlockPos(x, 4, z), Blocks.AIR.defaultBlockState());
+            }
+        }
+        setBlock(helper, firstTargetRel, Blocks.STONE.defaultBlockState());
+        setBlock(helper, secondTargetRel, Blocks.STONE.defaultBlockState());
+        for (int y = 1; y <= 3; y++) {
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(2, y, 2),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+        }
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 3, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        for (int slot = 18; slot < HiredJobInventory.SLOT_COUNT; slot++) {
+            context.inventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        context.inventory().setItem(18, new ItemStack(Items.COBBLESTONE, 63));
+        MiningWorker worker = new MiningWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 360, () ->
+                level.getBlockState(helper.absolutePos(firstTargetRel)).isAir()
+                        && level.getBlockState(helper.absolutePos(secondTargetRel)).isAir()
+                        && countItem(container(level, chest), Items.COBBLESTONE) > 0);
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(firstTargetRel)).isAir(),
+                "miner should clear the first lower excavation target before depositing");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(secondTargetRel)).isAir(),
+                "miner should return from storage and clear the remaining lower excavation target");
+        helper.assertTrue(countItem(container(level, chest), Items.COBBLESTONE) > 0,
+                "miner should deposit filled output to the assigned surface chest");
+        helper.assertTrue(context.isInsideWorkArea(villager.blockPosition()),
+                "miner should finish the resumed lower excavation inside the work area");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 320)
+    public static void miningWorkerOutsideAreaReturnsBeforeTargetScan(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 3);
+        buildFloor(helper, 0, 8, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerOutsideReturnMine");
+        movePlayer(helper, hirer, new BlockPos(1, 4, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(6, 4, 3));
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+
+        for (int x = 2; x <= 4; x++) {
+            for (int z = 2; z <= 4; z++) {
+                setBlock(helper, new BlockPos(x, 1, z), Blocks.BEDROCK.defaultBlockState());
+                setBlock(helper, new BlockPos(x, 2, z), Blocks.AIR.defaultBlockState());
+                setBlock(helper, new BlockPos(x, 3, z), Blocks.AIR.defaultBlockState());
+                setBlock(helper, new BlockPos(x, 4, z), Blocks.AIR.defaultBlockState());
+            }
+        }
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+        for (int y = 1; y <= 3; y++) {
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(2, y, 2),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+        }
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 3, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        HiredWorkerBrain.setFailure(context, "target_unreachable", level.getGameTime() + 100L);
+        HiredWorkerBrain.setLastTargetScanResult(context, "no_targets");
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+        MiningWorker worker = new MiningWorker();
+
+        WorkResult firstTick = worker.tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot firstState = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertTrue(firstTick.progressed(), "outside miner should begin returning instead of idling without targets; status="
+                + firstTick.status() + ", task=" + firstState.taskState() + ", failure=" + firstState.failureReason()
+                + ", scan=" + firstState.lastTargetScanResult() + ", target=" + firstState.targetPos());
+        helper.assertTrue(
+                firstState.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA
+                        || firstState.taskState() == HiredWorkerTaskState.MOVING_TO_TARGET,
+                "outside miner should return or immediately resume target movement; state=" + firstState.taskState());
+        helper.assertFalse(firstState.failureReason().contains("target_unreachable"),
+                "stale target failure should be cleared during outside return");
+        helper.assertFalse(firstState.lastTargetScanResult().contains("no_targets"),
+                "stale no-target scan should be cleared during outside return");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).is(Blocks.STONE),
+                "return tick should not mine or reject the valid target before navigating back");
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 240, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "miner should descend from the surface side and mine the valid lower target");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.COBBLESTONE)),
+                "returned excavation should store mined drops as output");
+        helper.assertTrue(context.isInsideWorkArea(villager.blockPosition()),
+                "miner should finish the recovered excavation inside the work area");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80000)
+    public static void miningWorkerServiceExcavatesFullMixedBoxAndDeposits(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        movePlayer(helper, hirer, new BlockPos(12, 6, 6));
+
+        BlockPos workMinRel = new BlockPos(2, 1, 2);
+        BlockPos workMaxRel = new BlockPos(10, 5, 10);
+        fillMixedExcavationBox(helper, workMinRel, workMaxRel);
+        buildStoragePlatform(helper, 11, 15, 4, 8, 5);
+
+        BlockPos chestRel = new BlockPos(12, 6, 6);
+        BlockPos paymentRel = new BlockPos(13, 6, 6);
+        BlockPos chest = helper.absolutePos(chestRel);
+        BlockPos payment = helper.absolutePos(paymentRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, paymentRel, VillagerRetaliationBlocks.OAK_PAYMENT_BOX.get().defaultBlockState());
+        Container supplyAndOutput = container(level, chest);
+        supplyAndOutput.setItem(0, new ItemStack(Items.LADDER, 64));
+        supplyAndOutput.setItem(1, new ItemStack(Items.TORCH, 64));
+        supplyAndOutput.setItem(2, new ItemStack(Items.DIAMOND_PICKAXE));
+        supplyAndOutput.setItem(3, new ItemStack(Items.DIAMOND_SHOVEL));
+        container(level, payment).setItem(0, new ItemStack(Items.EMERALD, 64));
+
+        Villager villager = spawnVillager(helper, new BlockPos(11, 6, 6));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.TOOLSMITH));
+        pinHiredWorkServicePhase(level, villager);
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 64);
+        helper.assertTrue(
+                HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.MINING),
+                "toolsmith villager should accept mining role");
+        HiredVillagerWorkService.setWorkArea(
+                hirer,
+                level,
+                villager,
+                helper.absolutePos(workMinRel),
+                helper.absolutePos(workMaxRel));
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        session.state().putBoolean("UseAssignedStorageForSupplies", true);
+        session.state().putBoolean("AutoDepositOutputs", true);
+
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.removeAssignedContainer(level, payment);
+        AssignedStorageService.AssignSummary chestAssignment = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.GENERAL_PURPOSE);
+        AssignedStorageService.AssignSummary paymentAssignment = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), payment)),
+                AssignedStorageService.PAYMENT_PURPOSE);
+        helper.assertValueEqual(chestAssignment.assigned(), 1, "mixed mining chest assignment");
+        helper.assertValueEqual(paymentAssignment.assigned(), 1, "mixed mining payment assignment");
+
+        runHiredMiningServiceUntil(helper, level, villager, workMinRel, workMaxRel, 76000, () ->
+                mixedExcavationBoxCleared(level, helper, workMinRel, workMaxRel)
+                        && !HiredJobInventory.getJobInventory(villager).hasOutputItems());
+
+        helper.assertTrue(mixedExcavationBoxCleared(level, helper, workMinRel, workMaxRel),
+                "miner should clear every original grass/dirt/stone/iron block from the assigned box");
+        helper.assertTrue(countItem(supplyAndOutput, Items.DIRT) >= 150,
+                "miner should deposit grass and dirt drops not reused as support backing into the assigned chest, count="
+                        + countItem(supplyAndOutput, Items.DIRT));
+        helper.assertTrue(countItem(supplyAndOutput, Items.RAW_IRON) >= 40,
+                "miner should deposit iron ore drops into the assigned chest, count="
+                        + countItem(supplyAndOutput, Items.RAW_IRON));
+        helper.assertTrue(countItem(supplyAndOutput, Items.COBBLESTONE) > 0,
+                "miner should deposit stone drops into the assigned chest");
+        helper.assertFalse(HiredJobInventory.getJobInventory(villager).hasOutputItems(),
+                "miner should finish with job output inventory deposited");
+        helper.assertTrue(countItem(container(level, payment), Items.EMERALD) >= 64,
+                "payment box should remain assigned and stocked with emeralds");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();
         helper.succeed();
     }
@@ -701,17 +1411,204 @@ public final class VillagerWorkerGameTests {
         for (int tick = 0; tick < maxTicks && !done.getAsBoolean(); tick++) {
             worker.maintain(level, villager, context);
             worker.tick(level, villager, hirer, context);
+            VillagerTaskNavigationUtil.tickPathLadders(level, villager);
             level.tickNonPassenger(villager);
         }
         if (!done.getAsBoolean()) {
             HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
             String debug = worker instanceof LoggingWorker ? " " + LoggingWorker.debugSummary(context) : "";
+            BlockPos navTarget = villager.getNavigation().getTargetPos();
+            BlockPos activeTarget = context.state().contains("ActiveWorkBlockPos")
+                    ? BlockPos.of(context.state().getLong("ActiveWorkBlockPos"))
+                    : null;
+            BlockPos activeApproach = context.state().contains("ActiveWorkApproachPos")
+                    ? BlockPos.of(context.state().getLong("ActiveWorkApproachPos"))
+                    : null;
             throw new GameTestAssertException("Worker did not reach expected state in " + maxTicks
                     + " direct ticks; task=" + snapshot.taskState()
                     + ", failure=" + snapshot.failureReason()
                     + ", scan=" + snapshot.lastTargetScanResult()
+                    + ", pos=" + villager.blockPosition()
+                    + ", precise=(" + String.format(java.util.Locale.ROOT, "%.2f", villager.getX())
+                    + "," + String.format(java.util.Locale.ROOT, "%.2f", villager.getY())
+                    + "," + String.format(java.util.Locale.ROOT, "%.2f", villager.getZ()) + ")"
+                    + ", nav=" + navTarget
+                    + ", active=" + activeTarget
+                    + ", approach=" + activeApproach
                     + debug);
         }
+    }
+
+    private static void runHiredMiningServiceUntil(
+            GameTestHelper helper,
+            ServerLevel level,
+            Villager villager,
+            BlockPos workMinRel,
+            BlockPos workMaxRel,
+            int maxTicks,
+            java.util.function.BooleanSupplier done) {
+        int lastRemainingBlocks = remainingMixedExcavationBlocks(level, helper, workMinRel, workMaxRel);
+        int ticksSinceBlockProgress = 0;
+        for (int tick = 0; tick < maxTicks && !done.getAsBoolean(); tick++) {
+            HiredVillagerContractService.onVillagerTickPost(villager);
+            HiredVillagerWorkService.onVillagerTickPost(villager);
+            VillagerTaskNavigationUtil.tickVillagerWaterSafety(level, villager);
+            VillagerTaskNavigationUtil.tickPathDoors(level, villager);
+            VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+            level.tickNonPassenger(villager);
+
+            int remainingBlocks = remainingMixedExcavationBlocks(level, helper, workMinRel, workMaxRel);
+            if (remainingBlocks < lastRemainingBlocks) {
+                lastRemainingBlocks = remainingBlocks;
+                ticksSinceBlockProgress = 0;
+            } else if (remainingBlocks > 0) {
+                ticksSinceBlockProgress++;
+            }
+            if (ticksSinceBlockProgress > 3000) {
+                throw mixedMiningServiceFailure(
+                        helper,
+                        level,
+                        villager,
+                        workMinRel,
+                        workMaxRel,
+                        "Hired mining service stalled for " + ticksSinceBlockProgress
+                                + " ticks without clearing another original block");
+            }
+        }
+        if (!done.getAsBoolean()) {
+            throw mixedMiningServiceFailure(
+                    helper,
+                    level,
+                    villager,
+                    workMinRel,
+                    workMaxRel,
+                    "Hired mining service did not finish mixed excavation in " + maxTicks + " ticks");
+        }
+    }
+
+    private static GameTestAssertException mixedMiningServiceFailure(
+            GameTestHelper helper,
+            ServerLevel level,
+            Villager villager,
+            BlockPos workMinRel,
+            BlockPos workMaxRel,
+            String reason) {
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
+        BlockPos navTarget = villager.getNavigation().getTargetPos();
+        BlockPos entryTarget = MiningWorker.excavationEntryTarget(level, session.context());
+        BlockPos returnTarget = MiningWorker.excavationReturnTarget(level, villager, session.context());
+        return new GameTestAssertException(reason
+                + "; task=" + snapshot.taskState()
+                + ", failure=" + snapshot.failureReason()
+                + ", scan=" + snapshot.lastTargetScanResult()
+                + ", status=" + session.state().getString("Status")
+                + ", layer=" + MiningBlockRules.currentExcavationLayer(level, session.context())
+                + ", pos=" + villager.blockPosition()
+                + ", precise=(" + String.format(java.util.Locale.ROOT, "%.2f", villager.getX())
+                + "," + String.format(java.util.Locale.ROOT, "%.2f", villager.getY())
+                + "," + String.format(java.util.Locale.ROOT, "%.2f", villager.getZ()) + ")"
+                + ", nav=" + navTarget
+                + ", storage=" + snapshot.storageTargetPos()
+                + ", target=" + snapshot.targetPos()
+                + ", entry=" + entryTarget
+                + ", return=" + returnTarget
+                + ", remainingBlocks=" + remainingMixedExcavationBlocks(level, helper, workMinRel, workMaxRel)
+                + ", remainingOutput=" + session.inventory().hasOutputItems()
+                + ", ladders=" + ladderSummary(level, helper, workMinRel, workMaxRel));
+    }
+
+    private static void pinHiredWorkServicePhase(ServerLevel level, Villager villager) {
+        int interval = Math.max(10, VillagerRetaliationConfig.HIRED_WORK_TICK_INTERVAL.get());
+        long least = Math.floorMod(-level.getGameTime(), interval);
+        villager.setUUID(new UUID(0x564d696e6572544cL, least));
+    }
+
+    private static void fillMixedExcavationBox(GameTestHelper helper, BlockPos min, BlockPos max) {
+        for (int x = min.getX(); x <= max.getX(); x++) {
+            for (int y = min.getY(); y <= max.getY(); y++) {
+                for (int z = min.getZ(); z <= max.getZ(); z++) {
+                    BlockState state;
+                    if (y == max.getY()) {
+                        state = Blocks.GRASS_BLOCK.defaultBlockState();
+                    } else if (y == max.getY() - 1) {
+                        state = Blocks.DIRT.defaultBlockState();
+                    } else if (Math.floorMod(x + y + z, 5) == 0) {
+                        state = Blocks.IRON_ORE.defaultBlockState();
+                    } else {
+                        state = Blocks.STONE.defaultBlockState();
+                    }
+                    setBlock(helper, new BlockPos(x, y, z), state);
+                }
+            }
+        }
+        for (int x = min.getX(); x <= max.getX(); x++) {
+            for (int z = min.getZ(); z <= max.getZ(); z++) {
+                setBlock(helper, new BlockPos(x, min.getY() - 1, z), Blocks.BEDROCK.defaultBlockState());
+                setBlock(helper, new BlockPos(x, max.getY() + 1, z), Blocks.AIR.defaultBlockState());
+                setBlock(helper, new BlockPos(x, max.getY() + 2, z), Blocks.AIR.defaultBlockState());
+            }
+        }
+    }
+
+    private static void buildStoragePlatform(GameTestHelper helper, int minX, int maxX, int minZ, int maxZ, int floorY) {
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                setBlock(helper, new BlockPos(x, floorY, z), Blocks.STONE.defaultBlockState());
+                setBlock(helper, new BlockPos(x, floorY + 1, z), Blocks.AIR.defaultBlockState());
+                setBlock(helper, new BlockPos(x, floorY + 2, z), Blocks.AIR.defaultBlockState());
+            }
+        }
+    }
+
+    private static boolean mixedExcavationBoxCleared(ServerLevel level, GameTestHelper helper, BlockPos min, BlockPos max) {
+        return remainingMixedExcavationBlocks(level, helper, min, max) == 0;
+    }
+
+    private static int remainingMixedExcavationBlocks(ServerLevel level, GameTestHelper helper, BlockPos min, BlockPos max) {
+        int remaining = 0;
+        for (int x = min.getX(); x <= max.getX(); x++) {
+            for (int y = min.getY(); y <= max.getY(); y++) {
+                for (int z = min.getZ(); z <= max.getZ(); z++) {
+                    if (isOriginalMixedExcavationMaterial(level.getBlockState(helper.absolutePos(new BlockPos(x, y, z))))) {
+                        remaining++;
+                    }
+                }
+            }
+        }
+        return remaining;
+    }
+
+    private static String ladderSummary(ServerLevel level, GameTestHelper helper, BlockPos min, BlockPos max) {
+        BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+        StringBuilder builder = new StringBuilder("[");
+        int count = 0;
+        for (int x = min.getX() - 1; x <= max.getX() + 1; x++) {
+            for (int y = min.getY() - 1; y <= max.getY() + 1; y++) {
+                for (int z = min.getZ() - 1; z <= max.getZ() + 1; z++) {
+                    BlockPos absolute = helper.absolutePos(new BlockPos(x, y, z));
+                    if (!level.getBlockState(absolute).is(Blocks.LADDER)) {
+                        continue;
+                    }
+                    if (count++ > 0) {
+                        builder.append(",");
+                    }
+                    builder.append("(")
+                            .append(absolute.getX() - origin.getX()).append(",")
+                            .append(absolute.getY() - origin.getY()).append(",")
+                            .append(absolute.getZ() - origin.getZ()).append(")");
+                }
+            }
+        }
+        builder.append("]");
+        return builder.toString();
+    }
+
+    private static boolean isOriginalMixedExcavationMaterial(BlockState state) {
+        return state.is(Blocks.GRASS_BLOCK)
+                || state.is(Blocks.DIRT)
+                || state.is(Blocks.STONE)
+                || state.is(Blocks.IRON_ORE);
     }
 
     private static HiredWorkContext context(

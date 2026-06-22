@@ -276,6 +276,12 @@ public final class ClipboardWorkforceService {
             return reason.contains("missing_brewing_materials")
                     || reason.contains("interaction.work.brewing.missing_materials");
         }
+        if (role == HiredVillagerRole.MINING) {
+            return !noStorage
+                    && !materialStorageUnreachable
+                    && brain.taskState() == HiredWorkerTaskState.WAITING_FOR_MATERIALS
+                    && lower(brain.failureReason()).contains("missing_ladders");
+        }
         if (role != HiredVillagerRole.BUILDER || noStorage || materialStorageUnreachable) {
             return false;
         }
@@ -291,6 +297,7 @@ public final class ClipboardWorkforceService {
         return switch (role) {
             case BREWING -> failure.contains("brewing_storage_path_failed");
             case BUILDER -> failure.contains("builder_material_storage_unreachable");
+            case MINING -> failure.contains("mining_support_storage_path_failed");
             default -> false;
         };
     }
@@ -345,6 +352,9 @@ public final class ClipboardWorkforceService {
         }
         if (role == HiredVillagerRole.LOGGING) {
             return loggingDiagnostic(brain, context, inventoryFull, noStorage);
+        }
+        if (role == HiredVillagerRole.MINING) {
+            return miningDiagnostic(brain, inventoryFull, noStorage, missingMaterials, materialStorageUnreachable);
         }
         if (role != HiredVillagerRole.BUILDER) {
             return "";
@@ -429,6 +439,34 @@ public final class ClipboardWorkforceService {
         }
         if (reason.contains("placement_failed")) {
             return "The next construction block failed to place; check collision, support, or protection at the target.";
+        }
+        return "";
+    }
+
+    private static String miningDiagnostic(
+            HiredWorkerBrain.Snapshot brain,
+            boolean inventoryFull,
+            boolean noStorage,
+            boolean missingMaterials,
+            boolean materialStorageUnreachable) {
+        String reason = lower(brain.failureReason());
+        if (materialStorageUnreachable) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return limitDiagnostic(storagePos == null
+                    ? "Assigned storage contains excavation supports, but the miner cannot path to that container."
+                    : "Assigned storage at " + HiredWorkerBrain.formatPos(storagePos)
+                            + " contains excavation supports, but the miner cannot path to it.");
+        }
+        if (missingMaterials || reason.contains("missing_ladders")) {
+            return "Miner needs ladders in job supplies or reachable assigned storage before digging lower excavation layers.";
+        }
+        if (reason.contains("tool_storage_unreachable")) {
+            return "Miner cannot path to assigned tool storage for a suitable tool.";
+        }
+        if (inventoryFull) {
+            return noStorage
+                    ? "Miner inventory is full and no assigned output storage is available."
+                    : "Miner inventory is full and it is trying to deposit mined output.";
         }
         return "";
     }

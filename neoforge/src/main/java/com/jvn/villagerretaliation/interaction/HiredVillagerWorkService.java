@@ -205,8 +205,9 @@ public final class HiredVillagerWorkService {
             return false;
         }
         BlockPos excavationEntry = excavationSurfaceEntryTarget(level, session, villager);
+        BlockPos excavationCompletionEntry = excavationCompletionEntryTarget(level, session);
         HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(state, level.getGameTime());
-        if (isReturnedToWorkArea(villager, session.context(), excavationEntry)) {
+        if (isReturnedToWorkArea(villager, session.context(), excavationCompletionEntry, excavationEntry)) {
             if (brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA) {
                 VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.IDLE, null);
@@ -350,11 +351,15 @@ public final class HiredVillagerWorkService {
         if (context.isInsideWorkArea(villager.blockPosition())) {
             return null;
         }
-        BlockPos ladderEntry = MiningWorker.excavationEntryTarget(level, context);
-        if (ladderEntry != null && !isAtExcavationEntry(villager, ladderEntry)) {
-            return ladderEntry;
+        return MiningWorker.excavationReturnTarget(level, villager, context);
+    }
+
+    private static BlockPos excavationCompletionEntryTarget(ServerLevel level, HiredWorkSession session) {
+        if (session.role() != HiredVillagerRole.MINING
+                || !HiredMiningMode.fromState(session.state()).excavatesArea()) {
+            return null;
         }
-        return bestExcavationSurfaceEntryTarget(level, villager, context);
+        return MiningWorker.excavationEntryTarget(level, session.context());
     }
 
     private static BlockPos bestExcavationSurfaceEntryTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -491,17 +496,52 @@ public final class HiredVillagerWorkService {
                 WORK_AREA_RETURN_CLOSE_ENOUGH);
     }
 
-    private static boolean isReturnedToWorkArea(Villager villager, HiredWorkContext context, BlockPos excavationEntry) {
+    private static boolean isReturnedToWorkArea(
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos excavationEntry,
+            BlockPos excavationSurfaceEntry) {
+        BlockPos pos = villager.blockPosition();
+        if (context.isInsideWorkArea(pos)) {
+            return true;
+        }
         if (excavationEntry != null) {
             return isAtExcavationEntry(villager, excavationEntry);
         }
-        BlockPos pos = villager.blockPosition();
+        if (excavationSurfaceEntry != null
+                && isAtExcavationSurfaceEntry(villager, context, excavationSurfaceEntry)) {
+            return true;
+        }
         return context.isInsideWorkArea(pos);
     }
 
+    private static boolean isAtExcavationSurfaceEntry(
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos excavationEntry) {
+        if (isAtExcavationEntry(villager, excavationEntry)) {
+            return true;
+        }
+        BlockPos pos = villager.blockPosition();
+        int horizontalDistance = Math.abs(pos.getX() - excavationEntry.getX())
+                + Math.abs(pos.getZ() - excavationEntry.getZ());
+        return excavationEntry.getY() == context.workMax().getY() + 1
+                && horizontalDistance <= WORK_AREA_RETURN_CLOSE_ENOUGH
+                && pos.getY() >= excavationEntry.getY()
+                && pos.getY() <= excavationEntry.getY() + 1;
+    }
+
     private static boolean isAtExcavationEntry(Villager villager, BlockPos excavationEntry) {
-        return villager.blockPosition().distSqr(excavationEntry) <= 1.0D
-                && Math.abs(villager.blockPosition().getY() - excavationEntry.getY()) <= 1;
+        BlockPos pos = villager.blockPosition();
+        if (pos.distSqr(excavationEntry) <= 1.0D
+                && Math.abs(pos.getY() - excavationEntry.getY()) <= 1) {
+            return true;
+        }
+        int horizontalDistance = Math.abs(pos.getX() - excavationEntry.getX())
+                + Math.abs(pos.getZ() - excavationEntry.getZ());
+        return horizontalDistance <= 1
+                && pos.getY() >= excavationEntry.getY()
+                && pos.getY() <= excavationEntry.getY() + 2;
     }
 
     private static boolean isWorkAreaReturnNavigationStuck(
