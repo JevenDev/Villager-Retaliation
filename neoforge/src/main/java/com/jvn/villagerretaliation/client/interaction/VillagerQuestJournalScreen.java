@@ -827,7 +827,7 @@ public final class VillagerQuestJournalScreen extends Screen {
             y = addWrappedDetailLines(lines, selected.issuerLocation(), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 0);
         }
         y = addDividerLine(lines, y + 3, 3);
-        y = addWrappedDetailLines(lines, selected.objective(), wrapWidth, TEXT_COLOR, y, lineStep, 0);
+        y = addWrappedDetailLines(lines, descriptionLine(selected), wrapWidth, TEXT_COLOR, y, lineStep, 0);
         y = addDividerLine(lines, y + 3, 3);
         y = addCenteredDetailLine(lines, "Objectives", TITLE_COLOR, y, lineStep, 0);
         y = addDividerLine(lines, y + 3, 3);
@@ -951,6 +951,10 @@ public final class VillagerQuestJournalScreen extends Screen {
         return VillagerQuestTrackerOverlay.isTracked(entry)
                 ? "Status: " + entry.status() + " | Tracked"
                 : "Status: " + entry.status() + " | Not tracked";
+    }
+
+    private static String descriptionLine(QuestTrackerSyncPayload.Entry entry) {
+        return entry.description().isBlank() ? entry.objective() : entry.description();
     }
 
     private static String questItemLine(QuestTrackerSyncPayload.QuestItem item) {

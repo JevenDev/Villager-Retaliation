@@ -42,6 +42,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             buffer.writeUtf(entry.questId(), 128);
             buffer.writeUtf(entry.title(), 128);
             buffer.writeUtf(entry.objective(), 256);
+            buffer.writeUtf(entry.description(), 256);
             buffer.writeUtf(entry.metadata(), 256);
             buffer.writeFloat(entry.progress());
             buffer.writeBoolean(entry.showProgress());
@@ -72,6 +73,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             Entry entry = new Entry(
                     buffer.readUtf(128),
                     buffer.readUtf(128),
+                    buffer.readUtf(256),
                     buffer.readUtf(256),
                     buffer.readUtf(256),
                     buffer.readFloat(),
@@ -121,6 +123,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             String questId,
             String title,
             String objective,
+            String description,
             String metadata,
             float progress,
             boolean showProgress,
@@ -144,7 +147,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 String issuerLocation,
                 List<QuestItem> questItems,
                 boolean questUpdate) {
-            this(questId, title, objective, metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, questUpdate, false);
+            this(questId, title, objective, "", metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, questUpdate, false);
         }
 
         public Entry(
@@ -159,13 +162,31 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 String issuer,
                 String issuerLocation,
                 List<QuestItem> questItems) {
-            this(questId, title, objective, metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, false, false);
+            this(questId, title, objective, "", metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, false, false);
+        }
+
+        public Entry(
+                String questId,
+                String title,
+                String objective,
+                String metadata,
+                float progress,
+                boolean showProgress,
+                String state,
+                String status,
+                String issuer,
+                String issuerLocation,
+                List<QuestItem> questItems,
+                boolean questUpdate,
+                boolean questAvailable) {
+            this(questId, title, objective, "", metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, questUpdate, questAvailable);
         }
 
         public Entry {
             questId = questId == null ? "" : questId;
             title = title == null ? "" : title;
             objective = objective == null ? "" : objective;
+            description = description == null ? "" : description;
             metadata = metadata == null ? "" : metadata;
             progress = Math.max(0.0F, Math.min(1.0F, progress));
             state = state == null ? "" : state;
@@ -182,6 +203,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     this.questId,
                     this.title,
                     this.objective,
+                    this.description,
                     this.metadata,
                     this.progress,
                     this.showProgress,
@@ -199,6 +221,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     questId,
                     this.title,
                     this.objective,
+                    this.description,
                     this.metadata,
                     this.progress,
                     this.showProgress,
@@ -216,6 +239,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     this.questId,
                     this.title,
                     this.objective,
+                    this.description,
                     this.metadata,
                     this.progress,
                     this.showProgress,

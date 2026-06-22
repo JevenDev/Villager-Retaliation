@@ -24,6 +24,7 @@ public final class QuestTrackerPresenter {
                 definition.id().toString(),
                 resolveText(input.player(), input.title(), input.replacements()),
                 resolveText(input.player(), new QuestDefinition.SelectedText(step.text(), step.textKey()), input.replacements()),
+                resolveText(input.player(), new QuestDefinition.SelectedText(definition.description(), definition.descriptionKey()), input.replacements()),
                 metadataText(input.player(), step.metadata(), input.replacements(), input.status(), input.issuer()),
                 Mth.clamp(input.progress(), 0.0F, 1.0F),
                 input.showProgress(),
@@ -31,7 +32,9 @@ public final class QuestTrackerPresenter {
                 input.status(),
                 input.issuer(),
                 input.issuerLocation(),
-                input.questItems());
+                input.questItems(),
+                false,
+                false);
     }
 
     public static String syncSignature(
@@ -79,6 +82,7 @@ public final class QuestTrackerPresenter {
         builder.append(entry.questId()).append('|')
                 .append(entry.title()).append('|')
                 .append(entry.objective()).append('|')
+                .append(entry.description()).append('|')
                 .append(entry.metadata()).append('|')
                 .append(entry.progress()).append('|')
                 .append(entry.showProgress()).append('|')
@@ -101,6 +105,7 @@ public final class QuestTrackerPresenter {
         builder.append(entry.questId()).append('|')
                 .append(entry.title()).append('|')
                 .append(entry.objective()).append('|')
+                .append(entry.description()).append('|')
                 .append(entry.metadata()).append('|')
                 .append(entry.progress()).append('|')
                 .append(entry.showProgress()).append('|')
