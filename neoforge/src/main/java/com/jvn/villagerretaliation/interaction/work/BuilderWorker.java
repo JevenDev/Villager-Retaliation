@@ -1032,7 +1032,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                     storage,
                     stack -> BuilderStructureScanner.sameMaterial(stack, material.item()),
                     needed,
-                    stack -> context.inventory().insertSupply(stack));
+                    stack -> context.inventory().insertSupplyFromStorage(stack));
         }
         return moved;
     }

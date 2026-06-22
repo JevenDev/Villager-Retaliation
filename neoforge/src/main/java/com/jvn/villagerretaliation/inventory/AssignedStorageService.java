@@ -479,8 +479,21 @@ public final class AssignedStorageService {
         if (villager == null || pos == null) {
             return false;
         }
-        return villager.getEyePosition().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR
-                && villager.position().distanceToSqr(pos.getCenter()) <= STORAGE_INTERACTION_REACH_SQR
+        Vec3 storageCenter = pos.getCenter();
+        Vec3 centeredFeet = new Vec3(
+                villager.blockPosition().getX() + 0.5D,
+                villager.getY(),
+                villager.blockPosition().getZ() + 0.5D);
+        Vec3 centeredEye = new Vec3(
+                centeredFeet.x,
+                villager.blockPosition().getY() + villager.getEyeHeight(),
+                centeredFeet.z);
+        boolean positionWithinReach = villager.position().distanceToSqr(storageCenter) <= STORAGE_INTERACTION_REACH_SQR
+                || centeredFeet.distanceToSqr(storageCenter) <= STORAGE_INTERACTION_REACH_SQR;
+        boolean eyeWithinReach = villager.getEyePosition().distanceToSqr(storageCenter) <= STORAGE_INTERACTION_REACH_SQR
+                || centeredEye.distanceToSqr(storageCenter) <= STORAGE_INTERACTION_REACH_SQR;
+        return positionWithinReach
+                && eyeWithinReach
                 && hasLineOfSightToStorage(villager, pos);
     }
 
@@ -488,8 +501,30 @@ public final class AssignedStorageService {
         if (villager == null || pos == null) {
             return false;
         }
-        Vec3 start = villager.getEyePosition();
-        Vec3 end = Vec3.atCenterOf(pos);
+        if (hasLineOfSightToStorageFrom(villager, villager.getEyePosition(), pos)) {
+            return true;
+        }
+        Vec3 centeredEye = new Vec3(
+                villager.blockPosition().getX() + 0.5D,
+                villager.blockPosition().getY() + villager.getEyeHeight(),
+                villager.blockPosition().getZ() + 0.5D);
+        return hasLineOfSightToStorageFrom(villager, centeredEye, pos);
+    }
+
+    private static boolean hasLineOfSightToStorageFrom(Villager villager, Vec3 start, BlockPos pos) {
+        return hitsStorageBlock(villager, start, Vec3.atCenterOf(pos), pos)
+                || hitsStorageBlock(villager, start, storageSightPoint(pos, start, 0.5D), pos)
+                || hitsStorageBlock(villager, start, storageSightPoint(pos, start, 0.85D), pos)
+                || hitsStorageBlock(villager, start, storageSightPoint(pos, start, 0.15D), pos);
+    }
+
+    private static Vec3 storageSightPoint(BlockPos pos, Vec3 start, double yOffset) {
+        double x = Math.clamp(start.x, pos.getX() + 0.08D, pos.getX() + 0.92D);
+        double z = Math.clamp(start.z, pos.getZ() + 0.08D, pos.getZ() + 0.92D);
+        return new Vec3(x, pos.getY() + yOffset, z);
+    }
+
+    private static boolean hitsStorageBlock(Villager villager, Vec3 start, Vec3 end, BlockPos pos) {
         BlockHitResult hit = villager.level().clip(new ClipContext(
                 start,
                 end,

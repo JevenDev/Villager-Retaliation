@@ -242,7 +242,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 villager,
                 storage,
                 pair.foodPredicate(),
-                context.inventory()::insertSupply);
+                context.inventory()::insertSupplyFromStorage);
         if (moved <= 0) {
             HiredWorkerBrain.setFailure(context, "animal_food_inventory_full", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
@@ -356,7 +356,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 villager,
                 storage,
                 target.supplyPredicate(),
-                context.inventory()::insertSupply);
+                context.inventory()::insertSupplyFromStorage);
         if (moved <= 0) {
             HiredWorkerBrain.setFailure(context, "animal_product_supply_inventory_full", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);

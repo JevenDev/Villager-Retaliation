@@ -38,6 +38,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -340,12 +341,47 @@ public final class VillagerInventoryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void deathDropsPersonalAndJobInventory(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        helper.assertTrue(
+                VillagerInventoryContainer.addItem(villager, new ItemStack(Items.BREAD, 5)).isEmpty(),
+                "personal inventory should accept bread");
+        HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+        jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_PICKAXE));
+        helper.assertTrue(jobInventory.insertOutput(new ItemStack(Items.COAL, 3)).isEmpty(), "job output should fit");
+
+        List<ItemEntity> drops = new ArrayList<>();
+        LivingDropsEvent event = new LivingDropsEvent(villager, villager.damageSources().generic(), drops, false);
+        VillagerInventoryAccess.dropAllInventoryAndEquipment(villager, event);
+
+        helper.assertValueEqual(countEventDrops(drops, Items.BREAD), 5, "death should drop personal inventory");
+        helper.assertValueEqual(countEventDrops(drops, Items.IRON_PICKAXE), 1, "death should drop job equipment");
+        helper.assertValueEqual(countEventDrops(drops, Items.COAL), 3, "death should drop job output");
+        helper.assertValueEqual(countStored(villager, Items.BREAD), 0, "personal inventory should clear after death drops");
+        helper.assertTrue(HiredJobInventory.getJobInventory(villager).isEmpty(), "job inventory should clear after death drops");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     private static int countStored(Villager villager, Item item) {
         int count = 0;
         NonNullList<ItemStack> inventory = VillagerInventoryContainer.loadFullInventory(villager);
         for (ItemStack stack : inventory) {
             if (stack.is(item)) {
                 count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static int countEventDrops(Iterable<ItemEntity> drops, Item item) {
+        int count = 0;
+        for (ItemEntity entity : drops) {
+            if (entity.getItem().is(item)) {
+                count += entity.getItem().getCount();
             }
         }
         return count;

@@ -55,7 +55,16 @@ final class HiredStorageNavigationGoal {
         BlockPos primaryStorage = nearestStoragePosition(villager, storagePositions);
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         double distanceSqr = nearestStorageDistanceSqr(villager, storagePositions);
-        if (shouldPreferLadderNavigation(villager, primaryStorage)) {
+        boolean preferLadderNavigation = shouldPreferLadderNavigation(villager, primaryStorage);
+        if (preferLadderNavigation
+                && navigationTarget != null
+                && !isStorageNavigationTarget(storagePositions, navigationTarget)
+                && !isVerticallyToward(villager.blockPosition(), navigationTarget, primaryStorage)) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            clearStorageNavigationState(context);
+            navigationTarget = null;
+        }
+        if (preferLadderNavigation) {
             if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, primaryStorage, speed)) {
                 if (rememberManualStorageNavigationProgress(level, context, villager, primaryStorage, distanceSqr)) {
                     return Result.MOVING;
@@ -67,7 +76,7 @@ final class HiredStorageNavigationGoal {
                 }
             }
         }
-        if (continueStorageIntermediateNavigation(level, context, villager, storagePositions, navigationTarget)) {
+        if (continueStorageIntermediateNavigation(level, context, villager, storagePositions, primaryStorage, navigationTarget)) {
             return Result.MOVING;
         }
         if (villager.getNavigation().isDone()
@@ -89,7 +98,7 @@ final class HiredStorageNavigationGoal {
                 if (moveToStorageBlock(level, context, villager, storagePositions, speed, distanceSqr)) {
                     return Result.MOVING;
                 }
-                if (moveTowardStorageIntermediate(level, context, villager, storagePositions, speed)) {
+                if (moveTowardStorageIntermediate(level, context, villager, storagePositions, primaryStorage, speed)) {
                     return Result.MOVING;
                 }
                 if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, primaryStorage, speed)) {
@@ -118,7 +127,7 @@ final class HiredStorageNavigationGoal {
         if (moveToStorageBlock(level, context, villager, storagePositions, speed, distanceSqr)) {
             return Result.MOVING;
         }
-        if (moveTowardStorageIntermediate(level, context, villager, storagePositions, speed)) {
+        if (moveTowardStorageIntermediate(level, context, villager, storagePositions, primaryStorage, speed)) {
             return Result.MOVING;
         }
         if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, primaryStorage, speed)) {
@@ -179,6 +188,18 @@ final class HiredStorageNavigationGoal {
         return target != null && Math.abs(villager.blockPosition().getY() - target.getY()) > 2;
     }
 
+    private static boolean isVerticallyToward(BlockPos origin, BlockPos navigationTarget, BlockPos target) {
+        if (target == null || navigationTarget == null) {
+            return true;
+        }
+        int targetDelta = target.getY() - origin.getY();
+        int navigationDelta = navigationTarget.getY() - origin.getY();
+        if (Math.abs(targetDelta) <= 2 || navigationDelta == 0) {
+            return true;
+        }
+        return Integer.signum(targetDelta) == Integer.signum(navigationDelta);
+    }
+
     private static boolean rememberManualStorageNavigationProgress(
             ServerLevel level,
             HiredWorkContext context,
@@ -230,11 +251,18 @@ final class HiredStorageNavigationGoal {
             HiredWorkContext context,
             Villager villager,
             List<BlockPos> storagePositions,
+            BlockPos primaryStorage,
             BlockPos navigationTarget) {
         if (villager.getNavigation().isDone()
                 || navigationTarget == null
                 || isStorageNavigationTarget(storagePositions, navigationTarget)
                 || !isRememberedStorageNavigationTarget(context, navigationTarget)) {
+            return false;
+        }
+        if (shouldPreferLadderNavigation(villager, primaryStorage)
+                && !isVerticallyToward(villager.blockPosition(), navigationTarget, primaryStorage)) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            clearStorageNavigationState(context);
             return false;
         }
         if (HiredPathMemory.isNavigationBlocked(
@@ -254,8 +282,9 @@ final class HiredStorageNavigationGoal {
             HiredWorkContext context,
             Villager villager,
             List<BlockPos> storagePositions,
+            BlockPos primaryStorage,
             double speed) {
-        BlockPos target = bestStorageIntermediateTarget(level, context, villager, storagePositions);
+        BlockPos target = bestStorageIntermediateTarget(level, context, villager, storagePositions, primaryStorage);
         if (target == null) {
             return false;
         }
@@ -279,7 +308,8 @@ final class HiredStorageNavigationGoal {
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
-            List<BlockPos> storagePositions) {
+            List<BlockPos> storagePositions,
+            BlockPos primaryStorage) {
         BlockPos origin = villager.blockPosition();
         double currentStorageDistance = nearestBlockDistanceSqr(origin, storagePositions);
         List<StorageIntermediate> candidates = new ArrayList<>();
@@ -290,6 +320,7 @@ final class HiredStorageNavigationGoal {
             if (candidate.equals(origin)
                     || !context.isLoaded(level, candidate)
                     || HiredPathMemory.isAvoided(level, villager, candidate)
+                    || !isVerticallyToward(origin, candidate, primaryStorage)
                     || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)) {
                 continue;
             }

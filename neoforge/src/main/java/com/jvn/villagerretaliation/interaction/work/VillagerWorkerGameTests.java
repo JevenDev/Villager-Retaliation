@@ -409,8 +409,24 @@ public final class VillagerWorkerGameTests {
             helper.assertValueEqual(inventory.slotType(slot), HiredJobInventorySlotType.SUPPLY, "supply slot type " + slot);
         }
 
+        ItemStack supplyRemainder = inventory.insertSupplyFromStorage(new ItemStack(Items.LADDER, 3));
+        helper.assertTrue(supplyRemainder.isEmpty(), "storage-sourced supplies should fit into supply slots");
+        ItemStack storedLadders = inventory.findSupply(stack -> stack.is(Items.LADDER));
+        helper.assertTrue(HiredJobInventory.isJobItem(storedLadders), "storage-sourced supplies should be tagged as job items");
+
         inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_PICKAXE));
         helper.assertTrue(villager.getMainHandItem().is(Items.IRON_PICKAXE), "gear slots should stay synced to villager equipment");
+        for (int slot = 6; slot < 18; slot++) {
+            if (inventory.getItem(slot).isEmpty()) {
+                inventory.setItem(slot, new ItemStack(Items.DIRT, 64));
+            }
+        }
+        ItemStack toolRemainder = inventory.insertToolFromStorage(new ItemStack(Items.DIAMOND_PICKAXE));
+        helper.assertFalse(toolRemainder.isEmpty(), "storage tools should not spill into output slots when job slots are full");
+        for (int slot = 18; slot < HiredJobInventory.SLOT_COUNT; slot++) {
+            helper.assertFalse(inventory.getItem(slot).is(Items.DIAMOND_PICKAXE), "output slot " + slot + " should not hold a storage tool");
+            helper.assertFalse(inventory.slotType(slot) == HiredJobInventorySlotType.SUPPLY, "output slot " + slot + " should not become a supply slot");
+        }
         villager.discard();
         helper.succeed();
     }
@@ -462,6 +478,41 @@ public final class VillagerWorkerGameTests {
         AssignedStorageService.removeAllAssignedStorage(level, otherVillager);
         villager.discard();
         otherVillager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void assignedOutputStorageDepositsFromAdjacentApproachWithoutNudge(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerStorageNudge");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos chestRel = new BlockPos(3, 2, 2);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        BlockPos approach = helper.absolutePos(new BlockPos(3, 2, 3));
+        villager.moveTo(approach.getX() + 0.18D, approach.getY(), approach.getZ() + 0.82D, 0.0F, 0.0F);
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.insertOutput(new ItemStack(Items.COBBLESTONE, 11));
+
+        helper.assertTrue(
+                AssignedStorageService.canInteractWithAssignedStorage(villager, chest),
+                "off-center villager should still be able to interact with adjacent assigned storage");
+        helper.assertTrue(
+                inventory.depositOutputToAssignedStorageAt(chest),
+                "off-center adjacent villager should deposit without needing a nudge");
+        helper.assertValueEqual(countItem(container(level, chest), Items.COBBLESTONE), 11, "adjacent output deposit count");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
         helper.succeed();
     }
 
@@ -596,6 +647,7 @@ public final class VillagerWorkerGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void miningWorkerExcavatesTopLayerWithoutLadders(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 0);
         buildFloor(helper, 0, 6, 0, 6, 1);
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = fakePlayer(level, "VrWorkerExcavateTop");
@@ -620,8 +672,45 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void miningWorkerDoesNotMineUnsafeBlockUnderfoot(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerUnsafeOre");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredOreBlockTracker.clearRuntimeState();
+        HiredRoleWorkerRegistry.clearRuntimeState();
+        BlockPos oreRel = new BlockPos(2, 1, 2);
+        BlockPos lavaRel = new BlockPos(2, 0, 2);
+        setBlock(helper, oreRel, Blocks.COAL_ORE.defaultBlockState());
+        setBlock(helper, lavaRel, Blocks.LAVA.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, oreRel, new BlockPos(2, 2, 2), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        MiningWorker worker = new MiningWorker();
+
+        for (int tick = 0; tick < 40; tick++) {
+            worker.maintain(level, villager, context);
+            worker.tick(level, villager, hirer, context);
+            level.tickNonPassenger(villager);
+        }
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(oreRel)).is(Blocks.COAL_ORE),
+                "miner should not break an ore directly underfoot when lava is below");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(lavaRel)).is(Blocks.LAVA),
+                "unsafe landing lava should remain covered by the ore");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.COAL), 0,
+                "unsafe underfoot ore should not produce job output");
+
+        villager.discard();
+        HiredOreBlockTracker.clearRuntimeState();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
     public static void miningWorkerDoesNotFetchUnusedTorchSupplyBeforeMining(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 0);
         buildFloor(helper, 0, 8, 0, 6, 1);
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = fakePlayer(level, "VrWorkerNoTorchFetch");
@@ -1099,6 +1188,129 @@ public final class VillagerWorkerGameTests {
             level.tickNonPassenger(villager);
         }
         helper.assertValueEqual(villager.blockPosition(), lowerDismount, "villager should return to the lower ladder dismount");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 1400)
+    public static void ladderNavigationMovesFromEveryColumnHeightToTopAndBottom(GameTestHelper helper) {
+        buildTallLadderFixture(helper, 2, 1, 2, 6);
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(3, 1, 2));
+        BlockPos bottomDismount = helper.absolutePos(new BlockPos(3, 1, 2));
+        BlockPos topDismount = helper.absolutePos(new BlockPos(3, 7, 2));
+
+        for (int y = 1; y <= 6; y++) {
+            moveVillagerToBlock(villager, helper.absolutePos(new BlockPos(2, y, 2)));
+            runLadderNavigationUntil(helper, level, villager, topDismount, 120,
+                    "villager should climb from ladder y=" + y + " to the top dismount");
+
+            moveVillagerToBlock(villager, helper.absolutePos(new BlockPos(2, y, 2)));
+            runLadderNavigationUntil(helper, level, villager, bottomDismount, 120,
+                    "villager should descend from ladder y=" + y + " to the bottom dismount");
+        }
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 240)
+    public static void ladderNavigationBottomDismountClearsClimbStateAndStaysLanded(GameTestHelper helper) {
+        buildTallLadderFixture(helper, 2, 1, 2, 6);
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 6, 2));
+        BlockPos bottomDismount = helper.absolutePos(new BlockPos(3, 1, 2));
+
+        runLadderNavigationUntil(helper, level, villager, bottomDismount, 160,
+                "villager should descend to the bottom dismount");
+        helper.assertFalse(villager.isNoGravity(), "bottom dismount should clear ladder no-gravity");
+        helper.assertTrue(Math.abs(villager.getDeltaMovement().y) < 0.08D,
+                "bottom dismount should not keep descent velocity");
+
+        double landedY = villager.getY();
+        for (int tick = 0; tick < 20; tick++) {
+            level.tickNonPassenger(villager);
+        }
+        helper.assertValueEqual(villager.blockPosition(), bottomDismount, "villager should stay on the bottom dismount");
+        helper.assertTrue(Math.abs(villager.getY() - landedY) < 0.15D,
+                "villager should not bob after bottom dismount");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void ladderNavigationBottomRungSnapsToLowerLandingWithoutFalling(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int y = 1; y <= 4; y++) {
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(2, y, 2),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+        }
+        setBlock(helper, new BlockPos(3, -1, 2), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 0, 2), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 1, 2), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 2, 2), Blocks.AIR.defaultBlockState());
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 1, 2));
+        BlockPos lowerLanding = helper.absolutePos(new BlockPos(3, 0, 2));
+        moveVillagerToBlock(villager, helper.absolutePos(new BlockPos(2, 1, 2)));
+
+        helper.assertTrue(
+                VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, lowerLanding, 0.55D),
+                "bottom rung dismount should be handled by the ladder helper");
+        helper.assertValueEqual(villager.blockPosition(), lowerLanding,
+                "bottom rung dismount should snap to the lower landing instead of drifting over the gap");
+        helper.assertFalse(villager.isNoGravity(), "lower landing snap should clear ladder no-gravity");
+
+        for (int tick = 0; tick < 20; tick++) {
+            level.tickNonPassenger(villager);
+            helper.assertTrue(villager.getY() >= lowerLanding.getY() - 0.05D,
+                    "villager should not fall below the lower ladder landing");
+        }
+        helper.assertValueEqual(villager.blockPosition(), lowerLanding,
+                "villager should remain on the lower landing after dismount");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 260)
+    public static void ladderNavigationRetargetsPathDuringActiveClimb(GameTestHelper helper) {
+        buildTallLadderFixture(helper, 2, 1, 2, 6);
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(3, 1, 2));
+        BlockPos bottomDismount = helper.absolutePos(new BlockPos(3, 1, 2));
+        BlockPos topDismount = helper.absolutePos(new BlockPos(3, 7, 2));
+
+        for (int tick = 0; tick < 90 && villager.getY() < bottomDismount.getY() + 3.0D; tick++) {
+            helper.assertTrue(
+                    VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, topDismount, 0.55D),
+                    "villager should start the upward ladder climb");
+            VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+            level.tickNonPassenger(villager);
+        }
+        helper.assertTrue(villager.getY() >= bottomDismount.getY() + 3.0D
+                        && villager.getY() < topDismount.getY() - 0.5D,
+                "fixture should place the villager mid-climb before retargeting");
+
+        double retargetY = villager.getY();
+        helper.assertTrue(
+                VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, bottomDismount, 0.55D),
+                "intentional mid-climb retarget should be accepted");
+        for (int tick = 0; tick < 10; tick++) {
+            VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, bottomDismount, 0.55D);
+            VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+            level.tickNonPassenger(villager);
+        }
+        helper.assertTrue(villager.getY() <= retargetY + 0.2D,
+                "retargeted ladder navigation should not continue the stale upward climb");
+
+        runLadderNavigationUntil(helper, level, villager, bottomDismount, 120,
+                "villager should recover and descend to the newly assigned lower target");
 
         villager.discard();
         helper.succeed();
@@ -1645,6 +1857,52 @@ public final class VillagerWorkerGameTests {
                 setBlock(helper, new BlockPos(x, floorY + 2, z), Blocks.AIR.defaultBlockState());
             }
         }
+    }
+
+    private static void buildTallLadderFixture(GameTestHelper helper, int x, int minY, int z, int maxY) {
+        setBlock(helper, new BlockPos(x + 1, minY - 1, z), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(x + 1, minY, z), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(x + 1, minY + 1, z), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(x + 1, maxY, z), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(x + 1, maxY + 1, z), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(x + 1, maxY + 2, z), Blocks.AIR.defaultBlockState());
+        for (int y = minY; y <= maxY; y++) {
+            setBlock(helper, new BlockPos(x, y, z - 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(x, y, z),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+            if (y > minY && y < maxY) {
+                setBlock(helper, new BlockPos(x + 1, y, z), Blocks.AIR.defaultBlockState());
+                setBlock(helper, new BlockPos(x + 1, y + 1, z), Blocks.AIR.defaultBlockState());
+            }
+        }
+        setBlock(helper, new BlockPos(x + 1, maxY, z), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(x + 1, maxY + 1, z), Blocks.AIR.defaultBlockState());
+        setBlock(helper, new BlockPos(x + 1, maxY + 2, z), Blocks.AIR.defaultBlockState());
+    }
+
+    private static void moveVillagerToBlock(Villager villager, BlockPos pos) {
+        VillagerTaskNavigationUtil.clearRuntimeState(villager);
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        villager.setNoGravity(false);
+        villager.setDeltaMovement(0.0D, 0.0D, 0.0D);
+        villager.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
+    }
+
+    private static void runLadderNavigationUntil(
+            GameTestHelper helper,
+            ServerLevel level,
+            Villager villager,
+            BlockPos target,
+            int maxTicks,
+            String message) {
+        for (int tick = 0; tick < maxTicks && !villager.blockPosition().equals(target); tick++) {
+            VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target, 0.55D);
+            VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+            level.tickNonPassenger(villager);
+        }
+        helper.assertValueEqual(villager.blockPosition(), target, message);
     }
 
     private static boolean mixedExcavationBoxCleared(ServerLevel level, GameTestHelper helper, BlockPos min, BlockPos max) {

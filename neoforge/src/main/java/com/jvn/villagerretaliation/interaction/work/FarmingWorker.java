@@ -327,7 +327,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 villager,
                 storage,
                 FarmerHoeRequirement::isHoe,
-                context.inventory()::insertTool);
+                context.inventory()::insertToolFromStorage);
         hoe = context.inventory().equipBestTool(FarmerHoeRequirement::isHoe, FarmerHoeRequirement::hoeScore);
         if (moved <= 0 || hoe.isEmpty()) {
             HiredWorkerBrain.setFailure(context, "farming_hoe_inventory_full", level.getGameTime() + 100L);

@@ -303,7 +303,7 @@ final class MiningExcavationSupport {
                     storage,
                     SupportType.LADDER::matchesSupply,
                     64,
-                    context.inventory()::insertSupply);
+                    context.inventory()::insertSupplyFromStorage);
         }
         if (wantsTorches) {
             moved += AssignedStorageService.transferItemsAtAssignedStorage(
@@ -311,7 +311,7 @@ final class MiningExcavationSupport {
                     storage,
                     SupportType.TORCH::matchesSupply,
                     16,
-                    context.inventory()::insertSupply);
+                    context.inventory()::insertSupplyFromStorage);
         }
         HiredStorageNavigationGoal.clearStorageTarget(context);
         if (moved > 0) {

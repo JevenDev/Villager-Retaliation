@@ -536,7 +536,9 @@ public final class MiningWorker extends AbstractBlockWorker {
     private HiredPathTarget resolveOreTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
         HiredPathTarget active = activeWorkTarget(level, context, villager);
         BlockPos anchor = MiningWorkerState.miningAnchor(level, context);
-        if (active != null && isValidMiningTarget(level, villager, context, active.blockPos(), anchor)) {
+        if (active != null
+                && isValidMiningTarget(level, villager, context, active.blockPos(), anchor)
+                && isSafeMiningWorkTarget(level, villager, active)) {
             MiningWorkerState.rememberMiningAnchor(level, context, active.blockPos());
             return active;
         }
@@ -544,7 +546,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
         }
 
-        HiredPathTarget planned = plannedTarget(
+        HiredPathTarget planned = plannedOreTarget(
                 level,
                 villager,
                 context,
@@ -701,7 +703,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
         return mode.excavatesArea()
                 ? chooseExcavationTarget(level, villager, context, candidates)
-                : chooseReachableTarget(level, villager, context, candidates);
+                : chooseReachableOreTarget(level, villager, context, candidates);
     }
 
     private HiredPathTarget findNearestExcavationTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -758,7 +760,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 || !context.isLoaded(level, target.blockPos())
                 || !isValidExcavationWorkStance(level, context, target.approachPos())
                 || !isUsableExcavationApproachForCurrentLayer(level, context, villager.blockPosition(), target.approachPos())
-                || isUnsafeBottomExcavationStance(level, context, target.blockPos(), target.approachPos())
+                || isUnsafeUnderfootMiningTarget(level, target.blockPos(), target.approachPos())
                 || !isValidExcavationApproach(level, context, villager.blockPosition())) {
             return null;
         }
@@ -795,6 +797,51 @@ public final class MiningWorker extends AbstractBlockWorker {
         return null;
     }
 
+    private HiredPathTarget plannedOreTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            java.util.function.Predicate<BlockPos> validator,
+            int maxPlanTargets) {
+        java.util.function.Predicate<BlockPos> safeValidator = validator == null ? ignored -> true : validator;
+        HiredWorkPlan.retainMatching(context, safeValidator, maxPlanTargets);
+        for (BlockPos planned : HiredWorkPlan.targets(context)) {
+            HiredPathTarget target = bestOreWorkTarget(level, villager, context, planned);
+            if (target != null && safeValidator.test(target.blockPos())) {
+                return target;
+            }
+        }
+        HiredWorkPlan.clear(context);
+        return null;
+    }
+
+    private HiredPathTarget bestOreWorkTarget(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos target) {
+        if (!context.isInsideWorkArea(target)) {
+            return null;
+        }
+        return chooseReachableOreTarget(level, villager, context, List.of(target));
+    }
+
+    private HiredPathTarget chooseReachableOreTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Iterable<BlockPos> targets) {
+        return new HiredMoveToBlockFaceJob(
+                level,
+                villager,
+                targets,
+                MAX_PLANNED_MINING_TARGETS,
+                context::isInsideWorkArea,
+                context::isInsideWorkArea,
+                context::isInsideWorkArea,
+                ignored -> false,
+                null,
+                (target, approach) -> !isUnsafeUnderfootMiningTarget(level, target, approach))
+                .search()
+                .target();
+    }
+
     private HiredPathTarget bestExcavationWorkTarget(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos target) {
         if (!context.isInsideWorkArea(target)) {
             return null;
@@ -824,7 +871,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 pathFilter,
                 ignored -> false,
                 (target, approach) -> canUseExcavationLadderApproach(level, villager, context, target, approach),
-                (target, approach) -> !isUnsafeBottomExcavationStance(level, context, target, approach))
+                (target, approach) -> !isUnsafeUnderfootMiningTarget(level, target, approach))
                 .search()
                 .target();
     }
@@ -883,7 +930,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             BlockPos approachPos) {
         BlockPos target = targetPos.immutable();
         if (!isReachableCurrentExcavationTarget(level, context, target)
-                || isUnsafeBottomExcavationStance(level, context, target, approachPos)
+                || isUnsafeUnderfootMiningTarget(level, target, approachPos)
                 || approachPos.distSqr(target) > 4) {
             return null;
         }
@@ -988,7 +1035,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                     vein.getFirst(),
                     vein,
                     MAX_PLANNED_MINING_TARGETS);
-            HiredPathTarget target = plannedTarget(
+            HiredPathTarget target = plannedOreTarget(
                     level,
                     villager,
                     context,
@@ -1009,7 +1056,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 ordered.isEmpty() ? null : ordered.getFirst(),
                 ordered,
                 MAX_PLANNED_MINING_TARGETS);
-        return plannedTarget(
+        return plannedOreTarget(
                 level,
                 villager,
                 context,
@@ -1075,12 +1122,12 @@ public final class MiningWorker extends AbstractBlockWorker {
                     && context.isLoaded(level, target.blockPos())
                     && isValidExcavationWorkStance(level, context, target.approachPos())
                     && isValidExcavationWorkStance(level, context, villager.blockPosition())
-                    && !isUnsafeBottomExcavationStance(level, context, target.blockPos(), target.approachPos())
-                    && !isUnsafeBottomExcavationStance(level, context, target.blockPos(), villager.blockPosition())
+                    && isSafeMiningWorkTarget(level, villager, target)
                     && hasLineOfSightToTarget(level, villager, target)
                     && canMineFromCurrentPosition(level, villager, target);
         }
         return canWorkFromCurrentPosition(level, villager, context, target)
+                && isSafeMiningWorkTarget(level, villager, target)
                 && hasLineOfSightToTarget(level, villager, target)
                 && canMineFromCurrentPosition(level, villager, target);
     }
@@ -1288,7 +1335,16 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (ladderEntryTarget == null || descentTarget == null) {
             return false;
         }
-        return isAtExcavationReturnTarget(context, villager, ladderEntryTarget);
+        if (isAtExcavationReturnTarget(context, villager, ladderEntryTarget)) {
+            return true;
+        }
+        BlockPos pos = villager.blockPosition();
+        return pos.getX() == ladderEntryTarget.getX()
+                && pos.getZ() == ladderEntryTarget.getZ()
+                && pos.getX() == descentTarget.getX()
+                && pos.getZ() == descentTarget.getZ()
+                && pos.getY() <= ladderEntryTarget.getY()
+                && pos.getY() >= descentTarget.getY();
     }
 
     private BlockPos miningReturnTarget(
@@ -1462,15 +1518,17 @@ public final class MiningWorker extends AbstractBlockWorker {
                 && pos.getZ() <= context.workMax().getZ() + 1;
     }
 
-    private static boolean isUnsafeBottomExcavationStance(
+    private static boolean isSafeMiningWorkTarget(ServerLevel level, Villager villager, HiredPathTarget target) {
+        return !isUnsafeUnderfootMiningTarget(level, target.blockPos(), target.approachPos())
+                && !isUnsafeUnderfootMiningTarget(level, target.blockPos(), villager.blockPosition());
+    }
+
+    private static boolean isUnsafeUnderfootMiningTarget(
             ServerLevel level,
-            HiredWorkContext context,
             BlockPos target,
             BlockPos stance) {
         if (target == null
                 || stance == null
-                || context.workMin().getY() >= context.workMax().getY()
-                || target.getY() > context.workMin().getY()
                 || stance.getX() != target.getX()
                 || stance.getZ() != target.getZ()
                 || stance.getY() != target.getY() + 1) {
@@ -1483,7 +1541,9 @@ public final class MiningWorker extends AbstractBlockWorker {
             return false;
         }
         BlockPos landing = target.below();
-        return !level.hasChunkAt(landing) || !level.getBlockState(landing).isSolid();
+        return !level.hasChunkAt(landing)
+                || !level.getFluidState(landing).isEmpty()
+                || !level.getBlockState(landing).isSolid();
     }
 
     private boolean storeMinedDrops(
@@ -1494,6 +1554,9 @@ public final class MiningWorker extends AbstractBlockWorker {
             ItemStack tool,
             HiredMiningMode mode) {
         if (!mode.excavatesArea()) {
+            if (!canStartMining(level, villager, context, target, mode)) {
+                return false;
+            }
             return storeDrops(level, context, villager, target, tool);
         }
         if (!context.isInsideWorkArea(target.blockPos())

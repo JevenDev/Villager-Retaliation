@@ -1172,7 +1172,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
                     storage,
                     need.predicate(),
                     need.count(),
-                    context.inventory()::insertSupply);
+                    context.inventory()::insertSupplyFromStorage);
         }
         if (movedTotal <= 0) {
             setBrewingBlocked(context, "brewing_material_inventory_full", materials.materialsSummary(context));

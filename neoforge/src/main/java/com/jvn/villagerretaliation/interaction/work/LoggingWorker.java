@@ -1078,7 +1078,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 villager,
                 storage,
                 LoggingWorker::isLeafHarvestTool,
-                context.inventory()::insertTool);
+                context.inventory()::insertToolFromStorage);
         HiredStorageNavigationGoal.clearStorageTarget(context);
         if (moved <= 0) {
             return null;

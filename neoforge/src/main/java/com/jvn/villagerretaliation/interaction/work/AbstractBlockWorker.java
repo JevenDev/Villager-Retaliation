@@ -591,7 +591,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
                 villager,
                 storage,
                 predicate,
-                context.inventory()::insertTool);
+                context.inventory()::insertToolFromStorage);
         tool = context.inventory().equipBestTool(predicate, scorer);
         if (moved <= 0 || tool.isEmpty()) {
             return new ToolStorageResult(ToolStorageStatus.INVENTORY_FULL, ItemStack.EMPTY, storage);

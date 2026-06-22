@@ -240,7 +240,7 @@ public final class FishingWorker extends AbstractBlockWorker {
                 villager,
                 storage,
                 this::isFishingRod,
-                offered -> context.inventory().insertTool(offered));
+                offered -> context.inventory().insertToolFromStorage(offered));
         rod = context.inventory().equipBestTool(this::isFishingRod, stack -> rodScore(level, villager, stack));
         if (moved <= 0 || rod.isEmpty()) {
             context.state().remove(COLLECTING_ROD_TAG);

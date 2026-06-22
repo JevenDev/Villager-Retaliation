@@ -8,6 +8,7 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -17,6 +18,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 public final class HiredJobInventory implements Container {
@@ -29,6 +31,12 @@ public final class HiredJobInventory implements Container {
     private static final String SLOT_TYPES_TAG = "SlotTypes";
     private static final String SLOT_TAG = "Slot";
     private static final String TYPE_TAG = "Type";
+    private static final String JOB_ITEM_TAG = "VillagerRetaliationJobItem";
+    private static final String JOB_ITEM_KIND_TAG = "Kind";
+    private static final String JOB_ITEM_SOURCE_TAG = "Source";
+    private static final String JOB_ITEM_SOURCE_STORAGE = "assigned_storage";
+    private static final String JOB_ITEM_KIND_SUPPLY = "supply";
+    private static final String JOB_ITEM_KIND_TOOL = "tool";
     private static final EquipmentSlot[] ARMOR_SLOTS = {
             EquipmentSlot.HEAD,
             EquipmentSlot.CHEST,
@@ -92,6 +100,14 @@ public final class HiredJobInventory implements Container {
 
     public static ItemStack markAsProtectedVillagerProperty(ItemStack stack, Villager owner, String reason) {
         return ProtectedVillagerProperty.mark(stack, owner, reason);
+    }
+
+    public static boolean isJobItem(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        return !customData.isEmpty() && customData.contains(JOB_ITEM_TAG);
     }
 
     public static void dropAll(Villager villager, LivingDropsEvent event) {
@@ -452,10 +468,21 @@ public final class HiredJobInventory implements Container {
     }
 
     public ItemStack insertSupply(ItemStack stack) {
+        return insertSupply(stack, false, JOB_ITEM_KIND_SUPPLY);
+    }
+
+    public ItemStack insertSupplyFromStorage(ItemStack stack) {
+        return insertSupply(stack, true, JOB_ITEM_KIND_SUPPLY);
+    }
+
+    private ItemStack insertSupply(ItemStack stack, boolean markJobItem, String jobItemKind) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
+        if (markJobItem) {
+            markAsStorageJobItem(remainder, jobItemKind);
+        }
         for (int slot : supplySlots()) {
             if (!canInsertSupplyIntoSlot(slot)) {
                 continue;
@@ -484,10 +511,21 @@ public final class HiredJobInventory implements Container {
     }
 
     public ItemStack insertTool(ItemStack stack) {
+        return insertTool(stack, false, JOB_ITEM_KIND_TOOL);
+    }
+
+    public ItemStack insertToolFromStorage(ItemStack stack) {
+        return insertTool(stack, true, JOB_ITEM_KIND_TOOL);
+    }
+
+    private ItemStack insertTool(ItemStack stack, boolean markJobItem, String jobItemKind) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
+        if (markJobItem) {
+            markAsStorageJobItem(remainder, jobItemKind);
+        }
         ItemStack mainhand = this.items.get(MAINHAND_SLOT);
         if (!ProtectedVillagerProperty.isProtected(mainhand)) {
             if (mainhand.isEmpty()) {
@@ -815,10 +853,7 @@ public final class HiredJobInventory implements Container {
                 || ProtectedVillagerProperty.isProtected(this.items.get(slot))) {
             return false;
         }
-        HiredJobInventorySlotType type = slotType(slot);
-        return type == HiredJobInventorySlotType.SUPPLY
-                || this.items.get(slot).isEmpty()
-                && (type == HiredJobInventorySlotType.OUTPUT || type == HiredJobInventorySlotType.NORMAL);
+        return slotType(slot) == HiredJobInventorySlotType.SUPPLY;
     }
 
     private void resetEmptySlotType(int slot) {
@@ -1083,6 +1118,19 @@ public final class HiredJobInventory implements Container {
             return HiredJobInventorySlotType.SUPPLY;
         }
         return HiredJobInventorySlotType.OUTPUT;
+    }
+
+    private static ItemStack markAsStorageJobItem(ItemStack stack, String kind) {
+        if (stack == null || stack.isEmpty() || isJobItem(stack)) {
+            return stack;
+        }
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
+            CompoundTag jobItemTag = new CompoundTag();
+            jobItemTag.putString(JOB_ITEM_KIND_TAG, kind == null || kind.isBlank() ? JOB_ITEM_KIND_SUPPLY : kind);
+            jobItemTag.putString(JOB_ITEM_SOURCE_TAG, JOB_ITEM_SOURCE_STORAGE);
+            tag.put(JOB_ITEM_TAG, jobItemTag);
+        });
+        return stack;
     }
 
     private static boolean sameStack(ItemStack first, ItemStack second) {

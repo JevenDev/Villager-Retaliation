@@ -129,7 +129,7 @@ public final class VillagerTaskNavigationUtil {
     }
 
     public static void stopHiredNavigation(Villager villager) {
-        if (!villager.getNavigation().isDone()) {
+        if (!villager.getNavigation().isDone() || villager.getNavigation().getTargetPos() != null) {
             villager.getNavigation().stop();
         }
         Brain<Villager> brain = villager.getBrain();
@@ -149,10 +149,10 @@ public final class VillagerTaskNavigationUtil {
     }
 
     public static void tickPathLadders(ServerLevel level, Villager villager) {
-        if (continueActiveLadderClimb(level, villager, null, 0.45D)) {
+        BlockPos target = villager.getNavigation().isDone() ? null : villager.getNavigation().getTargetPos();
+        if (continueActiveLadderClimb(level, villager, target, 0.45D)) {
             return;
         }
-        BlockPos target = villager.getNavigation().getTargetPos();
         if (target == null || !needsLadderRoute(villager, target)) {
             return;
         }
@@ -456,7 +456,7 @@ public final class VillagerTaskNavigationUtil {
             return true;
         }
         if (dismount != null && reachedLadderExitHeight(villager, ladderExitY, climbingUp)) {
-            moveOffLadderToDismount(level, villager, dismount, climbingUp, speed);
+            moveOffLadderToDismount(level, villager, columnEnd, dismount, climbingUp, speed);
             return true;
         }
         if (dismount == null && reachedLadderColumnEnd(villager, columnEnd, climbingUp)) {
@@ -496,6 +496,7 @@ public final class VillagerTaskNavigationUtil {
     private static void moveOffLadderToDismount(
             ServerLevel level,
             Villager villager,
+            BlockPos ladder,
             BlockPos dismount,
             boolean climbingUp,
             double speed) {
@@ -506,14 +507,36 @@ public final class VillagerTaskNavigationUtil {
         boolean stillOnLadder = isStandingInLadder(level, villager.blockPosition());
         villager.getMoveControl().setWantedPosition(targetX, dismount.getY(), targetZ, speed);
         if (!stillOnLadder && villager.distanceToSqr(dismount.getCenter()) <= LADDER_DISMOUNT_REACHED_DISTANCE_SQR) {
-            clearActiveLadderClimb(villager);
+            snapToLadderDismount(level, villager, ladder, dismount);
             return;
         }
 
         Vec3 motion = villager.getDeltaMovement();
-        double vertical = climbingUp && stillOnLadder
-                ? Math.max(motion.y, LADDER_DISMOUNT_UPWARD_SPEED)
-                : motion.y;
+        if (!climbingUp && stillOnLadder) {
+            if (villager.getY() <= ladder.getY() + 0.35D
+                    && snapToLadderDismount(level, villager, ladder, dismount)) {
+                return;
+            }
+            double ladderCenterX = ladder.getX() + 0.5D;
+            double ladderCenterZ = ladder.getZ() + 0.5D;
+            double ladderDx = ladderCenterX - villager.getX();
+            double ladderDz = ladderCenterZ - villager.getZ();
+            villager.getMoveControl().setWantedPosition(ladderCenterX, ladder.getY(), ladderCenterZ, speed);
+            villager.setNoGravity(true);
+            villager.setDeltaMovement(
+                    Math.clamp(ladderDx * 0.24D + motion.x * 0.15D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT),
+                    Math.clamp((ladder.getY() - villager.getY()) * 0.2D, -0.08D, -0.02D),
+                    Math.clamp(ladderDz * 0.24D + motion.z * 0.15D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT));
+            villager.setOnGround(false);
+            return;
+        }
+
+        double vertical = motion.y;
+        if (stillOnLadder) {
+            vertical = climbingUp
+                    ? Math.max(motion.y, LADDER_DISMOUNT_UPWARD_SPEED)
+                    : Math.clamp((dismount.getY() - villager.getY()) * 0.2D, -0.02D, 0.04D);
+        }
         villager.setNoGravity(stillOnLadder);
         villager.setDeltaMovement(
                 Math.clamp(dx * 0.28D + motion.x * 0.2D, -LADDER_DISMOUNT_HORIZONTAL_SPEED_LIMIT, LADDER_DISMOUNT_HORIZONTAL_SPEED_LIMIT),
@@ -728,7 +751,7 @@ public final class VillagerTaskNavigationUtil {
                 && snapToLadderDismount(level, villager, ladder, dismount)) {
             return true;
         }
-        moveOffLadderToDismount(level, villager, dismount, climbingUp, speed);
+        moveOffLadderToDismount(level, villager, ladder, dismount, climbingUp, speed);
         return true;
     }
 
@@ -970,7 +993,7 @@ public final class VillagerTaskNavigationUtil {
                 && cached.expiresGameTime() > level.getGameTime()
                 && cached.targetPos() == target.asLong()
                 && cached.origin().distSqr(origin) <= LADDER_SEARCH_ORIGIN_REUSE_DISTANCE_SQR
-                && (cached.ladder() == null || isLoadedLadder(level, cached.ladder()))) {
+                && (cached.ladder() == null || isUsefulLadderRoute(level, villager, cached.ladder(), target))) {
             return cached.ladder();
         }
         BlockPos best = null;
@@ -1026,6 +1049,12 @@ public final class VillagerTaskNavigationUtil {
             return Double.MAX_VALUE;
         }
         boolean climbingUp = verticalDelta > 0;
+        if (climbingUp && ladder.getY() < origin.getY()) {
+            return Double.MAX_VALUE;
+        }
+        if (!climbingUp && ladder.getY() > origin.getY()) {
+            return Double.MAX_VALUE;
+        }
         BlockPos columnEnd = climbingUp ? topOfLadderColumn(level, ladder) : bottomOfLadderColumn(level, ladder);
         if (climbingUp ? columnEnd.getY() <= origin.getY() : columnEnd.getY() >= origin.getY()) {
             return Double.MAX_VALUE;
