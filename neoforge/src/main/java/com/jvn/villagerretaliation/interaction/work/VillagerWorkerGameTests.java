@@ -620,6 +620,92 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void miningWorkerDoesNotFetchUnusedTorchSupplyBeforeMining(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerNoTorchFetch");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+        BlockPos chestRel = new BlockPos(7, 2, 3);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        container(level, chest).setItem(0, new ItemStack(Items.TORCH, 16));
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.GENERAL_PURPOSE);
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        MiningWorker worker = new MiningWorker();
+
+        WorkResult result = worker.tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertFalse(snapshot.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE,
+                "miner should not walk to storage only because optional torches are present; status=" + result.status());
+        helper.assertTrue(snapshot.storageTargetPos() == null,
+                "miner should not set a storage target for unused torch supply");
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 80, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir());
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "miner should mine the available target before fetching optional torch supply");
+        helper.assertValueEqual(countItem(container(level, chest), Items.TORCH), 16,
+                "unused torch stack should remain in storage");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void miningWorkerPausesWhenLadderStorageCannotFitSupply(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerLadderSupplyFull");
+        Villager villager = spawnVillager(helper, new BlockPos(6, 2, 3));
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+        BlockPos chestRel = new BlockPos(7, 2, 3);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        container(level, chest).setItem(0, new ItemStack(Items.LADDER, 8));
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.GENERAL_PURPOSE);
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, new BlockPos(3, 2, 3), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        for (int slot : context.inventory().supplySlots()) {
+            context.inventory().setItem(slot, new ItemStack(Items.STICK, 64));
+        }
+
+        WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(result.status(), "interaction.work.mining.support.inventory_full", "ladder supply full status");
+        helper.assertValueEqual(snapshot.taskState(), HiredWorkerTaskState.PAUSED_FULL_INVENTORY, "ladder supply full task state");
+        helper.assertValueEqual(snapshot.failureReason(), "support_inventory_full", "ladder supply full reason");
+        helper.assertTrue(snapshot.storageTargetPos() == null,
+                "miner should not keep a storage target when it cannot accept required ladder supplies");
+        helper.assertValueEqual(countItem(container(level, chest), Items.LADDER), 8,
+                "unaccepted ladders should remain in storage");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.LADDER), 0,
+                "job inventory should not pretend it gathered ladders");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void miningWorkerDoesNotPlaceTopLayerLadderSupportWhenSupplied(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);

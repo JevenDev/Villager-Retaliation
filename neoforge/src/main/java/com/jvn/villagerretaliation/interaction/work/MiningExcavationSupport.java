@@ -254,7 +254,13 @@ final class MiningExcavationSupport {
                 && context.inventory().findSupply(SupportType.LADDER::matchesSupply).isEmpty()
                 && !hasCompleteLadderToLayer(level, context, currentLayerY)
                 && AssignedStorageService.countItems(villager, SupportType.LADDER::matchesSupply) > 0;
+        if (needsLadders && !canAcceptSupportSupply(context, SupportType.LADDER)) {
+            return blockOnFullSupportInventory(level, context);
+        }
+        int supportFloorY = supportFloorY(level, context, currentLayerY);
         boolean wantsTorches = context.inventory().findSupply(SupportType.TORCH::matchesSupply).isEmpty()
+                && canAcceptSupportSupply(context, SupportType.TORCH)
+                && hasPendingTorchSupportPlacement(level, villager, context, supportFloorY)
                 && AssignedStorageService.countItems(villager, SupportType.TORCH::matchesSupply) > 0;
         if (!needsLadders && !wantsTorches) {
             return null;
@@ -312,6 +318,9 @@ final class MiningExcavationSupport {
             MiningWorkerState.set(context, MiningWorkerState.Phase.GATHER_SUPPLIES);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
             return WorkResult.progressed("interaction.work.mining.support.gathered_supplies");
+        }
+        if (needsLadders) {
+            return blockOnFullSupportInventory(level, context);
         }
         return null;
     }
@@ -766,7 +775,24 @@ final class MiningExcavationSupport {
         return bestScore;
     }
 
+    private static boolean hasPendingTorchSupportPlacement(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            int lowestOpenY) {
+        return nextTorchPlacement(level, villager, context, lowestOpenY, false) != null;
+    }
+
     private static SupportPlacement nextTorchPlacement(ServerLevel level, Villager villager, HiredWorkContext context, int lowestOpenY) {
+        return nextTorchPlacement(level, villager, context, lowestOpenY, true);
+    }
+
+    private static SupportPlacement nextTorchPlacement(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            int lowestOpenY,
+            boolean requireInventorySupply) {
         for (int y = context.workMax().getY(); y >= lowestOpenY; y--) {
             if (!isTorchLayer(context, y)) {
                 continue;
@@ -776,7 +802,7 @@ final class MiningExcavationSupport {
                     continue;
                 }
                 BlockState torch = Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, placement.facing());
-                if (hasInventorySupportSupply(context, SupportType.TORCH)
+                if ((!requireInventorySupply || hasInventorySupportSupply(context, SupportType.TORCH))
                         && (canPlaceSupportBlock(level, placement.pos(), torch)
                         || canPrepareSupportBacking(level, context, placement.pos(), torch))) {
                     return new SupportPlacement(placement.pos(), torch, SupportType.TORCH);
@@ -855,6 +881,18 @@ final class MiningExcavationSupport {
 
     private static boolean hasInventorySupportSupply(HiredWorkContext context, SupportType type) {
         return !context.inventory().findSupply(type::matchesSupply).isEmpty();
+    }
+
+    private static boolean canAcceptSupportSupply(HiredWorkContext context, SupportType type) {
+        return context.inventory().canStoreSuppliesAfterDepositingOutputs(List.of(type.probeStack()));
+    }
+
+    private static WorkResult blockOnFullSupportInventory(ServerLevel level, HiredWorkContext context) {
+        HiredStorageNavigationGoal.clearStorageTarget(context);
+        MiningWorkerState.set(context, MiningWorkerState.Phase.BLOCKED_MISSING_SUPPLIES);
+        HiredWorkerBrain.setFailure(context, "support_inventory_full", level.getGameTime() + 100L);
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
+        return WorkResult.idle("interaction.work.mining.support.inventory_full");
     }
 
     private static boolean requiresLadderToContinue(ServerLevel level, HiredWorkContext context, int layerY) {
@@ -1087,6 +1125,11 @@ final class MiningExcavationSupport {
             String placedStatusKey() {
                 return "interaction.work.mining.support.placed_ladder";
             }
+
+            @Override
+            ItemStack probeStack() {
+                return new ItemStack(Items.LADDER);
+            }
         },
         TORCH {
             @Override
@@ -1098,10 +1141,17 @@ final class MiningExcavationSupport {
             String placedStatusKey() {
                 return "interaction.work.mining.support.placed_torch";
             }
+
+            @Override
+            ItemStack probeStack() {
+                return new ItemStack(Items.TORCH);
+            }
         };
 
         abstract boolean matchesSupply(ItemStack stack);
 
         abstract String placedStatusKey();
+
+        abstract ItemStack probeStack();
     }
 }

@@ -757,6 +757,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (!isValidExcavationTarget(level, villager, context, target.blockPos())
                 || !context.isLoaded(level, target.blockPos())
                 || !isValidExcavationWorkStance(level, context, target.approachPos())
+                || !isUsableExcavationApproachForCurrentLayer(level, context, villager.blockPosition(), target.approachPos())
                 || isUnsafeBottomExcavationStance(level, context, target.blockPos(), target.approachPos())
                 || !isValidExcavationApproach(level, context, villager.blockPosition())) {
             return null;
@@ -810,6 +811,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         Predicate<BlockPos> routeFilter = pos -> isValidExcavationApproach(level, context, pos);
         Predicate<BlockPos> approachFilter = pos -> routeFilter.test(pos)
                 && isValidExcavationWorkStance(level, context, pos)
+                && isUsableExcavationApproachForCurrentLayer(level, context, pathOrigin, pos)
                 && !level.getBlockState(pos).is(Blocks.LADDER);
         Predicate<BlockPos> pathFilter = pos -> routeFilter.test(pos) || pos.equals(pathOrigin);
         return new HiredMoveToBlockFaceJob(
@@ -1440,12 +1442,24 @@ public final class MiningWorker extends AbstractBlockWorker {
                 && pos.getY() <= currentLayerY + 1;
     }
 
+    private static boolean isUsableExcavationApproachForCurrentLayer(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos current,
+            BlockPos approach) {
+        Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
+        if (currentLayerY == null || currentLayerY < context.workMax().getY()) {
+            return true;
+        }
+        return isTopExcavationEntryPosition(context, approach) || approach.equals(current);
+    }
+
     private static boolean isTopExcavationEntryPosition(HiredWorkContext context, BlockPos pos) {
         return pos.getY() == context.workMax().getY() + 1
-                && pos.getX() >= context.workMin().getX()
-                && pos.getX() <= context.workMax().getX()
-                && pos.getZ() >= context.workMin().getZ()
-                && pos.getZ() <= context.workMax().getZ();
+                && pos.getX() >= context.workMin().getX() - 1
+                && pos.getX() <= context.workMax().getX() + 1
+                && pos.getZ() >= context.workMin().getZ() - 1
+                && pos.getZ() <= context.workMax().getZ() + 1;
     }
 
     private static boolean isUnsafeBottomExcavationStance(
