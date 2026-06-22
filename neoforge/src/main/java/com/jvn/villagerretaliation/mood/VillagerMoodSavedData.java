@@ -79,4 +79,20 @@ public class VillagerMoodSavedData extends SavedData {
             setDirty();
         }
     }
+
+    public boolean transferVillagerMood(UUID sourceVillagerId, UUID targetVillagerId) {
+        if (sourceVillagerId == null || targetVillagerId == null || sourceVillagerId.equals(targetVillagerId)) {
+            return false;
+        }
+
+        VillagerMoodState source = this.moods.remove(sourceVillagerId);
+        if (source == null) {
+            return false;
+        }
+        if (!source.isNeutral()) {
+            this.moods.put(targetVillagerId, source);
+        }
+        setDirty();
+        return true;
+    }
 }

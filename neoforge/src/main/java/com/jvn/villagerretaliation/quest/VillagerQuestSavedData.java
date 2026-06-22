@@ -285,6 +285,25 @@ public class VillagerQuestSavedData extends SavedData {
         return changed;
     }
 
+    public int transferVillagerIdentity(UUID sourceVillagerId, UUID targetVillagerId) {
+        if (sourceVillagerId == null || targetVillagerId == null || sourceVillagerId.equals(targetVillagerId)) {
+            return 0;
+        }
+
+        int changed = 0;
+        for (Map<ResourceLocation, QuestProgress> playerEntries : this.entries.values()) {
+            for (QuestProgress progress : playerEntries.values()) {
+                if (progress.replaceVillagerIdentity(sourceVillagerId, targetVillagerId)) {
+                    changed++;
+                }
+            }
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public enum QuestState {
         NOT_STARTED,
         ACTIVE,
@@ -372,6 +391,24 @@ public class VillagerQuestSavedData extends SavedData {
                 tag.putString(TAG_ISSUER_VILLAGE_KEY, this.issuerVillageKey);
             }
             return tag;
+        }
+
+        private CompletionHistoryEntry replacingVillagerIdentity(UUID sourceVillagerId, UUID targetVillagerId) {
+            if (this.issuerId == null || !this.issuerId.equals(sourceVillagerId)) {
+                return this;
+            }
+            return new CompletionHistoryEntry(
+                    this.completionIndex,
+                    targetVillagerId,
+                    this.startedGameTime,
+                    this.completedGameTime,
+                    this.issuerName,
+                    this.issuerProfession,
+                    this.issuerLevel,
+                    this.issuerDimension,
+                    this.issuerPos,
+                    this.issuerVillageKey
+            );
         }
     }
 
@@ -703,6 +740,23 @@ public class VillagerQuestSavedData extends SavedData {
             }
             this.issuerVillageKey = targetKey;
             return true;
+        }
+
+        private boolean replaceVillagerIdentity(UUID sourceVillagerId, UUID targetVillagerId) {
+            boolean changed = false;
+            if (this.startedVillagerId != null && this.startedVillagerId.equals(sourceVillagerId)) {
+                this.startedVillagerId = targetVillagerId;
+                changed = true;
+            }
+            for (int index = 0; index < this.completionHistory.size(); index++) {
+                CompletionHistoryEntry current = this.completionHistory.get(index);
+                CompletionHistoryEntry updated = current.replacingVillagerIdentity(sourceVillagerId, targetVillagerId);
+                if (updated != current) {
+                    this.completionHistory.set(index, updated);
+                    changed = true;
+                }
+            }
+            return changed;
         }
 
         public void setTarget(UUID villagerId, ResourceKey<Level> dimension, BlockPos pos, String objectiveId) {

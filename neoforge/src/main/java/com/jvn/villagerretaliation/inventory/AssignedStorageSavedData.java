@@ -131,6 +131,32 @@ public final class AssignedStorageSavedData extends SavedData {
         return records.size();
     }
 
+    public int transferVillagerAssignments(UUID sourceVillagerId, UUID targetVillagerId) {
+        if (sourceVillagerId == null || targetVillagerId == null || sourceVillagerId.equals(targetVillagerId)) {
+            return 0;
+        }
+
+        List<AssignedContainerRecord> records = new ArrayList<>(this.byVillager.getOrDefault(sourceVillagerId, List.of()));
+        if (records.isEmpty()) {
+            return 0;
+        }
+
+        this.byVillager.remove(sourceVillagerId);
+        for (AssignedContainerRecord record : records) {
+            put(new AssignedContainerRecord(
+                    record.dimension(),
+                    record.pos(),
+                    targetVillagerId,
+                    record.hirerId(),
+                    record.purpose(),
+                    record.priority(),
+                    record.validationStatus()
+            ));
+        }
+        setDirty();
+        return records.size();
+    }
+
     public int removeAssignedTo(UUID villagerId, String purpose) {
         String normalizedPurpose = normalizePurpose(purpose);
         List<AssignedContainerRecord> records = new ArrayList<>(this.byVillager.getOrDefault(villagerId, List.of()).stream()

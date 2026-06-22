@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.trade.VillagerSkillTradeEvents;
+import com.jvn.villagerretaliation.villager.VillagerConversionPersistenceService;
 import com.jvn.toucanlib.neoforge.event.ToucanEventBuses;
 import com.jvn.toucanlib.util.ToucanIds;
 import net.minecraft.resources.ResourceLocation;
@@ -66,6 +67,7 @@ public class VillagerRetaliation {
                 .listener(VillagerSocialGraphService::onBabyEntitySpawn)
                 .listener(VillagerSocialGraphService::onLivingConversionPost)
                 .listener(VillagerReputationEvents::onLivingConversionPost)
+                .listener(VillagerConversionPersistenceService::onLivingConversionPost)
                 .listener(VillagerRetaliationEvents::onEntityJoinLevel)
                 .listener(VillagerSocialGraphService::onEntityJoinLevel)
                 .listener(VillagerRetaliationEvents::onPlayerStartTracking)

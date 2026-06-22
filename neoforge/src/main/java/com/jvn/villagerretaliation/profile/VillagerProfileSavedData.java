@@ -65,6 +65,20 @@ public class VillagerProfileSavedData extends SavedData {
         return previous;
     }
 
+    public boolean transferVillagerProfile(UUID sourceVillagerId, UUID targetVillagerId) {
+        if (sourceVillagerId == null || targetVillagerId == null || sourceVillagerId.equals(targetVillagerId)) {
+            return false;
+        }
+
+        VillagerProfile source = this.profiles.remove(sourceVillagerId);
+        if (source == null) {
+            return false;
+        }
+        this.profiles.put(targetVillagerId, source.copyFor(targetVillagerId));
+        setDirty();
+        return true;
+    }
+
     public Collection<VillagerProfile> profiles() {
         return this.profiles.values();
     }

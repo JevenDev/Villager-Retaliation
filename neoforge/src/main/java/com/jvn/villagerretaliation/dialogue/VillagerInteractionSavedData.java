@@ -627,6 +627,30 @@ public class VillagerInteractionSavedData extends SavedData {
         this.villagerIdsByPlayer.computeIfAbsent(playerId, ignored -> new LinkedHashSet<>()).add(villagerId);
     }
 
+    public boolean transferVillagerEntries(UUID sourceVillagerId, UUID targetVillagerId) {
+        if (sourceVillagerId == null || targetVillagerId == null || sourceVillagerId.equals(targetVillagerId)) {
+            return false;
+        }
+
+        Map<UUID, InteractionEntry> sourceEntries = this.entries.remove(sourceVillagerId);
+        if (sourceEntries == null || sourceEntries.isEmpty()) {
+            return false;
+        }
+
+        Map<UUID, InteractionEntry> targetEntries = this.entries.computeIfAbsent(targetVillagerId, ignored -> new HashMap<>());
+        for (Map.Entry<UUID, InteractionEntry> entry : sourceEntries.entrySet()) {
+            targetEntries.put(entry.getKey(), entry.getValue());
+            Set<UUID> indexedIds = this.villagerIdsByPlayer.computeIfAbsent(entry.getKey(), ignored -> new LinkedHashSet<>());
+            indexedIds.remove(sourceVillagerId);
+            indexedIds.add(targetVillagerId);
+        }
+        for (Set<UUID> indexedIds : this.villagerIdsByPlayer.values()) {
+            indexedIds.remove(sourceVillagerId);
+        }
+        setDirty();
+        return true;
+    }
+
     private Iterable<UUID> villagerIdsForPlayer(UUID playerId) {
         Set<UUID> indexedIds = this.villagerIdsByPlayer.get(playerId);
         return indexedIds == null ? List.of() : indexedIds;

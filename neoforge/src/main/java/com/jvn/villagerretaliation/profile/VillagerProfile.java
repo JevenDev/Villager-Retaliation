@@ -149,6 +149,23 @@ public class VillagerProfile {
         return this.villagerUuid;
     }
 
+    public VillagerProfile copyFor(UUID villagerUuid) {
+        return new VillagerProfile(
+                villagerUuid,
+                this.generatedVersion,
+                this.seed,
+                this.socialAttributes,
+                this.skillGeneratedVersion,
+                this.skills,
+                this.lastKnownProfession,
+                this.highestSkillGrowthTradeLevelAwarded,
+                this.regularTradeSkillGrowthProgress,
+                this.tradeLevelSkillAdjustedXpProgress,
+                this.createdGameTime,
+                this.updatedGameTime
+        );
+    }
+
     public int generatedVersion() {
         return this.generatedVersion;
     }
