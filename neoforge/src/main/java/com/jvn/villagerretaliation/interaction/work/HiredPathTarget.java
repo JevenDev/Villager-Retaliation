@@ -3,5 +3,5 @@ package com.jvn.villagerretaliation.interaction.work;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
-record HiredPathTarget(BlockPos blockPos, BlockPos approachPos, Vec3 hitPos) {
+public record HiredPathTarget(BlockPos blockPos, BlockPos approachPos, Vec3 hitPos) {
 }

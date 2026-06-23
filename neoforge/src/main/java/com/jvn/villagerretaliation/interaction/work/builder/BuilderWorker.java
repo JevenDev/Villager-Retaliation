@@ -1,5 +1,16 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.builder;
 
+import com.jvn.villagerretaliation.interaction.work.WorkResult;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import com.jvn.villagerretaliation.interaction.work.HiredStorageNavigationGoal;
+import com.jvn.villagerretaliation.interaction.work.HiredPathTarget;
+import com.jvn.villagerretaliation.interaction.work.HiredPathResult;
+import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
+import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
+import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
+import com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;

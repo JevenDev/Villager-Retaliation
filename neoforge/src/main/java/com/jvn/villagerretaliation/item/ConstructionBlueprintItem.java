@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.item;
 
-import com.jvn.villagerretaliation.interaction.work.BuilderStructureScanner;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

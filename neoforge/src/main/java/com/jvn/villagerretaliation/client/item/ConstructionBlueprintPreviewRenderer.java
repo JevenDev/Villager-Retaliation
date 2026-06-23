@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.item;
 
-import com.jvn.villagerretaliation.interaction.work.BuilderStructureScanner;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewBlock;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewData;

@@ -23,8 +23,8 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class HiredMoveToBlockFaceJob extends HiredPathJob {
-    static final double MAX_REACH = 3.0D;
-    static final double MAX_REACH_SQR = MAX_REACH * MAX_REACH;
+    public static final double MAX_REACH = 3.0D;
+    public static final double MAX_REACH_SQR = MAX_REACH * MAX_REACH;
     private static final double BODY_REACH_BUFFER = 0.75D;
     private static final double BODY_REACH_SQR = (MAX_REACH + BODY_REACH_BUFFER) * (MAX_REACH + BODY_REACH_BUFFER);
     private static final int FACE_APPROACH_RADIUS = 1;
@@ -41,11 +41,11 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     private final BiPredicate<BlockPos, BlockPos> alternateApproachReachable;
     private final BiPredicate<BlockPos, BlockPos> targetApproachFilter;
 
-    HiredMoveToBlockFaceJob(ServerLevel level, Villager villager, Iterable<BlockPos> candidatePositions, int maxCandidates) {
+    public HiredMoveToBlockFaceJob(ServerLevel level, Villager villager, Iterable<BlockPos> candidatePositions, int maxCandidates) {
         this(level, villager, candidatePositions, maxCandidates, ignored -> true);
     }
 
-    HiredMoveToBlockFaceJob(
+    public HiredMoveToBlockFaceJob(
             ServerLevel level,
             Villager villager,
             Iterable<BlockPos> candidatePositions,
@@ -54,7 +54,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         this(level, villager, candidatePositions, maxCandidates, positionFilter, positionFilter, ignored -> false);
     }
 
-    HiredMoveToBlockFaceJob(
+    public HiredMoveToBlockFaceJob(
             ServerLevel level,
             Villager villager,
             Iterable<BlockPos> candidatePositions,
@@ -64,7 +64,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         this(level, villager, candidatePositions, maxCandidates, positionFilter, positionFilter, sightTransparent);
     }
 
-    HiredMoveToBlockFaceJob(
+    public HiredMoveToBlockFaceJob(
             ServerLevel level,
             Villager villager,
             Iterable<BlockPos> candidatePositions,
@@ -75,7 +75,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         this(level, villager, candidatePositions, maxCandidates, targetFilter, approachFilter, approachFilter, sightTransparent);
     }
 
-    HiredMoveToBlockFaceJob(
+    public HiredMoveToBlockFaceJob(
             ServerLevel level,
             Villager villager,
             Iterable<BlockPos> candidatePositions,
@@ -87,7 +87,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         this(level, villager, candidatePositions, maxCandidates, targetFilter, approachFilter, pathFilter, sightTransparent, null);
     }
 
-    HiredMoveToBlockFaceJob(
+    public HiredMoveToBlockFaceJob(
             ServerLevel level,
             Villager villager,
             Iterable<BlockPos> candidatePositions,
@@ -100,7 +100,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         this(level, villager, candidatePositions, maxCandidates, targetFilter, approachFilter, pathFilter, sightTransparent, alternateApproachReachable, null);
     }
 
-    HiredMoveToBlockFaceJob(
+    public HiredMoveToBlockFaceJob(
             ServerLevel level,
             Villager villager,
             Iterable<BlockPos> candidatePositions,
@@ -250,11 +250,11 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 + HiredPathMemory.recentCost(this.villager, target);
     }
 
-    static boolean canReachFromCurrentPosition(ServerLevel level, Villager villager, HiredPathTarget target) {
+    public static boolean canReachFromCurrentPosition(ServerLevel level, Villager villager, HiredPathTarget target) {
         return canReachFromCurrentPosition(level, villager, target, ignored -> false);
     }
 
-    static boolean canReachFromCurrentPosition(
+    public static boolean canReachFromCurrentPosition(
             ServerLevel level,
             Villager villager,
             HiredPathTarget target,
@@ -270,12 +270,12 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 && hasLineOfSightToBlock(level, villager, villager.getEyePosition(), target.blockPos(), target.hitPos(), sightTransparent);
     }
 
-    static boolean isCloseEnough(Villager villager, HiredPathTarget target) {
+    public static boolean isCloseEnough(Villager villager, HiredPathTarget target) {
         return villager.getEyePosition().distanceToSqr(target.hitPos()) <= MAX_REACH_SQR
                 && villager.position().distanceToSqr(target.hitPos()) <= BODY_REACH_SQR;
     }
 
-    static boolean pathStaysInsideFilter(Path path, Predicate<BlockPos> positionFilter) {
+    public static boolean pathStaysInsideFilter(Path path, Predicate<BlockPos> positionFilter) {
         if (path == null) {
             return false;
         }
@@ -288,7 +288,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         return true;
     }
 
-    static boolean pathStaysInsideFilter(ServerLevel level, Path path, Predicate<BlockPos> positionFilter) {
+    public static boolean pathStaysInsideFilter(ServerLevel level, Path path, Predicate<BlockPos> positionFilter) {
         if (path == null) {
             return false;
         }
@@ -322,11 +322,11 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         return cost;
     }
 
-    static Vec3 visibleHitPosition(ServerLevel level, Villager villager, Vec3 start, BlockPos target) {
+    public static Vec3 visibleHitPosition(ServerLevel level, Villager villager, Vec3 start, BlockPos target) {
         return visibleHitPosition(level, villager, start, target, ignored -> false);
     }
 
-    static Vec3 visibleHitPosition(
+    public static Vec3 visibleHitPosition(
             ServerLevel level,
             Villager villager,
             Vec3 start,
@@ -361,11 +361,11 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         return bestHit;
     }
 
-    static boolean hasLineOfSightToBlock(ServerLevel level, Villager villager, Vec3 start, BlockPos target, Vec3 hitPos) {
+    public static boolean hasLineOfSightToBlock(ServerLevel level, Villager villager, Vec3 start, BlockPos target, Vec3 hitPos) {
         return hasLineOfSightToBlock(level, villager, start, target, hitPos, ignored -> false);
     }
 
-    static boolean hasLineOfSightToBlock(
+    public static boolean hasLineOfSightToBlock(
             ServerLevel level,
             Villager villager,
             Vec3 start,
@@ -408,7 +408,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         return false;
     }
 
-    static boolean isValidApproachPosition(ServerLevel level, BlockPos pos) {
+    public static boolean isValidApproachPosition(ServerLevel level, BlockPos pos) {
         if (!isLoaded(level, pos) || !isLoaded(level, pos.above()) || !isLoaded(level, pos.below())) {
             return false;
         }
@@ -434,7 +434,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 || state.getCollisionShape(level, pos, CollisionContext.empty()).isEmpty();
     }
 
-    static double terrainCost(ServerLevel level, BlockPos pos) {
+    public static double terrainCost(ServerLevel level, BlockPos pos) {
         if (!isLoaded(level, pos) || !isLoaded(level, pos.above()) || !isLoaded(level, pos.below())) {
             return 256.0D;
         }

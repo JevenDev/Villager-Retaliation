@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
-abstract class AbstractBlockWorker implements HiredRoleWorker {
+public abstract class AbstractBlockWorker implements HiredRoleWorker {
     private static final String ACTIVE_BLOCK_POS_TAG = "ActiveWorkBlockPos";
     private static final String ACTIVE_APPROACH_POS_TAG = "ActiveWorkApproachPos";
     private static final String ACTIVE_HIT_X_TAG = "ActiveWorkHitX";
@@ -36,7 +36,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
     private static final int ROAM_CANDIDATE_ATTEMPTS = 16;
     private static final double APPROACH_CENTER_SETTLE_SQR = 0.04D;
 
-    static void clearSharedRuntimeState() {
+    public static void clearSharedRuntimeState() {
         HiredPathMemory.clear();
     }
 
@@ -621,7 +621,7 @@ abstract class AbstractBlockWorker implements HiredRoleWorker {
         context.state().remove(STORAGE_FULL_STATUS_SHOWN_TAG);
     }
 
-    protected void holdWorkPosition(Villager villager, HiredPathTarget target) {
+    public void holdWorkPosition(Villager villager, HiredPathTarget target) {
         stopWorkNavigation(villager);
         faceBlock(villager, target);
         villager.setDeltaMovement(villager.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));

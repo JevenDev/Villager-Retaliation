@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.interaction.work.BuilderStructureCatalog;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import java.util.List;
 import java.util.Objects;
 import net.minecraft.network.RegistryFriendlyByteBuf;

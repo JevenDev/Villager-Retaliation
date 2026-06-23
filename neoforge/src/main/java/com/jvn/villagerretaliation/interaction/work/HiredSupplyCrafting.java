@@ -16,17 +16,17 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 
-final class HiredSupplyCrafting {
+public final class HiredSupplyCrafting {
     private static final int MAX_CRAFTING_DEPTH = 8;
 
     private HiredSupplyCrafting() {
     }
 
-    static int countAvailable(Villager villager, HiredWorkContext context, Item item) {
+    public static int countAvailable(Villager villager, HiredWorkContext context, Item item) {
         return countAvailable(villager, context, stack -> stack.is(item));
     }
 
-    static int countAvailable(Villager villager, HiredWorkContext context, Predicate<ItemStack> predicate) {
+    public static int countAvailable(Villager villager, HiredWorkContext context, Predicate<ItemStack> predicate) {
         int count = countCarried(context, predicate);
         if (context.useAssignedStorageForSupplies()) {
             count += AssignedStorageService.countItems(villager, predicate);
@@ -34,11 +34,11 @@ final class HiredSupplyCrafting {
         return count;
     }
 
-    static int countCarried(HiredWorkContext context, Item item) {
+    public static int countCarried(HiredWorkContext context, Item item) {
         return countCarried(context, stack -> stack.is(item));
     }
 
-    static int countCarried(HiredWorkContext context, Predicate<ItemStack> predicate) {
+    public static int countCarried(HiredWorkContext context, Predicate<ItemStack> predicate) {
         int count = 0;
         for (int slot : context.inventory().supplySlots()) {
             ItemStack stack = context.inventory().getItem(slot);
@@ -49,7 +49,7 @@ final class HiredSupplyCrafting {
         return count;
     }
 
-    static boolean craftCarriedSupplyItem(ServerLevel level, HiredWorkContext context, Item item) {
+    public static boolean craftCarriedSupplyItem(ServerLevel level, HiredWorkContext context, Item item) {
         return craftCarriedSupplyItem(level, context, item, new HashSet<>());
     }
 
@@ -124,7 +124,7 @@ final class HiredSupplyCrafting {
         return true;
     }
 
-    static boolean canInsertSupply(HiredWorkContext context, ItemStack stack) {
+    public static boolean canInsertSupply(HiredWorkContext context, ItemStack stack) {
         for (int slot : context.inventory().supplySlots()) {
             ItemStack current = context.inventory().getItem(slot);
             if (current.isEmpty()) {
@@ -137,7 +137,7 @@ final class HiredSupplyCrafting {
         return false;
     }
 
-    static boolean willConsumeOnlyCarriedSupplyStack(HiredWorkContext context, Item item) {
+    public static boolean willConsumeOnlyCarriedSupplyStack(HiredWorkContext context, Item item) {
         int matchingSlots = 0;
         for (int slot : context.inventory().supplySlots()) {
             ItemStack stack = context.inventory().getItem(slot);
@@ -160,19 +160,19 @@ final class HiredSupplyCrafting {
         return false;
     }
 
-    static final class MaterialPlanner {
+    public static final class MaterialPlanner {
         private final ServerLevel level;
         private final Villager villager;
         private final HiredWorkContext context;
         private final Map<Item, Integer> surplus = new HashMap<>();
 
-        MaterialPlanner(ServerLevel level, Villager villager, HiredWorkContext context) {
+        public MaterialPlanner(ServerLevel level, Villager villager, HiredWorkContext context) {
             this.level = level;
             this.villager = villager;
             this.context = context;
         }
 
-        boolean plan(Item item, int count, Map<Item, Integer> planned) {
+        public boolean plan(Item item, int count, Map<Item, Integer> planned) {
             Map<Item, Integer> trial = new LinkedHashMap<>(planned);
             Map<Item, Integer> trialSurplus = new LinkedHashMap<>(this.surplus);
             if (!plan(item, count, trial, trialSurplus, new HashSet<>(), 0)) {
@@ -185,11 +185,11 @@ final class HiredSupplyCrafting {
             return true;
         }
 
-        int directAvailable(Item item, Map<Item, Integer> planned) {
+        public int directAvailable(Item item, Map<Item, Integer> planned) {
             return Math.max(0, countAvailable(this.villager, this.context, item) - planned.getOrDefault(item, 0));
         }
 
-        int surplusAvailable(Item item) {
+        public int surplusAvailable(Item item) {
             return Math.max(0, this.surplus.getOrDefault(item, 0));
         }
 

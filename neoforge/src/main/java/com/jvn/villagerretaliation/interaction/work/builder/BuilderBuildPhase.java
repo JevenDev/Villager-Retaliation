@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.builder;
 
 public enum BuilderBuildPhase {
     IDLE("idle"),

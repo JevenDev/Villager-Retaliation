@@ -1,5 +1,7 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.mining;
 
+import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;

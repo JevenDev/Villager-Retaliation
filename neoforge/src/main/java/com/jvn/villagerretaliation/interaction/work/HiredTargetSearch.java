@@ -7,11 +7,11 @@ import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
-final class HiredTargetSearch {
+public final class HiredTargetSearch {
     private HiredTargetSearch() {
     }
 
-    static <T> T find(
+    public static <T> T find(
             ServerLevel level,
             HiredWorkContext context,
             Supplier<T> activeTarget,
@@ -62,7 +62,7 @@ final class HiredTargetSearch {
         return target;
     }
 
-    record Messages(
+    public record Messages(
             String activeTarget,
             String plannedTarget,
             String scanCooldown,

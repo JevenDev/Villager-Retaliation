@@ -1,5 +1,6 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.mining;
 
+import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -10,11 +11,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-final class MiningBlockRules {
+public final class MiningBlockRules {
     private MiningBlockRules() {
     }
 
-    static boolean isMineableOre(ServerLevel level, BlockPos pos) {
+    public static boolean isMineableOre(ServerLevel level, BlockPos pos) {
         if (!level.hasChunkAt(pos)) {
             return false;
         }
@@ -26,7 +27,7 @@ final class MiningBlockRules {
                 && isExposed(level, pos);
     }
 
-    static boolean isMineableExcavationBlock(ServerLevel level, BlockPos pos) {
+    public static boolean isMineableExcavationBlock(ServerLevel level, BlockPos pos) {
         if (!level.hasChunkAt(pos)) {
             return false;
         }
@@ -41,12 +42,12 @@ final class MiningBlockRules {
                 && isExposed(level, pos);
     }
 
-    static boolean isCurrentExcavationLayer(ServerLevel level, HiredWorkContext context, BlockPos pos) {
+    public static boolean isCurrentExcavationLayer(ServerLevel level, HiredWorkContext context, BlockPos pos) {
         Integer layerY = currentExcavationLayer(level, context);
         return layerY != null && pos.getY() == layerY;
     }
 
-    static Integer currentExcavationLayer(ServerLevel level, HiredWorkContext context) {
+    public static Integer currentExcavationLayer(ServerLevel level, HiredWorkContext context) {
         if (MiningWorkerState.hasFreshExcavationLayerCache(level, context)) {
             return MiningWorkerState.cachedExcavationLayer(context);
         }
@@ -67,7 +68,7 @@ final class MiningBlockRules {
         return null;
     }
 
-    static boolean hasAdjacentExcavationFluid(ServerLevel level, BlockPos pos) {
+    public static boolean hasAdjacentExcavationFluid(ServerLevel level, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = pos.relative(direction);
             if (level.hasChunkAt(neighbor) && !level.getFluidState(neighbor).isEmpty()) {
@@ -77,7 +78,7 @@ final class MiningBlockRules {
         return false;
     }
 
-    static boolean isUsableMiningTool(HiredMiningMode mode, ItemStack stack, BlockState targetState) {
+    public static boolean isUsableMiningTool(HiredMiningMode mode, ItemStack stack, BlockState targetState) {
         if (mode.excavatesArea()) {
             return stack.isCorrectToolForDrops(targetState)
                     && matchesExcavationToolTag(stack, targetState);
@@ -85,7 +86,7 @@ final class MiningBlockRules {
         return stack.is(ItemTags.PICKAXES) && stack.isCorrectToolForDrops(targetState);
     }
 
-    static boolean isBuilderClearableObstruction(ServerLevel level, BlockPos pos, BlockState state) {
+    public static boolean isBuilderClearableObstruction(ServerLevel level, BlockPos pos, BlockState state) {
         return !state.isAir()
                 && !state.liquid()
                 && state.getDestroySpeed(level, pos) >= 0.0F
@@ -93,12 +94,12 @@ final class MiningBlockRules {
                 && hasExcavationToolTag(state);
     }
 
-    static boolean isUsableBuilderClearingTool(ItemStack stack, BlockState targetState) {
+    public static boolean isUsableBuilderClearingTool(ItemStack stack, BlockState targetState) {
         return stack.isCorrectToolForDrops(targetState)
                 && matchesExcavationToolTag(stack, targetState);
     }
 
-    static boolean hasExcavationToolTag(BlockState state) {
+    public static boolean hasExcavationToolTag(BlockState state) {
         return state.is(BlockTags.MINEABLE_WITH_PICKAXE)
                 || state.is(BlockTags.MINEABLE_WITH_SHOVEL)
                 || state.is(BlockTags.MINEABLE_WITH_AXE);

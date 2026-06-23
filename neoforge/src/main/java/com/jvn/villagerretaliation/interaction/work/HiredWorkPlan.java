@@ -29,7 +29,7 @@ public final class HiredWorkPlan {
         return targets(context).size();
     }
 
-    static List<BlockPos> targets(HiredWorkContext context) {
+    public static List<BlockPos> targets(HiredWorkContext context) {
         List<BlockPos> targets = new ArrayList<>();
         CompoundTag state = context.state();
         if (!state.contains(PLAN_TARGETS_TAG, Tag.TAG_LIST)) {
@@ -44,7 +44,7 @@ public final class HiredWorkPlan {
         return targets;
     }
 
-    static void replace(HiredWorkContext context, List<BlockPos> targets, int maxTargets) {
+    public static void replace(HiredWorkContext context, List<BlockPos> targets, int maxTargets) {
         ListTag serialized = new ListTag();
         Set<Long> seen = new LinkedHashSet<>();
         int safeMaxTargets = Math.max(1, maxTargets);
@@ -64,7 +64,7 @@ public final class HiredWorkPlan {
         context.state().put(PLAN_TARGETS_TAG, serialized);
     }
 
-    static void replaceWithObjective(
+    public static void replaceWithObjective(
             HiredWorkContext context,
             String objectiveType,
             BlockPos objectiveAnchor,
@@ -86,7 +86,7 @@ public final class HiredWorkPlan {
         }
     }
 
-    static void removeTarget(HiredWorkContext context, BlockPos target) {
+    public static void removeTarget(HiredWorkContext context, BlockPos target) {
         if (target == null) {
             return;
         }
@@ -99,7 +99,7 @@ public final class HiredWorkPlan {
         replace(context, remaining, Math.max(1, remaining.size()));
     }
 
-    static void prioritize(HiredWorkContext context, BlockPos target, int maxTargets) {
+    public static void prioritize(HiredWorkContext context, BlockPos target, int maxTargets) {
         if (target == null) {
             return;
         }
@@ -113,7 +113,7 @@ public final class HiredWorkPlan {
         replace(context, reordered, maxTargets);
     }
 
-    static void retainMatching(HiredWorkContext context, Predicate<BlockPos> predicate, int maxTargets) {
+    public static void retainMatching(HiredWorkContext context, Predicate<BlockPos> predicate, int maxTargets) {
         Predicate<BlockPos> safePredicate = predicate == null ? ignored -> true : predicate;
         List<BlockPos> retained = new ArrayList<>();
         for (BlockPos planned : targets(context)) {
@@ -135,7 +135,7 @@ public final class HiredWorkPlan {
                 : null;
     }
 
-    static List<BlockPos> routeOrder(BlockPos origin, Iterable<BlockPos> candidates, int maxTargets) {
+    public static List<BlockPos> routeOrder(BlockPos origin, Iterable<BlockPos> candidates, int maxTargets) {
         List<BlockPos> remaining = new ArrayList<>();
         Set<Long> seen = new LinkedHashSet<>();
         for (BlockPos candidate : candidates) {

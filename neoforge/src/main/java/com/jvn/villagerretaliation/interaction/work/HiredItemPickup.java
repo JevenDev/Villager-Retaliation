@@ -15,11 +15,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
 
-final class HiredItemPickup {
+public final class HiredItemPickup {
     private HiredItemPickup() {
     }
 
-    static WorkResult collectNearestOutputItem(
+    public static WorkResult collectNearestOutputItem(
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
@@ -178,7 +178,7 @@ final class HiredItemPickup {
                 context.workMax().getZ() + 1.0D);
     }
 
-    record Messages(
+    public record Messages(
             String outputFullDepositing,
             String outputFullBlocked,
             String unreachableFailure,

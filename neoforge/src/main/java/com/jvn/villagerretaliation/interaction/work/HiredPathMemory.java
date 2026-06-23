@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
 
-final class HiredPathMemory {
+public final class HiredPathMemory {
     private static final int PATH_FAILURE_LIMIT = 3;
     private static final long TARGET_BLACKLIST_TICKS = 20L * 30L;
     private static final long RECENT_TARGET_TICKS = 20L * 45L;
@@ -29,7 +29,7 @@ final class HiredPathMemory {
     private HiredPathMemory() {
     }
 
-    static void clear() {
+    public static void clear() {
         AVOIDED_TARGETS.clear();
         PATH_FAILURES.clear();
         RECENT_TARGETS.clear();
@@ -38,7 +38,7 @@ final class HiredPathMemory {
         LAST_EXPIRE_GAME_TIME.clear();
     }
 
-    static void clear(Villager villager) {
+    public static void clear(Villager villager) {
         UUID villagerId = villager.getUUID();
         AVOIDED_TARGETS.remove(villagerId);
         PATH_FAILURES.remove(villagerId);
@@ -47,7 +47,7 @@ final class HiredPathMemory {
         TARGET_RESERVATIONS.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
-    static void expire(ServerLevel level) {
+    public static void expire(ServerLevel level) {
         long now = level.getGameTime();
         ResourceKey<Level> dimension = level.dimension();
         Long lastExpireGameTime = LAST_EXPIRE_GAME_TIME.get(dimension);
@@ -65,7 +65,7 @@ final class HiredPathMemory {
         TARGET_RESERVATIONS.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
-    static boolean recordFailure(ServerLevel level, Villager villager, BlockPos pos) {
+    public static boolean recordFailure(ServerLevel level, Villager villager, BlockPos pos) {
         UUID villagerId = villager.getUUID();
         long packed = pos.asLong();
         Map<Long, Integer> failures = PATH_FAILURES.computeIfAbsent(villagerId, ignored -> new HashMap<>());
@@ -81,14 +81,14 @@ final class HiredPathMemory {
         return true;
     }
 
-    static void clearFailure(Villager villager, BlockPos pos) {
+    public static void clearFailure(Villager villager, BlockPos pos) {
         Map<Long, Integer> failures = PATH_FAILURES.get(villager.getUUID());
         if (failures != null) {
             failures.remove(pos.asLong());
         }
     }
 
-    static void clearAvoided(Villager villager, BlockPos pos) {
+    public static void clearAvoided(Villager villager, BlockPos pos) {
         UUID villagerId = villager.getUUID();
         Map<Long, Long> avoided = AVOIDED_TARGETS.get(villagerId);
         if (avoided != null) {
@@ -100,7 +100,7 @@ final class HiredPathMemory {
         clearFailure(villager, pos);
     }
 
-    static boolean isAvoided(ServerLevel level, Villager villager, BlockPos pos) {
+    public static boolean isAvoided(ServerLevel level, Villager villager, BlockPos pos) {
         Map<Long, Long> avoided = AVOIDED_TARGETS.get(villager.getUUID());
         if (avoided == null) {
             return false;
@@ -116,7 +116,7 @@ final class HiredPathMemory {
         return true;
     }
 
-    static boolean isReservedByOther(ServerLevel level, Villager villager, BlockPos pos) {
+    public static boolean isReservedByOther(ServerLevel level, Villager villager, BlockPos pos) {
         Map<Long, TargetReservation> reservations = TARGET_RESERVATIONS.get(level.dimension());
         if (reservations == null) {
             return false;
@@ -132,13 +132,13 @@ final class HiredPathMemory {
         return !reservation.villagerId().equals(villager.getUUID());
     }
 
-    static void reserveTarget(ServerLevel level, Villager villager, BlockPos pos) {
+    public static void reserveTarget(ServerLevel level, Villager villager, BlockPos pos) {
         TARGET_RESERVATIONS
                 .computeIfAbsent(level.dimension(), ignored -> new HashMap<>())
                 .put(pos.asLong(), new TargetReservation(villager.getUUID(), level.getGameTime() + TARGET_RESERVATION_TICKS));
     }
 
-    static void releaseTarget(ServerLevel level, Villager villager, BlockPos pos) {
+    public static void releaseTarget(ServerLevel level, Villager villager, BlockPos pos) {
         Map<Long, TargetReservation> reservations = TARGET_RESERVATIONS.get(level.dimension());
         if (reservations == null) {
             return;
@@ -149,20 +149,20 @@ final class HiredPathMemory {
         }
     }
 
-    static void releaseAll(Villager villager) {
+    public static void releaseAll(Villager villager) {
         UUID villagerId = villager.getUUID();
         TARGET_RESERVATIONS.values().forEach(targets -> targets.entrySet().removeIf(entry -> entry.getValue().villagerId().equals(villagerId)));
         TARGET_RESERVATIONS.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
-    static void rememberRecent(ServerLevel level, BlockPos pos) {
+    public static void rememberRecent(ServerLevel level, BlockPos pos) {
         RECENT_TARGETS.put(pos.asLong(), new RecentTarget(
                 pos.immutable(),
                 level.getGameTime() + RECENT_TARGET_TICKS,
                 RECENT_TARGET_EXTRA_COST));
     }
 
-    static double recentCost(Villager villager, BlockPos target) {
+    public static double recentCost(Villager villager, BlockPos target) {
         long now = villager.level().getGameTime();
         double cost = 0.0D;
         for (RecentTarget recent : RECENT_TARGETS.values()) {
@@ -179,7 +179,7 @@ final class HiredPathMemory {
         return cost;
     }
 
-    static boolean isNavigationBlocked(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {
+    public static boolean isNavigationBlocked(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {
         if (distanceSqr <= CLOSE_ENOUGH_SQR) {
             rememberNavigationProgress(level, villager, targetPos, distanceSqr);
             return false;
@@ -208,11 +208,11 @@ final class HiredPathMemory {
         return stuckChecks >= STUCK_LIMIT;
     }
 
-    static boolean observeNavigationProgress(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {
+    public static boolean observeNavigationProgress(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {
         return !isNavigationBlocked(level, villager, targetPos, distanceSqr);
     }
 
-    static void rememberNavigationProgress(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {
+    public static void rememberNavigationProgress(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {
         long now = level.getGameTime();
         NAVIGATION_PROGRESS.put(villager.getUUID(), new NavigationProgress(
                 targetPos.asLong(),
@@ -222,7 +222,7 @@ final class HiredPathMemory {
                 now + TARGET_BLACKLIST_TICKS));
     }
 
-    static void clearNavigationProgress(Villager villager) {
+    public static void clearNavigationProgress(Villager villager) {
         NAVIGATION_PROGRESS.remove(villager.getUUID());
     }
 

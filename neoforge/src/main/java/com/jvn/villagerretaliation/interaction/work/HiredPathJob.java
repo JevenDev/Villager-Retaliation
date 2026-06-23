@@ -9,19 +9,19 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 
-abstract class HiredPathJob {
+public abstract class HiredPathJob {
     private static final int MAX_REACHABLE_RESULTS_TO_COMPARE = 4;
     protected final ServerLevel level;
     protected final Villager villager;
     private final int maxCandidates;
 
-    HiredPathJob(ServerLevel level, Villager villager, int maxCandidates) {
+    protected HiredPathJob(ServerLevel level, Villager villager, int maxCandidates) {
         this.level = level;
         this.villager = villager;
         this.maxCandidates = Math.max(1, maxCandidates);
     }
 
-    final HiredPathResult search() {
+    public final HiredPathResult search() {
         List<BlockPos> candidates = uniqueCandidates();
         candidates.sort(Comparator.comparingDouble(this::candidateScore));
 

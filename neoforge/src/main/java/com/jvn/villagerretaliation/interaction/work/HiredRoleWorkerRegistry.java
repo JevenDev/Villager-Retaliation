@@ -1,5 +1,9 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
+import com.jvn.villagerretaliation.interaction.work.logging.LoggingWorker;
+import com.jvn.villagerretaliation.interaction.work.mining.MiningWorker;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.EnumMap;
 import java.util.Map;

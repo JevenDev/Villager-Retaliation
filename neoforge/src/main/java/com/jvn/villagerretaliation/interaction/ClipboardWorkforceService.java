@@ -5,13 +5,13 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.Warnin
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WarningType;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerRow;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus;
-import com.jvn.villagerretaliation.interaction.work.BrewingWorker;
-import com.jvn.villagerretaliation.interaction.work.BuilderBuildPhase;
-import com.jvn.villagerretaliation.interaction.work.BuilderTaskState;
+import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
-import com.jvn.villagerretaliation.interaction.work.LoggingWorker;
+import com.jvn.villagerretaliation.interaction.work.logging.LoggingWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.network.ClipboardWorkforceSyncPayload;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;

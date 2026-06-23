@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.builder;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.ArrayList;

@@ -1,5 +1,6 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.mining;
 
+import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;

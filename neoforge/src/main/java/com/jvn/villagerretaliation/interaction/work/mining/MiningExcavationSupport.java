@@ -1,5 +1,14 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.mining;
 
+import com.jvn.villagerretaliation.interaction.work.WorkResult;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import com.jvn.villagerretaliation.interaction.work.HiredStorageNavigationGoal;
+import com.jvn.villagerretaliation.interaction.work.HiredPathTarget;
+import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
+import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
+import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
@@ -22,7 +31,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
-final class MiningExcavationSupport {
+public final class MiningExcavationSupport {
     private static final String EXCAVATION_LADDER_X_TAG = "ExcavationLadderX";
     private static final String EXCAVATION_LADDER_Z_TAG = "ExcavationLadderZ";
     private static final String EXCAVATION_LADDER_FACING_TAG = "ExcavationLadderFacing";
@@ -32,7 +41,7 @@ final class MiningExcavationSupport {
     private MiningExcavationSupport() {
     }
 
-    static BlockPos entryTarget(ServerLevel level, HiredWorkContext context) {
+    public static BlockPos entryTarget(ServerLevel level, HiredWorkContext context) {
         if (level == null || context == null || !context.hasWorkArea()) {
             return null;
         }
@@ -51,7 +60,7 @@ final class MiningExcavationSupport {
         return null;
     }
 
-    static BlockPos returnTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
+    public static BlockPos returnTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
         BlockPos entry = entryTarget(level, context);
         if (entry != null) {
             if (isAtEntry(villager, entry) || isAtLadderSurfaceEntry(villager, entry)) {
@@ -71,7 +80,7 @@ final class MiningExcavationSupport {
         return level.hasChunkAt(fallback) ? fallback : context.workCenter();
     }
 
-    static BlockPos currentLayerDescentTarget(ServerLevel level, HiredWorkContext context) {
+    public static BlockPos currentLayerDescentTarget(ServerLevel level, HiredWorkContext context) {
         Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
         if (currentLayerY == null || currentLayerY >= context.workMax().getY()) {
             return null;
@@ -191,7 +200,7 @@ final class MiningExcavationSupport {
         return 0;
     }
 
-    static WorkResult maintain(
+    public static WorkResult maintain(
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
@@ -226,7 +235,7 @@ final class MiningExcavationSupport {
         return WorkResult.progressed(placement.type().placedStatusKey());
     }
 
-    static WorkResult requireLadder(ServerLevel level, Villager villager, HiredWorkContext context) {
+    public static WorkResult requireLadder(ServerLevel level, Villager villager, HiredWorkContext context) {
         Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
         if (currentLayerY == null) {
             return null;
@@ -242,7 +251,7 @@ final class MiningExcavationSupport {
         return WorkResult.idle("interaction.work.mining.support.missing_ladders");
     }
 
-    static WorkResult gatherSupplies(ServerLevel level, Villager villager, HiredWorkContext context) {
+    public static WorkResult gatherSupplies(ServerLevel level, Villager villager, HiredWorkContext context) {
         if (!context.useAssignedStorageForSupplies()) {
             return null;
         }
@@ -325,7 +334,7 @@ final class MiningExcavationSupport {
         return null;
     }
 
-    static boolean shouldUseLadderFallback(HiredWorkContext context, Villager villager, HiredPathTarget target) {
+    public static boolean shouldUseLadderFallback(HiredWorkContext context, Villager villager, HiredPathTarget target) {
         if (target == null) {
             return false;
         }
@@ -339,11 +348,11 @@ final class MiningExcavationSupport {
         return Math.abs(verticalDelta) > 1;
     }
 
-    static boolean hasCompleteLadderRouteToLayer(ServerLevel level, HiredWorkContext context, int layerY) {
+    public static boolean hasCompleteLadderRouteToLayer(ServerLevel level, HiredWorkContext context, int layerY) {
         return hasCompleteLadderToLayer(level, context, layerY);
     }
 
-    static boolean canMineCurrentLayerTarget(ServerLevel level, HiredWorkContext context, BlockPos target) {
+    public static boolean canMineCurrentLayerTarget(ServerLevel level, HiredWorkContext context, BlockPos target) {
         if (target == null) {
             return false;
         }
@@ -373,7 +382,7 @@ final class MiningExcavationSupport {
         return target.getY() == currentLayerY && horizontalDistance(target, shaftPos) == 1;
     }
 
-    static boolean isNeededLadderShaftTarget(ServerLevel level, HiredWorkContext context, BlockPos target) {
+    public static boolean isNeededLadderShaftTarget(ServerLevel level, HiredWorkContext context, BlockPos target) {
         if (target == null) {
             return false;
         }
@@ -391,7 +400,7 @@ final class MiningExcavationSupport {
                 && !MiningBlockRules.hasAdjacentExcavationFluid(level, target);
     }
 
-    static BlockPos nextNeededLadderShaftTarget(ServerLevel level, HiredWorkContext context) {
+    public static BlockPos nextNeededLadderShaftTarget(ServerLevel level, HiredWorkContext context) {
         Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
         if (currentLayerY == null
                 || !requiresLadderToContinue(level, context, currentLayerY)
@@ -406,7 +415,7 @@ final class MiningExcavationSupport {
         return isNeededLadderShaftTarget(level, context, target) ? target : null;
     }
 
-    static boolean needsLadderRouteOutputReserve(ServerLevel level, HiredWorkContext context, BlockPos target) {
+    public static boolean needsLadderRouteOutputReserve(ServerLevel level, HiredWorkContext context, BlockPos target) {
         if (target == null) {
             return false;
         }

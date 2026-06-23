@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.brewing;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

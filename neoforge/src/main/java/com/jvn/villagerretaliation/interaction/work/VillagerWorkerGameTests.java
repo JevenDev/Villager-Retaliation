@@ -1,5 +1,10 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.interaction.work.logging.LoggingWorker;
+import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
+import com.jvn.villagerretaliation.interaction.work.mining.MiningWorker;
+import com.jvn.villagerretaliation.interaction.work.mining.MiningExcavationSupport;
+import com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;

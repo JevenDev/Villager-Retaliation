@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.logging;
 
 import java.util.Locale;
 import net.minecraft.nbt.CompoundTag;

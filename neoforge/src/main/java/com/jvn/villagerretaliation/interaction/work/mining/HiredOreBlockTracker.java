@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.mining;
 
 import java.util.ArrayList;
 import java.util.Comparator;

@@ -1,5 +1,15 @@
-package com.jvn.villagerretaliation.interaction.work;
+package com.jvn.villagerretaliation.interaction.work.brewing;
 
+import com.jvn.villagerretaliation.interaction.work.WorkResult;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import com.jvn.villagerretaliation.interaction.work.HiredSupplyCrafting;
+import com.jvn.villagerretaliation.interaction.work.HiredStorageNavigationGoal;
+import com.jvn.villagerretaliation.interaction.work.HiredPathTarget;
+import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
+import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
+import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.mixin.BrewingStandBlockEntityAccessor;

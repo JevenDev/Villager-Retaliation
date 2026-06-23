@@ -16,7 +16,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-final class HiredStorageNavigationGoal {
+public final class HiredStorageNavigationGoal {
     private static final String STORAGE_NAV_TARGET_TAG = "StorageNavigationTarget";
     private static final String STORAGE_NAV_NEXT_REPATH_GAME_TIME_TAG = "StorageNavigationNextRepathGameTime";
     private static final int STORAGE_APPROACH_SEARCH_RADIUS = 4;
@@ -35,7 +35,7 @@ final class HiredStorageNavigationGoal {
     private HiredStorageNavigationGoal() {
     }
 
-    static Result moveToStorageTarget(
+    public static Result moveToStorageTarget(
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
@@ -145,7 +145,7 @@ final class HiredStorageNavigationGoal {
         return Result.FAILED;
     }
 
-    static boolean wanderNearStorage(
+    public static boolean wanderNearStorage(
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
@@ -500,7 +500,7 @@ final class HiredStorageNavigationGoal {
         context.state().remove(STORAGE_NAV_NEXT_REPATH_GAME_TIME_TAG);
     }
 
-    static void clearStorageTarget(HiredWorkContext context) {
+    public static void clearStorageTarget(HiredWorkContext context) {
         HiredWorkerBrain.clearStorageTarget(context);
         clearStorageNavigationState(context);
     }
@@ -589,7 +589,7 @@ final class HiredStorageNavigationGoal {
     private record StorageIntermediate(BlockPos pos, double score) {
     }
 
-    enum Result {
+    public enum Result {
         ARRIVED,
         MOVING,
         FAILED

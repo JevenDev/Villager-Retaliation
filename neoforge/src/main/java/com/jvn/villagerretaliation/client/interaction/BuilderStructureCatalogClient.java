@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.villagerretaliation.interaction.work.BuilderStructureCatalog;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.network.BuilderStructureCatalogSyncPayload;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 

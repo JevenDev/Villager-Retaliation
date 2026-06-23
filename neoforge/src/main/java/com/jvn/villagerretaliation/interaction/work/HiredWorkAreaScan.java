@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 
-final class HiredWorkAreaScan {
+public final class HiredWorkAreaScan {
     private HiredWorkAreaScan() {
     }
 
-    static Result collect(
+    public static Result collect(
             HiredWorkContext context,
             String cursorTag,
             int maxPositions,
@@ -46,11 +46,11 @@ final class HiredWorkAreaScan {
         return new Result(candidates, visited, completedFullPass);
     }
 
-    static boolean isInProgress(HiredWorkContext context, String cursorTag) {
+    public static boolean isInProgress(HiredWorkContext context, String cursorTag) {
         return context.state().contains(cursorTag);
     }
 
-    static void clearCursor(HiredWorkContext context, String cursorTag) {
+    public static void clearCursor(HiredWorkContext context, String cursorTag) {
         context.state().remove(cursorTag);
     }
 
@@ -62,6 +62,6 @@ final class HiredWorkAreaScan {
         return new BlockPos(min.getX() + xOffset, max.getY() - yOffset, min.getZ() + zOffset);
     }
 
-    record Result(List<BlockPos> candidates, long visitedPositions, boolean completedFullPass) {
+    public record Result(List<BlockPos> candidates, long visitedPositions, boolean completedFullPass) {
     }
 }
