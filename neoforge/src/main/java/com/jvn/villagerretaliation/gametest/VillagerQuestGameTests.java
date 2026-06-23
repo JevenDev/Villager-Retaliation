@@ -871,8 +871,7 @@ public final class VillagerQuestGameTests {
         List<QuestTrackerSyncPayload.RewardPreview> rewards = QuestTrackerPresenter.rewardPreviews(
                 null,
                 quest,
-                replacements,
-                ResourceLocation::toString);
+                replacements);
         QuestTrackerSyncPayload.Entry entry = QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
                 null,
                 quest,
@@ -901,6 +900,9 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(
                 entry.rewardPreviews().stream().anyMatch(reward -> reward.kind().equals("reputation") && reward.label().contains("+22")),
                 "presenter did not include reputation reward preview");
+        helper.assertTrue(
+                entry.rewardPreviews().stream().noneMatch(reward -> reward.kind().equals("loot")),
+                "presenter included loot table reward preview");
         helper.assertTrue(
                 QuestTrackerPresenter.syncSignature(List.of(entry), quest.id()).contains(entry.questId()),
                 "presenter signature omitted quest id");

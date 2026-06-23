@@ -4521,7 +4521,7 @@ public final class VillagerQuestService {
                 issuer,
                 issuerLocation,
                 List.of(),
-                QuestTrackerPresenter.rewardPreviews(player, definition, replacements, VillagerQuestService::lootTableName),
+                QuestTrackerPresenter.rewardPreviews(player, definition, replacements),
                 prerequisitePreviews(player, definition),
                 0.0F,
                 false,
@@ -4566,7 +4566,7 @@ public final class VillagerQuestService {
                 issuer,
                 issuerLocation,
                 List.of(),
-                QuestTrackerPresenter.rewardPreviews(player, definition, replacements, VillagerQuestService::lootTableName),
+                QuestTrackerPresenter.rewardPreviews(player, definition, replacements),
                 prerequisitePreviews(player, definition),
                 QuestTrackerPresenter.fallbackProgress("completed"),
                 false,
@@ -5018,7 +5018,7 @@ public final class VillagerQuestService {
                 issuer,
                 issuerLocation,
                 QuestTrackerPresenter.questItems(definition, progress, VillagerQuestService::itemName),
-                QuestTrackerPresenter.rewardPreviews(player, definition, replacements, VillagerQuestService::lootTableName),
+                QuestTrackerPresenter.rewardPreviews(player, definition, replacements),
                 prerequisitePreviews(player, definition),
                 progressValue,
                 showProgress,
@@ -5706,13 +5706,6 @@ public final class VillagerQuestService {
         return BuiltInRegistries.ITEM.getOptional(itemId)
                 .map(item -> new ItemStack(item).getHoverName().getString())
                 .orElseGet(() -> VillagerInteractionTextUtil.resourcePathName(itemId));
-    }
-
-    private static String lootTableName(ResourceLocation lootTable) {
-        if (lootTable == null) {
-            return "loot";
-        }
-        return VillagerInteractionTextUtil.resourcePathName(lootTable);
     }
 
     private static String objectiveEntityName(QuestDefinition.Objective objective) {

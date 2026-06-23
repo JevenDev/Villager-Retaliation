@@ -291,8 +291,7 @@ public final class QuestTrackerPresenter {
     public static List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews(
             ServerPlayer player,
             QuestDefinition definition,
-            Map<String, String> replacements,
-            Function<ResourceLocation, String> lootTableLabeler) {
+            Map<String, String> replacements) {
         if (definition == null || definition.rewards() == null) {
             return List.of();
         }
@@ -322,17 +321,6 @@ public final class QuestTrackerPresenter {
                 "quest.tracker.reward.gossip",
                 "Village gossip {signed_amount}",
                 replacements);
-        if (rewards.lootTable() != null) {
-            Map<String, String> values = previewReplacements(replacements);
-            String lootTableName = lootTableLabeler == null
-                    ? rewards.lootTable().toString()
-                    : lootTableLabeler.apply(rewards.lootTable());
-            values.put("loot_table", lootTableName);
-            previews.add(new QuestTrackerSyncPayload.RewardPreview(
-                    "loot",
-                    resolveGlobalText(player, "quest.tracker.reward.loot", "Loot: {loot_table}", values),
-                    0));
-        }
         if (rewards.memoryEvent() != null) {
             Map<String, String> values = previewReplacements(replacements);
             values.put("memory_event", rewards.memoryEvent().toString());
