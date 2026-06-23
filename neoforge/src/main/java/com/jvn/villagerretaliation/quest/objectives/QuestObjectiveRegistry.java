@@ -1,5 +1,7 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.objectives;
 
+import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import java.util.HashMap;
 import java.util.LinkedHashMap;

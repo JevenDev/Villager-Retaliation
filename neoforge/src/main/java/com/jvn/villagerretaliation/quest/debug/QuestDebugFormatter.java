@@ -1,5 +1,7 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.debug;
 
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.QuestDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;

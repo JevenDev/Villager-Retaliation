@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.objectives;
 
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.village.VillageEventMemory;

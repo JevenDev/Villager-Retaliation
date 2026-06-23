@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.runtime;
 
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionExecutor;
@@ -8,11 +8,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-final class QuestActionSequenceRunner {
+public final class QuestActionSequenceRunner {
     private QuestActionSequenceRunner() {
     }
 
-    static boolean run(
+    public static boolean run(
             DialogueContext context,
             List<VillagerActionDefinition> actions,
             Map<String, String> baseReplacements,

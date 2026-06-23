@@ -1,21 +1,21 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.runtime;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 
-final class QuestStageBranchOptionIds {
+public final class QuestStageBranchOptionIds {
     private static final String PREFIX = "vr_stage_branch:";
 
     private QuestStageBranchOptionIds() {
     }
 
-    static String create(ResourceLocation questId, String branchId) {
+    public static String create(ResourceLocation questId, String branchId) {
         return PREFIX + encodePart(questId.toString()) + ":" + encodePart(branchId);
     }
 
-    static Optional<Key> parse(String optionId) {
+    public static Optional<Key> parse(String optionId) {
         if (optionId == null || !optionId.startsWith(PREFIX)) {
             return Optional.empty();
         }
@@ -46,6 +46,6 @@ final class QuestStageBranchOptionIds {
         }
     }
 
-    record Key(ResourceLocation questId, String branchId) {
+    public record Key(ResourceLocation questId, String branchId) {
     }
 }

@@ -1,5 +1,7 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.objectives;
 
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import java.util.function.BiPredicate;
 import java.util.function.Function;

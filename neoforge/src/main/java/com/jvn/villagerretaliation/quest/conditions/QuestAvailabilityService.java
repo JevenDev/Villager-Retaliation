@@ -1,13 +1,16 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.conditions;
 
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.QuestExecutionContext;
+import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 
-final class QuestAvailabilityService {
+public final class QuestAvailabilityService {
     private QuestAvailabilityService() {
     }
 
-    static boolean canStart(
+    public static boolean canStart(
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
@@ -57,14 +60,14 @@ final class QuestAvailabilityService {
         };
     }
 
-    static boolean withinStartLimit(
+    public static boolean withinStartLimit(
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
         int maxStarts = definition.rules().maxStarts();
         return maxStarts <= 0 || progress == null || progress.startCount() < maxStarts;
     }
 
-    static boolean withinCompletionLimit(
+    public static boolean withinCompletionLimit(
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
@@ -79,17 +82,17 @@ final class QuestAvailabilityService {
         return scopedCompletionCounter.countScopedCompletions(context, definition) < maxCompletions;
     }
 
-    static boolean isPlayerCompletionScope(QuestDefinition.CompletionScope scope) {
+    public static boolean isPlayerCompletionScope(QuestDefinition.CompletionScope scope) {
         return scope == null
                 || scope == QuestDefinition.CompletionScope.PLAYER
                 || scope == QuestDefinition.CompletionScope.PLAYER_WORLD;
     }
 
-    static boolean cooldownElapsed(long gameTime, long eventTime, long cooldownTicks) {
+    public static boolean cooldownElapsed(long gameTime, long eventTime, long cooldownTicks) {
         return cooldownTicks <= 0L || eventTime <= 0L || gameTime - eventTime >= cooldownTicks;
     }
 
-    static boolean matchesProviderLock(
+    public static boolean matchesProviderLock(
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
@@ -100,12 +103,12 @@ final class QuestAvailabilityService {
     }
 
     @FunctionalInterface
-    interface ParentCompletionLookup {
+    public interface ParentCompletionLookup {
         boolean parentCompleted(DialogueContext context, QuestDefinition definition);
     }
 
     @FunctionalInterface
-    interface ScopedCompletionCounter {
+    public interface ScopedCompletionCounter {
         int countScopedCompletions(DialogueContext context, QuestDefinition definition);
     }
 }

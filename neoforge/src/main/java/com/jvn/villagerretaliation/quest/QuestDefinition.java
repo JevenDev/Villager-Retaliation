@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;

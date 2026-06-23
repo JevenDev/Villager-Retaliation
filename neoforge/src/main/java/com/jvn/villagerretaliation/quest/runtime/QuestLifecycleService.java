@@ -1,13 +1,16 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.runtime;
 
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import net.minecraft.resources.ResourceLocation;
 
-final class QuestLifecycleService {
+public final class QuestLifecycleService {
     private QuestLifecycleService() {
     }
 
-    static LifecycleEvent start(
+    public static LifecycleEvent start(
             ResourceLocation questId,
             VillagerQuestSavedData.QuestProgress progress,
             QuestProviderBinding providerBinding,
@@ -32,7 +35,7 @@ final class QuestLifecycleService {
         return event(LifecycleEventType.STARTED, questId, progress, gameTime, "");
     }
 
-    static StageTransition initializeStage(
+    public static StageTransition initializeStage(
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime) {
@@ -43,7 +46,7 @@ final class QuestLifecycleService {
         return setStage(definition, progress, stage, gameTime, true);
     }
 
-    static String initialStage(QuestDefinition definition) {
+    public static String initialStage(QuestDefinition definition) {
         if (definition == null || definition.stages().isEmpty()) {
             return "";
         }
@@ -53,14 +56,14 @@ final class QuestLifecycleService {
         return definition.stages().keySet().iterator().next();
     }
 
-    static boolean canTransitionStage(
+    public static boolean canTransitionStage(
             VillagerQuestSavedData.QuestProgress progress,
             String stage) {
         String nextStage = normalizeStage(stage);
         return progress != null && !nextStage.isBlank() && !progress.currentStage().equals(nextStage);
     }
 
-    static StageTransition transitionStage(
+    public static StageTransition transitionStage(
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             String stage,
@@ -89,7 +92,7 @@ final class QuestLifecycleService {
                 event(LifecycleEventType.STAGE_CHANGED, definition.id(), progress, gameTime, ""));
     }
 
-    static LifecycleEvent complete(
+    public static LifecycleEvent complete(
             ResourceLocation questId,
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
@@ -98,7 +101,7 @@ final class QuestLifecycleService {
         return event(LifecycleEventType.COMPLETED, questId, progress, gameTime, consume ? "completion" : "");
     }
 
-    static LifecycleEvent abandon(
+    public static LifecycleEvent abandon(
             ResourceLocation questId,
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
@@ -107,7 +110,7 @@ final class QuestLifecycleService {
         return event(LifecycleEventType.ABANDONED, questId, progress, gameTime, consume ? "abandonment" : "");
     }
 
-    static LifecycleEvent expire(
+    public static LifecycleEvent expire(
             ResourceLocation questId,
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
@@ -116,7 +119,7 @@ final class QuestLifecycleService {
         return event(LifecycleEventType.EXPIRED, questId, progress, gameTime, consume ? "expiration" : "");
     }
 
-    static LifecycleEvent consume(
+    public static LifecycleEvent consume(
             ResourceLocation questId,
             VillagerQuestSavedData.QuestProgress progress,
             String reason,
@@ -144,7 +147,7 @@ final class QuestLifecycleService {
                 reason == null ? "" : reason);
     }
 
-    enum LifecycleEventType {
+    public enum LifecycleEventType {
         STARTED,
         COMPLETED,
         ABANDONED,
@@ -153,7 +156,7 @@ final class QuestLifecycleService {
         STAGE_CHANGED
     }
 
-    record LifecycleEvent(
+    public record LifecycleEvent(
             LifecycleEventType type,
             ResourceLocation questId,
             VillagerQuestSavedData.QuestState state,
@@ -163,7 +166,7 @@ final class QuestLifecycleService {
     ) {
     }
 
-    record StageTransition(
+    public record StageTransition(
             boolean changed,
             String previousStage,
             String currentStage,

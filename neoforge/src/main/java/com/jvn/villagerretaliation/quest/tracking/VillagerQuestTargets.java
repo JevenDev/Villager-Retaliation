@@ -1,5 +1,10 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.tracking;
 
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
+import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.mojang.datafixers.util.Pair;
 import java.util.List;
@@ -18,21 +23,21 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
-final class VillagerQuestTargets {
+public final class VillagerQuestTargets {
     private static final int MIN_SPARSE_STRUCTURE_SEARCH_RADIUS = 1024;
     private static final int MIN_VERY_SPARSE_STRUCTURE_SEARCH_RADIUS = 2048;
 
     private VillagerQuestTargets() {
     }
 
-    static boolean requiresLocatedTarget(QuestDefinition definition) {
+    public static boolean requiresLocatedTarget(QuestDefinition definition) {
         return definition.target().hasStructureTarget()
                 || definition.objectives().stream()
                 .anyMatch(objective -> !objective.optional()
                         && QuestObjectiveRegistry.requiresLocatedTarget(objective));
     }
 
-    static boolean requiresLocatedTarget(QuestDefinition definition, String stageId) {
+    public static boolean requiresLocatedTarget(QuestDefinition definition, String stageId) {
         if (definition == null) {
             return false;
         }
@@ -42,14 +47,14 @@ final class VillagerQuestTargets {
                         && QuestObjectiveRegistry.requiresLocatedTarget(objective));
     }
 
-    static Optional<LocatedTarget> locateInitialTarget(DialogueContext context, QuestDefinition definition) {
+    public static Optional<LocatedTarget> locateInitialTarget(DialogueContext context, QuestDefinition definition) {
         if (definition.target().hasStructureTarget()) {
             return locateTarget(context.level(), context.villager().blockPosition(), definition);
         }
         return locateStageTarget(context, definition, QuestLifecycleService.initialStage(definition));
     }
 
-    static Optional<LocatedTarget> locateStageTarget(
+    public static Optional<LocatedTarget> locateStageTarget(
             DialogueContext context,
             QuestDefinition definition,
             String stageId) {
@@ -62,7 +67,7 @@ final class VillagerQuestTargets {
                 .flatMap(objective -> locateTarget(context.level(), context.villager().blockPosition(), objective));
     }
 
-    static ResourceLocation targetStructure(QuestDefinition definition, String objectiveId) {
+    public static ResourceLocation targetStructure(QuestDefinition definition, String objectiveId) {
         if (definition == null) {
             return null;
         }
@@ -78,7 +83,7 @@ final class VillagerQuestTargets {
                 .orElse(null);
     }
 
-    static Optional<LocatedTarget> locateTarget(ServerLevel level, BlockPos origin, QuestDefinition definition) {
+    public static Optional<LocatedTarget> locateTarget(ServerLevel level, BlockPos origin, QuestDefinition definition) {
         if (!definition.target().hasStructureTarget()) {
             return Optional.empty();
         }
@@ -91,7 +96,7 @@ final class VillagerQuestTargets {
                 "");
     }
 
-    static Optional<LocatedTarget> locateTarget(
+    public static Optional<LocatedTarget> locateTarget(
             ServerLevel level,
             BlockPos origin,
             QuestDefinition.Objective objective) {
@@ -104,7 +109,7 @@ final class VillagerQuestTargets {
                 objective.id());
     }
 
-    static boolean isAtQuestTarget(
+    public static boolean isAtQuestTarget(
             ServerLevel level,
             BlockPos playerPos,
             QuestDefinition definition,
@@ -121,7 +126,7 @@ final class VillagerQuestTargets {
                 definition.target().pieces());
     }
 
-    static boolean isAtObjectiveTarget(
+    public static boolean isAtObjectiveTarget(
             ServerLevel level,
             BlockPos playerPos,
             QuestDefinition.Objective objective,
@@ -290,6 +295,6 @@ final class VillagerQuestTargets {
         return false;
     }
 
-    record LocatedTarget(ResourceKey<Level> dimension, BlockPos pos, String objectiveId) {
+    public record LocatedTarget(ResourceKey<Level> dimension, BlockPos pos, String objectiveId) {
     }
 }

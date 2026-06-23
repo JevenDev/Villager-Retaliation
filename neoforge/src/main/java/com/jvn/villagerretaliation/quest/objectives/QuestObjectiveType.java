@@ -1,5 +1,6 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.objectives;
 
+import com.jvn.villagerretaliation.quest.QuestDefinition;
 import java.util.Optional;
 import java.util.Set;
 

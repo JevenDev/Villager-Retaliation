@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEventKind;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonObject;

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.jvn.villagerretaliation.util.NbtDataUtil;
 import java.util.ArrayList;
 import java.util.HashMap;

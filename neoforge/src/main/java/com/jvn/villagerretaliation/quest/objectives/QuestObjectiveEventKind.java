@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.objectives;
 
 public enum QuestObjectiveEventKind {
     MOB_KILL,

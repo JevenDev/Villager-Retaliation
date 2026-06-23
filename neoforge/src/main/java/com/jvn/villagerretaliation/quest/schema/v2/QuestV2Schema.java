@@ -7,7 +7,7 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
-import com.jvn.villagerretaliation.quest.QuestObjectiveRegistry;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderRegistry;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;

@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.quest.QuestTrackerLimits;
+import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

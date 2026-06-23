@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.quest;
+package com.jvn.villagerretaliation.quest.debug;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

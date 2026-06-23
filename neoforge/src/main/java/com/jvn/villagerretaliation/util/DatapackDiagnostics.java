@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.util;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.jvn.villagerretaliation.quest.QuestDiagnostic;
+import com.jvn.villagerretaliation.quest.debug.QuestDiagnostic;
 import com.mojang.logging.LogUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
