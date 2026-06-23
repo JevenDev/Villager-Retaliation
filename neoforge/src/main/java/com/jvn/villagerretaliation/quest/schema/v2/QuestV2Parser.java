@@ -149,6 +149,8 @@ public final class QuestV2Parser {
             "dimension",
             "location",
             "radius",
+            "search_radius",
+            "discovery_radius",
             "item",
             "items",
             "item_tag",
@@ -922,7 +924,7 @@ public final class QuestV2Parser {
                 }
             }
             validateTransitionReferences(validator, resource, stage.next(), stagePointer + "/next", stage.id());
-            validateDialogueSlots(validator, stage, stagePointer);
+            validateDialogueSlots(validator, resource, stage, stagePointer);
             for (QuestV2Resource.Response response : stage.responses()) {
                 validateTransitionReferences(validator, resource, response.transition(), stagePointer + "/responses/" + response.id(), stage.id());
             }
@@ -938,6 +940,7 @@ public final class QuestV2Parser {
 
     private static void validateDialogueSlots(
             Validator validator,
+            QuestV2Resource resource,
             QuestV2Resource.Stage stage,
             String stagePointer) {
         for (QuestV2Resource.DialogueSlot slot : stage.dialogueSlots().values()) {
@@ -949,14 +952,26 @@ public final class QuestV2Parser {
                         "Reference a scene id from this stage's scenes array.",
                         Set.of(stage.id(), slot.scene()));
             }
+            QuestV2Resource.Scene inlineScene = slot.inlineScene();
+            if (inlineScene != null) {
+                for (QuestV2Resource.Response response : inlineScene.responses()) {
+                    validateTransitionReferences(
+                            validator,
+                            resource,
+                            response.transition(),
+                            slotPointer + "/responses/" + response.id(),
+                            stage.id());
+                }
+            }
         }
         for (QuestV2Resource.Scene scene : stage.scenes().values()) {
             for (QuestV2Resource.Response response : scene.responses()) {
                 validateTransitionReferences(
                         validator,
-                        stage,
+                        resource,
                         response.transition(),
-                        stagePointer + "/scenes/" + scene.id() + "/responses/" + response.id());
+                        stagePointer + "/scenes/" + scene.id() + "/responses/" + response.id(),
+                        stage.id());
             }
         }
     }
@@ -1095,6 +1110,15 @@ public final class QuestV2Parser {
             }
             for (QuestV2Resource.Event event : stage.events()) {
                 enqueueStage(queue, resource, event.transition());
+            }
+            for (QuestV2Resource.DialogueSlot slot : stage.dialogueSlots().values()) {
+                QuestV2Resource.Scene inlineScene = slot.inlineScene();
+                if (inlineScene == null) {
+                    continue;
+                }
+                for (QuestV2Resource.Response response : inlineScene.responses()) {
+                    enqueueStage(queue, resource, response.transition());
+                }
             }
             for (QuestV2Resource.Scene scene : stage.scenes().values()) {
                 for (QuestV2Resource.Response response : scene.responses()) {

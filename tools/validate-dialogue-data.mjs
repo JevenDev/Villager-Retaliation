@@ -837,7 +837,7 @@ const questV2AvailabilityKeys = new Set(["conditions", "active", "cooldown", "co
 const questV2LifecycleKeys = new Set(["on_start", "on_complete", "on_abandon", "on_expire", "on_fail", "on_stage_enter", "on_stage_exit", "dialogue"]);
 const questV2LifecycleHookKeys = new Set(["actions", "transition", "next", "stage", "scene", "complete", "abandon", "fail"]);
 const questV2StageKeys = new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]);
-const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "target", "targets", "structure", "dimension", "location", "radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
+const questV2ObjectiveKeys = new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui"]);
 const questV2DialogueSlotKeys = new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]);
 const questV2SceneKeys = new Set(["id", "slot", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "actions", "conditions", "next", "transition", "external", "external_scene", "external_entry", "scene_ref", "metadata"]);
 const questV2ExternalSceneKeys = new Set(["tree", "tree_id", "dialogue_tree", "entry", "entry_id", "metadata"]);
@@ -1608,9 +1608,9 @@ function checkQuestV2Stages(file, stages, pointer, location, questId) {
     if (!next.empty) {
       model.transitions.push({ pointer: `${stagePointer}/next`, location: `${stageLocation}.next`, transition: next, stageId });
     }
-    const sceneIds = checkQuestV2Scenes(file, stage.scenes, `${stagePointer}/scenes`, `${stageLocation}.scenes`, questId);
+    const sceneIds = checkQuestV2Scenes(file, stage.scenes, `${stagePointer}/scenes`, `${stageLocation}.scenes`, questId, model.transitions, stageId);
     model.sceneIdsByStage.set(stageId, sceneIds);
-    checkQuestV2DialogueSlots(file, stage.dialogue, `${stagePointer}/dialogue`, `${stageLocation}.dialogue`, questId, sceneIds);
+    checkQuestV2DialogueSlots(file, stage.dialogue, `${stagePointer}/dialogue`, `${stageLocation}.dialogue`, questId, sceneIds, model.transitions, stageId);
     const responseIds = checkQuestV2Responses(file, stage.responses, `${stagePointer}/responses`, `${stageLocation}.responses`, questId, model.transitions, stageId);
     model.responseIdsByStage.set(stageId, responseIds);
     checkQuestV2Events(file, stage.events, `${stagePointer}/events`, `${stageLocation}.events`, questId, declaredStageIds, stageId, model.transitions);
@@ -1683,7 +1683,7 @@ function checkQuestV2ObjectiveRuntimeRequirements(file, objective, pointer, loca
   }
 }
 
-function checkQuestV2DialogueSlots(file, dialogue, pointer, location, questId, sceneIds) {
+function checkQuestV2DialogueSlots(file, dialogue, pointer, location, questId, sceneIds, transitions = [], stageId = "") {
   if (dialogue === undefined) {
     return;
   }
@@ -1692,11 +1692,11 @@ function checkQuestV2DialogueSlots(file, dialogue, pointer, location, questId, s
     return;
   }
   for (const [slot, value] of Object.entries(dialogue)) {
-    checkQuestV2DialogueSlot(file, value, `${pointer}/${escapeJsonPointer(slot)}`, `${location}.${slot}`, questId, slot, sceneIds);
+    checkQuestV2DialogueSlot(file, value, `${pointer}/${escapeJsonPointer(slot)}`, `${location}.${slot}`, questId, slot, sceneIds, transitions, stageId);
   }
 }
 
-function checkQuestV2DialogueSlot(file, slot, pointer, location, questId, slotId, sceneIds) {
+function checkQuestV2DialogueSlot(file, slot, pointer, location, questId, slotId, sceneIds, transitions = [], stageId = "") {
   if (!slot || typeof slot !== "object" || Array.isArray(slot)) {
     questV2Error(file, pointer, location, "dialogue slot must be an object.", "Use scene, external_scene, or inline lines/responses.");
     return;
@@ -1717,11 +1717,11 @@ function checkQuestV2DialogueSlot(file, slot, pointer, location, questId, slotId
   }
   collectQuestV2ExternalSceneReference(file, slot, pointer, location, slotId);
   if (hasInline) {
-    checkQuestV2InlineScene(file, slot, pointer, location, questId, slotId);
+    checkQuestV2InlineScene(file, slot, pointer, location, questId, slotId, transitions, stageId);
   }
 }
 
-function checkQuestV2Scenes(file, scenes, pointer, location, questId) {
+function checkQuestV2Scenes(file, scenes, pointer, location, questId, transitions = [], stageId = "") {
   const ids = new Set();
   if (scenes === undefined) {
     return ids;
@@ -1733,7 +1733,7 @@ function checkQuestV2Scenes(file, scenes, pointer, location, questId) {
   for (const [index, scene] of scenes.entries()) {
     const scenePointer = `${pointer}/${index}`;
     const sceneLocation = `${location}[${index}]`;
-    const id = checkQuestV2InlineScene(file, scene, scenePointer, sceneLocation, questId, `scene_${index}`);
+    const id = checkQuestV2InlineScene(file, scene, scenePointer, sceneLocation, questId, `scene_${index}`, transitions, stageId);
     if (id) {
       if (ids.has(id)) {
         questV2Error(file, `${scenePointer}/id`, `${sceneLocation}.id`, `duplicate scene id "${id}".`, "Use unique scene ids within the stage.");
@@ -1744,7 +1744,7 @@ function checkQuestV2Scenes(file, scenes, pointer, location, questId) {
   return ids;
 }
 
-function checkQuestV2InlineScene(file, scene, pointer, location, questId, fallbackId) {
+function checkQuestV2InlineScene(file, scene, pointer, location, questId, fallbackId, transitions = [], stageId = "") {
   if (!scene || typeof scene !== "object" || Array.isArray(scene)) {
     questV2Error(file, pointer, location, "scene must be an object.", "Use lines, text_key, responses, or external_scene inside the scene.");
     return "";
@@ -1767,7 +1767,7 @@ function checkQuestV2InlineScene(file, scene, pointer, location, questId, fallba
   if (hasInline && hasExternal) {
     questV2Error(file, pointer, location, "scene cannot mix inline dialogue content with an external scene reference.", "Use either inline lines/responses or external_scene.");
   }
-  checkQuestV2Responses(file, scene.responses, `${pointer}/responses`, `${location}.responses`, questId, [], "");
+  checkQuestV2Responses(file, scene.responses, `${pointer}/responses`, `${location}.responses`, questId, transitions, stageId);
   return id;
 }
 

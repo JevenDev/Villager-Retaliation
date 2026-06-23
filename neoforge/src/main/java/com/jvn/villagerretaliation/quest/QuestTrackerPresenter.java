@@ -246,7 +246,7 @@ public final class QuestTrackerPresenter {
         }
         Map<String, QuestTrackerSyncPayload.QuestItem> items = new LinkedHashMap<>();
         addQuestItem(items, definition.target().proofItem(), 1, itemLabeler);
-        for (QuestDefinition.Objective objective : definition.objectives()) {
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
             if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK || objective.item() == null) {
                 continue;
             }

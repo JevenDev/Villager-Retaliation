@@ -527,7 +527,7 @@ window.VR_WIKI_DATA = {
       },
       "objectives": [
         "Proof: Totem Of Undying",
-        "1 None",
+        "Defeat 1 Evoker",
         "12 Emerald"
       ],
       "steps": [
@@ -633,7 +633,7 @@ window.VR_WIKI_DATA = {
       "id": "villagerretaliation:blank_map_promise",
       "slug": "blank_map_promise",
       "title": "Blank Map Promise",
-      "description": "Help a cartographer prepare the paper, compass, and ink needed for a long atlas.",
+      "description": "Bind the first blank atlas folio with paper, ink, and a compass bearing.",
       "questline": "cartographers_atlas",
       "questlineLabel": "Cartographers Atlas",
       "group": "exploration",
@@ -668,16 +668,44 @@ window.VR_WIKI_DATA = {
       ],
       "steps": [
         {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Bring paper, a compass, and ink to the cartographer.",
+          "id": "gather_paper",
+          "label": "Gather Paper",
+          "text": "Bring 24 paper for the first atlas folio.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "bring_paper",
+          "label": "Bring Paper",
+          "text": "Bring 24 paper for the first atlas folio.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "bind_bearing",
+          "label": "Bind Bearing",
+          "text": "Bring 1 compass and 3 ink sacs for the folio binding.",
+          "progress": 0.8,
+          "hint": ""
+        },
+        {
+          "id": "bring_compass",
+          "label": "Bring Compass",
+          "text": "Bring 1 compass to give the atlas a north.",
           "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "bring_ink",
+          "label": "Bring Ink",
+          "text": "Bring 3 ink sacs to bind the first folio.",
+          "progress": 0.8,
           "hint": ""
         },
         {
           "id": "return",
           "label": "Return",
-          "text": "Return to the cartographer with the atlas supplies.",
+          "text": "Return to the cartographer with the folio materials.",
           "progress": 1,
           "hint": ""
         }
@@ -715,31 +743,686 @@ window.VR_WIKI_DATA = {
       ],
       "dialogue": {
         "offer": [
-          "I want to start an atlas that can survive more than one village. I need clean paper, a compass, and ink before I trust the first page."
+          "Every atlas begins as a promise: enough paper to hold the world, enough ink to admit where we do not know it yet.",
+          "Bring me paper, a compass, and ink sacs. I will bind the first folio, and you can decide whether the blank space becomes a road."
         ],
-        "accept": "I can gather that",
+        "accept": "Start the atlas",
         "decline": "Another time",
         "started": [
-          "Good. Bring 24 paper, 1 compass, and 3 ink sacs. Small supplies, long road."
+          "Good. Start with 24 paper; a thin atlas lies before the first rain."
         ],
         "reminder": [
-          "Bring 24 paper, 1 compass, and 3 ink sacs. The tracker will keep the count honest."
+          "First bring 24 paper. After that, bind the bearing with 1 compass and 3 ink sacs.",
+          "The folio still needs 1 compass and 3 ink sacs."
         ],
         "completed": [
-          "The first folio is bound. The atlas can begin."
+          "There. The first folio is bound. The atlas is still mostly empty, but now it knows how to begin."
         ],
         "missing": [
-          "Bring the full supply bundle before I bind the page.",
-          "The folio is still short. Check the tracker for the missing supplies."
-        ]
+          "The binding is still short. Check the tracker before I stitch the cover.",
+          "Bring the materials here, and I can bind them properly."
+        ],
+        "stages": [
+          {
+            "stageId": "gather_paper",
+            "label": "Gather Paper",
+            "trackerText": "Bring 24 paper for the first atlas folio.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Blank Map Promise",
+                "lines": [
+                  "Every atlas begins as a promise: enough paper to hold the world, enough ink to admit where we do not know it yet.",
+                  "Bring me paper, a compass, and ink sacs. I will bind the first folio, and you can decide whether the blank space becomes a road."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Start the atlas",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Blank Map Promise",
+                "lines": [
+                  "The blank folio still needs its paper before the compass can mean anything."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the list",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will keep the covers flat until you are ready to start again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no atlas folio in your hands right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "First bring 24 paper. After that, bind the bearing with 1 compass and 3 ink sacs."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your blank folio open right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The first folio is already bound."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Good. Start with 24 paper; a thin atlas lies before the first rain."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The map table needs a little time before it can take another promise."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Fold the blank folio away for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the map stays blank, which is safer but much less useful."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Blank space keeps its patience."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "bind_bearing",
+            "label": "Bind Bearing",
+            "trackerText": "Bring 1 compass and 3 ink sacs for the folio binding.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Blank Map Promise",
+                "lines": [
+                  "The paper is enough. Now the folio needs a compass and ink so the blank page knows which way to face."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the list",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will keep the covers flat until you are ready to start again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no atlas folio in your hands right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "The folio still needs 1 compass and 3 ink sacs."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your blank folio open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Fold the blank folio away for now?"
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Blank space keeps its patience."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the folio materials.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Blank Map Promise",
+                "lines": [
+                  "Paper, compass, ink. That is enough for a beginning."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Bind the first folio",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "There. The first folio is bound. The atlas is still mostly empty, but now it knows how to begin."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The binding is still short. Check the tracker before I stitch the cover."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the materials here, and I can bind them properly."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The folio still needs its paper, compass, and ink before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not crease the paper before it has a road."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "gather_paper",
+            "label": "Gather Paper",
+            "trackerText": "Bring 24 paper for the first atlas folio.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Blank Map Promise",
+                "lines": [
+                  "Every atlas begins as a promise: enough paper to hold the world, enough ink to admit where we do not know it yet.",
+                  "Bring me paper, a compass, and ink sacs. I will bind the first folio, and you can decide whether the blank space becomes a road."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Start the atlas",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Blank Map Promise",
+                "lines": [
+                  "The blank folio still needs its paper before the compass can mean anything."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the list",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will keep the covers flat until you are ready to start again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no atlas folio in your hands right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "First bring 24 paper. After that, bind the bearing with 1 compass and 3 ink sacs."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your blank folio open right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The first folio is already bound."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Good. Start with 24 paper; a thin atlas lies before the first rain."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The map table needs a little time before it can take another promise."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Fold the blank folio away for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the map stays blank, which is safer but much less useful."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Blank space keeps its patience."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "bind_bearing",
+            "label": "Bind Bearing",
+            "trackerText": "Bring 1 compass and 3 ink sacs for the folio binding.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Blank Map Promise",
+                "lines": [
+                  "The paper is enough. Now the folio needs a compass and ink so the blank page knows which way to face."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the list",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will keep the covers flat until you are ready to start again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no atlas folio in your hands right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "The folio still needs 1 compass and 3 ink sacs."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your blank folio open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Fold the blank folio away for now?"
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Blank space keeps its patience."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the folio materials.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Blank Map Promise",
+                "lines": [
+                  "Paper, compass, ink. That is enough for a beginning."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Bind the first folio",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "There. The first folio is bound. The atlas is still mostly empty, but now it knows how to begin."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The binding is still short. Check the tracker before I stitch the cover."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the materials here, and I can bind them properly."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The folio still needs its paper, compass, and ink before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not crease the paper before it has a road."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
       },
       "questlineOrder": 0
     },
     {
-      "id": "villagerretaliation:first_far_marker",
-      "slug": "first_far_marker",
-      "title": "First Far Marker",
-      "description": "Follow the cartographer's first atlas mark to Trail Ruins and return with field notes.",
+      "id": "villagerretaliation:ink_and_bearings",
+      "slug": "ink_and_bearings",
+      "title": "Ink and Bearings",
+      "description": "Prepare the atlas index and choose whether its first principle favors roads or wonders.",
       "questline": "cartographers_atlas",
       "questlineLabel": "Cartographers Atlas",
       "group": "exploration",
@@ -754,6 +1437,942 @@ window.VR_WIKI_DATA = {
         {
           "id": "villagerretaliation:blank_map_promise",
           "slug": "blank_map_promise"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [
+        {
+          "id": "roads",
+          "label": "Favor reliable roads"
+        },
+        {
+          "id": "wonders",
+          "label": "Favor strange wonders"
+        }
+      ],
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 10,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "2 Feather",
+        "6 Glass Pane",
+        "Choose Principle: Roads or Wonders"
+      ],
+      "steps": [
+        {
+          "id": "prepare_index",
+          "label": "Prepare Index",
+          "text": "Bring 2 feathers and 6 glass panes for the atlas index.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "bring_feathers",
+          "label": "Bring Feathers",
+          "text": "Bring 2 feathers for fine map pens.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "bring_glass",
+          "label": "Bring Glass",
+          "text": "Bring 6 glass panes to protect the index pages.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "choose_principle",
+          "label": "Choose Principle",
+          "text": "Choose the atlas principle from the cartographer's branch options.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "choose_principle",
+          "label": "Choose Principle",
+          "text": "Choose the atlas principle with the cartographer.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "roads_ready",
+          "label": "Roads Ready",
+          "text": "Return to the cartographer to set the road principle.",
+          "progress": 1,
+          "hint": ""
+        },
+        {
+          "id": "wonders_ready",
+          "label": "Wonders Ready",
+          "text": "Return to the cartographer to set the wonder principle.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 115,
+        "reputation": 8,
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/ink_and_bearings",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "3-6",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Empty Map",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "A blank atlas can become a diary, a warning, or a trophy shelf. We should choose better than that.",
+          "Bring fine pens and glass for the index. Then choose the atlas principle: reliable roads, or strange wonders."
+        ],
+        "accept": "Prepare the index",
+        "decline": "Another time",
+        "started": [
+          "Bring 2 feathers and 6 glass panes. Good maps need clear ink and clearer intentions."
+        ],
+        "reminder": [
+          "Bring 2 feathers and 6 glass panes. Once the index is ready, choose whether the atlas favors roads or wonders.",
+          "Choose roads if the atlas should favor safe returns, or wonders if it should favor rare discoveries."
+        ],
+        "completed": [
+          "I have inked roads into the index. The atlas will look for ways back before it looks for glory.",
+          "I have inked wonders into the index. The atlas will not mistake a hard road for an empty one."
+        ],
+        "missing": [
+          "Choose the atlas principle before I set the index.",
+          "Choose the atlas principle before I set the index."
+        ],
+        "stages": [
+          {
+            "stageId": "prepare_index",
+            "label": "Prepare Index",
+            "trackerText": "Bring 2 feathers and 6 glass panes for the atlas index.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Ink and Bearings",
+                "lines": [
+                  "A blank atlas can become a diary, a warning, or a trophy shelf. We should choose better than that.",
+                  "Bring fine pens and glass for the index. Then choose the atlas principle: reliable roads, or strange wonders."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Prepare the index",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Ink and Bearings",
+                "lines": [
+                  "The atlas index still needs fine pens and panes before we choose its first rule."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the list",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will keep the index loose until you return."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no atlas index open right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 2 feathers and 6 glass panes. Once the index is ready, choose whether the atlas favors roads or wonders."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your atlas index open right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The atlas already has its first principle."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 2 feathers and 6 glass panes. Good maps need clear ink and clearer intentions."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The first folio must be bound before the index matters."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Set aside the atlas index for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the atlas can wait before it starts having opinions."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A good bearing survives a pause."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "choose_principle",
+            "label": "Choose Principle",
+            "trackerText": "Choose the atlas principle from the cartographer's branch options.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Ink and Bearings",
+                "lines": [
+                  "The index is ready. Choose whether the atlas should privilege safe roads or the rare marks people cross oceans to see."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the choice",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will choose",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [
+              {
+                "id": "roads",
+                "label": "Favor reliable roads",
+                "lines": [
+                  "Atlas principle chosen: roads."
+                ],
+                "targetStageId": "roads_ready",
+                "destination": "Next: Roads Ready"
+              },
+              {
+                "id": "wonders",
+                "label": "Favor strange wonders",
+                "lines": [
+                  "Atlas principle chosen: wonders."
+                ],
+                "targetStageId": "wonders_ready",
+                "destination": "Next: Wonders Ready"
+              }
+            ],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Choose roads if the atlas should favor safe returns, or wonders if it should favor rare discoveries."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "We are not carrying that atlas principle right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Choose what you can live with following."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "roads_ready",
+            "label": "Roads Ready",
+            "trackerText": "Return to the cartographer to set the road principle.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Ink and Bearings",
+                "lines": [
+                  "Roads, then. A map should first get people home."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the road principle",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "I have inked roads into the index. The atlas will look for ways back before it looks for glory."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "Choose the atlas principle before I set the index."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The index still needs the proof we agreed on."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A good road waits at both ends."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "wonders_ready",
+            "label": "Wonders Ready",
+            "trackerText": "Return to the cartographer to set the wonder principle.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Ink and Bearings",
+                "lines": [
+                  "Wonders, then. A map should leave room for the impossible."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the wonder principle",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "I have inked wonders into the index. The atlas will not mistake a hard road for an empty one."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "Choose the atlas principle before I set the index."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The index still needs the proof we agreed on."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A wonder only looks impossible until someone writes it down."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "prepare_index",
+            "label": "Prepare Index",
+            "trackerText": "Bring 2 feathers and 6 glass panes for the atlas index.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Ink and Bearings",
+                "lines": [
+                  "A blank atlas can become a diary, a warning, or a trophy shelf. We should choose better than that.",
+                  "Bring fine pens and glass for the index. Then choose the atlas principle: reliable roads, or strange wonders."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Prepare the index",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Ink and Bearings",
+                "lines": [
+                  "The atlas index still needs fine pens and panes before we choose its first rule."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the list",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will keep the index loose until you return."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no atlas index open right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 2 feathers and 6 glass panes. Once the index is ready, choose whether the atlas favors roads or wonders."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your atlas index open right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The atlas already has its first principle."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 2 feathers and 6 glass panes. Good maps need clear ink and clearer intentions."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The first folio must be bound before the index matters."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Set aside the atlas index for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the atlas can wait before it starts having opinions."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A good bearing survives a pause."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "choose_principle",
+            "label": "Choose Principle",
+            "trackerText": "Choose the atlas principle from the cartographer's branch options.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Ink and Bearings",
+                "lines": [
+                  "The index is ready. Choose whether the atlas should privilege safe roads or the rare marks people cross oceans to see."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the choice",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will choose",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [
+              {
+                "id": "roads",
+                "label": "Favor reliable roads",
+                "lines": [
+                  "Atlas principle chosen: roads."
+                ],
+                "targetStageId": "roads_ready",
+                "destination": "Next: Roads Ready"
+              },
+              {
+                "id": "wonders",
+                "label": "Favor strange wonders",
+                "lines": [
+                  "Atlas principle chosen: wonders."
+                ],
+                "targetStageId": "wonders_ready",
+                "destination": "Next: Wonders Ready"
+              }
+            ],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Choose roads if the atlas should favor safe returns, or wonders if it should favor rare discoveries."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "We are not carrying that atlas principle right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Choose what you can live with following."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": [
+          {
+            "stageId": "choose_principle",
+            "label": "Choose Principle",
+            "choices": [
+              {
+                "id": "roads",
+                "label": "Favor reliable roads",
+                "lines": [
+                  "Atlas principle chosen: roads."
+                ],
+                "targetStageId": "roads_ready",
+                "destination": "Next: Roads Ready",
+                "stageIds": [
+                  "roads_ready"
+                ],
+                "stages": [
+                  {
+                    "stageId": "roads_ready",
+                    "label": "Roads Ready",
+                    "trackerText": "Return to the cartographer to set the road principle.",
+                    "slots": [
+                      {
+                        "slot": "turn_in",
+                        "title": "Turn-in",
+                        "label": "About Ink and Bearings",
+                        "lines": [
+                          "Roads, then. A map should first get people home."
+                        ],
+                        "responses": [
+                          {
+                            "id": "complete",
+                            "label": "Set the road principle",
+                            "lines": [],
+                            "targetStageId": "",
+                            "destination": "Scene: Complete Quest"
+                          },
+                          {
+                            "id": "leave",
+                            "label": "Not yet",
+                            "lines": [],
+                            "targetStageId": "",
+                            "destination": "Scene: Leave"
+                          }
+                        ]
+                      }
+                    ],
+                    "choices": [],
+                    "actions": [
+                      {
+                        "sceneId": "complete_quest",
+                        "action": "turn_in",
+                        "key": "completed",
+                        "label": "Turn-in: Completed",
+                        "lines": [
+                          "I have inked roads into the index. The atlas will look for ways back before it looks for glory."
+                        ]
+                      },
+                      {
+                        "sceneId": "complete_quest",
+                        "action": "turn_in",
+                        "key": "missing_objectives",
+                        "label": "Turn-in: Missing objectives",
+                        "lines": [
+                          "Choose the atlas principle before I set the index."
+                        ]
+                      },
+                      {
+                        "sceneId": "complete_quest",
+                        "action": "turn_in",
+                        "key": "unavailable",
+                        "label": "Turn-in: Unavailable",
+                        "lines": [
+                          "The index still needs the proof we agreed on."
+                        ]
+                      }
+                    ],
+                    "scenes": [
+                      {
+                        "sceneId": "leave",
+                        "label": "Scene: Leave",
+                        "lines": [
+                          "A good road waits at both ends."
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "wonders",
+                "label": "Favor strange wonders",
+                "lines": [
+                  "Atlas principle chosen: wonders."
+                ],
+                "targetStageId": "wonders_ready",
+                "destination": "Next: Wonders Ready",
+                "stageIds": [
+                  "wonders_ready"
+                ],
+                "stages": [
+                  {
+                    "stageId": "wonders_ready",
+                    "label": "Wonders Ready",
+                    "trackerText": "Return to the cartographer to set the wonder principle.",
+                    "slots": [
+                      {
+                        "slot": "turn_in",
+                        "title": "Turn-in",
+                        "label": "About Ink and Bearings",
+                        "lines": [
+                          "Wonders, then. A map should leave room for the impossible."
+                        ],
+                        "responses": [
+                          {
+                            "id": "complete",
+                            "label": "Set the wonder principle",
+                            "lines": [],
+                            "targetStageId": "",
+                            "destination": "Scene: Complete Quest"
+                          },
+                          {
+                            "id": "leave",
+                            "label": "Not yet",
+                            "lines": [],
+                            "targetStageId": "",
+                            "destination": "Scene: Leave"
+                          }
+                        ]
+                      }
+                    ],
+                    "choices": [],
+                    "actions": [
+                      {
+                        "sceneId": "complete_quest",
+                        "action": "turn_in",
+                        "key": "completed",
+                        "label": "Turn-in: Completed",
+                        "lines": [
+                          "I have inked wonders into the index. The atlas will not mistake a hard road for an empty one."
+                        ]
+                      },
+                      {
+                        "sceneId": "complete_quest",
+                        "action": "turn_in",
+                        "key": "missing_objectives",
+                        "label": "Turn-in: Missing objectives",
+                        "lines": [
+                          "Choose the atlas principle before I set the index."
+                        ]
+                      },
+                      {
+                        "sceneId": "complete_quest",
+                        "action": "turn_in",
+                        "key": "unavailable",
+                        "label": "Turn-in: Unavailable",
+                        "lines": [
+                          "The index still needs the proof we agreed on."
+                        ]
+                      }
+                    ],
+                    "scenes": [
+                      {
+                        "sceneId": "leave",
+                        "label": "Scene: Leave",
+                        "lines": [
+                          "A wonder only looks impossible until someone writes it down."
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "questlineOrder": 1
+    },
+    {
+      "id": "villagerretaliation:first_far_marker",
+      "slug": "first_far_marker",
+      "title": "First Far Marker",
+      "description": "Follow the first atlas mark to Trail Ruins and plate the route with copper.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "villagerretaliation:ink_and_bearings",
+      "parentSlug": "ink_and_bearings",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:ink_and_bearings",
+          "slug": "ink_and_bearings"
         }
       ],
       "branchGroup": "",
@@ -773,33 +2392,48 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Trail Ruins",
-        "proofItem": "Brush",
+        "proofItem": "",
         "searchRadius": 192,
         "discoveryRadius": 96
       },
       "objectives": [
-        "Proof: Brush",
+        "Visit Trail Ruins",
+        "1 Brush",
         "8 Copper Ingot"
       ],
       "steps": [
         {
-          "id": "travel",
-          "label": "Travel",
+          "id": "survey",
+          "label": "Survey",
           "text": "Reach the Trail Ruins near {target_x}, {target_z}.",
-          "progress": 0.25,
-          "hint": "{distance} blocks {direction}"
+          "progress": 0.35,
+          "hint": ""
         },
         {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Bring a brush and 8 copper ingots back from the survey.",
+          "id": "visit_ruins",
+          "label": "Visit Ruins",
+          "text": "Reach the Trail Ruins near {target_x}, {target_z}.",
+          "progress": 0.35,
+          "hint": ""
+        },
+        {
+          "id": "carry_brush",
+          "label": "Carry Brush",
+          "text": "Carry a brush so the ruins can be read without breaking them.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "bring_copper",
+          "label": "Bring Copper",
+          "text": "Bring 8 copper ingots for marker plates.",
           "progress": 0.75,
           "hint": ""
         },
         {
           "id": "return",
           "label": "Return",
-          "text": "Return to the cartographer with the brush and copper.",
+          "text": "Return to the cartographer with the field notes and copper.",
           "progress": 1,
           "hint": ""
         }
@@ -837,32 +2471,621 @@ window.VR_WIKI_DATA = {
       ],
       "dialogue": {
         "offer": [
-          "The first folio found an old road under the ink. Trail Ruins, if the table is reading true."
+          "The first folio found an old road under the ink. Trail Ruins, if the table is reading true.",
+          "Reach the ruins, carry a brush, and bring copper for marker plates. The atlas must learn that travel is more than a straight line."
         ],
         "accept": "Mark the route",
         "decline": "Another time",
         "started": [
-          "The ruins sit about {distance} blocks {direction}, near {target_x}, {target_z}. Bring a brush and 8 copper ingots after you reach them."
+          "The ruins sit about {distance} blocks {direction}, near {target_x}, {target_z}. Reach them, carry a brush, and bring 8 copper ingots back."
         ],
         "reminder": [
-          "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Bring a brush and 8 copper ingots."
+          "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots.",
+          "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots."
         ],
         "completed": [
-          "The first far marker is inked. Now the atlas has a spine."
+          "The first far marker is inked. Now the atlas has proof that its roads touch real dust."
         ],
         "missing": [
           "Reach the Trail Ruins first. A brush without dust is just a tool.",
-          "Bring the brush and copper before I mark the route.",
-          "The route still needs its copper marker plates."
-        ]
+          "Carry the brush and bring the copper before I mark the route.",
+          "The route still needs the ruins visited, the brush ready, and its copper marker plates."
+        ],
+        "stages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Trail Ruins near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "First Far Marker",
+                "lines": [
+                  "The first folio found an old road under the ink. Trail Ruins, if the table is reading true.",
+                  "Reach the ruins, carry a brush, and bring copper for marker plates. The atlas must learn that travel is more than a straight line."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Mark the route",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About First Far Marker",
+                "lines": [
+                  "The first marker is still waiting in the field."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will fold the marker away for now."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no marker route to fold away."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that marker open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The first far marker is already inked."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The ruins sit about {distance} blocks {direction}, near {target_x}, {target_z}. Reach them, carry a brush, and bring 8 copper ingots back."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The old road will not hold still on the table today."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas needs its paper and bearings before that marker makes sense."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Fold away the first far marker?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Old roads are patient. Usually."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Mind the margins."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the field notes and copper.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About First Far Marker",
+                "lines": [
+                  "Trail Ruins near {target_x}, {target_z}. Bring the brush and copper so the atlas can stop guessing."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About First Far Marker",
+                "lines": [
+                  "You reached the old mark? Then show me what the road left behind."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the field notes",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The first far marker is inked. Now the atlas has proof that its roads touch real dust."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "Reach the Trail Ruins first. A brush without dust is just a tool."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Carry the brush and bring the copper before I mark the route."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The route still needs the ruins visited, the brush ready, and its copper marker plates."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "This marker still needs its field proof before I can close it."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that marker open for you right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Mind the margins."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Trail Ruins near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "First Far Marker",
+                "lines": [
+                  "The first folio found an old road under the ink. Trail Ruins, if the table is reading true.",
+                  "Reach the ruins, carry a brush, and bring copper for marker plates. The atlas must learn that travel is more than a straight line."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Mark the route",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About First Far Marker",
+                "lines": [
+                  "The first marker is still waiting in the field."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will fold the marker away for now."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no marker route to fold away."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that marker open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The first far marker is already inked."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The ruins sit about {distance} blocks {direction}, near {target_x}, {target_z}. Reach them, carry a brush, and bring 8 copper ingots back."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The old road will not hold still on the table today."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas needs its paper and bearings before that marker makes sense."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Fold away the first far marker?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Old roads are patient. Usually."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Mind the margins."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the field notes and copper.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About First Far Marker",
+                "lines": [
+                  "Trail Ruins near {target_x}, {target_z}. Bring the brush and copper so the atlas can stop guessing."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About First Far Marker",
+                "lines": [
+                  "You reached the old mark? Then show me what the road left behind."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the field notes",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The first far marker is inked. Now the atlas has proof that its roads touch real dust."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "Reach the Trail Ruins first. A brush without dust is just a tool."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Carry the brush and bring the copper before I mark the route."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The route still needs the ruins visited, the brush ready, and its copper marker plates."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "This marker still needs its field proof before I can close it."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that marker open for you right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Mind the margins."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
       },
-      "questlineOrder": 1
+      "questlineOrder": 2
     },
     {
-      "id": "villagerretaliation:choose_the_horizon",
-      "slug": "choose_the_horizon",
-      "title": "Choose The Horizon",
-      "description": "Choose whether the atlas follows the coast or the dark roof road.",
+      "id": "villagerretaliation:roads_that_remember",
+      "slug": "roads_that_remember",
+      "title": "Roads That Remember",
+      "description": "Record a village defense memory and turn it into a road the atlas can understand.",
       "questline": "cartographers_atlas",
       "questlineLabel": "Cartographers Atlas",
       "group": "exploration",
@@ -880,53 +3103,1743 @@ window.VR_WIKI_DATA = {
         }
       ],
       "branchGroup": "",
-      "branchChoices": [
-        {
-          "id": "coast",
-          "label": "Chart the drowned coast"
-        },
-        {
-          "id": "dark_roof",
-          "label": "Chart the dark roof road"
-        }
-      ],
+      "branchChoices": [],
       "requirements": {
-        "minLevel": "Apprentice",
+        "minLevel": "Journeyman",
         "professions": [
           "Cartographer"
         ],
         "skills": [
           {
             "skill": "Cartography",
-            "min": 20,
+            "min": 22,
             "max": null
           }
         ]
       },
       "target": null,
       "objectives": [
-        "1 None"
+        "Record memory: Player Defended Village",
+        "1 Book"
       ],
       "steps": [
         {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Pick the atlas route from the cartographer's branch options.",
-          "progress": 0.7,
+          "id": "hear_story",
+          "label": "Hear Story",
+          "text": "Help or witness a village defense memory.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "witness_defense",
+          "label": "Witness Defense",
+          "text": "Help or witness a village defense so the atlas has a living road to record.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "write_account",
+          "label": "Write Account",
+          "text": "Bring 1 book to record the village defense memory.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "bring_book",
+          "label": "Bring Book",
+          "text": "Bring 1 book for the road account.",
+          "progress": 0.85,
           "hint": ""
         },
         {
           "id": "return",
           "label": "Return",
-          "text": "Return to the cartographer after choosing the route.",
+          "text": "Return to the cartographer with the road account.",
           "progress": 1,
           "hint": ""
         }
       ],
       "rewards": {
-        "experience": 80,
-        "reputation": 5,
-        "gossipReputation": 2,
+        "experience": 185,
+        "reputation": 12,
+        "gossipReputation": 5,
+        "lootTable": "villagerretaliation:quest/roads_that_remember",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "4-7",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Paper",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "Maps remember places. Villages remember what happened there. A useful atlas should learn both.",
+          "When a village survives danger, bring that memory back with a written account. Roads matter most when people need to return by them."
+        ],
+        "accept": "Record the road memory",
+        "decline": "Another time",
+        "started": [
+          "Listen for a village that survives danger. When the memory is fresh, bring a book and I will set it down properly."
+        ],
+        "reminder": [
+          "Help or witness a village defense, then bring me a book so I can write the account into the atlas.",
+          "Bring 1 book. The defense memory is ready; the account still needs a page."
+        ],
+        "completed": [
+          "Now the atlas has a road that remembers why it mattered. That will change how it judges every future mark."
+        ],
+        "missing": [
+          "The atlas needs both the defense memory and the book before I can write this account.",
+          "Bring the book here, and we can keep the memory clean."
+        ],
+        "stages": [
+          {
+            "stageId": "hear_story",
+            "label": "Hear Story",
+            "trackerText": "Help or witness a village defense memory.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Roads That Remember",
+                "lines": [
+                  "Maps remember places. Villages remember what happened there. A useful atlas should learn both.",
+                  "When a village survives danger, bring that memory back with a written account. Roads matter most when people need to return by them."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Record the road memory",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Roads That Remember",
+                "lines": [
+                  "The atlas still needs a living road: a memory of a village defended, then a written account."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the task",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will leave the page blank until the road has something to say."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no road memory open right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Help or witness a village defense, then bring me a book so I can write the account into the atlas."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that road memory open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The atlas already has its first living road."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Listen for a village that survives danger. When the memory is fresh, bring a book and I will set it down properly."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The first field marker must be inked before the atlas can weigh memories."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Leave this memory unwritten for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Fair. Some stories should not be chased while they are still happening."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep your ears open. Roads talk after danger."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "write_account",
+            "label": "Write Account",
+            "trackerText": "Bring 1 book to record the village defense memory.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Roads That Remember",
+                "lines": [
+                  "The memory is there. Bring a book so the atlas can keep it without bending it into rumor."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the task",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 book. The defense memory is ready; the account still needs a page."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that road memory open for you right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A remembered road deserves a clean page."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the road account.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Roads That Remember",
+                "lines": [
+                  "A defended village, a written account, and an atlas that knows the difference between distance and meaning."
+                ],
+                "responses": [
+                  {
+                    "id": "record",
+                    "label": "Record the road memory",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Now the atlas has a road that remembers why it mattered. That will change how it judges every future mark."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The atlas needs both the defense memory and the book before I can write this account."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the book here, and we can keep the memory clean."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "This road memory still needs your account before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "No hurry. Some memories need a quiet hand."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "hear_story",
+            "label": "Hear Story",
+            "trackerText": "Help or witness a village defense memory.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Roads That Remember",
+                "lines": [
+                  "Maps remember places. Villages remember what happened there. A useful atlas should learn both.",
+                  "When a village survives danger, bring that memory back with a written account. Roads matter most when people need to return by them."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Record the road memory",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Roads That Remember",
+                "lines": [
+                  "The atlas still needs a living road: a memory of a village defended, then a written account."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the task",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will leave the page blank until the road has something to say."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no road memory open right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Help or witness a village defense, then bring me a book so I can write the account into the atlas."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that road memory open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The atlas already has its first living road."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Listen for a village that survives danger. When the memory is fresh, bring a book and I will set it down properly."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The first field marker must be inked before the atlas can weigh memories."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Leave this memory unwritten for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Fair. Some stories should not be chased while they are still happening."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep your ears open. Roads talk after danger."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "write_account",
+            "label": "Write Account",
+            "trackerText": "Bring 1 book to record the village defense memory.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Roads That Remember",
+                "lines": [
+                  "The memory is there. Bring a book so the atlas can keep it without bending it into rumor."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the task",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 book. The defense memory is ready; the account still needs a page."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that road memory open for you right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A remembered road deserves a clean page."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the road account.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Roads That Remember",
+                "lines": [
+                  "A defended village, a written account, and an atlas that knows the difference between distance and meaning."
+                ],
+                "responses": [
+                  {
+                    "id": "record",
+                    "label": "Record the road memory",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Now the atlas has a road that remembers why it mattered. That will change how it judges every future mark."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The atlas needs both the defense memory and the book before I can write this account."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the book here, and we can keep the memory clean."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "This road memory still needs your account before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "No hurry. Some memories need a quiet hand."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 3
+    },
+    {
+      "id": "villagerretaliation:the_atlas_test",
+      "slug": "the_atlas_test",
+      "title": "The Atlas Test",
+      "description": "Choose a safer supply route or a riskier combat route to prove the atlas can guide real decisions.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "villagerretaliation:roads_that_remember",
+      "parentSlug": "roads_that_remember",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:roads_that_remember",
+          "slug": "roads_that_remember"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Expert",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 34,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "Choose Test Route: Safe or Risky",
+        "4 Lantern",
+        "8 Bread",
+        "Defeat 3 Pillager",
+        "1 Crossbow"
+      ],
+      "steps": [
+        {
+          "id": "choose_test",
+          "label": "Choose Test",
+          "text": "Choose the safer or riskier atlas test route.",
+          "progress": 0.35,
+          "hint": ""
+        },
+        {
+          "id": "choose_test_route",
+          "label": "Choose Test Route",
+          "text": "Choose the atlas test route with the cartographer.",
+          "progress": 0.35,
+          "hint": ""
+        },
+        {
+          "id": "safe_supplies",
+          "label": "Safe Supplies",
+          "text": "Bring 4 lanterns and 8 bread for the safer route test.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "bring_lanterns",
+          "label": "Bring Lanterns",
+          "text": "Bring 4 lanterns to light a repeatable road.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "bring_bread",
+          "label": "Bring Bread",
+          "text": "Bring 8 bread for the safer road kit.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "risky_patrol",
+          "label": "Risky Patrol",
+          "text": "Defeat 3 pillagers and carry a crossbow for the riskier route test.",
+          "progress": 0.8,
+          "hint": ""
+        },
+        {
+          "id": "kill_pillagers",
+          "label": "Kill Pillagers",
+          "text": "Defeat 3 pillagers to prove the riskier road can be defended.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "bring_crossbow",
+          "label": "Bring Crossbow",
+          "text": "Carry 1 crossbow as proof of the risky patrol.",
+          "progress": 0.8,
+          "hint": ""
+        },
+        {
+          "id": "safe_return",
+          "label": "Safe Return",
+          "text": "Return to the cartographer with the safer road kit.",
+          "progress": 1,
+          "hint": ""
+        },
+        {
+          "id": "risky_return",
+          "label": "Risky Return",
+          "text": "Return to the cartographer after the risky patrol.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 240,
+        "reputation": 15,
+        "gossipReputation": 6,
+        "lootTable": "villagerretaliation:quest/the_atlas_test",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "6-10",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Compass",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "The atlas has pages, markers, and memory. Now it needs judgment.",
+          "Choose the test: a safer supply road anyone can repeat, or a riskier road that proves the atlas can survive bad company."
+        ],
+        "accept": "Take the safer road",
+        "decline": "Another time",
+        "started": [],
+        "reminder": [
+          "Choose the safer road for lanterns and bread, or the riskier road for a pillager patrol and crossbow proof.",
+          "Bring 4 lanterns and 8 bread for the safer route test.",
+          "Defeat 3 pillagers and carry a crossbow as proof of the riskier route test."
+        ],
+        "completed": [
+          "The safer test is passed. The atlas now knows that mercy is also a route.",
+          "The riskier test is passed. The atlas now knows that danger can be measured without being worshiped."
+        ],
+        "missing": [
+          "The safe road kit is still missing pieces.",
+          "The risky patrol still needs proof."
+        ],
+        "stages": [
+          {
+            "stageId": "choose_test",
+            "label": "Choose Test",
+            "trackerText": "Choose the safer or riskier atlas test route.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Atlas Test",
+                "lines": [
+                  "The atlas has pages, markers, and memory. Now it needs judgment.",
+                  "Choose the test: a safer supply road anyone can repeat, or a riskier road that proves the atlas can survive bad company."
+                ],
+                "responses": [
+                  {
+                    "id": "safe",
+                    "label": "Take the safer road",
+                    "lines": [
+                      "Good. A safer road is not a weaker test; it just asks whether the atlas can keep people fed and lit."
+                    ],
+                    "targetStageId": "safe_supplies",
+                    "destination": "Next: Safe Supplies"
+                  },
+                  {
+                    "id": "risky",
+                    "label": "Take the risky road",
+                    "lines": [
+                      "Risky road it is. Come back with proof the danger was real, not just imagined from a warm room."
+                    ],
+                    "targetStageId": "risky_patrol",
+                    "destination": "Next: Risky Patrol"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "Choose whether the atlas should prove a safer road or a riskier one."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the test",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will choose",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Choose the safer road for lanterns and bread, or the riskier road for a pillager patrol and crossbow proof."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "We are not carrying that test right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the atlas keeps studying instead of deciding."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A test is only useful if you choose it honestly."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "safe_supplies",
+            "label": "Safe Supplies",
+            "trackerText": "Bring 4 lanterns and 8 bread for the safer route test.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "A safe road still needs proof. Bring lanterns and bread, the things a traveler notices only when they are missing."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the kit",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 4 lanterns and 8 bread for the safer route test."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "We are not carrying that test right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The safer road still deserves respect."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "risky_patrol",
+            "label": "Risky Patrol",
+            "trackerText": "Defeat 3 pillagers and carry a crossbow for the riskier route test.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "The riskier road needs proof that danger was not just guessed at from a safe table."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the patrol",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 pillagers and carry a crossbow as proof of the riskier route test."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "We are not carrying that test right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Risk is not courage until someone returns with the account."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "safe_return",
+            "label": "Safe Return",
+            "trackerText": "Return to the cartographer with the safer road kit.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "A safe road with light and food. That is not glamorous, which is why it is useful."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Finish the safer test",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Safe"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_safe",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The safer test is passed. The atlas now knows that mercy is also a route."
+                ]
+              },
+              {
+                "sceneId": "complete_safe",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The safe road kit is still missing pieces."
+                ]
+              },
+              {
+                "sceneId": "complete_safe",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I still need the safer road kit before we call this passed."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Bring the kit when the road is ready."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "risky_return",
+            "label": "Risky Return",
+            "trackerText": "Return to the cartographer after the risky patrol.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "You chose the riskier road and came back with proof. That is the part an atlas cannot fake."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Finish the risky test",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Risky"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_risky",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The riskier test is passed. The atlas now knows that danger can be measured without being worshiped."
+                ]
+              },
+              {
+                "sceneId": "complete_risky",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The risky patrol still needs proof."
+                ]
+              },
+              {
+                "sceneId": "complete_risky",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I still need the patrol proof before we call this passed."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Bring the proof when the road is ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "choose_test",
+            "label": "Choose Test",
+            "trackerText": "Choose the safer or riskier atlas test route.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Atlas Test",
+                "lines": [
+                  "The atlas has pages, markers, and memory. Now it needs judgment.",
+                  "Choose the test: a safer supply road anyone can repeat, or a riskier road that proves the atlas can survive bad company."
+                ],
+                "responses": [
+                  {
+                    "id": "safe",
+                    "label": "Take the safer road",
+                    "lines": [
+                      "Good. A safer road is not a weaker test; it just asks whether the atlas can keep people fed and lit."
+                    ],
+                    "targetStageId": "safe_supplies",
+                    "destination": "Next: Safe Supplies"
+                  },
+                  {
+                    "id": "risky",
+                    "label": "Take the risky road",
+                    "lines": [
+                      "Risky road it is. Come back with proof the danger was real, not just imagined from a warm room."
+                    ],
+                    "targetStageId": "risky_patrol",
+                    "destination": "Next: Risky Patrol"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "Choose whether the atlas should prove a safer road or a riskier one."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the test",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will choose",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Choose the safer road for lanterns and bread, or the riskier road for a pillager patrol and crossbow proof."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "We are not carrying that test right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the atlas keeps studying instead of deciding."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A test is only useful if you choose it honestly."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "safe_supplies",
+            "label": "Safe Supplies",
+            "trackerText": "Bring 4 lanterns and 8 bread for the safer route test.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "A safe road still needs proof. Bring lanterns and bread, the things a traveler notices only when they are missing."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the kit",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 4 lanterns and 8 bread for the safer route test."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "We are not carrying that test right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The safer road still deserves respect."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "risky_patrol",
+            "label": "Risky Patrol",
+            "trackerText": "Defeat 3 pillagers and carry a crossbow for the riskier route test.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "The riskier road needs proof that danger was not just guessed at from a safe table."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the patrol",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 pillagers and carry a crossbow as proof of the riskier route test."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "We are not carrying that test right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Risk is not courage until someone returns with the account."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "safe_return",
+            "label": "Safe Return",
+            "trackerText": "Return to the cartographer with the safer road kit.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "A safe road with light and food. That is not glamorous, which is why it is useful."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Finish the safer test",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Safe"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_safe",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The safer test is passed. The atlas now knows that mercy is also a route."
+                ]
+              },
+              {
+                "sceneId": "complete_safe",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The safe road kit is still missing pieces."
+                ]
+              },
+              {
+                "sceneId": "complete_safe",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I still need the safer road kit before we call this passed."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Bring the kit when the road is ready."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "risky_return",
+            "label": "Risky Return",
+            "trackerText": "Return to the cartographer after the risky patrol.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About The Atlas Test",
+                "lines": [
+                  "You chose the riskier road and came back with proof. That is the part an atlas cannot fake."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Finish the risky test",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Risky"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_risky",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The riskier test is passed. The atlas now knows that danger can be measured without being worshiped."
+                ]
+              },
+              {
+                "sceneId": "complete_risky",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The risky patrol still needs proof."
+                ]
+              },
+              {
+                "sceneId": "complete_risky",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I still need the patrol proof before we call this passed."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Bring the proof when the road is ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 4
+    },
+    {
+      "id": "villagerretaliation:choose_the_horizon",
+      "slug": "choose_the_horizon",
+      "title": "Choose The Horizon",
+      "description": "Set the completed atlas toward the drowned coast or the dark roof road.",
+      "questline": "cartographers_atlas",
+      "questlineLabel": "Cartographers Atlas",
+      "group": "exploration",
+      "groupLabel": "Exploration",
+      "tags": [
+        "group.exploration"
+      ],
+      "relationKey": "questline:cartographers_atlas",
+      "parent": "villagerretaliation:the_atlas_test",
+      "parentSlug": "the_atlas_test",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:the_atlas_test",
+          "slug": "the_atlas_test"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Master",
+        "professions": [
+          "Cartographer"
+        ],
+        "skills": [
+          {
+            "skill": "Cartography",
+            "min": 48,
+            "max": null
+          }
+        ]
+      },
+      "target": {
+        "structure": "Monument",
+        "proofItem": "",
+        "searchRadius": 384,
+        "discoveryRadius": 160
+      },
+      "objectives": [
+        "Choose Choice: Coast or Dark Roof",
+        "Visit Monument",
+        "4 Prismarine Crystals",
+        "4 Prismarine Shard",
+        "Visit Woodland Mansion",
+        "6 Book",
+        "1 Totem Of Undying"
+      ],
+      "steps": [
+        {
+          "id": "started",
+          "label": "Started",
+          "text": "Choose the final atlas horizon from the cartographer's branch options.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "choose_route",
+          "label": "Choose Route",
+          "text": "Choose the final atlas horizon with the cartographer.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "coast_final",
+          "label": "Coast Final",
+          "text": "Reach the Ocean Monument, then bring prismarine crystals and shards.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "visit_monument",
+          "label": "Visit Monument",
+          "text": "Reach the Ocean Monument near {target_x}, {target_z}.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "bring_prismarine_crystals",
+          "label": "Bring Prismarine Crystals",
+          "text": "Bring 4 prismarine crystals to bind the drowned coast horizon.",
+          "progress": 0.8,
+          "hint": ""
+        },
+        {
+          "id": "bring_prismarine_shards",
+          "label": "Bring Prismarine Shards",
+          "text": "Bring 4 prismarine shards to set the coast margin.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "dark_roof_final",
+          "label": "Dark Roof Final",
+          "text": "Reach the Woodland Mansion, then bring books and a totem.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "visit_mansion",
+          "label": "Visit Mansion",
+          "text": "Reach the Woodland Mansion near {target_x}, {target_z}.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "bring_books",
+          "label": "Bring Books",
+          "text": "Bring 6 books for the dark roof index.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "carry_totem",
+          "label": "Carry Totem",
+          "text": "Carry a Totem of Undying as proof the dark roof road was not imaginary.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "coast_chosen",
+          "label": "Coast Chosen",
+          "text": "Return to the cartographer to set the drowned coast horizon.",
+          "progress": 1,
+          "hint": ""
+        },
+        {
+          "id": "dark_roof_chosen",
+          "label": "Dark Roof Chosen",
+          "text": "Return to the cartographer to set the dark roof horizon.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 360,
+        "reputation": 20,
+        "gossipReputation": 9,
         "lootTable": "villagerretaliation:quest/choose_the_horizon",
         "loot": [
           {
@@ -946,35 +4859,774 @@ window.VR_WIKI_DATA = {
       "rules": [
         "One-time",
         "Locked to the quest giver",
-        "Turn-in items are not consumed on completion"
+        "Turn-in items are consumed on completion"
       ],
       "dialogue": {
         "offer": [
-          "The atlas forks. One route follows drowned stone under the sea. The other follows a roof so dark birds avoid it."
+          "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for a horizon.",
+          "Choose the drowned coast if you want the atlas to follow water and ruins. Choose the dark roof road if you want it to follow danger under old timber."
         ],
-        "accept": "Open the atlas",
+        "accept": "Choose the drowned coast",
         "decline": "Another time",
-        "started": [
-          "The branch page is open. Choose the drowned coast or the dark roof road from my notes."
-        ],
+        "started": [],
         "reminder": [
-          "Choose the drowned coast for ocean ruins, or the dark roof road for woodland mansions. The atlas will follow one branch."
+          "Choose the drowned coast for water, prismarine, and ocean ruins. Choose the dark roof road for books, illagers, and a mansion horizon.",
+          "Reach the Ocean Monument near the mark, then bring 4 prismarine crystals and 4 prismarine shards to bind the drowned coast horizon.",
+          "Reach the Woodland Mansion near the mark, then bring 6 books and carry a Totem of Undying to bind the dark roof road."
         ],
         "completed": [
-          "Done. The atlas will follow the road you chose."
+          "Done. The atlas has chosen the drowned coast, and the old blank promise has become a horizon.",
+          "Done. The atlas has chosen the dark roof road, and the old blank promise has become a horizon."
         ],
         "missing": [
-          "Choose a route first.",
-          "Choose a route from the branch notes before I set the ink."
-        ]
+          "The coast binding still needs the monument mark and prismarine proof.",
+          "The dark roof binding still needs the mansion mark, the books, and the totem proof."
+        ],
+        "stages": [
+          {
+            "stageId": "started",
+            "label": "Started",
+            "trackerText": "Choose the final atlas horizon from the cartographer's branch options.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Choose The Horizon",
+                "lines": [
+                  "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for a horizon.",
+                  "Choose the drowned coast if you want the atlas to follow water and ruins. Choose the dark roof road if you want it to follow danger under old timber."
+                ],
+                "responses": [
+                  {
+                    "id": "coast",
+                    "label": "Choose the drowned coast",
+                    "lines": [
+                      "Then we choose the coast. Keep your eyes on drowned stone, and do not trust quiet water."
+                    ],
+                    "targetStageId": "coast_final",
+                    "destination": "Next: Coast Final"
+                  },
+                  {
+                    "id": "dark_roof",
+                    "label": "Choose the dark roof road",
+                    "lines": [
+                      "Then we choose the dark roof road. If the house looks back, look back harder."
+                    ],
+                    "targetStageId": "dark_roof_final",
+                    "destination": "Next: Dark Roof Final"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Horizon",
+                "lines": [
+                  "This is the final fork. Coast or dark roof; water-stone or old timber."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the fork",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will choose",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Choose the drowned coast for water, prismarine, and ocean ruins. Choose the dark roof road for books, illagers, and a mansion horizon."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your horizon page open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the horizon stays unchosen, which is a kind of answer but not a useful one."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Choose with both eyes open."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "coast_final",
+            "label": "Coast Final",
+            "trackerText": "Reach the Ocean Monument, then bring prismarine crystals and shards.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Horizon",
+                "lines": [
+                  "The drowned coast needs prismarine proof before I can set it into the final folio."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the proof",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Reach the Ocean Monument near the mark, then bring 4 prismarine crystals and 4 prismarine shards to bind the drowned coast horizon."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your horizon page open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The tide can wait, but it will not wait forever."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "dark_roof_final",
+            "label": "Dark Roof Final",
+            "trackerText": "Reach the Woodland Mansion, then bring books and a totem.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Horizon",
+                "lines": [
+                  "The dark roof road needs books and a totem before I can set it into the final folio."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the proof",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Reach the Woodland Mansion near the mark, then bring 6 books and carry a Totem of Undying to bind the dark roof road."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your horizon page open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The roof will stay dark without our help."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "coast_chosen",
+            "label": "Coast Chosen",
+            "trackerText": "Return to the cartographer to set the drowned coast horizon.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About The Horizon",
+                "lines": [
+                  "The drowned coast proof is here. The atlas can finally point beyond its own margin."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the drowned coast horizon",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Coast"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_coast",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Done. The atlas has chosen the drowned coast, and the old blank promise has become a horizon."
+                ]
+              },
+              {
+                "sceneId": "complete_coast",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The coast binding still needs the monument mark and prismarine proof."
+                ]
+              },
+              {
+                "sceneId": "complete_coast",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot set the coast horizon until the proof is all here."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The coast will keep making noise until we finish."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "dark_roof_chosen",
+            "label": "Dark Roof Chosen",
+            "trackerText": "Return to the cartographer to set the dark roof horizon.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About The Horizon",
+                "lines": [
+                  "The dark roof proof is here. The atlas can finally point beyond its own courage."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the dark roof horizon",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Dark Roof"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_dark_roof",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Done. The atlas has chosen the dark roof road, and the old blank promise has become a horizon."
+                ]
+              },
+              {
+                "sceneId": "complete_dark_roof",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The dark roof binding still needs the mansion mark, the books, and the totem proof."
+                ]
+              },
+              {
+                "sceneId": "complete_dark_roof",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot set the dark roof horizon until the proof is all here."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The roof will stay dark until we finish."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "started",
+            "label": "Started",
+            "trackerText": "Choose the final atlas horizon from the cartographer's branch options.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Choose The Horizon",
+                "lines": [
+                  "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for a horizon.",
+                  "Choose the drowned coast if you want the atlas to follow water and ruins. Choose the dark roof road if you want it to follow danger under old timber."
+                ],
+                "responses": [
+                  {
+                    "id": "coast",
+                    "label": "Choose the drowned coast",
+                    "lines": [
+                      "Then we choose the coast. Keep your eyes on drowned stone, and do not trust quiet water."
+                    ],
+                    "targetStageId": "coast_final",
+                    "destination": "Next: Coast Final"
+                  },
+                  {
+                    "id": "dark_roof",
+                    "label": "Choose the dark roof road",
+                    "lines": [
+                      "Then we choose the dark roof road. If the house looks back, look back harder."
+                    ],
+                    "targetStageId": "dark_roof_final",
+                    "destination": "Next: Dark Roof Final"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Horizon",
+                "lines": [
+                  "This is the final fork. Coast or dark roof; water-stone or old timber."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the fork",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will choose",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Choose the drowned coast for water, prismarine, and ocean ruins. Choose the dark roof road for books, illagers, and a mansion horizon."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your horizon page open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the horizon stays unchosen, which is a kind of answer but not a useful one."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Choose with both eyes open."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "coast_final",
+            "label": "Coast Final",
+            "trackerText": "Reach the Ocean Monument, then bring prismarine crystals and shards.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Horizon",
+                "lines": [
+                  "The drowned coast needs prismarine proof before I can set it into the final folio."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the proof",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Reach the Ocean Monument near the mark, then bring 4 prismarine crystals and 4 prismarine shards to bind the drowned coast horizon."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your horizon page open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The tide can wait, but it will not wait forever."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "dark_roof_final",
+            "label": "Dark Roof Final",
+            "trackerText": "Reach the Woodland Mansion, then bring books and a totem.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About The Horizon",
+                "lines": [
+                  "The dark roof road needs books and a totem before I can set it into the final folio."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the proof",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Reach the Woodland Mansion near the mark, then bring 6 books and carry a Totem of Undying to bind the dark roof road."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your horizon page open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The roof will stay dark without our help."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "coast_chosen",
+            "label": "Coast Chosen",
+            "trackerText": "Return to the cartographer to set the drowned coast horizon.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About The Horizon",
+                "lines": [
+                  "The drowned coast proof is here. The atlas can finally point beyond its own margin."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the drowned coast horizon",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Coast"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_coast",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Done. The atlas has chosen the drowned coast, and the old blank promise has become a horizon."
+                ]
+              },
+              {
+                "sceneId": "complete_coast",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The coast binding still needs the monument mark and prismarine proof."
+                ]
+              },
+              {
+                "sceneId": "complete_coast",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot set the coast horizon until the proof is all here."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The coast will keep making noise until we finish."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "dark_roof_chosen",
+            "label": "Dark Roof Chosen",
+            "trackerText": "Return to the cartographer to set the dark roof horizon.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About The Horizon",
+                "lines": [
+                  "The dark roof proof is here. The atlas can finally point beyond its own courage."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the dark roof horizon",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Dark Roof"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_dark_roof",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Done. The atlas has chosen the dark roof road, and the old blank promise has become a horizon."
+                ]
+              },
+              {
+                "sceneId": "complete_dark_roof",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The dark roof binding still needs the mansion mark, the books, and the totem proof."
+                ]
+              },
+              {
+                "sceneId": "complete_dark_roof",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot set the dark roof horizon until the proof is all here."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The roof will stay dark until we finish."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
       },
-      "questlineOrder": 2
+      "questlineOrder": 5
     },
     {
       "id": "villagerretaliation:chart_the_drowned_coast",
       "slug": "chart_the_drowned_coast",
-      "title": "Chart The Drowned Coast",
-      "description": "Follow the coast branch to an Ocean Monument and return with prismarine proof.",
+      "title": "Chart the Drowned Coast",
+      "description": "Follow the coast horizon to an Ocean Monument and bring back prismarine proof.",
       "questline": "cartographers_atlas",
       "questlineLabel": "Cartographers Atlas",
       "group": "exploration",
@@ -991,7 +5643,7 @@ window.VR_WIKI_DATA = {
           "slug": "choose_the_horizon"
         }
       ],
-      "branchGroup": "villagerretaliation:cartographers_atlas_branch",
+      "branchGroup": "",
       "branchChoices": [],
       "requirements": {
         "minLevel": "Journeyman",
@@ -1007,35 +5659,49 @@ window.VR_WIKI_DATA = {
         ]
       },
       "target": {
-        "structure": "Ocean Monument",
-        "proofItem": "Prismarine Shard",
+        "structure": "Monument",
+        "proofItem": "",
         "searchRadius": 384,
-        "discoveryRadius": 128
+        "discoveryRadius": 160
       },
       "objectives": [
-        "Proof: Prismarine Shard",
-        "3 None",
+        "Visit Monument",
+        "Defeat 3 Guardian",
         "8 Prismarine Shard"
       ],
       "steps": [
         {
-          "id": "travel",
-          "label": "Travel",
+          "id": "survey",
+          "label": "Survey",
           "text": "Reach the Ocean Monument near {target_x}, {target_z}.",
-          "progress": 0.25,
-          "hint": "{distance} blocks {direction}"
+          "progress": 0.35,
+          "hint": ""
         },
         {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Bring prismarine proof from the drowned coast.",
+          "id": "visit_monument",
+          "label": "Visit Monument",
+          "text": "Reach the Ocean Monument near {target_x}, {target_z}.",
+          "progress": 0.35,
+          "hint": ""
+        },
+        {
+          "id": "defeat_guardians",
+          "label": "Defeat Guardians",
+          "text": "Defeat 3 guardians near the drowned coast route.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "bring_prismarine",
+          "label": "Bring Prismarine",
+          "text": "Bring 8 prismarine shards from the drowned coast.",
           "progress": 0.85,
           "hint": ""
         },
         {
           "id": "return",
           "label": "Return",
-          "text": "Return to the cartographer with the coast survey.",
+          "text": "Return to the cartographer with prismarine proof.",
           "progress": 1,
           "hint": ""
         }
@@ -1080,32 +5746,554 @@ window.VR_WIKI_DATA = {
       ],
       "dialogue": {
         "offer": [
-          "The coast route is yours. The atlas has found drowned stone beneath open water."
+          "You chose the coast, so the atlas is listening for drowned stone now.",
+          "An Ocean Monument is singing through the ink. Chart it, survive its guardians, and bring prismarine back."
         ],
-        "accept": "Give me the bearing",
+        "accept": "Chart the coast",
         "decline": "Another time",
         "started": [
-          "The Ocean Monument lies near {target_x}, {target_z}, about {distance} blocks {direction}. Bring prismarine and survive the guardians."
+          "The monument mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, survive the guardians, and bring prismarine."
         ],
         "reminder": [
-          "Ocean Monument near {target_x}, {target_z}. Bring 8 prismarine shards after you reach it and clear enough guardians."
+          "Ocean Monument near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, defeat 3 guardians, and bring 8 prismarine shards."
         ],
         "completed": [
-          "The drowned coast is charted. The atlas has learned how the sea keeps ruins."
+          "The drowned coast is charted. The atlas now knows how waves hide a road without erasing it."
         ],
         "missing": [
-          "Reach the monument itself before I trust the prismarine.",
-          "Bring prismarine proof before I close the coast page.",
-          "The coast page still needs its guardian count and prismarine."
-        ]
+          "The prismarine needs the monument bearing behind it.",
+          "Bring the prismarine proof before I trust the coast mark.",
+          "The coast page still needs its monument, guardian count, and prismarine."
+        ],
+        "stages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Ocean Monument near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Drowned Coast",
+                "lines": [
+                  "You chose the coast, so the atlas is listening for drowned stone now.",
+                  "An Ocean Monument is singing through the ink. Chart it, survive its guardians, and bring prismarine back."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Chart the coast",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Drowned Coast",
+                "lines": [
+                  "The coast route still needs a monument bearing, guardian proof, and prismarine shards."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will dry the coast page for now. The tide can rise again later."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "I will dry the coast page for a day before we ask it to open again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no drowned coast route active right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Ocean Monument near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, defeat 3 guardians, and bring 8 prismarine shards."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have the drowned coast page open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The drowned coast is already charted."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The monument mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, survive the guardians, and bring prismarine."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The coast is throwing glare across the page today. I would rather wait than hand you a false monument mark."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas must choose the coast horizon before this route opens."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Let the drowned coast sink back under the ink for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then keep your boots dry a little longer."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Mind the waterline."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with prismarine proof.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Drowned Coast",
+                "lines": [
+                  "You smell like salt and stubborn stone. Show me the coast proof."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the prismarine notes",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The drowned coast is charted. The atlas now knows how waves hide a road without erasing it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The prismarine needs the monument bearing behind it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the prismarine proof before I trust the coast mark."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The coast page still needs its monument, guardian count, and prismarine."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The coast still needs its proof before I can close the page."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the shards wrapped. Wet ink is honest but messy."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Ocean Monument near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Drowned Coast",
+                "lines": [
+                  "You chose the coast, so the atlas is listening for drowned stone now.",
+                  "An Ocean Monument is singing through the ink. Chart it, survive its guardians, and bring prismarine back."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Chart the coast",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Drowned Coast",
+                "lines": [
+                  "The coast route still needs a monument bearing, guardian proof, and prismarine shards."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will dry the coast page for now. The tide can rise again later."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "I will dry the coast page for a day before we ask it to open again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no drowned coast route active right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Ocean Monument near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, defeat 3 guardians, and bring 8 prismarine shards."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have the drowned coast page open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The drowned coast is already charted."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The monument mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, survive the guardians, and bring prismarine."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The coast is throwing glare across the page today. I would rather wait than hand you a false monument mark."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas must choose the coast horizon before this route opens."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Let the drowned coast sink back under the ink for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then keep your boots dry a little longer."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Mind the waterline."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with prismarine proof.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Drowned Coast",
+                "lines": [
+                  "You smell like salt and stubborn stone. Show me the coast proof."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the prismarine notes",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The drowned coast is charted. The atlas now knows how waves hide a road without erasing it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The prismarine needs the monument bearing behind it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the prismarine proof before I trust the coast mark."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The coast page still needs its monument, guardian count, and prismarine."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The coast still needs its proof before I can close the page."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the shards wrapped. Wet ink is honest but messy."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
       },
-      "questlineOrder": 3
+      "questlineOrder": 6
     },
     {
       "id": "villagerretaliation:ink_in_the_dark_roof",
       "slug": "ink_in_the_dark_roof",
-      "title": "Ink In The Dark Roof",
-      "description": "Follow the dark roof branch to a Woodland Mansion and return with dangerous proof.",
+      "title": "Ink in the Dark Roof",
+      "description": "Follow the dark roof horizon to a Woodland Mansion and return with its stolen records.",
       "questline": "cartographers_atlas",
       "questlineLabel": "Cartographers Atlas",
       "group": "exploration",
@@ -1122,7 +6310,7 @@ window.VR_WIKI_DATA = {
           "slug": "choose_the_horizon"
         }
       ],
-      "branchGroup": "villagerretaliation:cartographers_atlas_branch",
+      "branchGroup": "",
       "branchChoices": [],
       "requirements": {
         "minLevel": "Journeyman",
@@ -1132,41 +6320,63 @@ window.VR_WIKI_DATA = {
         "skills": [
           {
             "skill": "Cartography",
-            "min": 28,
+            "min": 30,
             "max": null
           }
         ]
       },
       "target": {
         "structure": "Woodland Mansion",
-        "proofItem": "Totem Of Undying",
+        "proofItem": "",
         "searchRadius": 768,
-        "discoveryRadius": 160
+        "discoveryRadius": 192
       },
       "objectives": [
-        "Proof: Totem Of Undying",
-        "4 None",
+        "Visit Woodland Mansion",
+        "Defeat 4 Vindicator or Evoker",
+        "1 Totem Of Undying",
         "12 Book"
       ],
       "steps": [
         {
-          "id": "travel",
-          "label": "Travel",
+          "id": "survey",
+          "label": "Survey",
           "text": "Reach the Woodland Mansion near {target_x}, {target_z}.",
-          "progress": 0.25,
-          "hint": "{distance} blocks {direction}"
+          "progress": 0.35,
+          "hint": ""
         },
         {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Bring a Totem of Undying and recovered books from the mansion.",
-          "progress": 0.85,
+          "id": "visit_mansion",
+          "label": "Visit Mansion",
+          "text": "Reach the Woodland Mansion near {target_x}, {target_z}.",
+          "progress": 0.35,
+          "hint": ""
+        },
+        {
+          "id": "defeat_illagers",
+          "label": "Defeat Illagers",
+          "text": "Defeat 4 mansion illagers on the dark roof road.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "carry_totem",
+          "label": "Carry Totem",
+          "text": "Carry 1 Totem of Undying as proof from the dark roof road.",
+          "progress": 0.82,
+          "hint": ""
+        },
+        {
+          "id": "bring_books",
+          "label": "Bring Books",
+          "text": "Bring 12 books from the mansion shelves.",
+          "progress": 0.92,
           "hint": ""
         },
         {
           "id": "return",
           "label": "Return",
-          "text": "Return to the cartographer with the dark roof survey.",
+          "text": "Return to the cartographer with the mansion records.",
           "progress": 1,
           "hint": ""
         }
@@ -1205,26 +6415,548 @@ window.VR_WIKI_DATA = {
       ],
       "dialogue": {
         "offer": [
-          "The dark roof route is yours. The atlas has found a house that thinks it is a fortress."
+          "You chose the dark roof, so the atlas is listening for timber where old trouble nests.",
+          "A Woodland Mansion is dragging ink off the edge of the page. Chart it, break the patrol, and bring back the books they kept from better hands."
         ],
-        "accept": "Give me the bearing",
+        "accept": "Chart the dark roof",
         "decline": "Another time",
         "started": [
-          "The Woodland Mansion lies near {target_x}, {target_z}, about {distance} blocks {direction}. Bring books and a totem if the halls let you leave."
+          "The mansion mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, break the patrol, and bring the books."
         ],
         "reminder": [
-          "Woodland Mansion near {target_x}, {target_z}. Bring 12 books and a Totem of Undying after you reach it."
+          "Woodland Mansion near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, defeat 4 vindicators or evokers, and bring 12 books."
         ],
         "completed": [
-          "The dark roof road is charted. I will not ask why some of the books are whispering."
+          "The dark roof road is charted. The atlas now knows that some houses are warnings pretending to be destinations."
         ],
         "missing": [
-          "The books need the mansion's shadow behind them.",
-          "Bring a Totem of Undying before I close the dark roof page.",
-          "The dark roof page still needs its illager count and recovered books."
-        ]
+          "The books need the mansion bearing behind them.",
+          "Bring the mansion proof before I trust the dark roof mark.",
+          "The dark roof page still needs its mansion, patrol count, and records."
+        ],
+        "stages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Woodland Mansion near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Dark Roof Road",
+                "lines": [
+                  "You chose the dark roof, so the atlas is listening for timber where old trouble nests.",
+                  "A Woodland Mansion is dragging ink off the edge of the page. Chart it, break the patrol, and bring back the books they kept from better hands."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Chart the dark roof",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Dark Roof Road",
+                "lines": [
+                  "The dark roof road still needs a mansion bearing, illager proof, and stolen records."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will shutter the dark roof page for now."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "I will shutter the dark roof page for a day. Let the ink stop watching us."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no dark roof route active right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Woodland Mansion near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, defeat 4 vindicators or evokers, and bring 12 books."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have the dark roof page open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The dark roof road is already charted."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The mansion mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, break the patrol, and bring the books."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The mansion is hiding too well today. I would rather wait than send you chasing a bad mark."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas must choose the dark roof horizon before this route opens."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Let the dark roof road close for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Reasonable. Some roofs are darker for good cause."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not trust a quiet hallway."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the mansion records.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Dark Roof Road",
+                "lines": [
+                  "The dark roof left ink on you. Let me see what you carried out."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the mansion records",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The dark roof road is charted. The atlas now knows that some houses are warnings pretending to be destinations."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The books need the mansion bearing behind them."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the mansion proof before I trust the dark roof mark."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The dark roof page still needs its mansion, patrol count, and records."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The dark roof road still needs its proof before I can close the page."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the records closed until we can read them safely."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Woodland Mansion near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Dark Roof Road",
+                "lines": [
+                  "You chose the dark roof, so the atlas is listening for timber where old trouble nests.",
+                  "A Woodland Mansion is dragging ink off the edge of the page. Chart it, break the patrol, and bring back the books they kept from better hands."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Chart the dark roof",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Dark Roof Road",
+                "lines": [
+                  "The dark roof road still needs a mansion bearing, illager proof, and stolen records."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will shutter the dark roof page for now."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "I will shutter the dark roof page for a day. Let the ink stop watching us."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no dark roof route active right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Woodland Mansion near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, defeat 4 vindicators or evokers, and bring 12 books."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have the dark roof page open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The dark roof road is already charted."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The mansion mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Chart it, break the patrol, and bring the books."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The mansion is hiding too well today. I would rather wait than send you chasing a bad mark."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas must choose the dark roof horizon before this route opens."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Let the dark roof road close for now?"
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Reasonable. Some roofs are darker for good cause."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not trust a quiet hallway."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the mansion records.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Dark Roof Road",
+                "lines": [
+                  "The dark roof left ink on you. Let me see what you carried out."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the mansion records",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The dark roof road is charted. The atlas now knows that some houses are warnings pretending to be destinations."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The books need the mansion bearing behind them."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the mansion proof before I trust the dark roof mark."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The dark roof page still needs its mansion, patrol count, and records."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The dark roof road still needs its proof before I can close the page."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the records closed until we can read them safely."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
       },
-      "questlineOrder": 4
+      "questlineOrder": 7
     },
     {
       "id": "villagerretaliation:nether_meridian",
@@ -1239,9 +6971,13 @@ window.VR_WIKI_DATA = {
         "group.exploration"
       ],
       "relationKey": "questline:cartographers_atlas",
-      "parent": "",
-      "parentSlug": "",
+      "parent": "villagerretaliation:choose_the_horizon",
+      "parentSlug": "choose_the_horizon",
       "prerequisites": [
+        {
+          "id": "villagerretaliation:choose_the_horizon",
+          "slug": "choose_the_horizon"
+        },
         {
           "id": "villagerretaliation:chart_the_drowned_coast",
           "slug": "chart_the_drowned_coast"
@@ -1268,28 +7004,42 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Fortress",
-        "proofItem": "Blaze Rod",
+        "proofItem": "",
         "searchRadius": 320,
         "discoveryRadius": 128
       },
       "objectives": [
-        "Proof: Blaze Rod",
+        "Visit Fortress",
         "3 Blaze Rod",
         "8 Nether Wart"
       ],
       "steps": [
         {
-          "id": "travel",
-          "label": "Travel",
+          "id": "survey",
+          "label": "Survey",
           "text": "Reach the Nether Fortress near {target_x}, {target_z} in {target_dimension}.",
-          "progress": 0.25,
-          "hint": "{distance} blocks {direction}"
+          "progress": 0.35,
+          "hint": ""
         },
         {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Bring blaze rods and Nether Wart from the fortress route.",
-          "progress": 0.85,
+          "id": "visit_fortress",
+          "label": "Visit Fortress",
+          "text": "Reach the Nether Fortress near {target_x}, {target_z}.",
+          "progress": 0.35,
+          "hint": ""
+        },
+        {
+          "id": "bring_blaze_rods",
+          "label": "Bring Blaze Rods",
+          "text": "Bring 3 blaze rods for heat-proof bearings.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "bring_nether_wart",
+          "label": "Bring Nether Wart",
+          "text": "Bring 8 Nether Wart from the fortress route.",
+          "progress": 0.9,
           "hint": ""
         },
         {
@@ -1340,32 +7090,472 @@ window.VR_WIKI_DATA = {
       ],
       "dialogue": {
         "offer": [
-          "Your atlas has crossed enough Overworld roads. It is time to see whether a map can survive fire."
+          "The atlas survived an Overworld horizon. Now we find out if its lines can cross fire.",
+          "Find a Nether Fortress, bring blaze rods and Nether Wart, and do not let the map learn to burn."
         ],
-        "accept": "Mark the Nether",
+        "accept": "Chart the Nether meridian",
         "decline": "Another time",
         "started": [
-          "The fortress bearing sits near {target_x}, {target_z}. Bring 3 blaze rods and 8 Nether Wart."
+          "The fortress mark is near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring blaze rods and Nether Wart."
         ],
         "reminder": [
-          "Nether Fortress near {target_x}, {target_z}. Bring 3 blaze rods and 8 Nether Wart."
+          "Nether Fortress near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring 3 blaze rods and 8 Nether Wart."
         ],
         "completed": [
-          "The Nether meridian is drawn. That line should not exist, which makes it very valuable."
+          "The Nether meridian is drawn. We have a road through heat now."
         ],
         "missing": [
-          "Reach the fortress first. The supplies need the bearing.",
-          "Bring blaze rods before I close the meridian.",
-          "The meridian still needs blaze rods and Nether Wart."
-        ]
+          "The supplies need a fortress bearing behind them.",
+          "Bring blaze rods from the fortress route before I trust the meridian.",
+          "The meridian still needs the fortress bearing, blaze rods, and Nether Wart."
+        ],
+        "stages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Nether Fortress near {target_x}, {target_z} in {target_dimension}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Nether Meridian",
+                "lines": [
+                  "The atlas survived an Overworld horizon. Now we find out if its lines can cross fire.",
+                  "Find a Nether Fortress, bring blaze rods and Nether Wart, and do not let the map learn to burn."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Chart the Nether meridian",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Nether Meridian",
+                "lines": [
+                  "The Nether page still needs a fortress bearing, blaze rods, and Nether Wart."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Nether Fortress near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring 3 blaze rods and 8 Nether Wart."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your Nether meridian open right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The Nether meridian is already drawn."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The fortress mark is near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring blaze rods and Nether Wart."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The Nether mark refuses to settle from here."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas needs one horizon commission complete before it can survive the Nether."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Reasonable. The Nether punishes casual curiosity."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the page away from sparks."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the Nether meridian.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Nether Meridian",
+                "lines": [
+                  "The ink warped, but the line held. Let me see the meridian proof."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the Nether meridian",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The Nether meridian is drawn. We have a road through heat now."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The supplies need a fortress bearing behind them."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring blaze rods from the fortress route before I trust the meridian."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The meridian still needs the fortress bearing, blaze rods, and Nether Wart."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The Nether meridian still needs its proof before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the hot ink away from the folio edge."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Nether Fortress near {target_x}, {target_z} in {target_dimension}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Nether Meridian",
+                "lines": [
+                  "The atlas survived an Overworld horizon. Now we find out if its lines can cross fire.",
+                  "Find a Nether Fortress, bring blaze rods and Nether Wart, and do not let the map learn to burn."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Chart the Nether meridian",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Nether Meridian",
+                "lines": [
+                  "The Nether page still needs a fortress bearing, blaze rods, and Nether Wart."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Nether Fortress near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring 3 blaze rods and 8 Nether Wart."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your Nether meridian open right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The Nether meridian is already drawn."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The fortress mark is near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring blaze rods and Nether Wart."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The Nether mark refuses to settle from here."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas needs one horizon commission complete before it can survive the Nether."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Reasonable. The Nether punishes casual curiosity."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the page away from sparks."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the Nether meridian.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Nether Meridian",
+                "lines": [
+                  "The ink warped, but the line held. Let me see the meridian proof."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the Nether meridian",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The Nether meridian is drawn. We have a road through heat now."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The supplies need a fortress bearing behind them."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring blaze rods from the fortress route before I trust the meridian."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The meridian still needs the fortress bearing, blaze rods, and Nether Wart."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The Nether meridian still needs its proof before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the hot ink away from the folio edge."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
       },
-      "questlineOrder": 5
+      "questlineOrder": 8
     },
     {
       "id": "villagerretaliation:eye_of_the_last_room",
       "slug": "eye_of_the_last_room",
-      "title": "Eye Of The Last Room",
-      "description": "Use the completed atlas to find a Stronghold and return with End-bound proof.",
+      "title": "Eye of the Last Room",
+      "description": "Follow the atlas to a Stronghold and return with Ender Eye bearings.",
       "questline": "cartographers_atlas",
       "questlineLabel": "Cartographers Atlas",
       "group": "exploration",
@@ -1399,33 +7589,48 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Stronghold",
-        "proofItem": "Ender Eye",
+        "proofItem": "",
         "searchRadius": 1024,
         "discoveryRadius": 192
       },
       "objectives": [
-        "Proof: Ender Eye",
+        "Visit Stronghold",
+        "1 Ender Eye",
         "4 Ender Pearl"
       ],
       "steps": [
         {
-          "id": "travel",
-          "label": "Travel",
+          "id": "survey",
+          "label": "Survey",
           "text": "Reach the Stronghold near {target_x}, {target_z}.",
-          "progress": 0.25,
-          "hint": "{distance} blocks {direction}"
+          "progress": 0.35,
+          "hint": ""
         },
         {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Bring an Eye of Ender and 4 ender pearls from the stronghold route.",
+          "id": "visit_stronghold",
+          "label": "Visit Stronghold",
+          "text": "Reach the Stronghold near {target_x}, {target_z}.",
+          "progress": 0.35,
+          "hint": ""
+        },
+        {
+          "id": "carry_eye",
+          "label": "Carry Eye",
+          "text": "Carry 1 Eye of Ender as proof of the last room.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "bring_pearls",
+          "label": "Bring Pearls",
+          "text": "Bring 4 Ender Pearls to stabilize the bearing.",
           "progress": 0.85,
           "hint": ""
         },
         {
           "id": "return",
           "label": "Return",
-          "text": "Return to the cartographer with the stronghold bearing.",
+          "text": "Return to the cartographer with the last room bearing.",
           "progress": 1,
           "hint": ""
         }
@@ -1433,7 +7638,7 @@ window.VR_WIKI_DATA = {
       "rewards": {
         "experience": 620,
         "reputation": 28,
-        "gossipReputation": 12,
+        "gossipReputation": 14,
         "lootTable": "villagerretaliation:quest/eye_of_the_last_room",
         "loot": [
           {
@@ -1470,26 +7675,466 @@ window.VR_WIKI_DATA = {
       ],
       "dialogue": {
         "offer": [
-          "The atlas has one Overworld secret left: a room built around an eye that points away from home."
+          "The Nether line cooled into an arrow. It points toward a room people usually find by throwing eyes and hoping.",
+          "Find the Stronghold, carry an Eye of Ender, and bring pearls so the atlas can learn the last room without losing itself."
         ],
-        "accept": "Mark the Stronghold",
+        "accept": "Find the last room",
         "decline": "Another time",
         "started": [
-          "The Stronghold bearing sits near {target_x}, {target_z}, about {distance} blocks {direction}. Bring an Eye of Ender and 4 ender pearls."
+          "The Stronghold mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Carry an Eye of Ender and bring 4 Ender Pearls."
         ],
         "reminder": [
-          "Stronghold near {target_x}, {target_z}. Bring an Eye of Ender and 4 ender pearls after you reach it."
+          "Stronghold near {target_x}, {target_z}, about {distance} blocks {direction}. Reach it, carry an Eye of Ender, and bring 4 Ender Pearls."
         ],
         "completed": [
-          "The last room is inked. The atlas has found the door at the edge of the world."
+          "The last room bearing is drawn. The atlas can now point at a threshold without mistaking it for an ending."
         ],
         "missing": [
-          "Reach the Stronghold first. The eye alone is not the bearing.",
-          "Bring an Eye of Ender before I close this page.",
-          "The last-room page still needs ender pearls."
-        ]
+          "The Eye needs the Stronghold bearing behind it.",
+          "Carry the Eye of Ender before I trust the last room mark.",
+          "The page still needs the Stronghold bearing, Eye, and Ender Pearls."
+        ],
+        "stages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Stronghold near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Eye of the Last Room",
+                "lines": [
+                  "The Nether line cooled into an arrow. It points toward a room people usually find by throwing eyes and hoping.",
+                  "Find the Stronghold, carry an Eye of Ender, and bring pearls so the atlas can learn the last room without losing itself."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Find the last room",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Last Room",
+                "lines": [
+                  "The last room page still needs a Stronghold bearing, an Eye of Ender, and Ender Pearls."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Stronghold near {target_x}, {target_z}, about {distance} blocks {direction}. Reach it, carry an Eye of Ender, and bring 4 Ender Pearls."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have the last room page open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The last room bearing is already drawn."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The Stronghold mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Carry an Eye of Ender and bring 4 Ender Pearls."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The last room turns away from the table today."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas needs the Nether meridian before it can read the last room."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "The last room is patient in a way I do not like."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not throw every eye at once."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the last room bearing.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Last Room",
+                "lines": [
+                  "You found the room that keeps the End behind a circle. Show me the bearing."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the last room bearing",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The last room bearing is drawn. The atlas can now point at a threshold without mistaking it for an ending."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The Eye needs the Stronghold bearing behind it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Carry the Eye of Ender before I trust the last room mark."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The page still needs the Stronghold bearing, Eye, and Ender Pearls."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The last room bearing still needs its proof before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The circle can wait until you are ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Stronghold near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Eye of the Last Room",
+                "lines": [
+                  "The Nether line cooled into an arrow. It points toward a room people usually find by throwing eyes and hoping.",
+                  "Find the Stronghold, carry an Eye of Ender, and bring pearls so the atlas can learn the last room without losing itself."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Find the last room",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Last Room",
+                "lines": [
+                  "The last room page still needs a Stronghold bearing, an Eye of Ender, and Ender Pearls."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Stronghold near {target_x}, {target_z}, about {distance} blocks {direction}. Reach it, carry an Eye of Ender, and bring 4 Ender Pearls."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have the last room page open for you right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The last room bearing is already drawn."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The Stronghold mark is near {target_x}, {target_z}, about {distance} blocks {direction}. Carry an Eye of Ender and bring 4 Ender Pearls."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The last room turns away from the table today."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas needs the Nether meridian before it can read the last room."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "The last room is patient in a way I do not like."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not throw every eye at once."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the last room bearing.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Last Room",
+                "lines": [
+                  "You found the room that keeps the End behind a circle. Show me the bearing."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the last room bearing",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The last room bearing is drawn. The atlas can now point at a threshold without mistaking it for an ending."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The Eye needs the Stronghold bearing behind it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Carry the Eye of Ender before I trust the last room mark."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The page still needs the Stronghold bearing, Eye, and Ender Pearls."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The last room bearing still needs its proof before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The circle can wait until you are ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
       },
-      "questlineOrder": 6
+      "questlineOrder": 9
     },
     {
       "id": "villagerretaliation:end_city_margin",
@@ -1529,28 +8174,50 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "End City",
-        "proofItem": "Shulker Shell",
+        "proofItem": "",
         "searchRadius": 1024,
         "discoveryRadius": 192
       },
       "objectives": [
-        "Proof: Shulker Shell",
+        "Visit End City",
+        "Defeat 2 Shulker",
         "2 Shulker Shell",
         "16 Chorus Fruit"
       ],
       "steps": [
         {
-          "id": "travel",
-          "label": "Travel",
+          "id": "survey",
+          "label": "Survey",
           "text": "Reach the End City near {target_x}, {target_z} in {target_dimension}.",
-          "progress": 0.25,
-          "hint": "{distance} blocks {direction}"
+          "progress": 0.35,
+          "hint": ""
         },
         {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Bring shulker shells and chorus fruit from the outer islands.",
-          "progress": 0.85,
+          "id": "visit_end_city",
+          "label": "Visit End City",
+          "text": "Reach the End City near {target_x}, {target_z}.",
+          "progress": 0.35,
+          "hint": ""
+        },
+        {
+          "id": "defeat_shulkers",
+          "label": "Defeat Shulkers",
+          "text": "Defeat 2 shulkers in the End City margin.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "bring_shulker_shells",
+          "label": "Bring Shulker Shells",
+          "text": "Bring 2 shulker shells from the End City.",
+          "progress": 0.8,
+          "hint": ""
+        },
+        {
+          "id": "bring_chorus_fruit",
+          "label": "Bring Chorus Fruit",
+          "text": "Bring 16 chorus fruit from the outer islands.",
+          "progress": 0.9,
           "hint": ""
         },
         {
@@ -1607,26 +8274,466 @@ window.VR_WIKI_DATA = {
       ],
       "dialogue": {
         "offer": [
-          "There is one margin left. The atlas wants the outer islands, where maps become suggestions."
+          "The last blank margin waits in the End, where roads float and cities pretend distance still makes sense.",
+          "Find the city, record its shulkers, and bring shells with chorus fruit. This is how the outer margin learns to hold."
         ],
-        "accept": "Mark the End City",
+        "accept": "Chart the End margin",
         "decline": "Another time",
         "started": [
-          "The End City mark sits near {target_x}, {target_z}. Bring 2 shulker shells and 16 chorus fruit if the islands let you return."
+          "The city mark is near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring shulker shells and chorus fruit after you chart it."
         ],
         "reminder": [
-          "End City near {target_x}, {target_z}. Bring 2 shulker shells and 16 chorus fruit."
+          "End City near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Defeat 2 shulkers and bring 2 shulker shells with 16 chorus fruit."
         ],
         "completed": [
-          "The Cartographer's Atlas is complete. It began with paper and ended past the edge of the world. That is a fine road."
+          "There it is: village road, ruin road, chosen horizon, fire road, last room, outer island. A whole atlas, and you walked it into truth."
         ],
         "missing": [
-          "Reach the End City first. The margin needs the place, not only the shell.",
-          "Bring shulker shells before I bind the atlas.",
-          "The final margin still needs shulker shells and chorus fruit."
-        ]
+          "The shells need the End City bearing behind them.",
+          "Bring shulker shells before I bind the final margin.",
+          "The End margin still needs the city bearing, shulkers, shells, and chorus fruit."
+        ],
+        "stages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the End City near {target_x}, {target_z} in {target_dimension}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "End City Margin",
+                "lines": [
+                  "The last blank margin waits in the End, where roads float and cities pretend distance still makes sense.",
+                  "Find the city, record its shulkers, and bring shells with chorus fruit. This is how the outer margin learns to hold."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Chart the End margin",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About End City Margin",
+                "lines": [
+                  "The End margin still needs the city bearing, shulker proof, shells, and chorus fruit."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "End City near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Defeat 2 shulkers and bring 2 shulker shells with 16 chorus fruit."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your End margin open right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The End City margin is already complete."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The city mark is near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring shulker shells and chorus fruit after you chart it."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The End City mark is too far for the atlas to catch from here."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas needs the Stronghold bearing before the End margin can be drawn."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "The outer islands are not going anywhere. That is one of their few courtesies."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Tie the page down before you open it near a portal."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the finished atlas margin.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About End City Margin",
+                "lines": [
+                  "You brought the outer islands back on your boots. Let me bind the final margin."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Bind the End City margin",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "There it is: village road, ruin road, chosen horizon, fire road, last room, outer island. A whole atlas, and you walked it into truth."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The shells need the End City bearing behind them."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring shulker shells before I bind the final margin."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The End margin still needs the city bearing, shulkers, shells, and chorus fruit."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The End margin still needs its proof before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the shells from rattling near the page edge."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the End City near {target_x}, {target_z} in {target_dimension}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "End City Margin",
+                "lines": [
+                  "The last blank margin waits in the End, where roads float and cities pretend distance still makes sense.",
+                  "Find the city, record its shulkers, and bring shells with chorus fruit. This is how the outer margin learns to hold."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Chart the End margin",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About End City Margin",
+                "lines": [
+                  "The End margin still needs the city bearing, shulker proof, shells, and chorus fruit."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me where",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "End City near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Defeat 2 shulkers and bring 2 shulker shells with 16 chorus fruit."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have your End margin open right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The End City margin is already complete."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "The city mark is near {target_x}, {target_z}, about {distance} blocks {direction} in {target_dimension}. Bring shulker shells and chorus fruit after you chart it."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The End City mark is too far for the atlas to catch from here."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The atlas needs the Stronghold bearing before the End margin can be drawn."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "The outer islands are not going anywhere. That is one of their few courtesies."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Tie the page down before you open it near a portal."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with the finished atlas margin.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About End City Margin",
+                "lines": [
+                  "You brought the outer islands back on your boots. Let me bind the final margin."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Bind the End City margin",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "There it is: village road, ruin road, chosen horizon, fire road, last room, outer island. A whole atlas, and you walked it into truth."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "The shells need the End City bearing behind them."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring shulker shells before I bind the final margin."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The End margin still needs the city bearing, shulkers, shells, and chorus fruit."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The End margin still needs its proof before I can close it."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the shells from rattling near the page edge."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
       },
-      "questlineOrder": 7
+      "questlineOrder": 10
     },
     {
       "id": "villagerretaliation:end_city_survey",
@@ -1772,14 +8879,14 @@ window.VR_WIKI_DATA = {
       "slug": "tales_of_a_lost_civilization",
       "title": "Tales of a Lost Civilization",
       "description": "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard.",
-      "questline": "",
-      "questlineLabel": "",
+      "questline": "lost_civilization",
+      "questlineLabel": "Lost Civilization",
       "group": "lost_civilization",
       "groupLabel": "Lost Civilization",
       "tags": [
         "group.lost_civilization"
       ],
-      "relationKey": "group:lost_civilization",
+      "relationKey": "questline:lost_civilization",
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
@@ -1806,20 +8913,28 @@ window.VR_WIKI_DATA = {
       },
       "objectives": [
         "Proof: Echo Shard",
+        "Visit Ancient City",
         "1 Echo Shard"
       ],
       "steps": [
         {
-          "id": "travel",
-          "label": "Travel",
+          "id": "survey",
+          "label": "Survey",
           "text": "Reach the Ancient City center near {target_x}, {target_z}.",
           "progress": 0.25,
-          "hint": "{distance} blocks {direction}"
+          "hint": ""
         },
         {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Recover {proof_item} as proof of the journey.",
+          "id": "visit_city_center",
+          "label": "Visit City Center",
+          "text": "Reach the Ancient City center near {target_x}, {target_z}.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "recover_echo_shard",
+          "label": "Recover Echo Shard",
+          "text": "Recover {objective_item} as proof of the journey.",
           "progress": 0.66,
           "hint": "City center visited"
         },
@@ -1828,7 +8943,7 @@ window.VR_WIKI_DATA = {
           "label": "Return",
           "text": "Return to the cartographer with {proof_item}.",
           "progress": 1,
-          "hint": "Ready to turn in"
+          "hint": ""
         }
       ],
       "rewards": {
@@ -1890,6 +9005,9 @@ window.VR_WIKI_DATA = {
         "reminder": [
           "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
           "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+          "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back.",
+          "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
+          "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
           "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
         ],
         "completed": [
@@ -1898,13 +9016,844 @@ window.VR_WIKI_DATA = {
           "An Echo Shard from the heart of {target}. I believe you. Some stories should be paid for before they are repeated."
         ],
         "missing": [
-          "That shard alone is not enough. You need to stand in the central heart of {target}, not only its halls.",
-          "The proof is half the story. The other half is the place itself: the city center near {target_x}, {target_z}.",
           "You saw the place, then. Bring me {proof_item}, and I can call the tale complete.",
-          "The journey needs a token. Find {proof_item} in those depths and bring it back."
-        ]
+          "The journey needs a token. Find {proof_item} in those depths and bring it back.",
+          "That shard alone is not enough. You need to stand in the central heart of {target}, not only its halls.",
+          "The proof is half the story. The other half is the place itself: the city center near {target_x}, {target_z}."
+        ],
+        "stages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Ancient City center near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Lost Civilization",
+                "lines": [
+                  "There are old maps that refuse to stay still. One of them keeps crawling back to the same shape under the ink.",
+                  "I found a mark that does not belong to any road I know. It points below the world, toward a city people stopped naming."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Tell me where to go",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Lost Civilization",
+                "lines": [
+                  "About the old city? I can mark the road again, or fold the map if you are done carrying it.",
+                  "The map is still yours to follow. Ask for the mark again, or I can put the route away."
+                ],
+                "responses": [
+                  {
+                    "id": "directions",
+                    "label": "Remind me where to go",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Active Cancel"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "Then I will fold the route away. If the old city keeps calling, come back and we can mark it again.",
+                  "Done. The map rests for now."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "Then I will fold the route away for a day. Give the ink time to dry before asking me to mark it again.",
+                  "Done. I can revisit the mark later, once the map has settled."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_forever",
+                "label": "Abandon: Abandoned Forever",
+                "lines": [
+                  "Then I will close the ledger on this one.",
+                  "Done. I will not offer that trail again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "That map is not in your hands right now.",
+                  "There is no active trail here for me to fold away."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
+                  "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+                  "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The map is not giving me the same answer right now.",
+                  "If the mark has slipped, come back when the ink settles."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "That lost city has already given us its answer.",
+                  "We have that tale now. I am still deciding how much of it should be spoken aloud."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The map table will not settle on that city today. I would rather wait than send you to a bad mark.",
+                  "I can feel the old road under the ink, but not clearly enough to send you there."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "One mark points {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. If you truly want the story, find the heart of {target} and bring back {proof_item}.",
+                  "I have copied this mark three times, and every copy crawls back to the same place: {target_x}, {target_z}, {direction} of us. Go carefully. The center of {target} is the part that matters, and {proof_item} will prove you reached it.",
+                  "Then listen closely: travel {direction}, about {distance} blocks, toward {target_x}, {target_z}. Stand in the city center, not just the outskirts, and return with {proof_item}."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "Not yet. This story needs a steadier hand with maps.",
+                  "There are marks I do not show until I trust the reading, and the reader."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_cancel",
+                "label": "Scene: Abandon Cancel",
+                "lines": [
+                  "Good. A folded map remembers less than a carried one.",
+                  "Then keep the mark. Some stories punish hesitation, but this one rewards care."
+                ]
+              },
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Folding this map means the trail goes cold for a while. Are you sure?",
+                  "I can put the old mark away, but I will not pretend the place stops waiting."
+                ]
+              },
+              {
+                "sceneId": "active_cancel",
+                "label": "Scene: Active Cancel",
+                "lines": [
+                  "Then keep the map close until the road starts speaking again.",
+                  "Fair. Some maps are better carried quietly."
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then leave the map folded. Some places are patient in ways people are not.",
+                  "Fair. A city that learned to keep silent can wait a little longer."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with {proof_item}.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Lost Civilization",
+                "lines": [
+                  "About the old city? I can mark the road again, or fold the map if you are done carrying it.",
+                  "The map is still yours to follow. Ask for the mark again, or I can put the route away."
+                ],
+                "responses": [
+                  {
+                    "id": "directions",
+                    "label": "Remind me where to go",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Active Cancel"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Lost Civilization",
+                "lines": [
+                  "You came back carrying the quiet with you. Tell me you stood in the center, not just the shadow of the place.",
+                  "That look is not from a cave. That is from somewhere older. Did you bring proof?"
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Show the Echo Shard",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Turn In Wait"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "Then I will fold the route away. If the old city keeps calling, come back and we can mark it again.",
+                  "Done. The map rests for now."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "Then I will fold the route away for a day. Give the ink time to dry before asking me to mark it again.",
+                  "Done. I can revisit the mark later, once the map has settled."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_forever",
+                "label": "Abandon: Abandoned Forever",
+                "lines": [
+                  "Then I will close the ledger on this one.",
+                  "Done. I will not offer that trail again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "That map is not in your hands right now.",
+                  "There is no active trail here for me to fold away."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "So the stories were not just ink after all. Keep what you learned close, and let the village know you walked where silence keeps records.",
+                  "You found the center and brought proof. That is more than a map can do. This village will remember your name beside that lost place.",
+                  "An Echo Shard from the heart of {target}. I believe you. Some stories should be paid for before they are repeated."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "You saw the place, then. Bring me {proof_item}, and I can call the tale complete.",
+                  "The journey needs a token. Find {proof_item} in those depths and bring it back."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "That shard alone is not enough. You need to stand in the central heart of {target}, not only its halls.",
+                  "The proof is half the story. The other half is the place itself: the city center near {target_x}, {target_z}."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The story still has a missing piece.",
+                  "Something is missing from the story."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
+                  "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+                  "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The map is not giving me the same answer right now.",
+                  "If the mark has slipped, come back when the ink settles."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_cancel",
+                "label": "Scene: Abandon Cancel",
+                "lines": [
+                  "Good. A folded map remembers less than a carried one.",
+                  "Then keep the mark. Some stories punish hesitation, but this one rewards care."
+                ]
+              },
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Folding this map means the trail goes cold for a while. Are you sure?",
+                  "I can put the old mark away, but I will not pretend the place stops waiting."
+                ]
+              },
+              {
+                "sceneId": "active_cancel",
+                "label": "Scene: Active Cancel",
+                "lines": [
+                  "Then keep the map close until the road starts speaking again.",
+                  "Fair. Some maps are better carried quietly."
+                ]
+              },
+              {
+                "sceneId": "turn_in_wait",
+                "label": "Scene: Turn In Wait",
+                "lines": [
+                  "Then keep it safe until you are ready to let the village remember with you.",
+                  "No need to force the words. Bring them back when they have settled."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "survey",
+            "label": "Survey",
+            "trackerText": "Reach the Ancient City center near {target_x}, {target_z}.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Lost Civilization",
+                "lines": [
+                  "There are old maps that refuse to stay still. One of them keeps crawling back to the same shape under the ink.",
+                  "I found a mark that does not belong to any road I know. It points below the world, toward a city people stopped naming."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "Tell me where to go",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Lost Civilization",
+                "lines": [
+                  "About the old city? I can mark the road again, or fold the map if you are done carrying it.",
+                  "The map is still yours to follow. Ask for the mark again, or I can put the route away."
+                ],
+                "responses": [
+                  {
+                    "id": "directions",
+                    "label": "Remind me where to go",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Active Cancel"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "Then I will fold the route away. If the old city keeps calling, come back and we can mark it again.",
+                  "Done. The map rests for now."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "Then I will fold the route away for a day. Give the ink time to dry before asking me to mark it again.",
+                  "Done. I can revisit the mark later, once the map has settled."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_forever",
+                "label": "Abandon: Abandoned Forever",
+                "lines": [
+                  "Then I will close the ledger on this one.",
+                  "Done. I will not offer that trail again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "That map is not in your hands right now.",
+                  "There is no active trail here for me to fold away."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
+                  "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+                  "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The map is not giving me the same answer right now.",
+                  "If the mark has slipped, come back when the ink settles."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "That lost city has already given us its answer.",
+                  "We have that tale now. I am still deciding how much of it should be spoken aloud."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "The map table will not settle on that city today. I would rather wait than send you to a bad mark.",
+                  "I can feel the old road under the ink, but not clearly enough to send you there."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "One mark points {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. If you truly want the story, find the heart of {target} and bring back {proof_item}.",
+                  "I have copied this mark three times, and every copy crawls back to the same place: {target_x}, {target_z}, {direction} of us. Go carefully. The center of {target} is the part that matters, and {proof_item} will prove you reached it.",
+                  "Then listen closely: travel {direction}, about {distance} blocks, toward {target_x}, {target_z}. Stand in the city center, not just the outskirts, and return with {proof_item}."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "Not yet. This story needs a steadier hand with maps.",
+                  "There are marks I do not show until I trust the reading, and the reader."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_cancel",
+                "label": "Scene: Abandon Cancel",
+                "lines": [
+                  "Good. A folded map remembers less than a carried one.",
+                  "Then keep the mark. Some stories punish hesitation, but this one rewards care."
+                ]
+              },
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Folding this map means the trail goes cold for a while. Are you sure?",
+                  "I can put the old mark away, but I will not pretend the place stops waiting."
+                ]
+              },
+              {
+                "sceneId": "active_cancel",
+                "label": "Scene: Active Cancel",
+                "lines": [
+                  "Then keep the map close until the road starts speaking again.",
+                  "Fair. Some maps are better carried quietly."
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then leave the map folded. Some places are patient in ways people are not.",
+                  "Fair. A city that learned to keep silent can wait a little longer."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the cartographer with {proof_item}.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Lost Civilization",
+                "lines": [
+                  "About the old city? I can mark the road again, or fold the map if you are done carrying it.",
+                  "The map is still yours to follow. Ask for the mark again, or I can put the route away."
+                ],
+                "responses": [
+                  {
+                    "id": "directions",
+                    "label": "Remind me where to go",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Active Cancel"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Lost Civilization",
+                "lines": [
+                  "You came back carrying the quiet with you. Tell me you stood in the center, not just the shadow of the place.",
+                  "That look is not from a cave. That is from somewhere older. Did you bring proof?"
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Show the Echo Shard",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Turn In Wait"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "Then I will fold the route away. If the old city keeps calling, come back and we can mark it again.",
+                  "Done. The map rests for now."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "Then I will fold the route away for a day. Give the ink time to dry before asking me to mark it again.",
+                  "Done. I can revisit the mark later, once the map has settled."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_forever",
+                "label": "Abandon: Abandoned Forever",
+                "lines": [
+                  "Then I will close the ledger on this one.",
+                  "Done. I will not offer that trail again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "That map is not in your hands right now.",
+                  "There is no active trail here for me to fold away."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "So the stories were not just ink after all. Keep what you learned close, and let the village know you walked where silence keeps records.",
+                  "You found the center and brought proof. That is more than a map can do. This village will remember your name beside that lost place.",
+                  "An Echo Shard from the heart of {target}. I believe you. Some stories should be paid for before they are repeated."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "You saw the place, then. Bring me {proof_item}, and I can call the tale complete.",
+                  "The journey needs a token. Find {proof_item} in those depths and bring it back."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "That shard alone is not enough. You need to stand in the central heart of {target}, not only its halls.",
+                  "The proof is half the story. The other half is the place itself: the city center near {target_x}, {target_z}."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The story still has a missing piece.",
+                  "Something is missing from the story."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
+                  "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+                  "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The map is not giving me the same answer right now.",
+                  "If the mark has slipped, come back when the ink settles."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_cancel",
+                "label": "Scene: Abandon Cancel",
+                "lines": [
+                  "Good. A folded map remembers less than a carried one.",
+                  "Then keep the mark. Some stories punish hesitation, but this one rewards care."
+                ]
+              },
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Folding this map means the trail goes cold for a while. Are you sure?",
+                  "I can put the old mark away, but I will not pretend the place stops waiting."
+                ]
+              },
+              {
+                "sceneId": "active_cancel",
+                "label": "Scene: Active Cancel",
+                "lines": [
+                  "Then keep the map close until the road starts speaking again.",
+                  "Fair. Some maps are better carried quietly."
+                ]
+              },
+              {
+                "sceneId": "turn_in_wait",
+                "label": "Scene: Turn In Wait",
+                "lines": [
+                  "Then keep it safe until you are ready to let the village remember with you.",
+                  "No need to force the words. Bring them back when they have settled."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
       },
-      "questlineOrder": 1
+      "questlineOrder": 0
     },
     {
       "id": "villagerretaliation:sunken_ledger",
@@ -2480,7 +10429,7 @@ window.VR_WIKI_DATA = {
       },
       "target": null,
       "objectives": [
-        "1 None"
+        "Record memory: Player Defended Village"
       ],
       "steps": [
         {
@@ -3143,126 +11092,6 @@ window.VR_WIKI_DATA = {
       "questlineOrder": 4
     },
     {
-      "id": "villagerretaliation:egg_baskets",
-      "slug": "egg_baskets",
-      "title": "Egg Baskets",
-      "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
-      "questline": "",
-      "questlineLabel": "",
-      "group": "village_supply",
-      "groupLabel": "Village Supply",
-      "tags": [
-        "group.village_supply"
-      ],
-      "relationKey": "group:village_supply",
-      "parent": "",
-      "parentSlug": "",
-      "prerequisites": [],
-      "branchGroup": "",
-      "branchChoices": [],
-      "requirements": {
-        "minLevel": "Novice",
-        "professions": [
-          "Farmer",
-          "Butcher"
-        ],
-        "skills": [
-          {
-            "skill": "Animal Handling",
-            "min": 5,
-            "max": null
-          },
-          {
-            "skill": "Cooking",
-            "min": 4,
-            "max": null
-          }
-        ]
-      },
-      "target": null,
-      "objectives": [
-        "12 Egg"
-      ],
-      "steps": [
-        {
-          "id": "proof",
-          "label": "Proof",
-          "text": "Bring 12 eggs for the kitchen baskets.",
-          "progress": 0.7,
-          "hint": ""
-        },
-        {
-          "id": "return",
-          "label": "Return",
-          "text": "Return to the quest giver with the eggs.",
-          "progress": 1,
-          "hint": ""
-        }
-      ],
-      "rewards": {
-        "experience": 45,
-        "reputation": 4,
-        "gossipReputation": 2,
-        "lootTable": "villagerretaliation:quest/egg_baskets",
-        "loot": [
-          {
-            "item": "Emerald",
-            "count": "4-7",
-            "weight": 1,
-            "note": ""
-          },
-          {
-            "item": "Bread",
-            "count": "3-5",
-            "weight": 2,
-            "note": ""
-          },
-          {
-            "item": "Pumpkin Pie",
-            "count": "1-2",
-            "weight": 1,
-            "note": ""
-          },
-          {
-            "item": "Experience Bottle",
-            "count": "2-4",
-            "weight": 1,
-            "note": ""
-          }
-        ]
-      },
-      "rules": [
-        "Repeatable",
-        "Can be completed with another valid villager",
-        "Locked to the quest giver",
-        "Turn-in items are consumed on completion",
-        "1 day completion cooldown"
-      ],
-      "dialogue": {
-        "offer": [
-          "We are shorter on eggs than we are on patience.",
-          "That usually ends with breakfast becoming a rumor."
-        ],
-        "accept": "I can fill the egg baskets",
-        "decline": "Another time",
-        "started": [
-          "Egg Baskets is yours now. Bring the eggs back when the count is ready."
-        ],
-        "reminder": [
-          "Egg Baskets: I still need the eggs. Bring the full count back to me."
-        ],
-        "completed": [
-          "Egg Baskets is complete. The village can use this, and you have earned the reward."
-        ],
-        "missing": [
-          "Egg Baskets is not at the right count yet; bring the rest before turning it in.",
-          "Egg Baskets still needs the eggs in your pack before I can close it.",
-          "Egg Baskets is still short. The tracker has the exact count."
-        ]
-      },
-      "questlineOrder": 5
-    },
-    {
       "id": "villagerretaliation:feather_fletching",
       "slug": "feather_fletching",
       "title": "Feather Fletching",
@@ -3380,7 +11209,7 @@ window.VR_WIKI_DATA = {
           "Feather Fletching is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 6
+      "questlineOrder": 5
     },
     {
       "id": "villagerretaliation:fresh_cod",
@@ -3500,7 +11329,7 @@ window.VR_WIKI_DATA = {
           "Fresh Cod is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 7
+      "questlineOrder": 6
     },
     {
       "id": "villagerretaliation:ink_supply",
@@ -3620,7 +11449,7 @@ window.VR_WIKI_DATA = {
           "Ink Supply is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 8
+      "questlineOrder": 7
     },
     {
       "id": "villagerretaliation:kiln_fuel",
@@ -3737,7 +11566,7 @@ window.VR_WIKI_DATA = {
           "Kiln Fuel is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 9
+      "questlineOrder": 8
     },
     {
       "id": "villagerretaliation:leather_repairs",
@@ -3857,7 +11686,7 @@ window.VR_WIKI_DATA = {
           "Leather Repairs is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 10
+      "questlineOrder": 9
     },
     {
       "id": "villagerretaliation:map_paper",
@@ -3972,7 +11801,7 @@ window.VR_WIKI_DATA = {
           "Map Paper is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 11
+      "questlineOrder": 10
     },
     {
       "id": "villagerretaliation:seed_stockpile",
@@ -4086,7 +11915,7 @@ window.VR_WIKI_DATA = {
           "Seed Stockpile is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 12
+      "questlineOrder": 11
     },
     {
       "id": "villagerretaliation:torch_bundle",
@@ -4207,7 +12036,7 @@ window.VR_WIKI_DATA = {
           "Torch Bundle is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 13
+      "questlineOrder": 12
     },
     {
       "id": "villagerretaliation:village_lanterns",
@@ -4323,7 +12152,7 @@ window.VR_WIKI_DATA = {
           "Village Lanterns is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 14
+      "questlineOrder": 13
     },
     {
       "id": "villagerretaliation:wool_blankets",
@@ -4443,7 +12272,837 @@ window.VR_WIKI_DATA = {
           "Wool Blankets is still short. The tracker has the exact count."
         ]
       },
-      "questlineOrder": 15
+      "questlineOrder": 14
+    },
+    {
+      "id": "villagerretaliation:egg_baskets",
+      "slug": "egg_baskets",
+      "title": "Egg Baskets",
+      "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
+      "questline": "village_supply",
+      "questlineLabel": "Village Supply",
+      "group": "village_supply",
+      "groupLabel": "Village Supply",
+      "tags": [
+        "group.village_supply"
+      ],
+      "relationKey": "questline:village_supply",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Farmer",
+          "Butcher"
+        ],
+        "skills": [
+          {
+            "skill": "Animal Handling",
+            "min": 5,
+            "max": null
+          },
+          {
+            "skill": "Cooking",
+            "min": 4,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "12 Egg"
+      ],
+      "steps": [
+        {
+          "id": "collect",
+          "label": "Collect",
+          "text": "Bring 12 eggs for the kitchen baskets.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "bring_eggs",
+          "label": "Bring Eggs",
+          "text": "Bring 12 eggs for the kitchen baskets.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return to the quest giver with the eggs.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 45,
+        "reputation": 4,
+        "gossipReputation": 2,
+        "lootTable": "villagerretaliation:quest/egg_baskets",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "4-7",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Bread",
+            "count": "3-5",
+            "weight": 2,
+            "note": ""
+          },
+          {
+            "item": "Pumpkin Pie",
+            "count": "1-2",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Experience Bottle",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "Repeatable",
+        "Can be completed with another valid villager",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion",
+        "1 day completion cooldown"
+      ],
+      "dialogue": {
+        "offer": [
+          "We are shorter on eggs than we are on patience.",
+          "That usually ends with breakfast becoming a rumor."
+        ],
+        "accept": "I can fill the egg baskets",
+        "decline": "Another time",
+        "started": [
+          "Egg Baskets is yours now. Bring the eggs back when the count is ready."
+        ],
+        "reminder": [
+          "Egg Baskets: I still need the eggs. Bring the full count back to me."
+        ],
+        "completed": [
+          "Egg Baskets is complete. The village can use this, and you have earned the reward."
+        ],
+        "missing": [
+          "Egg Baskets is still short. The tracker has the exact count.",
+          "Egg Baskets still needs the eggs in your pack before I can close it.",
+          "Egg Baskets is not at the right count yet; bring the rest before turning it in."
+        ],
+        "stages": [
+          {
+            "stageId": "collect",
+            "label": "Collect",
+            "trackerText": "Bring 12 eggs for the kitchen baskets.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Egg Baskets",
+                "lines": [
+                  "We are shorter on eggs than we are on patience.",
+                  "That usually ends with breakfast becoming a rumor."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I can fill the egg baskets",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Egg Baskets",
+                "lines": [
+                  "Egg Baskets is still open. I can repeat the details, or close my notes if you are done."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me what to do",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Active Cancel"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_forever",
+                "label": "Abandon: Abandoned Forever",
+                "lines": [
+                  "Then the egg request is closed for good."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no egg count here for me to close."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "inactive",
+                "label": "Reminder: Inactive",
+                "lines": [
+                  "The kitchen has no active egg count at the moment."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Egg Baskets: I still need the eggs. Bring the full count back to me."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "That egg-basket request is not in your hands right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The egg baskets are already settled."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "Egg Baskets cannot be posted from here right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Egg Baskets is yours now. Bring the eggs back when the count is ready."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The kitchen is not asking you for eggs right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_cancel",
+                "label": "Scene: Abandon Cancel",
+                "lines": [
+                  "Good. The pans will stay hopeful a little longer."
+                ]
+              },
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Put Egg Baskets aside for now?"
+                ]
+              },
+              {
+                "sceneId": "active_cancel",
+                "label": "Scene: Active Cancel",
+                "lines": [
+                  "Then keep the shells uncracked until you are ready."
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then I will keep negotiating with empty pans."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the quest giver with the eggs.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Egg Baskets",
+                "lines": [
+                  "If you have the eggs, we can settle Egg Baskets."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Show what I brought",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Turn In Wait"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_forever",
+                "label": "Abandon: Abandoned Forever",
+                "lines": [
+                  "Then the egg request is closed for good."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no egg count here for me to close."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Egg Baskets is complete. The village can use this, and you have earned the reward."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "inactive",
+                "label": "Turn-in: Inactive",
+                "lines": [
+                  "The kitchen is not accepting eggs right now."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "Egg Baskets is still short. The tracker has the exact count."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Egg Baskets still needs the eggs in your pack before I can close it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "Egg Baskets is not at the right count yet; bring the rest before turning it in."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "This egg count is not ready to close yet."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_cancel",
+                "label": "Scene: Abandon Cancel",
+                "lines": [
+                  "Good. The pans will stay hopeful a little longer."
+                ]
+              },
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Put Egg Baskets aside for now?"
+                ]
+              },
+              {
+                "sceneId": "turn_in_wait",
+                "label": "Scene: Turn In Wait",
+                "lines": [
+                  "Keep the eggs safe, then bring them back when you are ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "collect",
+            "label": "Collect",
+            "trackerText": "Bring 12 eggs for the kitchen baskets.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Egg Baskets",
+                "lines": [
+                  "We are shorter on eggs than we are on patience.",
+                  "That usually ends with breakfast becoming a rumor."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I can fill the egg baskets",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Egg Baskets",
+                "lines": [
+                  "Egg Baskets is still open. I can repeat the details, or close my notes if you are done."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Remind me what to do",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Active Cancel"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_forever",
+                "label": "Abandon: Abandoned Forever",
+                "lines": [
+                  "Then the egg request is closed for good."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no egg count here for me to close."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "inactive",
+                "label": "Reminder: Inactive",
+                "lines": [
+                  "The kitchen has no active egg count at the moment."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Egg Baskets: I still need the eggs. Bring the full count back to me."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "That egg-basket request is not in your hands right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The egg baskets are already settled."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "locate_failed",
+                "label": "Start: Locate Failed",
+                "lines": [
+                  "Egg Baskets cannot be posted from here right now."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Egg Baskets is yours now. Bring the eggs back when the count is ready."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The kitchen is not asking you for eggs right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_cancel",
+                "label": "Scene: Abandon Cancel",
+                "lines": [
+                  "Good. The pans will stay hopeful a little longer."
+                ]
+              },
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Put Egg Baskets aside for now?"
+                ]
+              },
+              {
+                "sceneId": "active_cancel",
+                "label": "Scene: Active Cancel",
+                "lines": [
+                  "Then keep the shells uncracked until you are ready."
+                ]
+              },
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then I will keep negotiating with empty pans."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return to the quest giver with the eggs.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Egg Baskets",
+                "lines": [
+                  "If you have the eggs, we can settle Egg Baskets."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Show what I brought",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "abandon",
+                    "label": "Abandon quest",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Abandon Confirm"
+                  },
+                  {
+                    "id": "never_mind",
+                    "label": "Never mind",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Turn In Wait"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned",
+                "label": "Abandon: Abandoned",
+                "lines": [
+                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_cooldown",
+                "label": "Abandon: Abandoned Cooldown",
+                "lines": [
+                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "abandoned_forever",
+                "label": "Abandon: Abandoned Forever",
+                "lines": [
+                  "Then the egg request is closed for good."
+                ]
+              },
+              {
+                "sceneId": "abandon_quest",
+                "action": "abandon",
+                "key": "unavailable",
+                "label": "Abandon: Unavailable",
+                "lines": [
+                  "There is no egg count here for me to close."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Egg Baskets is complete. The village can use this, and you have earned the reward."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "inactive",
+                "label": "Turn-in: Inactive",
+                "lines": [
+                  "The kitchen is not accepting eggs right now."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "Egg Baskets is still short. The tracker has the exact count."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Egg Baskets still needs the eggs in your pack before I can close it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_target",
+                "label": "Turn-in: Missing target",
+                "lines": [
+                  "Egg Baskets is not at the right count yet; bring the rest before turning it in."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "This egg count is not ready to close yet."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "abandon_cancel",
+                "label": "Scene: Abandon Cancel",
+                "lines": [
+                  "Good. The pans will stay hopeful a little longer."
+                ]
+              },
+              {
+                "sceneId": "abandon_confirm",
+                "label": "Scene: Abandon Confirm",
+                "lines": [
+                  "Put Egg Baskets aside for now?"
+                ]
+              },
+              {
+                "sceneId": "turn_in_wait",
+                "label": "Scene: Turn In Wait",
+                "lines": [
+                  "Keep the eggs safe, then bring them back when you are ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 0
     }
   ],
   "gifts": {
@@ -7770,11 +16429,12 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 28838,
+    "dialogueLinesEstimate": 32014,
     "dialogueLineBreakdown": {
-      "dialogue": 28320,
+      "dialogue": 31417,
       "forcedDialogue": 220,
-      "dialogueTrees": 298
+      "dialogueTrees": 225,
+      "questModules": 152
     }
   }
 };

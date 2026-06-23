@@ -715,6 +715,17 @@ public final class QuestObjectiveRegistry {
                     context.player().blockPosition(),
                     objective,
                     context.progress());
+            if (!complete
+                    && context.definition() != null
+                    && context.definition().target().hasStructureTarget()
+                    && context.definition().target().structure().equals(objective.structure())) {
+                complete = context.progress() != null && context.progress().visitedTarget()
+                        || VillagerQuestTargets.isAtQuestTarget(
+                                context.level(),
+                                context.player().blockPosition(),
+                                context.definition(),
+                                context.progress());
+            }
             return complete
                     ? QuestObjectiveResult.complete("structure target reached")
                     : QuestObjectiveResult.incomplete(0.0F, "structure target not reached");

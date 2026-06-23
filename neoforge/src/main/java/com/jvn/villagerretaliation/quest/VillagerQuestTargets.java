@@ -32,14 +32,50 @@ final class VillagerQuestTargets {
                         && QuestObjectiveRegistry.requiresLocatedTarget(objective));
     }
 
+    static boolean requiresLocatedTarget(QuestDefinition definition, String stageId) {
+        if (definition == null) {
+            return false;
+        }
+        return definition.target().hasStructureTarget()
+                || QuestObjectiveQuery.stageObjectives(definition, stageId).stream()
+                .anyMatch(objective -> !objective.optional()
+                        && QuestObjectiveRegistry.requiresLocatedTarget(objective));
+    }
+
     static Optional<LocatedTarget> locateInitialTarget(DialogueContext context, QuestDefinition definition) {
         if (definition.target().hasStructureTarget()) {
             return locateTarget(context.level(), context.villager().blockPosition(), definition);
         }
-        return definition.objectives().stream()
+        return locateStageTarget(context, definition, QuestLifecycleService.initialStage(definition));
+    }
+
+    static Optional<LocatedTarget> locateStageTarget(
+            DialogueContext context,
+            QuestDefinition definition,
+            String stageId) {
+        if (context == null || definition == null) {
+            return Optional.empty();
+        }
+        return QuestObjectiveQuery.stageObjectives(definition, stageId).stream()
                 .filter(QuestObjectiveRegistry::requiresLocatedTarget)
                 .findFirst()
                 .flatMap(objective -> locateTarget(context.level(), context.villager().blockPosition(), objective));
+    }
+
+    static ResourceLocation targetStructure(QuestDefinition definition, String objectiveId) {
+        if (definition == null) {
+            return null;
+        }
+        String normalizedObjectiveId = objectiveId == null ? "" : objectiveId.trim();
+        if (normalizedObjectiveId.isBlank()) {
+            return definition.target().structure();
+        }
+        return definition.objectives().stream()
+                .filter(objective -> objective.id().equals(normalizedObjectiveId))
+                .map(QuestDefinition.Objective::structure)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     static Optional<LocatedTarget> locateTarget(ServerLevel level, BlockPos origin, QuestDefinition definition) {
@@ -174,7 +210,12 @@ final class VillagerQuestTargets {
                     "minecraft:bastion_remnant",
                     "minecraft:end_city",
                     "minecraft:fortress",
+                    "minecraft:monument",
+                    "minecraft:stronghold",
+                    "minecraft:trail_ruins",
                     "minecraft:trial_chambers" -> MIN_SPARSE_STRUCTURE_SEARCH_RADIUS;
+            case "minecraft:pillager_outpost",
+                    "minecraft:shipwreck" -> 512;
             default -> searchRadius;
         });
     }

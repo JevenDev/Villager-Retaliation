@@ -1553,6 +1553,139 @@ blockquote p {
   max-width: none;
 }
 
+.dialogue-reference-body {
+  display: grid;
+  gap: 14px;
+  padding: 0 12px 12px;
+}
+
+.dialogue-route,
+.dialogue-branch-group,
+.dialogue-stage-list,
+.dialogue-stage,
+.dialogue-block,
+.dialogue-lines,
+.dialogue-options {
+  display: grid;
+}
+
+.dialogue-route,
+.dialogue-branch-group,
+.dialogue-stage-list {
+  gap: 10px;
+}
+
+.dialogue-route-title,
+.dialogue-stage-head,
+.dialogue-choice-head,
+.dialogue-block-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dialogue-route-title {
+  padding-top: 2px;
+}
+
+.dialogue-route-title strong,
+.dialogue-stage-head strong,
+.dialogue-choice-head strong,
+.dialogue-block-title strong,
+.dialogue-options > strong {
+  color: #ffffff;
+  font-weight: 650;
+}
+
+.dialogue-route-title span,
+.dialogue-stage-head span,
+.dialogue-choice-head span,
+.dialogue-block-title span,
+.dialogue-destination,
+.dialogue-empty,
+.dialogue-options em {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  font-style: normal;
+}
+
+.dialogue-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dialogue-choice,
+.dialogue-stage {
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel-2);
+  padding: 10px;
+}
+
+.dialogue-choice {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.dialogue-stage {
+  gap: 9px;
+}
+
+.dialogue-block {
+  gap: 7px;
+  border-left: 2px solid var(--line);
+  padding-left: 10px;
+}
+
+.dialogue-tracker {
+  color: #ddd8e1;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.dialogue-lines {
+  gap: 5px;
+}
+
+.dialogue-lines p,
+.dialogue-options li p {
+  color: #ddd8e1;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.dialogue-options {
+  gap: 6px;
+}
+
+.dialogue-options ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dialogue-options li {
+  display: grid;
+  gap: 2px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel);
+  padding: 7px 8px;
+}
+
+.dialogue-options li span {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .search-results {
   display: grid;
   gap: 10px;
@@ -1796,7 +1929,8 @@ blockquote p {
   .quest-guide,
   .info-grid,
   .turnin-layout,
-  .loot-grid {
+  .loot-grid,
+  .dialogue-choice-grid {
     grid-template-columns: 1fr;
   }
 

@@ -29,6 +29,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.MapItem;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
@@ -384,6 +385,50 @@ public final class VillagerStoryHintService {
                 target.pos(),
                 gameTime + CARTOGRAPHER_MAP_DISCOVERY_TICKS
         );
+        VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), map);
+
+        CARTOGRAPHER_MAP_GIFTS.put(giftKey, gameTime + CARTOGRAPHER_MAP_COOLDOWN_TICKS);
+        context.villager().playSound(SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.8F, 0.9F + context.random().nextFloat() * 0.2F);
+        pruneMapGiftCooldowns(gameTime);
+        return true;
+    }
+
+    public static boolean maybeGiveQuestTargetMap(
+            DialogueContext context,
+            ResourceLocation structureId,
+            ResourceKey<Level> targetDimension,
+            BlockPos targetPos,
+            String targetName) {
+        if (context == null
+                || structureId == null
+                || targetPos == null
+                || context.profession() != VillagerProfession.CARTOGRAPHER
+                || context.random().nextInt(100) >= cartographerMapChancePercent(context.reputationLevel())) {
+            return false;
+        }
+
+        CartographerMapGiftKey giftKey = new CartographerMapGiftKey(context.player().getUUID(), context.villager().getUUID());
+        long gameTime = context.level().getGameTime();
+        Long nextGiftTime = CARTOGRAPHER_MAP_GIFTS.get(giftKey);
+        if (nextGiftTime != null && nextGiftTime > gameTime) {
+            return false;
+        }
+
+        ServerLevel mapLevel = targetDimension == null
+                ? context.level()
+                : context.level().getServer().getLevel(targetDimension);
+        if (mapLevel == null) {
+            return false;
+        }
+
+        String name = targetName == null || targetName.isBlank()
+                ? VillagerInteractionTextUtil.resourcePathName(structureId)
+                : targetName;
+        ItemStack map = createExplorerMap(mapLevel, new CachedTarget(HintKind.STRUCTURE, structureId, targetPos), name);
+        ItemStack remainder = map.copy();
+        if (!context.player().addItem(remainder) && !remainder.isEmpty()) {
+            context.player().drop(remainder, false);
+        }
         VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), map);
 
         CARTOGRAPHER_MAP_GIFTS.put(giftKey, gameTime + CARTOGRAPHER_MAP_COOLDOWN_TICKS);

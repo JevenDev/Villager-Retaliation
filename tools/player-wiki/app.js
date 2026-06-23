@@ -801,18 +801,132 @@ function renderQuestDetail(quest) {
       </dl>
     `) : ""}
 
-    ${section("Dialogue Reference", `
+    ${section("Dialogue Reference", renderQuestDialogueReference(quest))}
+  `;
+}
+
+function renderQuestDialogueReference(quest) {
+  const dialogue = quest.dialogue || {};
+  const commonStages = (dialogue.commonStages || []).filter(dialogueStageHasContent);
+  const branches = dialogue.branches || [];
+  if (commonStages.length || branches.length) {
+    return `
       <details class="reference-panel">
         <summary>${icon("message-square-text")}Show quest dialogue</summary>
-        <div class="quote-stack">
-          ${quoteBlock("Offer", quest.dialogue.offer)}
-          ${quoteBlock("Started", quest.dialogue.started)}
-          ${quoteBlock("Reminder", quest.dialogue.reminder)}
-          ${quoteBlock("Completion", quest.dialogue.completed)}
-          ${quoteBlock("Missing Items", quest.dialogue.missing)}
+        <div class="dialogue-reference-body">
+          ${commonStages.length ? `
+            <div class="dialogue-route">
+              <div class="dialogue-route-title">
+                <strong>Shared path</strong>
+                <span>Shown before branch-specific dialogue.</span>
+              </div>
+              ${renderDialogueStageList(commonStages)}
+            </div>
+          ` : ""}
+          ${branches.map(renderDialogueBranchGroup).join("")}
         </div>
       </details>
-    `)}
+    `;
+  }
+  return `
+    <details class="reference-panel">
+      <summary>${icon("message-square-text")}Show quest dialogue</summary>
+      <div class="quote-stack">
+        ${quoteBlock("Offer", dialogue.offer)}
+        ${quoteBlock("Started", dialogue.started)}
+        ${quoteBlock("Reminder", dialogue.reminder)}
+        ${quoteBlock("Completion", dialogue.completed)}
+        ${quoteBlock("Missing Items", dialogue.missing)}
+      </div>
+    </details>
+  `;
+}
+
+function dialogueStageHasContent(stage) {
+  return stage?.slots?.length || stage?.choices?.length || stage?.actions?.length || stage?.scenes?.length;
+}
+
+function renderDialogueBranchGroup(branch) {
+  return `
+    <div class="dialogue-branch-group">
+      <div class="dialogue-route-title">
+        <strong>Choice at ${escapeHtml(branch.label || titleCase(branch.stageId))}</strong>
+        <span>${escapeHtml(branch.stageId || "branch")}</span>
+      </div>
+      <div class="dialogue-choice-grid">
+        ${(branch.choices || []).map((choice) => `
+          <div class="dialogue-choice">
+            <div class="dialogue-choice-head">
+              <strong>${escapeHtml(choice.label || titleCase(choice.id))}</strong>
+              ${choice.id ? `<span>${escapeHtml(choice.id)}</span>` : ""}
+            </div>
+            ${choice.lines?.length ? `<div class="dialogue-lines">${choice.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>` : ""}
+            ${choice.destination ? `<p class="dialogue-destination">${escapeHtml(choice.destination)}</p>` : ""}
+            ${choice.stages?.length ? renderDialogueStageList(choice.stages) : `<p class="dialogue-empty">No separate branch dialogue is listed for this option.</p>`}
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderDialogueStageList(stages) {
+  return `<div class="dialogue-stage-list">${(stages || []).filter(dialogueStageHasContent).map(renderDialogueStage).join("")}</div>`;
+}
+
+function renderDialogueStage(stage) {
+  return `
+    <div class="dialogue-stage">
+      <div class="dialogue-stage-head">
+        <strong>${escapeHtml(stage.label || titleCase(stage.stageId))}</strong>
+        ${stage.stageId ? `<span>${escapeHtml(stage.stageId)}</span>` : ""}
+      </div>
+      ${stage.trackerText ? `<p class="dialogue-tracker">${escapeHtml(stage.trackerText)}</p>` : ""}
+      ${(stage.slots || []).map(renderDialogueSlot).join("")}
+      ${stage.choices?.length ? renderDialogueChoices("Branch options", stage.choices) : ""}
+      ${(stage.actions || []).map((group) => renderDialogueLineGroup(group.label, group.lines)).join("")}
+      ${(stage.scenes || []).map((group) => renderDialogueLineGroup(group.label, group.lines)).join("")}
+    </div>
+  `;
+}
+
+function renderDialogueSlot(slot) {
+  return `
+    <div class="dialogue-block">
+      <div class="dialogue-block-title">
+        <strong>${escapeHtml(slot.title || "Dialogue")}</strong>
+        ${slot.label && slot.label !== slot.title ? `<span>${escapeHtml(slot.label)}</span>` : ""}
+      </div>
+      ${slot.lines?.length ? `<div class="dialogue-lines">${slot.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>` : ""}
+      ${slot.responses?.length ? renderDialogueChoices("Options", slot.responses) : ""}
+    </div>
+  `;
+}
+
+function renderDialogueChoices(title, choices) {
+  return `
+    <div class="dialogue-options">
+      <strong>${escapeHtml(title)}</strong>
+      <ul>
+        ${(choices || []).map((choice) => `
+          <li>
+            <span>${escapeHtml(choice.label || titleCase(choice.id))}</span>
+            ${choice.destination ? `<em>${escapeHtml(choice.destination)}</em>` : ""}
+            ${choice.lines?.length ? choice.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("") : ""}
+          </li>
+        `).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function renderDialogueLineGroup(title, lines) {
+  if (!lines?.length) return "";
+  return `
+    <div class="dialogue-block">
+      <div class="dialogue-block-title"><strong>${escapeHtml(title)}</strong></div>
+      <div class="dialogue-lines">${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>
+    </div>
   `;
 }
 

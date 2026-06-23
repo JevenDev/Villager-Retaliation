@@ -14,5 +14,17 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate data and tools
+        run: |
+          node --check tools/datapack-builder/app.js
+          node --check tools/player-wiki/app.js
+          node tools/validate-dialogue-data.mjs
+          node tools/test-quest-v2-tools.mjs
+          node tools/test-datapack-builder-schema.mjs
+          node tools/datapack-builder/build-wiki-snapshot.mjs --check
+          node tools/player-wiki/build-data.mjs --check
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew build

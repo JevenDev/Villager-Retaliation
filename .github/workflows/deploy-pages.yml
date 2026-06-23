@@ -33,11 +33,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Check JavaScript syntax
         run: node --check tools/datapack-builder/app.js
 
       - name: Check player wiki JavaScript syntax
         run: node --check tools/player-wiki/app.js
+
+      - name: Check generated static data
+        run: |
+          node tools/datapack-builder/build-wiki-snapshot.mjs --check
+          node tools/player-wiki/build-data.mjs --check
 
       - name: Verify datapack builder entry files
         run: |

@@ -6,6 +6,7 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(scriptDir, "..", "..");
 const dataDir = path.join(rootDir, "neoforge", "src", "main", "resources", "data", "villagerretaliation");
 const assetsDir = path.join(rootDir, "neoforge", "src", "main", "resources", "assets", "villagerretaliation");
+const checkOnly = process.argv.includes("--check");
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -95,6 +96,69 @@ function firstArray(value) {
   return Array.isArray(value) ? value : value == null ? [] : [value];
 }
 
+function isQuestV2(quest) {
+  return quest?.schema === "villagerretaliation:quest/v2";
+}
+
+function questMetadata(quest) {
+  return isQuestV2(quest) ? quest.metadata || {} : quest.display || {};
+}
+
+function questAvailability(quest) {
+  return isQuestV2(quest) ? quest.availability || {} : quest.rules || {};
+}
+
+function questProviderFilters(quest) {
+  return isQuestV2(quest) ? quest.provider?.filters || {} : quest.offer || {};
+}
+
+function questParent(quest) {
+  return questMetadata(quest).parent || quest.parent || "";
+}
+
+function questTags(quest) {
+  const metadata = questMetadata(quest);
+  return uniqueStrings([
+    ...firstArray(metadata.tag),
+    ...firstArray(metadata.tags),
+    ...firstArray(quest.tag),
+    ...firstArray(quest.tags)
+  ]);
+}
+
+function questStagesArray(quest) {
+  if (!quest?.stages) return [];
+  return Array.isArray(quest.stages) ? quest.stages : Object.values(quest.stages);
+}
+
+function questObjectives(quest) {
+  if (!isQuestV2(quest)) return firstArray(quest.objectives);
+  return questStagesArray(quest).flatMap((stage) => firstArray(stage.objectives).map((objective) => ({
+    ...objective,
+    stage: stage.id || ""
+  })));
+}
+
+function questTargetInfo(quest) {
+  if (quest.target && (quest.target.structure || quest.target.proof_item)) {
+    return {
+      structure: quest.target.structure ? titleCase(quest.target.structure) : "",
+      proofItem: quest.target.proof_item ? itemName(quest.target.proof_item) : "",
+      searchRadius: quest.target.search_radius || null,
+      discoveryRadius: quest.target.discovery_radius || null
+    };
+  }
+  const structureObjective = questObjectives(quest)
+    .find((objective) => String(objective.type || "").toLowerCase() === "structure_visit" || objective.structure);
+  if (!structureObjective) return null;
+  return {
+    structure: structureObjective.structure ? titleCase(structureObjective.structure) : "",
+    proofItem: "",
+    searchRadius: structureObjective.search_radius || null,
+    discoveryRadius: structureObjective.discovery_radius || null
+  };
+}
+
 function groupBy(items, key) {
   return items.reduce((groups, item) => {
     const group = item[key] || "Other";
@@ -126,7 +190,174 @@ function lootEntries(lootTableId) {
   }));
 }
 
-function questDialogue(tree) {
+function compactDialogueLines(...sources) {
+  return sources.flatMap((source) => firstArray(source))
+    .filter((line) => typeof line === "string" && line.trim());
+}
+
+function responseTransitionStage(response = {}) {
+  if (response.transition?.stage) return response.transition.stage;
+  if (response.stage) return response.stage;
+  if (typeof response.next === "string") return response.next;
+  if (response.next?.stage) return response.next.stage;
+  return "";
+}
+
+function responseDestinationLabel(response = {}) {
+  const targetStageId = responseTransitionStage(response);
+  if (targetStageId) return `Next: ${titleCase(targetStageId)}`;
+  if (response.transition?.complete || response.complete) return "Completes quest";
+  if (response.transition?.abandon || response.abandon) return "Abandons quest";
+  if (response.transition?.fail || response.fail) return "Fails quest";
+  const sceneId = response.transition?.scene || response.scene;
+  return sceneId ? `Scene: ${titleCase(sceneId)}` : "";
+}
+
+function dialogueResponseInfo(response = {}) {
+  return {
+    id: response.id || "",
+    label: response.label || titleCase(response.id || "option"),
+    lines: compactDialogueLines(response.lines, response.text),
+    targetStageId: responseTransitionStage(response),
+    destination: responseDestinationLabel(response)
+  };
+}
+
+function dialogueSlotLabel(slot = "") {
+  return ({
+    offer: "Offer",
+    reminder: "Reminder",
+    turn_in: "Turn-in",
+    already_completed: "Already completed",
+    unavailable: "Unavailable",
+    inactive: "Inactive",
+    missing_target: "Missing target",
+    missing_proof: "Missing proof",
+    locate_failed: "Locate failed"
+  })[slot] || titleCase(slot);
+}
+
+function questActionLineLabel(action = "", key = "") {
+  const prefix = ({
+    start: "Start",
+    remind: "Reminder",
+    turn_in: "Turn-in",
+    abandon: "Abandon"
+  })[action] || titleCase(action || "Action");
+  const state = ({
+    already_completed: "Already completed",
+    started: "Started",
+    unavailable: "Unavailable",
+    reminder: "Reminder",
+    completed: "Completed",
+    missing_target: "Missing target",
+    missing_proof: "Missing proof",
+    missing_objectives: "Missing objectives",
+    abandoned: "Abandoned"
+  })[key] || titleCase(key);
+  return `${prefix}: ${state}`;
+}
+
+function stageNextId(stage = {}) {
+  if (typeof stage.next === "string") return stage.next;
+  if (stage.next?.stage) return stage.next.stage;
+  if (stage.transition?.stage) return stage.transition.stage;
+  return "";
+}
+
+function questDialogueActionGroups(stage = {}) {
+  return firstArray(stage.scenes).flatMap((scene) => firstArray(scene.actions).flatMap((entry) => {
+    const action = entry.type === "quest" ? entry.action || "" : entry.action || entry.type || "";
+    return Object.entries(entry.lines || {}).map(([key, lines]) => ({
+      sceneId: scene.id || "",
+      action,
+      key,
+      label: questActionLineLabel(action, key),
+      lines: compactDialogueLines(lines)
+    })).filter((group) => group.lines.length);
+  }));
+}
+
+function questDialogueSceneGroups(stage = {}) {
+  return firstArray(stage.scenes).map((scene) => ({
+    sceneId: scene.id || "",
+    label: `Scene: ${titleCase(scene.id || "dialogue")}`,
+    lines: compactDialogueLines(scene.lines, scene.text)
+  })).filter((group) => group.lines.length);
+}
+
+function questDialogueStageBlock(stage = {}) {
+  const dialogue = stage.dialogue || {};
+  const slots = Object.entries(dialogue).map(([slot, entry]) => ({
+    slot,
+    title: dialogueSlotLabel(slot),
+    label: entry.label || dialogueSlotLabel(slot),
+    lines: compactDialogueLines(entry.lines, entry.text),
+    responses: firstArray(entry.responses).map(dialogueResponseInfo)
+  })).filter((entry) => entry.lines.length || entry.responses.length);
+  return {
+    stageId: stage.id || "",
+    label: stage.title || stage.ui?.title || titleCase(stage.id || "stage"),
+    trackerText: stage.ui?.tracker_text || stage.ui?.text || "",
+    slots,
+    choices: firstArray(stage.responses).map(dialogueResponseInfo),
+    actions: questDialogueActionGroups(stage),
+    scenes: questDialogueSceneGroups(stage)
+  };
+}
+
+function stageHasDialogue(block = {}) {
+  return block.slots?.length
+    || block.choices?.length
+    || block.actions?.length
+    || block.scenes?.length;
+}
+
+function collectDialoguePathStageIds(stagesById, startStageId) {
+  const ids = [];
+  const seen = new Set();
+  let nextId = startStageId || "";
+  while (nextId && !seen.has(nextId) && ids.length < 16) {
+    const stage = stagesById.get(nextId);
+    if (!stage) break;
+    seen.add(nextId);
+    ids.push(nextId);
+    if (firstArray(stage.responses).length) break;
+    nextId = stageNextId(stage);
+  }
+  return ids;
+}
+
+function questDialogueBranches(stages, stageBlocksById) {
+  const stagesById = new Map(stages.map((stage) => [stage.id || "", stage]));
+  return stages.flatMap((stage) => {
+    const responses = firstArray(stage.responses).map((response) => {
+      const choice = dialogueResponseInfo(response);
+      const stageIds = collectDialoguePathStageIds(stagesById, choice.targetStageId);
+      return {
+        ...choice,
+        stageIds,
+        stages: stageIds.map((stageId) => stageBlocksById.get(stageId)).filter(stageHasDialogue)
+      };
+    }).filter((choice) => choice.id || choice.label || choice.stageIds.length);
+    if (!responses.length) return [];
+    return [{
+      stageId: stage.id || "",
+      label: stage.title || stage.ui?.title || titleCase(stage.id || "branch"),
+      choices: responses
+    }];
+  });
+}
+
+function actionLines(stageBlocks, action, keys) {
+  const wanted = new Set(firstArray(keys));
+  return stageBlocks.flatMap((block) => firstArray(block.actions)
+    .filter((group) => group.action === action && wanted.has(group.key))
+    .flatMap((group) => group.lines));
+}
+
+function questDialogue(quest, tree) {
+  if (isQuestV2(quest)) return questInlineDialogue(quest);
   if (!tree?.nodes) return {};
   const actionLines = (nodeId, action, key) => firstArray(tree.nodes[nodeId]?.actions)
     .find((entry) => entry.action === action)?.lines?.[key] || [];
@@ -145,7 +376,66 @@ function questDialogue(tree) {
   };
 }
 
+function questInlineDialogue(quest) {
+  const stages = questStagesArray(quest);
+  const stageBlocks = stages.map(questDialogueStageBlock);
+  const stageBlocksById = new Map(stageBlocks.map((block) => [block.stageId, block]));
+  const branches = questDialogueBranches(stages, stageBlocksById);
+  const branchPathStageIds = new Set(branches.flatMap((branch) => branch.choices.flatMap((choice) => choice.stageIds)));
+  const commonStages = stageBlocks.filter((block) => stageHasDialogue(block) && !branchPathStageIds.has(block.stageId));
+  const offer = stageBlocks.flatMap((block) => block.slots).find((slot) => slot.slot === "offer") || {};
+  const accept = firstArray(offer.responses).find((response) => response.id === "accept")?.label
+    || firstArray(offer.responses)[0]?.label
+    || "Accept";
+  const decline = firstArray(offer.responses).find((response) => response.id === "decline")?.label || "Decline";
+  return {
+    offer: firstArray(offer.lines),
+    accept,
+    decline,
+    started: actionLines(stageBlocks, "start", "started"),
+    reminder: actionLines(stageBlocks, "remind", "reminder"),
+    completed: actionLines(stageBlocks, "turn_in", "completed"),
+    missing: actionLines(stageBlocks, "turn_in", ["missing_target", "missing_proof", "missing_objectives"]),
+    stages: stageBlocks.filter(stageHasDialogue),
+    commonStages,
+    branches
+  };
+}
+
 function questSteps(quest) {
+  if (isQuestV2(quest)) {
+    const steps = [];
+    for (const stage of questStagesArray(quest)) {
+      const stageText = stage.ui?.tracker_text || stage.ui?.text || "";
+      if (stageText) {
+        steps.push({
+          id: stage.id || `stage_${steps.length + 1}`,
+          label: titleCase(stage.id || "stage"),
+          text: stageText,
+          progress: stage.ui?.progress ?? null,
+          hint: stage.ui?.metadata?.hint || ""
+        });
+      }
+      for (const objective of firstArray(stage.objectives)) {
+        const tracker = objective.tracker || {};
+        if (!tracker.text) continue;
+        steps.push({
+          id: objective.id || `objective_${steps.length + 1}`,
+          label: titleCase(objective.id || objective.type || "objective"),
+          text: tracker.text,
+          progress: tracker.progress ?? null,
+          hint: tracker.metadata?.hint || ""
+        });
+      }
+    }
+    const seen = new Set();
+    return steps.filter((step) => {
+      const key = `${step.id}:${step.text}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
   const steps = quest.tracker?.steps || {};
   const objectiveIds = firstArray(quest.objectives).map((objective) => objective.id);
   const preferred = ["travel", "proof", ...objectiveIds, "return"];
@@ -160,7 +450,7 @@ function questSteps(quest) {
 }
 
 function questRequirements(quest) {
-  const offer = quest.offer || {};
+  const offer = questProviderFilters(quest);
   return {
     minLevel: offer.min_villager_level ? titleCase(offer.min_villager_level) : "Any",
     professions: firstArray(offer.professions).map(titleCase),
@@ -177,9 +467,9 @@ function questConditionRefs(conditions) {
   for (const condition of firstArray(conditions)) {
     if (!condition || typeof condition !== "object") continue;
     const type = String(condition.type || "").toLowerCase();
-    if ((type === "quest_fact" || type === "quest_stage" || type === "quest_tag" || type === "quest_variable" || type === "quest_counter")
-        && condition.quest) {
-      refs.push(condition.quest);
+    if ((type === "quest" || type === "quest_fact" || type === "quest_stage" || type === "quest_tag" || type === "quest_variable" || type === "quest_counter")
+        && (condition.quest || condition.quest_id)) {
+      refs.push(condition.quest || condition.quest_id);
     }
     refs.push(...questConditionRefs(condition.conditions));
     refs.push(...questConditionRefs(condition.condition));
@@ -189,12 +479,35 @@ function questConditionRefs(conditions) {
 
 function questObjectiveText(quest) {
   const proof = quest.target?.proof_item ? [`Proof: ${itemName(quest.target.proof_item)}`] : [];
-  const objectives = firstArray(quest.objectives).map((objective) => `${objective.count || 1} ${itemName(objective.item || objective.items || objective.tag || objective.tags)}`);
+  const objectives = questObjectives(quest).map((objective) => {
+    const count = countText(objective.count || 1);
+    const type = String(objective.type || "").toLowerCase();
+    if (type === "item_check" || objective.item || objective.items || objective.item_tag || objective.item_tags || objective.tag || objective.tags) {
+      return `${count} ${itemName(objective.item || objective.items || objective.item_tag || objective.item_tags || objective.tag || objective.tags)}`;
+    }
+    if (type === "mob_kill") {
+      return `Defeat ${count} ${itemName(objective.entity || objective.entities || objective.entity_tag || objective.entity_tags)}`;
+    }
+    if (type === "structure_visit" || objective.structure) {
+      return `Visit ${titleCase(objective.structure || objective.target || "marked structure")}`;
+    }
+    if (type === "memory_event") {
+      return `Record memory: ${titleCase(objective.memory || objective.memory_tag || firstArray(objective.memory_tags)[0] || "village event")}`;
+    }
+    if (type === "choice") {
+      const values = firstArray(objective.values || objective.choices).map(titleCase).join(" or ");
+      return `Choose ${titleCase(objective.key || objective.id || "route")}${values ? `: ${values}` : ""}`;
+    }
+    if (type === "fact") {
+      return `Confirm ${titleCase(objective.key || objective.tag || objective.id || "quest fact")}`;
+    }
+    return titleCase(objective.id || objective.type || "Objective");
+  });
   return [...proof, ...objectives];
 }
 
 function questRules(quest) {
-  const rules = quest.rules || {};
+  const rules = questAvailability(quest);
   const details = [];
   details.push(rules.repeatable ? "Repeatable" : "One-time");
   if (rules.cross_villager_compatible) details.push("Can be completed with another valid villager");
@@ -209,52 +522,68 @@ function questRules(quest) {
   return details;
 }
 
+function questBranchChoices(quest) {
+  const legacyChoices = Object.values(quest.stages || {}).flatMap((stage) => firstArray(stage.branches).map((branch) => ({
+    id: branch.id || "",
+    label: branch.label || titleCase(branch.id || "")
+  })));
+  const v2Choices = questStagesArray(quest).flatMap((stage) => firstArray(stage.responses).map((response) => ({
+    id: response.id || "",
+    label: response.label || titleCase(response.id || "")
+  })));
+  const seen = new Set();
+  return [...legacyChoices, ...v2Choices].filter((branch) => {
+    const key = `${branch.id}:${branch.label}`;
+    if ((!branch.id && !branch.label) || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function buildQuests() {
   const questRoot = path.join(dataDir, "quests");
   const quests = walkJson(questRoot).map((file) => {
     const quest = readJson(file);
     const rel = path.relative(questRoot, file);
     const moduleGroup = rel.split(path.sep)[0] || "";
-    const tags = uniqueStrings([ ...firstArray(quest.tag), ...firstArray(quest.tags) ]);
-    const questline = quest.questline || "";
+    const metadata = questMetadata(quest);
+    const tags = questTags(quest);
+    const questline = metadata.questline || quest.questline || "";
     const group = groupFromTags(tags) || moduleGroup;
     const treePath = path.join(dataDir, "dialogue_trees", "en_us", "quests", rel);
     const tree = fs.existsSync(treePath) ? readJson(treePath) : null;
     const rewards = quest.rewards || {};
-    const rules = quest.rules || {};
+    const rules = questAvailability(quest);
+    const offer = questProviderFilters(quest);
+    const parent = questParent(quest);
+    const target = questTargetInfo(quest);
     const prerequisiteIds = [
-      quest.parent || "",
-      ...questConditionRefs(quest.offer?.conditions)
+      parent,
+      ...firstArray(rules.prerequisites).map((entry) => typeof entry === "string" ? entry : entry?.quest || entry?.id || ""),
+      ...questConditionRefs(offer.conditions),
+      ...questConditionRefs(rules.conditions)
     ].filter(Boolean);
     return {
       id: quest.id,
       slug: idTail(quest.id),
-      title: quest.display?.title || titleCase(quest.id),
-      description: quest.display?.description || "",
+      title: metadata.title || quest.display?.title || titleCase(quest.id),
+      description: metadata.description || quest.display?.description || "",
       questline,
       questlineLabel: questline ? titleCase(questline) : "",
       group,
       groupLabel: titleCase(group),
       tags,
       relationKey: questline ? `questline:${questline}` : `group:${group}`,
-      parent: quest.parent || "",
-      parentSlug: quest.parent ? idTail(quest.parent) : "",
+      parent,
+      parentSlug: parent ? idTail(parent) : "",
       prerequisites: [...new Set(prerequisiteIds)].map((id) => ({
         id,
         slug: idTail(id)
       })),
       branchGroup: rules.exclusive_group || rules.branch?.exclusive_group || "",
-      branchChoices: Object.values(quest.stages || {}).flatMap((stage) => firstArray(stage.branches).map((branch) => ({
-        id: branch.id || "",
-        label: branch.label || titleCase(branch.id || "")
-      }))).filter((branch) => branch.id || branch.label),
+      branchChoices: questBranchChoices(quest),
       requirements: questRequirements(quest),
-      target: quest.target ? {
-        structure: quest.target.structure ? titleCase(quest.target.structure) : "",
-        proofItem: quest.target.proof_item ? itemName(quest.target.proof_item) : "",
-        searchRadius: quest.target.search_radius || null,
-        discoveryRadius: quest.target.discovery_radius || null
-      } : null,
+      target,
       objectives: questObjectiveText(quest),
       steps: questSteps(quest),
       rewards: {
@@ -265,7 +594,7 @@ function buildQuests() {
         loot: lootEntries(rewards.loot_table)
       },
       rules: questRules(quest),
-      dialogue: questDialogue(tree)
+      dialogue: questDialogue(quest, tree)
     };
   });
 
@@ -450,12 +779,24 @@ function buildStats() {
     .reduce((total, file) => total + countDialogueTextLines(readJson(file)), 0);
   const dialogueTreeLines = walkJson(path.join(dataDir, "dialogue_trees"))
     .reduce((total, file) => total + countDialogueTextLines(readJson(file)), 0);
+  const questModuleDialogueLines = walkJson(path.join(dataDir, "quests"))
+    .reduce((total, file) => {
+      const quest = readJson(file);
+      return total + countDialogueTextLines(quest.dialogue) + questStagesArray(quest)
+        .reduce((stageTotal, stage) => (
+          stageTotal
+          + countDialogueTextLines(stage.dialogue)
+          + countDialogueTextLines(stage.scenes)
+          + countDialogueTextLines(stage.responses)
+        ), 0);
+    }, 0);
   return {
-    dialogueLinesEstimate: dialogueLines + forcedDialogueLines + dialogueTreeLines,
+    dialogueLinesEstimate: dialogueLines + forcedDialogueLines + dialogueTreeLines + questModuleDialogueLines,
     dialogueLineBreakdown: {
       dialogue: dialogueLines,
       forcedDialogue: forcedDialogueLines,
-      dialogueTrees: dialogueTreeLines
+      dialogueTrees: dialogueTreeLines,
+      questModules: questModuleDialogueLines
     }
   };
 }
@@ -482,5 +823,18 @@ const data = {
 };
 
 const output = `window.VR_WIKI_DATA = ${JSON.stringify(data, null, 2)};\n`;
-fs.writeFileSync(path.join(scriptDir, "site-data.js"), output, "utf8");
-console.log(`Generated player wiki data: ${data.quests.length} quests, ${data.advancements.length} advancements, ${data.skillTrades.reduce((sum, group) => sum + group.count, 0)} skill trades.`);
+const outputPath = path.join(scriptDir, "site-data.js");
+const summary = `${data.quests.length} quests, ${data.advancements.length} advancements, ${data.skillTrades.reduce((sum, group) => sum + group.count, 0)} skill trades`;
+
+if (checkOnly) {
+  const current = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "";
+  if (current !== output) {
+    console.error("tools/player-wiki/site-data.js is out of date. Run node tools/player-wiki/build-data.mjs.");
+    process.exitCode = 1;
+  } else {
+    console.log(`Player wiki data is up to date: ${summary}.`);
+  }
+} else {
+  fs.writeFileSync(outputPath, output, "utf8");
+  console.log(`Generated player wiki data: ${summary}.`);
+}

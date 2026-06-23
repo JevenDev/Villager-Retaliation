@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -757,6 +758,12 @@ public final class VillagerQuestService {
 
         VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
         VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
+        if ((progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED)
+                && transition.stageId().equals(initialStage(definition))
+                && canStart(context, definition, progress)) {
+            startQuest(context, definition);
+            progress = data.get(context.player().getUUID(), definition.id());
+        }
         if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE || !matchesVillagerLock(context, definition, progress)) {
             return transitionActionResult(
                     "unavailable",
@@ -1559,6 +1566,29 @@ public final class VillagerQuestService {
         return QuestLifecycleService.initialStage(definition);
     }
 
+    private static void ensureStageTarget(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (context == null || definition == null || progress == null || definition.target().hasStructureTarget()) {
+            return;
+        }
+        QuestDefinition.Objective targetObjective = QuestObjectiveQuery.stageObjectives(definition, progress.currentStage()).stream()
+                .filter(QuestObjectiveRegistry::requiresLocatedTarget)
+                .findFirst()
+                .orElse(null);
+        if (targetObjective == null
+                || (targetObjective.id().equals(progress.targetObjectiveId()) && progress.targetPos() != null)) {
+            return;
+        }
+        VillagerQuestTargets.locateTarget(context.level(), context.villager().blockPosition(), targetObjective)
+                .ifPresent(target -> {
+                    progress.setTarget(context.villager().getUUID(), target.dimension(), target.pos(), target.objectiveId());
+                    rememberQuestStoryHint(context, definition, target);
+                    maybeGiveQuestTargetMap(context, definition, target);
+                });
+    }
+
     private static boolean changeQuestStage(
             DialogueContext context,
             QuestDefinition definition,
@@ -1583,6 +1613,7 @@ public final class VillagerQuestService {
             return false;
         }
         syncQuestStageFact(context, definition, transition.currentStage());
+        ensureStageTarget(context, definition, progress);
         dispatchStageChangedTriggers(context, definition, progress);
 
         QuestDefinition.Stage current = definition.stages().get(transition.currentStage());
@@ -1643,20 +1674,11 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             List<VillagerActionDefinition> actions) {
-        if (actions == null || actions.isEmpty()) {
-            return false;
-        }
-        boolean ranAction = false;
-        Map<String, String> replacements = new LinkedHashMap<>(replacements(context, definition, progress));
-        for (VillagerActionDefinition action : actions) {
-            VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
-            replacements.putAll(result.replacements());
-            if (result.flashTracker()) {
-                sendTrackerSync(context.player(), true);
-            }
-            ranAction |= result.ran();
-        }
-        return ranAction;
+        return QuestActionSequenceRunner.run(
+                context,
+                actions,
+                replacements(context, definition, progress),
+                () -> sendTrackerSync(context.player(), true));
     }
 
     private static QuestActionOutcome startQuest(DialogueContext context, QuestDefinition definition) {
@@ -1689,7 +1711,7 @@ public final class VillagerQuestService {
 
         VillagerQuestTargets.LocatedTarget target =
                 VillagerQuestTargets.locateInitialTarget(context, definition).orElse(null);
-        if (target == null && VillagerQuestTargets.requiresLocatedTarget(definition)) {
+        if (target == null && VillagerQuestTargets.requiresLocatedTarget(definition, initialStage(definition))) {
             return result(
                     "locate_failed",
                     lineId(definition, "locate_failed"),
@@ -1714,6 +1736,7 @@ public final class VillagerQuestService {
         data.setTrackedQuest(context.player().getUUID(), definition.id());
         if (target != null) {
             rememberQuestStoryHint(context, definition, target);
+            maybeGiveQuestTargetMap(context, definition, target);
         }
         sendQuestNotification(context, "quest.started", definition, started, "Quest started: {quest}");
         if (dispatchQuestTriggers(context, definition, started, QuestDefinition.TriggerEvent.STARTED)) {
@@ -1818,7 +1841,7 @@ public final class VillagerQuestService {
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
-        ItemHandInResult itemHandInResult = handInRequiredObjectiveItems(context, definition);
+        ItemHandInResult itemHandInResult = handInRequiredObjectiveItems(context, definition, progress);
         if (itemHandInResult != ItemHandInResult.SUCCESS) {
             return result(
                     itemHandInResult.status,
@@ -3171,8 +3194,8 @@ public final class VillagerQuestService {
                 || !(player.level() instanceof ServerLevel level)) {
             return false;
         }
-        List<QuestDefinition.Objective> requiredItemHandIns = QuestObjectiveQuery.requiredItemHandIns(definition);
-        for (QuestDefinition.Objective objective : QuestObjectiveQuery.requiredObjectives(definition)) {
+        List<QuestDefinition.Objective> requiredItemHandIns = QuestObjectiveQuery.requiredItemHandIns(definition, progress);
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.requiredObjectives(definition, progress)) {
             if (QuestObjectiveRegistry.requiresItemHandIn(objective)) {
                 continue;
             }
@@ -3295,12 +3318,12 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             DialogueContext context) {
-        if (definition.objectives().isEmpty()) {
+        if (QuestObjectiveQuery.activeObjectives(definition, progress).isEmpty()) {
             return false;
         }
 
         boolean changed = false;
-        for (QuestDefinition.Objective objective : definition.objectives()) {
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
             if (progress.objectiveComplete(objective.id())) {
                 continue;
             }
@@ -3331,7 +3354,7 @@ public final class VillagerQuestService {
         boolean changed = false;
         QuestObjectiveEvaluationContext objectiveContext =
                 objectiveEvaluationContext(player, null, level, definition, progress);
-        for (QuestDefinition.Objective objective : definition.objectives()) {
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
             int previousCounter = progress.objectiveCounter(objective.id());
             boolean previouslyComplete = progress.objectiveComplete(objective.id());
             if (progress.objectiveComplete(objective.id())
@@ -3432,8 +3455,8 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        List<QuestDefinition.Objective> requiredItemHandIns = QuestObjectiveQuery.requiredItemHandIns(definition);
-        for (QuestDefinition.Objective objective : QuestObjectiveQuery.requiredObjectives(definition)) {
+        List<QuestDefinition.Objective> requiredItemHandIns = QuestObjectiveQuery.requiredItemHandIns(definition, progress);
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.requiredObjectives(definition, progress)) {
             if (QuestObjectiveRegistry.requiresItemHandIn(objective)) {
                 continue;
             }
@@ -3451,7 +3474,7 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
-        if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK && progress.objectiveComplete(objective.id())) {
+        if (progress.objectiveComplete(objective.id())) {
             return true;
         }
         Optional<QuestObjectiveResult> registryResult = QuestObjectiveRegistry.evaluate(
@@ -3609,11 +3632,15 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         return QuestObjectiveQuery.firstIncompleteRequired(
                 definition,
+                progress,
                 objective -> objectiveComplete(player, context, level, definition, progress, objective));
     }
 
-    private static ItemHandInResult handInRequiredObjectiveItems(DialogueContext context, QuestDefinition definition) {
-        List<QuestDefinition.Objective> requiredItemHandIns = QuestObjectiveQuery.requiredItemHandIns(definition);
+    private static ItemHandInResult handInRequiredObjectiveItems(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        List<QuestDefinition.Objective> requiredItemHandIns = QuestObjectiveQuery.requiredItemHandIns(definition, progress);
         if (requiredItemHandIns.isEmpty()) {
             return ItemHandInResult.SUCCESS;
         }
@@ -3892,7 +3919,8 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestTargets.LocatedTarget target) {
-        if (!definition.target().hasStructureTarget()) {
+        ResourceLocation structure = VillagerQuestTargets.targetStructure(definition, target.objectiveId());
+        if (structure == null) {
             return;
         }
         VillagerInteractionTracker.rememberStoryHint(
@@ -3900,13 +3928,54 @@ public final class VillagerQuestService {
                 context.villager(),
                 context.player(),
                 VillagerInteractionTracker.StoryHintKind.STRUCTURE,
-                definition.target().structure(),
-                targetName(definition),
+                structure,
+                targetDisplayName(definition, target),
                 target.pos(),
                 target.dimension().location(),
                 context.level().getGameTime() + QUEST_STORY_HINT_TICKS,
-                definition.target().discoveryRadius()
+                targetDiscoveryRadius(definition, target)
         );
+    }
+
+    private static void maybeGiveQuestTargetMap(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestTargets.LocatedTarget target) {
+        ResourceLocation structure = VillagerQuestTargets.targetStructure(definition, target.objectiveId());
+        if (structure == null) {
+            return;
+        }
+        VillagerStoryHintService.maybeGiveQuestTargetMap(
+                context,
+                structure,
+                target.dimension(),
+                target.pos(),
+                targetDisplayName(definition, target));
+    }
+
+    private static String targetDisplayName(
+            QuestDefinition definition,
+            VillagerQuestTargets.LocatedTarget target) {
+        ResourceLocation structure = VillagerQuestTargets.targetStructure(definition, target.objectiveId());
+        if (structure == null) {
+            return targetName(definition);
+        }
+        return target.objectiveId().isBlank()
+                ? targetName(definition)
+                : VillagerInteractionTextUtil.resourcePathName(structure);
+    }
+
+    private static int targetDiscoveryRadius(
+            QuestDefinition definition,
+            VillagerQuestTargets.LocatedTarget target) {
+        if (target.objectiveId().isBlank()) {
+            return definition.target().discoveryRadius();
+        }
+        return definition.objectives().stream()
+                .filter(objective -> objective.id().equals(target.objectiveId()))
+                .findFirst()
+                .map(QuestDefinition.Objective::discoveryRadius)
+                .orElse(definition.target().discoveryRadius());
     }
 
     private static boolean dispatchQuestTriggers(
@@ -4001,17 +4070,11 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Trigger trigger) {
-        boolean ranAction = false;
-        Map<String, String> replacements = new LinkedHashMap<>(replacements(context, definition, progress));
-        for (VillagerActionDefinition action : trigger.actions()) {
-            VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
-            replacements.putAll(result.replacements());
-            if (result.flashTracker()) {
-                sendTrackerSync(context.player(), true);
-            }
-            ranAction |= result.ran();
-        }
-        return ranAction;
+        return QuestActionSequenceRunner.run(
+                context,
+                trigger.actions(),
+                replacements(context, definition, progress),
+                () -> sendTrackerSync(context.player(), true));
     }
 
     private static void sendQuestNotification(
@@ -4969,7 +5032,7 @@ public final class VillagerQuestService {
         if (!activeConditionsMet
                 || progress == null
                 || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
-                || definition.objectives().isEmpty()
+                || QuestObjectiveQuery.activeObjectives(definition, progress).isEmpty()
                 || !(player.level() instanceof ServerLevel level)) {
             return null;
         }
@@ -5007,7 +5070,7 @@ public final class VillagerQuestService {
             ServerLevel level,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        for (QuestDefinition.Objective objective : definition.objectives()) {
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
             if (objective.optional()
                     || !objective.tracker().hasCompletionDisplay()
                     || !objectiveComplete(player, context, level, definition, progress, objective)) {
@@ -5024,7 +5087,7 @@ public final class VillagerQuestService {
             ServerLevel level,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        for (QuestDefinition.Objective objective : definition.objectives()) {
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
             if (!objective.optional()
                     || !QuestTrackerPresenter.objectiveTrackerHasDisplay(objective, false)
                     || objectiveComplete(player, context, level, definition, progress, objective)) {
@@ -5044,7 +5107,7 @@ public final class VillagerQuestService {
         if (!activeConditionsMet
                 || progress == null
                 || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
-                || definition.objectives().isEmpty()
+                || QuestObjectiveQuery.activeObjectives(definition, progress).isEmpty()
                 || !(player.level() instanceof ServerLevel level)) {
             return null;
         }
@@ -5081,7 +5144,7 @@ public final class VillagerQuestService {
             return "proof";
         }
         String stageStepKey = currentStageTrackerStepKey(definition, progress);
-        if (progress != null && !definition.objectives().isEmpty() && player.level() instanceof ServerLevel level) {
+        if (progress != null && !QuestObjectiveQuery.activeObjectives(definition, progress).isEmpty() && player.level() instanceof ServerLevel level) {
             QuestDefinition.Objective objective = firstIncompleteRequiredObjective(
                     player,
                     context,
@@ -5410,7 +5473,6 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
         if (progress != null
-                && objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK
                 && progress.objectiveComplete(objective.id())) {
             return 1.0F;
         }
@@ -5570,14 +5632,14 @@ public final class VillagerQuestService {
         if (definition.target().hasProofItem()) {
             return itemName(definition.target().proofItem());
         }
-        for (QuestDefinition.Objective objective : definition.objectives()) {
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
             if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK
                     && objective.item() != null
                     && (progress == null || !progress.objectiveComplete(objective.id()))) {
                 return itemName(objective.item());
             }
         }
-        for (QuestDefinition.Objective objective : definition.objectives()) {
+        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
             if (objective.type() == QuestDefinition.ObjectiveType.ITEM_CHECK && objective.item() != null) {
                 return itemName(objective.item());
             }

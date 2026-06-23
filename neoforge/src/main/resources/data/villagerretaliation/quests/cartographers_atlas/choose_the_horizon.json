@@ -3,36 +3,50 @@
   "id": "villagerretaliation:choose_the_horizon",
   "metadata": {
     "title": "Choose The Horizon",
-    "description": "Choose whether the atlas follows the coast or the dark roof road.",
+    "description": "Set the completed atlas toward the drowned coast or the dark roof road.",
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:first_far_marker"
+    "parent": "villagerretaliation:the_atlas_test"
   },
   "provider": {
     "type": "villagerretaliation:villager",
     "filters": {
-      "min_villager_level": "apprentice",
+      "min_villager_level": "master",
       "professions": [
         "minecraft:cartographer"
       ],
       "skills": {
         "cartography": {
-          "min": 20
+          "min": 48
         }
       }
     }
   },
   "availability": {
     "abandonment": "allow_repickup",
-    "consume_on_completion": false,
+    "consume_on_completion": true,
     "cross_villager_compatible": false,
     "locked_to_villager": true,
     "max_completions": 1,
     "max_starts": 0,
     "repeatable": false
   },
+  "events": [
+    {
+      "id": "horizon_chosen",
+      "event": "completed",
+      "repeatable": false,
+      "actions": [
+        {
+          "type": "set_tag",
+          "scope": "player",
+          "tag": "villagerretaliation:cartographers_atlas_horizon_chosen"
+        }
+      ]
+    }
+  ],
   "entry_stage": "started",
   "stages": [
     {
@@ -47,69 +61,15 @@
             "dark_roof"
           ],
           "tracker": {
-            "text": "Choose the next atlas route with the cartographer.",
-            "complete_text": "Route chosen: {objective_choice_value}.",
+            "text": "Choose the final atlas horizon with the cartographer.",
+            "complete_text": "You chose the {objective_choice_value} horizon.",
             "show_progress": true,
-            "progress": 0.9
+            "progress": 0.45
           }
         }
       ],
       "complete_when": [
         "choose_route"
-      ],
-      "responses": [
-        {
-          "id": "coast",
-          "label": "Chart the drowned coast",
-          "text": "Atlas route chosen: drowned coast.",
-          "actions": [
-            {
-              "type": "set_variable",
-              "scope": "quest",
-              "key": "choice",
-              "value": "coast"
-            },
-            {
-              "type": "set_tag",
-              "scope": "player",
-              "tag": "villagerretaliation:atlas_coast_route"
-            },
-            {
-              "type": "notification",
-              "trigger": "quest.updated",
-              "text": "Atlas route chosen: drowned coast."
-            }
-          ],
-          "transition": {
-            "stage": "coast_chosen"
-          }
-        },
-        {
-          "id": "dark_roof",
-          "label": "Chart the dark roof road",
-          "text": "Atlas route chosen: dark roof road.",
-          "actions": [
-            {
-              "type": "set_variable",
-              "scope": "quest",
-              "key": "choice",
-              "value": "dark_roof"
-            },
-            {
-              "type": "set_tag",
-              "scope": "player",
-              "tag": "villagerretaliation:atlas_dark_roof_route"
-            },
-            {
-              "type": "notification",
-              "trigger": "quest.updated",
-              "text": "Atlas route chosen: dark roof road."
-            }
-          ],
-          "transition": {
-            "stage": "dark_roof_chosen"
-          }
-        }
       ],
       "dialogue": {
         "offer": {
@@ -118,13 +78,61 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The atlas forks. One route follows drowned stone under the sea. The other follows a roof so dark birds avoid it."
+            "The atlas has paper, bearings, field proof, memory, and judgment. Now it asks for a horizon.",
+            "Choose the drowned coast if you want the atlas to follow water and ruins. Choose the dark roof road if you want it to follow danger under old timber."
           ],
           "responses": [
             {
-              "id": "accept",
-              "label": "Open the atlas",
-              "scene": "start_quest"
+              "id": "coast",
+              "label": "Choose the drowned coast",
+              "text": "Then we choose the coast. Keep your eyes on drowned stone, and do not trust quiet water.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "coast"
+                },
+                {
+                  "type": "set_tag",
+                  "scope": "player",
+                  "tag": "villagerretaliation:atlas_coast_route"
+                },
+                {
+                  "type": "notification",
+                  "trigger": "quest.updated",
+                  "text": "You chose the drowned coast. Reach the Ocean Monument, then bring back the prismarine proof."
+                }
+              ],
+              "transition": {
+                "stage": "coast_final"
+              }
+            },
+            {
+              "id": "dark_roof",
+              "label": "Choose the dark roof road",
+              "text": "Then we choose the dark roof road. If the house looks back, look back harder.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "dark_roof"
+                },
+                {
+                  "type": "set_tag",
+                  "scope": "player",
+                  "tag": "villagerretaliation:atlas_dark_roof_route"
+                },
+                {
+                  "type": "notification",
+                  "trigger": "quest.updated",
+                  "text": "You chose the dark roof road. Reach the Woodland Mansion, then bring back the binding proof."
+                }
+              ],
+              "transition": {
+                "stage": "dark_roof_final"
+              }
             },
             {
               "id": "decline",
@@ -139,20 +147,14 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "Pick the coast if you want guardians and prismarine. Pick the dark roof if you want illagers and stolen books. The branch options should be in my notes."
+            "This is the final fork. Coast or dark roof; water-stone or old timber."
           ],
           "responses": [
             {
-              "id": "remind",
-              "label": "Repeat the branch",
+              "id": "details",
+              "label": "Repeat the fork",
               "scene": "reminder_details",
-              "order": 80
-            },
-            {
-              "id": "abandon",
-              "label": "Abandon quest",
-              "scene": "abandon_confirm",
-              "order": 90
+              "order": 0
             },
             {
               "id": "leave",
@@ -165,35 +167,17 @@
       },
       "scenes": [
         {
-          "id": "abandon_confirm",
-          "lines": [
-            "Close the branch page for now?"
-          ],
-          "responses": [
-            {
-              "id": "confirm",
-              "label": "Abandon quest",
-              "scene": "abandon_quest"
-            },
-            {
-              "id": "cancel",
-              "label": "Keep the quest",
-              "scene": "leave"
-            }
-          ]
-        },
-        {
-          "id": "abandon_quest",
+          "id": "reminder_details",
           "actions": [
             {
               "type": "quest",
-              "action": "abandon",
+              "action": "remind",
               "lines": {
-                "abandoned": [
-                  "I will close the fork for now. It can reopen if you still want the atlas."
+                "reminder": [
+                  "Choose the drowned coast for water, prismarine, and ocean ruins. Choose the dark roof road for books, illagers, and a mansion horizon."
                 ],
                 "unavailable": [
-                  "There is no branch page to close."
+                  "I do not have your horizon page open right now."
                 ]
               }
             }
@@ -202,13 +186,99 @@
         {
           "id": "decline",
           "lines": [
-            "Then the horizon keeps both secrets."
+            "Then the horizon stays unchosen, which is a kind of answer but not a useful one."
           ]
         },
         {
           "id": "leave",
           "lines": [
             "Choose with both eyes open."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Choose the final atlas horizon from the cartographer's branch options.",
+        "show_progress": true,
+        "progress": 0.45
+      }
+    },
+    {
+      "id": "coast_final",
+      "objectives": [
+        {
+          "id": "visit_monument",
+          "type": "structure_visit",
+          "structure": "minecraft:monument",
+          "search_radius": 384,
+          "discovery_radius": 160,
+          "tracker": {
+            "text": "Reach the Ocean Monument near {target_x}, {target_z}.",
+            "complete_text": "The drowned coast mark is confirmed.",
+            "show_progress": true,
+            "progress": 0.65
+          }
+        },
+        {
+          "id": "bring_prismarine_crystals",
+          "type": "item_check",
+          "item": "minecraft:prismarine_crystals",
+          "count": 4,
+          "tracker": {
+            "text": "Bring 4 prismarine crystals to bind the drowned coast horizon.",
+            "complete_text": "The coast binding crystals are ready.",
+            "show_progress": true,
+            "progress": 0.8
+          }
+        },
+        {
+          "id": "bring_prismarine_shards",
+          "type": "item_check",
+          "item": "minecraft:prismarine_shard",
+          "count": 4,
+          "tracker": {
+            "text": "Bring 4 prismarine shards to set the coast margin.",
+            "complete_text": "The coast margin shards are ready.",
+            "show_progress": true,
+            "progress": 0.85
+          }
+        }
+      ],
+      "complete_when": [
+        "visit_monument",
+        "bring_prismarine_crystals",
+        "bring_prismarine_shards"
+      ],
+      "next": "coast_chosen",
+      "dialogue": {
+        "reminder": {
+          "label": "About The Horizon",
+          "request": "question",
+          "order": -24,
+          "show_for_babies": false,
+          "lines": [
+            "The drowned coast needs prismarine proof before I can set it into the final folio."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the proof",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "leave",
+              "label": "Never mind",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "leave",
+          "lines": [
+            "The tide can wait, but it will not wait forever."
           ]
         },
         {
@@ -219,27 +289,10 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Choose the drowned coast for ocean ruins, or the dark roof road for woodland mansions. The atlas will follow one branch."
+                  "Reach the Ocean Monument near the mark, then bring 4 prismarine crystals and 4 prismarine shards to bind the drowned coast horizon."
                 ],
                 "unavailable": [
-                  "The branch page is not active right now."
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "id": "start_quest",
-          "actions": [
-            {
-              "type": "quest",
-              "action": "start",
-              "lines": {
-                "started": [
-                  "The branch page is open. Choose the drowned coast or the dark roof road from my notes."
-                ],
-                "unavailable": [
-                  "The atlas cannot fork yet."
+                  "I do not have your horizon page open right now."
                 ]
               }
             }
@@ -247,9 +300,113 @@
         }
       ],
       "ui": {
-        "tracker_text": "Pick the atlas route from the cartographer's branch options.",
+        "tracker_text": "Reach the Ocean Monument, then bring prismarine crystals and shards.",
         "show_progress": true,
-        "progress": 0.7
+        "progress": 0.85
+      }
+    },
+    {
+      "id": "dark_roof_final",
+      "objectives": [
+        {
+          "id": "visit_mansion",
+          "type": "structure_visit",
+          "structure": "minecraft:woodland_mansion",
+          "search_radius": 768,
+          "discovery_radius": 192,
+          "tracker": {
+            "text": "Reach the Woodland Mansion near {target_x}, {target_z}.",
+            "complete_text": "The dark roof mark is confirmed.",
+            "show_progress": true,
+            "progress": 0.65
+          }
+        },
+        {
+          "id": "bring_books",
+          "type": "item_check",
+          "item": "minecraft:book",
+          "count": 6,
+          "tracker": {
+            "text": "Bring 6 books for the dark roof index.",
+            "complete_text": "The dark roof index is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "carry_totem",
+          "type": "item_check",
+          "item": "minecraft:totem_of_undying",
+          "count": 1,
+          "consume": false,
+          "tracker": {
+            "text": "Carry a Totem of Undying as proof the dark roof road was not imaginary.",
+            "complete_text": "The dark roof proof is ready.",
+            "show_progress": true,
+            "progress": 0.9
+          }
+        }
+      ],
+      "complete_when": [
+        "visit_mansion",
+        "bring_books",
+        "carry_totem"
+      ],
+      "next": "dark_roof_chosen",
+      "dialogue": {
+        "reminder": {
+          "label": "About The Horizon",
+          "request": "question",
+          "order": -24,
+          "show_for_babies": false,
+          "lines": [
+            "The dark roof road needs books and a totem before I can set it into the final folio."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the proof",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "leave",
+              "label": "Never mind",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "leave",
+          "lines": [
+            "The roof will stay dark without our help."
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Reach the Woodland Mansion near the mark, then bring 6 books and carry a Totem of Undying to bind the dark roof road."
+                ],
+                "unavailable": [
+                  "I do not have your horizon page open right now."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Reach the Woodland Mansion, then bring books and a totem.",
+        "show_progress": true,
+        "progress": 0.9
       }
     },
     {
@@ -262,13 +419,13 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The route is chosen. Let me fix the ink before it changes its mind."
+            "The drowned coast proof is here. The atlas can finally point beyond its own margin."
           ],
           "responses": [
             {
               "id": "complete",
-              "label": "Set the route",
-              "scene": "complete_quest"
+              "label": "Set the drowned coast horizon",
+              "scene": "complete_coast"
             },
             {
               "id": "leave",
@@ -280,23 +437,24 @@
       },
       "scenes": [
         {
-          "id": "complete_quest",
+          "id": "complete_coast",
           "actions": [
+            {
+              "type": "loot",
+              "loot_table": "villagerretaliation:quest/choose_the_horizon_coast_bonus"
+            },
             {
               "type": "quest",
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "Done. The atlas will follow the road you chose."
+                  "Done. The atlas has chosen the drowned coast, and the old blank promise has become a horizon."
                 ],
                 "missing_objectives": [
-                  "Choose a route from the branch notes before I set the ink."
-                ],
-                "missing_proof": [
-                  "Choose a route first."
+                  "The coast binding still needs the monument mark and prismarine proof."
                 ],
                 "unavailable": [
-                  "The branch page is not ready to close."
+                  "I cannot set the coast horizon until the proof is all here."
                 ]
               }
             }
@@ -305,12 +463,12 @@
         {
           "id": "leave",
           "lines": [
-            "Choose with both eyes open."
+            "The coast will keep making noise until we finish."
           ]
         }
       ],
       "ui": {
-        "tracker_text": "Return to the cartographer after choosing the route.",
+        "tracker_text": "Return to the cartographer to set the drowned coast horizon.",
         "show_progress": true,
         "progress": 1
       }
@@ -325,13 +483,13 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The route is chosen. Let me fix the ink before it changes its mind."
+            "The dark roof proof is here. The atlas can finally point beyond its own courage."
           ],
           "responses": [
             {
               "id": "complete",
-              "label": "Set the route",
-              "scene": "complete_quest"
+              "label": "Set the dark roof horizon",
+              "scene": "complete_dark_roof"
             },
             {
               "id": "leave",
@@ -343,23 +501,24 @@
       },
       "scenes": [
         {
-          "id": "complete_quest",
+          "id": "complete_dark_roof",
           "actions": [
+            {
+              "type": "loot",
+              "loot_table": "villagerretaliation:quest/choose_the_horizon_dark_roof_bonus"
+            },
             {
               "type": "quest",
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "Done. The atlas will follow the road you chose."
+                  "Done. The atlas has chosen the dark roof road, and the old blank promise has become a horizon."
                 ],
                 "missing_objectives": [
-                  "Choose a route from the branch notes before I set the ink."
-                ],
-                "missing_proof": [
-                  "Choose a route first."
+                  "The dark roof binding still needs the mansion mark, the books, and the totem proof."
                 ],
                 "unavailable": [
-                  "The branch page is not ready to close."
+                  "I cannot set the dark roof horizon until the proof is all here."
                 ]
               }
             }
@@ -368,23 +527,23 @@
         {
           "id": "leave",
           "lines": [
-            "Choose with both eyes open."
+            "The roof will stay dark until we finish."
           ]
         }
       ],
       "ui": {
-        "tracker_text": "Return to the cartographer after choosing the route.",
+        "tracker_text": "Return to the cartographer to set the dark roof horizon.",
         "show_progress": true,
         "progress": 1
       }
     }
   ],
   "rewards": {
-    "experience": 80,
-    "gossip_reputation": 2,
+    "experience": 360,
+    "gossip_reputation": 9,
     "loot_table": "villagerretaliation:quest/choose_the_horizon",
     "memory_event": "player_completed_quest",
-    "reputation": 5
+    "reputation": 20
   },
   "ui": {
     "title": "Choose The Horizon"

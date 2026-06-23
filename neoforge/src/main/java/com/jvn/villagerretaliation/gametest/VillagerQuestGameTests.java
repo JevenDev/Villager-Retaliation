@@ -135,7 +135,7 @@ public final class VillagerQuestGameTests {
             VillagerActionDefinition.Kind.NOTIFICATION,
             VillagerActionDefinition.Kind.FORCED_DIALOGUE);
     private static final Map<String, Integer> EXPECTED_QUESTLINE_COUNTS = orderedMap(
-            Map.entry("cartographers_atlas", 8),
+            Map.entry("cartographers_atlas", 11),
             Map.entry("dangerous_commissions", 4),
             Map.entry("lost_civilization", 2),
             Map.entry("old_roads", 2),
@@ -896,6 +896,7 @@ public final class VillagerQuestGameTests {
                 entry.questId(),
                 entry.title(),
                 entry.objective(),
+                entry.description(),
                 entry.metadata(),
                 entry.progress(),
                 entry.showProgress(),
@@ -903,7 +904,9 @@ public final class VillagerQuestGameTests {
                 entry.status(),
                 entry.issuer(),
                 "minecraft:overworld 6,65,-2",
-                entry.questItems());
+                entry.questItems(),
+                false,
+                false);
         helper.assertValueEqual(
                 QuestTrackerPresenter.questProgressSignature(movedIssuerEntry),
                 QuestTrackerPresenter.questProgressSignature(entry),
@@ -1072,7 +1075,7 @@ public final class VillagerQuestGameTests {
                 .orElseThrow(() -> new GameTestAssertException("Missing compiled quest " + questId));
         QuestDefinition quest = compiled.asQuestDefinition();
         helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "choose_the_horizon schema version");
-        helper.assertValueEqual(quest.objectives().size(), 1, "choose_the_horizon objective count");
+        helper.assertValueEqual(quest.objectives().size(), 7, "choose_the_horizon objective count");
         QuestDefinition.Objective objective = quest.objectives().getFirst();
         helper.assertValueEqual(objective.id(), "started.choose_route", "branch objective id");
         helper.assertValueEqual(objective.type(), QuestDefinition.ObjectiveType.CHOICE, "branch objective type");
@@ -1081,38 +1084,73 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(objective.factValues().containsAll(Set.of("coast", "dark_roof")),
                 "branch objective choices changed");
 
-        helper.assertValueEqual(quest.stages().size(), 3, "choose_the_horizon stage count");
+        helper.assertValueEqual(quest.stages().size(), 5, "choose_the_horizon stage count");
         QuestDefinition.Stage started = quest.stages().get("started");
         helper.assertTrue(started != null, "choose_the_horizon has no started stage");
         helper.assertTrue(started.branches().isEmpty(), "v2 responses should not compile duplicate legacy branches");
         helper.assertValueEqual(started.objectives(), List.of("started.choose_route"), "started objective ownership");
         helper.assertValueEqual(started.completeWhen().getFirst().objective(), "started.choose_route", "started predicate");
+        helper.assertTrue(quest.stages().containsKey("coast_final"), "coast_final stage missing");
+        helper.assertTrue(quest.stages().containsKey("dark_roof_final"), "dark_roof_final stage missing");
         helper.assertTrue(quest.stages().containsKey("coast_chosen"), "coast_chosen stage missing");
         helper.assertTrue(quest.stages().containsKey("dark_roof_chosen"), "dark_roof_chosen stage missing");
-        assertTrackerStepMatches(helper, quest.tracker().steps().get("started"), legacyChooseTheHorizonQuestV1Fixture()
-                .getAsJsonObject("tracker").getAsJsonObject("steps").getAsJsonObject("proof"), "choose horizon proof");
-        assertTrackerStepMatches(helper, quest.tracker().steps().get("coast_chosen"), legacyChooseTheHorizonQuestV1Fixture()
-                .getAsJsonObject("tracker").getAsJsonObject("steps").getAsJsonObject("return"), "choose horizon coast return");
-        assertTrackerStepMatches(helper, quest.tracker().steps().get("dark_roof_chosen"), legacyChooseTheHorizonQuestV1Fixture()
-                .getAsJsonObject("tracker").getAsJsonObject("steps").getAsJsonObject("return"), "choose horizon dark roof return");
+        helper.assertValueEqual(
+                quest.tracker().steps().get("started").text(),
+                "Choose the final atlas horizon from the cartographer's branch options.",
+                "choose horizon proof tracker");
+        helper.assertValueEqual(
+                quest.tracker().steps().get("coast_final").text(),
+                "Reach the Ocean Monument, then bring prismarine crystals and shards.",
+                "choose horizon coast proof tracker");
+        helper.assertValueEqual(
+                quest.tracker().steps().get("dark_roof_final").text(),
+                "Reach the Woodland Mansion, then bring books and a totem.",
+                "choose horizon dark roof proof tracker");
+        helper.assertValueEqual(quest.tracker().steps().get("coast_chosen").progress(), 1.0F, "choose horizon coast return");
+        helper.assertValueEqual(quest.tracker().steps().get("dark_roof_chosen").progress(), 1.0F, "choose horizon dark roof return");
+
+        VillagerQuestSavedData.QuestProgress branchProgress = new VillagerQuestSavedData().getOrCreate(
+                UUID.fromString("00000000-0000-0000-0000-000000000111"),
+                questId);
+        branchProgress.start(
+                UUID.fromString("00000000-0000-0000-0000-000000000112"),
+                Level.OVERWORLD,
+                null,
+                0L);
+        branchProgress.setCurrentStage("coast_final");
+        Set<String> coastObjectiveIds = QuestObjectiveQuery.activeObjectives(quest, branchProgress).stream()
+                .map(QuestDefinition.Objective::id)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        helper.assertTrue(coastObjectiveIds.contains("coast_final.visit_monument"), "coast branch visit objective missing");
+        helper.assertTrue(coastObjectiveIds.contains("coast_final.bring_prismarine_crystals"), "coast branch crystal objective missing");
+        helper.assertFalse(coastObjectiveIds.contains("dark_roof_final.bring_books"), "dark roof objective leaked into coast branch");
+        Set<ResourceLocation> coastHandIns = QuestObjectiveQuery.requiredItemHandIns(quest, branchProgress).stream()
+                .map(QuestDefinition.Objective::item)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        helper.assertValueEqual(
+                coastHandIns,
+                Set.of(
+                        ResourceLocation.fromNamespaceAndPath("minecraft", "prismarine_crystals"),
+                        ResourceLocation.fromNamespaceAndPath("minecraft", "prismarine_shard")),
+                "coast branch hand-ins leaked another route");
 
         DialogueTreeDefinition generatedTree = DialogueTreeResources
                 .tree(helper.getLevel().getServer(), LOCALE, QuestDialogueCompiler.treeId(questId))
                 .orElseThrow(() -> new GameTestAssertException("choose_the_horizon generated dialogue tree missing"));
         DialogueTreeDefinition.Node responsesNode = generatedTree
-                .node("stage.started.responses")
-                .orElseThrow(() -> new GameTestAssertException("choose_the_horizon response node missing"));
+                .node("stage.started.slot.offer")
+                .orElseThrow(() -> new GameTestAssertException("choose_the_horizon offer node missing"));
         assertRouteResponse(
                 helper,
                 responsesNode,
                 "coast",
-                "coast_chosen",
+                "coast_final",
                 VillagerRetaliation.id("atlas_coast_route"));
         assertRouteResponse(
                 helper,
                 responsesNode,
                 "dark_roof",
-                "dark_roof_chosen",
+                "dark_roof_final",
                 VillagerRetaliation.id("atlas_dark_roof_route"));
 
         helper.succeed();
@@ -1130,6 +1168,7 @@ public final class VillagerQuestGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         movePlayer(helper, player, new BlockPos(1, 2, 2));
         configureChooseTheHorizonProvider(level, villager);
+        markQuestCompleted(level, player.getUUID(), VillagerRetaliation.id("the_atlas_test"));
 
         try {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
@@ -1141,7 +1180,7 @@ public final class VillagerQuestGameTests {
                     questId,
                     treeId,
                     "coast",
-                    "coast_chosen",
+                    "coast_final",
                     VillagerRetaliation.id("atlas_coast_route"));
             VillagerQuestService.debugRemoveQuest(player, questId);
             DialogueTreeService.clearRuntimeState();
@@ -1153,7 +1192,7 @@ public final class VillagerQuestGameTests {
                     questId,
                     treeId,
                     "dark_roof",
-                    "dark_roof_chosen",
+                    "dark_roof_final",
                     VillagerRetaliation.id("atlas_dark_roof_route"));
             helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "choose_the_horizon branch runtime emitted diagnostics");
             DatapackDiagnostics.clear();
@@ -1193,8 +1232,12 @@ public final class VillagerQuestGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         helper.assertValueEqual(
                 VillagerQuestResources.questIdsWithObjective(server, QuestDefinition.ObjectiveType.MOB_KILL).size(),
-                3,
+                5,
                 "mob-kill quest index size");
+        helper.assertTrue(
+                VillagerQuestResources.memoryEventQuestIds(server, VillagerRetaliation.id("player_defended_village"))
+                        .contains(VillagerRetaliation.id("roads_that_remember")),
+                "memory-event quest index is missing roads_that_remember");
         helper.assertTrue(
                 VillagerQuestResources.memoryEventQuestIds(server, VillagerRetaliation.id("player_defended_village"))
                         .contains(VillagerRetaliation.id("standing_watch")),
@@ -2223,7 +2266,7 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void builtInFirstFarMarkerQuestModuleV2PreservesTargetSemantics(GameTestHelper helper) {
+    public static void builtInFirstFarMarkerQuestModuleV2PreservesObjectiveTargetSemantics(GameTestHelper helper) {
         DatapackDiagnostics.clear();
         VillagerQuestResources.clearCache();
         DialogueTreeResources.clearCache();
@@ -2234,11 +2277,22 @@ public final class VillagerQuestGameTests {
         QuestDefinition quest = compiled.asQuestDefinition();
 
         helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "first_far_marker schema version");
-        helper.assertValueEqual(quest.target().structure(), ResourceLocation.fromNamespaceAndPath("minecraft", "trail_ruins"), "first marker target structure");
-        helper.assertValueEqual(quest.target().searchRadius(), 192, "first marker search radius");
-        helper.assertValueEqual(quest.target().discoveryRadius(), 96, "first marker discovery radius");
-        helper.assertValueEqual(quest.target().proofItem(), ResourceLocation.fromNamespaceAndPath("minecraft", "brush"), "first marker proof item");
-        helper.assertValueEqual(quest.objectives().getFirst().id(), "survey.bring_copper", "first marker objective id");
+        helper.assertFalse(quest.target().hasStructureTarget(), "first marker should use objective-level targeting");
+        Set<String> firstMarkerObjectives = quest.objectives().stream()
+                .map(QuestDefinition.Objective::id)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        assertContainsAll(
+                helper,
+                firstMarkerObjectives,
+                Set.of("survey.visit_ruins", "survey.carry_brush", "survey.bring_copper"),
+                "first marker objective ids");
+        QuestDefinition.Objective visitRuins = quest.objectives().stream()
+                .filter(objective -> objective.id().equals("survey.visit_ruins"))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("first marker visit objective missing"));
+        helper.assertValueEqual(visitRuins.structure(), ResourceLocation.fromNamespaceAndPath("minecraft", "trail_ruins"), "first marker target structure");
+        helper.assertValueEqual(visitRuins.searchRadius(), 192, "first marker search radius");
+        helper.assertValueEqual(visitRuins.discoveryRadius(), 96, "first marker discovery radius");
         helper.assertValueEqual(quest.stages().get("survey").next(), "return", "first marker survey next stage");
         helper.assertValueEqual(quest.tracker().steps().get("survey").text(), "Reach the Trail Ruins near {target_x}, {target_z}.", "first marker travel tracker");
         helper.assertValueEqual(quest.tracker().steps().get("return").progress(), 1.0F, "first marker return tracker progress");
@@ -2261,8 +2315,7 @@ public final class VillagerQuestGameTests {
         VillagerQuestSavedData data = new VillagerQuestSavedData();
         VillagerQuestSavedData.QuestProgress progress = data.getOrCreate(playerId, questId);
         progress.start(villagerId, Level.OVERWORLD, targetPos, 26L);
-        progress.setTarget(villagerId, Level.OVERWORLD, targetPos, "structure_target");
-        progress.markVisitedTarget();
+        progress.setTarget(villagerId, Level.OVERWORLD, targetPos, "survey.visit_ruins");
         progress.setCurrentStage("return");
         progress.markObjectiveComplete("survey.bring_copper");
 
@@ -2271,10 +2324,9 @@ public final class VillagerQuestGameTests {
         VillagerQuestSavedData.QuestProgress loadedProgress = loaded.get(playerId, questId);
         helper.assertTrue(loadedProgress != null, "first marker target progress did not reload");
         helper.assertValueEqual(loadedProgress.currentStage(), "return", "first marker reloaded stage");
-        helper.assertTrue(loadedProgress.visitedTarget(), "first marker reloaded visited target");
         helper.assertValueEqual(loadedProgress.targetDimension(), Level.OVERWORLD, "first marker reloaded target dimension");
         helper.assertValueEqual(loadedProgress.targetPos(), targetPos, "first marker reloaded target position");
-        helper.assertValueEqual(loadedProgress.targetObjectiveId(), "structure_target", "first marker reloaded target objective");
+        helper.assertValueEqual(loadedProgress.targetObjectiveId(), "survey.visit_ruins", "first marker reloaded target objective");
         helper.assertTrue(loadedProgress.objectiveComplete("survey.bring_copper"), "first marker reloaded objective");
         helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "first marker migration emitted diagnostics");
         DatapackDiagnostics.clear();
@@ -2299,6 +2351,7 @@ public final class VillagerQuestGameTests {
         movePlayer(helper, player, new BlockPos(1, 2, 2));
         configureFirstFarMarkerProvider(level, villager);
         markQuestCompleted(level, player.getUUID(), VillagerRetaliation.id("blank_map_promise"));
+        markQuestCompleted(level, player.getUUID(), VillagerRetaliation.id("ink_and_bearings"));
 
         try {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
@@ -2357,7 +2410,14 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(quest.target().searchRadius(), 256, "lost civilization search radius");
         helper.assertValueEqual(quest.target().discoveryRadius(), 128, "lost civilization discovery radius");
         helper.assertValueEqual(quest.target().proofItem(), ResourceLocation.fromNamespaceAndPath("minecraft", "echo_shard"), "lost civilization proof item");
-        helper.assertValueEqual(quest.objectives().getFirst().id(), "survey.recover_echo_shard", "lost civilization objective id");
+        Set<String> lostCivilizationObjectives = quest.objectives().stream()
+                .map(QuestDefinition.Objective::id)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        assertContainsAll(
+                helper,
+                lostCivilizationObjectives,
+                Set.of("survey.visit_city_center", "survey.recover_echo_shard"),
+                "lost civilization objective ids");
         helper.assertValueEqual(quest.stages().get("survey").next(), "return", "lost civilization survey next stage");
         helper.assertValueEqual(quest.tracker().steps().get("survey").progress(), 0.25F, "lost civilization travel tracker progress");
         helper.assertValueEqual(quest.tracker().steps().get("return").progress(), 1.0F, "lost civilization return tracker progress");
@@ -3084,8 +3144,8 @@ public final class VillagerQuestGameTests {
     private static void configureChooseTheHorizonProvider(ServerLevel level, Villager villager) {
         villager.setVillagerData(villager.getVillagerData()
                 .setProfession(VillagerProfession.CARTOGRAPHER)
-                .setLevel(2));
-        VillagerProfileManager.setSkill(level, villager, VillagerSkill.CARTOGRAPHY, 20);
+                .setLevel(5));
+        VillagerProfileManager.setSkill(level, villager, VillagerSkill.CARTOGRAPHY, 48);
     }
 
     private static void configureFirstFarMarkerProvider(ServerLevel level, Villager villager) {
@@ -3935,20 +3995,17 @@ public final class VillagerQuestGameTests {
             ResourceLocation treeId,
             String branchId,
             String nextStage,
-            ResourceLocation routeTag) {
-        VillagerQuestService.DebugStartResult started =
-                VillagerQuestService.debugStartQuest(player, villager, questId, true);
-        helper.assertTrue(started.started(), branchId + " choose_the_horizon did not start: " + started.message());
+        ResourceLocation routeTag) {
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
         selectDialogueOption(
                 helper,
                 context,
-                DialogueTreeService.entryOptionId(treeId, "stage.started.responses"));
+                DialogueTreeService.entryOptionId(treeId, "stage.started.offer"));
         helper.assertTrue(
                 selectDialogueOption(
                         helper,
                         context,
-                        DialogueTreeService.responseOptionId(treeId, branchId)).text().contains("Atlas route chosen"),
+                        DialogueTreeService.responseOptionId(treeId, branchId)).text().contains("coast".equals(branchId) ? "coast" : "dark roof"),
                 branchId + " response text");
 
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
@@ -3957,7 +4014,7 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(progress.currentStage(), nextStage, branchId + " transition stage");
         helper.assertValueEqual(progress.choiceHistory().size(), 1, branchId + " choice history count");
         VillagerQuestSavedData.ChoiceHistoryEntry choice = progress.choiceHistory().getFirst();
-        helper.assertValueEqual(choice.scenePath(), "stage.started.responses", branchId + " choice scene path");
+        helper.assertValueEqual(choice.scenePath(), "stage.started.scene.offer", branchId + " choice scene path");
         helper.assertValueEqual(choice.responseId(), branchId, branchId + " choice response");
         helper.assertValueEqual(choice.priorStage(), "started", branchId + " choice prior stage");
         helper.assertValueEqual(choice.nextStage(), nextStage, branchId + " choice next stage");
@@ -3998,11 +4055,11 @@ public final class VillagerQuestGameTests {
                 new CompiledQuestTransition(
                         questId,
                         "started",
-                        "stage.started.responses",
+                        choice.scenePath(),
                         branchId,
                         CompiledQuestTransition.Target.STAGE,
                         nextStage,
-                        "/stages/0/responses/" + ("coast".equals(branchId) ? "0" : "1")),
+                        "/stages/0/dialogue/offer/responses/" + ("coast".equals(branchId) ? "0" : "1")),
                 Map.of());
         helper.assertTrue(duplicate.text().contains("already"), branchId + " duplicate response replay was not reported");
         helper.assertValueEqual(progress.currentStage(), nextStage, branchId + " duplicate replay changed stage");
@@ -4073,27 +4130,6 @@ public final class VillagerQuestGameTests {
                         + DatapackDiagnostics.structuredRecent().stream()
                                 .map(diagnostic -> diagnostic.jsonPointer() + " :: " + diagnostic.message())
                                 .toList());
-    }
-
-    private static JsonObject legacyChooseTheHorizonQuestV1Fixture() {
-        return JsonParser.parseString("""
-                {
-                  "tracker": {
-                    "steps": {
-                      "proof": {
-                        "text": "Pick the atlas route from the cartographer's branch options.",
-                        "show_progress": true,
-                        "progress": 0.7
-                      },
-                      "return": {
-                        "text": "Return to the cartographer after choosing the route.",
-                        "show_progress": true,
-                        "progress": 1
-                      }
-                    }
-                  }
-                }
-                """).getAsJsonObject();
     }
 
     private static JsonObject legacyEggBasketsQuestV1Fixture() {
@@ -5093,6 +5129,11 @@ public final class VillagerQuestGameTests {
             VillagerActionDefinition action,
             VillagerActionDefinition.QuestAction expectedAction,
             ResourceLocation questId) {
+        if (expectedAction == VillagerActionDefinition.QuestAction.START
+                && action.kind() == VillagerActionDefinition.Kind.QUEST_TRANSITION
+                && Objects.equals(action.questTransition().questId(), questId)) {
+            return true;
+        }
         return action.kind() == VillagerActionDefinition.Kind.QUEST
                 && action.questAction() == expectedAction
                 && Objects.equals(action.questId(), questId);

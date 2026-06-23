@@ -86,6 +86,19 @@
       "id": "survey",
       "objectives": [
         {
+          "id": "visit_city_center",
+          "type": "structure_visit",
+          "structure": "minecraft:ancient_city",
+          "search_radius": 256,
+          "discovery_radius": 128,
+          "tracker": {
+            "text": "Reach the Ancient City center near {target_x}, {target_z}.",
+            "complete_text": "You reached the heart of the old city.",
+            "show_progress": true,
+            "progress": 0.45
+          }
+        },
+        {
           "id": "recover_echo_shard",
           "type": "item_check",
           "item": "minecraft:echo_shard",
@@ -104,6 +117,7 @@
         }
       ],
       "complete_when": [
+        "visit_city_center",
         "recover_echo_shard"
       ],
       "next": "return",
@@ -261,7 +275,7 @@
                   "We have that tale now. I am still deciding how much of it should be spoken aloud."
                 ],
                 "locate_failed": [
-                  "The map table is quiet today. I cannot find a clean mark for that city.",
+                  "The map table will not settle on that city today. I would rather wait than send you to a bad mark.",
                   "I can feel the old road under the ink, but not clearly enough to send you there."
                 ],
                 "started": [
@@ -436,7 +450,7 @@
                   "The proof is half the story. The other half is the place itself: the city center near {target_x}, {target_z}."
                 ],
                 "unavailable": [
-                  "This tale is not ready to close yet.",
+                  "The story still has a missing piece.",
                   "Something is missing from the story."
                 ]
               }

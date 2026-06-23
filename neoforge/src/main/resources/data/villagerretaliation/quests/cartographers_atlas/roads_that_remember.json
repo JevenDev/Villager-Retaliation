@@ -1,24 +1,25 @@
 {
   "schema": "villagerretaliation:quest/v2",
-  "id": "villagerretaliation:blank_map_promise",
+  "id": "villagerretaliation:roads_that_remember",
   "metadata": {
-    "title": "Blank Map Promise",
-    "description": "Bind the first blank atlas folio with paper, ink, and a compass bearing.",
+    "title": "Roads That Remember",
+    "description": "Record a village defense memory and turn it into a road the atlas can understand.",
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration"
-    ]
+    ],
+    "parent": "villagerretaliation:first_far_marker"
   },
   "provider": {
     "type": "villagerretaliation:villager",
     "filters": {
-      "min_villager_level": "novice",
+      "min_villager_level": "journeyman",
       "professions": [
         "minecraft:cartographer"
       ],
       "skills": {
         "cartography": {
-          "min": 6
+          "min": 22
         }
       }
     }
@@ -34,66 +35,54 @@
   },
   "events": [
     {
-      "id": "atlas_opened",
-      "event": "started",
-      "repeatable": false,
-      "actions": [
-        {
-          "type": "set_tag",
-          "scope": "player",
-          "tag": "villagerretaliation:cartographers_atlas_started"
-        }
-      ]
-    },
-    {
-      "id": "folio_bound",
+      "id": "memory_recorded",
       "event": "completed",
       "repeatable": false,
       "actions": [
         {
           "type": "set_tag",
           "scope": "player",
-          "tag": "villagerretaliation:cartographers_atlas_folio_bound"
+          "tag": "villagerretaliation:cartographers_atlas_story_recorded"
         }
       ]
     }
   ],
-  "entry_stage": "gather_paper",
+  "entry_stage": "hear_story",
   "stages": [
     {
-      "id": "gather_paper",
+      "id": "hear_story",
       "objectives": [
         {
-          "id": "bring_paper",
-          "type": "item_check",
-          "item": "minecraft:paper",
-          "count": 24,
+          "id": "witness_defense",
+          "type": "memory_event",
+          "memory": "player_defended_village",
+          "count": 1,
           "tracker": {
-            "text": "Bring 24 paper for the first atlas folio.",
-            "complete_text": "The folio paper is ready.",
+            "text": "Help or witness a village defense so the atlas has a living road to record.",
+            "complete_text": "A village defense memory is ready for the atlas.",
             "show_progress": true,
-            "progress": 0.45
+            "progress": 0.55
           }
         }
       ],
       "complete_when": [
-        "bring_paper"
+        "witness_defense"
       ],
-      "next": "bind_bearing",
+      "next": "write_account",
       "dialogue": {
         "offer": {
-          "label": "Blank Map Promise",
-          "request": "question",
+          "label": "Roads That Remember",
+          "request": "story",
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "Every atlas begins as a promise: enough paper to hold the world, enough ink to admit where we do not know it yet.",
-            "Bring me paper, a compass, and ink sacs. I will bind the first folio, and you can decide whether the blank space becomes a road."
+            "Maps remember places. Villages remember what happened there. A useful atlas should learn both.",
+            "When a village survives danger, bring that memory back with a written account. Roads matter most when people need to return by them."
           ],
           "responses": [
             {
               "id": "accept",
-              "label": "Start the atlas",
+              "label": "Record the road memory",
               "scene": "start_quest"
             },
             {
@@ -104,17 +93,17 @@
           ]
         },
         "reminder": {
-          "label": "About Blank Map Promise",
-          "request": "question",
+          "label": "About Roads That Remember",
+          "request": "story",
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The blank folio still needs its paper before the compass can mean anything."
+            "The atlas still needs a living road: a memory of a village defended, then a written account."
           ],
           "responses": [
             {
               "id": "details",
-              "label": "Repeat the list",
+              "label": "Repeat the task",
               "scene": "reminder_details",
               "order": 0
             },
@@ -137,7 +126,7 @@
         {
           "id": "abandon_confirm",
           "lines": [
-            "Fold the blank folio away for now?"
+            "Leave this memory unwritten for now?"
           ],
           "responses": [
             {
@@ -147,7 +136,7 @@
             },
             {
               "id": "cancel",
-              "label": "Keep the folio",
+              "label": "Keep listening",
               "scene": "leave"
             }
           ]
@@ -160,10 +149,10 @@
               "action": "abandon",
               "lines": {
                 "abandoned": [
-                  "I will keep the covers flat until you are ready to start again."
+                  "I will leave the page blank until the road has something to say."
                 ],
                 "unavailable": [
-                  "There is no atlas folio in your hands right now."
+                  "There is no road memory open right now."
                 ]
               }
             }
@@ -172,13 +161,13 @@
         {
           "id": "decline",
           "lines": [
-            "Then the map stays blank, which is safer but much less useful."
+            "Fair. Some stories should not be chased while they are still happening."
           ]
         },
         {
           "id": "leave",
           "lines": [
-            "Blank space keeps its patience."
+            "Keep your ears open. Roads talk after danger."
           ]
         },
         {
@@ -189,10 +178,10 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "First bring 24 paper. After that, bind the bearing with 1 compass and 3 ink sacs."
+                  "Help or witness a village defense, then bring me a book so I can write the account into the atlas."
                 ],
                 "unavailable": [
-                  "I do not have your blank folio open right now."
+                  "I do not have that road memory open for you right now."
                 ]
               }
             }
@@ -206,13 +195,13 @@
               "action": "start",
               "lines": {
                 "already_completed": [
-                  "The first folio is already bound."
+                  "The atlas already has its first living road."
                 ],
                 "started": [
-                  "Good. Start with 24 paper; a thin atlas lies before the first rain."
+                  "Listen for a village that survives danger. When the memory is fresh, bring a book and I will set it down properly."
                 ],
                 "unavailable": [
-                  "The map table needs a little time before it can take another promise."
+                  "The first field marker must be inked before the atlas can weigh memories."
                 ]
               }
             }
@@ -220,65 +209,46 @@
         }
       ],
       "ui": {
-        "tracker_text": "Bring 24 paper for the first atlas folio.",
+        "tracker_text": "Help or witness a village defense memory.",
         "show_progress": true,
-        "progress": 0.45
+        "progress": 0.55
       }
     },
     {
-      "id": "bind_bearing",
+      "id": "write_account",
       "objectives": [
         {
-          "id": "bring_compass",
+          "id": "bring_book",
           "type": "item_check",
-          "item": "minecraft:compass",
+          "item": "minecraft:book",
           "count": 1,
           "tracker": {
-            "text": "Bring 1 compass to give the atlas a north.",
-            "complete_text": "The compass bearing is ready.",
+            "text": "Bring 1 book for the road account.",
+            "complete_text": "The road account can be written.",
             "show_progress": true,
-            "progress": 0.7
-          }
-        },
-        {
-          "id": "bring_ink",
-          "type": "item_check",
-          "item": "minecraft:ink_sac",
-          "count": 3,
-          "tracker": {
-            "text": "Bring 3 ink sacs to bind the first folio.",
-            "complete_text": "The binding ink is ready.",
-            "show_progress": true,
-            "progress": 0.8
+            "progress": 0.85
           }
         }
       ],
       "complete_when": [
-        "bring_compass",
-        "bring_ink"
+        "bring_book"
       ],
       "next": "return",
       "dialogue": {
         "reminder": {
-          "label": "About Blank Map Promise",
-          "request": "question",
+          "label": "About Roads That Remember",
+          "request": "story",
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The paper is enough. Now the folio needs a compass and ink so the blank page knows which way to face."
+            "The memory is there. Bring a book so the atlas can keep it without bending it into rumor."
           ],
           "responses": [
             {
               "id": "details",
-              "label": "Repeat the list",
+              "label": "Repeat the task",
               "scene": "reminder_details",
               "order": 0
-            },
-            {
-              "id": "abandon",
-              "label": "Abandon quest",
-              "scene": "abandon_confirm",
-              "order": 90
             },
             {
               "id": "leave",
@@ -291,44 +261,9 @@
       },
       "scenes": [
         {
-          "id": "abandon_confirm",
-          "lines": [
-            "Fold the blank folio away for now?"
-          ],
-          "responses": [
-            {
-              "id": "confirm",
-              "label": "Abandon quest",
-              "scene": "abandon_quest"
-            },
-            {
-              "id": "cancel",
-              "label": "Keep the folio",
-              "scene": "leave"
-            }
-          ]
-        },
-        {
-          "id": "abandon_quest",
-          "actions": [
-            {
-              "type": "quest",
-              "action": "abandon",
-              "lines": {
-                "abandoned": [
-                  "I will keep the covers flat until you are ready to start again."
-                ],
-                "unavailable": [
-                  "There is no atlas folio in your hands right now."
-                ]
-              }
-            }
-          ]
-        },
-        {
           "id": "leave",
           "lines": [
-            "Blank space keeps its patience."
+            "A remembered road deserves a clean page."
           ]
         },
         {
@@ -339,10 +274,10 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "The folio still needs 1 compass and 3 ink sacs."
+                  "Bring 1 book. The defense memory is ready; the account still needs a page."
                 ],
                 "unavailable": [
-                  "I do not have your blank folio open right now."
+                  "I do not have that road memory open for you right now."
                 ]
               }
             }
@@ -350,9 +285,9 @@
         }
       ],
       "ui": {
-        "tracker_text": "Bring 1 compass and 3 ink sacs for the folio binding.",
+        "tracker_text": "Bring 1 book to record the village defense memory.",
         "show_progress": true,
-        "progress": 0.8
+        "progress": 0.85
       }
     },
     {
@@ -360,17 +295,17 @@
       "objectives": [],
       "dialogue": {
         "turn_in": {
-          "label": "About Blank Map Promise",
-          "request": "question",
+          "label": "About Roads That Remember",
+          "request": "story",
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "Paper, compass, ink. That is enough for a beginning."
+            "A defended village, a written account, and an atlas that knows the difference between distance and meaning."
           ],
           "responses": [
             {
-              "id": "complete",
-              "label": "Bind the first folio",
+              "id": "record",
+              "label": "Record the road memory",
               "scene": "complete_quest"
             },
             {
@@ -390,16 +325,16 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "There. The first folio is bound. The atlas is still mostly empty, but now it knows how to begin."
+                  "Now the atlas has a road that remembers why it mattered. That will change how it judges every future mark."
                 ],
                 "missing_objectives": [
-                  "The binding is still short. Check the tracker before I stitch the cover."
+                  "The atlas needs both the defense memory and the book before I can write this account."
                 ],
                 "missing_proof": [
-                  "Bring the materials here, and I can bind them properly."
+                  "Bring the book here, and we can keep the memory clean."
                 ],
                 "unavailable": [
-                  "The folio still needs its paper, compass, and ink before I can close it."
+                  "This road memory still needs your account before I can close it."
                 ]
               }
             }
@@ -408,25 +343,25 @@
         {
           "id": "leave",
           "lines": [
-            "Do not crease the paper before it has a road."
+            "No hurry. Some memories need a quiet hand."
           ]
         }
       ],
       "ui": {
-        "tracker_text": "Return to the cartographer with the folio materials.",
+        "tracker_text": "Return to the cartographer with the road account.",
         "show_progress": true,
         "progress": 1
       }
     }
   ],
   "rewards": {
-    "experience": 90,
-    "gossip_reputation": 3,
-    "loot_table": "villagerretaliation:quest/blank_map_promise",
+    "experience": 185,
+    "gossip_reputation": 5,
+    "loot_table": "villagerretaliation:quest/roads_that_remember",
     "memory_event": "player_completed_quest",
-    "reputation": 7
+    "reputation": 12
   },
   "ui": {
-    "title": "Blank Map Promise"
+    "title": "Roads That Remember"
   }
 }

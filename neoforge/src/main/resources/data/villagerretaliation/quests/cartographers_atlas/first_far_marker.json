@@ -3,12 +3,12 @@
   "id": "villagerretaliation:first_far_marker",
   "metadata": {
     "title": "First Far Marker",
-    "description": "Follow the cartographer's first atlas mark to Trail Ruins and return with field notes.",
+    "description": "Follow the first atlas mark to Trail Ruins and plate the route with copper.",
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:blank_map_promise"
+    "parent": "villagerretaliation:ink_and_bearings"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -33,17 +33,51 @@
     "max_starts": 0,
     "repeatable": false
   },
-  "target": {
-    "structure": "minecraft:trail_ruins",
-    "search_radius": 192,
-    "discovery_radius": 96,
-    "proof_item": "minecraft:brush"
-  },
+  "events": [
+    {
+      "id": "first_marker_recorded",
+      "event": "completed",
+      "repeatable": false,
+      "actions": [
+        {
+          "type": "set_tag",
+          "scope": "player",
+          "tag": "villagerretaliation:cartographers_atlas_fieldwork"
+        }
+      ]
+    }
+  ],
   "entry_stage": "survey",
   "stages": [
     {
       "id": "survey",
       "objectives": [
+        {
+          "id": "visit_ruins",
+          "type": "structure_visit",
+          "structure": "minecraft:trail_ruins",
+          "search_radius": 192,
+          "discovery_radius": 96,
+          "tracker": {
+            "text": "Reach the Trail Ruins near {target_x}, {target_z}.",
+            "complete_text": "The first far marker has been visited.",
+            "show_progress": true,
+            "progress": 0.35
+          }
+        },
+        {
+          "id": "carry_brush",
+          "type": "item_check",
+          "item": "minecraft:brush",
+          "count": 1,
+          "consume": false,
+          "tracker": {
+            "text": "Carry a brush so the ruins can be read without breaking them.",
+            "complete_text": "A brush is ready for the field notes.",
+            "show_progress": true,
+            "progress": 0.55
+          }
+        },
         {
           "id": "bring_copper",
           "type": "item_check",
@@ -58,6 +92,8 @@
         }
       ],
       "complete_when": [
+        "visit_ruins",
+        "carry_brush",
         "bring_copper"
       ],
       "next": "return",
@@ -68,7 +104,8 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "The first folio found an old road under the ink. Trail Ruins, if the table is reading true."
+            "The first folio found an old road under the ink. Trail Ruins, if the table is reading true.",
+            "Reach the ruins, carry a brush, and bring copper for marker plates. The atlas must learn that travel is more than a straight line."
           ],
           "responses": [
             {
@@ -169,10 +206,10 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Bring a brush and 8 copper ingots."
+                  "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots."
                 ],
                 "unavailable": [
-                  "That marker is not active right now."
+                  "I do not have that marker open for you right now."
                 ]
               }
             }
@@ -185,14 +222,17 @@
               "type": "quest",
               "action": "start",
               "lines": {
+                "already_completed": [
+                  "The first far marker is already inked."
+                ],
                 "started": [
-                  "The ruins sit about {distance} blocks {direction}, near {target_x}, {target_z}. Bring a brush and 8 copper ingots after you reach them."
+                  "The ruins sit about {distance} blocks {direction}, near {target_x}, {target_z}. Reach them, carry a brush, and bring 8 copper ingots back."
                 ],
                 "locate_failed": [
                   "The old road will not hold still on the table today."
                 ],
                 "unavailable": [
-                  "The atlas is not ready for that marker yet."
+                  "The atlas needs its paper and bearings before that marker makes sense."
                 ]
               }
             }
@@ -206,7 +246,7 @@
           "target_z": "target.z"
         },
         "show_progress": true,
-        "progress": 0.25
+        "progress": 0.35
       }
     },
     {
@@ -219,7 +259,7 @@
           "order": -24,
           "show_for_babies": false,
           "lines": [
-            "Trail Ruins near {target_x}, {target_z}. Bring a brush and 8 copper ingots so the atlas can stop guessing."
+            "Trail Ruins near {target_x}, {target_z}. Bring the brush and copper so the atlas can stop guessing."
           ],
           "responses": [
             {
@@ -227,12 +267,6 @@
               "label": "Remind me where",
               "scene": "reminder_details",
               "order": 0
-            },
-            {
-              "id": "abandon",
-              "label": "Abandon quest",
-              "scene": "abandon_confirm",
-              "order": 90
             },
             {
               "id": "leave",
@@ -266,41 +300,6 @@
       },
       "scenes": [
         {
-          "id": "abandon_confirm",
-          "lines": [
-            "Fold away the first far marker?"
-          ],
-          "responses": [
-            {
-              "id": "confirm",
-              "label": "Abandon quest",
-              "scene": "abandon_quest"
-            },
-            {
-              "id": "cancel",
-              "label": "Keep the quest",
-              "scene": "leave"
-            }
-          ]
-        },
-        {
-          "id": "abandon_quest",
-          "actions": [
-            {
-              "type": "quest",
-              "action": "abandon",
-              "lines": {
-                "abandoned": [
-                  "I will fold the marker away for now."
-                ],
-                "unavailable": [
-                  "There is no marker route to fold away."
-                ]
-              }
-            }
-          ]
-        },
-        {
           "id": "complete_quest",
           "actions": [
             {
@@ -308,19 +307,19 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "The first far marker is inked. Now the atlas has a spine."
+                  "The first far marker is inked. Now the atlas has proof that its roads touch real dust."
                 ],
                 "missing_target": [
                   "Reach the Trail Ruins first. A brush without dust is just a tool."
                 ],
                 "missing_proof": [
-                  "Bring the brush and copper before I mark the route."
+                  "Carry the brush and bring the copper before I mark the route."
                 ],
                 "missing_objectives": [
-                  "The route still needs its copper marker plates."
+                  "The route still needs the ruins visited, the brush ready, and its copper marker plates."
                 ],
                 "unavailable": [
-                  "This marker is not ready to close."
+                  "This marker still needs its field proof before I can close it."
                 ]
               }
             }
@@ -340,10 +339,10 @@
               "action": "remind",
               "lines": {
                 "reminder": [
-                  "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Bring a brush and 8 copper ingots."
+                  "Trail Ruins near {target_x}, {target_z}, about {distance} blocks {direction}. Reach the ruins, carry a brush, and bring 8 copper ingots."
                 ],
                 "unavailable": [
-                  "That marker is not active right now."
+                  "I do not have that marker open for you right now."
                 ]
               }
             }
@@ -351,7 +350,7 @@
         }
       ],
       "ui": {
-        "tracker_text": "Return to the cartographer with the brush and copper.",
+        "tracker_text": "Return to the cartographer with the field notes and copper.",
         "show_progress": true,
         "progress": 1
       }
