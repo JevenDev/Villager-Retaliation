@@ -1018,6 +1018,33 @@ public final class VillagerQuestGameTests {
                 QuestTrackerSyncPayload.MAX_PREREQUISITES,
                 "tracker entry did not cap prerequisites");
 
+        List<QuestTrackerSyncPayload.ObjectiveStep> manyObjectiveSteps = new ArrayList<>();
+        for (int i = 0; i < QuestTrackerSyncPayload.MAX_OBJECTIVE_STEPS + 4; i++) {
+            manyObjectiveSteps.add(new QuestTrackerSyncPayload.ObjectiveStep("Objective " + i, true));
+        }
+        QuestTrackerSyncPayload.Entry objectiveStepCappedEntry = new QuestTrackerSyncPayload.Entry(
+                "villagerretaliation:objective_step_cap",
+                "Objective Step Cap",
+                "Objective",
+                "",
+                "Metadata",
+                0.25F,
+                true,
+                "active",
+                "Active",
+                "Issuer",
+                "Location",
+                List.of(),
+                List.of(),
+                List.of(),
+                manyObjectiveSteps,
+                false,
+                false);
+        helper.assertValueEqual(
+                objectiveStepCappedEntry.objectiveSteps().size(),
+                QuestTrackerSyncPayload.MAX_OBJECTIVE_STEPS,
+                "tracker entry did not cap objective steps");
+
         List<QuestTrackerSyncPayload.Entry> manyEntries = new ArrayList<>();
         for (int i = 0; i < QuestTrackerSyncPayload.MAX_SYNC_ENTRIES + 4; i++) {
             manyEntries.add(new QuestTrackerSyncPayload.Entry(

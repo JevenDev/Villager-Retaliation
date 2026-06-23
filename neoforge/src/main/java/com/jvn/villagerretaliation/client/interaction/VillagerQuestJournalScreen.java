@@ -840,7 +840,11 @@ public final class VillagerQuestJournalScreen extends Screen {
         y = addCenteredDetailLine(lines, "Objectives", TITLE_COLOR, y, lineStep, 0);
         y = addDividerLine(lines, y + 3, 3);
         boolean completed = selected.progress() >= 1.0F || QuestJournalEntryState.from(selected) == QuestJournalEntryState.COMPLETED;
-        if (selected.questItems().isEmpty()) {
+        if (!selected.objectiveSteps().isEmpty()) {
+            for (QuestTrackerSyncPayload.ObjectiveStep objectiveStep : selected.objectiveSteps()) {
+                y = addQuestStepLines(lines, objectiveStep.label(), objectiveStep.completed(), true, y, lineStep, 2);
+            }
+        } else if (selected.questItems().isEmpty()) {
             y = addQuestStepLines(lines, selected.objective(), completed, y, lineStep, 2);
         } else {
             for (QuestTrackerSyncPayload.QuestItem item : selected.questItems()) {
@@ -879,12 +883,29 @@ public final class VillagerQuestJournalScreen extends Screen {
             int gapAfter,
             ResourceLocation firstLineIcon,
             boolean titleIcon) {
+        return addWrappedDetailLines(lines, text, wrapWidth, color, top, lineStep, gapAfter, firstLineIcon, titleIcon, false);
+    }
+
+    private int addWrappedDetailLines(
+            List<QuestDetailLine> lines,
+            String text,
+            int wrapWidth,
+            int color,
+            int top,
+            int lineStep,
+            int gapAfter,
+            ResourceLocation firstLineIcon,
+            boolean titleIcon,
+            boolean strikethrough) {
         if (text == null || text.isBlank() || wrapWidth <= 0) {
             return top;
         }
         int y = top;
         boolean first = true;
-        for (FormattedCharSequence line : this.font.split(Component.literal(text), wrapWidth)) {
+        Component component = strikethrough
+                ? Component.literal(text).withStyle(Style.EMPTY.withStrikethrough(true))
+                : Component.literal(text);
+        for (FormattedCharSequence line : this.font.split(component, wrapWidth)) {
             lines.add(new QuestDetailLine(
                     line,
                     color,
@@ -934,6 +955,17 @@ public final class VillagerQuestJournalScreen extends Screen {
             int top,
             int lineStep,
             int gapAfter) {
+        return addQuestStepLines(lines, text, completed, false, top, lineStep, gapAfter);
+    }
+
+    private int addQuestStepLines(
+            List<QuestDetailLine> lines,
+            String text,
+            boolean completed,
+            boolean strikeCompleted,
+            int top,
+            int lineStep,
+            int gapAfter) {
         ResourceLocation icon = completed
                 ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_COMPLETED_TEXTURE
                 : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_TEXTURE;
@@ -946,7 +978,8 @@ public final class VillagerQuestJournalScreen extends Screen {
                 lineStep,
                 gapAfter,
                 icon,
-                false);
+                false,
+                strikeCompleted && completed);
     }
 
     private static int detailContentHeight(List<QuestDetailLine> detailLines) {

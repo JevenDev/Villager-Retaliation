@@ -4568,6 +4568,7 @@ public final class VillagerQuestService {
                 List.of(),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements),
                 prerequisitePreviews(player, definition),
+                completedObjectiveSteps(player, definition),
                 QuestTrackerPresenter.fallbackProgress("completed"),
                 false,
                 VillagerQuestSavedData.QuestState.COMPLETED))
@@ -5020,6 +5021,9 @@ public final class VillagerQuestService {
                 QuestTrackerPresenter.questItems(definition, progress, VillagerQuestService::itemName),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements),
                 prerequisitePreviews(player, definition),
+                progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
+                        ? completedObjectiveSteps(player, definition)
+                        : List.of(),
                 progressValue,
                 showProgress,
                 progress.state()));
@@ -5036,6 +5040,123 @@ public final class VillagerQuestService {
                 definition,
                 parentId -> parentQuestTitle(level, player, parentId),
                 parentId -> parentQuestCompleted(level, player, parentId));
+    }
+
+    private static List<QuestTrackerSyncPayload.ObjectiveStep> completedObjectiveSteps(
+            ServerPlayer player,
+            QuestDefinition definition) {
+        if (player == null || definition == null || definition.objectives().isEmpty()) {
+            return List.of();
+        }
+        List<QuestTrackerSyncPayload.ObjectiveStep> steps = new ArrayList<>();
+        for (QuestDefinition.Objective objective : definition.objectives()) {
+            String label = completedObjectiveStepLabel(player, definition, objective);
+            if (!label.isBlank()) {
+                steps.add(new QuestTrackerSyncPayload.ObjectiveStep(label, true));
+            }
+            if (steps.size() >= QuestTrackerSyncPayload.MAX_OBJECTIVE_STEPS) {
+                break;
+            }
+        }
+        return List.copyOf(steps);
+    }
+
+    private static String completedObjectiveStepLabel(
+            ServerPlayer player,
+            QuestDefinition definition,
+            QuestDefinition.Objective objective) {
+        if (objective == null) {
+            return "";
+        }
+        QuestDefinition.Step fallback = new QuestDefinition.Step(
+                completedObjectiveFallback(objective),
+                "",
+                false,
+                1.0F,
+                Map.of());
+        QuestDefinition.Step step = QuestTrackerPresenter.objectiveTrackerStep(objective, fallback, true);
+        return QuestTrackerPresenter.resolveText(
+                player,
+                new QuestDefinition.SelectedText(step.text(), step.textKey()),
+                completedObjectiveReplacements(player, definition, objective));
+    }
+
+    private static Map<String, String> completedObjectiveReplacements(
+            ServerPlayer player,
+            QuestDefinition definition,
+            QuestDefinition.Objective objective) {
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("quest", questTitle(player, definition, Map.of()));
+        values.put("quest_id", definition.id().toString());
+        values.put("target", targetName(definition));
+        values.put("proof_item", questItemName(definition, null));
+        values.put("quest_stage", "completed");
+        values.put("current_stage", "completed");
+        values.put("visited_target", "yes");
+        values.put("has_proof", "yes");
+        values.put("active_conditions", "met");
+        values.put("objective", objective.id());
+        values.put("objective_id", objective.id());
+        values.put("objective_type", objective.type().name().toLowerCase(Locale.ROOT));
+        values.put("objective_item", objective.item() == null ? questItemName(definition, null) : itemName(objective.item()));
+        values.put("objective_item_id", objective.item() == null ? "" : objective.item().toString());
+        values.put("objective_count", Integer.toString(objective.count()));
+        values.put("objective_progress_count", Integer.toString(objective.count()));
+        values.put("objective_entity", objectiveEntityName(objective));
+        values.put("objective_block", objectiveBlockName(objective));
+        values.put("objective_block_id", objectiveBlockId(objective));
+        values.put("objective_memory", objectiveMemoryName(objective));
+        values.put("objective_memory_id", objectiveMemoryId(objective));
+        values.put("objective_gift_reaction", objectiveGiftReaction(objective));
+        values.put("objective_reputation", "0");
+        values.put("objective_reputation_level", objectiveReputationLevel(objective));
+        values.put("objective_reputation_min", objective.minReputation() == null ? "" : objective.minReputation().toString());
+        values.put("objective_reputation_max", objective.maxReputation() == null ? "" : objective.maxReputation().toString());
+        values.put("objective_choice", objectiveChoiceValue(objective));
+        values.put("objective_choice_key", objective.type() == QuestDefinition.ObjectiveType.CHOICE ? objective.factKey() : "");
+        values.put("objective_choice_value", objectiveChoiceValue(objective));
+        values.put("objective_fact", objectiveFactName(objective));
+        values.put("objective_fact_id", objectiveFactId(objective));
+        values.put("objective_fact_key", objective.factKey());
+        values.put("objective_fact_value", objectiveFactValue(objective));
+        values.put("objective_fact_scope", objective.factScope().name().toLowerCase(Locale.ROOT));
+        values.put("objective_radius", Integer.toString(objective.radius()));
+        values.put("objective_complete", "yes");
+        values.put("objective_progress", "1.00");
+
+        BlockPos targetPos = objective.location();
+        if (targetPos == null) {
+            values.put("objective_target_x", "unknown");
+            values.put("objective_target_y", "unknown");
+            values.put("objective_target_z", "unknown");
+            values.put("objective_target_dimension", "unknown");
+        } else {
+            values.put("objective_target_x", Integer.toString(roundCoordinate(targetPos.getX())));
+            values.put("objective_target_y", Integer.toString(roundCoordinate(targetPos.getY())));
+            values.put("objective_target_z", Integer.toString(roundCoordinate(targetPos.getZ())));
+            values.put("objective_target_dimension", objective.dimension() == null
+                    ? "unknown"
+                    : dimensionDisplayName(objective.dimension()));
+        }
+        return Map.copyOf(values);
+    }
+
+    private static String completedObjectiveFallback(QuestDefinition.Objective objective) {
+        return switch (objective.type()) {
+            case STRUCTURE_VISIT, LOCATION_VISIT -> "Reach {target}.";
+            case ITEM_CHECK -> "Collect {objective_count} {objective_item}.";
+            case MOB_KILL -> "Defeat {objective_count} {objective_entity}.";
+            case BLOCK_BREAK -> "Break {objective_count} {objective_block}.";
+            case BLOCK_PLACE -> "Place {objective_count} {objective_block}.";
+            case BLOCK_INTERACT -> "Use {objective_count} {objective_block}.";
+            case MEMORY_EVENT -> "Resolve {objective_memory}.";
+            case TRADE -> "Complete {objective_count} trades.";
+            case GIFT -> "Give {objective_count} {objective_item}.";
+            case REPUTATION -> "Reach {objective_reputation_level} reputation.";
+            case CHOICE -> "Make a quest choice.";
+            case FACT -> "Resolve {objective_fact}.";
+            case CONDITION -> "Meet the quest condition.";
+        };
     }
 
     private static String parentQuestTitle(ServerLevel level, ServerPlayer player, ResourceLocation parentId) {

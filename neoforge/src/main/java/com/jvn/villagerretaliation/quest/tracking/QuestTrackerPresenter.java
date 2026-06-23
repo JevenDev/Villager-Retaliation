@@ -38,6 +38,7 @@ public final class QuestTrackerPresenter {
                 input.questItems(),
                 input.rewardPreviews(),
                 input.prerequisites(),
+                input.objectiveSteps(),
                 false,
                 false);
     }
@@ -103,6 +104,8 @@ public final class QuestTrackerPresenter {
         appendRewardPreviewSignature(builder, entry.rewardPreviews());
         builder.append('|');
         appendPrerequisiteSignature(builder, entry.prerequisites());
+        builder.append('|');
+        appendObjectiveStepSignature(builder, entry.objectiveSteps());
         return builder.toString();
     }
 
@@ -131,6 +134,8 @@ public final class QuestTrackerPresenter {
         appendRewardPreviewSignature(builder, entry.rewardPreviews());
         builder.append('|');
         appendPrerequisiteSignature(builder, entry.prerequisites());
+        builder.append('|');
+        appendObjectiveStepSignature(builder, entry.objectiveSteps());
         return builder.toString();
     }
 
@@ -151,6 +156,15 @@ public final class QuestTrackerPresenter {
             builder.append(prerequisite.questId()).append(',')
                     .append(prerequisite.label()).append(',')
                     .append(prerequisite.met()).append(';');
+        }
+    }
+
+    private static void appendObjectiveStepSignature(
+            StringBuilder builder,
+            List<QuestTrackerSyncPayload.ObjectiveStep> objectiveSteps) {
+        for (QuestTrackerSyncPayload.ObjectiveStep objectiveStep : objectiveSteps) {
+            builder.append(objectiveStep.label()).append(',')
+                    .append(objectiveStep.completed()).append(';');
         }
     }
 
@@ -419,6 +433,7 @@ public final class QuestTrackerPresenter {
             List<QuestTrackerSyncPayload.QuestItem> questItems,
             List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews,
             List<QuestTrackerSyncPayload.Prerequisite> prerequisites,
+            List<QuestTrackerSyncPayload.ObjectiveStep> objectiveSteps,
             float progress,
             boolean showProgress,
             VillagerQuestSavedData.QuestState state
@@ -436,7 +451,7 @@ public final class QuestTrackerPresenter {
                 float progress,
                 boolean showProgress,
                 VillagerQuestSavedData.QuestState state) {
-            this(player, definition, title, step, replacements, status, issuer, issuerLocation, questItems, List.of(), List.of(), progress, showProgress, state);
+            this(player, definition, title, step, replacements, status, issuer, issuerLocation, questItems, List.of(), List.of(), List.of(), progress, showProgress, state);
         }
 
         public EntryInput(
@@ -453,7 +468,25 @@ public final class QuestTrackerPresenter {
                 float progress,
                 boolean showProgress,
                 VillagerQuestSavedData.QuestState state) {
-            this(player, definition, title, step, replacements, status, issuer, issuerLocation, questItems, rewardPreviews, List.of(), progress, showProgress, state);
+            this(player, definition, title, step, replacements, status, issuer, issuerLocation, questItems, rewardPreviews, List.of(), List.of(), progress, showProgress, state);
+        }
+
+        public EntryInput(
+                ServerPlayer player,
+                QuestDefinition definition,
+                QuestDefinition.SelectedText title,
+                QuestDefinition.Step step,
+                Map<String, String> replacements,
+                String status,
+                String issuer,
+                String issuerLocation,
+                List<QuestTrackerSyncPayload.QuestItem> questItems,
+                List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews,
+                List<QuestTrackerSyncPayload.Prerequisite> prerequisites,
+                float progress,
+                boolean showProgress,
+                VillagerQuestSavedData.QuestState state) {
+            this(player, definition, title, step, replacements, status, issuer, issuerLocation, questItems, rewardPreviews, prerequisites, List.of(), progress, showProgress, state);
         }
 
         public EntryInput {
@@ -471,6 +504,7 @@ public final class QuestTrackerPresenter {
             questItems = questItems == null ? List.of() : List.copyOf(questItems);
             rewardPreviews = rewardPreviews == null ? List.of() : List.copyOf(rewardPreviews);
             prerequisites = prerequisites == null ? List.of() : List.copyOf(prerequisites);
+            objectiveSteps = objectiveSteps == null ? List.of() : List.copyOf(objectiveSteps);
             state = state == null ? VillagerQuestSavedData.QuestState.NOT_STARTED : state;
         }
     }
