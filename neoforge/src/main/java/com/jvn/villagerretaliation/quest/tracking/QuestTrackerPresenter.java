@@ -36,6 +36,7 @@ public final class QuestTrackerPresenter {
                 input.issuer(),
                 input.issuerLocation(),
                 input.questItems(),
+                input.rewardPreviews(),
                 false,
                 false);
     }
@@ -97,6 +98,8 @@ public final class QuestTrackerPresenter {
                     .append(item.label()).append(',')
                     .append(item.count()).append(';');
         }
+        builder.append('|');
+        appendRewardPreviewSignature(builder, entry.rewardPreviews());
         return builder.toString();
     }
 
@@ -121,7 +124,19 @@ public final class QuestTrackerPresenter {
                     .append(item.label()).append(',')
                     .append(item.count()).append(';');
         }
+        builder.append('|');
+        appendRewardPreviewSignature(builder, entry.rewardPreviews());
         return builder.toString();
+    }
+
+    private static void appendRewardPreviewSignature(
+            StringBuilder builder,
+            List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews) {
+        for (QuestTrackerSyncPayload.RewardPreview reward : rewardPreviews) {
+            builder.append(reward.kind()).append(',')
+                    .append(reward.label()).append(',')
+                    .append(reward.amount()).append(';');
+        }
     }
 
     public static QuestDefinition.Step fallbackStep(
@@ -258,6 +273,97 @@ public final class QuestTrackerPresenter {
         return List.copyOf(items.values());
     }
 
+    public static List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews(
+            ServerPlayer player,
+            QuestDefinition definition,
+            Map<String, String> replacements,
+            Function<ResourceLocation, String> lootTableLabeler) {
+        if (definition == null || definition.rewards() == null) {
+            return List.of();
+        }
+        QuestDefinition.Rewards rewards = definition.rewards();
+        List<QuestTrackerSyncPayload.RewardPreview> previews = new ArrayList<>();
+        addAmountRewardPreview(
+                previews,
+                player,
+                "experience",
+                rewards.experience(),
+                "quest.tracker.reward.experience",
+                "{amount} XP",
+                replacements);
+        addAmountRewardPreview(
+                previews,
+                player,
+                "reputation",
+                rewards.reputation(),
+                "quest.tracker.reward.reputation",
+                "Reputation {signed_amount}",
+                replacements);
+        addAmountRewardPreview(
+                previews,
+                player,
+                "gossip",
+                rewards.gossipReputation(),
+                "quest.tracker.reward.gossip",
+                "Village gossip {signed_amount}",
+                replacements);
+        if (rewards.lootTable() != null) {
+            Map<String, String> values = previewReplacements(replacements);
+            String lootTableName = lootTableLabeler == null
+                    ? rewards.lootTable().toString()
+                    : lootTableLabeler.apply(rewards.lootTable());
+            values.put("loot_table", lootTableName);
+            previews.add(new QuestTrackerSyncPayload.RewardPreview(
+                    "loot",
+                    resolveGlobalText(player, "quest.tracker.reward.loot", "Loot: {loot_table}", values),
+                    0));
+        }
+        if (rewards.memoryEvent() != null) {
+            Map<String, String> values = previewReplacements(replacements);
+            values.put("memory_event", rewards.memoryEvent().toString());
+            previews.add(new QuestTrackerSyncPayload.RewardPreview(
+                    "memory",
+                    resolveGlobalText(player, "quest.tracker.reward.memory", "Village memory updated", values),
+                    0));
+        }
+        return List.copyOf(previews.stream()
+                .filter(reward -> reward != null && !reward.label().isBlank())
+                .limit(QuestTrackerSyncPayload.MAX_REWARD_PREVIEWS)
+                .toList());
+    }
+
+    private static void addAmountRewardPreview(
+            List<QuestTrackerSyncPayload.RewardPreview> previews,
+            ServerPlayer player,
+            String kind,
+            int amount,
+            String textKey,
+            String fallback,
+            Map<String, String> replacements) {
+        if (amount == 0) {
+            return;
+        }
+        Map<String, String> values = previewReplacements(replacements);
+        values.put("amount", Integer.toString(Math.abs(amount)));
+        values.put("signed_amount", signedAmount(amount));
+        previews.add(new QuestTrackerSyncPayload.RewardPreview(
+                kind,
+                resolveGlobalText(player, textKey, fallback, values),
+                amount));
+    }
+
+    private static Map<String, String> previewReplacements(Map<String, String> replacements) {
+        Map<String, String> values = new LinkedHashMap<>();
+        if (replacements != null) {
+            values.putAll(replacements);
+        }
+        return values;
+    }
+
+    private static String signedAmount(int amount) {
+        return amount > 0 ? "+" + amount : Integer.toString(amount);
+    }
+
     private static void addQuestItem(
             Map<String, QuestTrackerSyncPayload.QuestItem> items,
             ResourceLocation itemId,
@@ -283,10 +389,27 @@ public final class QuestTrackerPresenter {
             String issuer,
             String issuerLocation,
             List<QuestTrackerSyncPayload.QuestItem> questItems,
+            List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews,
             float progress,
             boolean showProgress,
             VillagerQuestSavedData.QuestState state
     ) {
+        public EntryInput(
+                ServerPlayer player,
+                QuestDefinition definition,
+                QuestDefinition.SelectedText title,
+                QuestDefinition.Step step,
+                Map<String, String> replacements,
+                String status,
+                String issuer,
+                String issuerLocation,
+                List<QuestTrackerSyncPayload.QuestItem> questItems,
+                float progress,
+                boolean showProgress,
+                VillagerQuestSavedData.QuestState state) {
+            this(player, definition, title, step, replacements, status, issuer, issuerLocation, questItems, List.of(), progress, showProgress, state);
+        }
+
         public EntryInput {
             if (definition == null) {
                 throw new IllegalArgumentException("tracker entry definition must not be null");
@@ -300,6 +423,7 @@ public final class QuestTrackerPresenter {
             issuer = issuer == null ? "" : issuer;
             issuerLocation = issuerLocation == null ? "" : issuerLocation;
             questItems = questItems == null ? List.of() : List.copyOf(questItems);
+            rewardPreviews = rewardPreviews == null ? List.of() : List.copyOf(rewardPreviews);
             state = state == null ? VillagerQuestSavedData.QuestState.NOT_STARTED : state;
         }
     }

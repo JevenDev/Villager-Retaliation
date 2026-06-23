@@ -13,6 +13,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
     public static final int MAX_TRACKED_QUESTS = QuestTrackerLimits.MAX_TRACKED_QUESTS;
     public static final int MAX_SYNC_ENTRIES = 32;
     public static final int MAX_QUEST_ITEMS = 16;
+    public static final int MAX_REWARD_PREVIEWS = 8;
     public static final Type<QuestTrackerSyncPayload> TYPE = VillagerPayloads.type("quest_tracker_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, QuestTrackerSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(QuestTrackerSyncPayload::encode, QuestTrackerSyncPayload::decode);
@@ -56,6 +57,12 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 buffer.writeUtf(item.label(), 128);
                 buffer.writeVarInt(item.count());
             }
+            buffer.writeVarInt(Math.min(MAX_REWARD_PREVIEWS, entry.rewardPreviews().size()));
+            for (RewardPreview reward : entry.rewardPreviews()) {
+                buffer.writeUtf(reward.kind(), 32);
+                buffer.writeUtf(reward.label(), 160);
+                buffer.writeVarInt(reward.amount());
+            }
             buffer.writeBoolean(entry.questUpdate());
             buffer.writeBoolean(entry.questAvailable());
         }
@@ -83,6 +90,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     buffer.readUtf(160),
                     buffer.readUtf(192),
                     readQuestItems(buffer),
+                    readRewardPreviews(buffer),
                     buffer.readBoolean(),
                     buffer.readBoolean()
             );
@@ -110,6 +118,20 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
         return items;
     }
 
+    private static List<RewardPreview> readRewardPreviews(RegistryFriendlyByteBuf buffer) {
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_REWARD_PREVIEWS, "quest reward previews");
+        List<RewardPreview> rewards = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            RewardPreview reward = new RewardPreview(
+                    buffer.readUtf(32),
+                    buffer.readUtf(160),
+                    buffer.readVarInt()
+            );
+            rewards.add(reward);
+        }
+        return rewards;
+    }
+
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
@@ -132,8 +154,27 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             String issuer,
             String issuerLocation,
             List<QuestItem> questItems,
+            List<RewardPreview> rewardPreviews,
             boolean questUpdate,
             boolean questAvailable) {
+        public Entry(
+                String questId,
+                String title,
+                String objective,
+                String description,
+                String metadata,
+                float progress,
+                boolean showProgress,
+                String state,
+                String status,
+                String issuer,
+                String issuerLocation,
+                List<QuestItem> questItems,
+                boolean questUpdate,
+                boolean questAvailable) {
+            this(questId, title, objective, description, metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, List.of(), questUpdate, questAvailable);
+        }
+
         public Entry(
                 String questId,
                 String title,
@@ -147,7 +188,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 String issuerLocation,
                 List<QuestItem> questItems,
                 boolean questUpdate) {
-            this(questId, title, objective, "", metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, questUpdate, false);
+            this(questId, title, objective, "", metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, List.of(), questUpdate, false);
         }
 
         public Entry(
@@ -162,7 +203,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 String issuer,
                 String issuerLocation,
                 List<QuestItem> questItems) {
-            this(questId, title, objective, "", metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, false, false);
+            this(questId, title, objective, "", metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, List.of(), false, false);
         }
 
         public Entry(
@@ -179,7 +220,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 List<QuestItem> questItems,
                 boolean questUpdate,
                 boolean questAvailable) {
-            this(questId, title, objective, "", metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, questUpdate, questAvailable);
+            this(questId, title, objective, "", metadata, progress, showProgress, state, status, issuer, issuerLocation, questItems, List.of(), questUpdate, questAvailable);
         }
 
         public Entry {
@@ -196,6 +237,9 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             questItems = questItems == null
                     ? List.of()
                     : List.copyOf(questItems.stream().filter(Objects::nonNull).limit(MAX_QUEST_ITEMS).toList());
+            rewardPreviews = rewardPreviews == null
+                    ? List.of()
+                    : List.copyOf(rewardPreviews.stream().filter(Objects::nonNull).limit(MAX_REWARD_PREVIEWS).toList());
         }
 
         public Entry withQuestUpdate(boolean questUpdate) {
@@ -212,6 +256,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     this.issuer,
                     this.issuerLocation,
                     this.questItems,
+                    this.rewardPreviews,
                     questUpdate,
                     this.questAvailable);
         }
@@ -230,6 +275,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     this.issuer,
                     this.issuerLocation,
                     this.questItems,
+                    this.rewardPreviews,
                     this.questUpdate,
                     this.questAvailable);
         }
@@ -248,6 +294,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                     this.issuer,
                     this.issuerLocation,
                     this.questItems,
+                    this.rewardPreviews,
                     this.questUpdate,
                     questAvailable);
         }
@@ -257,6 +304,13 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 case "active", "abandoned", "expired" -> true;
                 default -> false;
             };
+        }
+    }
+
+    public record RewardPreview(String kind, String label, int amount) {
+        public RewardPreview {
+            kind = kind == null ? "" : kind;
+            label = label == null ? "" : label;
         }
     }
 

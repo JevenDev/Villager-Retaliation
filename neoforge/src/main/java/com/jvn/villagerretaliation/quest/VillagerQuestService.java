@@ -4521,6 +4521,7 @@ public final class VillagerQuestService {
                 issuer,
                 issuerLocation,
                 List.of(),
+                QuestTrackerPresenter.rewardPreviews(player, definition, replacements, VillagerQuestService::lootTableName),
                 0.0F,
                 false,
                 VillagerQuestSavedData.QuestState.NOT_STARTED))
@@ -4564,6 +4565,7 @@ public final class VillagerQuestService {
                 issuer,
                 issuerLocation,
                 List.of(),
+                QuestTrackerPresenter.rewardPreviews(player, definition, replacements, VillagerQuestService::lootTableName),
                 QuestTrackerPresenter.fallbackProgress("completed"),
                 false,
                 VillagerQuestSavedData.QuestState.COMPLETED))
@@ -5014,6 +5016,7 @@ public final class VillagerQuestService {
                 issuer,
                 issuerLocation,
                 QuestTrackerPresenter.questItems(definition, progress, VillagerQuestService::itemName),
+                QuestTrackerPresenter.rewardPreviews(player, definition, replacements, VillagerQuestService::lootTableName),
                 progressValue,
                 showProgress,
                 progress.state()));
@@ -5671,6 +5674,13 @@ public final class VillagerQuestService {
         return BuiltInRegistries.ITEM.getOptional(itemId)
                 .map(item -> new ItemStack(item).getHoverName().getString())
                 .orElseGet(() -> VillagerInteractionTextUtil.resourcePathName(itemId));
+    }
+
+    private static String lootTableName(ResourceLocation lootTable) {
+        if (lootTable == null) {
+            return "loot";
+        }
+        return VillagerInteractionTextUtil.resourcePathName(lootTable);
     }
 
     private static String objectiveEntityName(QuestDefinition.Objective objective) {

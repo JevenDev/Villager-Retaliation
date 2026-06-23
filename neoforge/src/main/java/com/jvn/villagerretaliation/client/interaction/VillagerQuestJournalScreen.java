@@ -839,6 +839,14 @@ public final class VillagerQuestJournalScreen extends Screen {
                 y = addQuestStepLines(lines, questItemLine(item), completed, y, lineStep, 2);
             }
         }
+        if (!selected.rewardPreviews().isEmpty()) {
+            y = addDividerLine(lines, y + 3, 3);
+            y = addCenteredDetailLine(lines, "Rewards", TITLE_COLOR, y, lineStep, 0);
+            y = addDividerLine(lines, y + 3, 3);
+            for (QuestTrackerSyncPayload.RewardPreview reward : selected.rewardPreviews()) {
+                y = addQuestStepLines(lines, rewardPreviewLine(reward), completed, y, lineStep, 2);
+            }
+        }
         return lines;
     }
 
@@ -959,6 +967,10 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private static String questItemLine(QuestTrackerSyncPayload.QuestItem item) {
         return item.count() > 1 ? item.label() + " x" + item.count() : item.label();
+    }
+
+    private static String rewardPreviewLine(QuestTrackerSyncPayload.RewardPreview reward) {
+        return reward.label();
     }
 
     private static int questStepTextIndent() {

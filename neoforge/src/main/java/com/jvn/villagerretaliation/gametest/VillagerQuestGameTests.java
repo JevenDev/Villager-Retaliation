@@ -868,6 +868,11 @@ public final class VillagerQuestGameTests {
                 "quest", quest.title(),
                 "proof_item", "Echo Shard",
                 "issuer", "Lore Keeper");
+        List<QuestTrackerSyncPayload.RewardPreview> rewards = QuestTrackerPresenter.rewardPreviews(
+                null,
+                quest,
+                replacements,
+                ResourceLocation::toString);
         QuestTrackerSyncPayload.Entry entry = QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
                 null,
                 quest,
@@ -878,6 +883,7 @@ public final class VillagerQuestGameTests {
                 "Lore Keeper",
                 "minecraft:overworld 4,65,-2",
                 items,
+                rewards,
                 0.5F,
                 true,
                 progress.state()));
@@ -889,6 +895,12 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(entry.progress(), 0.5F, "presenter progress");
         helper.assertTrue(entry.showProgress(), "presenter show progress");
         helper.assertValueEqual(entry.state(), "active", "presenter state");
+        helper.assertTrue(
+                entry.rewardPreviews().stream().anyMatch(reward -> reward.kind().equals("experience") && reward.label().contains("430")),
+                "presenter did not include XP reward preview");
+        helper.assertTrue(
+                entry.rewardPreviews().stream().anyMatch(reward -> reward.kind().equals("reputation") && reward.label().contains("+22")),
+                "presenter did not include reputation reward preview");
         helper.assertTrue(
                 QuestTrackerPresenter.syncSignature(List.of(entry), quest.id()).contains(entry.questId()),
                 "presenter signature omitted quest id");
@@ -932,6 +944,31 @@ public final class VillagerQuestGameTests {
                 itemCappedEntry.questItems().size(),
                 QuestTrackerSyncPayload.MAX_QUEST_ITEMS,
                 "tracker entry did not cap quest items");
+
+        List<QuestTrackerSyncPayload.RewardPreview> manyRewards = new ArrayList<>();
+        for (int i = 0; i < QuestTrackerSyncPayload.MAX_REWARD_PREVIEWS + 4; i++) {
+            manyRewards.add(new QuestTrackerSyncPayload.RewardPreview("test", "Reward " + i, i));
+        }
+        QuestTrackerSyncPayload.Entry rewardCappedEntry = new QuestTrackerSyncPayload.Entry(
+                "villagerretaliation:reward_cap",
+                "Reward Cap",
+                "Objective",
+                "",
+                "Metadata",
+                0.25F,
+                true,
+                "active",
+                "Active",
+                "Issuer",
+                "Location",
+                List.of(),
+                manyRewards,
+                false,
+                false);
+        helper.assertValueEqual(
+                rewardCappedEntry.rewardPreviews().size(),
+                QuestTrackerSyncPayload.MAX_REWARD_PREVIEWS,
+                "tracker entry did not cap reward previews");
 
         List<QuestTrackerSyncPayload.Entry> manyEntries = new ArrayList<>();
         for (int i = 0; i < QuestTrackerSyncPayload.MAX_SYNC_ENTRIES + 4; i++) {
