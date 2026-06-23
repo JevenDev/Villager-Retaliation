@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
+import com.jvn.villagerretaliation.dialogue.normal.GiftAdviceKind;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;

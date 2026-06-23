@@ -1,11 +1,11 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;

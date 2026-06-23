@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.item;
 
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignmentSummaryMessage;

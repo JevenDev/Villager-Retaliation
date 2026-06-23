@@ -2,10 +2,10 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
-import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;

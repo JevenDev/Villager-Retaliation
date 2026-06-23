@@ -1,8 +1,8 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.DialogueTextEffects;
-import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import java.util.List;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;

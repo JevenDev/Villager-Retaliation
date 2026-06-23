@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.trade;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerTradeRefreshStatePayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationTradePricing;

@@ -1,12 +1,12 @@
 package com.jvn.villagerretaliation.util;
 
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
-import com.jvn.villagerretaliation.dialogue.BiomeStoryResources;
-import com.jvn.villagerretaliation.dialogue.DangerousStructureStoryResources;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
-import com.jvn.villagerretaliation.dialogue.GeneratedContainerLootResources;
+import com.jvn.villagerretaliation.dialogue.resources.BiomeStoryResources;
+import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources;
+import com.jvn.villagerretaliation.dialogue.forced.container.GeneratedContainerLootResources;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerSavedData;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerService;

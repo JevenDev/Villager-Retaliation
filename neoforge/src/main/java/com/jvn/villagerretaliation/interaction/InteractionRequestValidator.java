@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;

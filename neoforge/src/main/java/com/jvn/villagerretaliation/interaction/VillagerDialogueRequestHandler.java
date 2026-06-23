@@ -1,15 +1,17 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialogueItemPayment;
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
-import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
-import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
-import com.jvn.villagerretaliation.dialogue.DialogueTreeService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueItemPayment;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.normal.GiftAdviceKind;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
@@ -94,8 +96,8 @@ public final class VillagerDialogueRequestHandler {
         }
 
         var reputationEffect = VillagerQuestService.isQuestDialogueOption(dialogueOption)
-                ? com.jvn.villagerretaliation.dialogue.DialogueReputationEffect.none(requestType)
-                : com.jvn.villagerretaliation.dialogue.DialogueReputationService.apply(context, requestType, interactionState);
+                ? com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect.none(requestType)
+                : com.jvn.villagerretaliation.dialogue.normal.DialogueReputationService.apply(context, requestType, interactionState);
         VillagerMoodService.recordDialogueEffect(context, requestType, reputationEffect);
         VillagerInteractionService.playDialogueFeedback(level, villager, reputationEffect);
         VillagerAmbientIndicatorService.onDialogueResponse(level, villager, player, optionId, requestType, reputationEffect);

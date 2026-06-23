@@ -2,9 +2,9 @@ package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import java.util.ArrayList;

@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
-import com.jvn.villagerretaliation.dialogue.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.util.LinkedHashSet;

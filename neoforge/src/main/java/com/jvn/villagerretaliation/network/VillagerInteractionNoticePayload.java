@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.dialogue.DialogueTextEffects;
-import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

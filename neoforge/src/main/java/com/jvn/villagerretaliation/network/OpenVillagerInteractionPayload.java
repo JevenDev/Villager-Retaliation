@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;

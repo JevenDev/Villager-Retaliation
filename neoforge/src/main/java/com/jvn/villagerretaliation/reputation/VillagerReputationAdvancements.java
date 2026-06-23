@@ -2,8 +2,8 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.BiomeStoryResources;
-import com.jvn.villagerretaliation.dialogue.DangerousStructureStoryResources;
+import com.jvn.villagerretaliation.dialogue.resources.BiomeStoryResources;
+import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;

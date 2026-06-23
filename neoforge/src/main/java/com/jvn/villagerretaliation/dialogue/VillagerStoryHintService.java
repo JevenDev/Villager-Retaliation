@@ -1,5 +1,9 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;

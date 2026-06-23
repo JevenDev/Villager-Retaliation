@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.quest.compiled;
 
-import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;

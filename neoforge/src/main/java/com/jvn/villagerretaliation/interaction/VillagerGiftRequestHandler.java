@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerTakenItemTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;

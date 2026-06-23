@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumMap;

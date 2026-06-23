@@ -1,7 +1,8 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -67,12 +68,12 @@ final class VillagerAnimatedChatText {
             }
             List<DialogueTextSegment> embedded = new ArrayList<>();
             if (embeddedStart > 0) {
-                embedded.add(new DialogueTextSegment(lineText.substring(0, embeddedStart), com.jvn.villagerretaliation.dialogue.DialogueTextEffects.NONE));
+                embedded.add(new DialogueTextSegment(lineText.substring(0, embeddedStart), com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE));
             }
             embedded.addAll(segments);
             int embeddedEnd = embeddedStart + fullText.length();
             if (embeddedEnd < lineText.length()) {
-                embedded.add(new DialogueTextSegment(lineText.substring(embeddedEnd), com.jvn.villagerretaliation.dialogue.DialogueTextEffects.NONE));
+                embedded.add(new DialogueTextSegment(lineText.substring(embeddedEnd), com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE));
             }
             return List.copyOf(embedded);
         }

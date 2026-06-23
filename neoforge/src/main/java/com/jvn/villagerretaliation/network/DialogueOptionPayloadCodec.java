@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;

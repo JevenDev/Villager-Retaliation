@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.work.BuilderTaskState;

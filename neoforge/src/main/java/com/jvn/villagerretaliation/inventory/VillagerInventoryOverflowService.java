@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
-import com.jvn.villagerretaliation.dialogue.GeneratedContainerSavedData;
-import com.jvn.villagerretaliation.dialogue.GeneratedContainerLootResources;
+import com.jvn.villagerretaliation.dialogue.forced.container.GeneratedContainerSavedData;
+import com.jvn.villagerretaliation.dialogue.forced.container.GeneratedContainerLootResources;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;

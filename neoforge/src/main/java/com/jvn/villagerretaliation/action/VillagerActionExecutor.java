@@ -1,9 +1,9 @@
 package com.jvn.villagerretaliation.action;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialoguePlaceholders;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;

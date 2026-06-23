@@ -3,7 +3,7 @@ package com.jvn.villagerretaliation.quest.tracking;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
-import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.ArrayList;

@@ -14,7 +14,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.trade.VillagerSkillTradeEvents;
 import com.jvn.villagerretaliation.villager.VillagerConversionPersistenceService;
 import com.jvn.toucanlib.neoforge.event.ToucanEventBuses;

@@ -4,7 +4,7 @@ import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
-import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;

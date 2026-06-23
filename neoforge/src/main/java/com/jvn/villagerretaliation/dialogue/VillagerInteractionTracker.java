@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.village.VillageMembership;

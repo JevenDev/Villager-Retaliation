@@ -1,5 +1,11 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -271,7 +277,7 @@ public final class DialogueTreeResources {
         );
     }
 
-    static DialogueTreeDefinition readGeneratedTree(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
+    public static DialogueTreeDefinition readGeneratedTree(ResourceLocation location, JsonObject root, ResourceLocation fallbackId) {
         return readTree(location, root, fallbackId);
     }
 

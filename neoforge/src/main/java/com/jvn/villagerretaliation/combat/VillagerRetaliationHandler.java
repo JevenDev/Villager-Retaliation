@@ -3,7 +3,7 @@ package com.jvn.villagerretaliation.combat;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;

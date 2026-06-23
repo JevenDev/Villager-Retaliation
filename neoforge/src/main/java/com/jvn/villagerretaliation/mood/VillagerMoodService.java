@@ -2,8 +2,8 @@ package com.jvn.villagerretaliation.mood;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
