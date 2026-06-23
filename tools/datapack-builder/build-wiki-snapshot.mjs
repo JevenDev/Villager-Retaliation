@@ -17,11 +17,16 @@ async function buildSnapshot() {
     snapshot[version.name] = {};
 
     for (const file of files.filter((entry) => entry.isFile() && entry.name.endsWith(".md")).sort(byName)) {
-      snapshot[version.name][file.name] = await readFile(path.join(versionRoot, file.name), "utf8");
+      const source = await readFile(path.join(versionRoot, file.name), "utf8");
+      snapshot[version.name][file.name] = normalizeLineEndings(source);
     }
   }
 
   return `var VR_WIKI_SNAPSHOT = ${JSON.stringify(snapshot, null, 2)};\nwindow.VR_WIKI_SNAPSHOT = VR_WIKI_SNAPSHOT;\n`;
+}
+
+function normalizeLineEndings(source) {
+  return source.replace(/\r\n?/g, "\n");
 }
 
 function byName(left, right) {
