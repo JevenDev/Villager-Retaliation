@@ -37,6 +37,7 @@ public final class QuestTrackerPresenter {
                 input.issuerLocation(),
                 input.questItems(),
                 input.rewardPreviews(),
+                input.prerequisites(),
                 false,
                 false);
     }
@@ -100,6 +101,8 @@ public final class QuestTrackerPresenter {
         }
         builder.append('|');
         appendRewardPreviewSignature(builder, entry.rewardPreviews());
+        builder.append('|');
+        appendPrerequisiteSignature(builder, entry.prerequisites());
         return builder.toString();
     }
 
@@ -126,6 +129,8 @@ public final class QuestTrackerPresenter {
         }
         builder.append('|');
         appendRewardPreviewSignature(builder, entry.rewardPreviews());
+        builder.append('|');
+        appendPrerequisiteSignature(builder, entry.prerequisites());
         return builder.toString();
     }
 
@@ -136,6 +141,16 @@ public final class QuestTrackerPresenter {
             builder.append(reward.kind()).append(',')
                     .append(reward.label()).append(',')
                     .append(reward.amount()).append(';');
+        }
+    }
+
+    private static void appendPrerequisiteSignature(
+            StringBuilder builder,
+            List<QuestTrackerSyncPayload.Prerequisite> prerequisites) {
+        for (QuestTrackerSyncPayload.Prerequisite prerequisite : prerequisites) {
+            builder.append(prerequisite.questId()).append(',')
+                    .append(prerequisite.label()).append(',')
+                    .append(prerequisite.met()).append(';');
         }
     }
 
@@ -364,6 +379,31 @@ public final class QuestTrackerPresenter {
         return amount > 0 ? "+" + amount : Integer.toString(amount);
     }
 
+    public static List<QuestTrackerSyncPayload.Prerequisite> prerequisites(
+            ServerPlayer player,
+            QuestDefinition definition,
+            Function<ResourceLocation, String> questTitleLabeler,
+            Function<ResourceLocation, Boolean> completionLookup) {
+        if (definition == null || definition.parent() == null) {
+            return List.of();
+        }
+        ResourceLocation parent = definition.parent();
+        String parentTitle = questTitleLabeler == null ? parent.toString() : questTitleLabeler.apply(parent);
+        if (parentTitle == null || parentTitle.isBlank()) {
+            parentTitle = parent.toString();
+        }
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("parent_quest", parentTitle);
+        values.put("parent_quest_id", parent.toString());
+        boolean met = completionLookup != null && Boolean.TRUE.equals(completionLookup.apply(parent));
+        String fallback = met ? "Completed {parent_quest}" : "Complete {parent_quest}";
+        String key = met ? "quest.tracker.prerequisite.parent_complete" : "quest.tracker.prerequisite.parent";
+        return List.of(new QuestTrackerSyncPayload.Prerequisite(
+                parent.toString(),
+                resolveGlobalText(player, key, fallback, values),
+                met));
+    }
+
     private static void addQuestItem(
             Map<String, QuestTrackerSyncPayload.QuestItem> items,
             ResourceLocation itemId,
@@ -390,6 +430,7 @@ public final class QuestTrackerPresenter {
             String issuerLocation,
             List<QuestTrackerSyncPayload.QuestItem> questItems,
             List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews,
+            List<QuestTrackerSyncPayload.Prerequisite> prerequisites,
             float progress,
             boolean showProgress,
             VillagerQuestSavedData.QuestState state
@@ -407,7 +448,24 @@ public final class QuestTrackerPresenter {
                 float progress,
                 boolean showProgress,
                 VillagerQuestSavedData.QuestState state) {
-            this(player, definition, title, step, replacements, status, issuer, issuerLocation, questItems, List.of(), progress, showProgress, state);
+            this(player, definition, title, step, replacements, status, issuer, issuerLocation, questItems, List.of(), List.of(), progress, showProgress, state);
+        }
+
+        public EntryInput(
+                ServerPlayer player,
+                QuestDefinition definition,
+                QuestDefinition.SelectedText title,
+                QuestDefinition.Step step,
+                Map<String, String> replacements,
+                String status,
+                String issuer,
+                String issuerLocation,
+                List<QuestTrackerSyncPayload.QuestItem> questItems,
+                List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews,
+                float progress,
+                boolean showProgress,
+                VillagerQuestSavedData.QuestState state) {
+            this(player, definition, title, step, replacements, status, issuer, issuerLocation, questItems, rewardPreviews, List.of(), progress, showProgress, state);
         }
 
         public EntryInput {
@@ -424,6 +482,7 @@ public final class QuestTrackerPresenter {
             issuerLocation = issuerLocation == null ? "" : issuerLocation;
             questItems = questItems == null ? List.of() : List.copyOf(questItems);
             rewardPreviews = rewardPreviews == null ? List.of() : List.copyOf(rewardPreviews);
+            prerequisites = prerequisites == null ? List.of() : List.copyOf(prerequisites);
             state = state == null ? VillagerQuestSavedData.QuestState.NOT_STARTED : state;
         }
     }

@@ -904,6 +904,23 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(
                 QuestTrackerPresenter.syncSignature(List.of(entry), quest.id()).contains(entry.questId()),
                 "presenter signature omitted quest id");
+        QuestDefinition childQuest = quest(helper, VillagerRetaliation.id("standing_watch"));
+        List<QuestTrackerSyncPayload.Prerequisite> unmetPrerequisites = QuestTrackerPresenter.prerequisites(
+                null,
+                childQuest,
+                parentId -> "Watch Arrows",
+                parentId -> false);
+        helper.assertValueEqual(unmetPrerequisites.size(), 1, "presenter did not include parent prerequisite");
+        helper.assertTrue(!unmetPrerequisites.getFirst().met(), "presenter marked unmet parent prerequisite complete");
+        helper.assertTrue(
+                unmetPrerequisites.getFirst().label().contains("Complete Watch Arrows"),
+                "presenter prerequisite label omitted parent title");
+        List<QuestTrackerSyncPayload.Prerequisite> metPrerequisites = QuestTrackerPresenter.prerequisites(
+                null,
+                childQuest,
+                parentId -> "Watch Arrows",
+                parentId -> true);
+        helper.assertTrue(metPrerequisites.getFirst().met(), "presenter did not mark completed parent prerequisite");
         QuestTrackerSyncPayload.Entry movedIssuerEntry = new QuestTrackerSyncPayload.Entry(
                 entry.questId(),
                 entry.title(),
@@ -969,6 +986,35 @@ public final class VillagerQuestGameTests {
                 rewardCappedEntry.rewardPreviews().size(),
                 QuestTrackerSyncPayload.MAX_REWARD_PREVIEWS,
                 "tracker entry did not cap reward previews");
+
+        List<QuestTrackerSyncPayload.Prerequisite> manyPrerequisites = new ArrayList<>();
+        for (int i = 0; i < QuestTrackerSyncPayload.MAX_PREREQUISITES + 4; i++) {
+            manyPrerequisites.add(new QuestTrackerSyncPayload.Prerequisite(
+                    "villagerretaliation:parent_" + i,
+                    "Parent " + i,
+                    false));
+        }
+        QuestTrackerSyncPayload.Entry prerequisiteCappedEntry = new QuestTrackerSyncPayload.Entry(
+                "villagerretaliation:prerequisite_cap",
+                "Prerequisite Cap",
+                "Objective",
+                "",
+                "Metadata",
+                0.25F,
+                true,
+                "active",
+                "Active",
+                "Issuer",
+                "Location",
+                List.of(),
+                List.of(),
+                manyPrerequisites,
+                false,
+                false);
+        helper.assertValueEqual(
+                prerequisiteCappedEntry.prerequisites().size(),
+                QuestTrackerSyncPayload.MAX_PREREQUISITES,
+                "tracker entry did not cap prerequisites");
 
         List<QuestTrackerSyncPayload.Entry> manyEntries = new ArrayList<>();
         for (int i = 0; i < QuestTrackerSyncPayload.MAX_SYNC_ENTRIES + 4; i++) {

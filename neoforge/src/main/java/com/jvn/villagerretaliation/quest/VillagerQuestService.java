@@ -4522,6 +4522,7 @@ public final class VillagerQuestService {
                 issuerLocation,
                 List.of(),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements, VillagerQuestService::lootTableName),
+                prerequisitePreviews(player, definition),
                 0.0F,
                 false,
                 VillagerQuestSavedData.QuestState.NOT_STARTED))
@@ -4566,6 +4567,7 @@ public final class VillagerQuestService {
                 issuerLocation,
                 List.of(),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements, VillagerQuestService::lootTableName),
+                prerequisitePreviews(player, definition),
                 QuestTrackerPresenter.fallbackProgress("completed"),
                 false,
                 VillagerQuestSavedData.QuestState.COMPLETED))
@@ -5017,9 +5019,39 @@ public final class VillagerQuestService {
                 issuerLocation,
                 QuestTrackerPresenter.questItems(definition, progress, VillagerQuestService::itemName),
                 QuestTrackerPresenter.rewardPreviews(player, definition, replacements, VillagerQuestService::lootTableName),
+                prerequisitePreviews(player, definition),
                 progressValue,
                 showProgress,
                 progress.state()));
+    }
+
+    private static List<QuestTrackerSyncPayload.Prerequisite> prerequisitePreviews(
+            ServerPlayer player,
+            QuestDefinition definition) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return List.of();
+        }
+        return QuestTrackerPresenter.prerequisites(
+                player,
+                definition,
+                parentId -> parentQuestTitle(level, player, parentId),
+                parentId -> parentQuestCompleted(level, player, parentId));
+    }
+
+    private static String parentQuestTitle(ServerLevel level, ServerPlayer player, ResourceLocation parentId) {
+        return VillagerQuestResources.quest(level.getServer(), parentId)
+                .map(parent -> questTitle(player, parent, Map.of()))
+                .orElseGet(() -> VillagerInteractionTextUtil.resourcePathName(parentId));
+    }
+
+    private static boolean parentQuestCompleted(ServerLevel level, ServerPlayer player, ResourceLocation parentId) {
+        QuestDefinition parent = VillagerQuestResources.quest(level.getServer(), parentId).orElse(null);
+        if (parent == null) {
+            return false;
+        }
+        VillagerQuestSavedData.QuestProgress progress =
+                VillagerQuestSavedData.get(level).get(player.getUUID(), parent.id());
+        return progress != null && progress.completionCount() > 0;
     }
 
     private static String trackerStateStepKey(

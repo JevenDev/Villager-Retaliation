@@ -828,6 +828,14 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
         y = addDividerLine(lines, y + 3, 3);
         y = addWrappedDetailLines(lines, descriptionLine(selected), wrapWidth, TEXT_COLOR, y, lineStep, 0);
+        if (!selected.prerequisites().isEmpty()) {
+            y = addDividerLine(lines, y + 3, 3);
+            y = addCenteredDetailLine(lines, "Prerequisites", TITLE_COLOR, y, lineStep, 0);
+            y = addDividerLine(lines, y + 3, 3);
+            for (QuestTrackerSyncPayload.Prerequisite prerequisite : selected.prerequisites()) {
+                y = addQuestStepLines(lines, prerequisiteLine(prerequisite), prerequisite.met(), y, lineStep, 2);
+            }
+        }
         y = addDividerLine(lines, y + 3, 3);
         y = addCenteredDetailLine(lines, "Objectives", TITLE_COLOR, y, lineStep, 0);
         y = addDividerLine(lines, y + 3, 3);
@@ -971,6 +979,10 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private static String rewardPreviewLine(QuestTrackerSyncPayload.RewardPreview reward) {
         return reward.label();
+    }
+
+    private static String prerequisiteLine(QuestTrackerSyncPayload.Prerequisite prerequisite) {
+        return prerequisite.label();
     }
 
     private static int questStepTextIndent() {
