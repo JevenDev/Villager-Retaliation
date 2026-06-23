@@ -936,6 +936,9 @@ public final class VillagerQuestGameTests {
                 entry.issuer(),
                 "minecraft:overworld 6,65,-2",
                 entry.questItems(),
+                entry.rewardPreviews(),
+                entry.prerequisites(),
+                entry.objectiveSteps(),
                 false,
                 false);
         helper.assertValueEqual(
