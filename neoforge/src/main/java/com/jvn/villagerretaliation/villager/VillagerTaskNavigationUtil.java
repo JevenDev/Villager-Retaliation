@@ -554,6 +554,7 @@ public final class VillagerTaskNavigationUtil {
         }
         rememberRecentLadderDismount(level, villager, ladder, dismount);
         clearActiveLadderClimb(villager);
+        stopHiredNavigation(villager);
         villager.setDeltaMovement(0.0D, 0.0D, 0.0D);
         villager.moveTo(targetX, targetY, targetZ, villager.getYRot(), villager.getXRot());
         villager.getMoveControl().setWantedPosition(targetX, targetY, targetZ, 0.0D);
