@@ -1,9 +1,11 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
 final class DialogueOptionPayloadCodec {
@@ -26,6 +28,7 @@ final class DialogueOptionPayloadCodec {
             buffer.writeEnum(option.requestType());
             buffer.writeBoolean(option.forceCameraTowardsVillager());
             buffer.writeVarInt(option.order());
+            writeStringList(buffer, option.metadata().tags().stream().toList());
         }
     }
 
@@ -33,13 +36,25 @@ final class DialogueOptionPayloadCodec {
         int size = VillagerPayloads.readCollectionSize(buffer, MAX_DIALOGUE_OPTIONS, "dialogue options");
         List<DialogueOptionDefinition> options = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
+            String id = buffer.readUtf(OPTION_ID_LENGTH);
+            String label = buffer.readUtf(OPTION_LABEL_LENGTH);
+            DialogueRequestType requestType = buffer.readEnum(DialogueRequestType.class);
+            boolean forceCameraTowardsVillager = buffer.readBoolean();
+            int order = buffer.readVarInt();
+            DialogueEntryMetadata metadata = new DialogueEntryMetadata(
+                    "",
+                    Set.copyOf(readStringList(buffer)),
+                    "",
+                    "",
+                    "",
+                    "");
             DialogueOptionDefinition option = DialogueOptionDefinition.transmitted(
-                    buffer.readUtf(OPTION_ID_LENGTH),
-                    buffer.readUtf(OPTION_LABEL_LENGTH),
-                    buffer.readEnum(DialogueRequestType.class),
-                    buffer.readBoolean(),
-                    buffer.readVarInt()
-            );
+                    id,
+                    label,
+                    requestType,
+                    forceCameraTowardsVillager,
+                    order,
+                    metadata);
             options.add(option);
         }
         return List.copyOf(options);

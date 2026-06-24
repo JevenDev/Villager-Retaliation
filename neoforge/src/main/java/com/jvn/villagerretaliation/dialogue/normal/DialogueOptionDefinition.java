@@ -90,10 +90,20 @@ public record DialogueOptionDefinition(
             DialogueRequestType requestType,
             boolean forceCameraTowardsVillager,
             int order) {
+        return transmitted(id, label, requestType, forceCameraTowardsVillager, order, DialogueEntryMetadata.EMPTY);
+    }
+
+    public static DialogueOptionDefinition transmitted(
+            String id,
+            String label,
+            DialogueRequestType requestType,
+            boolean forceCameraTowardsVillager,
+            int order,
+            DialogueEntryMetadata metadata) {
         return new DialogueOptionDefinition(
                 id,
                 null,
-                DialogueEntryMetadata.EMPTY,
+                metadata,
                 DialogueQuestAction.EMPTY,
                 DialogueTreeReference.EMPTY,
                 label,

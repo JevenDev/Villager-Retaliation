@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.client.villager;
 
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationClientPreferences;
 import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -16,6 +18,7 @@ public final class VillagerNameTagOverlay {
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
         if (!VillagerRetaliationServerConfigClient.showVillagerNameTags()
+                || !VillagerRetaliationClientPreferences.showVillagerNameTags()
                 || !(event.getEntity() instanceof AbstractVillager villager)
                 || villager.hasCustomName()) {
             return;
@@ -36,6 +39,16 @@ public final class VillagerNameTagOverlay {
     }
 
     public static void onClientTick(ClientTickEvent.Post event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null) {
+            while (VillagerNameTagKeyMappings.TOGGLE_NAME_TAGS.consumeClick()) {
+                boolean enabled = VillagerRetaliationClientPreferences.toggleShowVillagerNameTags();
+                String key = enabled
+                        ? "message.villagerretaliation.villager_name_tags.enabled"
+                        : "message.villagerretaliation.villager_name_tags.disabled";
+                minecraft.player.displayClientMessage(Component.translatable(key), true);
+            }
+        }
         VillagerNameClientCache.pruneMissing();
     }
 
