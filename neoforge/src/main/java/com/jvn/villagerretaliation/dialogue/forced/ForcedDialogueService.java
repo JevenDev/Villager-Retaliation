@@ -37,6 +37,7 @@ import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.Force
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueStolenItemReturn;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.LocalizedText;
+import com.jvn.villagerretaliation.event.VillagerEventTriggerSavedData;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.GeneratedContainerTooltipPayload;
@@ -368,6 +369,7 @@ public final class ForcedDialogueService {
                 1.0D,
                 0,
                 0,
+                0L,
                 0,
                 Integer.MAX_VALUE,
                 0,
@@ -1277,6 +1279,7 @@ public final class ForcedDialogueService {
                 source.chance(),
                 0,
                 source.priority(),
+                source.cooldownTicks(),
                 source.minRecentContainerThefts(),
                 source.maxRecentContainerThefts(),
                 source.minRecentRetaliations(),
@@ -1387,6 +1390,7 @@ public final class ForcedDialogueService {
                 optionDefinition.chance(),
                 optionDefinition.reputationDelta(),
                 optionDefinition.priority(),
+                optionDefinition.cooldownTicks(),
                 optionDefinition.minRecentContainerThefts(),
                 optionDefinition.maxRecentContainerThefts(),
                 optionDefinition.minRecentRetaliations(),
@@ -2479,6 +2483,7 @@ public final class ForcedDialogueService {
                 source.chance(),
                 0,
                 source.priority(),
+                source.cooldownTicks(),
                 source.minRecentContainerThefts(),
                 source.maxRecentContainerThefts(),
                 source.minRecentRetaliations(),
@@ -3391,6 +3396,9 @@ public final class ForcedDialogueService {
             int removedCount,
             List<ItemStack> removedStacks,
             ForcedDialogueDefinition definition) {
+        if (isContainerTheftCooldownActive(level, player, snapshot, definition)) {
+            return false;
+        }
         if (!rollChance(level, definition.chance())) {
             return true;
         }
@@ -3441,6 +3449,7 @@ public final class ForcedDialogueService {
                     VillagerInteractionService.villagerSpeakerLabel(witness),
                     outputRadius(definition)
             );
+            markContainerTheftCooldown(level, player, snapshot, definition);
         }
         return true;
     }
@@ -3464,6 +3473,9 @@ public final class ForcedDialogueService {
             return false;
         }
         if (!definitionMatchesReputation(level, witness, player, definition)) {
+            return false;
+        }
+        if (isContainerTheftCooldownActive(level, player, snapshot, definition)) {
             return false;
         }
 
@@ -3514,9 +3526,11 @@ public final class ForcedDialogueService {
             }
             if (royaltyAggroBypass) {
                 sendRoyaltyAggroBypassNotice(player, witness);
+                markContainerTheftCooldown(level, player, snapshot, definition);
                 return true;
             }
             VillagerRetaliationHandler.forceAnger(witness, player);
+            markContainerTheftCooldown(level, player, snapshot, definition);
             return true;
         }
 
@@ -3524,6 +3538,7 @@ public final class ForcedDialogueService {
             if (!line.isBlank()) {
                 VillagerInteractionService.sendVillagerNotice(player, witness, line);
             }
+            markContainerTheftCooldown(level, player, snapshot, definition);
             return true;
         }
 
@@ -3551,10 +3566,48 @@ public final class ForcedDialogueService {
                     List.of(),
                     royaltyAggroBypass
             ));
-        } else if (!line.isBlank()) {
-            VillagerInteractionService.sendVillagerNotice(player, witness, line);
+            markContainerTheftCooldown(level, player, snapshot, definition);
+        } else {
+            if (!line.isBlank()) {
+                VillagerInteractionService.sendVillagerNotice(player, witness, line);
+            }
+            markContainerTheftCooldown(level, player, snapshot, definition);
         }
         return true;
+    }
+
+    private static boolean isContainerTheftCooldownActive(
+            ServerLevel level,
+            ServerPlayer player,
+            ContainerSnapshot snapshot,
+            ForcedDialogueDefinition definition) {
+        if (definition.trigger() != ForcedDialogueTrigger.CONTAINER_THEFT || definition.cooldownTicks() <= 0L) {
+            return false;
+        }
+        long lastRunTime = VillagerEventTriggerSavedData.get(level).lastRunGameTime(containerTheftCooldownKey(player, snapshot, definition));
+        return lastRunTime > 0L && level.getGameTime() - lastRunTime < definition.cooldownTicks();
+    }
+
+    private static void markContainerTheftCooldown(
+            ServerLevel level,
+            ServerPlayer player,
+            ContainerSnapshot snapshot,
+            ForcedDialogueDefinition definition) {
+        if (definition.trigger() != ForcedDialogueTrigger.CONTAINER_THEFT || definition.cooldownTicks() <= 0L) {
+            return;
+        }
+        VillagerEventTriggerSavedData.get(level).markRun(containerTheftCooldownKey(player, snapshot, definition), level.getGameTime());
+    }
+
+    private static String containerTheftCooldownKey(
+            ServerPlayer player,
+            ContainerSnapshot snapshot,
+            ForcedDialogueDefinition definition) {
+        return "forced_container_theft|"
+                + definition.id()
+                + "|player:" + player.getUUID()
+                + "|dimension:" + snapshot.dimension().location()
+                + "|pos:" + snapshot.pos().asLong();
     }
 
     private static boolean triggerPlayerItemProximityChat(

@@ -57,6 +57,7 @@ public final class ForcedDialogueResources {
             "requires_line_of_sight", "output", "initiate_dialogue", "aggro_immediately", "force_camera_towards_villager",
             "reputation", "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
             "loot_table", "loot_tables", "target_entity_type", "target_entity_types", "target_entities",
+            "cooldown_ticks", "cooldown_seconds", "cooldown_days",
             "min_recent_container_thefts", "max_recent_container_thefts", "min_recent_retaliations", "max_recent_retaliations",
             "options", "leave_option", "leave_options");
     private static final Set<String> ENTRY_KEYS = ROOT_KEYS;
@@ -294,6 +295,7 @@ public final class ForcedDialogueResources {
                 clampChance(readDouble(entry, "chance", 1.0D)),
                 readInt(entry, "reputation", 0),
                 readInt(entry, "priority", 0),
+                DatapackJsonReader.readDurationTicks(entry, "cooldown", defaultCooldownTicks(trigger.get())),
                 readInt(entry, "min_recent_container_thefts", 0),
                 readInt(entry, "max_recent_container_thefts", Integer.MAX_VALUE),
                 readInt(entry, "min_recent_retaliations", 0),
@@ -311,6 +313,10 @@ public final class ForcedDialogueResources {
                 leaveOption,
                 leaveOptions
         ));
+    }
+
+    private static long defaultCooldownTicks(ForcedDialogueTrigger trigger) {
+        return trigger == ForcedDialogueTrigger.CONTAINER_THEFT ? 20L * 30L : 0L;
     }
 
     private static ForcedDialogueOutput readOutput(JsonObject entry) {
@@ -1030,6 +1036,7 @@ public final class ForcedDialogueResources {
             double chance,
             int reputationDelta,
             int priority,
+            long cooldownTicks,
             int minRecentContainerThefts,
             int maxRecentContainerThefts,
             int minRecentRetaliations,
