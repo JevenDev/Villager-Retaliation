@@ -508,8 +508,8 @@
       ],
       "chance": 0.5775,
       "lines": [
-        "No weapon. Still no running, {player}.",
-        "I cannot fight you properly, but I will remember."
+        "Unarmed. Still here.",
+        "I will remember."
       ],
       "weight": 24
     },
@@ -613,7 +613,7 @@
       "lines": [
         "Ow!",
         "Help!",
-        "I want to go home!"
+        "I want home!"
       ],
       "trigger": "alert.villager_damaged",
       "world_text_kind": "alert",
