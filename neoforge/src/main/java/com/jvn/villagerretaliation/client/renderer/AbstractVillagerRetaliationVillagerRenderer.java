@@ -120,6 +120,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     private boolean shouldUseCombatTextureAndModel(T villager, float attackTime) {
         boolean needsSideArmModel = this.poseProvider.shouldUseCombatModel(villager)
                 || attackTime > 0.0F
+                || VillagerRenderEquipmentState.hasArmorEquipped(villager)
                 || !VillagerRenderEquipmentState.visibleMainHand(villager).isEmpty()
                 || !villager.getOffhandItem().isEmpty();
         if (needsSideArmModel) {

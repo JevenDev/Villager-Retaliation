@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client;
 
+import com.jvn.villagerretaliation.client.model.VillagerArmorModel;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.jvn.villagerretaliation.client.renderer.VillagerFishingHookRenderer;
 import com.jvn.villagerretaliation.client.renderer.VillagerRetaliationVillagerRenderer;
@@ -20,5 +21,7 @@ public final class VillagerRetaliationClientRenderers {
 
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(VillagerRetaliationVillagerModel.LAYER_LOCATION, VillagerRetaliationVillagerModel::createBodyLayer);
+        event.registerLayerDefinition(VillagerArmorModel.INNER_ARMOR, VillagerArmorModel::createInnerArmorLayer);
+        event.registerLayerDefinition(VillagerArmorModel.OUTER_ARMOR, VillagerArmorModel::createOuterArmorLayer);
     }
 }

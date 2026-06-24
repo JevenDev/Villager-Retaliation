@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.renderer;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.pose.DefaultVillagerPoseProvider;
+import com.jvn.villagerretaliation.client.renderer.layer.VillagerArmorLayer;
 import com.jvn.villagerretaliation.client.renderer.layer.VillagerRetaliationProfessionLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -20,6 +21,7 @@ public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetalia
                 true
         );
         this.addLayer(new VillagerRetaliationProfessionLayer<>(this, context.getResourceManager(), "villager"));
+        this.addLayer(new VillagerArmorLayer<>(this, context));
     }
 
     @Override

@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.pose.VillagerArmPose;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseAnimator;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
+import com.jvn.villagerretaliation.client.renderer.VillagerRenderEquipmentState;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -23,6 +25,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
 
     private final ModelPart root;
     private final ModelPart body;
+    private final ModelPart robe;
     private final ModelPart crossedArms;
     private final ModelPart head;
     private final ModelPart helmet;
@@ -40,6 +43,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     public VillagerRetaliationVillagerModel(ModelPart root, VillagerPoseProvider<T> poseProvider) {
         this.root = root;
         this.body = root.getChild("body");
+        this.robe = getOptionalChild(root, "robe");
         this.crossedArms = root.getChild("arms");
         this.head = root.getChild("head");
         this.helmet = getOptionalChild(this.head, "helmet");
@@ -55,8 +59,9 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
 
-        PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 20).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F))
-                .texOffs(0, 38).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 18.0F, 6.0F, new CubeDeformation(0.5F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+        partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 20).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+
+        partdefinition.addOrReplaceChild("robe", CubeListBuilder.create().texOffs(0, 38).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 18.0F, 6.0F, new CubeDeformation(0.5F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
         partdefinition.addOrReplaceChild("arms", CubeListBuilder.create().texOffs(44, 22).addBox(-8.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
                 .texOffs(44, 22).addBox(4.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
@@ -101,6 +106,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
             this.leftLeg.xRot = -1.4137167F;
             this.leftLeg.yRot = (-(float) Math.PI / 10F);
             this.leftLeg.zRot = -0.07853982F;
+            this.syncRobe(villager);
             return;
         }
 
@@ -121,11 +127,13 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         VillagerArmPose pose = this.poseProvider == null
                 ? VillagerArmPose.NONE
                 : this.poseProvider.getArmPose(villager, this.attackTime);
-        this.setArmLayout(pose != VillagerArmPose.NONE);
+        this.setArmLayout(pose != VillagerArmPose.NONE || VillagerRenderEquipmentState.hasArmorEquipped(villager));
         if (pose == VillagerArmPose.NONE) {
+            this.syncRobe(villager);
             return;
         }
         VillagerPoseAnimator.applyPose(pose, villager, this.body, this.head, this.rightArm, this.leftArm, this.attackTime, ageInTicks);
+        this.syncRobe(villager);
     }
 
     @Override
@@ -145,6 +153,18 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         setVisible(this.brim, visible);
     }
 
+    @Override
+    public void copyPropertiesToHumanoidArmor(HumanoidModel<T> armorModel) {
+        super.copyPropertiesToHumanoidArmor(armorModel);
+        armorModel.head.copyFrom(this.head);
+        armorModel.hat.copyFrom(this.head);
+        armorModel.body.copyFrom(this.body);
+        armorModel.rightArm.copyFrom(this.rightArm);
+        armorModel.leftArm.copyFrom(this.leftArm);
+        armorModel.rightLeg.copyFrom(this.rightLeg);
+        armorModel.leftLeg.copyFrom(this.leftLeg);
+    }
+
     public void translateToHand(HumanoidArm arm, PoseStack poseStack) {
         this.getArm(arm).translateAndRotate(poseStack);
     }
@@ -157,6 +177,14 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
 
     private ModelPart getArm(HumanoidArm arm) {
         return arm == HumanoidArm.LEFT ? this.leftArm : this.rightArm;
+    }
+
+    private void syncRobe(T villager) {
+        if (this.robe == null) {
+            return;
+        }
+        this.robe.copyFrom(this.body);
+        this.robe.visible = !VillagerRenderEquipmentState.hasBodyArmorEquipped(villager);
     }
 
     private static ModelPart getOptionalChild(ModelPart parent, String name) {

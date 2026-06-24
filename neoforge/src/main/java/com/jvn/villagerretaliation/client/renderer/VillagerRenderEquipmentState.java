@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 
 public final class VillagerRenderEquipmentState {
@@ -35,6 +37,23 @@ public final class VillagerRenderEquipmentState {
             return ItemStack.EMPTY;
         }
         return cached.stack();
+    }
+
+    public static boolean hasArmorEquipped(AbstractVillager villager) {
+        return hasArmorEquipped(villager, EquipmentSlot.HEAD)
+                || hasArmorEquipped(villager, EquipmentSlot.CHEST)
+                || hasArmorEquipped(villager, EquipmentSlot.LEGS)
+                || hasArmorEquipped(villager, EquipmentSlot.FEET);
+    }
+
+    public static boolean hasBodyArmorEquipped(AbstractVillager villager) {
+        return hasArmorEquipped(villager, EquipmentSlot.CHEST)
+                || hasArmorEquipped(villager, EquipmentSlot.LEGS);
+    }
+
+    private static boolean hasArmorEquipped(AbstractVillager villager, EquipmentSlot slot) {
+        ItemStack stack = villager.getItemBySlot(slot);
+        return stack.getItem() instanceof ArmorItem armorItem && armorItem.getEquipmentSlot() == slot;
     }
 
     private static void remember(UUID villagerId, ItemStack stack, long gameTime) {

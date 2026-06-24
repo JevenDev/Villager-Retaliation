@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.renderer;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.pose.DefaultWanderingTraderPoseProvider;
+import com.jvn.villagerretaliation.client.renderer.layer.VillagerArmorLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -16,6 +17,7 @@ public class VillagerRetaliationWanderingTraderRenderer extends AbstractVillager
                 VillagerRetaliationClientAssets.VANILLA_TRADER_SKIN,
                 VillagerRetaliationClientAssets.COMBAT_TRADER_SKIN
         );
+        this.addLayer(new VillagerArmorLayer<>(this, context));
     }
 
     @Override
