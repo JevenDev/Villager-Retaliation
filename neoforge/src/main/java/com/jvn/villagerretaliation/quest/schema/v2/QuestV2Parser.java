@@ -55,6 +55,7 @@ public final class QuestV2Parser {
             "questline",
             "tags",
             "parent",
+            "show_locked_adventure_hint",
             "author",
             "version");
     private static final Set<String> TARGET_KEYS = Set.of(

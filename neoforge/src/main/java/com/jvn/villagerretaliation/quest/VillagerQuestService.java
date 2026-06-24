@@ -470,6 +470,7 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         if (context == null
                 || definition == null
+                || !definition.showLockedAdventureHint()
                 || context.villager().isBaby()
                 || canStart(context, definition, progress)
                 || !offerProfessionMatches(context, definition.offer())) {

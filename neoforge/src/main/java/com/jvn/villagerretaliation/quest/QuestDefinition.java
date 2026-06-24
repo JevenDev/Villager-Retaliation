@@ -30,6 +30,7 @@ public record QuestDefinition(
         String questline,
         Set<String> tags,
         ResourceLocation parent,
+        boolean showLockedAdventureHint,
         Offer offer,
         Target target,
         List<Objective> objectives,

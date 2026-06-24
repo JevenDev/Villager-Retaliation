@@ -143,6 +143,10 @@ public final class QuestV2Compiler {
         if (tags.size() > 0) {
             root.add("tags", tags);
         }
+        JsonElement showLockedAdventureHint = resource.metadata().get("show_locked_adventure_hint");
+        if (showLockedAdventureHint != null && showLockedAdventureHint.isJsonPrimitive()) {
+            root.add("show_locked_adventure_hint", showLockedAdventureHint.deepCopy());
+        }
     }
 
     private static void addOffer(JsonObject root, QuestV2Resource resource) {

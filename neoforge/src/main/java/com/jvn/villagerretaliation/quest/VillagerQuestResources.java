@@ -496,6 +496,7 @@ public final class VillagerQuestResources {
                 firstNonBlank(DatapackJsonReader.readString(root, "questline"), inferQuestline(location)),
                 readQuestTags(root),
                 parent,
+                DatapackJsonReader.readBoolean(root, "show_locked_adventure_hint", true),
                 readOffer(location, root, id),
                 readTarget(root),
                 readObjectives(location, root, id),

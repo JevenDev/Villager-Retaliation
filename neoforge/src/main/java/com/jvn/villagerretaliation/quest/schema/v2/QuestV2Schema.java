@@ -101,6 +101,7 @@ public final class QuestV2Schema {
         properties.add("questline", string());
         properties.add("tags", arrayOf(string()));
         properties.add("parent", resourceLocation());
+        properties.add("show_locked_adventure_hint", booleanSchema());
         properties.add("author", string());
         properties.add("version", string());
         schema.add("properties", properties);

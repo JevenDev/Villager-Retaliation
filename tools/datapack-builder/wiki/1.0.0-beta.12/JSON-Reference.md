@@ -323,13 +323,15 @@ Common optional fields:
 
 | Field | Meaning |
 | --- | --- |
-| `metadata` | `title`, `description`, `title_key`, `description_key`, `questline`, `tags`, `parent` |
+| `metadata` | `title`, `description`, `title_key`, `description_key`, `questline`, `tags`, `parent`, `show_locked_adventure_hint` |
 | `availability` | Repeat, cooldown, abandonment, locking, completion scope, and active gates |
 | `target` | Structure target, dimension, search radius, discovery radius, and proof item |
 | `events` | Quest-level trigger actions |
 | `rewards` | XP, reputation, gossip, loot, memory event, or reward actions |
 | `ui` | Tracker text, icon, color, progress, placeholders, priority, and hidden flag |
 | `external_scenes` | Resource ids for extracted dialogue tree scenes |
+
+Set `metadata.show_locked_adventure_hint` to `false` when a quest should not appear as a locked preview in the villager `Adventures` menu before its offer requirements are met.
 
 Each stage requires `id` and `objectives`. Stages can also define `complete_when`, `next`, `dialogue`, `responses`, `scenes`, `events`, `entry_actions`, `exit_actions`, `rewards`, `ui`, and `metadata`.
 

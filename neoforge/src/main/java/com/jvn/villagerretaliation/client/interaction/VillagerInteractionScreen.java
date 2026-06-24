@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.client.reputation.VillagerReputationIconSet;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
@@ -86,6 +87,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final String DIALOGUE_TREE_LEAVE_OPTION_ID = DialogueTreeService.LEAVE_OPTION_ID;
     private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
     private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
+    private static final String QUEST_V2_TAG = "quest_v2";
     private static final String QUEST_OFFER_HINT_TAG = "quest_offer_hint";
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
@@ -415,7 +417,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.knownDislikedGiftNames.clear();
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
         this.awaitingForcedDialogueResponse = false;
-        if (this.page == DialoguePage.TALK) {
+        if (this.page == DialoguePage.TALK || this.page == DialoguePage.ADVENTURES) {
             rebuildOptionsKeepingListPosition();
         }
     }
@@ -622,7 +624,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void rebuildOptions() {
         this.options.clear();
         if (this.page == DialoguePage.TALK) {
-            addDialogueOptions();
+            if (this.forcedDialogue) {
+                addDialogueOptions();
+            } else {
+                addDialogueOptions(false);
+            }
+        } else if (this.page == DialoguePage.ADVENTURES) {
+            addDialogueOptions(true);
         } else if (this.page == DialoguePage.PROFILE) {
             addProfileOptions();
         } else if (this.page == DialoguePage.SKILLS) {
@@ -723,8 +731,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
+    private void addDialogueOptions(boolean adventuresOnly) {
+        for (DialogueOptionDefinition option : this.dialogueOptions) {
+            if (isQuestOption(option) != adventuresOnly) {
+                continue;
+            }
+            addDialogueOption(option);
+        }
+    }
+
     private void addRootOptions() {
         addOption("root.talk", this::openTalkPage);
+        if (hasQuestOptions()) {
+            addOption("root.adventures", this::openAdventuresPage);
+        }
         if (!this.baby) {
             addOption("root.profile", this::openProfilePage);
             addOption("root.skills", this::openSkillsPage);
@@ -1245,6 +1265,29 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addDialogueOption(option.label(), option.id(), option.metadata().tags().contains(QUEST_OFFER_HINT_TAG));
     }
 
+    private boolean hasQuestOptions() {
+        for (DialogueOptionDefinition option : this.dialogueOptions) {
+            if (isQuestOption(option)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isQuestOption(DialogueOptionDefinition option) {
+        if (option == null) {
+            return false;
+        }
+        if (!option.questAction().isEmpty()) {
+            return true;
+        }
+        DialogueEntryMetadata metadata = option.metadata();
+        return metadata != null
+                && (!metadata.quest().isBlank()
+                        || metadata.tags().contains(QUEST_V2_TAG)
+                        || metadata.tags().contains(QUEST_OFFER_HINT_TAG));
+    }
+
     private void addDialogueOption(String label, String optionId, boolean locked) {
         if (BLUEPRINT_CHANGE_OPTION_ID.equals(optionId)) {
             this.options.add(DialogueOption.enabled(label, this::openBuilderStructuresPage));
@@ -1267,6 +1310,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openTalkPage() {
         openPage(DialoguePage.TALK);
+    }
+
+    private void openAdventuresPage() {
+        openPage(DialoguePage.ADVENTURES);
     }
 
     private void openProfilePage() {
@@ -3080,6 +3127,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private enum DialoguePage {
         ROOT,
         TALK,
+        ADVENTURES,
         PROFILE,
         SKILLS,
         GIFT,
