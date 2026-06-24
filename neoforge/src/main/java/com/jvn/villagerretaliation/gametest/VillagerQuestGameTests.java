@@ -1223,6 +1223,7 @@ public final class VillagerQuestGameTests {
         progress.markObjectiveComplete("defeat_zombie");
         progress.setCurrentStage("return");
         player.getInventory().clearContent();
+        player.getInventory().setChanged();
 
         QuestTrackerSyncPayload.Entry droppedEntry = VillagerQuestService.debugTrackerEntryForTests(
                 player,
