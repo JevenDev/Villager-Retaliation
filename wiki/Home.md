@@ -25,6 +25,7 @@ Every page includes at least one copyable example. Start small, test one system 
 | Gifts | Gift preferences and high-trust rewards | `data/villagerretaliation/gifts/` | [Gifts](Gifts.md) |
 | Pacification | Items that calm hostile villagers | `data/villagerretaliation/pacification/` | [Pacification](Pacification.md) |
 | Profession loot | Villager drop rules backed by loot tables | `data/villagerretaliation/profession_loot/` | [Profession Loot](Profession-Loot.md) |
+| Natural job armor | Armor fresh villagers can spawn with by profession | `data/villagerretaliation/natural_job_armor/` | [Natural Job Armor](Natural-Job-Armor.md) |
 | Skill trades | Skill-based extra trade offers and Special Orders | `data/<namespace>/skill_trades/` | [Skill Trades](Skill-Trades.md) |
 | Builder structures | Structure templates hired builders can offer and build costs | `data/<namespace>/builder_structures/` | [Builder Structures](Builder-Structures.md) |
 | Story discovery | Structures and biomes used by `share_story` dialogue | `data/<namespace>/story_structures/` and `story_biomes/` | [Story Discovery](Story-Discovery.md) |

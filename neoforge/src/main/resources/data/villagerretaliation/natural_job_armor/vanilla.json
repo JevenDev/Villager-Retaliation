@@ -1,0 +1,88 @@
+{
+  "profiles": [
+    {
+      "id": "fletcher",
+      "professions": [
+        "fletcher"
+      ],
+      "chance": {
+        "peaceful": 0.34,
+        "easy": 0.42,
+        "normal": 0.54,
+        "hard": 0.66
+      },
+      "next_piece_chance": {
+        "peaceful": 0.58,
+        "easy": 0.66,
+        "normal": 0.76,
+        "hard": 0.86
+      },
+      "enchant_chance": {
+        "peaceful": 0.025,
+        "easy": 0.045,
+        "normal": 0.08,
+        "hard": 0.14
+      },
+      "armor_sets": [
+        {
+          "id": "leather",
+          "material": "leather",
+          "weight": 70
+        },
+        {
+          "id": "chainmail",
+          "material": "chainmail",
+          "weight": 30
+        }
+      ]
+    },
+    {
+      "id": "smiths",
+      "professions": [
+        "armorer",
+        "toolsmith",
+        "weaponsmith"
+      ],
+      "chance": {
+        "peaceful": 0.42,
+        "easy": 0.50,
+        "normal": 0.62,
+        "hard": 0.74
+      },
+      "next_piece_chance": {
+        "peaceful": 0.58,
+        "easy": 0.66,
+        "normal": 0.76,
+        "hard": 0.86
+      },
+      "enchant_chance": {
+        "peaceful": 0.025,
+        "easy": 0.045,
+        "normal": 0.08,
+        "hard": 0.14
+      },
+      "armor_sets": [
+        {
+          "id": "chainmail",
+          "material": "chainmail",
+          "weight": 45
+        },
+        {
+          "id": "iron",
+          "material": "iron",
+          "weight": 52
+        },
+        {
+          "id": "diamond",
+          "material": "diamond",
+          "weight_by_difficulty": {
+            "peaceful": 1,
+            "easy": 1,
+            "normal": 2,
+            "hard": 3
+          }
+        }
+      ]
+    }
+  ]
+}

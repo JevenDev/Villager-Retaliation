@@ -51,6 +51,7 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import com.jvn.villagerretaliation.villager.VillagerContainerClimbGuard;
+import com.jvn.villagerretaliation.villager.VillagerNaturalJobArmor;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
@@ -265,6 +266,7 @@ public final class VillagerRetaliationEvents {
             return;
         }
         if (entity instanceof Villager villager) {
+            VillagerNaturalJobArmor.maybeRoll(villager);
             VillagerConversationService.tickVillager(villager);
             HiredVillagerContractService.onVillagerTickPost(villager);
             if (villager.level() instanceof ServerLevel level) {
@@ -305,6 +307,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        VillagerNaturalJobArmor.onEntityJoinLevel(event);
         VillagerRetaliationHandler.onEntityJoinLevel(event);
     }
 

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.villager.VillagerNaturalJobArmor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
@@ -863,6 +864,10 @@ final class VillagerInventoryContainer implements Container {
     private static void dropEquipmentSlot(Villager villager, LivingDropsEvent event, EquipmentSlot slot) {
         ItemStack stack = villager.getItemBySlot(slot);
         if (stack.isEmpty()) {
+            return;
+        }
+        if (VillagerNaturalJobArmor.isNaturalArmor(villager, slot, stack)) {
+            VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
             return;
         }
         if (HiredJobInventory.hasJobEquipmentForSlot(villager, slot)) {

@@ -35,6 +35,9 @@ public final class VillagerRetaliationVillagerEquipment {
             setInventoryMainHand(villager, stack);
             return;
         }
+        if (villager instanceof Villager regularVillager && slot.isArmor()) {
+            VillagerNaturalJobArmor.clearNaturalArmorSlot(regularVillager, slot);
+        }
         setEquipment(villager, slot, stack, true);
     }
 

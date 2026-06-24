@@ -23,6 +23,7 @@ import com.jvn.villagerretaliation.trade.SkillTradeResources;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageEventMemorySavedData;
 import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.villager.VillagerNaturalJobArmorResources;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import net.minecraft.server.MinecraftServer;
@@ -38,6 +39,7 @@ public final class VillagerDataWarmup {
         ProfessionLootResources.warm(server);
         SkillTradeResources.warm(server);
         VillagerCurrencyResources.warm(server);
+        VillagerNaturalJobArmorResources.warm(server);
         VillagerPacifyPaymentResources.warm(server);
         BuilderStructureCatalog.warm(server);
         VillagerNotificationResources.warm(server);
@@ -70,6 +72,7 @@ public final class VillagerDataWarmup {
         ProfessionLootResources.clearCache();
         SkillTradeResources.clearCache();
         VillagerCurrencyResources.clearCache();
+        VillagerNaturalJobArmorResources.clearCache();
         VillagerPacifyPaymentResources.clearCache();
         BuilderStructureCatalog.clearCache();
         VillagerNotificationResources.clearCache();

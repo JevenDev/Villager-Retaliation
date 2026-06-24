@@ -14,6 +14,7 @@ Use a datapack for behavior and authored text:
       gifts/
       currency/
       notifications/
+      natural_job_armor/
       pacification/
       profession_loot/
       villager_names/
@@ -50,6 +51,7 @@ These systems are intentionally fixed to the mod namespace:
 | Notifications | `villagerretaliation` |
 | Gifts | `villagerretaliation` |
 | Currency | `villagerretaliation` |
+| Natural job armor | `villagerretaliation` |
 | Pacification | `villagerretaliation` |
 | Profession loot rules | `villagerretaliation` |
 | Villager names | `villagerretaliation` |
