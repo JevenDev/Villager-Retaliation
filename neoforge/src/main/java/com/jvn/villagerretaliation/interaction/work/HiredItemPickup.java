@@ -78,6 +78,8 @@ public final class HiredItemPickup {
             return WorkResult.idle(messages.outputFullBlocked());
         }
 
+        villager.onItemPickup(item);
+        villager.take(item, moved);
         if (remainder.isEmpty()) {
             item.discard();
         } else {
