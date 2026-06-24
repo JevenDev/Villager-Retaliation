@@ -1073,6 +1073,173 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void activeTrackerEntryListsMobKillObjectiveSteps(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+
+        QuestDefinition.Objective defeatZombie = new QuestDefinition.Objective(
+                "defeat_zombie",
+                QuestDefinition.ObjectiveType.MOB_KILL,
+                false,
+                null,
+                Level.OVERWORLD,
+                null,
+                8,
+                List.of(),
+                16,
+                8,
+                null,
+                Set.of(ResourceLocation.fromNamespaceAndPath("minecraft", "zombie")),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                null,
+                null,
+                QuestFactScope.PLAYER,
+                null,
+                Set.of(),
+                "",
+                Set.of(),
+                null,
+                null,
+                2,
+                false,
+                QuestDefinition.ItemRequirements.EMPTY,
+                List.of(),
+                QuestDefinition.ObjectiveTracker.EMPTY);
+        QuestDefinition.Objective bringBones = new QuestDefinition.Objective(
+                "bring_bones",
+                QuestDefinition.ObjectiveType.ITEM_CHECK,
+                false,
+                null,
+                Level.OVERWORLD,
+                null,
+                8,
+                List.of(),
+                16,
+                8,
+                ResourceLocation.fromNamespaceAndPath("minecraft", "bone"),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                Set.of(),
+                null,
+                null,
+                QuestFactScope.PLAYER,
+                null,
+                Set.of(),
+                "",
+                Set.of(),
+                null,
+                null,
+                3,
+                false,
+                QuestDefinition.ItemRequirements.EMPTY,
+                List.of(),
+                QuestDefinition.ObjectiveTracker.EMPTY);
+        QuestDefinition.Stage started = new QuestDefinition.Stage(
+                "started",
+                List.of("defeat_zombie", "bring_bones"),
+                List.of(
+                        new QuestDefinition.StagePredicate("defeat_zombie", List.of()),
+                        new QuestDefinition.StagePredicate("bring_bones", List.of())),
+                "return",
+                List.of(),
+                List.of(),
+                List.of());
+        QuestDefinition.Stage returnStage = new QuestDefinition.Stage(
+                "return",
+                List.of(),
+                List.of(),
+                "",
+                List.of(),
+                List.of(),
+                List.of());
+        QuestDefinition quest = new QuestDefinition(
+                VillagerRetaliation.id("active_mob_objective_steps"),
+                "Active Mob Objective Steps",
+                "Defeat a mob and bring back supplies.",
+                "",
+                "",
+                "",
+                Set.of("test"),
+                null,
+                null,
+                QuestDefinition.Target.EMPTY,
+                List.of(defeatZombie, bringBones),
+                QuestDefinition.Rules.DEFAULT,
+                QuestDefinition.Tracker.EMPTY,
+                Map.of("started", started, "return", returnStage),
+                List.of(),
+                QuestDefinition.Rewards.EMPTY,
+                QuestDefinition.Dialogue.EMPTY,
+                null,
+                QuestDefinition.Links.EMPTY);
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(villager.getUUID(), Level.OVERWORLD, null, level.getGameTime());
+        progress.setIssuer(
+                villager.getUUID(),
+                "Scout",
+                "minecraft:weaponsmith",
+                2,
+                Level.OVERWORLD,
+                villager.blockPosition(),
+                "village:overworld:0:0");
+        progress.addObjectiveCounter("defeat_zombie", 1);
+        player.getInventory().add(new ItemStack(Items.BONE, 2));
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+
+        QuestTrackerSyncPayload.Entry entry = VillagerQuestService.debugTrackerEntryForTests(
+                player,
+                context,
+                quest,
+                progress,
+                true);
+
+        helper.assertTrue(entry.objective().contains("Defeat 1/2 Zombie"), "active tracker objective did not update mob progress: " + entry.objective());
+        helper.assertValueEqual(entry.objectiveSteps().size(), 2, "active tracker did not list all objectives");
+        helper.assertTrue(
+                entry.objectiveSteps().getFirst().label().contains("Defeat 1/2 Zombie"),
+                "active tracker omitted required mob kill objective: " + entry.objectiveSteps());
+        helper.assertTrue(
+                entry.objectiveSteps().stream().anyMatch(step -> step.label().contains("Collect 2/3 Bone")),
+                "active tracker omitted item objective beside mob kill: " + entry.objectiveSteps());
+        helper.assertTrue(
+                entry.questItems().stream().anyMatch(item -> item.itemId().equals("minecraft:bone")
+                        && item.count() == 3
+                        && item.currentCount() == 2),
+                "active tracker quest item count did not update: " + entry.questItems());
+
+        progress.addObjectiveCounter("defeat_zombie", 1);
+        progress.markObjectiveComplete("defeat_zombie");
+        progress.setCurrentStage("return");
+        player.getInventory().clearContent();
+
+        QuestTrackerSyncPayload.Entry droppedEntry = VillagerQuestService.debugTrackerEntryForTests(
+                player,
+                context,
+                quest,
+                progress,
+                true);
+        helper.assertValueEqual(droppedEntry.status(), "Active", "dropped item objective still looked ready");
+        helper.assertTrue(
+                droppedEntry.questItems().stream().anyMatch(item -> item.itemId().equals("minecraft:bone")
+                        && item.count() == 3
+                        && item.currentCount() == 0),
+                "dropped required item disappeared from tracker counts: " + droppedEntry.questItems());
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questProgressPersistsDistinctCompletionHistory(GameTestHelper helper) {
         VillagerQuestSavedData data = new VillagerQuestSavedData();
         UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000101");

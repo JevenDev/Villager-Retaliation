@@ -182,9 +182,14 @@ final class VillagerQuestHudRenderer {
     private static String questItemsLine(QuestTrackerSyncPayload.Entry entry) {
         List<String> names = new ArrayList<>();
         for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
-            names.add(item.count() > 1 ? item.label() + " x" + item.count() : item.label());
+            names.add(questItemProgressLine(item));
         }
         return "Quest item: " + String.join(", ", names);
+    }
+
+    private static String questItemProgressLine(QuestTrackerSyncPayload.QuestItem item) {
+        int current = Math.max(0, Math.min(item.count(), item.currentCount()));
+        return item.label() + " " + current + "/" + item.count();
     }
 
     static void renderEntry(

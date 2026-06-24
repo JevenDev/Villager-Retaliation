@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -98,7 +99,8 @@ public final class QuestTrackerPresenter {
         for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
             builder.append(item.itemId()).append(',')
                     .append(item.label()).append(',')
-                    .append(item.count()).append(';');
+                    .append(item.count()).append(',')
+                    .append(item.currentCount()).append(';');
         }
         builder.append('|');
         appendRewardPreviewSignature(builder, entry.rewardPreviews());
@@ -128,7 +130,8 @@ public final class QuestTrackerPresenter {
         for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
             builder.append(item.itemId()).append(',')
                     .append(item.label()).append(',')
-                    .append(item.count()).append(';');
+                    .append(item.count()).append(',')
+                    .append(item.currentCount()).append(';');
         }
         builder.append('|');
         appendRewardPreviewSignature(builder, entry.rewardPreviews());
@@ -288,18 +291,61 @@ public final class QuestTrackerPresenter {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             Function<ResourceLocation, String> itemLabeler) {
+        return questItems(definition, progress, itemLabeler, itemId -> 0, objective -> 0);
+    }
+
+    public static List<QuestTrackerSyncPayload.QuestItem> questItems(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            Function<ResourceLocation, String> itemLabeler,
+            Function<ResourceLocation, Integer> itemCounter,
+            ToIntFunction<QuestDefinition.Objective> objectiveCounter) {
+        return questItems(
+                definition,
+                progress,
+                itemLabeler,
+                itemCounter,
+                objectiveCounter,
+                QuestObjectiveQuery.activeObjectives(definition, progress));
+    }
+
+    public static List<QuestTrackerSyncPayload.QuestItem> questItems(
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            Function<ResourceLocation, String> itemLabeler,
+            Function<ResourceLocation, Integer> itemCounter,
+            ToIntFunction<QuestDefinition.Objective> objectiveCounter,
+            List<QuestDefinition.Objective> objectives) {
         if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
             return List.of();
         }
         Map<String, QuestTrackerSyncPayload.QuestItem> items = new LinkedHashMap<>();
-        addQuestItem(items, definition.target().proofItem(), 1, itemLabeler);
-        for (QuestDefinition.Objective objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
+        addQuestItem(
+                items,
+                definition.target().proofItem(),
+                1,
+                itemLabeler,
+                currentItemCount(itemCounter, definition.target().proofItem()));
+        for (QuestDefinition.Objective objective : objectives == null ? List.<QuestDefinition.Objective>of() : objectives) {
             if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK || objective.item() == null) {
                 continue;
             }
-            addQuestItem(items, objective.item(), objective.count(), itemLabeler);
+            addQuestItem(
+                    items,
+                    objective.item(),
+                    objective.count(),
+                    itemLabeler,
+                    objectiveCounter == null ? 0 : Math.max(0, objectiveCounter.applyAsInt(objective)));
         }
         return List.copyOf(items.values());
+    }
+
+    private static int currentItemCount(Function<ResourceLocation, Integer> itemCounter, ResourceLocation itemId) {
+        if (itemCounter == null || itemId == null) {
+            return 0;
+        }
+        Integer count = itemCounter.apply(itemId);
+        return count == null ? 0 : Math.max(0, count);
     }
 
     public static List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews(
@@ -410,14 +456,21 @@ public final class QuestTrackerPresenter {
             Map<String, QuestTrackerSyncPayload.QuestItem> items,
             ResourceLocation itemId,
             int count,
-            Function<ResourceLocation, String> itemLabeler) {
+            Function<ResourceLocation, String> itemLabeler,
+            int currentCount) {
         if (itemId == null) {
             return;
         }
         String key = itemId.toString();
         QuestTrackerSyncPayload.QuestItem existing = items.get(key);
         if (existing == null || count > existing.count()) {
-            items.put(key, new QuestTrackerSyncPayload.QuestItem(key, itemLabeler.apply(itemId), count));
+            items.put(key, new QuestTrackerSyncPayload.QuestItem(key, itemLabeler.apply(itemId), count, currentCount));
+        } else if (currentCount > existing.currentCount()) {
+            items.put(key, new QuestTrackerSyncPayload.QuestItem(
+                    existing.itemId(),
+                    existing.label(),
+                    existing.count(),
+                    currentCount));
         }
     }
 

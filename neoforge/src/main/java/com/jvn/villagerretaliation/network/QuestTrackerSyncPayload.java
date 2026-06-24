@@ -58,6 +58,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
                 buffer.writeUtf(item.itemId(), 128);
                 buffer.writeUtf(item.label(), 128);
                 buffer.writeVarInt(item.count());
+                buffer.writeVarInt(item.currentCount());
             }
             buffer.writeVarInt(Math.min(MAX_REWARD_PREVIEWS, entry.rewardPreviews().size()));
             for (RewardPreview reward : entry.rewardPreviews()) {
@@ -126,6 +127,7 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
             QuestItem item = new QuestItem(
                     buffer.readUtf(128),
                     buffer.readUtf(128),
+                    buffer.readVarInt(),
                     buffer.readVarInt()
             );
             items.add(item);
@@ -422,11 +424,16 @@ public record QuestTrackerSyncPayload(List<Entry> entries, List<String> trackedQ
         }
     }
 
-    public record QuestItem(String itemId, String label, int count) {
+    public record QuestItem(String itemId, String label, int count, int currentCount) {
+        public QuestItem(String itemId, String label, int count) {
+            this(itemId, label, count, 0);
+        }
+
         public QuestItem {
             itemId = itemId == null ? "" : itemId;
             label = label == null ? "" : label;
             count = Math.max(1, count);
+            currentCount = Math.max(0, currentCount);
         }
     }
 }

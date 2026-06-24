@@ -848,7 +848,7 @@ public final class VillagerQuestJournalScreen extends Screen {
             y = addQuestStepLines(lines, selected.objective(), completed, y, lineStep, 2);
         } else {
             for (QuestTrackerSyncPayload.QuestItem item : selected.questItems()) {
-                y = addQuestStepLines(lines, questItemLine(item), completed, y, lineStep, 2);
+                y = addQuestStepLines(lines, questItemLine(item), questItemComplete(item), y, lineStep, 2);
             }
         }
         if (!selected.rewardPreviews().isEmpty()) {
@@ -1007,7 +1007,12 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private static String questItemLine(QuestTrackerSyncPayload.QuestItem item) {
-        return item.count() > 1 ? item.label() + " x" + item.count() : item.label();
+        int current = Math.max(0, Math.min(item.count(), item.currentCount()));
+        return item.label() + " " + current + "/" + item.count();
+    }
+
+    private static boolean questItemComplete(QuestTrackerSyncPayload.QuestItem item) {
+        return item.count() <= 0 || item.currentCount() >= item.count();
     }
 
     private static String rewardPreviewLine(QuestTrackerSyncPayload.RewardPreview reward) {
