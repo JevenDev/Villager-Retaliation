@@ -743,11 +743,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addRootRecruitmentOptions() {
         if (this.followingPlayer) {
+            addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
             if (canCommandStayHere()) {
                 addOption("recruit.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
             }
         } else if (this.stayingHere) {
             addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
+            addOption("recruit.stop_staying_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE));
         } else {
             addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
             if (canCommandStayHere()) {
@@ -784,7 +786,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.followingPlayer) {
             addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
         } else if (this.stayingHere) {
-            addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
+            addOption("recruit.stop_staying_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE));
         }
     }
 
@@ -1128,7 +1130,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private boolean canCommandStayHere() {
         return this.reputationLevel != null
-                && this.reputationLevel.trustRank() >= VillagerReputationLevel.NEUTRAL.trustRank();
+                && this.reputationLevel.trustRank() >= VillagerReputationLevel.TRUSTED.trustRank();
     }
 
     private void addClipboardMenuOptions() {
@@ -1530,7 +1532,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
             this.followingPlayer = false;
             this.stayingHere = true;
-        } else if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING) {
+        } else if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
+                || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
             this.followingPlayer = false;
             this.stayingHere = false;
         } else if (action == VillagerRecruitRequestPayload.Action.STOP_BREWING) {

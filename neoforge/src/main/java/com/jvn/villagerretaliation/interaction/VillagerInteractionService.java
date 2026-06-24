@@ -135,11 +135,11 @@ public final class VillagerInteractionService {
             return handleSleepingVillagerInteraction(villager, player);
         }
 
-        if (VillagerRecruitmentService.isFollowing(villager, player)) {
+        if (player.isShiftKeyDown() && VillagerRecruitmentService.isFollowing(villager, player)) {
             VillagerRecruitmentService.stopFollowing(player.serverLevel(), villager, player);
             VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
             focusVillagerOnPlayer(villager, player);
-            sendVillagerNotice(player, villager, "interaction.follow_stay");
+            sendVillagerNotice(player, villager, "interaction.follow_stop");
             return InteractionResult.SUCCESS;
         }
 
@@ -445,7 +445,8 @@ public final class VillagerInteractionService {
         focusVillagerOnPlayer(villager, player);
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW
                 || action == VillagerRecruitRequestPayload.Action.STAY_HERE
-                || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING) {
+                || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
+                || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
             String responseKey;
             if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
                 VillagerRecruitmentService.startFollowing(level, villager, player);
@@ -459,8 +460,12 @@ public final class VillagerInteractionService {
                 responseKey = "interaction.follow_hold_position";
             } else {
                 VillagerRecruitmentService.stopFollowing(level, villager, player);
-                VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
-                responseKey = "interaction.follow_stay";
+                if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING) {
+                    VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
+                    responseKey = "interaction.follow_stop";
+                } else {
+                    responseKey = "interaction.stay_stop";
+                }
             }
             String responseText = message(createDialogueContext(level, player, villager), responseKey);
             sendVillagerNotice(player, villager, responseText);

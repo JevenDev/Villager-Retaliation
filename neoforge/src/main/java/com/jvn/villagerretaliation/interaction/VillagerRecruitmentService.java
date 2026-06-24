@@ -85,7 +85,9 @@ public final class VillagerRecruitmentService {
     }
 
     public static boolean canCommandStayHere(ServerLevel level, Villager villager, ServerPlayer player) {
-        return canRecruit(level, villager, player);
+        return !villager.isBaby()
+                && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
+                >= VillagerReputationLevel.TRUSTED.trustRank();
     }
 
     public static boolean isFollowing(Villager villager, ServerPlayer player) {

@@ -26,6 +26,22 @@
       "id": "global.messages.00_interaction.messages.interaction.follow_stay.000"
     },
     {
+      "key": "interaction.follow_stop",
+      "lines": [
+        "All right. I will stop following you.",
+        "I will stop following. I can find my own footing from here.",
+        "Understood. I am no longer following you.",
+        "Fine. I will stay with my own path now.",
+        "I will stop trailing after you.",
+        "All right. I am done following for now.",
+        "I will leave your road to you.",
+        "Understood. I will not follow you any farther.",
+        "Very well. I am on my own again.",
+        "I will stop following. Try not to make me regret it."
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.follow_stop.001"
+    },
+    {
       "key": "interaction.follow_start",
       "lines": [
         "All right. I will follow you.",
@@ -39,23 +55,39 @@
         "I am with you. For now.",
         "All right. Let us go before I think too hard about it."
       ],
-      "id": "global.messages.00_interaction.messages.interaction.follow_start.001"
+      "id": "global.messages.00_interaction.messages.interaction.follow_start.002"
     },
     {
       "key": "interaction.follow_hold_position",
       "lines": [
-        "All right. I will hold this spot.",
-        "Very well. I will stay exactly here until it is safe to move.",
-        "I understand. I will keep to this place.",
-        "Then this is where I stand.",
-        "I will remain here and return to this spot if trouble pulls me away.",
-        "Right. I will wait on this ground for you.",
-        "I can hold here. If danger comes, I will come back once it passes.",
-        "This place will do. I will keep it.",
-        "Understood. I will stay planted here.",
-        "Then I am staying here unless I must run or fight."
+        "All right. I will stay here.",
+        "Understood. I will hold this spot.",
+        "I can wait here. Come back when you are ready.",
+        "This place is fine. I will stay close to it.",
+        "All right. I will keep this spot for you.",
+        "I will stay put unless something forces me away.",
+        "Right. I will wait here and keep out of trouble.",
+        "I understand. I will return to this spot if I have to move.",
+        "Then this is where I will be.",
+        "All right. I will keep my feet here."
       ],
-      "id": "global.messages.00_interaction.messages.interaction.follow_hold_position.002"
+      "id": "global.messages.00_interaction.messages.interaction.follow_hold_position.003"
+    },
+    {
+      "key": "interaction.stay_stop",
+      "lines": [
+        "All right. I will stop staying here.",
+        "Understood. I will move around again.",
+        "I will let this spot go.",
+        "All right. I will stop holding this place.",
+        "I understand. I do not need to wait here anymore.",
+        "Then I will stop returning to this spot.",
+        "Very well. I will go back to my own business.",
+        "All right. I am free to move again.",
+        "I will stop waiting here, then.",
+        "Understood. This is not my post anymore."
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.stay_stop.004"
     },
     {
       "key": "opening.return_after_absence",

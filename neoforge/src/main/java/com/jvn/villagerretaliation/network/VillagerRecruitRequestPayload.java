@@ -74,6 +74,7 @@ public record VillagerRecruitRequestPayload(int entityId, Action action) impleme
         STOP_BUILDER_BUILD,
         FOLLOW,
         STAY_HERE,
-        STOP_FOLLOWING
+        STOP_FOLLOWING,
+        STOP_STAYING_HERE
     }
 }
