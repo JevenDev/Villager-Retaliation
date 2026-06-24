@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.TickThrottle;
+import com.jvn.villagerretaliation.util.VillagerEquipmentDurability;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -388,7 +389,9 @@ public final class VillagerRetaliationHandler {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(villager);
             villager.swing(attackHand, true);
             syncMeleeAttackAttributes(villager);
-            villager.doHurtTarget(target);
+            if (villager.doHurtTarget(target)) {
+                VillagerEquipmentDurability.postMeleeHit(villager, target, attackHand);
+            }
             RETALIATION.setNextAttackTick(
                     villager,
                     gameTime + VillagerSocialAttributeBehavior.adjustCombatCooldownTicks(

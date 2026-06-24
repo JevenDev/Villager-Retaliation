@@ -1592,7 +1592,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         });
         level.destroyBlock(target.blockPos(), false, villager);
         level.destroyBlockProgress(villager.getId(), target.blockPos(), -1);
-        damageTool(context, villager, tool);
+        damageTool(context, villager, tool, level, state, target.blockPos());
         HiredPathMemory.rememberRecent(level, target.blockPos());
         return true;
     }

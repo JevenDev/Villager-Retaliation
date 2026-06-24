@@ -1867,7 +1867,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         });
         level.destroyBlock(pos, false, villager);
         level.destroyBlockProgress(villager.getId(), pos, -1);
-        damageTool(context, villager, tool);
+        damageTool(context, villager, tool, level, state, pos);
         HiredPathMemory.rememberRecent(level, pos);
         clearWorkPathFailure(villager, pos);
         clearActiveBreakingTarget(level, context, villager);

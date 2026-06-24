@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.util.VillagerEquipmentDurability;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.List;
 import java.util.function.Predicate;
@@ -104,7 +105,7 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         });
         level.destroyBlock(target.blockPos(), false, villager);
         level.destroyBlockProgress(villager.getId(), target.blockPos(), -1);
-        damageTool(context, villager, tool);
+        damageTool(context, villager, tool, level, state, target.blockPos());
         HiredPathMemory.rememberRecent(level, target.blockPos());
         return true;
     }
@@ -654,11 +655,27 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
     }
 
     protected void damageTool(HiredWorkContext context, Villager villager, ItemStack tool) {
-        if (!tool.isEmpty() && tool.isDamageableItem()) {
-            tool.hurtAndBreak(1, villager, EquipmentSlot.MAINHAND);
+        if (tool.isDamageableItem()) {
+            VillagerEquipmentDurability.hurtTool(tool, villager, EquipmentSlot.MAINHAND);
             context.inventory().syncMainHandEquipment();
             context.inventory().setChanged();
         }
+    }
+
+    protected void damageTool(
+            HiredWorkContext context,
+            Villager villager,
+            ItemStack tool,
+            ServerLevel level,
+            BlockState state,
+            BlockPos pos
+    ) {
+        if (VillagerEquipmentDurability.mineBlock(tool, level, state, pos, villager)) {
+            context.inventory().syncMainHandEquipment();
+            context.inventory().setChanged();
+            return;
+        }
+        damageTool(context, villager, tool);
     }
 
     private int efficiencyLevel(ItemStack stack) {

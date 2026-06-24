@@ -46,6 +46,7 @@ import com.jvn.villagerretaliation.trade.VillagerTradeMemory;
 import com.jvn.villagerretaliation.trade.VillagerTradeUseTracker;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerDataWarmup;
+import com.jvn.villagerretaliation.util.VillagerEquipmentDurability;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
@@ -179,6 +180,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof AbstractVillager villager) {
+            VillagerEquipmentDurability.hurtArmor(villager, event.getSource(), event.getOriginalDamage());
+        }
         if (event.getEntity() instanceof Villager villager && event.getNewDamage() > 0.0F) {
             VillagerRecruitmentService.rememberFollowerDamage(villager);
         }

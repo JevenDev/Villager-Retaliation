@@ -1654,7 +1654,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             });
             level.destroyBlock(log, false, villager);
             level.destroyBlockProgress(villager.getId(), log, -1);
-            damageTool(context, villager, axe);
+            damageTool(context, villager, axe, level, harvestState, log);
             if (stripped && !axe.isEmpty()) {
                 damageTool(context, villager, axe);
             }
@@ -1772,7 +1772,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         boolean removed = level.destroyBlock(leaf, false, villager);
         level.destroyBlockProgress(villager.getId(), leaf, -1);
         if (removed || !isNaturalLeaf(level.getBlockState(leaf))) {
-            damageTool(context, villager, leafTool);
+            damageTool(context, villager, leafTool, level, state, leaf);
             HiredPathMemory.rememberRecent(level, leaf);
         }
         restoreLoggingAxe(context, level, leaf);
