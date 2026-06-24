@@ -33,6 +33,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCatalog;
+import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
@@ -61,6 +62,7 @@ import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -3946,7 +3948,7 @@ public final class VillagerQuestService {
                 context.player(),
                 VillagerInteractionTracker.StoryHintKind.STRUCTURE,
                 structure,
-                targetDisplayName(definition, target),
+                targetDisplayName(context, definition, target),
                 target.pos(),
                 target.dimension().location(),
                 context.level().getGameTime() + QUEST_STORY_HINT_TICKS,
@@ -3967,10 +3969,11 @@ public final class VillagerQuestService {
                 structure,
                 target.dimension(),
                 target.pos(),
-                targetDisplayName(definition, target));
+                targetDisplayName(context, definition, target));
     }
 
     private static String targetDisplayName(
+            DialogueContext context,
             QuestDefinition definition,
             VillagerQuestTargets.LocatedTarget target) {
         ResourceLocation structure = VillagerQuestTargets.targetStructure(definition, target.objectiveId());
@@ -3979,7 +3982,20 @@ public final class VillagerQuestService {
         }
         return target.objectiveId().isBlank()
                 ? targetName(definition)
-                : VillagerInteractionTextUtil.resourcePathName(structure);
+                : structureDisplayName(context, structure);
+    }
+
+    private static String structureDisplayName(DialogueContext context, ResourceLocation structure) {
+        if (context != null && structure != null) {
+            Optional<String> configuredName = DangerousStructureStoryResources.entries(context.level().getServer()).stream()
+                    .filter(entry -> VillagerWorldTargetCache.sameStructureId(entry.structureId(), structure))
+                    .findFirst()
+                    .map(DangerousStructureStoryResources.Entry::targetName);
+            if (configuredName.isPresent()) {
+                return configuredName.get();
+            }
+        }
+        return VillagerInteractionTextUtil.resourcePathName(structure);
     }
 
     private static int targetDiscoveryRadius(

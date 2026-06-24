@@ -77,6 +77,7 @@ public final class VillagerDataWarmup {
         GeneratedContainerLootResources.clearCache();
         BiomeStoryResources.clearCache();
         DangerousStructureStoryResources.clearCache();
+        VillagerWorldTargetCache.clearCache();
         VillagerQuestResources.clearCache();
         VillagerEventTriggerService.clearCache();
         VillagerPresetNameRegistry.clearCache();

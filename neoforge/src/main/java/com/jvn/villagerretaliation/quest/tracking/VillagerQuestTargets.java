@@ -6,11 +6,10 @@ import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.mojang.datafixers.util.Pair;
+import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -24,9 +23,6 @@ import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 public final class VillagerQuestTargets {
-    private static final int MIN_SPARSE_STRUCTURE_SEARCH_RADIUS = 1024;
-    private static final int MIN_VERY_SPARSE_STRUCTURE_SEARCH_RADIUS = 2048;
-
     private VillagerQuestTargets() {
     }
 
@@ -73,13 +69,14 @@ public final class VillagerQuestTargets {
         }
         String normalizedObjectiveId = objectiveId == null ? "" : objectiveId.trim();
         if (normalizedObjectiveId.isBlank()) {
-            return definition.target().structure();
+            return VillagerWorldTargetCache.canonicalStructureId(definition.target().structure());
         }
         return definition.objectives().stream()
                 .filter(objective -> objective.id().equals(normalizedObjectiveId))
                 .map(QuestDefinition.Objective::structure)
                 .filter(java.util.Objects::nonNull)
                 .findFirst()
+                .map(VillagerWorldTargetCache::canonicalStructureId)
                 .orElse(null);
     }
 
@@ -188,41 +185,8 @@ public final class VillagerQuestTargets {
             BlockPos origin,
             ResourceLocation structureId,
             int searchRadius) {
-        Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-        ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, structureId);
-        Optional<Holder.Reference<Structure>> holder = registry.getHolder(structureKey);
-        if (holder.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Pair<BlockPos, Holder<Structure>> nearest = level.getChunkSource().getGenerator().findNearestMapStructure(
-                level,
-                HolderSet.direct(holder.get()),
-                origin,
-                effectiveSearchRadius(structureId, searchRadius),
-                false
-        );
-        return nearest == null ? Optional.empty() : Optional.of(nearest.getFirst());
-    }
-
-    private static int effectiveSearchRadius(ResourceLocation structureId, int searchRadius) {
-        if (structureId == null) {
-            return searchRadius;
-        }
-        return Math.max(searchRadius, switch (structureId.toString()) {
-            case "minecraft:woodland_mansion" -> MIN_VERY_SPARSE_STRUCTURE_SEARCH_RADIUS;
-            case "minecraft:ancient_city",
-                    "minecraft:bastion_remnant",
-                    "minecraft:end_city",
-                    "minecraft:fortress",
-                    "minecraft:monument",
-                    "minecraft:stronghold",
-                    "minecraft:trail_ruins",
-                    "minecraft:trial_chambers" -> MIN_SPARSE_STRUCTURE_SEARCH_RADIUS;
-            case "minecraft:pillager_outpost",
-                    "minecraft:shipwreck" -> 512;
-            default -> searchRadius;
-        });
+        return VillagerWorldTargetCache.findNearestStructure(level, origin, structureId, searchRadius)
+                .map(VillagerWorldTargetCache.LocatedStructure::pos);
     }
 
     private static BlockPos projectedOrigin(
@@ -258,8 +222,8 @@ public final class VillagerQuestTargets {
         }
 
         Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-        ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, structureId);
-        Optional<Holder.Reference<Structure>> holder = registry.getHolder(structureKey);
+        Optional<net.minecraft.core.Holder.Reference<Structure>> holder =
+                VillagerWorldTargetCache.structureHolder(registry, structureId);
         if (holder.isEmpty()) {
             return false;
         }

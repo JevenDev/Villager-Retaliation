@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.ServerResourceCache;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,11 +61,12 @@ public final class DangerousStructureStoryResources {
         structureIds.addAll(DialogueJsonResources.readStringList(entry, "structure"));
         structureIds.addAll(DialogueJsonResources.readStringList(entry, "structures"));
         for (String structureId : structureIds) {
-            ResourceLocation id = ResourceLocation.tryParse(structureId);
-            if (id == null) {
+            ResourceLocation parsedId = ResourceLocation.tryParse(structureId);
+            if (parsedId == null) {
                 continue;
             }
-            String name = targetName.isBlank() ? VillagerInteractionTextUtil.resourcePathName(id) : targetName;
+            ResourceLocation id = VillagerWorldTargetCache.canonicalStructureId(parsedId);
+            String name = targetName.isBlank() ? VillagerInteractionTextUtil.resourcePathName(parsedId) : targetName;
             entries.put(id, new Entry(id, name, radius));
         }
     }

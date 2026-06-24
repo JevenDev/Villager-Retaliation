@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
+import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import java.util.Collection;
 import java.util.HashMap;
@@ -284,17 +285,20 @@ public final class VillagerInteractionTracker {
     }
 
     private static Optional<StructureVisit> detectedStructureAt(ServerLevel level, BlockPos playerPos, ResourceLocation structureId) {
-        ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, structureId);
+        if (structureId == null) {
+            return Optional.empty();
+        }
+        ResourceLocation canonicalStructureId = VillagerWorldTargetCache.canonicalStructureId(structureId);
         return level.registryAccess()
                 .registryOrThrow(Registries.STRUCTURE)
-                .getHolder(structureKey)
+                .getHolder(ResourceKey.create(Registries.STRUCTURE, canonicalStructureId))
                 .flatMap(holder -> {
                     StructureStart start = level.structureManager()
                             .getStructureWithPieceAt(playerPos, HolderSet.direct(holder));
                     if (!start.isValid()) {
                         return Optional.empty();
                     }
-                    return Optional.of(new StructureVisit(structureId, start.getBoundingBox().getCenter()));
+                    return Optional.of(new StructureVisit(canonicalStructureId, start.getBoundingBox().getCenter()));
                 });
     }
 

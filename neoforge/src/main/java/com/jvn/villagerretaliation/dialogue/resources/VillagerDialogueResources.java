@@ -33,6 +33,7 @@ import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
+import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -1255,13 +1256,13 @@ public final class VillagerDialogueResources {
         for (String value : readStringList(entry, "story_structure")) {
             ResourceLocation id = ResourceLocation.tryParse(value);
             if (id != null) {
-                storyTargetIds.add(id);
+                storyTargetIds.add(VillagerWorldTargetCache.canonicalStructureId(id));
             }
         }
         for (String value : readStringList(entry, "story_structures")) {
             ResourceLocation id = ResourceLocation.tryParse(value);
             if (id != null) {
-                storyTargetIds.add(id);
+                storyTargetIds.add(VillagerWorldTargetCache.canonicalStructureId(id));
             }
         }
         for (String value : readStringList(entry, "story_biome")) {
