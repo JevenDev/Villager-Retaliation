@@ -66,7 +66,9 @@ public final class VillagerReputationEvents {
     private static final long NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS = 20L * 10L;
     private static final long NEGATIVE_REPUTATION_BELL_CACHE_TICKS = 20L * 5L;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_RADIUS = 32;
-    private static final int CURED_VILLAGER_REPUTATION = 100;
+    private static final int NEW_CURED_VILLAGER_REPUTATION = 100;
+    private static final float CURED_REPUTATION_MIN_LOSS = 0.30F;
+    private static final float CURED_REPUTATION_MAX_LOSS = 0.50F;
     private static final Map<UUID, PlayerContribution> HOSTILE_PLAYER_CONTRIBUTIONS = new HashMap<>();
     private static final Map<UUID, Long> NEGATIVE_REPUTATION_BELL_COOLDOWNS = new HashMap<>();
     private static final Map<BellSearchKey, BellSearchResult> NEGATIVE_REPUTATION_BELL_CACHE = new HashMap<>();
@@ -356,7 +358,10 @@ public final class VillagerReputationEvents {
         if (source instanceof ZombieVillager
                 && outcome instanceof Villager curedVillager
                 && curingPlayerId != null) {
-            VillagerReputationManager.setReputation(level, curedVillager, curingPlayerId, CURED_VILLAGER_REPUTATION);
+            int curedReputation = hadKnownReputationBeforeCure
+                    ? reputationAfterCure(curedVillager, VillagerReputationManager.getReputation(level, curedVillager, curingPlayerId))
+                    : NEW_CURED_VILLAGER_REPUTATION;
+            VillagerReputationManager.setReputation(level, curedVillager, curingPlayerId, curedReputation);
             VillageEventMemory.rememberCuredVillager(
                     level,
                     curedVillager.blockPosition(),
@@ -372,6 +377,19 @@ public final class VillagerReputationEvents {
                 VillagerReputationAdvancements.onCuredKnownZombieVillager(serverPlayer);
             }
         }
+    }
+
+    private static int reputationAfterCure(Villager curedVillager, int previousReputation) {
+        if (previousReputation == 0) {
+            return 0;
+        }
+
+        float loss = CURED_REPUTATION_MIN_LOSS
+                + curedVillager.getRandom().nextFloat() * (CURED_REPUTATION_MAX_LOSS - CURED_REPUTATION_MIN_LOSS);
+        if (previousReputation > 0) {
+            return Math.max(0, Math.round(previousReputation * (1.0F - loss)));
+        }
+        return Math.round(previousReputation * (1.0F + loss));
     }
 
     private static Optional<PlayerCredit> creditedPlayer(ServerLevel level, LivingDeathEvent event) {

@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -398,7 +399,10 @@ public final class VillagerReputationNetworking {
         PacketDistributor.sendToPlayersTrackingEntity(villager, new FearedVillagerPulsePayload(villager.getId(), ticks));
     }
 
-    public static void sendName(ServerPlayer player, AbstractVillager villager) {
+    public static void sendName(ServerPlayer player, Entity villager) {
+        if (!VillagerPresetNameRegistry.isVillagerForm(villager)) {
+            return;
+        }
         if (villager.hasCustomName() && villager.getCustomName() != null) {
             String customName = villager.getCustomName().getString().trim();
             if (!customName.isBlank()) {

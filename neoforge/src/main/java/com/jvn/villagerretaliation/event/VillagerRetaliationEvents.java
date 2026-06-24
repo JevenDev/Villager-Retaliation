@@ -318,9 +318,14 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onPlayerStartTracking(PlayerEvent.StartTracking event) {
-        if (event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof AbstractVillager villager) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        if (event.getTarget() instanceof AbstractVillager villager) {
             VillagerProfileManager.getOrCreateProfile(player.serverLevel(), villager);
-            VillagerReputationNetworking.sendName(player, villager);
+        }
+        if (VillagerPresetNameRegistry.isVillagerForm(event.getTarget())) {
+            VillagerReputationNetworking.sendName(player, event.getTarget());
         }
     }
 

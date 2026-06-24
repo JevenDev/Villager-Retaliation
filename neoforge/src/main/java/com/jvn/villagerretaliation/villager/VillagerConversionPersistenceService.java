@@ -26,6 +26,8 @@ public final class VillagerConversionPersistenceService {
             "AssignProfessionWhenSpawned",
             "Brain",
             "CanPickUpLoot",
+            "CustomName",
+            "CustomNameVisible",
             "ForcedAge",
             "FoodLevel",
             "Gossips",
@@ -57,6 +59,7 @@ public final class VillagerConversionPersistenceService {
             return;
         }
 
+        VillagerPresetNameRegistry.ensurePresetNameAssigned(source);
         copyPersistentData(source, outcome);
         transferSavedData(level, source.getUUID(), outcome.getUUID());
 

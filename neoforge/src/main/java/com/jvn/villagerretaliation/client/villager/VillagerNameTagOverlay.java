@@ -2,9 +2,9 @@ package com.jvn.villagerretaliation.client.villager;
 
 import com.jvn.villagerretaliation.client.config.VillagerRetaliationClientPreferences;
 import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.npc.AbstractVillager;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderNameTagEvent;
@@ -19,8 +19,8 @@ public final class VillagerNameTagOverlay {
     public static void onRenderNameTag(RenderNameTagEvent event) {
         if (!VillagerRetaliationServerConfigClient.showVillagerNameTags()
                 || !VillagerRetaliationClientPreferences.showVillagerNameTags()
-                || !(event.getEntity() instanceof AbstractVillager villager)
-                || villager.hasCustomName()) {
+                || !VillagerPresetNameRegistry.isVillagerForm(event.getEntity())
+                || event.getEntity().hasCustomName()) {
             return;
         }
 
@@ -28,11 +28,11 @@ public final class VillagerNameTagOverlay {
         if (minecraft.player == null || minecraft.options.hideGui) {
             return;
         }
-        if (minecraft.player.distanceToSqr(villager) > MAX_NAME_TAG_DISTANCE * MAX_NAME_TAG_DISTANCE) {
+        if (minecraft.player.distanceToSqr(event.getEntity()) > MAX_NAME_TAG_DISTANCE * MAX_NAME_TAG_DISTANCE) {
             return;
         }
 
-        VillagerNameClientCache.displayName(villager.getId()).ifPresent(name -> {
+        VillagerNameClientCache.displayName(event.getEntity().getId()).ifPresent(name -> {
             event.setContent(name);
             event.setCanRender(TriState.TRUE);
         });
