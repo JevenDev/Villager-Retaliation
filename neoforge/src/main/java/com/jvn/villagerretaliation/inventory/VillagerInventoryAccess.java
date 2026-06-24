@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -26,20 +27,31 @@ public final class VillagerInventoryAccess {
         if (!(villager.level() instanceof ServerLevel level) || !canAccess(level, villager, player)) {
             return false;
         }
-        open(player, villager, VillagerInventoryMenu.ViewMode.PERSONAL, true);
+        open(
+                player,
+                villager,
+                VillagerInventoryMenu.ViewMode.PERSONAL,
+                true,
+                HiredVillagerContractService.canAccessJobInventory(level, villager, player));
         return true;
     }
 
-    public static void openJobInventory(ServerPlayer player, Villager villager) {
-        boolean personalInventoryAccess = villager.level() instanceof ServerLevel level && canAccess(level, villager, player);
-        open(player, villager, VillagerInventoryMenu.ViewMode.JOB, personalInventoryAccess);
+    public static boolean openJobInventory(ServerPlayer player, Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !HiredVillagerContractService.canAccessJobInventory(level, villager, player)) {
+            return false;
+        }
+        boolean personalInventoryAccess = canAccess(level, villager, player);
+        open(player, villager, VillagerInventoryMenu.ViewMode.JOB, personalInventoryAccess, true);
+        return true;
     }
 
     private static void open(
             ServerPlayer player,
             Villager villager,
             VillagerInventoryMenu.ViewMode viewMode,
-            boolean personalInventoryAccess) {
+            boolean personalInventoryAccess,
+            boolean jobInventoryAccess) {
         Component title = Component.translatable(
                 viewMode == VillagerInventoryMenu.ViewMode.JOB
                         ? "container.villagerretaliation.job_inventory"
@@ -53,12 +65,14 @@ public final class VillagerInventoryAccess {
                                 inventory,
                                 villager,
                                 viewMode,
-                                personalInventoryAccess),
+                                personalInventoryAccess,
+                                jobInventoryAccess),
                         title),
                 buffer -> {
                     buffer.writeVarInt(villager.getId());
                     buffer.writeEnum(viewMode);
                     buffer.writeBoolean(personalInventoryAccess);
+                    buffer.writeBoolean(jobInventoryAccess);
                 }
         );
     }

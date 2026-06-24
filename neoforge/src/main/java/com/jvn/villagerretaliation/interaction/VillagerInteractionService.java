@@ -398,7 +398,7 @@ public final class VillagerInteractionService {
         ServerLevel level = player.serverLevel();
         boolean canAccessPersonalInventory = VillagerInventoryAccess.canAccess(level, villager, player);
         boolean canAccessJobInventory = HiredVillagerContractService.canAccessJobInventory(level, villager, player);
-        if (jobInventory && !canAccessJobInventory && !canAccessPersonalInventory) {
+        if (jobInventory && !canAccessJobInventory) {
             sendVillagerNotice(player, villager, "interaction.job_inventory.requires_hirer");
             return;
         }

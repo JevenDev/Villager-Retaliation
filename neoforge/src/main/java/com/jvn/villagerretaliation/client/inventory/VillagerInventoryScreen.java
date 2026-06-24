@@ -62,6 +62,10 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
                             && !this.menu.canSwitchToPersonalInventory()) {
                         return;
                     }
+                    if (nextMode == VillagerInventoryMenu.ViewMode.JOB
+                            && !this.menu.canSwitchToJobInventory()) {
+                        return;
+                    }
                     this.menu.switchViewMode(nextMode);
                     refreshForModeSwitch();
                     PacketDistributor.sendToServer(
@@ -70,6 +74,9 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
                 .bounds(this.leftPos + 116, this.topPos + 8, 52, 18)
                 .build();
         if (this.menu.isJobInventory() && !this.menu.canSwitchToPersonalInventory()) {
+            tabButton.active = false;
+        }
+        if (!this.menu.isJobInventory() && !this.menu.canSwitchToJobInventory()) {
             tabButton.active = false;
         }
         addRenderableWidget(tabButton);
