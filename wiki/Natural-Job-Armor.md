@@ -72,6 +72,14 @@ data/villagerretaliation/natural_job_armor/<file>.json
 
 Chance objects support `peaceful`, `easy`, `normal`, and `hard`, with values from `0.0` to `1.0`.
 
+Modded professions are supported by using their full registry id:
+
+```json
+"professions": ["examplemod:guard", "examplemod:archer"]
+```
+
+Modded villager entities can use these rules when they are villager-like entities that expose normal villager data through Minecraft's `VillagerDataHolder` contract.
+
 ## Armor Sets
 
 Use a vanilla material shorthand:

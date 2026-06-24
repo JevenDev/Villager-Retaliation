@@ -71,6 +71,7 @@ import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerDataHolder;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.raid.Raid;
@@ -294,6 +295,11 @@ public final class VillagerRetaliationEvents {
             VillagerWalletService.tickWallet(villager);
             VillagerSocialGraphService.onEntityTickPost(event);
             VillagerReputationEvents.onEntityTickPost(event);
+            return;
+        }
+        if (entity instanceof AbstractVillager villager
+                && entity instanceof VillagerDataHolder) {
+            VillagerNaturalJobArmor.maybeRoll(villager);
             return;
         }
         if (entity instanceof WanderingTrader) {
