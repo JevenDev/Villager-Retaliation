@@ -83,7 +83,11 @@ public final class VillagerNaturalJobArmor {
             if (!villager.getItemBySlot(slot).isEmpty()) {
                 continue;
             }
-            ItemStack stack = new ItemStack(armorSet.items().itemForSlot(slot));
+            VillagerNaturalJobArmorResources.WeightedArmorSet slotArmorSet = profile.armorSetForSlot(
+                    random,
+                    difficulty.getDifficulty(),
+                    armorSet);
+            ItemStack stack = new ItemStack(slotArmorSet.items().itemForSlot(slot));
             if (stack.isEmpty() || stack.is(Items.AIR)) {
                 continue;
             }

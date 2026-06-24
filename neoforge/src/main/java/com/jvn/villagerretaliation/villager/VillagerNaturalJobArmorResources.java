@@ -44,6 +44,10 @@ public final class VillagerNaturalJobArmorResources {
             "armorChance",
             "next_piece_chance",
             "nextPieceChance",
+            "mixed_gear_chance",
+            "mixedGearChance",
+            "mixed_piece_chance",
+            "mixedPieceChance",
             "enchant_chance",
             "enchantChance",
             "armor_sets",
@@ -182,6 +186,7 @@ public final class VillagerNaturalJobArmorResources {
                     professions,
                     readChance(entry, "chance", "armor_chance", "armorChance"),
                     readChance(entry, "next_piece_chance", "nextPieceChance"),
+                    readChance(entry, "mixed_gear_chance", "mixedGearChance", "mixed_piece_chance", "mixedPieceChance"),
                     readChance(entry, "enchant_chance", "enchantChance"),
                     armorSets
             ));
@@ -362,6 +367,7 @@ public final class VillagerNaturalJobArmorResources {
             List<VillagerProfession> professions,
             DifficultyChances armorChance,
             DifficultyChances nextPieceChance,
+            DifficultyChances mixedGearChance,
             DifficultyChances enchantChance,
             List<WeightedArmorSet> armorSets) {
         private boolean matches(VillagerProfession profession) {
@@ -379,6 +385,43 @@ public final class VillagerNaturalJobArmorResources {
 
             int selected = random.nextInt(totalWeight);
             for (WeightedArmorSet armorSet : this.armorSets) {
+                selected -= armorSet.weight(difficulty);
+                if (selected < 0) {
+                    return Optional.of(armorSet);
+                }
+            }
+            return Optional.empty();
+        }
+
+        public WeightedArmorSet armorSetForSlot(RandomSource random, Difficulty difficulty, WeightedArmorSet baseArmorSet) {
+            if (this.armorSets.size() < 2 || !this.mixedGearChance.passes(random, difficulty)) {
+                return baseArmorSet;
+            }
+
+            return this.selectArmorSetExcept(random, difficulty, baseArmorSet).orElse(baseArmorSet);
+        }
+
+        private Optional<WeightedArmorSet> selectArmorSetExcept(
+                RandomSource random,
+                Difficulty difficulty,
+                WeightedArmorSet excludedArmorSet
+        ) {
+            int totalWeight = 0;
+            for (WeightedArmorSet armorSet : this.armorSets) {
+                if (armorSet == excludedArmorSet) {
+                    continue;
+                }
+                totalWeight += armorSet.weight(difficulty);
+            }
+            if (totalWeight <= 0) {
+                return Optional.empty();
+            }
+
+            int selected = random.nextInt(totalWeight);
+            for (WeightedArmorSet armorSet : this.armorSets) {
+                if (armorSet == excludedArmorSet) {
+                    continue;
+                }
                 selected -= armorSet.weight(difficulty);
                 if (selected < 0) {
                     return Optional.of(armorSet);

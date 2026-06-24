@@ -28,6 +28,12 @@ data/villagerretaliation/natural_job_armor/<file>.json
         "normal": 0.75,
         "hard": 0.90
       },
+      "mixed_gear_chance": {
+        "peaceful": 0.05,
+        "easy": 0.10,
+        "normal": 0.20,
+        "hard": 0.30
+      },
       "enchant_chance": {
         "peaceful": 0.01,
         "easy": 0.03,
@@ -67,6 +73,7 @@ data/villagerretaliation/natural_job_armor/<file>.json
 | `profession` / `professions` | One or more villager professions. Vanilla professions can omit `minecraft:`. |
 | `chance` / `armor_chance` | Chance that a matching fresh villager receives any armor. Number or per-difficulty object. |
 | `next_piece_chance` | Chance to continue adding another armor piece after each piece except the helmet. |
+| `mixed_gear_chance` | Per-piece chance to choose a different eligible armor set instead of the profile's base armor set. |
 | `enchant_chance` | Per-piece chance to apply vanilla mob-spawn equipment enchantments. |
 | `armor_sets` / `materials` | Weighted armor set entries. |
 
@@ -109,3 +116,5 @@ Or provide explicit item ids:
 ```
 
 Armor set weights can be a single `weight` or a per-difficulty `weight_by_difficulty` object.
+
+When `mixed_gear_chance` passes, the piece rerolls from the same `armor_sets` list, excluding the base set when another weighted set is available.

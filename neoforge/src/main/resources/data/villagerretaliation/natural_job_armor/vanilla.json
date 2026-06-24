@@ -17,6 +17,12 @@
         "normal": 0.76,
         "hard": 0.86
       },
+      "mixed_gear_chance": {
+        "peaceful": 0.10,
+        "easy": 0.14,
+        "normal": 0.18,
+        "hard": 0.24
+      },
       "enchant_chance": {
         "peaceful": 0.025,
         "easy": 0.045,
@@ -54,6 +60,12 @@
         "easy": 0.66,
         "normal": 0.76,
         "hard": 0.86
+      },
+      "mixed_gear_chance": {
+        "peaceful": 0.12,
+        "easy": 0.18,
+        "normal": 0.24,
+        "hard": 0.30
       },
       "enchant_chance": {
         "peaceful": 0.025,
