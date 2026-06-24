@@ -38,6 +38,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/interaction_container_portrait_ornament");
     public static final ResourceLocation INTERACTION_REPUTATION_ICON_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_reputation_icon");
+    public static final ResourceLocation INTERACTION_LOCKED_ICON_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_locked_icon");
     public static final ResourceLocation INTERACTION_OPTION_BUTTON_TEXTURE =
             texture("gui/villager_interaction_screen/option_button/interaction_option_button");
     public static final ResourceLocation INTERACTION_OPTION_HOVER_TEXTURE =

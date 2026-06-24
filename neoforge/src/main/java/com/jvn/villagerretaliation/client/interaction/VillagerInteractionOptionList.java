@@ -197,10 +197,15 @@ final class VillagerInteractionOptionList {
         try {
             blitPixelOptionButton(graphics, texture, left, drawTop, context.optionWidth(), rowHeight);
 
-            int textLeft = left + context.optionTextInset();
-            int textWidth = Math.max(1, context.optionWidth() - context.optionTextInset() - context.pixelOptionTextRightPadding());
+            boolean hasIcon = context.pixelOptionIconTexture(index) != null;
+            int iconTextOffset = hasIcon
+                    ? context.pixelOptionIconWidth(index) + context.pixelOptionIconTextGap(index)
+                    : 0;
+            int textLeft = left + context.optionTextInset() + iconTextOffset;
+            int textWidth = Math.max(1, context.optionWidth() - context.optionTextInset() - iconTextOffset - context.pixelOptionTextRightPadding());
             List<String> lines = pixelOptionLabelLines(context, index);
             int textColor = context.pixelOptionTextColor(keyboardFocused, isHovered || active);
+            renderPixelOptionIcon(context, graphics, index, left, drawTop, rowHeight);
             for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
                 int lineTop = drawTop + context.pixelOptionTextTop() + lineIndex * context.pixelOptionLineStep();
                 graphics.drawString(
@@ -218,6 +223,21 @@ final class VillagerInteractionOptionList {
         } finally {
             graphics.pose().popPose();
         }
+    }
+
+    private static void renderPixelOptionIcon(Context context, GuiGraphics graphics, int index, int left, int top, int rowHeight) {
+        ResourceLocation texture = context.pixelOptionIconTexture(index);
+        if (texture == null) {
+            return;
+        }
+        int iconWidth = context.pixelOptionIconWidth(index);
+        int iconHeight = context.pixelOptionIconHeight(index);
+        if (iconWidth <= 0 || iconHeight <= 0) {
+            return;
+        }
+        int iconLeft = left + context.optionTextInset();
+        int iconTop = top + Math.max(0, (rowHeight - iconHeight) / 2);
+        graphics.blit(texture, iconLeft, iconTop, 0, 0, iconWidth, iconHeight, iconWidth, iconHeight);
     }
 
     private static void applyPixelOptionEdgeScale(GuiGraphics graphics, int left, int top, int width, int height, float scale) {
@@ -617,6 +637,22 @@ final class VillagerInteractionOptionList {
 
         default int pixelOptionTextColor(boolean selected, boolean hovered) {
             return 0xFF2E2418;
+        }
+
+        default ResourceLocation pixelOptionIconTexture(int index) {
+            return null;
+        }
+
+        default int pixelOptionIconWidth(int index) {
+            return 0;
+        }
+
+        default int pixelOptionIconHeight(int index) {
+            return 0;
+        }
+
+        default int pixelOptionIconTextGap(int index) {
+            return 0;
         }
 
         default ResourceLocation pixelOptionArrowUpTexture() {

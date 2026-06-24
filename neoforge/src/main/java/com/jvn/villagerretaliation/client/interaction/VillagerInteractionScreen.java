@@ -86,6 +86,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final String DIALOGUE_TREE_LEAVE_OPTION_ID = DialogueTreeService.LEAVE_OPTION_ID;
     private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
     private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
+    private static final String QUEST_OFFER_HINT_TAG = "quest_offer_hint";
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
@@ -165,6 +166,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_OPTION_SELECTION_ARROW_GAP = 2;
     private static final int INTERACTION_OPTION_MAX_LINE_CHARACTERS = 20;
     private static final int INTERACTION_OPTION_LINE_STEP = 10;
+    private static final int INTERACTION_LOCKED_ICON_WIDTH = 6;
+    private static final int INTERACTION_LOCKED_ICON_HEIGHT = 7;
+    private static final int INTERACTION_LOCKED_ICON_TEXT_GAP = 3;
     private static final int INTERACTION_ICON_SIZE = 16;
     private static final int INTERACTION_ICON_TEXT_GAP = 4;
     private static final int INTERACTION_TOOLTIP_MAX_WIDTH = 220;
@@ -715,7 +719,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addDialogueOptions() {
         for (DialogueOptionDefinition option : this.dialogueOptions) {
-            addDialogueOption(option.label(), option.id());
+            addDialogueOption(option);
         }
     }
 
@@ -1237,7 +1241,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private void addDialogueOption(String label, String optionId) {
+    private void addDialogueOption(DialogueOptionDefinition option) {
+        addDialogueOption(option.label(), option.id(), option.metadata().tags().contains(QUEST_OFFER_HINT_TAG));
+    }
+
+    private void addDialogueOption(String label, String optionId, boolean locked) {
         if (BLUEPRINT_CHANGE_OPTION_ID.equals(optionId)) {
             this.options.add(DialogueOption.enabled(label, this::openBuilderStructuresPage));
             return;
@@ -1246,7 +1254,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.options.add(DialogueOption.enabled(label, this::leaveConversation));
             return;
         }
-        this.options.add(DialogueOption.enabled(label, () -> requestDialogue(optionId)));
+        this.options.add(DialogueOption.enabled(label, () -> requestDialogue(optionId), locked));
     }
 
     private void addOption(String labelKey, Runnable action) {
@@ -2767,10 +2775,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int desiredWidth = INTERACTION_OPTION_WIDTH;
         for (int index = 0; index < this.options.size(); index++) {
             for (String line : VillagerInteractionOptionList.pixelOptionLabelLines(this.optionListContext, index)) {
+                int iconWidth = this.options.get(index).locked()
+                        ? INTERACTION_LOCKED_ICON_WIDTH + INTERACTION_LOCKED_ICON_TEXT_GAP
+                        : 0;
                 desiredWidth = Math.max(
                         desiredWidth,
                         this.font.width(line)
                                 + INTERACTION_OPTION_TEXT_INSET
+                                + iconWidth
                                 + INTERACTION_OPTION_TEXT_RIGHT_PADDING);
             }
         }
@@ -3097,9 +3109,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         BREWING_AMOUNT
     }
 
-    private record DialogueOption(String label, Runnable action) {
+    private record DialogueOption(String label, Runnable action, boolean locked) {
         static DialogueOption enabled(String label, Runnable action) {
-            return new DialogueOption(label, action);
+            return enabled(label, action, false);
+        }
+
+        static DialogueOption enabled(String label, Runnable action, boolean locked) {
+            return new DialogueOption(label, action, locked);
         }
     }
 
@@ -3325,6 +3341,34 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public int pixelOptionLineStep() {
             return INTERACTION_OPTION_LINE_STEP;
+        }
+
+        @Override
+        public ResourceLocation pixelOptionIconTexture(int index) {
+            return VillagerInteractionScreen.this.options.get(index).locked()
+                    ? VillagerRetaliationClientAssets.INTERACTION_LOCKED_ICON_TEXTURE
+                    : null;
+        }
+
+        @Override
+        public int pixelOptionIconWidth(int index) {
+            return VillagerInteractionScreen.this.options.get(index).locked()
+                    ? INTERACTION_LOCKED_ICON_WIDTH
+                    : 0;
+        }
+
+        @Override
+        public int pixelOptionIconHeight(int index) {
+            return VillagerInteractionScreen.this.options.get(index).locked()
+                    ? INTERACTION_LOCKED_ICON_HEIGHT
+                    : 0;
+        }
+
+        @Override
+        public int pixelOptionIconTextGap(int index) {
+            return VillagerInteractionScreen.this.options.get(index).locked()
+                    ? INTERACTION_LOCKED_ICON_TEXT_GAP
+                    : 0;
         }
 
         @Override

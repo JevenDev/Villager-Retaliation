@@ -27,6 +27,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueQuestAction;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
@@ -61,6 +62,8 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -135,7 +138,9 @@ public final class VillagerQuestService {
     private static final ResourceLocation QUEST_BRANCH_BLOCKED_FACT =
             ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_branch_blocked");
     private static final String BRANCH_LOCK_CONSUMED_REASON = "branch_lock";
+    private static final String QUEST_OFFER_HINT_TAG = "quest_offer_hint";
     private static final int STAGE_BRANCH_OPTION_ORDER = 900;
+    private static final int QUEST_OFFER_HINT_ORDER = -4;
     private static final ThreadLocal<Boolean> DISPATCHING_STAGE_TRIGGERS =
             ThreadLocal.withInitial(() -> false);
     private static final Set<UUID> CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS = new HashSet<>();
@@ -169,6 +174,36 @@ public final class VillagerQuestService {
         private static InventoryObjectiveCountKey of(QuestDefinition.Objective objective) {
             return new InventoryObjectiveCountKey(objective.item(), objective.itemRequirements());
         }
+    }
+
+    private record QuestOfferHint(QuestOfferHintKind kind, int villagerLevel, VillagerSkill skill) {
+        private static QuestOfferHint trust() {
+            return new QuestOfferHint(QuestOfferHintKind.TRUST, 0, null);
+        }
+
+        private static QuestOfferHint level(int villagerLevel) {
+            return new QuestOfferHint(QuestOfferHintKind.LEVEL, villagerLevel, null);
+        }
+
+        private static QuestOfferHint skill(VillagerSkill skill) {
+            return new QuestOfferHint(QuestOfferHintKind.SKILL, 0, skill);
+        }
+
+        private static QuestOfferHint parent() {
+            return new QuestOfferHint(QuestOfferHintKind.PARENT, 0, null);
+        }
+
+        private static QuestOfferHint timing() {
+            return new QuestOfferHint(QuestOfferHintKind.TIMING, 0, null);
+        }
+    }
+
+    private enum QuestOfferHintKind {
+        TRUST,
+        LEVEL,
+        SKILL,
+        PARENT,
+        TIMING
     }
 
     private static final class InventoryItemCountCache {
@@ -397,8 +432,155 @@ public final class VillagerQuestService {
                 options.add(entry.toOption(tree.id()));
             }
         }
+        appendQuestOfferHintOptions(context, options);
         options.sort(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id));
         return List.copyOf(options);
+    }
+
+    private static void appendQuestOfferHintOptions(DialogueContext context, List<DialogueOptionDefinition> options) {
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
+        int order = QUEST_OFFER_HINT_ORDER;
+        for (QuestDefinition definition : VillagerQuestResources.quests(context.level().getServer())) {
+            VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
+            Optional<QuestOfferHint> hint = questOfferHintCandidate(context, definition, progress);
+            if (hint.isEmpty()) {
+                continue;
+            }
+            options.add(DialogueOptionDefinition.quest(
+                    questOfferHintOptionId(definition),
+                    questOfferHintOptionLabel(definition),
+                    DialogueRequestType.QUESTION,
+                    new DialogueQuestAction(definition.id(), DialogueQuestAction.Action.HINT),
+                    questOfferHintMetadata(definition),
+                    order++));
+        }
+    }
+
+    private static Optional<String> questOfferHint(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return questOfferHintCandidate(context, definition, progress)
+                .map(hint -> selectQuestOfferHint(context, hint));
+    }
+
+    private static Optional<QuestOfferHint> questOfferHintCandidate(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (context == null
+                || definition == null
+                || context.villager().isBaby()
+                || canStart(context, definition, progress)
+                || !offerProfessionMatches(context, definition.offer())) {
+            return Optional.empty();
+        }
+        if (canStart(context, definition, progress, true)) {
+            return Optional.of(questOfferRequirementHint(context, definition));
+        }
+        if (parentLockedHintCandidate(context, definition, progress)) {
+            return Optional.of(QuestOfferHint.parent());
+        }
+        return Optional.empty();
+    }
+
+    private static boolean offerProfessionMatches(DialogueContext context, QuestDefinition.Offer offer) {
+        return offer == null
+                || offer.professions().isEmpty()
+                || offer.professions().contains(context.profession());
+    }
+
+    private static boolean parentLockedHintCandidate(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return definition.parent() != null
+                && (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED)
+                && !parentCompleted(context, definition);
+    }
+
+    private static QuestOfferHint questOfferRequirementHint(DialogueContext context, QuestDefinition definition) {
+        QuestDefinition.Offer offer = definition.offer();
+        if (offer == null) {
+            return QuestOfferHint.timing();
+        }
+        if (!offer.conditions().isEmpty() && !DialogueCondition.matchesAll(context, offer.conditions())) {
+            return QuestOfferHint.trust();
+        }
+        if (context.villager().getVillagerData().getLevel() < offer.minVillagerLevel()) {
+            return QuestOfferHint.level(offer.minVillagerLevel());
+        }
+        Optional<VillagerSkill> unmetSkill = strongestUnmetOfferSkill(context, offer);
+        if (unmetSkill.isPresent()) {
+            return QuestOfferHint.skill(unmetSkill.get());
+        }
+        return QuestOfferHint.trust();
+    }
+
+    private static Optional<VillagerSkill> strongestUnmetOfferSkill(DialogueContext context, QuestDefinition.Offer offer) {
+        VillagerSkill strongest = null;
+        int strongestShortfall = 0;
+        for (Map.Entry<VillagerSkill, Integer> entry : offer.minSkills().entrySet()) {
+            int required = VillagerSkillSet.clamp(entry.getValue());
+            int current = context.skillValue(entry.getKey());
+            int shortfall = required - current;
+            if (shortfall > strongestShortfall) {
+                strongest = entry.getKey();
+                strongestShortfall = shortfall;
+            }
+        }
+        return Optional.ofNullable(strongest);
+    }
+
+    private static String selectQuestOfferHint(DialogueContext context, QuestOfferHint hint) {
+        Map<String, String> replacements = new LinkedHashMap<>();
+        replacements.put("level", villagerLevelName(hint.villagerLevel()));
+        replacements.put("skill", skillName(hint.skill()));
+        return VillagerDialogueResources.message(context, questOfferHintMessageKey(hint.kind()), replacements)
+                .orElse("");
+    }
+
+    private static String questOfferHintMessageKey(QuestOfferHintKind kind) {
+        String suffix = switch (kind) {
+            case TRUST -> "trust";
+            case LEVEL -> "level";
+            case SKILL -> "skill";
+            case PARENT -> "parent";
+            case TIMING -> "timing";
+        };
+        return "quest.offer_hint." + suffix;
+    }
+
+    private static String questOfferHintOptionId(QuestDefinition definition) {
+        return "quest_offer_hint_" + definition.id().getNamespace() + "_" + definition.id().getPath().replace('/', '_');
+    }
+
+    private static String questOfferHintOptionLabel(QuestDefinition definition) {
+        return definition.title();
+    }
+
+    private static DialogueEntryMetadata questOfferHintMetadata(QuestDefinition definition) {
+        return new DialogueEntryMetadata(
+                "quest offer hint",
+                Set.of("quest_v2", QUEST_OFFER_HINT_TAG),
+                "",
+                definition.id().toString(),
+                "offer_hint",
+                "");
+    }
+
+    private static String skillName(VillagerSkill skill) {
+        return VillagerInteractionTextUtil.titleCaseIdentifier(skill == null ? "skill" : skill.serializedName());
+    }
+
+    private static String villagerLevelName(int level) {
+        return switch (Math.max(1, Math.min(5, level))) {
+            case 2 -> "Apprentice";
+            case 3 -> "Journeyman";
+            case 4 -> "Expert";
+            case 5 -> "Master";
+            default -> "Novice";
+        };
     }
 
     private static boolean matchesEmbeddedDialogueBinding(
@@ -725,7 +907,37 @@ public final class VillagerQuestService {
             DialogueContext context,
             ResourceLocation questId,
             DialogueQuestAction.Action action) {
+        if (action == DialogueQuestAction.Action.HINT) {
+            return questOfferHintAction(context, questId);
+        }
         return performAction(context, questId, fromDialogueAction(action));
+    }
+
+    private static Optional<QuestActionOutcome> questOfferHintAction(DialogueContext context, ResourceLocation questId) {
+        if (context == null || questId == null) {
+            return Optional.empty();
+        }
+        QuestDefinition definition = VillagerQuestResources.quest(context.level().getServer(), questId).orElse(null);
+        if (definition == null) {
+            return Optional.of(result(
+                    "missing",
+                    "quest_offer_hint_missing_" + questId,
+                    "I cannot find the notes for that work.",
+                    Map.of()));
+        }
+        VillagerQuestSavedData.QuestProgress progress =
+                VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), definition.id());
+        String hint = questOfferHint(context, definition, progress)
+                .filter(value -> !value.isBlank())
+                .orElseGet(() -> resolveQuestText(
+                        context,
+                        definition.dialogue().selectUnavailableText(context.random()),
+                        replacements(context, definition, progress)));
+        return Optional.of(result(
+                "offer_hint",
+                lineId(definition, "offer_hint"),
+                hint,
+                replacements(context, definition, progress)));
     }
 
     public static Optional<QuestActionOutcome> performAction(
@@ -915,7 +1127,7 @@ public final class VillagerQuestService {
             case TURN_IN -> VillagerActionDefinition.QuestAction.TURN_IN;
             case ABANDON -> VillagerActionDefinition.QuestAction.ABANDON;
             case BLOCK -> VillagerActionDefinition.QuestAction.BLOCK;
-            case NONE -> VillagerActionDefinition.QuestAction.NONE;
+            case HINT, NONE -> VillagerActionDefinition.QuestAction.NONE;
         };
     }
 
