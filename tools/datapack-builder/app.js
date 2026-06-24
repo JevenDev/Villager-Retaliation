@@ -447,6 +447,9 @@ const FIELD_TOOLTIPS = {
   "forced-requires_witness_armed": "Requires the witnessing villager to have a usable weapon in either hand.",
   "forced-player_items": "For player_item_proximity, requires the nearby player to carry one matching item or item tag. Prefix tags with #.",
   "forced-player_item_slots": "Where to check player items. Defaults to hands when player_items is set.",
+  "forced-requires_held_trade_item": "For player_item_proximity, matches when the player holds an active trade cost item for this villager.",
+  "forced-min_trade_level": "Minimum villager trade level from 1 to 5.",
+  "forced-max_trade_level": "Maximum villager trade level from 1 to 5.",
   "forced-min_player_item_durability": "Minimum remaining durability required on the matched player item.",
   "forced-max_player_item_durability": "Maximum remaining durability allowed on the matched player item.",
   "forced-min_player_item_durability_percent": "Minimum remaining durability percent required on the matched player item.",
@@ -7035,6 +7038,8 @@ function renderForcedDialogue() {
             ${villagerEquipmentToggles("forced", entry, "witness")}
             ${listField({ id: "forced-player_items", label: "Player items or tags", value: entry.player_items ?? entry.player_item ?? entry.player_item_tags ?? entry.player_item_tag, help: "Required for player_item_proximity. Use minecraft:diamond_sword or #minecraft:swords." })}
             ${listField({ id: "forced-player_item_slots", label: "Player item slots", value: entry.player_item_slots ?? entry.player_item_slot, help: CONSTANTS.itemSlots.join(", ") })}
+            ${field({ id: "forced-min_trade_level", label: "Min trade level", value: entry.min_trade_level ?? entry.min_villager_trade_level ?? "", type: "number", attrs: 'min="1" max="5" step="1"' })}
+            ${field({ id: "forced-max_trade_level", label: "Max trade level", value: entry.max_trade_level ?? entry.max_villager_trade_level ?? "", type: "number", attrs: 'min="1" max="5" step="1"' })}
             ${playerItemDurabilityFields("forced", entry)}
             ${playerItemEnchantmentFields("forced", entry)}
             ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
@@ -7045,6 +7050,7 @@ function renderForcedDialogue() {
               <label>Event Behavior</label>
               <div class="toggle-grid">
                 ${toggle({ id: "forced-requires_line_of_sight", label: "Requires line of sight", checked: entry.requires_line_of_sight !== false })}
+                ${toggle({ id: "forced-requires_held_trade_item", label: "Held trade item", checked: (entry.requires_held_trade_item ?? entry.requires_trade_item ?? entry.requires_matching_trade_item) === true })}
               </div>
             </div>
             <div class="field full ${forcedOnlyClass}">
@@ -7861,6 +7867,9 @@ function readForcedDialogueEntry(options = {}) {
     ...readVillagerEquipment("forced", "witness"),
     player_items: readList("forced-player_items"),
     player_item_slots: readList("forced-player_item_slots"),
+    requires_held_trade_item: readValue("forced-requires_held_trade_item"),
+    min_trade_level: parseInteger(readValue("forced-min_trade_level")),
+    max_trade_level: parseInteger(readValue("forced-max_trade_level")),
     ...readPlayerItemDurability("forced"),
     ...readPlayerItemEnchantments("forced"),
     loot_tables: readList("forced-loot_tables"),

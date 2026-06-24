@@ -173,6 +173,30 @@ Use forced dialogue when:
 
 Use normal [Dialogue](Dialogue.md) when the player chooses to ask something on purpose.
 
+## Held Item Proximity
+
+Use `trigger: "player_item_proximity"` for lines that fire when a nearby player is holding, wearing, or carrying a matching item. Add `output.mode: "chat"` for a bark instead of a locked conversation.
+
+```json
+{
+  "id": "my_pack.trade_cost_pitch",
+  "trigger": "player_item_proximity",
+  "output": {
+    "mode": "chat"
+  },
+  "line": "I could use {trade_cost}. I have {trade_result_stack} ready if you are interested.",
+  "witness_radius": 4,
+  "chance": 0.35,
+  "requires_held_trade_item": true,
+  "min_trade_level": 2,
+  "max_trade_level": 4
+}
+```
+
+`requires_held_trade_item: true` makes the entry match only adult, non-nitwit villagers the player can currently trade with, and only when the player's main hand or off hand matches one of that villager's active trade cost items. It uses vanilla's `ShowTradesToPlayer` item check, extended to also consider the off hand, so counts and components do not need to match. Out-of-stock offers are ignored. You can also use `requires_trade_item` or `requires_matching_trade_item` as aliases.
+
+Trade-cost entries can use `{held_item}`, `{trade_cost}`, `{trade_cost_count}`, `{trade_result}`, `{trade_result_stack}`, and `{trade_offer_index}`. Trade-level filters use villager levels 1 through 5; `min_villager_trade_level` and `max_villager_trade_level` are accepted aliases for `min_trade_level` and `max_trade_level`.
+
 ## Replacing Or Removing Built-Ins
 
 Use top-level `replace: true` when a pack wants to replace the built-in forced-dialogue set instead of adding to it:

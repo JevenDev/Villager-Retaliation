@@ -48,6 +48,8 @@ public final class ForcedDialogueResources {
             "witness_profession", "witness_professions", "professions",
             "requires_witness_unarmed", "witness_unarmed", "requires_witness_armed", "witness_armed",
             "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
+            "requires_held_trade_item", "requires_trade_item", "requires_matching_trade_item",
+            "min_trade_level", "max_trade_level", "min_villager_trade_level", "max_villager_trade_level",
             "min_player_item_durability", "max_player_item_durability", "min_player_item_durability_percent", "max_player_item_durability_percent",
             "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
             "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
@@ -299,6 +301,9 @@ public final class ForcedDialogueResources {
                 readLootTables(entry),
                 readTargetEntityTypes(entry),
                 readProfessions(location, entryContext(entry, index), entry),
+                readTradeLevel(entry, "min_trade_level", "min_villager_trade_level", 1),
+                readTradeLevel(entry, "max_trade_level", "max_villager_trade_level", 5),
+                readRequiresHeldTradeItem(entry),
                 VillagerEquipmentCondition.read(entry, "witness"),
                 VillagerPlayerItemCondition.read(entry),
                 VillagerReputationCondition.read(entry),
@@ -374,6 +379,16 @@ public final class ForcedDialogueResources {
             parseResourceLocation(value).ifPresent(entityTypes::add);
         }
         return Set.copyOf(entityTypes);
+    }
+
+    private static int readTradeLevel(JsonObject entry, String key, String alias, int fallback) {
+        return Math.max(1, Math.min(5, readInt(entry, key, alias, fallback)));
+    }
+
+    private static boolean readRequiresHeldTradeItem(JsonObject entry) {
+        return readBoolean(entry, "requires_held_trade_item")
+                || readBoolean(entry, "requires_trade_item")
+                || readBoolean(entry, "requires_matching_trade_item");
     }
 
     private static List<LocalizedText> readLines(JsonObject entry, String messagePrefix) {
@@ -833,6 +848,10 @@ public final class ForcedDialogueResources {
         return DatapackJsonReader.readInt(entry, key, fallback);
     }
 
+    private static int readInt(JsonObject entry, String key, String alias, int fallback) {
+        return DatapackJsonReader.readInt(entry, key, alias, fallback);
+    }
+
     private static double readDouble(JsonObject entry, String key, double fallback) {
         return DatapackJsonReader.readDouble(entry, key, fallback);
     }
@@ -930,7 +949,7 @@ public final class ForcedDialogueResources {
                     .stream()
                     .filter(definition -> definition.lootTables().isEmpty())
                     .filter(definition -> definition.targetEntityTypes().isEmpty())
-                    .filter(ForcedDialogueDefinition::hasPlayerItemCondition)
+                    .filter(definition -> definition.hasPlayerItemCondition() || definition.requiresHeldTradeItem())
                     .toList();
             return new CachedForcedDialogues(
                     server,
@@ -1018,6 +1037,9 @@ public final class ForcedDialogueResources {
             Set<ResourceLocation> lootTables,
             Set<ResourceLocation> targetEntityTypes,
             Set<VillagerProfession> witnessProfessions,
+            int minTradeLevel,
+            int maxTradeLevel,
+            boolean requiresHeldTradeItem,
             VillagerEquipmentCondition witnessEquipmentCondition,
             VillagerPlayerItemCondition playerItemCondition,
             VillagerReputationCondition reputationCondition,
@@ -1043,7 +1065,10 @@ public final class ForcedDialogueResources {
             if (!this.witnessProfessions.isEmpty() && !this.witnessProfessions.contains(villager.getVillagerData().getProfession())) {
                 return false;
             }
-            return this.witnessEquipmentCondition.matches(villager);
+            int tradeLevel = villager.getVillagerData().getLevel();
+            return tradeLevel >= this.minTradeLevel
+                    && tradeLevel <= this.maxTradeLevel
+                    && this.witnessEquipmentCondition.matches(villager);
         }
 
         public boolean matchesRecentContainerThefts(int count) {

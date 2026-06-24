@@ -76,7 +76,9 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -373,6 +375,9 @@ public final class ForcedDialogueService {
                 Set.of(),
                 Set.of(),
                 Set.of(),
+                1,
+                5,
+                false,
                 VillagerEquipmentCondition.empty(),
                 VillagerPlayerItemCondition.empty(),
                 VillagerReputationCondition.empty(),
@@ -1279,6 +1284,9 @@ public final class ForcedDialogueService {
                 source.lootTables(),
                 source.targetEntityTypes(),
                 source.witnessProfessions(),
+                source.minTradeLevel(),
+                source.maxTradeLevel(),
+                source.requiresHeldTradeItem(),
                 source.witnessEquipmentCondition(),
                 source.playerItemCondition(),
                 source.reputationCondition(),
@@ -1386,6 +1394,9 @@ public final class ForcedDialogueService {
                 optionDefinition.lootTables(),
                 optionDefinition.targetEntityTypes(),
                 optionDefinition.witnessProfessions(),
+                optionDefinition.minTradeLevel(),
+                optionDefinition.maxTradeLevel(),
+                optionDefinition.requiresHeldTradeItem(),
                 optionDefinition.witnessEquipmentCondition(),
                 optionDefinition.playerItemCondition(),
                 optionDefinition.reputationCondition(),
@@ -2475,6 +2486,9 @@ public final class ForcedDialogueService {
                 source.lootTables(),
                 source.targetEntityTypes(),
                 source.witnessProfessions(),
+                source.minTradeLevel(),
+                source.maxTradeLevel(),
+                source.requiresHeldTradeItem(),
                 source.witnessEquipmentCondition(),
                 source.playerItemCondition(),
                 source.reputationCondition(),
@@ -2939,7 +2953,6 @@ public final class ForcedDialogueService {
         for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, area)) {
             if (player.isAlive()
                     && !player.isSpectator()
-                    && !player.isCreative()
                     && !FORCED_SESSIONS.containsKey(player.getUUID())) {
                 players.add(player);
             }
@@ -2964,7 +2977,11 @@ public final class ForcedDialogueService {
             long gameTime,
             boolean chatOutput) {
         for (ForcedDialogueDefinition definition : definitions) {
+            Optional<TradeItemProximityMatch> tradeItemMatch = definition.requiresHeldTradeItem()
+                    ? matchingHeldTradeItem(villager, player)
+                    : Optional.empty();
             if (ForcedDialogueTriggerGates.isChatOutput(definition) != chatOutput
+                    || (definition.requiresHeldTradeItem() && tradeItemMatch.isEmpty())
                     || !definition.matchesPlayerItem(player)
                     || !definitionMatchesReputation(level, villager, player, definition)
                     || villager.distanceToSqr(player) > definition.witnessRadius() * definition.witnessRadius()
@@ -2974,14 +2991,60 @@ public final class ForcedDialogueService {
             }
 
             boolean triggered = chatOutput
-                    ? triggerPlayerItemProximityChat(level, villager, player, definition)
-                    : triggerPlayerItemProximity(level, villager, player, definition);
+                    ? triggerPlayerItemProximityChat(level, villager, player, definition, tradeItemMatch)
+                    : triggerPlayerItemProximity(level, villager, player, definition, tradeItemMatch);
             if (triggered) {
                 markPlayerItemProximityUsed(gameTime, villager, player, definition);
                 return true;
             }
         }
         return false;
+    }
+
+    private static Optional<TradeItemProximityMatch> matchingHeldTradeItem(Villager villager, ServerPlayer player) {
+        if (!canReactToHeldTradeItem(villager, player)) {
+            return Optional.empty();
+        }
+
+        Optional<TradeItemProximityMatch> mainHandMatch = matchingHeldTradeItem(villager, player.getMainHandItem(), "main_hand");
+        if (mainHandMatch.isPresent()) {
+            return mainHandMatch;
+        }
+        return matchingHeldTradeItem(villager, player.getOffhandItem(), "off_hand");
+    }
+
+    private static boolean canReactToHeldTradeItem(Villager villager, ServerPlayer player) {
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        return profession != VillagerProfession.NONE
+                && profession != VillagerProfession.NITWIT
+                && !villager.getOffers().isEmpty()
+                && VillagerInteractionService.canUseForcedInteractionSystem(player, villager);
+    }
+
+    private static Optional<TradeItemProximityMatch> matchingHeldTradeItem(Villager villager, ItemStack heldStack, String slot) {
+        if (heldStack.isEmpty()) {
+            return Optional.empty();
+        }
+        int offerIndex = 0;
+        for (MerchantOffer offer : villager.getOffers()) {
+            offerIndex++;
+            if (offer.isOutOfStock()) {
+                continue;
+            }
+            ItemStack costA = offer.getCostA();
+            if (isHeldTradeCost(heldStack, costA)) {
+                return Optional.of(new TradeItemProximityMatch(heldStack, costA, offer.getResult(), slot, offerIndex));
+            }
+            ItemStack costB = offer.getCostB();
+            if (isHeldTradeCost(heldStack, costB)) {
+                return Optional.of(new TradeItemProximityMatch(heldStack, costB, offer.getResult(), slot, offerIndex));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isHeldTradeCost(ItemStack heldStack, ItemStack costStack) {
+        return !costStack.isEmpty() && ItemStack.isSameItem(heldStack, costStack);
     }
 
     public static boolean triggerRetaliationStarted(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -3498,15 +3561,17 @@ public final class ForcedDialogueService {
             ServerLevel level,
             Villager villager,
             ServerPlayer player,
-            ForcedDialogueDefinition definition) {
+            ForcedDialogueDefinition definition,
+            Optional<TradeItemProximityMatch> tradeItemMatch) {
         if (!rollChance(level, definition.chance())) {
-            return true;
+            return false;
         }
-        ForcedDialogueContext context = playerItemProximityContext(villager, player, definition);
+        Map<String, String> replacements = playerItemProximityReplacements(definition, player, tradeItemMatch);
+        ForcedDialogueContext context = playerItemProximityContext(villager, player, replacements);
         String line = ForcedDialogueResources.resolveTemplate(
                 definition.selectLine(level.getRandom()),
                 context,
-                definition.playerItemReplacements(player));
+                replacements);
         if (!line.isBlank()) {
             VillagerInteractionService.broadcastForcedVillagerChat(
                     level,
@@ -3523,11 +3588,13 @@ public final class ForcedDialogueService {
             ServerLevel level,
             Villager villager,
             ServerPlayer player,
-            ForcedDialogueDefinition definition) {
+            ForcedDialogueDefinition definition,
+            Optional<TradeItemProximityMatch> tradeItemMatch) {
         if (!rollChance(level, definition.chance())) {
-            return true;
+            return false;
         }
-        ForcedDialogueContext context = playerItemProximityContext(villager, player, definition);
+        Map<String, String> replacements = playerItemProximityReplacements(definition, player, tradeItemMatch);
+        ForcedDialogueContext context = playerItemProximityContext(villager, player, replacements);
         if (definition.reputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             VillagerReputationManager.addWitnessedReputation(level, villager, player.getUUID(), definition.reputationDelta(), villager.blockPosition());
             VillagerGossipHooks.spreadReputation(level, villager, player.getUUID(), definition.reputationDelta());
@@ -3536,7 +3603,7 @@ public final class ForcedDialogueService {
         String line = ForcedDialogueResources.resolveTemplate(
                 definition.selectLine(level.getRandom()),
                 context,
-                definition.playerItemReplacements(player));
+                replacements);
         if (definition.aggroImmediately()) {
             if (!line.isBlank()) {
                 VillagerInteractionService.sendVillagerNotice(player, villager, line);
@@ -3589,11 +3656,11 @@ public final class ForcedDialogueService {
     private static ForcedDialogueContext playerItemProximityContext(
             Villager villager,
             ServerPlayer player,
-            ForcedDialogueDefinition definition) {
+            Map<String, String> itemReplacements) {
         ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(player.getType());
-        Map<String, String> itemReplacements = definition.playerItemReplacements(player);
         String itemName = itemReplacements.getOrDefault("player_item", "");
         String itemId = itemReplacements.getOrDefault("player_item_id", "");
+        int itemCount = parseInt(itemReplacements.get("trade_cost_count"), 1);
         String playerName = player.getDisplayName().getString();
         return new ForcedDialogueContext(
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
@@ -3603,8 +3670,8 @@ public final class ForcedDialogueService {
                 targetTypeId == null ? "" : targetTypeId.toString(),
                 itemName,
                 itemId,
-                1,
-                itemName,
+                itemCount,
+                itemReplacements.getOrDefault("trade_cost", itemName),
                 itemName,
                 "",
                 "",
@@ -3614,6 +3681,26 @@ public final class ForcedDialogueService {
                 villager.blockPosition().getY(),
                 villager.blockPosition().getZ()
         );
+    }
+
+    private static Map<String, String> playerItemProximityReplacements(
+            ForcedDialogueDefinition definition,
+            ServerPlayer player,
+            Optional<TradeItemProximityMatch> tradeItemMatch) {
+        Map<String, String> replacements = new HashMap<>(definition.playerItemReplacements(player));
+        tradeItemMatch.ifPresent(match -> replacements.putAll(match.replacements()));
+        return replacements;
+    }
+
+    private static int parseInt(String value, int fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
     }
 
     private static boolean playerItemProximityReady(
@@ -4283,5 +4370,44 @@ public final class ForcedDialogueService {
             UUID villagerId,
             UUID playerId,
             String definitionId) {
+    }
+
+    private record TradeItemProximityMatch(
+            ItemStack heldStack,
+            ItemStack costStack,
+            ItemStack resultStack,
+            String slot,
+            int offerIndex) {
+        private Map<String, String> replacements() {
+            String heldItemName = this.heldStack.getHoverName().getString();
+            String heldItemId = BuiltInRegistries.ITEM.getKey(this.heldStack.getItem()).toString();
+            String costItemName = this.costStack.getHoverName().getString();
+            String costStackName = ForcedDialogueContainers.stackName(this.costStack);
+            String resultItemName = this.resultStack.isEmpty()
+                    ? "something"
+                    : this.resultStack.getHoverName().getString();
+            String resultStackName = this.resultStack.isEmpty()
+                    ? "something"
+                    : ForcedDialogueContainers.stackName(this.resultStack);
+            Map<String, String> replacements = new HashMap<>();
+            replacements.put("player_item", heldItemName);
+            replacements.put("held_item", heldItemName);
+            replacements.put("player_item_id", heldItemId);
+            replacements.put("held_item_id", heldItemId);
+            replacements.put("player_item_slot", this.slot);
+            replacements.put("held_item_slot", this.slot);
+            replacements.put("player_item_count", Integer.toString(this.heldStack.getCount()));
+            replacements.put("held_item_count", Integer.toString(this.heldStack.getCount()));
+            replacements.put("trade_cost_item", costItemName);
+            replacements.put("trade_cost", costStackName);
+            replacements.put("trade_cost_count", Integer.toString(this.costStack.getCount()));
+            replacements.put("trade_result", resultItemName);
+            replacements.put("trade_item", resultItemName);
+            replacements.put("trade_result_stack", resultStackName);
+            replacements.put("trade_item_stack", resultStackName);
+            replacements.put("trade_result_count", Integer.toString(this.resultStack.isEmpty() ? 0 : this.resultStack.getCount()));
+            replacements.put("trade_offer_index", Integer.toString(this.offerIndex));
+            return replacements;
+        }
     }
 }

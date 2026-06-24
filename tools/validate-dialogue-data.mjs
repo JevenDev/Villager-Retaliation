@@ -778,8 +778,16 @@ const knownPlaceholders = new Set([
   "theft_witness_possessive",
   "time_remaining",
   "trade_count",
+  "trade_cost",
+  "trade_cost_count",
+  "trade_cost_item",
   "trade_item",
+  "trade_item_stack",
   "trade_items",
+  "trade_offer_index",
+  "trade_result",
+  "trade_result_count",
+  "trade_result_stack",
   "trade_word",
   "vague_direction",
   "vertical",
@@ -4297,11 +4305,15 @@ function checkForcedDialogueEntryText(file, entry, location, messagePrefix = "")
   checkOptionalBoolean(file, entry, location, "remove");
   checkOptionalString(file, entry, location, "message_prefix");
   checkOptionalString(file, entry, location, "text_prefix");
-  for (const key of ["initiate_dialogue", "aggro_immediately", "force_camera_towards_villager", "requires_line_of_sight"]) {
+  for (const key of ["initiate_dialogue", "aggro_immediately", "force_camera_towards_villager", "requires_line_of_sight", "requires_held_trade_item", "requires_trade_item", "requires_matching_trade_item"]) {
     checkOptionalBoolean(file, entry, location, key);
   }
   checkOptionalInteger(file, entry, location, "priority");
   checkOptionalInteger(file, entry, location, "reputation");
+  checkOptionalInteger(file, entry, location, "min_trade_level", { min: 1, max: 5 });
+  checkOptionalInteger(file, entry, location, "max_trade_level", { min: 1, max: 5 });
+  checkOptionalInteger(file, entry, location, "min_villager_trade_level", { min: 1, max: 5 });
+  checkOptionalInteger(file, entry, location, "max_villager_trade_level", { min: 1, max: 5 });
   checkOptionalInteger(file, entry, location, "min_recent_container_thefts", { min: 0 });
   checkOptionalInteger(file, entry, location, "max_recent_container_thefts", { min: 0 });
   checkOptionalInteger(file, entry, location, "min_recent_retaliations", { min: 0 });
