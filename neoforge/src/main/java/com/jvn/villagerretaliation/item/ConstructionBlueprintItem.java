@@ -132,6 +132,16 @@ public final class ConstructionBlueprintItem extends Item {
         expireMatchingBlueprints(player.getInventory().offhand, jobId);
     }
 
+    public static void expireMatchingBlueprints(ServerLevel level, UUID jobId) {
+        if (level == null || level.getServer() == null || jobId == null) {
+            return;
+        }
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            expireMatchingBlueprints(player.getInventory().items, jobId);
+            expireMatchingBlueprints(player.getInventory().offhand, jobId);
+        }
+    }
+
     public static void completeMatchingBlueprints(ServerLevel level, UUID jobId) {
         if (level == null || level.getServer() == null || jobId == null) {
             return;

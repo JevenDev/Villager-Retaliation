@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
+import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -16,6 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.ItemStack;
 
 public final class HiredVillagerContractService {
     private static final String CONTRACT_TAG = "VillagerRetaliationHireContract";
@@ -250,7 +253,11 @@ public final class HiredVillagerContractService {
         CompoundTag tag = contract.get();
         HiredVillagerRole currentRole = roleFromContract(level, villager, tag);
         if (currentRole != role) {
-            HiredVillagerWorkService.stopWork(level, villager, currentRole, "Work stopped. Role changed.");
+            if (currentRole == HiredVillagerRole.BUILDER
+                    && BuilderTaskState.hasTask(HiredVillagerWorkService.state(villager))) {
+                return false;
+            }
+            HiredVillagerWorkService.cancelWork(level, villager, currentRole, "Work stopped. Role changed.");
             HiredVillagerWorkService.resetReportProgress(level, villager);
         }
         tag.putString(ROLE_TAG, role.serializedName());
@@ -307,7 +314,7 @@ public final class HiredVillagerContractService {
             return;
         }
         HiredVillagerRole role = roleFromContract(level, villager, tag);
-        HiredVillagerWorkService.stopWork(level, villager, role, "Contract paused. Assigned payment box must be in a loaded chunk for renewal.");
+        HiredVillagerWorkService.pauseWork(level, villager, role, "Contract paused. Assigned payment box must be in a loaded chunk for renewal.");
         setWorkStatus(villager, "Contract paused. Assigned payment box must be in a loaded chunk for renewal.");
         tag.putString(STATUS_TAG, STATUS_AWAITING_AUTO_PAYMENT);
         tag.putLong(AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG, level.getGameTime());
@@ -393,7 +400,8 @@ public final class HiredVillagerContractService {
             String workStatus,
             boolean depositJobInventory) {
         HiredVillagerRole role = roleFromContract(level, villager, tag);
-        HiredVillagerWorkService.stopWork(level, villager, role, workStatus);
+        finalizeBuilderJobForContractEnd(level, villager, tag, role);
+        HiredVillagerWorkService.finishWork(level, villager, role, workStatus);
         tag.putString(STATUS_TAG, contractStatus);
         unlockProfessionAfterHire(villager, tag);
         if (depositJobInventory) {
@@ -403,6 +411,53 @@ public final class HiredVillagerContractService {
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
         villager.setPersistenceRequired();
         HiredVillagerIndex.remove(villager);
+    }
+
+    private static void finalizeBuilderJobForContractEnd(
+            ServerLevel level,
+            Villager villager,
+            CompoundTag contract,
+            HiredVillagerRole role) {
+        if (role != HiredVillagerRole.BUILDER) {
+            return;
+        }
+        CompoundTag state = HiredVillagerWorkService.state(villager);
+        if (!BuilderTaskState.hasTask(state)) {
+            return;
+        }
+        Optional<UUID> jobId = BuilderTaskState.jobId(state);
+        int paid = BuilderTaskState.paidCurrency(state);
+        int placed = BuilderTaskState.placedIndex(state);
+        jobId.ifPresent(id -> ConstructionBlueprintItem.expireMatchingBlueprints(level, id));
+        refundUnstartedBuilderJob(level, villager, contract, paid, placed);
+    }
+
+    private static void refundUnstartedBuilderJob(
+            ServerLevel level,
+            Villager villager,
+            CompoundTag contract,
+            int paid,
+            int placed) {
+        if (placed > 0 || paid <= 0 || !contract.hasUUID(HIRER_TAG)) {
+            return;
+        }
+        ServerPlayer hirer = level.getServer().getPlayerList().getPlayer(contract.getUUID(HIRER_TAG));
+        if (hirer == null || !VillagerWalletService.spendCurrency(villager, paid, VillagerWalletService.WalletSource.DEPOSIT_ADJUSTMENT)) {
+            return;
+        }
+        giveCurrency(hirer, paid);
+    }
+
+    private static void giveCurrency(ServerPlayer player, int count) {
+        int remaining = count;
+        while (remaining > 0) {
+            int chunk = Math.min(VillagerCurrencyResources.maxStackSize(player.serverLevel().getServer()), remaining);
+            ItemStack stack = VillagerCurrencyResources.createStack(player.serverLevel().getServer(), chunk);
+            if (!player.getInventory().add(stack)) {
+                player.drop(stack, false);
+            }
+            remaining -= chunk;
+        }
     }
 
     private static void setWorkStatus(Villager villager, String status) {

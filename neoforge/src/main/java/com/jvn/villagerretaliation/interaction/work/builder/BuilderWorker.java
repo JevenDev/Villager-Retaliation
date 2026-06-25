@@ -307,6 +307,13 @@ public final class BuilderWorker extends AbstractBlockWorker {
     }
 
     @Override
+    public void pause(ServerLevel level, Villager villager, HiredWorkContext context) {
+        clearActiveBreakingTarget(level, context, villager);
+        clearBuildSiteIntermediateNavigation(context);
+        super.pause(level, villager, context);
+    }
+
+    @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
         clearActiveBreakingTarget(level, context, villager);
         clearBuildSiteIntermediateNavigation(context);

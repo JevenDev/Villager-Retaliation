@@ -829,14 +829,73 @@ public final class HiredVillagerWorkService {
             HiredVillagerRole role,
             String status,
             Map<String, String> replacements) {
+        cancelWork(level, villager, role, status, replacements);
+    }
+
+    public static void pauseWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
+        pauseWork(level, villager, role, status, Map.of());
+    }
+
+    public static void pauseWork(
+            ServerLevel level,
+            Villager villager,
+            HiredVillagerRole role,
+            String status,
+            Map<String, String> replacements) {
+        updateWorkLifecycle(level, villager, role, status, replacements, WorkLifecycle.PAUSE);
+    }
+
+    public static void cancelWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
+        cancelWork(level, villager, role, status, Map.of());
+    }
+
+    public static void cancelWork(
+            ServerLevel level,
+            Villager villager,
+            HiredVillagerRole role,
+            String status,
+            Map<String, String> replacements) {
+        updateWorkLifecycle(level, villager, role, status, replacements, WorkLifecycle.CANCEL);
+    }
+
+    public static void finishWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
+        finishWork(level, villager, role, status, Map.of());
+    }
+
+    public static void finishWork(
+            ServerLevel level,
+            Villager villager,
+            HiredVillagerRole role,
+            String status,
+            Map<String, String> replacements) {
+        updateWorkLifecycle(level, villager, role, status, replacements, WorkLifecycle.FINISH);
+    }
+
+    private static void updateWorkLifecycle(
+            ServerLevel level,
+            Villager villager,
+            HiredVillagerRole role,
+            String status,
+            Map<String, String> replacements,
+            WorkLifecycle lifecycle) {
         HiredWorkSession session = HiredWorkSession.create(level, villager, role);
         if (session.worker() != null) {
-            session.worker().stop(level, villager, session.context());
+            if (lifecycle == WorkLifecycle.PAUSE) {
+                session.worker().pause(level, villager, session.context());
+            } else {
+                session.worker().stop(level, villager, session.context());
+            }
         } else {
             session.context().setProgressTicks(0);
         }
         session.state().remove("NextWorkGameTime");
         setStatus(session.state(), status, replacements);
+    }
+
+    private enum WorkLifecycle {
+        PAUSE,
+        CANCEL,
+        FINISH
     }
 
     public static void toggleEnabled(ServerPlayer player, ServerLevel level, Villager villager) {

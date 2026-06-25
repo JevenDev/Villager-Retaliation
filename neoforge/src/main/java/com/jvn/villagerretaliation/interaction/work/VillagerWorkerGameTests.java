@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.mojang.authlib.GameProfile;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -126,6 +127,47 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(idle.targetPos() == null, "idle state should clear block target");
         helper.assertTrue(idle.storageTargetPos() == null, "idle state should clear storage target");
         helper.assertValueEqual(HiredWorkerTaskState.byId("target_unreachable"), HiredWorkerTaskState.FAILED_COOLDOWN, "legacy state alias");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void pausingBuilderWorkPreservesPaidTask(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = persistentWorkState(villager);
+        seedBuilderTask(state, 19, 0);
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.WORKING, helper.absolutePos(new BlockPos(3, 2, 3)));
+
+        HiredVillagerWorkService.pauseWork(level, villager, HiredVillagerRole.BUILDER, "paused_for_test");
+
+        helper.assertTrue(BuilderTaskState.hasTask(state), "temporary builder pause must keep the paid task");
+        helper.assertValueEqual(BuilderTaskState.paidCurrency(state), 19, "paid amount should survive pause");
+        helper.assertValueEqual(BuilderTaskState.placedIndex(state), 0, "build progress should survive pause");
+        helper.assertValueEqual(
+                HiredWorkerBrain.snapshot(state, level.getGameTime()).taskState(),
+                HiredWorkerTaskState.AWAITING_INSTRUCTION,
+                "paused builder should stop active movement without deleting the job");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void cancelingBuilderWorkClearsPaidTaskExplicitly(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = persistentWorkState(villager);
+        seedBuilderTask(state, 19, 3);
+
+        HiredVillagerWorkService.cancelWork(level, villager, HiredVillagerRole.BUILDER, "cancelled_for_test");
+
+        helper.assertFalse(BuilderTaskState.hasTask(state), "explicit builder cancellation should clear the task");
+        helper.assertValueEqual(
+                HiredWorkerBrain.snapshot(state, level.getGameTime()).taskState(),
+                HiredWorkerTaskState.AWAITING_INSTRUCTION,
+                "cancelled builder should return to awaiting instructions");
+        villager.discard();
         helper.succeed();
     }
 
@@ -1986,6 +2028,31 @@ public final class VillagerWorkerGameTests {
                 100,
                 true,
                 true);
+    }
+
+    private static void seedBuilderTask(CompoundTag state, int paidCurrency, int placedIndex) {
+        CompoundTag task = new CompoundTag();
+        task.putString("JobId", UUID.randomUUID().toString());
+        task.putString("StructureId", "villagerretaliation:test_structure");
+        task.putString("StructureLabel", "Test Structure");
+        task.putLong("Origin", BlockPos.ZERO.asLong());
+        task.putString("Rotation", "NONE");
+        task.putString("Phase", "building");
+        task.putInt("PlacedIndex", Math.max(0, placedIndex));
+        task.putInt("TotalBlocks", 8);
+        task.putInt("PaidCurrency", Math.max(0, paidCurrency));
+        task.putLong("StartedGameTime", 1L);
+        state.put(BuilderTaskState.TASK_TAG, task);
+    }
+
+    private static CompoundTag persistentWorkState(Villager villager) {
+        CompoundTag data = villager.getPersistentData();
+        if (!data.contains(WORK_STATE_TAG)) {
+            data.put(WORK_STATE_TAG, new CompoundTag());
+        }
+        CompoundTag state = data.getCompound(WORK_STATE_TAG);
+        HiredWorkerBrain.initialize(state);
+        return state;
     }
 
     private static void buildFloor(GameTestHelper helper, int minX, int maxX, int minZ, int maxZ, int y) {

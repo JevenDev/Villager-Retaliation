@@ -76,6 +76,12 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
     }
 
     @Override
+    public void pause(ServerLevel level, Villager villager, HiredWorkContext context) {
+        clearActiveBreakingTarget(level, context, villager);
+        HiredRoleWorker.super.pause(level, villager, context);
+    }
+
+    @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
         clearActiveBreakingTarget(level, context, villager);
         HiredRoleWorker.super.stop(level, villager, context);
