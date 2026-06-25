@@ -893,14 +893,19 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.hire.extend_requires_hirer");
             return true;
         }
-        int cost = HiredVillagerContractService.getHireCost(level, villager, player, days);
+        int extensionDays = HiredVillagerContractService.getAvailableExtensionDays(level, villager, player, days);
+        if (extensionDays <= 0) {
+            sendVillagerNotice(player, villager, "interaction.extend_unavailable");
+            return true;
+        }
+        int cost = HiredVillagerContractService.getExtensionCost(level, villager, player, days);
         if (countCurrency(player) < cost) {
             sendVillagerNotice(
                     player,
                     villager,
                     "interaction.extend_cost",
                     Map.of(
-                            "time_remaining", formatDaysRemaining(days),
+                            "time_remaining", formatDaysRemaining(extensionDays),
                             "contract_cost", formatCurrency(level, cost)
                     )
             );
@@ -918,7 +923,7 @@ public final class VillagerInteractionService {
                 villager,
                 "interaction.extend_success",
                 Map.of(
-                        "time_remaining", formatDaysRemaining(days),
+                        "time_remaining", formatDaysRemaining(extensionDays),
                         "contract_cost", formatCurrency(level, cost),
                         "new_time_remaining", formatDaysRemaining(remainingDays)
                 )

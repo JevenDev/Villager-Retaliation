@@ -630,6 +630,72 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void contractExtensionClampsToThirtyRemainingDays(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrContractHorizon");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 25, 25);
+
+        int extensionDays = HiredVillagerContractService.getAvailableExtensionDays(level, villager, hirer, 10);
+        helper.assertValueEqual(extensionDays, 5, "extension should only add days up to the 30-day horizon");
+
+        int extensionCost = HiredVillagerContractService.getExtensionCost(level, villager, hirer, 10);
+        helper.assertTrue(
+                HiredVillagerContractService.extendHireContract(level, villager, hirer, 10, extensionCost),
+                "extension within horizon should succeed");
+        helper.assertValueEqual(
+                HiredVillagerContractService.getRemainingHireDays(level, villager),
+                30,
+                "remaining contract days should be capped at 30");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void autoPaymentRenewalUsesCurrentDailyRate(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        BlockPos paymentRel = new BlockPos(2, 2, 1);
+        BlockPos payment = helper.absolutePos(paymentRel);
+        setBlock(helper, paymentRel, VillagerRetaliationBlocks.OAK_PAYMENT_BOX.get().defaultBlockState());
+        container(level, payment).setItem(0, new ItemStack(Items.EMERALD, 64));
+        AssignedStorageService.removeAssignedContainer(level, payment);
+        AssignedStorageService.AssignSummary paymentAssignment = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), payment)),
+                AssignedStorageService.PAYMENT_PURPOSE);
+        helper.assertValueEqual(paymentAssignment.assigned(), 1, "payment box assignment");
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 1);
+        HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
+        int currentDailyCost = HiredVillagerContractService.getDailyCost(level, villager, hirer);
+        CompoundTag contract = villager.getPersistentData().getCompound("VillagerRetaliationHireContract");
+        long expiredAt = level.getGameTime();
+        contract.putLong("EndGameTime", expiredAt);
+
+        HiredVillagerContractService.expireHireContractIfNeeded(level, villager);
+
+        helper.assertValueEqual(
+                countItem(container(level, payment), Items.EMERALD),
+                64 - currentDailyCost,
+                "auto renewal should consume the current daily rate");
+        helper.assertValueEqual(contract.getInt("DailyCost"), currentDailyCost, "renewed daily cost should track current rate");
+        helper.assertValueEqual(contract.getLong("EndGameTime"), expiredAt + 24000L, "auto renewal should add one day");
+        helper.assertValueEqual(contract.getString("Status"), "active", "contract should return to active after renewal");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void paymentStorageAssignmentRejectsOtherDimensions(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         ServerLevel level = helper.getLevel();

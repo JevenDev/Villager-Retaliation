@@ -174,6 +174,10 @@ public final class HiredVillagerContractService {
     }
 
     public static int getHireCost(ServerLevel level, Villager villager, ServerPlayer player, int days) {
+        return getDailyCost(level, villager, player) * clampedContractDays(days);
+    }
+
+    public static int getDailyCost(ServerLevel level, Villager villager, ServerPlayer player) {
         int skillScore = HiredVillagerRoles.bestRoleScore(level, villager);
         int skillPremium = Math.max(0, (skillScore - 50) / 10)
                 * Math.max(0, VillagerRetaliationConfig.HIRED_CONTRACT_SKILL_PREMIUM_PER_TEN.get());
@@ -185,19 +189,31 @@ public final class HiredVillagerContractService {
                 minDailyCost,
                 maxDailyCost
         );
-        return dailyCost * clampedContractDays(days);
+        return dailyCost;
     }
 
-    public static int getDailyCost(ServerLevel level, Villager villager, ServerPlayer player) {
-        return getHireCost(level, villager, player, 1);
+    public static int getAvailableExtensionDays(ServerLevel level, Villager villager, ServerPlayer player, int requestedDays) {
+        expireHireContractIfNeeded(level, villager);
+        return contract(villager)
+                .filter(HiredVillagerContractService::isActive)
+                .filter(tag -> tag.hasUUID(HIRER_TAG) && tag.getUUID(HIRER_TAG).equals(player.getUUID()))
+                .map(tag -> effectiveExtensionDays(level, tag, requestedDays))
+                .orElse(0);
+    }
+
+    public static int getExtensionCost(ServerLevel level, Villager villager, ServerPlayer player, int requestedDays) {
+        int extensionDays = getAvailableExtensionDays(level, villager, player, requestedDays);
+        if (extensionDays <= 0) {
+            return 0;
+        }
+        return getDailyCost(level, villager, player) * extensionDays;
     }
 
     public static int getContractDailyCost(ServerLevel level, Villager villager, ServerPlayer player) {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .map(tag -> Math.max(0, tag.getInt(DAILY_COST_TAG)))
-                .filter(cost -> cost > 0)
+                .map(tag -> currentRenewalDailyCost(level, villager, tag))
                 .orElseGet(() -> getDailyCost(level, villager, player));
     }
 
@@ -276,7 +292,10 @@ public final class HiredVillagerContractService {
         if (contract.isEmpty()) {
             return false;
         }
-        int safeDays = clampedContractDays(days);
+        int safeDays = effectiveExtensionDays(level, contract.get(), days);
+        if (safeDays <= 0) {
+            return false;
+        }
         CompoundTag tag = contract.get();
         long currentEnd = Math.max(level.getGameTime(), tag.getLong(END_GAME_TIME_TAG));
         tag.putLong(END_GAME_TIME_TAG, currentEnd + safeDays * DAY_TICKS);
@@ -451,7 +470,7 @@ public final class HiredVillagerContractService {
     }
 
     private static AutoPaymentResult tryAutoPaymentRenewal(ServerLevel level, Villager villager, CompoundTag tag) {
-        int dailyCost = Math.max(1, tag.getInt(DAILY_COST_TAG));
+        int dailyCost = currentRenewalDailyCost(level, villager, tag);
         if (!AssignedStorageService.hasLoadedAssignedPaymentStorage(level, villager)) {
             return AutoPaymentResult.UNAVAILABLE;
         }
@@ -566,7 +585,10 @@ public final class HiredVillagerContractService {
     }
 
     private static void extendActiveContract(ServerLevel level, CompoundTag tag, int days, int emeraldsPaid) {
-        int safeDays = clampedContractDays(days);
+        int safeDays = effectiveExtensionDays(level, tag, days);
+        if (safeDays <= 0) {
+            return;
+        }
         long currentEnd = Math.max(level.getGameTime(), tag.getLong(END_GAME_TIME_TAG));
         tag.putLong(END_GAME_TIME_TAG, currentEnd + safeDays * DAY_TICKS);
         tag.putInt(DURATION_DAYS_TAG, tag.getInt(DURATION_DAYS_TAG) + safeDays);
@@ -618,6 +640,25 @@ public final class HiredVillagerContractService {
 
     private static int clampedContractDays(int days) {
         return Mth.clamp(days, 1, MAX_CONTRACT_DAYS);
+    }
+
+    private static int effectiveExtensionDays(ServerLevel level, CompoundTag tag, int requestedDays) {
+        int safeRequestedDays = clampedContractDays(requestedDays);
+        long currentEnd = Math.max(level.getGameTime(), tag.getLong(END_GAME_TIME_TAG));
+        long remainingTicks = Math.max(0L, currentEnd - level.getGameTime());
+        long availableTicks = Math.max(0L, MAX_CONTRACT_DAYS * DAY_TICKS - remainingTicks);
+        int maxAdditionalDays = (int) Math.min(MAX_CONTRACT_DAYS, availableTicks / DAY_TICKS);
+        return Math.min(safeRequestedDays, maxAdditionalDays);
+    }
+
+    private static int currentRenewalDailyCost(ServerLevel level, Villager villager, CompoundTag tag) {
+        ServerPlayer hirer = tag.hasUUID(HIRER_TAG)
+                ? level.getServer().getPlayerList().getPlayer(tag.getUUID(HIRER_TAG))
+                : null;
+        if (hirer != null) {
+            return Math.max(1, getDailyCost(level, villager, hirer));
+        }
+        return Math.max(1, tag.getInt(DAILY_COST_TAG));
     }
 
     private static int earlyEndRefund(ServerLevel level, CompoundTag contract) {
