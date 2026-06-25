@@ -1,8 +1,11 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
@@ -34,7 +37,9 @@ public final class HiredJobInventory implements Container {
     private static final String JOB_ITEM_TAG = "VillagerRetaliationJobItem";
     private static final String JOB_ITEM_KIND_TAG = "Kind";
     private static final String JOB_ITEM_SOURCE_TAG = "Source";
+    private static final String JOB_ITEM_CONTRACT_ID_TAG = "ContractId";
     private static final String JOB_ITEM_SOURCE_STORAGE = "assigned_storage";
+    private static final String JOB_ITEM_SOURCE_CONTRACT = "contract";
     private static final String JOB_ITEM_KIND_SUPPLY = "supply";
     private static final String JOB_ITEM_KIND_TOOL = "tool";
     private static final EquipmentSlot[] ARMOR_SLOTS = {
@@ -108,6 +113,20 @@ public final class HiredJobInventory implements Container {
         }
         CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         return !customData.isEmpty() && customData.contains(JOB_ITEM_TAG);
+    }
+
+    public static Optional<UUID> jobItemContractId(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return Optional.empty();
+        }
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (customData.isEmpty() || !customData.contains(JOB_ITEM_TAG)) {
+            return Optional.empty();
+        }
+        CompoundTag jobItemTag = customData.copyTag().getCompound(JOB_ITEM_TAG);
+        return jobItemTag.hasUUID(JOB_ITEM_CONTRACT_ID_TAG)
+                ? Optional.of(jobItemTag.getUUID(JOB_ITEM_CONTRACT_ID_TAG))
+                : Optional.empty();
     }
 
     public static void dropAll(Villager villager, LivingDropsEvent event) {
@@ -208,6 +227,7 @@ public final class HiredJobInventory implements Container {
         } else if (this.slotTypes[slot] == HiredJobInventorySlotType.PROTECTED_PROPERTY) {
             this.slotTypes[slot] = defaultType(slot);
         }
+        markWithActiveContract(stack);
         setChanged();
     }
 
@@ -467,6 +487,56 @@ public final class HiredJobInventory implements Container {
         return consumed;
     }
 
+    public int countRemovableItemsForContract(UUID contractId) {
+        if (contractId == null) {
+            return 0;
+        }
+        int count = 0;
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            ItemStack stack = this.items.get(slot);
+            if (!stack.isEmpty()
+                    && canHirerRemoveFromJobInventory(stack)
+                    && jobItemContractId(stack).filter(contractId::equals).isPresent()) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    public boolean hasRemovableItemsForContract(UUID contractId) {
+        return countRemovableItemsForContract(contractId) > 0;
+    }
+
+    public int countRemovableItemsWithoutContract() {
+        int count = 0;
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            ItemStack stack = this.items.get(slot);
+            if (!stack.isEmpty() && canHirerRemoveFromJobInventory(stack) && jobItemContractId(stack).isEmpty()) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    public int markRemovableItemsForContract(UUID contractId) {
+        if (contractId == null) {
+            return 0;
+        }
+        int marked = 0;
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            ItemStack stack = this.items.get(slot);
+            if (stack.isEmpty() || !canHirerRemoveFromJobInventory(stack)) {
+                continue;
+            }
+            markAsContractJobItem(stack, contractId, JOB_ITEM_KIND_SUPPLY);
+            marked += stack.getCount();
+        }
+        if (marked > 0) {
+            setChanged();
+        }
+        return marked;
+    }
+
     public ItemStack insertSupply(ItemStack stack) {
         return insertSupply(stack, false, JOB_ITEM_KIND_SUPPLY);
     }
@@ -481,7 +551,9 @@ public final class HiredJobInventory implements Container {
         }
         ItemStack remainder = stack.copy();
         if (markJobItem) {
-            markAsStorageJobItem(remainder, jobItemKind);
+            markAsStorageJobItem(remainder, jobItemKind, activeContractId().orElse(null));
+        } else {
+            markWithActiveContract(remainder);
         }
         for (int slot : supplySlots()) {
             if (!canInsertSupplyIntoSlot(slot)) {
@@ -524,7 +596,9 @@ public final class HiredJobInventory implements Container {
         }
         ItemStack remainder = stack.copy();
         if (markJobItem) {
-            markAsStorageJobItem(remainder, jobItemKind);
+            markAsStorageJobItem(remainder, jobItemKind, activeContractId().orElse(null));
+        } else {
+            markWithActiveContract(remainder);
         }
         ItemStack mainhand = this.items.get(MAINHAND_SLOT);
         if (!ProtectedVillagerProperty.isProtected(mainhand)) {
@@ -582,6 +656,7 @@ public final class HiredJobInventory implements Container {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
+        markWithActiveContract(remainder);
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             if (!canInsertOutputIntoSlot(this.items, slot)) {
                 continue;
@@ -802,6 +877,7 @@ public final class HiredJobInventory implements Container {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
+        markWithActiveContract(remainder);
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             if (!canInsertSupplyIntoSlot(simulatedItems, simulatedTypes, slot)) {
                 continue;
@@ -960,6 +1036,7 @@ public final class HiredJobInventory implements Container {
                 && !isCurrentJobEquipment(current, previousJobStack)) {
             storeDisplacedEquipment(current);
         }
+        markWithActiveContract(stack);
         this.items.set(slot, stack);
         if (!stack.isEmpty() && ProtectedVillagerProperty.isProtected(stack)) {
             this.slotTypes[slot] = HiredJobInventorySlotType.PROTECTED_PROPERTY;
@@ -1120,14 +1197,49 @@ public final class HiredJobInventory implements Container {
         return HiredJobInventorySlotType.OUTPUT;
     }
 
-    private static ItemStack markAsStorageJobItem(ItemStack stack, String kind) {
-        if (stack == null || stack.isEmpty() || isJobItem(stack)) {
+    private void markWithActiveContract(ItemStack stack) {
+        activeContractId().ifPresent(contractId -> markAsContractJobItem(stack, contractId, JOB_ITEM_KIND_SUPPLY));
+    }
+
+    private Optional<UUID> activeContractId() {
+        return HiredVillagerContractService.currentContractId(this.villager);
+    }
+
+    private static ItemStack markAsStorageJobItem(ItemStack stack, String kind, UUID contractId) {
+        if (stack == null || stack.isEmpty()) {
             return stack;
         }
+        String safeKind = kind == null || kind.isBlank() ? JOB_ITEM_KIND_SUPPLY : kind;
         CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
-            CompoundTag jobItemTag = new CompoundTag();
-            jobItemTag.putString(JOB_ITEM_KIND_TAG, kind == null || kind.isBlank() ? JOB_ITEM_KIND_SUPPLY : kind);
+            CompoundTag jobItemTag = tag.contains(JOB_ITEM_TAG, Tag.TAG_COMPOUND)
+                    ? tag.getCompound(JOB_ITEM_TAG)
+                    : new CompoundTag();
+            jobItemTag.putString(JOB_ITEM_KIND_TAG, safeKind);
             jobItemTag.putString(JOB_ITEM_SOURCE_TAG, JOB_ITEM_SOURCE_STORAGE);
+            if (contractId != null) {
+                jobItemTag.putUUID(JOB_ITEM_CONTRACT_ID_TAG, contractId);
+            }
+            tag.put(JOB_ITEM_TAG, jobItemTag);
+        });
+        return stack;
+    }
+
+    private static ItemStack markAsContractJobItem(ItemStack stack, UUID contractId, String kind) {
+        if (stack == null || stack.isEmpty() || contractId == null || ProtectedVillagerProperty.isProtected(stack)) {
+            return stack;
+        }
+        String safeKind = kind == null || kind.isBlank() ? JOB_ITEM_KIND_SUPPLY : kind;
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
+            CompoundTag jobItemTag = tag.contains(JOB_ITEM_TAG, Tag.TAG_COMPOUND)
+                    ? tag.getCompound(JOB_ITEM_TAG)
+                    : new CompoundTag();
+            jobItemTag.putString(JOB_ITEM_KIND_TAG, jobItemTag.getString(JOB_ITEM_KIND_TAG).isBlank()
+                    ? safeKind
+                    : jobItemTag.getString(JOB_ITEM_KIND_TAG));
+            if (!jobItemTag.contains(JOB_ITEM_SOURCE_TAG, Tag.TAG_STRING)) {
+                jobItemTag.putString(JOB_ITEM_SOURCE_TAG, JOB_ITEM_SOURCE_CONTRACT);
+            }
+            jobItemTag.putUUID(JOB_ITEM_CONTRACT_ID_TAG, contractId);
             tag.put(JOB_ITEM_TAG, jobItemTag);
         });
         return stack;

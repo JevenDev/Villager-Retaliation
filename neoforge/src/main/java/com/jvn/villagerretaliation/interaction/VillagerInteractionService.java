@@ -172,6 +172,11 @@ public final class VillagerInteractionService {
         }
 
         if (villager.level() instanceof ServerLevel level
+                && HiredVillagerContractService.tryOpenJobInventoryOverflowReminder(level, villager, player)) {
+            return InteractionResult.CONSUME;
+        }
+
+        if (villager.level() instanceof ServerLevel level
                 && ForcedDialogueService.tryOpenTradeRefreshReadyDialogue(level, villager, player)) {
             return InteractionResult.CONSUME;
         }
@@ -569,7 +574,13 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.brewing.unknown_recipe");
             return;
         }
-        BrewingWorker.setOrder(state, itemId, potionId, amount, continuous);
+        BrewingWorker.setOrder(
+                state,
+                itemId,
+                potionId,
+                amount,
+                continuous,
+                HiredVillagerContractService.currentContractId(villager).orElse(null));
         String quantity = continuous ? "continuously" : Integer.toString(amount);
         HiredVillagerWorkService.stopWork(
                 level,
@@ -818,6 +829,14 @@ public final class VillagerInteractionService {
         }
         if (HiredVillagerContractService.isHired(level, villager)) {
             sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
+            return true;
+        }
+        if (HiredVillagerContractService.hasForeignJobInventoryOverflow(level, villager, player)) {
+            sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.hire_overflow_blocked",
+                    HiredVillagerContractService.jobInventoryOverflowReplacements(level, villager));
             return true;
         }
 

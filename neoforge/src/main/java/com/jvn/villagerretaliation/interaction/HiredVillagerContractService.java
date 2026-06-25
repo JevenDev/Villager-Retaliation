@@ -1,10 +1,13 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
@@ -12,8 +15,10 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.Optional;
+import java.util.Map;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -22,7 +27,13 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class HiredVillagerContractService {
     private static final String CONTRACT_TAG = "VillagerRetaliationHireContract";
+    private static final String CONTRACT_ID_TAG = "ContractId";
+    private static final String OVERFLOW_CLAIM_TAG = "VillagerRetaliationJobInventoryOverflowClaim";
     private static final String HIRER_TAG = "Hirer";
+    private static final String OVERFLOW_CLAIM_OWNER_TAG = "Owner";
+    private static final String OVERFLOW_CLAIM_CREATED_GAME_TIME_TAG = "CreatedGameTime";
+    private static final String OVERFLOW_CLAIM_EXPIRES_GAME_TIME_TAG = "ExpiresGameTime";
+    private static final String OVERFLOW_CLAIM_LAST_REMINDER_DAY_TAG = "LastReminderDay";
     private static final String START_GAME_TIME_TAG = "StartGameTime";
     private static final String END_GAME_TIME_TAG = "EndGameTime";
     private static final String DURATION_DAYS_TAG = "DurationDays";
@@ -41,6 +52,7 @@ public final class HiredVillagerContractService {
     private static final String STATUS_EXPIRED = "expired";
     private static final String STATUS_AWAITING_AUTO_PAYMENT = "awaiting_auto_payment";
     private static final long DAY_TICKS = 24000L;
+    private static final long OVERFLOW_CLAIM_TICKS = 3L * DAY_TICKS;
     private static final int MAX_CONTRACT_DAYS = 30;
     private static final int HIRED_PROFESSION_LOCK_XP = 1;
 
@@ -58,13 +70,84 @@ public final class HiredVillagerContractService {
 
     public static boolean canAccessJobInventory(ServerLevel level, Villager villager, ServerPlayer player) {
         expireHireContractIfNeeded(level, villager);
-        return player != null
-                && !villager.isBaby()
-                && contract(villager)
+        if (player == null || villager.isBaby()) {
+            return false;
+        }
+        boolean activeHirer = contract(villager)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
                 .filter(tag -> tag.hasUUID(HIRER_TAG))
                 .map(tag -> tag.getUUID(HIRER_TAG))
                 .filter(player.getUUID()::equals)
                 .isPresent();
+        if (activeHirer) {
+            return true;
+        }
+        return activeOverflowClaim(level, villager)
+                .filter(tag -> tag.hasUUID(OVERFLOW_CLAIM_OWNER_TAG))
+                .map(tag -> tag.getUUID(OVERFLOW_CLAIM_OWNER_TAG))
+                .filter(player.getUUID()::equals)
+                .isPresent();
+    }
+
+    public static Optional<UUID> currentContractId(Villager villager) {
+        return contract(villager)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .map(HiredVillagerContractService::ensureContractId);
+    }
+
+    public static boolean hasBlockingJobInventoryOverflow(ServerLevel level, Villager villager) {
+        return activeOverflowClaim(level, villager).isPresent();
+    }
+
+    public static boolean hasForeignJobInventoryOverflow(ServerLevel level, Villager villager, ServerPlayer player) {
+        return activeOverflowClaim(level, villager)
+                .filter(tag -> !tag.hasUUID(OVERFLOW_CLAIM_OWNER_TAG)
+                        || player == null
+                        || !tag.getUUID(OVERFLOW_CLAIM_OWNER_TAG).equals(player.getUUID()))
+                .isPresent();
+    }
+
+    public static int getJobInventoryOverflowRemainingDays(ServerLevel level, Villager villager) {
+        return activeOverflowClaim(level, villager)
+                .map(tag -> remainingOverflowDays(level, tag))
+                .orElse(0);
+    }
+
+    public static int getJobInventoryOverflowItemCount(ServerLevel level, Villager villager) {
+        return activeOverflowClaim(level, villager)
+                .map(tag -> HiredJobInventory.getJobInventory(villager).countRemovableItemsForContract(tag.getUUID(CONTRACT_ID_TAG)))
+                .orElse(0);
+    }
+
+    public static boolean tryOpenJobInventoryOverflowReminder(ServerLevel level, Villager villager, ServerPlayer player) {
+        Optional<CompoundTag> claim = activeOverflowClaim(level, villager)
+                .filter(tag -> tag.hasUUID(OVERFLOW_CLAIM_OWNER_TAG))
+                .filter(tag -> tag.getUUID(OVERFLOW_CLAIM_OWNER_TAG).equals(player.getUUID()));
+        if (claim.isEmpty()) {
+            return false;
+        }
+        CompoundTag tag = claim.get();
+        long day = level.getDayTime() / DAY_TICKS;
+        if (tag.getLong(OVERFLOW_CLAIM_LAST_REMINDER_DAY_TAG) == day) {
+            return false;
+        }
+        Map<String, String> replacements = overflowReplacements(level, villager, tag);
+        String line = VillagerDialogueResources
+                .message(
+                        VillagerInteractionService.createDialogueContext(level, player, villager),
+                        "interaction.hire_overflow_claim_reminder",
+                        replacements)
+                .orElse("");
+        if (ForcedDialogueService.openSimpleForcedDialogue(
+                player,
+                villager,
+                "villagerretaliation:hired_job_inventory_overflow_claim",
+                line)) {
+            tag.putLong(OVERFLOW_CLAIM_LAST_REMINDER_DAY_TAG, day);
+            villager.setPersistenceRequired();
+            return true;
+        }
+        return false;
     }
 
     public static void onVillagerTickPost(Villager villager) {
@@ -166,6 +249,8 @@ public final class HiredVillagerContractService {
         int safeDays = clampedContractDays(days);
         long startGameTime = level.getGameTime();
         CompoundTag tag = new CompoundTag();
+        UUID contractId = UUID.randomUUID();
+        tag.putUUID(CONTRACT_ID_TAG, contractId);
         tag.putUUID(HIRER_TAG, player.getUUID());
         tag.putLong(START_GAME_TIME_TAG, startGameTime);
         tag.putLong(END_GAME_TIME_TAG, startGameTime + safeDays * DAY_TICKS);
@@ -177,6 +262,8 @@ public final class HiredVillagerContractService {
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         lockProfessionForHire(villager, tag);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
+        villager.getPersistentData().remove(OVERFLOW_CLAIM_TAG);
+        HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         villager.setPersistenceRequired();
         HiredVillagerIndex.update(level, villager);
     }
@@ -257,6 +344,7 @@ public final class HiredVillagerContractService {
                     && BuilderTaskState.hasTask(HiredVillagerWorkService.state(villager))) {
                 return false;
             }
+            clearContractScopedOrders(level, villager, currentRole);
             HiredVillagerWorkService.cancelWork(level, villager, currentRole, "Work stopped. Role changed.");
             HiredVillagerWorkService.resetReportProgress(level, villager);
         }
@@ -388,10 +476,6 @@ public final class HiredVillagerContractService {
         return level.getGameTime() - startGameTime >= DAY_TICKS;
     }
 
-    private static void depositJobInventoryToAssignedStorage(Villager villager) {
-        HiredJobInventory.getJobInventory(villager).depositRemovableItemsToAssignedStorage();
-    }
-
     private static void finishContract(
             ServerLevel level,
             Villager villager,
@@ -400,12 +484,17 @@ public final class HiredVillagerContractService {
             String workStatus,
             boolean depositJobInventory) {
         HiredVillagerRole role = roleFromContract(level, villager, tag);
+        UUID contractId = ensureContractId(tag);
         finalizeBuilderJobForContractEnd(level, villager, tag, role);
         HiredVillagerWorkService.finishWork(level, villager, role, workStatus);
+        clearContractScopedOrders(level, villager, role);
         tag.putString(STATUS_TAG, contractStatus);
         unlockProfessionAfterHire(villager, tag);
         if (depositJobInventory) {
-            depositJobInventoryToAssignedStorage(villager);
+            HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+            inventory.markRemovableItemsForContract(contractId);
+            inventory.depositRemovableItemsToAssignedStorage();
+            rememberOverflowClaimIfNeeded(level, villager, tag, contractId);
         }
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
@@ -453,6 +542,12 @@ public final class HiredVillagerContractService {
 
     private static void setWorkStatus(Villager villager, String status) {
         HiredVillagerWorkService.state(villager).putString("Status", status == null ? "" : status);
+    }
+
+    private static void clearContractScopedOrders(ServerLevel level, Villager villager, HiredVillagerRole role) {
+        if (role == HiredVillagerRole.BREWING) {
+            BrewingWorker.clearOrder(HiredVillagerWorkService.state(villager));
+        }
     }
 
     private static void extendActiveContract(ServerLevel level, CompoundTag tag, int days, int emeraldsPaid) {
@@ -533,6 +628,88 @@ public final class HiredVillagerContractService {
 
     private static boolean isAwaitingAutoPayment(CompoundTag tag) {
         return STATUS_AWAITING_AUTO_PAYMENT.equals(tag.getString(STATUS_TAG));
+    }
+
+    private static UUID ensureContractId(CompoundTag tag) {
+        if (!tag.hasUUID(CONTRACT_ID_TAG)) {
+            tag.putUUID(CONTRACT_ID_TAG, UUID.randomUUID());
+        }
+        return tag.getUUID(CONTRACT_ID_TAG);
+    }
+
+    private static void rememberOverflowClaimIfNeeded(ServerLevel level, Villager villager, CompoundTag contract, UUID contractId) {
+        if (contractId == null || !contract.hasUUID(HIRER_TAG)) {
+            clearOverflowClaim(villager);
+            return;
+        }
+        int overflowCount = HiredJobInventory.getJobInventory(villager).countRemovableItemsForContract(contractId);
+        if (overflowCount <= 0) {
+            clearOverflowClaim(villager);
+            return;
+        }
+        CompoundTag claim = new CompoundTag();
+        claim.putUUID(CONTRACT_ID_TAG, contractId);
+        claim.putUUID(OVERFLOW_CLAIM_OWNER_TAG, contract.getUUID(HIRER_TAG));
+        claim.putLong(OVERFLOW_CLAIM_CREATED_GAME_TIME_TAG, level.getGameTime());
+        claim.putLong(OVERFLOW_CLAIM_EXPIRES_GAME_TIME_TAG, level.getGameTime() + OVERFLOW_CLAIM_TICKS);
+        claim.putLong(OVERFLOW_CLAIM_LAST_REMINDER_DAY_TAG, -1L);
+        villager.getPersistentData().put(OVERFLOW_CLAIM_TAG, claim);
+    }
+
+    private static Optional<CompoundTag> activeOverflowClaim(ServerLevel level, Villager villager) {
+        CompoundTag persistentData = villager.getPersistentData();
+        if (!persistentData.contains(OVERFLOW_CLAIM_TAG, Tag.TAG_COMPOUND)) {
+            return Optional.empty();
+        }
+        CompoundTag claim = persistentData.getCompound(OVERFLOW_CLAIM_TAG);
+        if (!claim.hasUUID(CONTRACT_ID_TAG) || !claim.hasUUID(OVERFLOW_CLAIM_OWNER_TAG)) {
+            clearOverflowClaim(villager);
+            return Optional.empty();
+        }
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        if (!inventory.hasRemovableItemsForContract(claim.getUUID(CONTRACT_ID_TAG))) {
+            clearOverflowClaim(villager);
+            return Optional.empty();
+        }
+        if (level.getGameTime() >= claim.getLong(OVERFLOW_CLAIM_EXPIRES_GAME_TIME_TAG)) {
+            clearOverflowClaim(villager);
+            return Optional.empty();
+        }
+        return Optional.of(claim);
+    }
+
+    private static void clearOverflowClaim(Villager villager) {
+        if (villager.getPersistentData().contains(OVERFLOW_CLAIM_TAG)) {
+            villager.getPersistentData().remove(OVERFLOW_CLAIM_TAG);
+            villager.setPersistenceRequired();
+        }
+    }
+
+    private static int remainingOverflowDays(ServerLevel level, CompoundTag claim) {
+        long remainingTicks = Math.max(0L, claim.getLong(OVERFLOW_CLAIM_EXPIRES_GAME_TIME_TAG) - level.getGameTime());
+        return (int) Math.max(1L, (remainingTicks + DAY_TICKS - 1L) / DAY_TICKS);
+    }
+
+    private static Map<String, String> overflowReplacements(ServerLevel level, Villager villager, CompoundTag claim) {
+        int days = remainingOverflowDays(level, claim);
+        int items = HiredJobInventory.getJobInventory(villager).countRemovableItemsForContract(claim.getUUID(CONTRACT_ID_TAG));
+        return Map.of(
+                "time_remaining", formatDays(days),
+                "overflow_count", Integer.toString(items),
+                "item_or_items", items == 1 ? "item" : "items");
+    }
+
+    static Map<String, String> jobInventoryOverflowReplacements(ServerLevel level, Villager villager) {
+        return activeOverflowClaim(level, villager)
+                .map(tag -> overflowReplacements(level, villager, tag))
+                .orElseGet(() -> Map.of(
+                        "time_remaining", formatDays(0),
+                        "overflow_count", "0",
+                        "item_or_items", "items"));
+    }
+
+    private static String formatDays(int count) {
+        return count + " day" + (count == 1 ? "" : "s");
     }
 
     private enum AutoPaymentResult {

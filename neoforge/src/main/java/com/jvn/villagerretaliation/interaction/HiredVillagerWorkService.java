@@ -801,6 +801,7 @@ public final class HiredVillagerWorkService {
     public static void resetForNewContract(ServerLevel level, Villager villager) {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
+        BrewingWorker.clearOrder(state);
         state.putBoolean("Enabled", true);
         state.remove("NextWorkGameTime");
         state.remove("ProgressTicks");

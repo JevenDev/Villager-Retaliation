@@ -234,6 +234,38 @@
       "id": "global.messages.09_hire_contracts.messages.interaction.hire.extend_requires_hirer.013"
     },
     {
+      "key": "interaction.hire_overflow_blocked",
+      "lines": [
+        "I cannot take a new contract yet. I still have {overflow_count} {item_or_items} from my last job, and the old hirer has {time_remaining} to claim them.",
+        "Not yet. There are {overflow_count} {item_or_items} from my previous work still in my job inventory. I can be hired again in {time_remaining}.",
+        "I am holding {overflow_count} old job {item_or_items}. Until the former hirer has their {time_remaining} to collect them, I cannot sign a new contract.",
+        "I cannot be hired while those {overflow_count} leftover job {item_or_items} are still under claim. Give it {time_remaining}, unless they are collected sooner.",
+        "There is still old work property with me: {overflow_count} {item_or_items}. The claim clears in {time_remaining}, then I can take new work.",
+        "I would rather not mix contracts. I have {overflow_count} {item_or_items} from the last one, and the previous hirer has {time_remaining} left to retrieve them.",
+        "My job inventory still contains {overflow_count} claimed {item_or_items}. Come back in {time_remaining}, or after the old hirer clears them out.",
+        "I am not free for a new contract yet. {overflow_count} {item_or_items} from my last employer remain with me for {time_remaining}.",
+        "Those leftover job {item_or_items} need sorting first: {overflow_count} remain, and the claim lasts {time_remaining}.",
+        "I can work for someone new after {time_remaining}. For now, {overflow_count} previous-contract {item_or_items} are still waiting to be claimed."
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.hire_overflow_blocked.014"
+    },
+    {
+      "key": "interaction.hire_overflow_claim_reminder",
+      "lines": [
+        "Before you go, I still have {overflow_count} job {item_or_items} from our contract. You have {time_remaining} to take them back before I can accept other work freely.",
+        "I am still carrying {overflow_count} of your old job {item_or_items}. Please claim them within {time_remaining}, or I will stop holding the contract open.",
+        "Your last contract left {overflow_count} {item_or_items} in my job inventory. There are {time_remaining} left before I can move on with them.",
+        "A reminder: {overflow_count} job {item_or_items} from your contract are still with me. The claim has {time_remaining} remaining.",
+        "I have not forgotten your supplies. {overflow_count} {item_or_items} remain in my job inventory, and you have {time_remaining} to collect them.",
+        "Please clear the old contract goods when you can. I am holding {overflow_count} {item_or_items}, with {time_remaining} left on your claim.",
+        "I still have {overflow_count} leftover job {item_or_items} from you. After {time_remaining}, I will be free to take new work with them still here.",
+        "Your old job inventory has not been emptied: {overflow_count} {item_or_items} remain. You have {time_remaining} to retrieve them.",
+        "I can keep those {overflow_count} contract {item_or_items} for {time_remaining} more. After that, I will not refuse other hirers over them.",
+        "Just so it is clear, {overflow_count} of your job {item_or_items} are still with me. The holding period ends in {time_remaining}."
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.hire_overflow_claim_reminder.015"
+    },
+    {
       "key": "interaction.hire_unavailable",
       "lines": [
         "I cannot be hired yet.",
@@ -247,7 +279,7 @@
         "Come back when hiring is actually possible.",
         "For now, that offer has nowhere to land."
       ],
-      "id": "global.messages.09_hire_contracts.messages.interaction.hire_unavailable.014"
+      "id": "global.messages.09_hire_contracts.messages.interaction.hire_unavailable.016"
     }
   ]
 }

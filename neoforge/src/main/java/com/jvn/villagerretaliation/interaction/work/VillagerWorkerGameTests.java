@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningWorker;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningExcavationSupport;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules;
+import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -35,6 +36,7 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
@@ -502,6 +504,88 @@ public final class VillagerWorkerGameTests {
             helper.assertFalse(inventory.getItem(slot).is(Items.DIAMOND_PICKAXE), "output slot " + slot + " should not hold a storage tool");
             helper.assertFalse(inventory.slotType(slot) == HiredJobInventorySlotType.SUPPLY, "output slot " + slot + " should not become a supply slot");
         }
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void endedContractOverflowBlocksForeignHirerUntilClaimExpires(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerPlayer originalHirer = fakePlayer(level, "VrOverflowOwner");
+        ServerPlayer otherHirer = fakePlayer(level, "VrOverflowOther");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        HiredVillagerContractService.startHireContract(level, villager, originalHirer, 1, 8);
+        UUID originalContractId = HiredVillagerContractService.currentContractId(villager).orElseThrow();
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.DIRT, 5)).isEmpty(), "contract supplies should fit");
+        helper.assertValueEqual(
+                HiredJobInventory.jobItemContractId(inventory.findSupply(stack -> stack.is(Items.DIRT))).orElse(null),
+                originalContractId,
+                "job supplies should be stamped with the active contract");
+
+        HiredVillagerContractService.endHireContract(level, villager, originalHirer);
+
+        helper.assertTrue(
+                HiredVillagerContractService.hasBlockingJobInventoryOverflow(level, villager),
+                "leftover removable contract items should create a claim");
+        helper.assertFalse(
+                HiredVillagerContractService.hasForeignJobInventoryOverflow(level, villager, originalHirer),
+                "the previous hirer's own leftovers should not be foreign");
+        helper.assertTrue(
+                HiredVillagerContractService.hasForeignJobInventoryOverflow(level, villager, otherHirer),
+                "other players should be blocked by previous-contract leftovers");
+        helper.assertTrue(
+                HiredVillagerContractService.canAccessJobInventory(level, villager, originalHirer),
+                "the previous hirer should be able to reclaim overflow during the claim window");
+        helper.assertFalse(
+                HiredVillagerContractService.canAccessJobInventory(level, villager, otherHirer),
+                "foreign players should not be able to claim overflow during the claim window");
+
+        CompoundTag claim = villager.getPersistentData().getCompound("VillagerRetaliationJobInventoryOverflowClaim");
+        claim.putLong("ExpiresGameTime", level.getGameTime());
+        helper.assertFalse(
+                HiredVillagerContractService.hasBlockingJobInventoryOverflow(level, villager),
+                "expired claims should stop blocking new contracts");
+
+        HiredVillagerContractService.startHireContract(level, villager, otherHirer, 1, 8);
+        UUID newContractId = HiredVillagerContractService.currentContractId(villager).orElseThrow();
+        HiredJobInventory refreshedInventory = HiredJobInventory.getJobInventory(villager);
+        helper.assertValueEqual(
+                HiredJobInventory.jobItemContractId(refreshedInventory.findSupply(stack -> stack.is(Items.DIRT))).orElse(null),
+                newContractId,
+                "expired overflow should be claimed by the next contract that takes it on");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void contractHandoffClearsBrewingOrders(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerPlayer hirer = fakePlayer(level, "VrBrewingOrderOwner");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        villager.getPersistentData()
+                .getCompound("VillagerRetaliationHireContract")
+                .putString("Role", HiredVillagerRole.BREWING.serializedName());
+        CompoundTag state = new CompoundTag();
+        villager.getPersistentData().put(WORK_STATE_TAG, state);
+        BrewingWorker.setOrder(
+                state,
+                ResourceLocation.fromNamespaceAndPath("minecraft", "potion"),
+                ResourceLocation.fromNamespaceAndPath("minecraft", "water"),
+                3,
+                false,
+                HiredVillagerContractService.currentContractId(villager).orElse(null));
+        helper.assertTrue(BrewingWorker.hasOrder(state), "brewing order should be present before contract end");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+
+        helper.assertFalse(BrewingWorker.hasOrder(state), "contract end should clear brewing orders from the old contract");
         villager.discard();
         helper.succeed();
     }

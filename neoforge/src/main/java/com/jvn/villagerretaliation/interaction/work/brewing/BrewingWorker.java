@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -47,6 +48,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
     private static final String TARGET_POTION_TAG = "BrewingTargetPotion";
     private static final String REMAINING_TAG = "BrewingRemaining";
     private static final String CONTINUOUS_TAG = "BrewingContinuous";
+    private static final String ORDER_CONTRACT_ID_TAG = "BrewingOrderContractId";
     private static final String CACHED_STAND_POS_TAG = "BrewingCachedStandPos";
     private static final String CACHED_WATER_POS_TAG = "BrewingCachedWaterPos";
     private static final String NEXT_STAND_SCAN_GAME_TIME_TAG = "NextBrewingStandScanGameTime";
@@ -69,10 +71,25 @@ public final class BrewingWorker extends AbstractBlockWorker {
     }
 
     public static void setOrder(CompoundTag state, ResourceLocation itemId, ResourceLocation potionId, int amount, boolean continuous) {
+        setOrder(state, itemId, potionId, amount, continuous, null);
+    }
+
+    public static void setOrder(
+            CompoundTag state,
+            ResourceLocation itemId,
+            ResourceLocation potionId,
+            int amount,
+            boolean continuous,
+            UUID contractId) {
         state.putString(TARGET_ITEM_TAG, itemId.toString());
         state.putString(TARGET_POTION_TAG, potionId.toString());
         state.putInt(REMAINING_TAG, Math.max(0, amount));
         state.putBoolean(CONTINUOUS_TAG, continuous);
+        if (contractId == null) {
+            state.remove(ORDER_CONTRACT_ID_TAG);
+        } else {
+            state.putUUID(ORDER_CONTRACT_ID_TAG, contractId);
+        }
         state.remove("NextWorkGameTime");
         clearBrewingBlocked(state);
     }
@@ -519,6 +536,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         state.remove(TARGET_POTION_TAG);
         state.remove(REMAINING_TAG);
         state.remove(CONTINUOUS_TAG);
+        state.remove(ORDER_CONTRACT_ID_TAG);
         clearBrewingBlocked(state);
     }
 
