@@ -25,6 +25,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -140,6 +141,7 @@ public final class VillagerRetaliationEvents {
         VillagerRecruitmentService.clearRuntimeState();
         HiredVillagerWorkService.clearRuntimeState();
         HiredVillagerIndex.clearRuntimeState();
+        HiredJobInventory.clearRuntimeState();
         HiredOreBlockTracker.clearRuntimeState();
         VillagerTradeMemory.clearRuntimeState();
         VillagerSocialGraphService.clearRuntimeState();
@@ -611,6 +613,7 @@ public final class VillagerRetaliationEvents {
                 HiredVillagerWorkService.onVillagerLeaveLevel(level, villager);
             }
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
+            HiredJobInventory.clearRuntimeState(villager);
             VillagerTaskNavigationUtil.clearRuntimeState(villager);
             VillagerRetaliationVillagerRules.clearCachedChecks(villager);
             VillagerTradeMemory.clearRuntimeState(villager);

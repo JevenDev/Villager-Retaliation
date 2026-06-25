@@ -27,12 +27,13 @@ public record HiredWorkSession(
         HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
         HiredRoleWorker worker = HiredRoleWorkerRegistry.get(safeRole);
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
-        int maxRadius = HiredVillagerWorkService.maxWorkRadius(level, villager, safeRole);
+        int roleScore = HiredVillagerRoles.roleScore(level, villager, safeRole);
+        int maxRadius = HiredVillagerWorkService.maxWorkRadius(level, villager, safeRole, roleScore);
         HiredWorkArea area = HiredVillagerWorkService.workAreaWithinMax(state, villager, maxRadius);
         if (safeRole == HiredVillagerRole.BUILDER) {
             area = area.asUsable(false);
         }
-        int efficiency = HiredVillagerWorkService.efficiencyPercent(level, villager, safeRole, state, inventory);
+        int efficiency = HiredVillagerWorkService.efficiencyPercent(level, villager, safeRole, state, inventory, roleScore);
         HiredWorkContext context = new HiredWorkContext(
                 inventory,
                 state,

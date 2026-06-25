@@ -1339,9 +1339,13 @@ public final class HiredVillagerWorkService {
     }
 
     static int maxWorkRadius(ServerLevel level, Villager villager, HiredVillagerRole role) {
+        return maxWorkRadius(level, villager, role, HiredVillagerRoles.roleScore(level, villager, role));
+    }
+
+    static int maxWorkRadius(ServerLevel level, Villager villager, HiredVillagerRole role, int roleScore) {
         int base = baseWorkRadiusCap();
         int max = Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_MAX_RADIUS.get(), base, MAX_SKILLED_WORK_RADIUS);
-        int score = Mth.clamp(HiredVillagerRoles.roleScore(level, villager, role), 0, 100);
+        int score = Mth.clamp(roleScore, 0, 100);
         double progress = Math.max(0.0D, Math.min(1.0D, (score - SKILL_RADIUS_BASELINE) / 50.0D));
         return Mth.clamp(base + (int) Math.round((max - base) * progress), MIN_WORK_RADIUS, max);
     }
@@ -1534,11 +1538,21 @@ public final class HiredVillagerWorkService {
     }
 
     static int efficiencyPercent(ServerLevel level, Villager villager, HiredVillagerRole role, CompoundTag state, HiredJobInventory inventory) {
+        return efficiencyPercent(level, villager, role, state, inventory, HiredVillagerRoles.roleScore(level, villager, role));
+    }
+
+    static int efficiencyPercent(
+            ServerLevel level,
+            Villager villager,
+            HiredVillagerRole role,
+            CompoundTag state,
+            HiredJobInventory inventory,
+            int roleScore) {
         int min = Math.max(1, VillagerRetaliationConfig.HIRED_WORK_MINIMUM_EFFICIENCY_PERCENT.get());
         int max = Math.max(min, VillagerRetaliationConfig.HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT.get());
         int efficiency = VillagerRetaliationConfig.HIRED_WORK_BASE_EFFICIENCY_PERCENT.get();
-        efficiency += (HiredVillagerRoles.roleScore(level, villager, role) - 50) / 2;
-        if (HiredVillagerRoles.isSkillUnlocked(level, villager, role)) {
+        efficiency += (roleScore - 50) / 2;
+        if (HiredVillagerRoles.isSkillUnlocked(villager, role, roleScore)) {
             efficiency += 10;
         } else if (HiredVillagerRoles.isProfessionPreferred(villager, role)) {
             efficiency += 3;

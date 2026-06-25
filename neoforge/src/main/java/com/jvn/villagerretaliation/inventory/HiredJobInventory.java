@@ -3,7 +3,9 @@ package com.jvn.villagerretaliation.inventory;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
@@ -42,6 +44,8 @@ public final class HiredJobInventory implements Container {
     private static final String JOB_ITEM_SOURCE_CONTRACT = "contract";
     private static final String JOB_ITEM_KIND_SUPPLY = "supply";
     private static final String JOB_ITEM_KIND_TOOL = "tool";
+    private static final long EQUIPMENT_MAINTENANCE_INTERVAL_TICKS = 20L;
+    private static final Map<UUID, Long> NEXT_EQUIPMENT_MAINTENANCE_TICKS = new HashMap<>();
     private static final EquipmentSlot[] ARMOR_SLOTS = {
             EquipmentSlot.HEAD,
             EquipmentSlot.CHEST,
@@ -84,7 +88,33 @@ public final class HiredJobInventory implements Container {
         if (!hasPersistedJobEquipment(tag)) {
             return;
         }
+        if (!shouldMaintainEquipmentAuthority(villager)) {
+            return;
+        }
         new HiredJobInventory(villager).maintainEquipmentAuthority();
+    }
+
+    private static boolean shouldMaintainEquipmentAuthority(Villager villager) {
+        UUID villagerId = villager.getUUID();
+        long gameTime = villager.level().getGameTime();
+        Long nextTick = NEXT_EQUIPMENT_MAINTENANCE_TICKS.get(villagerId);
+        if (nextTick != null && gameTime < nextTick) {
+            return false;
+        }
+        NEXT_EQUIPMENT_MAINTENANCE_TICKS.put(
+                villagerId,
+                gameTime + Math.max(1L, EQUIPMENT_MAINTENANCE_INTERVAL_TICKS));
+        return true;
+    }
+
+    public static void clearRuntimeState() {
+        NEXT_EQUIPMENT_MAINTENANCE_TICKS.clear();
+    }
+
+    public static void clearRuntimeState(Villager villager) {
+        if (villager != null) {
+            NEXT_EQUIPMENT_MAINTENANCE_TICKS.remove(villager.getUUID());
+        }
     }
 
     public static boolean hasJobEquipmentForSlot(Villager villager, EquipmentSlot equipmentSlot) {

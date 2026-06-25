@@ -151,10 +151,17 @@ public final class HiredVillagerContractService {
     }
 
     public static void onVillagerTickPost(Villager villager) {
-        if (!(villager.level() instanceof ServerLevel level) || villager.isBaby() || !villager.isAlive()) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || villager.isBaby()
+                || !villager.isAlive()
+                || !hasContract(villager)) {
             return;
         }
         maybeAutoRenew(level, villager);
+    }
+
+    public static boolean hasContract(Villager villager) {
+        return villager != null && villager.getPersistentData().contains(CONTRACT_TAG, Tag.TAG_COMPOUND);
     }
 
     public static Optional<UUID> getHirer(ServerLevel level, Villager villager) {
@@ -383,18 +390,20 @@ public final class HiredVillagerContractService {
     }
 
     private static void maybeAutoRenew(ServerLevel level, Villager villager) {
-        Optional<CompoundTag> awaitingPaymentContract = contract(villager)
-                .filter(HiredVillagerContractService::isAwaitingAutoPayment);
-        if (awaitingPaymentContract.isPresent()) {
-            handleAwaitingAutoPayment(level, villager, awaitingPaymentContract.get());
+        Optional<CompoundTag> storedContract = contract(villager);
+        if (storedContract.isEmpty()) {
             return;
         }
 
-        Optional<CompoundTag> activeContract = contract(villager).filter(HiredVillagerContractService::isActive);
-        if (activeContract.isEmpty()) {
+        CompoundTag tag = storedContract.get();
+        if (isAwaitingAutoPayment(tag)) {
+            handleAwaitingAutoPayment(level, villager, tag);
             return;
         }
-        CompoundTag tag = activeContract.get();
+
+        if (!isActive(tag)) {
+            return;
+        }
         if (!tag.getBoolean(AUTO_PAYMENT_TAG)) {
             return;
         }
@@ -775,7 +784,7 @@ public final class HiredVillagerContractService {
     }
 
     private static Optional<CompoundTag> contract(Villager villager) {
-        if (!villager.getPersistentData().contains(CONTRACT_TAG, net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+        if (!hasContract(villager)) {
             return Optional.empty();
         }
         return Optional.of(villager.getPersistentData().getCompound(CONTRACT_TAG));

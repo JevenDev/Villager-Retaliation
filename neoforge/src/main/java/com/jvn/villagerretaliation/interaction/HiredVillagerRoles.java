@@ -88,10 +88,14 @@ public final class HiredVillagerRoles {
     }
 
     public static boolean isSkillUnlocked(ServerLevel level, Villager villager, HiredVillagerRole role) {
+        return isSkillUnlocked(villager, role, roleScore(level, villager, role));
+    }
+
+    public static boolean isSkillUnlocked(Villager villager, HiredVillagerRole role, int roleScore) {
         if (!isProfessionEligible(villager, role)) {
             return false;
         }
-        return roleScore(level, villager, role) >= SKILL_UNLOCK_THRESHOLD;
+        return roleScore >= SKILL_UNLOCK_THRESHOLD;
     }
 
     public static boolean isProfessionPreferred(Villager villager, HiredVillagerRole role) {

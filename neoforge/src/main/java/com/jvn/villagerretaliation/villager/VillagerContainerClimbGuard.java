@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.villager;
 
+import com.jvn.villagerretaliation.util.TickThrottle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -13,6 +14,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class VillagerContainerClimbGuard {
     private static final int ESCAPE_RADIUS = 3;
+    private static final long CHECK_INTERVAL_TICKS = 5L;
 
     private VillagerContainerClimbGuard() {
     }
@@ -21,6 +23,7 @@ public final class VillagerContainerClimbGuard {
         if (!(villager.level() instanceof ServerLevel level)
                 || villager.isPassenger()
                 || villager.isSleeping()
+                || !TickThrottle.isSpreadTick(villager.getUUID(), level.getGameTime(), CHECK_INTERVAL_TICKS)
                 || !isForbiddenStandingFloor(level, villager.blockPosition().below())) {
             return;
         }
