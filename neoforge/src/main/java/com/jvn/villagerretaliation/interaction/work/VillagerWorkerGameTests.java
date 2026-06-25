@@ -455,6 +455,17 @@ public final class VillagerWorkerGameTests {
         HiredPathMemory.rememberNavigationProgress(level, first, target, 25.0D);
         helper.assertFalse(HiredPathMemory.isNavigationBlocked(level, first, target, 25.0D), "same-tick navigation should not be marked stuck");
 
+        helper.assertValueEqual(HiredPathMemory.adjustedCandidateLimit(first, 64), 64, "fresh path searches should use the full candidate cap");
+        HiredPathMemory.recordPathSearchFailure(level, first);
+        helper.assertTrue(HiredPathMemory.pathSearchRetryCooldownTicks(level, first) > 0L, "path failures should schedule a retry cooldown");
+        HiredPathMemory.recordPathSearchFailure(level, first);
+        helper.assertTrue(HiredPathMemory.adjustedCandidateLimit(first, 64) < 64, "repeated path failures should reduce candidate cap");
+        BlockPos approach = helper.absolutePos(new BlockPos(3, 2, 3));
+        HiredPathMemory.rememberUnreachableApproach(level, first, approach);
+        helper.assertTrue(HiredPathMemory.isApproachRecentlyUnreachable(level, first, approach), "failed approach positions should be cached");
+        HiredPathMemory.clearUnreachableApproach(first, approach);
+        HiredPathMemory.clearPathSearchFailures(first);
+
         HiredPathMemory.clear(first);
         HiredPathMemory.clear(second);
         first.discard();

@@ -186,9 +186,13 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             if (evaluated >= MAX_APPROACHES_TO_PATHFIND) {
                 break;
             }
+            if (HiredPathMemory.isApproachRecentlyUnreachable(this.level, this.villager, approach.pos())) {
+                continue;
+            }
             evaluated++;
-            Path path = this.villager.getNavigation().createPath(approach.pos(), 0);
+            Path path = HiredPathMemory.createPath(this.level, this.villager, approach.pos(), 0);
             if (path != null && path.canReach() && pathStaysInsideFilter(this.level, path, this.pathFilter)) {
+                HiredPathMemory.clearUnreachableApproach(this.villager, approach.pos());
                 double score = approach.score() + pathTraversalCost(this.level, path);
                 HiredPathResult result = new HiredPathResult(
                         new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()),
@@ -203,6 +207,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                     break;
                 }
             } else if (this.alternateApproachReachable.test(target, approach.pos())) {
+                HiredPathMemory.clearUnreachableApproach(this.villager, approach.pos());
                 double score = approach.score() + this.villager.distanceToSqr(approach.pos().getCenter());
                 HiredPathResult result = new HiredPathResult(
                         new HiredPathTarget(target.immutable(), approach.pos(), approach.hitPos()),
@@ -216,6 +221,8 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 if (reachableApproaches >= MAX_REACHABLE_APPROACHES_TO_COMPARE) {
                     break;
                 }
+            } else {
+                HiredPathMemory.rememberUnreachableApproach(this.level, this.villager, approach.pos());
             }
         }
         return bestResult != null ? bestResult : HiredPathResult.blocked();

@@ -22,14 +22,18 @@ public abstract class HiredPathJob {
     }
 
     public final HiredPathResult search() {
+        if (HiredPathMemory.shouldDelayPathSearch(this.level, this.villager)) {
+            return HiredPathResult.blocked();
+        }
         List<BlockPos> candidates = uniqueCandidates();
         candidates.sort(Comparator.comparingDouble(this::candidateScore));
 
+        int maxCandidatesToEvaluate = HiredPathMemory.adjustedCandidateLimit(this.villager, this.maxCandidates);
         int evaluated = 0;
         int reachableResults = 0;
         HiredPathResult bestResult = null;
         for (BlockPos candidate : candidates) {
-            if (evaluated >= this.maxCandidates) {
+            if (evaluated >= maxCandidatesToEvaluate) {
                 break;
             }
             evaluated++;
@@ -44,7 +48,14 @@ public abstract class HiredPathJob {
                 }
             }
         }
-        return bestResult != null ? bestResult : HiredPathResult.blocked();
+        if (bestResult != null) {
+            HiredPathMemory.clearPathSearchFailures(this.villager);
+            return bestResult;
+        }
+        if (evaluated > 0) {
+            HiredPathMemory.recordPathSearchFailure(this.level, this.villager);
+        }
+        return HiredPathResult.blocked();
     }
 
     private List<BlockPos> uniqueCandidates() {

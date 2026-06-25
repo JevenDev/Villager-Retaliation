@@ -331,14 +331,20 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
             if (!context.isLoaded(level, candidate) || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)) {
                 continue;
             }
-            Path path = villager.getNavigation().createPath(candidate, 0);
+            if (HiredPathMemory.isApproachRecentlyUnreachable(level, villager, candidate)) {
+                continue;
+            }
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
             if (path != null && path.canReach() && pathStaysInsideWorkArea(path, context)) {
+                HiredPathMemory.clearUnreachableApproach(villager, candidate);
                 boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, candidate, speed, 0);
                 if (moved) {
                     HiredPathMemory.rememberNavigationProgress(level, villager, candidate, villager.distanceToSqr(candidate.getCenter()));
                     setTaskState(context, HiredWorkerTaskState.IDLE);
                     return true;
                 }
+            } else {
+                HiredPathMemory.rememberUnreachableApproach(level, villager, candidate);
             }
         }
         return false;
@@ -395,8 +401,15 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
             }
             return true;
         }
-        Path path = villager.getNavigation().createPath(currentTarget.approachPos(), 0);
+        if (HiredPathMemory.shouldDelayPathSearch(level, villager)
+                || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, currentTarget.approachPos())) {
+            HiredPathMemory.clearNavigationProgress(villager);
+            return false;
+        }
+        Path path = HiredPathMemory.createPath(level, villager, currentTarget.approachPos(), 0);
         if (path != null && path.canReach() && pathStaysInsideWorkArea(path, context)) {
+            HiredPathMemory.clearUnreachableApproach(villager, currentTarget.approachPos());
+            HiredPathMemory.clearPathSearchFailures(villager);
             boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(
                     villager,
                     path,
@@ -414,6 +427,8 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
             }
             return moved;
         }
+        HiredPathMemory.rememberUnreachableApproach(level, villager, currentTarget.approachPos());
+        HiredPathMemory.recordPathSearchFailure(level, villager);
         if (villager.distanceToSqr(currentTarget.approachPos().getCenter()) <= 2.25D
                 && settleIntoApproach(villager, currentTarget, speed)) {
             HiredPathMemory.rememberNavigationProgress(

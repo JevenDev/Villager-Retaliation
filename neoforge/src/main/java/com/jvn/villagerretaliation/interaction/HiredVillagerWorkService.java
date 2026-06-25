@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
+import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
@@ -237,7 +238,7 @@ public final class HiredVillagerWorkService {
                 BlockPos progressTarget = context.isInsideWorkArea(navigationTarget) ? navigationTarget : context.workCenter();
                 if (isWorkAreaReturnNavigationStuck(level, villager, state, progressTarget)) {
                     VillagerTaskNavigationUtil.stopHiredNavigation(villager);
-                    state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level));
+                    state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level, villager));
                     setStatus(state, "interaction.work.status.return_path_lost");
                     return true;
                 }
@@ -275,7 +276,7 @@ public final class HiredVillagerWorkService {
                 return true;
             }
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, excavationEntry);
-            state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
+            state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level, villager));
             setStatus(state, "interaction.work.status.need_excavation_ladder_path");
             return true;
         }
@@ -294,7 +295,7 @@ public final class HiredVillagerWorkService {
             } else {
                 VillagerTaskNavigationUtil.stopHiredNavigation(villager);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-                state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
+                state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level, villager));
                 setStatus(state, "interaction.work.status.return_path_missing");
             }
             return true;
@@ -335,7 +336,7 @@ public final class HiredVillagerWorkService {
                 setStatus(state, "interaction.work.status.returning_from_far_bounds");
             } else {
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-                state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTime + WORK_AREA_RETURN_PATH_RETRY_TICKS);
+                state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level, villager));
                 setStatus(state, "interaction.work.status.return_could_not_move");
             }
         }
@@ -388,13 +389,19 @@ public final class HiredVillagerWorkService {
         BlockPos best = null;
         double bestScore = Double.MAX_VALUE;
         for (ReturnIntermediate candidate : candidates) {
-            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            if (HiredPathMemory.isApproachRecentlyUnreachable(level, villager, candidate.pos())) {
+                continue;
+            }
+            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
             if (path != null && path.canReach() && !pathEntersLiquid(level, path)) {
+                HiredPathMemory.clearUnreachableApproach(villager, candidate.pos());
                 double score = candidate.score() + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
                 if (score < bestScore) {
                     bestScore = score;
                     best = candidate.pos();
                 }
+            } else {
+                HiredPathMemory.rememberUnreachableApproach(level, villager, candidate.pos());
             }
         }
         return best != null ? best : candidates.isEmpty() ? null : candidates.getFirst().pos();
@@ -439,7 +446,11 @@ public final class HiredVillagerWorkService {
         if (target == null) {
             return false;
         }
-        Path path = villager.getNavigation().createPath(target, 0);
+        if (HiredPathMemory.shouldDelayPathSearch(level, villager)
+                || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, target)) {
+            return false;
+        }
+        Path path = HiredPathMemory.createPath(level, villager, target, 0);
         if (path == null
                 || !path.canReach()
                 || pathEntersLiquid(level, path)
@@ -449,8 +460,12 @@ public final class HiredVillagerWorkService {
                         target,
                         speed,
                         WORK_AREA_RETURN_CLOSE_ENOUGH)) {
+            HiredPathMemory.rememberUnreachableApproach(level, villager, target);
+            HiredPathMemory.recordPathSearchFailure(level, villager);
             return false;
         }
+        HiredPathMemory.clearUnreachableApproach(villager, target);
+        HiredPathMemory.clearPathSearchFailures(villager);
         rememberWorkAreaReturnProgress(level, villager, context.state(), context.workCenter());
         return true;
     }
@@ -477,17 +492,29 @@ public final class HiredVillagerWorkService {
         BlockPos best = null;
         double bestScore = Double.MAX_VALUE;
         for (ReturnIntermediate candidate : candidates) {
-            if (attempts++ >= MAX_RETURN_INTERMEDIATE_PATH_ATTEMPTS) {
+            if (attempts >= HiredPathMemory.adjustedCandidateLimit(villager, MAX_RETURN_INTERMEDIATE_PATH_ATTEMPTS)) {
                 break;
             }
-            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            if (HiredPathMemory.isApproachRecentlyUnreachable(level, villager, candidate.pos())) {
+                continue;
+            }
+            attempts++;
+            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
             if (path != null && path.canReach() && !pathEntersLiquid(level, path)) {
+                HiredPathMemory.clearUnreachableApproach(villager, candidate.pos());
                 double score = candidate.score() + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
                 if (score < bestScore) {
                     bestScore = score;
                     best = candidate.pos();
                 }
+            } else {
+                HiredPathMemory.rememberUnreachableApproach(level, villager, candidate.pos());
             }
+        }
+        if (best == null && attempts > 0) {
+            HiredPathMemory.recordPathSearchFailure(level, villager);
+        } else if (best != null) {
+            HiredPathMemory.clearPathSearchFailures(villager);
         }
         return best;
     }
@@ -596,11 +623,19 @@ public final class HiredVillagerWorkService {
         state.remove(WORK_AREA_RETURN_STUCK_CHECKS_TAG);
     }
 
-    private static long gameTimeForRetry(ServerLevel level) {
-        return level.getGameTime() + WORK_AREA_RETURN_PATH_RETRY_TICKS;
+    private static long gameTimeForRetry(ServerLevel level, Villager villager) {
+        long minimumRetry = level.getGameTime() + WORK_AREA_RETURN_PATH_RETRY_TICKS;
+        long existingCooldown = HiredPathMemory.pathSearchRetryCooldownTicks(level, villager);
+        if (existingCooldown > 0L) {
+            return Math.max(minimumRetry, level.getGameTime() + existingCooldown);
+        }
+        return Math.max(minimumRetry, HiredPathMemory.recordPathSearchFailure(level, villager));
     }
 
     private static ReturnPath findWorkAreaReturnPath(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (HiredPathMemory.shouldDelayPathSearch(level, villager)) {
+            return null;
+        }
         BlockPos clamped = new BlockPos(
                 Mth.clamp(villager.blockPosition().getX(), context.workMin().getX(), context.workMax().getX()),
                 Mth.clamp(villager.blockPosition().getY(), context.workMin().getY(), context.workMax().getY()),
@@ -627,32 +662,50 @@ public final class HiredVillagerWorkService {
         ReturnPath best = null;
         double bestScore = Double.MAX_VALUE;
         for (BlockPos candidate : candidates) {
-            if (evaluated >= MAX_RETURN_TARGETS_TO_PATHFIND) {
+            if (evaluated >= HiredPathMemory.adjustedCandidateLimit(villager, MAX_RETURN_TARGETS_TO_PATHFIND)) {
                 break;
             }
-            if (!isValidWorkAreaReturnCandidate(level, context, candidate)) {
+            if (!isValidWorkAreaReturnCandidate(level, context, candidate)
+                    || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, candidate)) {
                 continue;
             }
             evaluated++;
-            Path path = villager.getNavigation().createPath(candidate, 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
             if (path != null && path.canReach() && !pathEntersLiquid(level, path)) {
+                HiredPathMemory.clearUnreachableApproach(villager, candidate);
                 double score = returnTargetScore(villager, context, candidate)
                         + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
                 if (score < bestScore) {
                     bestScore = score;
                     best = new ReturnPath(candidate, path);
                 }
+            } else {
+                HiredPathMemory.rememberUnreachableApproach(level, villager, candidate);
             }
+        }
+        if (best == null && evaluated > 0) {
+            HiredPathMemory.recordPathSearchFailure(level, villager);
+        } else if (best != null) {
+            HiredPathMemory.clearPathSearchFailures(villager);
         }
         return best;
     }
 
     private static ReturnPath findDryReturnPathTo(ServerLevel level, Villager villager, BlockPos target) {
-        if (!isValidWorkAreaReturnTarget(level, target)) {
+        if (!isValidWorkAreaReturnTarget(level, target)
+                || HiredPathMemory.shouldDelayPathSearch(level, villager)
+                || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, target)) {
             return null;
         }
-        Path path = villager.getNavigation().createPath(target, 0);
-        return path != null && path.canReach() && !pathEntersLiquid(level, path) ? new ReturnPath(target, path) : null;
+        Path path = HiredPathMemory.createPath(level, villager, target, 0);
+        if (path != null && path.canReach() && !pathEntersLiquid(level, path)) {
+            HiredPathMemory.clearUnreachableApproach(villager, target);
+            HiredPathMemory.clearPathSearchFailures(villager);
+            return new ReturnPath(target, path);
+        }
+        HiredPathMemory.rememberUnreachableApproach(level, villager, target);
+        HiredPathMemory.recordPathSearchFailure(level, villager);
+        return null;
     }
 
     private static boolean isValidWorkAreaReturnTarget(ServerLevel level, BlockPos pos) {
@@ -764,6 +817,7 @@ public final class HiredVillagerWorkService {
         int outputItems = outputs.stream().mapToInt(output -> output.stack().getCount()).sum();
         boolean hasAssignedStorage = AssignedStorageService.hasAssignedStorage(level, villager);
         boolean canDepositNow = AssignedStorageService.canInteractWithAssignedStorage(villager, pos -> session.area().contains(pos));
+        HiredPathMemory.PathCreationDebug pathDebug = HiredPathMemory.pathCreationDebug(level, villager);
 
         List<String> lines = new ArrayList<>();
         lines.add("Hired worker debug: role=" + session.role().serializedName()
@@ -783,6 +837,12 @@ public final class HiredVillagerWorkService {
         lines.add("Failure: reason=" + valueOrNone(snapshot.failureReason())
                 + ", retryCooldown=" + snapshot.retryCooldownTicks()
                 + ", lastScan=" + valueOrNone(snapshot.lastTargetScanResult()));
+        lines.add("Pathing: createdThisTick=" + pathDebug.currentTickCount()
+                + ", lastTick=" + pathDebug.lastTickCount()
+                + ", total=" + pathDebug.totalCount()
+                + ", failureStreak=" + pathDebug.failureStreak()
+                + ", pathRetryCooldown=" + pathDebug.retryCooldownTicks()
+                + ", cachedApproaches=" + pathDebug.unreachableApproaches());
         lines.add("Work area: " + areaDescription(session.area())
                 + ", assigned=" + session.area().explicitlyAssigned()
                 + ", usable=" + session.area().usable()
