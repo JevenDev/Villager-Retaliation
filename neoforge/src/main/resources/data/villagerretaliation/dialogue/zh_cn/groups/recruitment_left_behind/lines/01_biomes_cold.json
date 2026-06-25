@@ -1,0 +1,470 @@
+[
+    {
+        "id":  "recruitment_left_behind_cold_ocean",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在冷水海洋附近。就算不是独自一人，那里的海水也已经够刺骨了。",
+                      "冷水海洋可不是走散的好地方。只要脚下一滑，我就全完了。",
+                      "我在冷水海洋旁等你，努力不去想那寒风是如何迅速将我冻透的。",
+                      "如果你在冷水海洋旁消失，我满脑子想的都是在救援赶来前我会被冻死。",
+                      "冷水海洋不会给你第二次机会。请别再让我在那里独自等待了。",
+                      "我一直盯着水面，心想它会多快夺走我的体温。",
+                      "下次我们经过冷水海洋时，请待在我能看见你的地方。",
+                      "水面上吹来的寒风，让每一分钟都显得无比漫长。",
+                      "我能忍受寒冷，但我无法忍受在严寒中被遗忘。",
+                      "被留在冷水海洋旁让我感到自己无比渺小，且身处险境。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:cold_ocean"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_deep_cold_ocean",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在深冷水海洋旁。冰冷的海水和深渊般的深度已经够糟了。",
+                      "我在等你的时候，深冷水海洋的每一阵\u003cwavy\u003e海浪\u003c/wavy\u003e声听起来都像是在威胁我。",
+                      "我独自在深冷水海洋旁，努力不去想我根本没有犯错的余地。",
+                      "如果你要把我弄丢，请别在深冷水海洋旁，那里的一切都显得致命。",
+                      "那片水域看起来深不见底。独自在旁边等待一点也无法让人安心。",
+                      "深冷水海洋就是那种连寂静都充满危险的地方。",
+                      "我一直想着如果我滑倒了会发生什么，而所有设想的结局都很糟。",
+                      "请不要再把我留在那盯着深邃冰冷的海水了。",
+                      "寒冷已经够糟了。深水让情况变得更糟。",
+                      "我无法停止注视海浪。感觉它们就在等我犯下哪怕一个错误。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:deep_cold_ocean"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_deep_frozen_ocean",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在深冻洋附近。严寒、深水和冰层，真是个糟糕透顶的组合。",
+                      "深冻洋绝对不是个适合独自站立、任凭寒风刺骨的地方。",
+                      "我在深冻洋旁等待，不知道是寒冷还是海水会先要了我的命。",
+                      "如果你在深冻洋旁消失，留给我的就只有冰块、深渊和无尽的担忧。",
+                      "那个地方感觉就像是由所有糟糕的决定堆砌而成的。",
+                      "冰面看起来很坚固，直到我必须独自去信任它。",
+                      "我一直听着冰面开裂的声音，祈祷裂缝不在我的脚下。",
+                      "请别把我留在表面结冰而底下深不可测的海洋旁。",
+                      "深冻洋让即使只是站着不动都感觉充满危险。",
+                      "我又冷又暴露在外，而且清楚地知道附近根本没有救援。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:deep_frozen_ocean"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_frozen_ocean",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在冻洋旁。我可承受不起冰面和刺骨海水的任何失误。",
+                      "当我独自站在那里时，冻洋让每一阵风都显得如此残酷。",
+                      "我在冻洋旁等待，心想如果必须快速移动，冰面是否能撑得住。",
+                      "如果你在冻洋旁走散，留给我的就只有寒冷、冰裂缝和担忧。",
+                      "冰层不断发出声音。我只能假装没去数那些裂痕声。",
+                      "冻洋只有从远处看才漂亮。走近了，独自一人，那就只剩下危险了。",
+                      "我不喜欢在一个地面随时可能碎裂的地方等待。",
+                      "下次，别把我留在刺骨的海水旁，连个避寒的地方都没有。",
+                      "我既不敢动，也不敢不动。把人留在这种地方真是太糟了。",
+                      "冻洋让我觉得只要走错一步，一切就结束了。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:frozen_ocean"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_frozen_peaks",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在冰封山峰上。在那上面稍微滑一跤，这雪山就会\u003cshake\u003e葬送我的性命\u003c/shake\u003e。",
+                      "冰封山峰上全是寒风、坚冰和糟糕的落脚点。我需要你快点回来。",
+                      "我独自在冰封山峰上，努力不让寒冷或对高度的恐惧占据大脑。",
+                      "如果你在冰封山峰上消失，我就只能在万丈深渊上方受冻。",
+                      "上面的每一步都感觉像是想成为我的最后一步。",
+                      "山上的风声呼啸，而其他一切却死寂无声。我讨厌那里。",
+                      "我不敢挪动脚步，因为我不相信这片地面会宽恕我的失误。",
+                      "请别把我留在空气稀薄而悬崖陡峭的地方。",
+                      "冰封山峰可不是什么候车室。它们是致命的警告。",
+                      "我又冷又被困，只需踩中一块暗冰，我就会消失得无影无踪。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:frozen_peaks"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_frozen_river",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在冰冻河流旁。冰层只有在破裂前才看起来那么安稳。",
+                      "冰冻河流太冷且太不可靠，不适合独自在旁边等待。",
+                      "我站在冰冻河流旁，努力不去过度信任那层冰。",
+                      "如果你在冰冻河流走散，我就只能在寒冷的河岸和更冷的水中作选择。",
+                      "河水在冰层下听起来很活跃。这并不能让我感到安慰。",
+                      "我一直想知道冰层有多厚，独自一人的时候我可不喜欢有这种念头。",
+                      "结冰的水依然是水。它只是等得更久才来毁掉你。",
+                      "请别把我留在脚下随时可能裂开的河边。",
+                      "河岸很冷，冰层更糟，而你却不在附近。",
+                      "我不知道是该呆在边缘还是走开。这两种选择感觉都像是错的。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:frozen_river"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_grove",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在雪林里。无论看起来多平静，斜坡上的雪林依然充满危险。",
+                      "当我意识到自己独自一人站在那儿时，雪林的死寂简直糟糕透顶。",
+                      "我在雪林中等待，脚下是积雪，树木间藏着太多阴影。",
+                      "如果你在雪林中消失，留给我的就只有寒冷、上坡路和警惕麻烦的心慌。",
+                      "树木遮挡了视线，这让每一个细微的声音听起来都近在咫尺。",
+                      "雪林看起来很宁静，直到你孤身一人，又不知自己从何而来。",
+                      "我一直盯着树木间的缝隙，总觉得会有什么东西窜出来。",
+                      "请别把我留在积雪掩盖足迹、树林隐藏一切的地方。",
+                      "雪林吞噬你脚步声的速度快得让我不安。",
+                      "我又冷又被树木包围，而且我很清楚自己根本不知道你在哪。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:grove"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_ice_spikes",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在冰刺平原这种地方。这里已经够冷够危险的了。",
+                      "冰刺平原上尽是刺骨寒风和尖锐的冰塔。我不想独自面对这一切。",
+                      "我被困在冰刺里，每次风在其中呼啸时，我都得努力不让自己惊慌。",
+                      "如果你在冰刺平原消失，我就只能在冰刃和厄运之间瑟瑟发抖。",
+                      "那些冰刺让整个地方感觉都像是在排斥你。",
+                      "我不断回头，因为每一座冰塔看起来都像是站在我背后的什么东西。",
+                      "寒冷已经够糟了，但那个地方的地形让情况更糟。",
+                      "请别把我留在那些看起来像是地上长出獠牙的地方。",
+                      "冰刺平原不仅寒冷，还让人感到充满敌意。",
+                      "我在那里冻僵了手等待着，根本不知道哪个方向才是安全的。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:ice_spikes"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_jagged_peaks",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在尖峭山峰上。单听这名字你就该得到警告了。",
+                      "尖峭山峰太陡峭也太冷了，绝不是个能把人丢下的地方。",
+                      "我在尖峭山峰上等待，努力不去想只要走错一步会怎样。",
+                      "如果你在尖峭山峰上消失，我就只能攀着岩石，祈祷你能回来。",
+                      "那上面的每一个边缘看起来都锋利得足以惩罚任何失误。",
+                      "风推搡得太用力了，而这大山却无动于衷。",
+                      "我找不到舒服的落脚点，更没有安全坠落的地方。",
+                      "请别把我留在光听名字就像是种威胁的山峰上。",
+                      "尖峭山峰让每迈出一步都像是一场博弈。",
+                      "我在冰冷的岩石、险峻的悬崖以及你可能回不来的恐惧之间摇摇欲坠。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:jagged_peaks"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_snowy_beach",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在雪石滩上。水面上吹来的冷风已经够让人难受了。",
+                      "雪石滩只有刺骨的空气和空旷的地面，能躲避的地方太少了。",
+                      "我在雪石滩上等待，努力不让寒冷使我变得粗心大意。",
+                      "如果你在雪石滩上消失，我就只能在海浪和积雪间瑟瑟发抖。",
+                      "海浪一波波涌来，仿佛它们有更好的去处似的。",
+                      "那里没有遮蔽所，没有温暖，也没有你的踪影。",
+                      "海滩不应该感觉这么空荡，但大雪做到了。",
+                      "请别把我留在寒冷同时来自地面和水面的地方。",
+                      "雪石滩让等待的过程感觉像是在四面八方暴露无遗。",
+                      "我一直注视着海岸线，希望你能在严寒彻底降临前回来。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:snowy_beach"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_snowy_plains",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在积雪平原上。严寒加上空旷，真是个可怕的组合。",
+                      "积雪平原根本无处藏身，要忍受的风也实在太大了。",
+                      "我站在积雪平原上望着地平线，祈祷上面的危险能少一点。",
+                      "如果你在积雪平原消失，我就只能在空旷处挨冻，附近毫无遮蔽。",
+                      "除了你之外，外面的一切都一览无余。",
+                      "平原让我觉得暴露无遗，仿佛任何东西都能大老远看到我。",
+                      "我不断扫视着雪地，却找不到任何有用的东西。",
+                      "请别把我留在无处躲避严寒的地方。",
+                      "积雪平原让等待变成了单纯在恶劣天气中站立受罪。",
+                      "我独自置身于空旷之中，而这空旷显得毫不仁慈。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:snowy_plains"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_snowy_slopes",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在雪坡上。坚冰和斜坡可不是什么好搭档。",
+                      "雪坡本身就已经够冷了，就别再增加滑向深渊的风险了。",
+                      "我在雪坡上等待，试图同时稳住我的脚跟和我的神经。",
+                      "如果你在雪坡上走散，我就只能在这个倾斜的难题上挨冻。",
+                      "每走一步都感觉自己可能会滑倒。",
+                      "我在那里根本无法放松。即使只是站着不动也像是在受刑。",
+                      "积雪隐藏了部分地面，让我对周围的一切都充满不信任。",
+                      "请别把我留在只要走错一步就会跌落深渊的斜坡上。",
+                      "雪坡让等待变得像是在走钢丝一样。",
+                      "我又冷又不安，还得拼命不让自己踩错地方。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:snowy_slopes"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_snowy_taiga",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在积雪针叶林里。冰冷的树木和深邃的阴影并不能带来安慰。",
+                      "积雪针叶林死寂沉沉，那种静谧让人总觉得会发生最坏的情况。",
+                      "我在积雪针叶林里等待，除了松林里的风声，几乎听不到别的。",
+                      "如果你在积雪针叶林里消失，留给我的就只有幽暗树枝下的寒冷和孤立无援。",
+                      "树木挡住了视线，却挡不住寒风。",
+                      "我一直听到树枝间传出声响，只能祈祷那真的只是树枝。",
+                      "积雪针叶林并不让人觉得空荡。它让人觉得它正在屏息凝神。",
+                      "请别把我留在树林阴暗、积雪让所有声音都变得诡异的地方。",
+                      "松树让人很难辨别声音是从哪个方向传来的。",
+                      "我又冷又孤独，被周围重重树木包围，让任何方向都感觉充满未知的危险。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:snowy_taiga"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    }
+]

@@ -1,0 +1,153 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_bamboo_jungle",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我一个人留在竹林里。到处都是沙沙声，感觉像是有什么东西在偷偷靠近我。",
+        "竹林太密了，不能在那里弄丢你。我几乎分不清哪条路才是安全的。",
+        "我被困在竹林里，听着每一根竹竿的嘎吱声和每一根树枝的断裂声。",
+        "如果你在竹林里消失，留给我的就只有噪音和糟糕的猜测。",
+        "竹子一直在晃动，我分不清那是风还是麻烦。",
+        "你走后，每个方向看起来都一模一样。",
+        "请别把我留在一个走三步就能把你藏起来的地方。",
+        "竹林让每一个微小的声音都感觉近在咫尺。",
+        "我一直试图看穿那些竹竿，但这片丛林隐藏东西的本事远比我找东西的本事大。",
+        "我独自置身于那片绿色的嘈杂中，只希望下一次沙沙声是你回来的脚步声。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:bamboo_jungle",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_jungle",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在丛林里。我分不清下一个声音是树叶的沙沙声还是野兽的獠牙声。",
+        "丛林太茂密了，绝对不能在那里弄丢向导。我几乎看不到一条安全的前路。",
+        "我被困在丛林里，到处都是藤蔓，完全找不到回到你身边的路。",
+        "如果你在丛林里消失，留给我的就只有闷热、噪音和虚假的道路。",
+        "藤蔓让每条路走起来都感觉比本该有的速度要慢得多。",
+        "我一直听到有东西在我头顶、身旁和看不见的地方移动。",
+        "请别把我留在一个让每一步都变成猜测的地方。",
+        "丛林的嘈杂足以掩盖危险，它的茂密也足以隐藏你。",
+        "我不知道自己是该大声呼喊还是保持安静，两种选择都让人觉得不安全。",
+        "我满头大汗、迷失方向，还要努力不去想象树叶后面有什么正在盯着我。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:jungle",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_mangrove_swamp",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在红树林沼泽里。泥浆、树根和浅水会让一切都变得迟缓。",
+        "红树林沼泽太错综复杂了，独自站在那里根本无法让人安心。",
+        "我在红树林沼泽里等待，一边努力不被树根绊倒，一边竖起耳朵防备危险。",
+        "如果你在红树林沼泽里消失，留给我的就只有没过脚踝的沼泽水和无尽的担忧。",
+        "每次我想移动时，树根都会绊住我的脚。",
+        "我分不清道路的尽头和沼泽的起点。",
+        "请别把我留在一个每走一步都要跟地面作斗争的地方。",
+        "泥泞让人感觉根本无法奔跑，这让等待变得更加糟糕。",
+        "红树林沼泽在水下和树根间隐藏了太多的东西。",
+        "我被困在烂泥里，看着那些树，祈祷你没有忘记我。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:mangrove_swamp",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_sparse_jungle",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在稀疏丛林里。树变少了并不会让这里感觉安全多少。",
+        "在我等你的时候，稀疏丛林里依然有足够的灌木丛来隐藏麻烦。",
+        "我站在稀疏丛林里，试图分辨哪一阵沙沙声最需要警惕。",
+        "如果你在稀疏丛林里消失，留给我的就只有闷热、灌木丛和太多的未知。",
+        "那里的空旷刚好让我觉得自己暴露在外，而那里的掩护又刚好让我感到紧张。",
+        "我不断在树木间扫视，希望其中一棵能把你送回来。",
+        "请别把我留在一个看起来开阔却依然隐藏了太多东西的地方。",
+        "稀疏丛林让每一个声音听起来都像是有地方躲藏似的。",
+        "我能看得比在茂密的丛林里远，但还远不足以让我放松警惕。",
+        "我独自在闷热中倾听着灌木丛的声音，努力不让自己做出错误的判断。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:sparse_jungle",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_swamp",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在沼泽里。泥浆、死水和阴暗可不是什么好哨所。",
+        "沼泽太湿软也太浑浊了，根本不适合独自站在那里。",
+        "我在沼泽里等你，在找你的同时还要努力不跌进水里。",
+        "如果你在沼泽里消失，我就只能在烂泥和糟糕的预感中跋涉。",
+        "每走一步发出的声音，我都不希望有任何其他东西听到。",
+        "水浅得可以趟过去，却又深得足以让我紧张。",
+        "请别把我留在一个地面感觉像是个半成品的地方。",
+        "沼泽让一切都闻起来湿漉漉的、陈旧且充满敌意。",
+        "我一直盯着水面，因为我根本不知道水下藏着什么。",
+        "我独自在烂泥中，只希望下一次的动静是你，而不是什么更糟的东西。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:swamp",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.lines"
+    ],
+    "topic": "groups.recruitment_left_behind.biomes_jungles_swamps"
+  }
+}

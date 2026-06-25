@@ -1,0 +1,517 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_followup_safe_home",
+      "request": "recruitment_followup",
+      "lines": [
+        "谢谢你让我跟着你。当黑夜露出<shake>獠牙</shake>时，再短的路也显得漫长。",
+        "你护送我平安走完了那趟旅程。这让漫漫长路变成了一份值得铭记的恩情。",
+        "我还能完好无损地站在这里，这对我来说有多重要，千言万语都<pulse>说不尽</pulse>。",
+        "这一路本可能更糟。但并没有，我知道这多亏了谁。",
+        "我不知道外面有什么在等着我们，但你确保了我能平安回家。",
+        "安稳的路走惯了容易忘，直到有人为你扫平障碍。",
+        "我会记得你没有丢下我。",
+        "有人在背后护着你，这旅程的感觉就完全不一样了。",
+        "我全头全尾、平平安安地回来了。这绝对得好好谢谢你。",
+        "你让一条艰难的路变得不再难走，我不会忘记的。"
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 36
+    },
+    {
+      "id": "recruitment_followup_safe_ready",
+      "request": "recruitment_followup",
+      "lines": [
+        "我毫发无损地回来了。这种恩情大家都会记在心里。",
+        "你护送我平安走完了那趟旅程。这让漫漫长路变成了一份值得铭记的善意。",
+        "我还能完好无损地站在这里，这比我能说出的任何道谢都重要。",
+        "路途虽然遥远，但并没有将我们击垮。",
+        "你信守了诺言，所以我现在才能站在这里说这些。",
+        "能安然抵达，除了脚酸没受别的罪，这真让人欣慰。",
+        "那趟旅程我把信任交给了你，而你也证明了我的选择是对的。",
+        "能平安归来可不是件小事，在外面那荒郊野岭更是如此。",
+        "我可不会把一路的太平当作理所当然。",
+        "你陪我走过了全程。这对我来说很重要。"
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "recruitment_followup_injured_shaken",
+      "request": "recruitment_followup",
+      "lines": [
+        "我是活着回来了，但也挂了彩。下次，我们要么走慢点，要么早点动手。",
+        "我到现在还觉得浑身疼呢。我谢归谢，可别以为我<italic>忘了</italic>这茬儿。",
+        "我是回来了，但这趟经历可是给我留了不少淤青作纪念。",
+        "能回家我很高兴，但这种代价我可不想再付第二次了。",
+        "旅程是结束了，但我的肋骨好像还在开会声讨这事儿呢。",
+        "下次，我希望能少带着点伤从那儿回来。",
+        "我跟着你走了一遭，然后带着伤回来了。这两点都很重要。",
+        "安全的结局可抹不平中间遭的那些罪。",
+        "我是还站着，但别把这和毫发无伤混为一谈。",
+        "我们总算熬过来了。下次再遇到这事儿，咱们还是做点更聪明的决定吧。"
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 68
+    },
+    {
+      "id": "recruitment_followup_betrayed_cut",
+      "request": "recruitment_followup",
+      "lines": [
+        "你让我跟着你，然后反手就攻击我。这可不是什么小事。",
+        "我跟着你，是因为以为你会保护我。现在我知道了，对待你的<pulse>承诺</pulse>得多留个心眼。",
+        "跟着你是出于信任。而之后挨的那下，可真是我没求着要上的教训。",
+        "路上的危险就够多了，向导可不该成为危险的一部分。",
+        "你用行动证明了，我当初就该老老实实待在家里。",
+        "我现在对那下攻击的记忆，可比对那条路的记忆清晰多了。这话够明白了吧。",
+        "背叛之后，信任就算还能找回来，也走得比蜗牛还慢了。",
+        "你把我带出去，然后教会了我该害怕你的拳头。",
+        "下次再让我跟着你去哪儿，我可得好好掂量掂量了。",
+        "你打破的可不只是皮肉。记住这点。"
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "show_for_babies": false,
+      "weight": 82
+    },
+    {
+      "id": "recruitment_followup_boat_safe",
+      "request": "recruitment_followup",
+      "lines": [
+        "船帮了大忙。我得承认，顺水漂回家对膝盖确实好多了。",
+        "坐船可比一路走回来强多了。这点我认。",
+        "这船载着我们一路前行，算是尽心尽责了。",
+        "脚下有艘船，再长的路也显得温柔了些。",
+        "当水面不再显得那么一望无际时，我还挺庆幸有水路的。",
+        "我的双腿很感谢你选择了坐船。",
+        "那艘船省了时间，省了麻烦，还省了我不少牢骚。",
+        "河流出了它的一份力，看到好帮手我总是很敬重的。",
+        "我还是更喜欢脚踏实地，但这船确实是个不错的选择。",
+        "要是每次出门，最难走的那段都能有艘船，我的抱怨肯定会少很多。"
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 44
+    },
+    {
+      "id": "recruitment_followup_ocean_boat_safe",
+      "request": "recruitment_followup",
+      "lines": [
+        "坐船过洋可比游过去聪明多了。谢谢你没让我变成落汤鸡。",
+        "有了脚下这艘船，大海看起来也没那么<wavy>无边无际</wavy>了。就冲这点我也得谢谢你。",
+        "在我和深水之间隔着一艘船，这才是明智之举。",
+        "我从来就不信任大海，但我倒挺信任那艘船的。",
+        "水面宽得让人心里发毛，好在船还是很给力的。",
+        "我很庆幸咱们过了洋，而且没让我的双臂包揽所有活儿。",
+        "有了船，深水感觉就不像个威胁，反而更像条大路了。",
+        "大海就该老老实实待在我们脚底下，我就喜欢这样。",
+        "我可不怎么享受这趟渡海，但我很享受能干爽地靠岸。",
+        "下次再要过那么宽的水面，我还是会投坐船一票。"
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_ocean_swim_safe",
+      "request": "recruitment_followup",
+      "lines": [
+        "我连船都没坐就游过了大海，居然还活下来了。下次，请在找海浪之前先找点木头好吗。",
+        "我是游过来了，但我的老骨头表示下次还是坐船吧。",
+        "游过大海可不叫勇敢，那叫缺乏更好的计划。",
+        "我为咱们能活下来感到骄傲，但我可不想再练一次了。",
+        "大海那么大，可不能把它当成小水坑来糊弄。",
+        "在海里的时候，我这辈子都没这么想念过一艘船。",
+        "海浪不停地拍打着问我累不累。我是真的累坏了。",
+        "我是游过来了，但每一个水花都在抗议这个糟糕的计划。",
+        "下次，这种“游泳”的活儿还是交给船来做吧。",
+        "很高兴现在身上干了。我希望能一直保持干爽。"
+      ],
+      "conditions": [
+        {
+          "swim_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_boat_injured",
+      "request": "recruitment_followup",
+      "lines": [
+        "坐船那会儿还算安稳。但在那之前或之后挂的彩，真是把好回忆全毁了。",
+        "水面倒是挺平静的。这趟旅程的其他部分可就不是那么回事了。",
+        "要是没受这伤，我对那艘船的印象肯定会好得多。",
+        "船是帮了忙没错，但也没让这趟旅程变得多舒坦。",
+        "我坐在船上，祈祷着最糟的已经过去了。结果并没有。",
+        "水路载了我们一程。剩下的一路，全是疼痛作伴。",
+        "我既可以感谢那艘船，也不妨碍我为身上的淤青生气。",
+        "这趟行程本来还有段消停日子，结果剩下的路全给找补回来了。",
+        "船能载人，却拦不住岸上等着我们的麻烦。",
+        "下次，我希望能光坐船，别再附赠这身伤了。"
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 44
+    },
+    {
+      "id": "recruitment_followup_ocean_boat_injured",
+      "request": "recruitment_followup",
+      "lines": [
+        "坐船过海倒还吃得消。就是我挂彩那部分，可就没那么美好了。",
+        "海水倒是挺平静的。这趟旅程的其他部分可就不是那么回事了。",
+        "要是没受这伤，我对那艘船的印象肯定会好得多。",
+        "这趟出门最糟的居然不是大海，这也挺能说明问题了。",
+        "船是没让我掉进水里，但也逃不过麻烦找上门。",
+        "过海本身就够吓人的了，更别说还添了这一身伤。",
+        "我感激那艘船，但对一路上发生的其他破事就没那么感激了。",
+        "深水区可比这段旅程的其他部分好相处多了。",
+        "我是带着伤回来的，但好歹没把命留在海里。",
+        "下次，要是坐船就是最难受的事，那就再好不过了。"
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_ocean_swim_injured",
+      "request": "recruitment_followup",
+      "lines": [
+        "游着过海还带着一身伤回家，这种冒险我可不想再来一次了。",
+        "带着伤在海里游泳，这段记忆我宁愿把它忘得干干净净。",
+        "<wavy>海浪</wavy>对我的淤青可没半点好处。你的破计划也一样。",
+        "光是把脑袋露出水面就够费劲的了，更别说还得忍着痛。",
+        "对于一个本来就倒霉透顶的人来说，那趟渡海真是要了老命了。",
+        "大海又宽又冷，而且对我的伤口表现出了过分的兴趣。",
+        "我是熬过来了，但这并不代表这是个好主意。",
+        "下次，如果我受伤了，咱们要么找艘船，要么就等着。",
+        "我现在要是动作太大，都还能感觉到那趟旅行留下的痛。",
+        "肯定有更安全的过水方法，我想试试那种。"
+      ],
+      "conditions": [
+        {
+          "swim_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_boat_betrayed",
+      "request": "recruitment_followup",
+      "lines": [
+        "你把我带上船，带着我一路走，然后背叛了我的信任。奇葩的旅程，更烂的结局。",
+        "在<wavy>水</wavy>上漂着，可没让这背叛显得轻描淡写一点。",
+        "船是带我们走了一程。但你毁了最关键的东西。",
+        "平稳的船票，可掩盖不了你那双残忍的手。",
+        "我还记得那水，但我更记得你做的好事。",
+        "船把我安全送到了。你却没做到。",
+        "信任可不该在靠岸后就沉了底。",
+        "我本以为水才是危险所在。我错了。",
+        "事后想想，连那趟安静的乘船都显得我像个傻瓜。",
+        "下次，我再考虑要不要和你同上一条船时，一定会三思而行。"
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_followup",
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "show_for_babies": false,
+      "weight": 46
+    },
+    {
+      "id": "question_follow_memory_biome",
+      "request": "question",
+      "lines": [
+        "还记得你让我跟着你穿过{follow_biome}吗？我现在光凭身上的酸痛都能认出那条路。",
+        "我记得{follow_biome}。有些地方，就算你离开了，那感觉也还留在你脚底板上。",
+        "{follow_biome}可是给我上了漫长的一课：去哪儿之前，一定要先问清楚目的地。",
+        "每当我的腿开始抗议时，我还会想起{follow_biome}。",
+        "你带我穿过{follow_biome}，我也算是学到了，原来风景看多了也会累人。",
+        "当我不得不徒步穿过{follow_biome}时，它看起来就完全不一样了。",
+        "我对{follow_biome}里那些声音的记忆，比我想象的还要深。",
+        "穿过{follow_biome}的某些路，走完之后回想起来感觉更漫长了。",
+        "我对{follow_biome}的了解，可比我计划的多太多了。",
+        "下次你再提起{follow_biome}，我可能得先找个地方坐下。"
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "question_follow_memory_long_walk",
+      "request": "question",
+      "lines": [
+        "还记得你让我跟着你走了足足{follow_distance}格吗？我的腿可是连着抱怨了好几天。",
+        "走{follow_distance}格的路，足够让你怀疑自己是不是选错向导了。",
+        "我的双腿对那{follow_distance}格路记忆犹新，有些细节根本就不想记那么清楚。",
+        "走了{follow_distance}格之后，就算是平地都让人感觉像是在故意刁难你。",
+        "跟在别人屁股后面走{follow_distance}格到底有多煎熬，我算是真切体会到了。",
+        "{follow_distance}格路，给了我充足的时间来质疑你的方向感。",
+        "我至今仍觉得，走完那段路，真该好好谢谢我的双脚。",
+        "想建立信任，明明有比拉着人走{follow_distance}格更省事的办法。",
+        "那趟徒步，让村里的每一张床看起来都像是奇迹般的恩赐。",
+        "下次我们要走那么远，我一定要先问清楚目的地在哪儿。"
+      ],
+      "conditions": [
+        {
+          "excludes_ocean_crossing": true,
+          "min_follow_distance": 500,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "question_follow_memory_boat",
+      "request": "question",
+      "lines": [
+        "还记得你带我坐船那次吗？我都不知道是该谢你，还是该问你把船桨弄哪儿去了。",
+        "我记得那艘船。自己坐着不动，看着世界在眼前倒退，这种感觉真是奇妙又惬意。",
+        "船桨倒是有它的方向。真希望我们剩下的人也有个明确的计划。",
+        "坐船可比走路清静多了，这点我很欣赏。",
+        "我还记得看着岸边的风景向后退去，仿佛它们也有自己的目的地要赶。",
+        "船真是个神奇的玩意儿。你只要坐着，不知不觉就能跨越千山万水。",
+        "其实我很庆幸能坐船，虽然我假装一点都不紧张。",
+        "水流载着我们前行，这回终于不用我的双脚受累了。",
+        "我记得我当时还在琢磨，船划水的声音是不是总是这么心里没底？",
+        "退一万步说，那艘船至少给了我的双腿一个光明正大休息的理由。"
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "question_follow_memory_ocean_swim",
+      "request": "question",
+      "lines": [
+        "还记得你连船都不用就带我游过了大海吗？我可是对每一个水花都记忆犹新。",
+        "没有船，泡在海里，还有大把的时间胡思乱想。我当然记得。",
+        "我到现在还记得，大海是怎么变着法儿地想让我寸步难行的。",
+        "当你泡在海里的时候，你会发现大海比你想象的还要大得多。",
+        "那天我算是领教了，海浪是一点礼貌都不讲的。",
+        "不坐船就去横渡大海，这种事我可绝对不推荐。",
+        "我记得我四处寻找海岸，结果只看到了更多的海水。",
+        "每一个打过来的浪头仿佛都在质问我们为什么没有船。我无言以对。",
+        "一想起那趟渡海，我现在还会觉得累。",
+        "下次要是还得下海，我希望能有块木头垫在脚底下。"
+      ],
+      "conditions": [
+        {
+          "swim_trip": true,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "question_follow_memory_boat_long",
+      "request": "question",
+      "lines": [
+        "那趟游船只是{follow_distance}格远足的一部分。水路是分担了一点，但还远远不够。",
+        "那艘船虽然帮着解决了{follow_distance}格的麻烦，但这趟行程也没因此变得多轻松。",
+        "如果有水路能分担一部分路程，那{follow_distance}格听起来似乎也没那么远了。",
+        "就算有船代步，跟在别人后面走{follow_distance}格也是段漫长的路。",
+        "船是让我的脚歇了一阵，但剩下的路还是照样得一脚一脚地走完。",
+        "下船之后走的每一格路，都让我对那艘船越发感激。",
+        "哪怕有条水上的捷径，{follow_distance}格的路终究还是{follow_distance}格。",
+        "船让一部分旅程变得平静。剩下的部分算是把遭的罪都找补回来了。",
+        "在这几百格路里，水流好歹载了我们一程，我十分感谢它的服务。",
+        "下次我们再走这么远，我想先知道到底有多少路是可以飘过去的。"
+      ],
+      "conditions": [
+        {
+          "boat_trip": true,
+          "min_follow_distance": 500,
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "question_follow_memory_betrayed",
+      "request": "question",
+      "lines": [
+        "还记得我跟着你，然后你打了我吗？我记得。到现在还疼呢。",
+        "我跟着你是因为以为你是安全的代名词。那一击彻底改变了我的想法。",
+        "有些记忆，还没等别人开口，就已经在隐隐作痛了。",
+        "我记得在那条路上我曾经信任过你。我也记得我后悔了。",
+        "你让我觉得，跟着你就是个彻头彻尾的错误。",
+        "那种伤害，可比身上的淤青停留得久多了。",
+        "那天，我算是彻底看清了你的承诺是什么货色。",
+        "被人带到一个地方然后挨上一顿揍，这种事可没那么容易忘记。",
+        "我脑海里总有个声音在回荡，提醒我当时早该转头就走。",
+        "如果你想知道我为什么犹豫，想想你当时是怎么对我的吧。"
+      ],
+      "conditions": [
+        {
+          "scenarios": [
+            "betrayed"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "question_follow_memory_injured",
+      "request": "question",
+      "lines": [
+        "我记得我跟着你，带着一身伤回家。我很感激，但也确实不好受。",
+        "能回家我很感激，但回家路上受了伤又让我很生气。这两点并不冲突。",
+        "旅程在这里结束了，但身上的疼痛却延续了更久。",
+        "我对每一步的记忆都太清晰了，清晰得让我都不想去回忆。",
+        "能到家很重要。在路上挂彩了也很重要。",
+        "我尽量不拖后腿，但疼痛有它自己的节奏。",
+        "当我一瘸一拐地走过那条路时，感觉它比原来漫长多了。",
+        "尽管身上还带着伤，能再次看到村子还是让我很高兴。",
+        "一次平安的归来，依然可能会留下一段痛苦的记忆。",
+        "下次，我宁愿平平安安地到达，而不是一路数着身上的淤青。"
+      ],
+      "conditions": [
+        {
+          "scenarios": [
+            "injured"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "gear_report_global_used",
+      "request": "gear_report",
+      "lines": [
+        "当麻烦逼近时，它派上了用场。这可比看起来光鲜亮丽重要多了。",
+        "战斗中我只能依靠它。我很高兴你有先见之明。",
+        "这{gear_kind}确实物超所值。这让我出乎意料地印象深刻。",
+        "在紧要关头，我比单枪匹马时准备得更充分了。",
+        "有了好装备，恐惧也没那么难熬了。",
+        "在千钧一发之际，这{gear_kind}发挥了它应有的作用。",
+        "我不会假装自己无所畏惧，但我确实已经准备好了。",
+        "就是这{gear_kind}，让我在慌乱中稳住了阵脚并付诸行动。",
+        "被赐予装备是一回事，能在高压下顶住又是另一回事了。",
+        "我现在更信任这{gear_kind}了。它在关键时刻证明了自己。"
+      ],
+      "conditions": [
+        {
+          "kind": "gear_report_used_in_combat",
+          "type": "memory"
+        }
+      ],
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 112
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.recruitment_memories"
+  }
+}

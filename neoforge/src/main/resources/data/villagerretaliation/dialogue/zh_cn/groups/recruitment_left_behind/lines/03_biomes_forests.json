@@ -1,0 +1,362 @@
+[
+    {
+        "id":  "recruitment_left_behind_birch_forest",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我一个人留在白桦森林里。在那些苍白的树干间太容易走散了。",
+                      "直到我意识到自己孤身一人站在那儿之前，白桦森林看起来都很平静。",
+                      "我在白桦森林里等待，倾听着你的脚步声，却听到了除你之外的一切声响。",
+                      "当我是那个被抛下的人时，白桦森林就显得没那么友善了。",
+                      "过了一会儿，那些白色的树干让每条路看起来都一样了。",
+                      "我一直在原地打转，希望能在树木的缝隙间看到你回来的身影。",
+                      "请别把我留在一个能这么快把你藏起来的森林里。",
+                      "白桦森林很安静，但那种安静并不能让人感到安慰。",
+                      "我能看透树林，但视线还不够远，不足以让我感到安全。",
+                      "我独自站在那些苍白的树枝下，想知道你到底去了哪个方向。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:birch_forest"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_cherry_grove",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在樱花树林里。漂亮的花朵可阻止不了糟糕的事情发生。",
+                      "直到我发觉自己孤身一人站在那片粉色之下，樱花树林才显得不再那么可爱。",
+                      "我被困在樱花树林里，努力不让那份死寂使我紧张。",
+                      "当你消失并把我一个人留在那里时，即使是樱花树林也会让人感到危险。",
+                      "花瓣不断落下，仿佛什么事都没发生一样。这让感觉更诡异了。",
+                      "很难仅仅因为一个地方看起来很平静就保持冷静。",
+                      "下次请别再把美丽误认为安全了。",
+                      "我一直看着花朵摇曳，心里却在想还有什么东西可能在跟着它们一起动。",
+                      "樱花树林柔和又安静，这只会让被留在那里的感觉变得更糟。",
+                      "我站在粉色的树叶下，努力不让自己因为害怕而显得像个傻瓜。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:cherry_grove"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_dark_forest",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在黑森林里。那里的阴影感觉就像在\u003cpulse\u003e注视着\u003c/pulse\u003e你。",
+                      "黑森林绝对不是个适合发觉自己找不到你的好地方。",
+                      "我在黑森林里等待，听着每一根树枝断裂的声音，就像那是某种\u003cshake\u003e警告\u003c/shake\u003e。",
+                      "如果你在黑森林里消失，留给我的就只有黑暗、树根，以及太过丰富的想象力。",
+                      "树木排列得如此密集，连日光都显得那么微弱。",
+                      "我总觉得有什么东西就站在我视线之外的地方。",
+                      "请别把我留在一个阴影比我还有耐心的地方。",
+                      "那片森林里的每一个声音都感觉近在咫尺，即使它们其实很远。",
+                      "黑森林让等待感觉就像是被从四面八方监视着一样。",
+                      "我独自在厚重的树冠下，拼命克制自己不要发出太大的呼吸声。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:dark_forest"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_flower_forest",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在繁花森林里。那里看起来很平静，直到你成了那里唯一的人。",
+                      "当我在繁花森林中央被抛下时，它就显得没那么迷人了。",
+                      "我在繁花森林里等待，竖起耳朵找寻你的踪迹，却只听到了蜜蜂、风声，除此之外别无其他。",
+                      "一旦意识到自己孤身一人，即使是繁花森林也会让我的神经紧绷。",
+                      "这些花并不能让我更容易辨别你走的方向。",
+                      "那里很美，是的。但在你离开之后，那里也太安静了。",
+                      "请别把我留在漂亮的地方，还指望那能让我觉得没事。",
+                      "我一直看着花朵摇曳，祈祷那只是风在吹动它们。",
+                      "繁花森林感觉很平静，但平静并不意味着无害。",
+                      "我被色彩包围，却依然觉得自己是唯一格格不入的那个。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:flower_forest"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_forest",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我一个人留在森林里。树木在遮蔽一切之前确实能让人感到安慰。",
+                      "直到你离开，每一个阴影都显得至关重要时，森林才不再显得那么普通。",
+                      "我在森林里等待，试图分辨出无害的噪音和危险的声响。",
+                      "如果你在森林里消失，我就只能去猜哪个方向才是安全的。",
+                      "树木让人太容易迷失方向，也太难再找到你了。",
+                      "我一直在倾听你的脚步声，但森林里充满了谎言。",
+                      "请别把我留在每一根树枝听起来都像是有东西在靠近的地方。",
+                      "直到我不得不独自站在那里，森林才让我觉得陌生。",
+                      "我不知道自己到底是该等待、寻找还是躲藏。",
+                      "我被树木包围，却不知为何依然觉得自己暴露在外。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:forest"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_old_growth_birch_forest",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在原始白桦森林里。更大的树木只意味着更大的阴影。",
+                      "一旦失去你的踪影，原始白桦森林就让人感觉太广阔而无从找起。",
+                      "我被困在原始白桦森林里，在茂密的树冠下倾听你的脚步声。",
+                      "如果你在原始白桦森林里消失，我就只能留在那些看起来一模一样的树干之间。",
+                      "那些高大的白桦树让整个地方感觉比我的勇气还要古老。",
+                      "我不断地抬头和环顾四周，但这完全帮不了我找到你。",
+                      "请别把我留在一片能如此轻易吞噬一个人的森林里。",
+                      "苍白的树干连绵不绝，直到我不再相信自己的方向感。",
+                      "我能听到树叶沙沙作响，却听不到我最需要的那个声音。",
+                      "我独自在古老的树枝下，努力不愿承认自己有多么迷茫。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:old_growth_birch_forest"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_old_growth_pine_taiga",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在原始松树针叶林里。那些高耸的松树让那里感觉比实际上还要冷。",
+                      "原始松树针叶林太茂密也太昏暗了，根本不适合被困在那里。",
+                      "我在原始松树针叶林里等待，脚下是松针，头顶上的天空却少得可怜。",
+                      "如果你在原始松树针叶林里消失，我就只能在吞噬声音的树下挨冻。",
+                      "那些松树太高了，让我即使不在地下也有种被活埋的感觉。",
+                      "我一直在倾听，但森林软化了每一个声音，直到我无法信任其中的任何一个。",
+                      "请别把我留在那些让整个世界感觉遥不可及的树下。",
+                      "地面崎岖不平，空气寒冷刺骨，而我根本看不到你在哪里。",
+                      "那片针叶林让每个方向看起来都比上一个还要暗。",
+                      "我独自在那些松树下，祈祷自己没有被永远遗忘。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:old_growth_pine_taiga"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_old_growth_spruce_taiga",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在原始云杉针叶林里。那些树让每一个阴影都显得更加沉重。",
+                      "在我不得不独自面对它之前，原始云杉针叶林就已经够暗够冷了。",
+                      "我在原始云杉针叶林里等待，努力不让那份死寂侵入我的大脑。",
+                      "如果你在原始云杉针叶林里走散，我就只能被高耸的树干和紧张感包围。",
+                      "云杉树遮蔽了天空，让这片森林感觉比实际上还要幽深。",
+                      "我一直听到树枝的晃动声，总觉得有什么东西正在靠近。",
+                      "请别把我留在树木感觉比道路还要古老的地方。",
+                      "地面崎岖不平，空气十分寒冷，我也看不到足够远的地方来让自己放松。",
+                      "那片针叶林让等待感觉就像是在树皮后被人盯着一样。",
+                      "我独自在那些阴暗的树枝下，试图保持冷静，却在无声地崩溃。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:old_growth_spruce_taiga"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_taiga",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在针叶林里。寒冷和树木让每一个声音听起来都感觉更加遥远。",
+                      "针叶林足够昏暗，以至于失去你的踪影让人感觉是瞬间且永久的。",
+                      "我在针叶林里等待，脚下踩着松针，肺里吸着冷空气。",
+                      "如果你在针叶林里走散，我就只能在阴暗的树枝下祈祷你能快点想起我。",
+                      "树木让人难以看清周围，寒冷让人难以思考。",
+                      "我一直在倾听你的声音，但针叶林把每个声音都藏了起来。",
+                      "请别把我留在一个你走后森林感觉变得更冷的地方。",
+                      "树枝合拢的程度恰好让每一个方向都变得不确定。",
+                      "我不知道是该大声呼喊还是保持安静，两种选择都让人觉得不安全。",
+                      "我独自在针叶林里，在让世界感觉无比庞大的树下等待着。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:taiga"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_windswept_forest",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在风袭森林里。那里的狂风让每一棵树听起来都在发怒。",
+                      "风袭森林太吵闹也太崎岖了，绝不是个可以弄丢向导的地方。",
+                      "我在风袭森林里等待，风从四面八方推搡着我。",
+                      "如果你在风袭森林里消失，我就只能听着树枝猛烈摇晃，祈祷它们别掉下来。",
+                      "狂风不断把无害的声音变成警报。",
+                      "我连自己思考的声音都快听不见了，更别提听清你去了哪里。",
+                      "请别把我留在树木被吹得弯曲、好像它们也想逃跑的地方。",
+                      "地面崎岖不平，树枝沙沙作响，而我只能独自承受这一切。",
+                      "那片森林让仅仅是站着不动都感觉像是在和人争吵。",
+                      "我在摇晃的树叶下等待，希望下一个声音就是你回来的脚步声。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:windswept_forest"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    }
+]

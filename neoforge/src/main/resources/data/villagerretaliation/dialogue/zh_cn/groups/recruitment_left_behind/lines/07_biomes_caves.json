@@ -1,0 +1,97 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_deep_dark",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在深暗之域。我可不想知道下面有什么会<pulse>最先听到我的声音</pulse>。",
+        "深暗之域可不是个考验耐心的地方。那里只有<shake>被压抑着的惊恐低语</shake>。",
+        "一旦你离开，我站在深暗之域里，连自己的<pulse>呼吸声</pulse>都怕太大。",
+        "如果你在深暗之域消失，我就只能小心翼翼地衡量每一个声音，仿佛那是我能听到的最后一声。",
+        "在下面的每一步都像是一个等着被发现的致命错误。",
+        "我一动不动地站了太久，甚至连我自己的心跳声都感觉充满危险。",
+        "请别把我留在一个连寂静都仿佛有生命的地方。",
+        "深暗之域让黑暗变得如此沉重，压得我喘不过气来。",
+        "我不敢动弹，不敢出声，更害怕独自留在那儿。",
+        "在那里，被抛下感觉并不像是粗心大意。那感觉就像是被判了死刑。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:deep_dark",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_dripstone_caves",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在溶洞里。只要走错一步，这洞穴就会要了我的命。",
+        "溶洞里全是尖锐的洞顶和更尖锐的地面。我讨厌独自在那里等待。",
+        "我被困在溶洞里，盯着每一根钟乳石，感觉它们都<italic>专门</italic>瞄准了我。",
+        "如果你在溶洞里消失，留给我的就只有坠落的尖石和糟糕的落脚点。",
+        "一旦我意识到自己孤身一人，每一滴水声都变得震耳欲聋。",
+        "我不断地往上看，再往下看，然后又往上看。但这根本无济于事。",
+        "请别把我留在一个上下都长满獠牙的洞穴里。",
+        "那些尖石让每一条路看起来都像是个警告。",
+        "头顶是尖石，脚下是更尖的石头，我根本无法放松。",
+        "我站在一个看起来随时准备惩罚第一步失误的洞穴里。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:dripstone_caves",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_lush_caves",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在繁茂洞穴里。漂亮的苔藓并不能让洞穴变得更安全。",
+        "繁茂洞穴很美，直到你想起在地底迷路是多么容易的事。",
+        "我在繁茂洞穴里等待，伴着滴水声和太多未知的死角。",
+        "如果你在繁茂洞穴里消失，我就只能一边欣赏植物，一边担心怪物的出现。",
+        "发光浆果的光亮刚好让我看清，自己周围到底有多少未知的黑暗。",
+        "我不断听到水声、树叶声，以及每一个可能像脚步声的动静。",
+        "请别把我留在一个美丽到足以让人忘记危险的地方。",
+        "苔藓柔和了洞穴的轮廓，但并没有让我感到安全。",
+        "每一个洞口看起来都通向更深处，而更深处绝不是我想呆的地方。",
+        "我独自在地底，被幽绿的光芒和太多可能藏匿危险的地方包围着。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:lush_caves",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.lines"
+    ],
+    "topic": "groups.recruitment_left_behind.biomes_caves"
+  }
+}

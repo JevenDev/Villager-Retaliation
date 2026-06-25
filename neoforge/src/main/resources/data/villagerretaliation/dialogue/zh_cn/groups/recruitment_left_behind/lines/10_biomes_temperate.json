@@ -1,0 +1,97 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_mushroom_fields",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在蘑菇岛。看似无害的怪异也依然是种怪异。",
+        "一旦我不得不独自在那儿等待，蘑菇岛就显得<wavy>太过安静也太诡异了</wavy>。",
+        "我站在蘑菇岛上，不知道是那份死寂更让我困扰，还是那些巨型蘑菇更让我心烦。",
+        "如果你在蘑菇岛消失，留给我的就只有这些古怪的事物，一点安全感都没有。",
+        "那里确实很平静，但平静并不总是意味着舒适。",
+        "那些大蘑菇让整片田野看起来像是属于其他什么东西的领地。",
+        "请别把我留在一个以最奇特的方式展现“安全”的地方。",
+        "蘑菇岛太安静了，以至于我自己的思绪听起来都大得惊人。",
+        "我不断环顾四周，等着那份古怪演变成真正的危险。",
+        "我独自在一个感觉无害、陌生，却一点也不如预期那般令人安心的地方。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:mushroom_fields",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_plains",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在平原上。开阔的土地意味着任何东西都能大远老就看到我。",
+        "平原太暴露了，根本不适合独自一人在那儿逗留。",
+        "我在平原上等待，多希望能有哪怕一个像样的遮蔽处。",
+        "如果你在平原上消失，我就只能在露天之下无处遁形。",
+        "我周围的空间如此广阔，却没一处能派上用场。",
+        "我一直盯着地平线，希望在你消失之前，能先看到你出现。",
+        "请别把我留在这种开阔得让我觉得自己像个活靶子的地方。",
+        "平原看起来很简单，但简单并不意味着安全。",
+        "草丛中的每一次晃动都让我忍不住转过头去。",
+        "我独自在广袤的天空下，多希望这片土地能提供除了距离以外的东西。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:plains",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_sunflower_plains",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在向日葵平原。开朗的花朵可算不上什么掩体。",
+        "向日葵平原明亮而开阔，实在太容易被人发现了。",
+        "我在向日葵平原等待，多希望这些花能把我藏得再严实点。",
+        "如果你在向日葵平原消失，我就只能透过花瓣盯着可能出现的危险。",
+        "向日葵始终迎着光，而我却一直在寻找你。",
+        "很难从这些刚到膝盖的花丛中感受到什么保护。",
+        "请别把我留在一个明亮到能让任何东西都看清我的地方。",
+        "向日葵平原看起来生机勃勃，被抛弃在这种地方简直像是一种讽刺。",
+        "我一直盯着那些黄色的花头在摇摆，祈祷它们后面没藏着什么东西。",
+        "我独自置身于这一片灿烂的开阔地中，心情可远没有这些花儿那么灿烂。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:sunflower_plains",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.lines"
+    ],
+    "topic": "groups.recruitment_left_behind.biomes_temperate"
+  }
+}

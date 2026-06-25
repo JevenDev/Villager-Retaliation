@@ -1,0 +1,125 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_meadow",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在草甸上。山上的开阔地说到底也还是开阔地。",
+        "草甸看起来很温和，直到我发觉独自站在那里有多么暴露。",
+        "我在草甸上等待，四周只有风，连个像样的藏身处都没有。",
+        "如果你在草甸走散，留给我的就只有在空旷处祈祷别被什么东西先盯上。",
+        "花朵让这里看起来很宁静，但并没有让它变得安全。",
+        "我能看得很远，但还不足以看到你去了哪里。",
+        "请别把我留在美丽却暴露的地方，还指望我能觉得没事。",
+        "一旦只剩下我一个人站在那里，草甸就让人觉得太安静了。",
+        "每一阵微风都会吹动草丛，而每一次动静都让我忍不住多看两眼。",
+        "我独自在开阔地上，只希望下一个出现在山丘上的就是你。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:meadow",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_stony_peaks",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在裸岩山峰上。就算不是孤身一人，那里的岩石和高度也已经够危险了。",
+        "裸岩山峰让每一条路感觉都像是在引诱我踏错一步。",
+        "我在裸岩山峰上等待，耳边是风声，脚下是松动的石头。",
+        "如果你在裸岩山峰上走丢，我就只能在恐惧和糟糕的落脚点之间艰难保持平衡。",
+        "一旦你离开，每一块松动岩石的声音听起来都像是个警告。",
+        "我尽量盯着脚下的路，但那深渊总是引人注目。",
+        "请别把我留在地面能如此轻易背叛我的地方。",
+        "裸岩山峰让站着不动感觉比走动更安全，但两种感觉都很糟。",
+        "我分不清哪些石头踩得稳，哪些石头正等着滑落。",
+        "我独自在世界的顶端，努力不去想下面到底有多深。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:stony_peaks",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_windswept_gravelly_hills",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在风袭沙砾丘陵。松动的沙砾和强风可不是什么好陪伴。",
+        "风袭沙砾丘陵让人感觉只要走错一步，脚下就会分崩离析。",
+        "我在风袭沙砾丘陵里等待，努力不去过度信任脚下的地面。",
+        "如果你在风袭沙砾丘陵消失，留给我的只有在不稳固的石头上顶着狂风。",
+        "脚下的沙砾在滑动，好像它们也想离开一样。",
+        "每一阵狂风都让山坡感觉更加危险。",
+        "请别把我留在一个地面和天气都想把我推走的地方。",
+        "我一直小心翼翼地落脚，但这座山丘让这举动显得很愚蠢。",
+        "松动的石头让每一步听起来都比实际上更糟，这可毫无帮助。",
+        "我独自在不稳定的地面上，祈祷自己不需要奔跑。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:windswept_gravelly_hills",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_windswept_hills",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在风袭丘陵。那上面的每一阵风都像是在猛推你。",
+        "风袭丘陵太过暴露，不适合独自在上面站太久。",
+        "我在风袭丘陵等待，狂风扑面，连个像样的避风处都没有。",
+        "如果你在风袭丘陵走散，我就只能同时和恶劣的天气以及紧张的神经作斗争。",
+        "狂风一直拉扯着我，好像想把我拖去更糟的地方。",
+        "我能看到大片的土地，却依然找不到一条能让我感到安全的路。",
+        "请别把我留在一个丘陵喧闹、空气不断推搡的地方。",
+        "风袭丘陵让每个声音都变得微弱，让每一步都变得不确定。",
+        "我一直迎着阵风，希望自己不需要快速移动。",
+        "我独自置身于空旷之中，努力稳住我的脚步和耐心。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:windswept_hills",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.lines"
+    ],
+    "topic": "groups.recruitment_left_behind.biomes_mountains"
+  }
+}

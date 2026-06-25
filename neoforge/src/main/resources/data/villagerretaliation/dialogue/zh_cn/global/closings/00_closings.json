@@ -1,0 +1,135 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.closings"
+    ],
+    "topic": "global.closings"
+  },
+  "closings": [
+    {
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "id": "global_friendly_closing",
+      "lines": [
+        "祝您旅途 <pulse>平安</pulse>。随时欢迎再来。",
+        "在外多加小心。期待与您的下次相遇。",
+        "<pulse>回头见</pulse>。路上注意安全。",
+        "没吃饱饭前，可别走得太远。",
+        "与您聊天很愉快。真的。",
+        "愿旅途对您温柔以待。",
+        "你今天的步伐很稳健。继续保持。",
+        "我还有不少活要忙，但我很 <green>享受</green> 刚才的谈话。",
+        "感谢您能驻足停留。能共度这段时光真好。",
+        "期待 <pulse>下次相遇</pulse>，愿您步履轻松，常有 <wave>温暖</wave> 的篝火相伴。"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "id": "global_neutral_closing",
+      "lines": [
+        "下次见。",
+        "我想今天就先到这吧。",
+        "改天我们再聊。",
+        "我还有些事得去完成。",
+        "感谢这次交谈。",
+        "<pulse>多保重</pulse>。有需要的话随时再来。",
+        "现在闲聊得够多了。",
+        "谢谢你抽空陪我说话。",
+        "我会在 <wave>这附近</wave>，<i>要是</i> 你有需要的话。",
+        "下次见面之前，祝你一切安好。"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "id": "global_hostile_closing",
+      "lines": [
+        "现在说得 <i>够多</i> 了。",
+        "我们到此为止吧。",
+        "我已经说得够多了。",
+        "我们 <pulse>别再拖延时间</pulse> 了。",
+        "我今天已经受够了。",
+        "谈话结束了。",
+        "别再说了。至少现在别说。",
+        "这些话留到以后再说吧。",
+        "我需要保持点距离。",
+        "我们就在这打住吧。"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "id": "baby_friendly_closing",
+      "lines": [
+        "<jump>拜拜！</jump> 待会再来玩呀！",
+        "拜拜！你随时可以再来找我。",
+        "再见！我现在要去 <pulse>玩耍</pulse> 啦。",
+        "待会见！",
+        "好啦，我要去奔跑和 <jump>蹦跳</jump> 了！",
+        "等你玩完你的游戏，再来找我吧。",
+        "你回来的时候，我还会在这里的。",
+        "再见！别在外面待太久哦。",
+        "好啦，我现在要去干点有趣的事了。",
+        "快去吧。我们很快会再见的！"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "neutral",
+        "cautious",
+        "rude"
+      ],
+      "id": "baby_cautious_closing",
+      "lines": [
+        "好的。再见。",
+        "行，我 <pulse>不想</pulse> 再说话了。",
+        "再见。我要去那边了。",
+        "那就再见吧。我得让自己忙起来。",
+        "好吧，我得歇一会了。",
+        "我要去广场的另一边了。",
+        "我们很快会再见的。大概吧。",
+        "行了，就这么多吧。",
+        "该去干我的家务活了。",
+        "再见！我现在要走去 <wave>那边</wave> 了。"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "id": "baby_afraid_closing",
+      "lines": [
+        "我要去找个 <pulse>大人</pulse>。",
+        "我要回到感觉更安全的地方去。",
+        "我现在必须去找一个大人。",
+        "我要去安全一点的地方。",
+        "我觉得我应该待在信任的人身边。",
+        "我要去大人们待的那边了。",
+        "我现在不想一个人呆着。",
+        "我得走了，留在这太让人紧张了。",
+        "等我胆子大一点的时候，我再回来吧。",
+        "<i>我要往人多的地方走。</i>"
+      ],
+      "show_for_adults": false
+    }
+  ]
+}

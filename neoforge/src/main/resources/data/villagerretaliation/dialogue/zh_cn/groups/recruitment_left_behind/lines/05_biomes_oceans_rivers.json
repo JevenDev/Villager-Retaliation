@@ -1,0 +1,237 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_beach",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在沙滩上。空旷的沙地让每一个威胁都感觉近在咫尺。",
+        "沙滩听起来很平静，直到你孤身一人，找不到坚实的退路。",
+        "我在沙滩上等你，心里忍不住去想接下来水里会冒出什么东西。",
+        "如果你在沙滩上不见了，留给我的就只有海浪、海风，以及毫无遮掩的空地。",
+        "沙地让我无处躲藏，也无处安稳立足。",
+        "我一直盯着水线，希望下一个动静是你，而不是什么更糟的东西。",
+        "请别把我留在如此空旷、四面八方都暴露无遗的地方。",
+        "沙滩看起来很平静，但当我孤身一人时，平静并不能带来多少安慰。",
+        "当我意识到你走散了，每一阵海浪声听起来都越来越近。",
+        "我站在大海和开阔的沙地之间，多希望其中哪怕有一个能让我感到安全。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:beach",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_deep_lukewarm_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在温水深海附近。就算水温让人觉得温和，深水依然是危险的深水。",
+        "直到我独自站在旁边，我才发现温水深海听起来比感觉上要温柔得多。",
+        "我被困在温水深海附近，水域太过宽广，而安全感却少得可怜。",
+        "如果你在温水深海旁乱晃走丢，我还是得提心吊胆地提防那水下涌动的东西。",
+        "那海水看起来足够平静，能骗过粗心的人。而我只能努力让自己保持警惕。",
+        "我一直试图看透水面，但这只会让我不断去想下面到底有多深。",
+        "请别仅仅因为深水看起来温暖无害，就把我留在它旁边。",
+        "微风虽然温和，但这片海洋依然让人感到太过庞大。",
+        "每一道涟漪都让我想知道，水下究竟藏着什么我看不到的东西。",
+        "我独自站在深水旁，努力不让自己的思绪随着海水一起下沉。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:deep_lukewarm_ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_deep_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在深海旁。凝视那么幽深的海水对我的神经毫无益处。",
+        "一旦我意识到你不再带路，深海的每一阵浪涛声都变得震耳欲聋。",
+        "我在深海旁等待，努力不去想象会有什么东西从深渊里浮上来。",
+        "如果你在深海附近消失，留给我的就只有无际的水面和糟糕的胡思乱想。",
+        "海水暗沉得仿佛能永远保守秘密。",
+        "我不断地从水边后退，哪怕我已经退得足够远了。",
+        "请别把我留在这种看起来深不见底的水域旁边。",
+        "深海让整个世界都显得太过空旷、太过遥远。",
+        "海浪发出的每一个声音，感觉都比它应有的还要沉重。",
+        "我独自面对着幽暗的海水，我的想象力也开始往不好的方向蔓延。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:deep_ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_lukewarm_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在温水海洋旁。平静的水面下依然隐藏着麻烦。",
+        "直到我不得不独自在旁边等待，温水海洋看起来都还挺温柔的。",
+        "我站在温水海洋旁，满脑子都在想你不在的时候水下有什么在游动。",
+        "如果你在温水海洋旁走丢，我依然得对看不见的危险提心吊胆。",
+        "这海水看起来还算宜人，但当我开始担忧时，这反而让情况变得更糟。",
+        "我一直盯着水面寻找那些根本不存在的轮廓，直到它们真的出现为止。",
+        "请别把我留在平静海浪会让危险显得彬彬有礼的地方。",
+        "温水海洋很安静，但还不足以安静到让我感到安慰。",
+        "每一声轻微的水花飞溅都会让我警惕地转过头去。",
+        "我独自在平静的水边，努力提醒自己，平静并不意味着安全。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:lukewarm_ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在海洋旁。开阔的水域让我担心的东西太多了。",
+        "一旦我意识到自己孤身一人站在那儿，海洋就显得太过庞大了。",
+        "我在海洋旁等待，努力不去想象你不在的时候会有什么东西浮出水面。",
+        "如果你在海洋附近乱晃走失，留给我的只有海浪、海风，毫无遮蔽。",
+        "地平线帮不上什么忙。它只会让一切感觉更加遥远。",
+        "我一直盯着水面，因为看其他任何地方都感觉不对劲。",
+        "请别把我留在这种世界开阔却让我无处藏身的地方。",
+        "海洋让等待变得无比渺小，又暴露无遗。",
+        "海浪一波又一波地涌来，但没有一波能把你带回我身边。",
+        "我独自站在茫茫大水旁，只希望你还记得把我留在了哪里。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_river",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在河流旁。如果我必须匆忙移动，河岸很容易打滑。",
+        "直到我独自在旁边等你，河流听起来都还挺平静的。",
+        "我站在河流旁，试图同时兼顾留意水面和河岸的动静。",
+        "如果你在河流走丢，留给我的就只有泥泞、湍急的水流，还有毫无胜算的处境。",
+        "水流一直奔涌向前，就像它清楚自己要去哪一样。但我却不知道。",
+        "我一直小心翼翼地检查着河岸，因为哪怕一步踩错，情况都会变得更糟。",
+        "请别把我留在地面湿滑、水流比看起来还要急的地方。",
+        "河流让每一条路感觉都可能在瞬间变成泥潭。",
+        "我能听到水流声、草丛声，听到所有不是你发出的声音。",
+        "我独自在河岸边，祈祷自己不需要被迫迅速逃跑。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:river",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_stony_shore",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在石岸上。湿滑的石头和开阔的水面可不是什么好搭档。",
+        "石岸上既没有柔软的立足点，也没有安全的退路。",
+        "我在石岸上等你，一边防备着滑倒，一边为你守望。",
+        "如果你在石岸上消失，我就只能留在湿滑的岩石上，听着水声越来越大。",
+        "每一块石头看起来都很稳固，直到我不得不踩上去。",
+        "我让自己的脚步保持谨慎，但我的神经却没那么配合。",
+        "请别把我留在连海岸本身感觉就像个致命陷阱的地方。",
+        "海浪让石头闪闪发亮，这反而让我更加无法信任它们。",
+        "我的一侧是水，脚下是坚硬的岩石，而你却不见踪影。",
+        "我在湿滑的石头上努力保持平衡，希望没有什么东西逼迫我快速逃离。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:stony_shore",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_warm_ocean",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在暖水海洋附近。温暖的水域依然隐藏着我不想遇见的东西。",
+        "直到我不得不独自注视它，暖水海洋看起来都还挺宜人的。",
+        "我在暖水海洋旁等待，心想你不在的时候水下会浮出些什么。",
+        "如果你在暖水海洋旁走失，留给我的依然是无际的水面和毫无遮蔽的处境。",
+        "海水看起来很诱人，但这只会让我想知道它还引来了别的什么东西。",
+        "我一直盯着明亮的水面，努力不去想下面住着什么。",
+        "请别仅仅因为一个地方看起来美丽，就把我留在那种貌似安全的地方。",
+        "暖水海洋太过平静让人无法信任，又太过开阔让人无法忽视。",
+        "每一次水花飞溅都在提醒我，我正孤身一人。",
+        "我站在温暖的海水旁，但被留在那里却感受不到任何温暖。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:warm_ocean",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.lines"
+    ],
+    "topic": "groups.recruitment_left_behind.biomes_oceans_rivers"
+  }
+}

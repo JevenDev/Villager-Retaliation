@@ -1,0 +1,304 @@
+[
+  {
+    "id": "default_combat_survival_armorers_count_dents",
+    "request": "combat_survival_report",
+    "professions": [
+      "armorer",
+      "weaponsmith",
+      "toolsmith"
+    ],
+    "show_for_babies": false,
+    "lines": [
+      "我活着回来了。想知道经历了什么，就去数数我身上的凹痕吧。",
+      "装备大体上撑住了。我会权当那是实力使然，而非运气使然。",
+      "我还活着，金属在嘶鸣，我们两个都需要好好修整一番。",
+      "那场恶战在一些我无法用锤子敲平的地方留下了伤痕。",
+      "我的家伙什保住了。但我的骄傲可能还需要多花点心思去修补。",
+      "盔甲抗下了最狠的毒打，剩下的由我来承受。",
+      "我完好无损地脱身了，那些怪物可就没这好运了。",
+      "利刃未曾脱手，即便当时我的双膝已经快要跪下了。",
+      "我本想说这是一场干净利落的完胜，但这些凹痕显然并不同意。",
+      "我还稳稳地站着。在这儿，这已经足够算是一份漂亮的答卷了。"
+    ],
+    "weight": 30,
+    "metadata": {
+      "tags": [
+        "content.dialogue",
+        "dialogue.ambient",
+        "scope.group.combat_trades",
+        "section.lines"
+      ]
+    }
+  },
+  {
+    "id": "default_gear_report_smiths_feedback",
+    "request": "gear_report",
+    "professions": [
+      "armorer",
+      "weaponsmith",
+      "toolsmith",
+      "fletcher"
+    ],
+    "show_for_babies": false,
+    "lines": [
+      "这身装备改变了我的站姿。其中的深意比听上去重要得多。",
+      "我穿上试了试。它虽然没能直接让我变得骁勇无畏，但至少给这份<bold>勇气</bold>找了个能稳妥施展的凭依。",
+      "去转告打造这玩意的匠人，整个村子都已经看在眼里了。",
+      "它比我预想的还要合身。好装备摸起来就应该像是一个牢固的承诺。",
+      "在千钧一发、无暇多想的关头，我毫无保留地信赖了它。这本身就足够说明一切了。",
+      "重心拿捏得恰到好处。不华哨，但绝对踏实可靠。",
+      "它经受住了泥泞、恐慌以及各种愚蠢决策的考验。真是个完美的开端。",
+      "打造这身装备的匠人，一定深知人在恐惧战栗时双手会如何无力地发抖。",
+      "它虽然没能直接替我赢下决斗，但它撑起了足够的腾挪空间，好让我能亲手赢下它。",
+      "精湛的手艺能让你活得足够久，好让你有机会站在这里抱怨它。"
+    ],
+    "weight": 32,
+    "metadata": {
+      "tags": [
+        "content.dialogue",
+        "dialogue.ambient",
+        "scope.group.combat_trades",
+        "section.lines"
+      ]
+    }
+  },
+  {
+    "id": "default_village_defense_smith_respect",
+    "request": "village_defense_report",
+    "professions": [
+      "armorer",
+      "weaponsmith",
+      "toolsmith",
+      "fletcher"
+    ],
+    "show_for_babies": false,
+    "player_event_tags": [
+      "player_defended_village",
+      "player_defended_raid"
+    ],
+    "lines": [
+      "我亲眼瞧见你在危机降临时挺身而出的壮举。那是任何熔炉也打造不出的武器灵魂。",
+      "在<shake>恐惧</shake>试图撕开防线缺口的紧要关头，你毅然挺身堵了上去。我会牢牢记住这一幕的。",
+      "村里老少心里亮堂着呢，谁只是腰间挂着冷钢，谁又是肩上扛着责任，大家一清二楚。",
+      "当警钟长鸣、危难临头时，你没有退缩。",
+      "世上多的是漂亮好听的空话，但你在村大门前做出的壮举，才是真刀真枪的担当。",
+      "你毅然挡在灾殃与我们温暖的家园之间。这份恩情，村里人绝不会视而不见。",
+      "我见过无数人挥舞兵刃，但极少有人懂得何时该死守阵地、寸步不让。",
+      "今天村落里洋溢着安稳，全因你当初决意留下来与我们共患难。",
+      "当危机不怀好意地寻找防线纰漏时，是你亲手将缺口死死堵上。",
+      "你浴血奋战的姿态，就像是把我们这帮老小的性命当成了值得用命去守护的无价之宝。这在这里，重如千钧。"
+    ],
+    "weight": 36,
+    "metadata": {
+      "tags": [
+        "content.dialogue",
+        "dialogue.ambient",
+        "scope.group.combat_trades",
+        "section.lines"
+      ]
+    }
+  },
+  {
+    "id": "default_event_baby_hurt_guarded",
+    "request": "village_event_report",
+    "professions": [
+      "armorer",
+      "weaponsmith",
+      "fletcher",
+      "cleric"
+    ],
+    "event_tags": [
+      "baby_villager_attacked"
+    ],
+    "lines": [
+      "有孩子受伤了。我的心肠还没硬到能平静接受这种回忆。",
+      "小家伙哇哇大哭的那一刻，每一个听见动静的成年人，眼神和手里的家伙什都变得更加<bold>冷厉凶狠</bold>了。",
+      "村里有些容不得逾越的底线，压根不需要开会商量。伤害孩子，就是其中天理难容的一条。",
+      "自那以后，再没人能安然入眠。谁也没法在听到一个可怜孩子惊惶颤栗时假装太平。",
+      "当孩子哭出那种撕心裂肺的声音时，你能清晰听到整座村落的呼吸都随之变冷了。",
+      "有些伤痕看似不起眼，压在心坎上却沉重得令人发喘。",
+      "大人们虽然说话轻言细语，可他们的手就从未离自己劈柴防身的家伙什太远。",
+      "这村子能容忍许多过失，但唯独这件事，永远也别想得到原谅。",
+      "孩子如今是安稳了，可安全并不代表他心里的伤痛已经痊愈。",
+      "所有人亲眼目睹。所有人牢记在心。"
+    ],
+    "weight": 40,
+    "metadata": {
+      "tags": [
+        "content.dialogue",
+        "dialogue.ambient",
+        "scope.group.combat_trades",
+        "section.lines"
+      ]
+    }
+  },
+  {
+    "id": "default_event_golem_defeated_mob_relief",
+    "request": "village_event_report",
+    "professions": [
+      "armorer",
+      "weaponsmith",
+      "toolsmith",
+      "mason"
+    ],
+    "event_tags": [
+      "iron_golem_defeated_mob"
+    ],
+    "lines": [
+      "傀儡履行了它的使命。我听到铁躯轰鸣，宛如一扇铁闸大门轰然关闭。",
+      "门口的怪物又少了一个。回头记得提醒我仔细检查检查傀儡身上有没有开裂的缝隙。",
+      "冰冷的钢铁替我们死死挡住了怪物的獠牙。那声闷响久久在耳畔<pulse>萦绕不散</pulse>。",
+      "最后一记重锤落下后，广场上顿时重归寂静。那种让人长舒一口气的安稳宁静。",
+      "我们的铁傀儡虽然干净利落地解决了它，可当时我每听到一步沉重的脚步声，心都悬在嗓子眼。",
+      "听着沉重的钢铁大步走向危机、而非临阵脱逃，这真是一种莫大的慰藉。",
+      "那怪物压根没能蹦跶多远。傀儡下手极有分寸，确保了它的死局。",
+      "我亲眼瞧见傀儡巍然转过身去，高高抡起两条铁臂，一言不发地彻底终结了那场风波。",
+      "村里这帮老小欠那堆大铁块的恩情，可远比大家嘴上念叨的要多得多。",
+      "那一瞬间，虽然房门紧闭，但每个人的心好在都还平稳地跳着。"
+    ],
+    "weight": 34,
+    "metadata": {
+      "tags": [
+        "content.dialogue",
+        "dialogue.ambient",
+        "scope.group.combat_trades",
+        "section.lines"
+      ]
+    }
+  },
+  {
+    "id": "default_event_golem_killed_alarm",
+    "request": "village_event_report",
+    "professions": [
+      "armorer",
+      "weaponsmith",
+      "toolsmith",
+      "mason",
+      "librarian"
+    ],
+    "event_tags": [
+      "golem_killed"
+    ],
+    "lines": [
+      "傀儡倒下了。现在，村落里的每一扇房门听上去都变得像纸一样薄了。",
+      "当那尊铁躯彻底止息、沦为死寂时，所有人终于都心惊胆战地听出了这份<shake>寂静</shake>背后的沉重代价。",
+      "我们失去的可不仅仅是一位哨兵。我们失去的是那份曾昂首矗立在广场中央的无畏底气。",
+      "没有了它那庞大的身影，广场如今看起来空落落得让人心慌。",
+      "我总是恍惚觉得下一刻就能听到它沉重的踱步声。可耳畔传来的却始终只有一片死寂。",
+      "一个习惯了在庞大庇护下繁衍生息的村落，一旦失去它，只会在空旷处留下刺骨的清冷寂寞。",
+      "最先察觉到异样的是小孩子们。这让本就压抑的气氛变得更加凄凉愁惨了。",
+      "兴许……我们可以再拼凑搭建一尊新的。但这也根本挽回不了眼前这一尊已经消逝的无情事实。",
+      "钢铁易得，安心难筑。",
+      "现在，投落在村落边缘的每一道阴影，都仿佛在无形之中被拉扯、膨胀得无比庞大吓人。"
+    ],
+    "weight": 42,
+    "metadata": {
+      "tags": [
+        "content.dialogue",
+        "dialogue.ambient",
+        "scope.group.combat_trades",
+        "section.lines"
+      ]
+    }
+  },
+  {
+    "id": "default_event_raid_trade_memory",
+    "request": "village_event_report",
+    "professions": [
+      "cartographer",
+      "fletcher",
+      "weaponsmith",
+      "armorer",
+      "librarian"
+    ],
+    "event_tags": [
+      "raid"
+    ],
+    "lines": [
+      "那些劫掠者举着招摇的恶魔旗帜杀进村来，最后只丢给了我们一堆需要修补的断壁残垣。",
+      "在突袭的战火洗礼下，不管手头干的是哪一门营生，如今都得硬着头皮去当放哨的眼线。",
+      "警钟急促鸣响的那一刻，听起来完全不像是铁器的轰鸣。它更像是在一瞬间声嘶力竭地在咆哮着村里<pulse>每一个人的名字</pulse>。",
+      "每当狂风以不对劲的劲头刮过屋顶时，我恍惚中依旧能听见那刺耳惊悚的号角声。",
+      "在那场九死一生的突袭中，村里人人都有各自的活计要忙活——哪怕那份活计仅仅只是缩在角落里瑟瑟发抖。",
+      "那些张狂的旗帜早已经退去，但伤痕累累的村子这会儿却依旧在默默地修修补补。",
+      "一场袭击能让你看清，哪些门足够结实，以及哪些人能够撑到最后。",
+      "在去统计庄稼房屋的损失之前，我们总是战战兢兢地先去清点幸存的人头。",
+      "厮杀过后，往日宽敞的广场看在眼里，不知为何，总觉得无端变窄、变小了许多。",
+      "袭击刚刚止息，买卖交易暂且搁在一旁吧。当务之急，是得先确保全村老小在点名时都能清脆、活生生地应上一声。"
+    ],
+    "weight": 40,
+    "metadata": {
+      "tags": [
+        "content.dialogue",
+        "dialogue.ambient",
+        "scope.group.combat_trades",
+        "section.lines"
+      ]
+    }
+  },
+  {
+    "id": "default_event_retaliation_started_combat_trades",
+    "request": "village_event_report",
+    "professions": [
+      "armorer",
+      "weaponsmith",
+      "fletcher",
+      "toolsmith"
+    ],
+    "event_tags": [
+      "villager_retaliation_started"
+    ],
+    "lines": [
+      "只要有一个老实巴交的村民决意挥拳还手，整个广场的老少都能瞬间感受到那股肃杀的势头。",
+      "复仇和反击绝不可能是优雅体面的。当温和的警告被彻底消磨殆尽，这便是那必然倾泻而出的滔天怒火。",
+      "有人得寸进尺、欺人太甚，如今，泥人捏的村落也终于决定用更强硬冷酷的手段去回应了。",
+      "我们固然不是什么浴血厮杀的兵卒，但即便再怎么温顺本分的一双手，也终有死死攥成铁拳的时候。",
+      "谁也不愿意看到局势闹到这般剑拔弩张的地步。但这，绝不意味着我们会像个傻子一样坐以待毙。",
+      "被逼入穷途末路的村落，骨子里的血性总是能被激发得极快。",
+      "忍耐终有尽头，当恐惧退无可退之时，它便不会再往后挪动半分半寸。",
+      "农具、弓箭、利刃、石块。在这一刻，大家手头摸到什么得心应手的家伙什就攥紧什么。",
+      "当打破沉默的第一记大锤猛然抡下时，连空气中的寒意都变了。自那之后，所有人便心里亮堂、什么都懂了。",
+      "村民们可以忍受很久，但绝不可能忍受一辈子。"
+    ],
+    "weight": 36,
+    "metadata": {
+      "tags": [
+        "content.dialogue",
+        "dialogue.ambient",
+        "scope.group.combat_trades",
+        "section.lines"
+      ]
+    }
+  },
+  {
+    "id": "default_joke_profession_smiths",
+    "request": "joke",
+    "professions": [
+      "armorer",
+      "toolsmith",
+      "weaponsmith"
+    ],
+    "show_for_babies": false,
+    "lines": [
+      "你这笑话可还得再搁在炉子里好好淬淬火。眼下，微风轻轻一吹，它就得软软地塌下去了。",
+      "实不相瞒，我从一把破铁勺上都听过比这要<italic>犀利尖锐</italic>得多的乐子。",
+      "算是不坏吧。可惜开刃还不够利索，而且身上的磕碰瘪痕也实在多了些。",
+      "给我一尊熔炉、一柄铁锤和三天工夫，我兴许能费劲把这疙瘩料子锻造成一个能逗人发笑的小玩意。",
+      "可惜咯，你这好不容易憋出来的乐子还没等出炉冷却呢，就先自个儿开裂了。",
+      "对于你绞尽脑汁的尝试，我深表敬意。但对于这个滑稽的结果，我恕难苟同。",
+      "如果你本来是想用它来锐利地扎扎别人的心窝子，那你可真是不开眼，连刃都忘了开了。",
+      "当心点。就算你这笑话迟钝粗糙得像块顽石，也依旧有可能会不长眼地砸伤旁人。",
+      "我这炉子里的废铁都比你懂抖包袱的时机。",
+      "等你老老实实回去把这块锈铁磨得锋利得体了，再跑过来跟我唠吧。"
+    ],
+    "weight": 22,
+    "metadata": {
+      "tags": [
+        "content.dialogue",
+        "dialogue.ambient",
+        "scope.group.combat_trades",
+        "section.lines"
+      ]
+    }
+  }
+]

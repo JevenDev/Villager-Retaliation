@@ -1,0 +1,59 @@
+{
+  "lines": [
+    {
+      "id": "default_profession_unemployed_between_jobs",
+      "request": "question",
+      "lines": [
+        "没有工作台意味着我能察觉到更多事情。低估无业游民可是会有<bold>危险</bold>的。",
+        "有些差事需要工具。而我的差事似乎是在午饭前听遍每一个<wavy>传闻</wavy>。",
+        "我正处于天职的交替期，这是一种委婉的说法，意思就是村里还没决定好该把什么事<shake>怪罪</shake>到我头上。",
+        "每个人都问我在干什么。我倒想问问他们为什么都这么<jump>匆忙</jump>。",
+        "工作台能给你一份活计。而没有工作台能让你看清<italic>其他所有人</italic>的活计。",
+        "我可能没有职业，但我有<bold>见解</bold>，而且不知为何，这些见解更占时间。",
+        "有活干的人总是很忙。没活干的人总是被别人<pulse>盯着</pulse>。",
+        "我可没闲着。我是在进行<italic>低效率观察</italic>。",
+        "村里一直在等我变得有用。而我一直在等村里降低他们的<shake>标准</shake>。",
+        "没有工具，没有柜台，没有日程。只有我，街道，以及多得让人<wavy>起疑</wavy>的空闲时间。"
+      ],
+      "professions": [
+        "unemployed",
+        "nitwit"
+      ],
+      "show_for_babies": false,
+      "weight": 18
+    },
+    {
+      "id": "default_event_reputation_changed_nitwit_plainspoken",
+      "request": "village_event_report",
+      "lines": [
+        "大家议论你的方式变了。我<bold>非常</bold>擅长听这种小道消息。",
+        "有些东西<pulse>变了</pulse>。同样的街道，不同的目光。",
+        "你稍微改变了村里的看法。这可比搬动一张<shake>床</shake>还要难。",
+        "现在人们看你的眼神不一样了。我能注意到那些<italic>眼神</italic>。我有的是时间。",
+        "今天有人提到了你的名字，而且没人用<wavy>平常那种口气</wavy>说话。",
+        "村里调整了对你的看法。村庄改变看法总是很<pulse>缓慢</pulse>，然后突然间就全变了。",
+        "我不知道你做了什么，但提起你名字时的氛围已经<pulse>改变</pulse>了。",
+        "大家对你的态度要么变<color:green>温和</color>了，要么变<color:red>尖刻</color>了。现在还很难说，但肯定不一样了。",
+        "你该知道那些<wavy>闲言碎语</wavy>换了风向。我跟听了一阵子。",
+        "在这儿，名声的改变就藏在每一句<italic>耳语</italic>里。"
+      ],
+      "event_tags": [
+        "reputation_changed"
+      ],
+      "professions": [
+        "nitwit",
+        "unemployed"
+      ],
+      "weight": 30
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.unassigned_trades",
+      "section.lines"
+    ],
+    "topic": "groups.unassigned_trades.lines"
+  }
+}

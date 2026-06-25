@@ -1,0 +1,254 @@
+[
+    {
+        "id":  "recruitment_left_behind_badlands",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在恶地里暴晒。那里的烈日和悬崖让人觉得麻烦永远不会结束。",
+                      "恶地里全都是高温、石头，而且无处可藏。在什么东西先找到我之前，快点回来。",
+                      "如果你想四处乱晃，别在恶地里这么干，那里的每一步都让人觉得暴露无遗。",
+                      "我在恶地里等待，不知道是高温还是陡坡会先要了我的命。",
+                      "恶地让每个方向看起来都不安全，每个阴影看起来都遥不可及。",
+                      "我一直盯着悬崖，因为任何东西都可能出现在我头顶，而我却无法及时发现。",
+                      "那地方只有干燥的空气、尖锐的石头和糟糕的落脚点。我一点也不喜欢独自在那里等待。",
+                      "请别把我留在地面塌陷速度比我反应还快的地方。",
+                      "酷热让人难以保持冷静，而悬崖峭壁让人难以移动。",
+                      "我孤身一人，口干舌燥，周围到处都是我信不过的悬崖边缘。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:badlands"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_desert",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在沙漠里。烈日、黄沙，还没有阴凉，这可不是什么好陪伴。",
+                      "沙漠太广阔也太炎热了，绝不能被丢在那里。",
+                      "我站在沙漠里，满眼都是热浪，完全不知道你什么时候才回来。",
+                      "如果你在沙漠里走散，我就只能在烈日下炙烤，扫视每一个沙丘寻找危险。",
+                      "沙漠让距离显得如此残酷。我能看得很远，但那根本毫无用处。",
+                      "我不断寻找阴凉，结果找到的却只有更多的沙子。",
+                      "请别把我留在感觉太阳对人充满敌意的地方。",
+                      "在还要担心被遗忘之前，高温就已经够糟糕的了。",
+                      "过了一会儿，每个沙丘看起来都一样了，这让等待变得更加难熬。",
+                      "我站在开阔的沙地上，只希望在其他东西注意到我之前你能回来。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:desert"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_eroded_badlands",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在风化恶地。那些尖塔让每条路感觉都像是个陷阱。",
+                      "风化恶地充满了高温和石塔，还有太多容易被逼入绝境的地方。",
+                      "我被困在风化恶地，试图在那些山脊之间找寻一条安全的出路。",
+                      "如果你在风化恶地里乱晃，我就只能在陡峭的悬崖边流汗。",
+                      "那些石塔让人很难判断危险会从哪里降临。",
+                      "我不断环顾四周，抬头看、回头看。那里有太多的死角。",
+                      "风化恶地感觉一点也不开阔。它感觉就像是一个由热浪组成的迷宫。",
+                      "请别把我留在每一条路看起来都通向糟糕结局的地方。",
+                      "我分不清自己是更担心掉下去，还是更担心被什么东西发现。",
+                      "整个地方感觉就像是为麻烦雕刻出来的藏身之处。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:eroded_badlands"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_savanna",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在疏林草原里。高高的草丛和开阔的地面根本提供不了什么掩护。",
+                      "疏林草原太干燥也太暴露了，在那里走失可不是闹着玩的。",
+                      "我在疏林草原等待，头顶烈日，周围根本没有坚实的藏身之所。",
+                      "如果你在疏林草原消失，我就只能留在草丛里，而那草丛隐藏危险的能力远比隐藏我要好。",
+                      "草丛一直在晃动，我分不清那是风还是麻烦找上门了。",
+                      "那里太过开阔，独自一人根本无法感到安全。",
+                      "请别把我留在可以从四面八方都被人看到的地方。",
+                      "疏林草原看起来很平静，但平静并不等同于安全。",
+                      "我一直盯着草丛的边缘，等着你回来，或者更糟的东西出现。",
+                      "高温、开阔的空地和死寂，让每一分钟都显得无比漫长。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:savanna"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_savanna_plateau",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在疏林高原上。只有在不是孤身一人的时候，高地才算有点用。",
+                      "一旦失去你的踪影，疏林高原就让人感觉太暴露了。",
+                      "我被困在疏林高原上，周围只有风、悬崖，没有良好的掩体。",
+                      "如果你在疏林高原上乱跑，我就只能暴露在长长的陡坡上方。",
+                      "站得更高并没有让我觉得更安全。它只会让坠落看起来更可怕。",
+                      "高原让我能看到一切，除了你去了哪里。",
+                      "请别把我留在地面会突然截断的地方。",
+                      "我尽量远离边缘，但依然感觉边缘近在咫尺。",
+                      "风有太多的空间肆虐，而我却只有太少的地方立足。",
+                      "我暴露在外，心神不宁，而且非常清楚掉下去可是一段很长的距离。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:savanna_plateau"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_windswept_savanna",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在风袭疏林草原里。开阔的悬崖和强劲的阵风真是个糟糕的组合。",
+                      "风袭疏林草原太过暴露，毫无防备地被困在那里实在太危险了。",
+                      "我在风袭疏林草原等待，狂风拉扯着我，周围空无一物的地方太多了。",
+                      "如果你在风袭疏林草原消失，我就只能独自留在崎岖的地面上，根本找不到合适的地方躲藏。",
+                      "狂风一直推搡着我，好像想把我推向边缘一样。",
+                      "那地方满地崎岖，时机也不对。我一点也不想独自在那儿等。",
+                      "请别把我留在地势崎岖、狂风肆虐的地方。",
+                      "在狂风呼啸中，我连自己思考的声音都快听不见了。",
+                      "风袭疏林草原让仅仅是站着不动都像是在战斗。",
+                      "我必须同时努力稳住脚步、保持方向感和按捺住性子。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:windswept_savanna"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    },
+    {
+        "id":  "recruitment_left_behind_wooded_badlands",
+        "request":  "recruitment_followup",
+        "option":  "recruitment_left_behind",
+        "show_for_babies":  false,
+        "weight":  20,
+        "lines":  [
+                      "别把我留在繁茂恶地里。高温、陡峭的石头和稀疏的掩护，这些根本不够看。",
+                      "即使周围散落着一些树木，繁茂恶地依然让人感觉环境恶劣。",
+                      "我在繁茂恶地等待，努力同时留意着那些岩架和缝隙。",
+                      "如果你在繁茂恶地里乱晃，我就只能在悬崖边挨烤，连条安全的退路都没有。",
+                      "树木稍微起了点作用，但还不足以让那地方显得友善。",
+                      "我不断在树干之间和石头上方扫视。需要防备的地方太多了。",
+                      "请别把我留在那种介于森林和悬崖之间、模棱两可的地方。",
+                      "阴凉很稀薄，石头很陡峭，而这一切我都只能独自承受。",
+                      "繁茂恶地给我的那点掩护，恰好够我胡思乱想还有什么东西也藏在里面。",
+                      "我又热又暴露在外，周围全都是我不信任的岩架。"
+                  ],
+        "conditions":  [
+                           {
+                               "type":  "recruitment_memory",
+                               "scenarios":  [
+                                                 "left_behind"
+                                             ],
+                               "biome":  "minecraft:wooded_badlands"
+                           }
+                       ],
+        "metadata":  {
+                         "tags":  [
+                                      "content.dialogue",
+                                      "dialogue.ambient",
+                                      "scope.group.recruitment_left_behind",
+                                      "section.lines"
+                                  ]
+                     }
+    }
+]

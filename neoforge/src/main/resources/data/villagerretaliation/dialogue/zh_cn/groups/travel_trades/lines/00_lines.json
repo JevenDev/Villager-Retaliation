@@ -1,0 +1,61 @@
+{
+  "lines": [
+    {
+      "id": "default_recruitment_followup_travel_trades",
+      "request": "recruitment_followup",
+      "lines": [
+        "这场旅途让外面的世界感觉更加辽阔，也让家的轮廓变得更加真切。",
+        "我算是明白了哪些道路只是看起来安全，而哪些只是在伪装。",
+        "下一次，我会轻装上阵、多听少说，而且绝对会<pulse>减少</pulse>对寂静的信任。",
+        "真是奇妙，一旦你真正踏上旅途，道路就会显得如此漫长。",
+        "我在外面见识了不少，现在对每一张地图都更加敬畏了。",
+        "有些路看起来简单，直到你亲身走过才发现并非如此。",
+        "我虽然拖着疲惫不堪的双腿归来，却也带回了更多有价值的问题。",
+        "当村庄在你身后、而非将你环绕时，这个世界给人的感觉会完全不同。",
+        "我发觉，漫长的旅途总是有种奇妙的魔力，会让曾经微不足道的忧虑也无限放大。",
+        "下次我们同行时，我会在那些东西盯上我们之前先发现它们。"
+      ],
+      "professions": [
+        "cartographer",
+        "fisherman",
+        "fletcher",
+        "leatherworker"
+      ],
+      "show_for_babies": false,
+      "weight": 30
+    },
+    {
+      "id": "default_recruitment_followup_home_trades",
+      "request": "recruitment_followup",
+      "lines": [
+        "走这一趟，着实让我深刻地意识到大门究竟有多么重要。",
+        "我不只带回了酸痛的双脚，更带回了对<pulse>家园</pulse>更清晰、更笃定的向往。",
+        "当你不得不艰难跋涉寻回这里时，整座村庄在眼里都会呈现出截然不同的光彩。",
+        "旅途虽有它的阅历，但我很高兴我们的道路最终还是引导我们回到了这里。",
+        "我对熟悉的工作声的怀念程度超出了自己的预想。",
+        "在经历过漫长旅途后，家显得更小了，但并不意味着它变弱了。",
+        "在见识过外面隐藏的万般危机之后，我如今更能理解村庄的珍贵了。",
+        "入夜前知道哪扇门属于自己，这真是一种慰藉。",
+        "外面的世界确实广袤无垠。但正因如此，才更显得温暖的壁炉是多么明智而安宁的存在。",
+        "我虽然疲惫地归来，却前所未有地确定自己究竟心归何处。"
+      ],
+      "professions": [
+        "farmer",
+        "librarian",
+        "mason",
+        "cleric"
+      ],
+      "show_for_babies": false,
+      "weight": 30
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.travel_trades",
+      "section.lines"
+    ],
+    "topic": "groups.travel_trades.lines"
+  }
+}

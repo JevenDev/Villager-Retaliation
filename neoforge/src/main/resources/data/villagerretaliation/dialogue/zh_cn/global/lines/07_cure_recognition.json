@@ -1,0 +1,272 @@
+{
+  "lines": [
+    {
+      "id": "gift_global_disliked_poor",
+      "request": "gift_preferences",
+      "lines": [
+        "送 {gift_item} 实在不算个体面的礼物。绝大多数村民甚至都不太想碰它。",
+        "送 {gift_item} 会传达出错误的暗示。",
+        "如果你是真心想表达善意，最好避开 {gift_item}。",
+        "送出 {gift_item}，比起馈赠，更像是一种警告。",
+        "把 {gift_item} 塞到别人手里，能瞬间让现场的气氛降到冰点。",
+        "{gift_item} 应该被扔在别处，而不是作为礼物拿在别人手里。",
+        "Most people here would call {gift_item} a bad offering.",
+        "比起带着 {gift_item} 登门，你还不如两手空空地来。",
+        "别把 {gift_item} 包装一番就厚颜无耻地称其为善意。",
+        "像 {gift_item} 这种礼物，只会让大家因为糟糕的缘由记住你。"
+      ],
+      "gift_advice": "global_disliked",
+      "weight": 186
+    },
+    {
+      "id": "gift_profession_liked_thoughtful",
+      "request": "gift_preferences",
+      "lines": [
+        "如果是给 {gift_subject} 挑选礼物，{gift_item} 会是个非常体贴的选择。",
+        "对 {gift_subject} 来说，{gift_item} 证明你是用了心思的。",
+        "{gift_subject} 绝对能将 {gift_item} 派上绝佳的用场。",
+        "比起别的礼物，{gift_item} 显然更契合 {gift_subject}。",
+        "当有人带上 {gift_item} 时，一瞧就知道他非常懂这一行。",
+        "在他们的本职工作中，{gift_item} 能发挥出真正的价值。",
+        "{gift_item} 这种实用物件，最能让 {gift_subject} 念及你的好意。",
+        "要给 {gift_subject} 准备一份精心挑选的礼物？那就是 {gift_item} 了。",
+        "{gift_subject} 往往会非常尊重送出 {gift_item} 这种礼物的人。",
+        "{gift_item} 会让 {gift_subject} 觉得非常有个人针对性。"
+      ],
+      "gift_advice": "profession_liked",
+      "weight": 186
+    },
+    {
+      "id": "gift_profession_disliked_avoid",
+      "request": "gift_preferences",
+      "lines": [
+        "如果你是为 {gift_subject} 挑礼物，我建议避开 {gift_item}。",
+        "对 {gift_subject} 而言，送 {gift_item} 显得很不走心。",
+        "千万别把 {gift_item} 塞给 {gift_subject}，还指望人家对你感恩戴德。",
+        "{gift_subject} 几乎根本用不上 {gift_item}。",
+        "{gift_item} 与 {gift_subject} 的身份简直风马牛不相及。",
+        "如果换作是我送礼给 {gift_subject}，我宁可把 {gift_item} 留在家里的杂物箱里。",
+        "{gift_subject} 可能会对你送他 {gift_item} 产生不好的误会。",
+        "对于他们那个行当，{gift_item} 纯属累赘，算不上什么礼物。",
+        "有些时候，无意的礼物反倒成了对他人专业能力的侮辱。而送 {gift_item} 就很可能起到这种反作用。",
+        "{gift_item} 绝对是会让 {gift_subject} 一想起来就拉下脸来的晦气玩意。"
+      ],
+      "gift_advice": "profession_disliked",
+      "weight": 186
+    },
+    {
+      "id": "gift_already_known_all",
+      "request": "gift_preferences",
+      "lines": [
+        "我想，关于送礼的事，我已经把我懂的全部教给你了。",
+        "恐怕你已经把我脑子里关于礼物的门道全部掏空了。",
+        "再没有别的新建议了。如果你还想打听礼物的八卦，不妨去问问别的村民。",
+        "我可不想在这不懂装懂、故弄玄虚。",
+        "我今天给不出更多关于礼物的建议了。去问问别人，你或许能听到不一样的说法。",
+        "这就是我目前关于礼物馈赠所能给出的全部心得了。",
+        "Nothing new comes to mind. Gifts are personal, even when villagers gossip.",
+        "我现在确实没有更多关于礼物的诀窍能传授给你了。",
+        "所有真正有用的建议，你都已经从我这听过了。",
+        "我这关于送礼的点子已经见底了。咱们就别在这继续刮空碗底了。"
+      ],
+      "gift_advice": "already_known",
+      "weight": 150
+    },
+    {
+      "id": "cured_recognition_generic_warm_1",
+      "request": "cured_recognition",
+      "lines": [
+        "我还记得一些零星的碎片。在我的声音恢复之前，我就先认出了你的脸。谢谢你一直守候在噩梦的彼岸。",
+        "我记得的事情已经足够让我明白，是你把我从那片深不见底的黑暗中生生拽了出来。",
+        "我仍记得重新找回自我的那个清晨，而你正是那抹晨光中不可或缺的一部分。",
+        "痊愈的过程就像是在水下憋气太久后终于浮出水面。当我重新能够顺畅呼吸时，你就站在我身旁。",
+        "过去的记忆很多都破碎了，但你的救命之恩，是其中最清晰的一块碎片。",
+        "虽然我无法把一切都回想起来，但我记得的事情已经足够支撑我向你致以最深的谢意。",
+        "你帮我重新找回了自己的名字。这可绝对不是什么微不足道的恩惠。",
+        "当眼前的重重迷雾散去时，我知道一直有人默默守在极近的地方对我施以援手。",
+        "我首先记起了恐惧，接着是温度，最后是你的脸庞。这番体验的先后顺序对我意义非凡。",
+        "无论我在那片黑暗中迷失了什么，我都深知，是你指引我找到了重见天日的出口。"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "weight": 60
+    },
+    {
+      "id": "cured_recognition_generic_confused_1",
+      "request": "cured_recognition",
+      "lines": [
+        "我想，我应该是认识你的。只是那段记忆的边缘，还残留着某种野兽噬咬过的痕迹。",
+        "你的声音听起来非常耳熟，但在痊愈之前，我所有的记忆都充斥着迷雾与永无止境的饥饿。",
+        "我认得你的脸，只是每当脑海翻涌起对你的回忆时，仍像个蹒跚跛行的人一般迟缓。",
+        "我的脑海中确实残留着一些关于你的碎片，但它们目前还无法天衣无缝地拼凑在一起。",
+        "我相信是你救了我。我正在努力试着回忆起那一切，并尽量不让自己吓得浑身发抖。",
+        "治疗确实把我拉回了人间，但我的魂魄好像还没彻底缓过神来。",
+        "我的脑海中偶尔会闪过对你的零星记忆。这比听上去要让人感到宽慰得多。",
+        "我的思绪总是要先在那些阴暗可怖的地方兜上几个圈子，然后才能触及到你当初展现的善意。",
+        "我想，我应该是非常感激你的。只是我多么希望我的记忆能把这一切更清晰地呈现出来。",
+        "你给我的熟悉感中，仍然夹杂着一丝让我不由自主保持警惕的余悸。"
+      ],
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "weight": 60
+    },
+    {
+      "id": "cured_recognition_generic_uneasy_1",
+      "request": "cured_recognition",
+      "lines": [
+        "我记住你了。但这并不意味着回忆起你是一件轻松的事。",
+        "我知道是你救了我。但我也同样清楚，每当回想起那段日子，痛苦依然如影随形。",
+        "我对你的感激确实发自肺腑，但与之相伴的那份恐惧也同样真实切骨。",
+        "你确实参与了我重回人间的过程，但那条回归之路上布满了荆棘和不体面。",
+        "我很感激，同时我也心有余悸。这两者都是我的真切感受。",
+        "不要因为治疗最终生效了，就奢求我能假装那些痛苦的回忆从没发生过一样完美无瑕。",
+        "我知道我欠你一份天大的恩情。但我同样知道，每当想起当初的惨状，我的双手至今仍颤抖个不停。",
+        "得到救赎，并不能抹去在这之前我所遭受过的所有摧残。",
+        "你的脸庞总是与那个充满煎熬和惨烈挣扎的清晨绑定在一起。我至今仍在试着学会该如何去面对它。",
+        "我可以对你心存感激，但这并不代表我已经准备好能毫无戒备地站在你身旁了。"
+      ],
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30
+    },
+    {
+      "id": "village_cure_acknowledgement_respectful_1",
+      "request": "greeting",
+      "lines": [
+        "我们听说了关于 <aqua>{cured_villager}</aqua> 的事。你把我们的一位同胞完好地带了回来。",
+        "大家都在相传，正因为你一直坚守不离，<aqua>{cured_villager}</aqua> 才能得以平安归家。",
+        "你治愈了 <aqua>{cured_villager}</aqua> 的伟业，彻底改变了大家提及你名字时的口吻。",
+        "能再次看到 <aqua>{cured_villager}</aqua> 漫步在村里的小道上，真是太好了。",
+        "你为 <aqua>{cured_villager}</aqua> 照亮了归途，整座村庄都会将这份恩情铭记于心。",
+        "可不是人人都愿意在这么长的时间里固守原地，去倾力拯救 <aqua>{cured_villager}</aqua> 的。",
+        "随着 <aqua>{cured_villager}</aqua> 的归来，村庄仿佛也重新变得完整了一些。",
+        "你所做的不单单是治愈了一场顽疾。你是把一个人完好地还给了他的至亲同胞。",
+        "<aqua>{cured_villager}</aqua> 重新回家了。这对我们这里所有人来说都是天大的事。",
+        "最近大家之所以对你交口称赞，往往都离不开你救治了 <aqua>{cured_villager}</aqua> 的缘故。"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "village_cure_acknowledgement_respectful_2",
+      "request": "question",
+      "lines": [
+        "你治愈了 <aqua>{cured_villager}</aqua> 这一壮举在这里意义非凡。大家会永远记住是谁留下来伸出援手的。",
+        "大家都在相传，正因为你一直坚守不离，<aqua>{cured_villager}</aqua> 才能得以平安归家。",
+        "你治愈了 <aqua>{cured_villager}</aqua> 的伟业，彻底改变了大家提及你名字时的口吻。",
+        "你协助将 <aqua>{cured_villager}</aqua> 送回了村子里，这绝非是一桩微不足道的小事。",
+        "当再次看到 <aqua>{cured_villager}</aqua> 安稳地重回我们当中时，大家都由衷地松了一口气。",
+        "你的医术不仅赐予了 <aqua>{cured_villager}</aqua> 健康，更是将他送回了家园。",
+        "大家都在默默关注着你对待 <aqua>{cured_villager}</aqua> 时展露的无上耐心。",
+        "这样的一场奇迹，它的余音足以为不止一个家庭带去久违的欢欣。",
+        "<aqua>{cured_villager}</aqua> 现在的步履轻盈多了，而这大半都要归功于你的努力。",
+        "是的，整座村庄不仅会把伤害一笔一笔地记在账上，它也同样会牢牢记住每一次神圣的治愈。"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "village_cure_acknowledgement_neutral_1",
+      "request": "greeting",
+      "lines": [
+        "我听说你治好了 <aqua>{cured_villager}</aqua>。那可是一件很了不起的大事。",
+        "大家都在相传，正因为你一直坚守不离，<aqua>{cured_villager}</aqua> 才能得以平安归家。",
+        "你治愈了 <aqua>{cured_villager}</aqua> 的伟业，彻底改变了大家提及你名字时的口吻。",
+        "<aqua>{cured_villager}</aqua> 重新回到了我们当中。大家对此都十分关注。",
+        "不管别人在闲言碎语些什么，你向 <aqua>{cured_villager}</aqua> 施以援手这事都至关重要。",
+        "如此神奇的治愈神迹，整个村庄上下都无法对此视而不见。",
+        "据我所知，你在对待 <aqua>{cured_villager}</aqua> 这一事上，做得非常体面、正确。",
+        "看到 <aqua>{cured_villager}</aqua> 重新恢复健康，帮大家打消了不止一个长久以来的顾虑。",
+        "不用担心，这座村庄同样有足够的度量去铭记那些善行。",
+        "你把 <aqua>{cured_villager}</aqua> 从那般凄惨的绝境中拉了回来。这分量不轻。"
+      ],
+      "dispositions": [
+        "neutral"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "village_cure_acknowledgement_neutral_2",
+      "request": "question",
+      "lines": [
+        "<aqua>{cured_villager}</aqua> 已经因为你重新行走在了村里的小路上。大家都看在眼里。",
+        "大家都在相传，正因为你一直坚守不离，<aqua>{cured_villager}</aqua> 才能得以平安归家。",
+        "你治愈了 <aqua>{cured_villager}</aqua> 的伟业，彻底改变了大家提及你名字时的口吻。",
+        "现在看到 <aqua>{cured_villager}</aqua> 顺利平安地回来，村里那些愁云惨淡的眼神都少了很多。",
+        "你通过这次治愈，协助安抚了不止一个人的内心平静。",
+        "虽然我不知道每一处的来龙去脉，但我确定知道的是，<aqua>{cured_villager}</aqua> 最终安然无恙地返回了。",
+        "村民们绝不会忘记那个在困局中把亲友带回家的人。",
+        "<aqua>{cured_villager}</aqua> 重获了新生的二次机会。而你，正是实现这一切的幕后功臣。",
+        "现在大家提及那次治愈时都带着无上的敬意。这真的很重要。",
+        "你让我们每次望向那片空地时，少了一个本该唏嘘的位置。"
+      ],
+      "dispositions": [
+        "neutral"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "village_cure_acknowledgement_wary_1",
+      "request": "greeting",
+      "lines": [
+        "我听说了你对 <aqua>{cured_villager}</aqua> 的善举。虽然我依然对你心存戒备，但我绝不会厚着脸皮假装那什么也不是。",
+        "大家都在相传，正因为你一直坚守不离，<aqua>{cured_villager}</aqua> 才能得以平安归家。",
+        "你治愈了 <aqua>{cured_villager}</aqua> 的伟业，彻底改变了大家提及你名字时的口吻。",
+        "我对你的人格确实依然抱有疑虑，但不得不承认，你帮了 <aqua>{cured_villager}</aqua> 的确应该记上一功。",
+        "<aqua>{cured_villager}</aqua> 已经回来了，哪怕是我，也会对那只施以援手的臂膀表达敬意。",
+        "可别指望我们村的大门会一瞬间全部为你敞开，但不得不说，这次治愈神迹确实让每个人都看在眼里。",
+        "你为 <aqua>{cured_villager}</aqua> 做了一件天大的好事。我能明确向你保证这一点。",
+        "我很谨慎，但我不瞎。能把 <aqua>{cured_villager}</aqua> 完好带回来，这事非常重要。",
+        "村民们依然在暗暗审视并考量着你的为人，但毫无疑问，这次治愈在天平上为你增添了极重的砝码。",
+        "我虽然还没到完全信任你的地步，但不得不承认，那确实是一件极具德行的高尚善举。"
+      ],
+      "dispositions": [
+        "cautious",
+        "rude"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.cure_recognition"
+  }
+}

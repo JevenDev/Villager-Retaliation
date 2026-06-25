@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.options"
+    ],
+    "topic": "groups.recruitment_left_behind.option"
+  },
+  "options": [
+    {
+      "id": "recruitment_left_behind",
+      "label": "关于把你留在原地的事……",
+      "type": "dialogue_option",
+      "request": "recruitment_followup",
+      "order": -1,
+      "requires_unreported_recruitment_followup": true,
+      "show_for_babies": false
+    }
+  ]
+}

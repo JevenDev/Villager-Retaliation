@@ -1,0 +1,181 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_end_barrens",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在末地荒岛。当坠落永无止境时，这种空旷的地方只会更加可怕。",
+        "末地荒岛让人感觉像是被遗弃在了世界的尽头。",
+        "我在末地荒岛等待，努力不去盯着脚下那贫瘠得近乎虚无的深渊。",
+        "如果你在末地荒岛消失，留给我的就只有死寂、虚空以及紧绷的神经。",
+        "我周围的一切都如此稀少，以至于每迈出一步都显得至关重要。",
+        "这里的空虚让你的缺席显得比实际情况还要让人难以承受。",
+        "请别把我留在世界如此支离破碎的地方。",
+        "末地荒岛让等待感觉就像是站在最后一块残存的物质之上。",
+        "我一直试图寻找一个安全的方向，结果却几乎一无所获。",
+        "我独自站在苍白的岩石上，努力不去想在这里消失是多么容易的一件事。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:end_barrens",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_end_highlands",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在末地高地。那里的一切都让人感到远离了安全。",
+        "末地高地可不是个能弄丢你唯一追随之人的地方。",
+        "我站在末地高地，努力不去想哪怕一个小小的失误会让我变得多么渺小。",
+        "如果你在末地高地消失，我就只能留在诡异的岩石上，祈祷<pulse>没有任何东西注意到我</pulse>。",
+        "虽然脚下的地面感觉还算坚固，但那地方的其他一切都并非如此。",
+        "我一直盯着地平线，尽管那里的地平线从来都显得不那么真实。",
+        "请别把我留在一个连站着不动都感觉只是暂时的落脚点的地方。",
+        "末地高地让附近的每一个声音都显得过于不同寻常。",
+        "我不敢盯着任何东西看太久，以防它也反过来盯着我。",
+        "我独自在一个感觉与任何形式的救援都彻底隔绝的地方。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:end_highlands",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_end_midlands",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在末地中岛。那地方总有办法让每一条路都显得转瞬即逝。",
+        "在我意识到自己孤身一人之前，末地中岛就已经够让人不安的了。",
+        "我在末地中岛等待，视线里没有一样熟悉的东西，周围全是空荡荡的气流。",
+        "如果你在末地中岛消失，我感觉自己离坠入无底深渊只剩一步之遥。",
+        "每个方向看起来都像是一条生路，却又同时让人感觉是死路一条。",
+        "我一直试图记住回去的路，但那地方根本没有任何能让我作为参照的东西。",
+        "请别把我留在一个仿佛连大地该如何存在都已被遗忘的地方。",
+        "末地中岛让距离变得诡异，让安全感变得虚幻。",
+        "我不知道是该移动还是该原地等待，这两种选择看起来都很糟。",
+        "我独自在异样的地面上，努力不让那份空虚侵蚀我的大脑。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:end_midlands",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_small_end_islands",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在末地小岛上。那里的世界几乎小到连立足之地都没有。",
+        "末地小岛绝不是个可以抛弃同伴的地方，除非你想让我对着虚空边缘惊慌失措。",
+        "我在末地小岛上等待，拼命忍住不去向下注视那片虚无。",
+        "如果你在末地小岛上消失，我就只能把每迈出的一步都当成是最后一步来计算。",
+        "那座岛小得连容纳恐惧都嫌拥挤，可恐惧却依然在那儿无孔不入。",
+        "我尽量远离边缘，但感觉边缘却无处不在。",
+        "请别把我留在哪怕一小步路都能变成万丈深渊的地方。",
+        "末地小岛让即使只是转个身都显得充满风险。",
+        "我能看到其他的陆地，但看到并不意味着我能到达那里。",
+        "我独自在虚空之上的一块岩石碎片上，只希望你还清楚地记得把我留在了哪里。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:small_end_islands",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_the_end",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在末地。我可一点也不想被遗弃在虚空之上那些诡异的石头上。",
+        "末地本身就已经够荒诞了，更别提还被独自留在这里。",
+        "我站在末地，努力不去想这里的一切离正常的世界有多么遥远。",
+        "如果你在末地消失，我就被丢在了一个几乎不像是为活物准备的地方。",
+        "天空、岩石、死寂。那里没有任何东西让人觉得是在欢迎我。",
+        "我低着头，让思绪也保持低迷，因为环顾四周只会让情况变得更糟。",
+        "请别把我留在一个让整个世界都显得像是还没完工的地方。",
+        "末地让每一个声音都显得遥不可及，哪怕那声音就在我身边。",
+        "我被怪异的宁静和更怪异的土地包围着，没有一处能让我感到安全。",
+        "被留在末地，感觉就像是被抛弃在了世界法则之外。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:the_end",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_the_void",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在虚空边缘。在那里一旦滑倒，可没有第二次机会。",
+        "虚空就是那种只要你孤身一人，就会感到被直接威胁的地方。",
+        "我在虚空附近等待，拼命不去想我脚下到底是什么。",
+        "如果你在虚空旁消失，我离再也回不来只隔着一个失误的距离。",
+        "面对一个永无止境的边缘，我找不到任何安慰。",
+        "我不断地后退，哪怕我已经离它很远了。",
+        "请别把我留在“坠落”就意味着“终结”的地方。",
+        "虚空让所有的恐惧都变得简单而决绝。",
+        "我无法停止去想，只要发生那么一点微小的意外，一切就都结束了。",
+        "我独自面对着虚无，而虚无感觉离我太近了。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:the_void",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.lines"
+    ],
+    "topic": "groups.recruitment_left_behind.biomes_end"
+  }
+}

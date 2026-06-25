@@ -1,0 +1,387 @@
+{
+  "lines": [
+    {
+      "id": "default_combat_survival_homekeepers_aftershock",
+      "request": "combat_survival_report",
+      "lines": [
+        "我回到了工作岗位。这感觉虽然比不上胜利那样宏大，却比立一座纪念碑更有意义。",
+        "村里听起来恢复正常了，这也是为什么我意识到自己仍在<shake>颤抖</shake>。",
+        "我活下来了。现在我可以继续干家务活了，这真是一种奇妙的仁慈。",
+        "在我的身体停止回味战斗之前，我的双手就已经先回去干活了。",
+        "我一直听到那些日常的声音，却还是忍不住会像大难临头般惊跳起来。",
+        "危险已经过去，但我的神经还没收到这个消息。",
+        "我很感激现在的疲累是干活累的，而不是因为在<italic>逃命</italic>。",
+        "一切看起来都和以前一样，除了我知道这一切改变起来有多快。",
+        "我回到家了。这句话听起来比它本该有的分量还要重。",
+        "村庄还在，我也还活着。对今天来说，这已经<pulse>足够</pulse>了。"
+      ],
+      "professions": [
+        "farmer",
+        "fisherman",
+        "shepherd",
+        "butcher"
+      ],
+      "show_for_babies": false,
+      "weight": 26
+    },
+    {
+      "id": "default_gear_report_practical_workers",
+      "request": "gear_report",
+      "lines": [
+        "它比我预想的更适合日常工作。这是种称赞。",
+        "好装备并不会让人觉得像英雄，只会让人觉得又少了一件会出岔子的事。",
+        "我一直把它带在身边。在这儿，实用的礼物会变成一种习惯。",
+        "它干起活来很顺手，这一点比人们想象的更重要。",
+        "我信任那些能让我专注干活而不用分心去照看的装备。",
+        "它经受住了泥泞、天气以及我那些极其平凡的抱怨。",
+        "没有花架子，也不愚蠢。就是<bold>好用</bold>。",
+        "如果一样东西能熬过一整天的实干，我就会开始敬重它。",
+        "它在宁静时显得坚实，在喧嚣时则表现得更好。",
+        "做这东西的人明白，实用的物件依然需要做到<pulse>可靠</pulse>。"
+      ],
+      "professions": [
+        "farmer",
+        "fisherman",
+        "leatherworker",
+        "mason",
+        "shepherd"
+      ],
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "default_village_defense_civic_gratitude",
+      "request": "village_defense_report",
+      "lines": [
+        "你守护了平凡的明天。这可不是件小事。",
+        "村里还有家务活要干，是因为你帮它在灾难中挺了过来，让我们还有活可干。",
+        "我听到了战斗声，然后又听到了大门重新开启的声音。<pulse>谢谢你。</pulse>",
+        "你挡在了危险企图入侵的地方，大家会记住这一点的。",
+        "因为有你，大家醒来后面对的是工作，而不是悲伤。",
+        "动荡之后一个宁静的早晨就像是一份礼物。是你帮我们赢得了它。",
+        "村里人可能不会大声说出来，但因为有你，大家现在的呼吸都顺畅多了。",
+        "你保护的不止是围墙。你保护的是围墙内那小小的日常。",
+        "我看到战斗停止后，大家脸上的恐惧在慢慢消退。",
+        "你让安全感重新变得可能。在这儿，那就是<bold>一切</bold>。"
+      ],
+      "player_event_tags": [
+        "player_defended_village",
+        "player_defended_raid"
+      ],
+      "professions": [
+        "farmer",
+        "butcher",
+        "fisherman",
+        "shepherd",
+        "mason"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "default_cured_recognition_working_hands",
+      "request": "cured_recognition",
+      "lines": [
+        "我醒来时满脑子想的都是回去干活。那就是我知道自己回来了的方式。",
+        "在我的思绪停止<shake>战栗</shake>之前，我的双手就已经记起了它们的行当。",
+        "你给了我一个我本以为再也见不到的清晨。",
+        "我首先记起的是饥饿，然后是痛苦，接着是你的帮助破除了这一切。",
+        "世界在慢慢回归。工作、面孔、名字，然后是<pulse>我</pulse>。",
+        "我依然能感觉到发生过的事情，但它们不再能左右我了。",
+        "你把我还给了我的双手、我的行当和我的族人们。",
+        "我曾几乎只剩下獠牙和饥饿。是你帮我重新变回了一个人。",
+        "之后我拿起的第一个工具感觉比平时重，但那是属于我的。",
+        "我欠你的不止是一声感谢，但感谢是我的声音重获新生后的开端。"
+      ],
+      "professions": [
+        "farmer",
+        "fisherman",
+        "butcher",
+        "mason",
+        "leatherworker"
+      ],
+      "show_for_babies": false,
+      "weight": 30
+    },
+    {
+      "id": "default_apology_craft_trades",
+      "request": "apology",
+      "lines": [
+        "道歉就是一种修补。别递给我一把你根本不打算用的工具。",
+        "我能接受裂痕，只要它承认自己是裂痕。现在证明它不会扩散。",
+        "言语是第一层补丁。<bold>行为</bold>才是加固的缝合。",
+        "我修过足够多的坏物件，知道第一层补丁永远不会是最后一步。",
+        "如果你是认真的，那就让你的行动来承担更有分量的工作。",
+        "一个爽快的道歉固然好，但改变习惯会更好。",
+        "凹痕是你弄出来的。现在向我证明你知道该如何停手。",
+        "我会听其言，但我更会察其行。",
+        "别粉饰你的愧疚，还管这叫修补。",
+        "说出来，然后证明它。信任就是这样重新<pulse>建立</pulse>起来的。"
+      ],
+      "professions": [
+        "armorer",
+        "toolsmith",
+        "weaponsmith",
+        "mason",
+        "leatherworker"
+      ],
+      "show_for_babies": false,
+      "weight": 30
+    },
+    {
+      "id": "default_apology_household_trades",
+      "request": "apology",
+      "lines": [
+        "我听到了。村里需要的不仅仅是听你说说而已。",
+        "道歉就像种子。我们要看看以后会<pulse>长出</pulse>什么来。",
+        "我想相信你。请让这个想法显得不那么愚蠢。",
+        "言语可以打开大门，但不能打扫地板。",
+        "如果你心存歉意，就让明天看起来和昨天不一样。",
+        "村里以前听过很多道歉。我们更相信一贯的表现。",
+        "我不会把你的话丢到一边，但我也不会只活在你的这些话里。",
+        "一颗忏悔的心依然需要一双稳重的手。",
+        "默默地做得更好，大家<italic>终究</italic>会注意到的。",
+        "这可以是一个开始，但前提是你不能把它当成终点。"
+      ],
+      "professions": [
+        "farmer",
+        "butcher",
+        "fisherman",
+        "shepherd",
+        "cleric",
+        "librarian"
+      ],
+      "show_for_babies": false,
+      "weight": 30
+    },
+    {
+      "id": "default_event_baby_born_tenders",
+      "request": "village_event_report",
+      "lines": [
+        "一个新的小生命加入了我们。连干活的声音都听着柔和了一阵。",
+        "村里现在有个婴儿了。大家都假装不笑，但全都失败了。",
+        "新生命的到来让整个村子都在大声细数自己的<pulse>福分</pulse>。",
+        "今天村里感觉暖和多了，甚至连漏风的角落都不觉得冷了。",
+        "婴儿甚至在开口说话前，就能改变一个地方的氛围。",
+        "每个人都突然记起了自己的双手可以有多温柔。",
+        "现在又多了一个让大门保持坚固、让炉火保持燃烧的理由。",
+        "虽然没人承认，但听到消息后，干家务活都觉得轻快了些。",
+        "一个小小的生命降临了，不知为何，整个村子的人都挺起了胸膛。",
+        "希望包裹在小小的手中，伴随着一声非常响亮的<jump>啼哭</jump>。"
+      ],
+      "event_tags": [
+        "baby_born"
+      ],
+      "professions": [
+        "farmer",
+        "shepherd",
+        "cleric"
+      ],
+      "weight": 34
+    },
+    {
+      "id": "default_event_night_attack_watchers",
+      "request": "village_event_report",
+      "lines": [
+        "黑夜靠得太近了。接下来一段时间，日落前我们都会反复检查插销。",
+        "黑暗考验了村庄，发现我们还算警醒。",
+        "我在看到那东西前先听到了它。那是连睡梦中都会<shake>记起</shake>的部分。",
+        "在那之后，门边每一个阴影看起来都心怀鬼胎。",
+        "村里陷入了那种锐利的寂静，每个人都在屏息凝神地倾听。",
+        "我们挺过来了，但黑夜留下了难以磨灭的印记。",
+        "几天之内，我都不会再信任一个祥和的落日了。",
+        "有些声音你只需要听一次，就会永远记在心里。",
+        "袭击结束了，但黑暗感觉还是比以前更<pulse>近</pulse>了一些。",
+        "今晚，每一扇门都要检查两遍，每一扇窗都要多看上一眼。"
+      ],
+      "event_tags": [
+        "night_attack"
+      ],
+      "professions": [
+        "farmer",
+        "fletcher",
+        "cleric",
+        "leatherworker"
+      ],
+      "weight": 36
+    },
+    {
+      "id": "default_event_player_defended_village_profession_gratitude",
+      "request": "village_event_report",
+      "lines": [
+        "你帮我们把危险赶出了大门。平凡的工作现在又变得可能了。",
+        "村里人都看到你和我们并肩而战。这种事传得比闲话还快。",
+        "因为有你，今天依旧只有忙碌的工作，而不是<italic>葬礼</italic>。",
+        "你给了大家喘息的时间，让他们在下一次勇敢之前能缓过劲来。",
+        "田地、圈舍、吊钩和磨石依然属于我们，是因为你帮我们守住了阵线。",
+        "有些感谢听起来微不足道，但我们还是要说给你听。",
+        "你本不必把我们的麻烦揽在身上，但你做了。",
+        "村里人会记住，在别人逃跑时，是谁奔向了危险。",
+        "我看到战斗结束后，大家打开房门，第一眼找的就是你。",
+        "你帮这个地方活了下来。这不是一种恩惠。这是<bold>荣誉</bold>。"
+      ],
+      "event_tags": [
+        "player_defended_village"
+      ],
+      "player_event_tags": [
+        "player_defended_village"
+      ],
+      "professions": [
+        "butcher",
+        "fisherman",
+        "shepherd",
+        "farmer",
+        "mason"
+      ],
+      "weight": 40
+    },
+    {
+      "id": "default_event_player_defended_raid_profession_gratitude",
+      "request": "village_event_report",
+      "lines": [
+        "你在袭击中奋战过。有些债是用绿宝石还不清的。",
+        "我看到你响应了警钟。<bold>这在这里意义非凡。</bold>",
+        "当掠夺者来袭时，你没有把我们当成别人的麻烦。",
+        "当战旗出现在山头时，你和村庄站在一起。",
+        "警钟在呼唤勇气，在它余音未了之前，你就已经给出了回应。",
+        "掠夺者会记住反抗。而村庄会记住反抗的人。",
+        "你挡在了我们和毁灭之间。大家不会很快忘记这一点的。",
+        "曾有一个时刻，一切都可能分崩离析。是你帮我们维持了完整。",
+        "村庄在袭击中幸存了下来，而你的名字也与这段故事紧紧相连。",
+        "有些人听到钟声就跑远了。而你却奔向了钟声。"
+      ],
+      "event_tags": [
+        "player_defended_raid"
+      ],
+      "player_event_tags": [
+        "player_defended_raid"
+      ],
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "fletcher",
+        "cleric"
+      ],
+      "weight": 42
+    },
+    {
+      "id": "default_event_village_fire_practical_response",
+      "request": "village_event_report",
+      "lines": [
+        "在烟雾散去前，火灾会让每一个木桶都显得太小了。",
+        "我们检查了墙壁、屋顶、双手和脾气。大火在所有这些上面都留下了痕迹。",
+        "当火焰起了念头时，村庄会非常迅速地领悟水的价值。",
+        "烟雾散去了，但每个人看自家屋顶的眼神都不一样了。",
+        "火焰可不在乎什么东西是花了多少年才建成的。",
+        "我们动作很快，因为火烧得更快。",
+        "我还能闻到那个味道。木头、浓烟、惊慌以及潮湿的灰烬。",
+        "村庄挺过来了，但这场火成功引起了我们的<shake>警惕</shake>。",
+        "每一个在手中传递的木桶都显得太轻，动作也显得太迟。",
+        "我们会重建烧掉的部分，但没人会忘记墙壁着火的声音。"
+      ],
+      "event_tags": [
+        "village_fire"
+      ],
+      "professions": [
+        "mason",
+        "leatherworker",
+        "farmer",
+        "fisherman"
+      ],
+      "weight": 36
+    },
+    {
+      "id": "default_event_storm_trade_responses",
+      "request": "village_event_report",
+      "lines": [
+        "今天的天气不太友好。我们紧闭房门，把人数数了两遍。",
+        "风暴会让村庄暂时变小。变小有时反而更安全。",
+        "我不介意讲礼貌的天气。但这绝不是讲礼貌的天气。",
+        "天空用足够大声的咆哮让每个人都明白它的意思。",
+        "我们把牲口赶近，关紧门窗，希望屋顶还记得它们的职责。",
+        "糟糕的天气总有办法让每一项家务活都突然变得紧迫起来。",
+        "风暴过去了，但每个人说话的声音都变小了一些。",
+        "我听到风吹打在墙上的声音，决定不去和它理论。",
+        "曾有一个瞬间，整个村子似乎都<shake>屏住了呼吸</shake>。",
+        "当天候变得残酷时，即便是一条熟悉的道路也会显得遥不可及。"
+      ],
+      "event_tags": [
+        "thunderstorm",
+        "sandstorm",
+        "snowstorm"
+      ],
+      "professions": [
+        "farmer",
+        "fisherman",
+        "shepherd",
+        "cartographer"
+      ],
+      "weight": 32
+    },
+    {
+      "id": "default_event_container_theft_working_trades",
+      "request": "village_event_report",
+      "lines": [
+        "从村里的箱子拿东西可不聪明。那是种连锁也锁不住的喧哗。",
+        "我们记得丢了什么，也记得是谁让我们必须去清点这些东西。",
+        "信任也存放在平凡的地方。通常就是箱子里。",
+        "当信任随之消失时，一件失窃物的分量可能比一整箱东西还要重。",
+        "你可能只是打开了一个箱子，但你破坏的东西远不止于此。",
+        "村里人会察觉到角落里什么时候开始不再安全。",
+        "失窃之后，大家清点财物的方式就不一样了。清点彼此的方式也不一样了。",
+        "偷箱子里的东西，就是偷走那些填满箱子的双手付出的心血。",
+        "丢了什么很重要。但它带给我们的感受更<bold>重要</bold>。",
+        "锁可以换新的。但锁背后的信任感需要更久才能恢复。"
+      ],
+      "event_tags": [
+        "player_container_theft"
+      ],
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "professions": [
+        "farmer",
+        "butcher",
+        "toolsmith",
+        "librarian",
+        "mason"
+      ],
+      "weight": 42
+    },
+    {
+      "id": "default_event_villager_attacked_shaken",
+      "request": "village_event_report",
+      "lines": [
+        "有人受伤了。从那以后，村里的氛围就变了。",
+        "在袭击之后，连熟悉的脚步声也需要一点时间才能重新变得熟悉。",
+        "我们还在这里，但这一天已不再像以前那样柔和。",
+        "危险降临后，大家都压低了说话的声音。",
+        "伤痕不仅仅留在那个被击中的人身上。",
+        "你在广场上就能感觉得到。每个人都在假装没有回头张望。",
+        "村里有人被袭击后，即便建筑没变，整个村子的面貌也会随之改变。",
+        "恐惧蔓延的速度比消息传播的速度还要快。",
+        "我们正在照看伤员并看守大门。这两件事都非常有必要。",
+        "村庄会重新安定下来的，但在那之前，这种<pulse>余悸</pulse>还要持续一阵。"
+      ],
+      "event_tags": [
+        "villager_attacked"
+      ],
+      "professions": [
+        "cleric",
+        "shepherd",
+        "mason",
+        "fletcher"
+      ],
+      "weight": 36
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.village_trades",
+      "section.lines"
+    ],
+    "topic": "groups.village_trades.lines"
+  }
+}

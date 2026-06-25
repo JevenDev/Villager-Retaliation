@@ -1,0 +1,153 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_basalt_deltas",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在玄武岩三角洲。这里的地面尖锐得仿佛能刺穿人的勇气。",
+        "玄武岩三角洲只有灰烬、玄武岩和痛苦。我需要你早点回来。",
+        "我站在玄武岩三角洲，努力不去想岩浆流到我脚边的画面。",
+        "如果你非要乱跑，请别在玄武岩三角洲，这里的一切都让人感觉破碎又滚烫。",
+        "地上的每一道裂缝看起来都像是个大麻烦。",
+        "灰烬让人难以视物，而高温让人无法思考。",
+        "请别把我留在一个连地面都仿佛充满怒气的地方。",
+        "在玄武岩三角洲，每一步听起来都像是糟糕决定下碎裂的石头。",
+        "我一直盯着岩浆、松动的岩石，以及任何想置我于死地的东西。",
+        "我独自待在这个由高温、灰烬和利刃般边缘组成的地方，只希望你还记得回来的路。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:basalt_deltas",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_crimson_forest",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在绯红森林。那里的一切似乎都有生命，而且是以最糟糕的方式。",
+        "绯红森林到处都是红色、噪音，就算有人陪着也足够令人不安了。独自一人就更糟了。",
+        "我被困在绯红森林里，盯着每一片菌落，生怕它们会<jump>扑过来</jump>。",
+        "如果你在绯红森林里走散，别指望我会乐意等你。",
+        "整个地方感觉就像在我周围呼吸一样。",
+        "我不断听到动静，却分不清那是森林本身还是里面的什么东西。",
+        "请别把我留在墙壁像血肉、树木像饿狼一样的地方。",
+        "绯红森林让每一个阴影都感觉温暖、逼近且诡异。",
+        "我尽量不盯着任何东西看太久，因为一切似乎都准备好回瞪我。",
+        "独自在那里感觉不像是等待，更像是被什么东西盯上了。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:crimson_forest",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_nether_wastes",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在下界荒地。高温、灰烬和裸露的岩浆可不是什么好伴侣。",
+        "下界荒地绝对是我最不想被抛弃的地方。",
+        "我在下界荒地等待，努力不去看那些仿佛在向我逼近的岩浆池。",
+        "如果你在下界荒地消失，我就只能留在烈火和糟糕的选择之中。",
+        "那里没有哪个地方感觉像避难所，只有火烧得稍微小一点的地方。",
+        "这种高温让我觉得每一次呼吸都是偷来的。",
+        "请别把我留在连空气都充满敌意的地方。",
+        "下界荒地让整个世界感觉像是一个没有门的火炉。",
+        "我不断观察岩浆、岩架和天空，但没有一个能让我感觉好点。",
+        "我独自在燃烧的荒原中，只希望在你回来之前，不要有什么更糟的东西先找上门。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:nether_wastes",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_soul_sand_valley",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在灵魂沙峡谷。那里的地面连我的每一步都要阻挠。",
+        "灵魂沙峡谷就算能快速移动也够糟的了。现在我一个人，根本快不起来。",
+        "我在灵魂沙峡谷等待，努力在地面拖慢我脚步时保持不惊慌。",
+        "如果你在灵魂沙峡谷消失，我就只能带着恐惧，沉重地跋涉。",
+        "那地方让奔跑感觉成了一种回忆。",
+        "每一步都在拉扯着我，好像这片土地想把我永远留下。",
+        "请别把我留在一个连逃跑本身都觉得疲惫的地方。",
+        "灵魂沙峡谷让每个声音听起来都很空洞，让每个动作都显得太慢。",
+        "我不断回头张望，因为我知道即使必须逃跑，我也快不起来。",
+        "我独自在灵魂沙上，像在噩梦中一样迟缓移动，而整个峡谷都在倾听。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:soul_sand_valley",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    },
+    {
+      "id": "recruitment_left_behind_warped_forest",
+      "request": "recruitment_followup",
+      "lines": [
+        "别把我留在诡异森林。那里没有任何东西看起来是属于安全地带的。",
+        "诡异森林太<wavy>诡异</wavy>了，被丢在这里根本无法保持理智。",
+        "我在诡异森林等待，努力不盯着周围的任何东西看太久。",
+        "如果你在诡异森林里消失，我就只能独自留在这种只该存在于想象中的地方。",
+        "颜色不对劲，寂静也不对劲，我非常清楚自己正孤身一人。",
+        "我总觉得趁我不注意的时候，森林稍微转动了一下。",
+        "请别把我留在一个现实都已经变得扭曲的地方。",
+        "诡异森林让每一个方向看起来都很熟悉，同时又让人觉得不可能。",
+        "我分不清它是安静得什么都没有，还是所有东西都在蛰伏等待。",
+        "被留在那里，感觉就像站在一个知晓我名字的噩梦里。"
+      ],
+      "conditions": [
+        {
+          "biome": "minecraft:warped_forest",
+          "scenarios": [
+            "left_behind"
+          ],
+          "type": "recruitment_memory"
+        }
+      ],
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.group.recruitment_left_behind",
+      "section.lines"
+    ],
+    "topic": "groups.recruitment_left_behind.biomes_nether"
+  }
+}
