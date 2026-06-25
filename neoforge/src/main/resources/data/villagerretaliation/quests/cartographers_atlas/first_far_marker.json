@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:ink_and_bearings"
+    "parent": "villagerretaliation:ink_and_bearings",
+    "title_key": "quest.cartographers_atlas.first_far_marker.title",
+    "description_key": "quest.cartographers_atlas.first_far_marker.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -364,6 +366,7 @@
     "reputation": 10
   },
   "ui": {
-    "title": "First Far Marker"
+    "title": "First Far Marker",
+    "title_key": "quest.cartographers_atlas.first_far_marker.tracker.title"
   }
 }

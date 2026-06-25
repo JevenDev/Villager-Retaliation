@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:roads_that_remember"
+    "parent": "villagerretaliation:roads_that_remember",
+    "title_key": "quest.cartographers_atlas.the_atlas_test.title",
+    "description_key": "quest.cartographers_atlas.the_atlas_test.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -504,6 +506,7 @@
     "reputation": 15
   },
   "ui": {
-    "title": "The Atlas Test"
+    "title": "The Atlas Test",
+    "title_key": "quest.cartographers_atlas.the_atlas_test.tracker.title"
   }
 }

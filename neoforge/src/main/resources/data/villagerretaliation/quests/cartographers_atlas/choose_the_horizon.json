@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:the_atlas_test"
+    "parent": "villagerretaliation:the_atlas_test",
+    "title_key": "quest.cartographers_atlas.choose_the_horizon.title",
+    "description_key": "quest.cartographers_atlas.choose_the_horizon.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -546,6 +548,7 @@
     "reputation": 20
   },
   "ui": {
-    "title": "Choose The Horizon"
+    "title": "Choose The Horizon",
+    "title_key": "quest.cartographers_atlas.choose_the_horizon.tracker.title"
   }
 }

@@ -7,7 +7,9 @@
     "questline": "cartographers_atlas",
     "tags": [
       "group.exploration"
-    ]
+    ],
+    "title_key": "quest.cartographers_atlas.blank_map_promise.title",
+    "description_key": "quest.cartographers_atlas.blank_map_promise.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -427,6 +429,7 @@
     "reputation": 7
   },
   "ui": {
-    "title": "Blank Map Promise"
+    "title": "Blank Map Promise",
+    "title_key": "quest.cartographers_atlas.blank_map_promise.tracker.title"
   }
 }

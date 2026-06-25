@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:nether_meridian"
+    "parent": "villagerretaliation:nether_meridian",
+    "title_key": "quest.cartographers_atlas.eye_of_the_last_room.title",
+    "description_key": "quest.cartographers_atlas.eye_of_the_last_room.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -270,6 +272,7 @@
     "reputation": 28
   },
   "ui": {
-    "title": "Eye of the Last Room"
+    "title": "Eye of the Last Room",
+    "title_key": "quest.cartographers_atlas.eye_of_the_last_room.tracker.title"
   }
 }

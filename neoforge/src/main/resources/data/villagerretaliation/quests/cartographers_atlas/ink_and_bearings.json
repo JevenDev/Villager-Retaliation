@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:blank_map_promise"
+    "parent": "villagerretaliation:blank_map_promise",
+    "title_key": "quest.cartographers_atlas.ink_and_bearings.title",
+    "description_key": "quest.cartographers_atlas.ink_and_bearings.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -474,6 +476,7 @@
     "reputation": 8
   },
   "ui": {
-    "title": "Ink and Bearings"
+    "title": "Ink and Bearings",
+    "title_key": "quest.cartographers_atlas.ink_and_bearings.tracker.title"
   }
 }

@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:eye_of_the_last_room"
+    "parent": "villagerretaliation:eye_of_the_last_room",
+    "title_key": "quest.cartographers_atlas.end_city_margin.title",
+    "description_key": "quest.cartographers_atlas.end_city_margin.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -303,6 +305,7 @@
     "reputation": 38
   },
   "ui": {
-    "title": "End City Margin"
+    "title": "End City Margin",
+    "title_key": "quest.cartographers_atlas.end_city_margin.tracker.title"
   }
 }

@@ -184,7 +184,7 @@ final class VillagerQuestHudRenderer {
         for (QuestTrackerSyncPayload.QuestItem item : entry.questItems()) {
             names.add(questItemProgressLine(item));
         }
-        return "Quest item: " + String.join(", ", names);
+        return Component.translatable("villagerretaliation.gui.quest_item_marker", String.join(", ", names)).getString();
     }
 
     private static String questItemProgressLine(QuestTrackerSyncPayload.QuestItem item) {

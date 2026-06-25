@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:choose_the_horizon"
+    "parent": "villagerretaliation:choose_the_horizon",
+    "title_key": "quest.cartographers_atlas.chart_the_drowned_coast.title",
+    "description_key": "quest.cartographers_atlas.chart_the_drowned_coast.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -322,6 +324,7 @@
     "reputation": 16
   },
   "ui": {
-    "title": "Chart the Drowned Coast"
+    "title": "Chart the Drowned Coast",
+    "title_key": "quest.cartographers_atlas.chart_the_drowned_coast.tracker.title"
   }
 }

@@ -1319,5 +1319,22 @@
   "text.config.villagerretaliation.enum.villagerReputationLevel.suspicious": "Suspicious",
   "text.config.villagerretaliation.enum.villagerReputationLevel.hostile": "Hostile",
   "text.config.villagerretaliation.enum.villagerReputationLevel.despised": "Despised",
-  "text.config.villagerretaliation.enum.villagerReputationLevel.feared": "Feared"
+  "text.config.villagerretaliation.enum.villagerReputationLevel.feared": "Feared",
+  "villagerretaliation.gui.quest_journal.title": "Quest Journal",
+  "villagerretaliation.gui.quest_journal.tab.available": "Available",
+  "villagerretaliation.gui.quest_journal.tab.active": "Active",
+  "villagerretaliation.gui.quest_journal.tab.completed": "Completed",
+  "villagerretaliation.gui.quest_journal.empty.available": "No available quests",
+  "villagerretaliation.gui.quest_journal.empty.active": "No active quests",
+  "villagerretaliation.gui.quest_journal.empty.completed": "No completed quests",
+  "villagerretaliation.gui.quest_journal.count.title": "Quest counts",
+  "villagerretaliation.gui.quest_journal.count.active": "Active: %s",
+  "villagerretaliation.gui.quest_journal.count.accepted": "Accepted: %s",
+  "villagerretaliation.gui.quest_journal.count.nearby": "Nearby: %s",
+  "villagerretaliation.gui.quest_journal.count.completed": "Completed: %s",
+  "villagerretaliation.gui.quest_journal.issuer": "Issuer: %s",
+  "villagerretaliation.gui.quest_journal.section.prerequisites": "Prerequisites",
+  "villagerretaliation.gui.quest_journal.section.objectives": "Objectives",
+  "villagerretaliation.gui.quest_journal.section.rewards": "Rewards",
+  "villagerretaliation.gui.quest_item_marker": "Quest item: %s"
 }

@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:choose_the_horizon"
+    "parent": "villagerretaliation:choose_the_horizon",
+    "title_key": "quest.cartographers_atlas.nether_meridian.title",
+    "description_key": "quest.cartographers_atlas.nether_meridian.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -288,6 +290,7 @@
     "reputation": 22
   },
   "ui": {
-    "title": "Nether Meridian"
+    "title": "Nether Meridian",
+    "title_key": "quest.cartographers_atlas.nether_meridian.tracker.title"
   }
 }

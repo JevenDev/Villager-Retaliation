@@ -3360,6 +3360,237 @@
       "lines": [
         "Standing Watch"
       ]
+    },
+    {
+      "id": "quest.cartographers_atlas.blank_map_promise.title",
+      "key": "quest.cartographers_atlas.blank_map_promise.title",
+      "lines": [
+        "Blank Map Promise"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.blank_map_promise.description",
+      "key": "quest.cartographers_atlas.blank_map_promise.description",
+      "lines": [
+        "Bind the first blank atlas folio with paper, ink, and a compass bearing."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.blank_map_promise.tracker.title",
+      "key": "quest.cartographers_atlas.blank_map_promise.tracker.title",
+      "lines": [
+        "Blank Map Promise"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.chart_the_drowned_coast.title",
+      "key": "quest.cartographers_atlas.chart_the_drowned_coast.title",
+      "lines": [
+        "Chart the Drowned Coast"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.chart_the_drowned_coast.description",
+      "key": "quest.cartographers_atlas.chart_the_drowned_coast.description",
+      "lines": [
+        "Follow the coast horizon to an Ocean Monument and bring back prismarine proof."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.chart_the_drowned_coast.tracker.title",
+      "key": "quest.cartographers_atlas.chart_the_drowned_coast.tracker.title",
+      "lines": [
+        "Chart the Drowned Coast"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.choose_the_horizon.title",
+      "key": "quest.cartographers_atlas.choose_the_horizon.title",
+      "lines": [
+        "Choose The Horizon"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.choose_the_horizon.description",
+      "key": "quest.cartographers_atlas.choose_the_horizon.description",
+      "lines": [
+        "Set the completed atlas toward the drowned coast or the dark roof road."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.choose_the_horizon.tracker.title",
+      "key": "quest.cartographers_atlas.choose_the_horizon.tracker.title",
+      "lines": [
+        "Choose The Horizon"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.end_city_margin.title",
+      "key": "quest.cartographers_atlas.end_city_margin.title",
+      "lines": [
+        "End City Margin"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.end_city_margin.description",
+      "key": "quest.cartographers_atlas.end_city_margin.description",
+      "lines": [
+        "Carry the atlas into the End, survey an End City, and return with shulker proof."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.end_city_margin.tracker.title",
+      "key": "quest.cartographers_atlas.end_city_margin.tracker.title",
+      "lines": [
+        "End City Margin"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.eye_of_the_last_room.title",
+      "key": "quest.cartographers_atlas.eye_of_the_last_room.title",
+      "lines": [
+        "Eye of the Last Room"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.eye_of_the_last_room.description",
+      "key": "quest.cartographers_atlas.eye_of_the_last_room.description",
+      "lines": [
+        "Follow the atlas to a Stronghold and return with Ender Eye bearings."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.eye_of_the_last_room.tracker.title",
+      "key": "quest.cartographers_atlas.eye_of_the_last_room.tracker.title",
+      "lines": [
+        "Eye of the Last Room"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.first_far_marker.title",
+      "key": "quest.cartographers_atlas.first_far_marker.title",
+      "lines": [
+        "First Far Marker"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.first_far_marker.description",
+      "key": "quest.cartographers_atlas.first_far_marker.description",
+      "lines": [
+        "Follow the first atlas mark to Trail Ruins and plate the route with copper."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.first_far_marker.tracker.title",
+      "key": "quest.cartographers_atlas.first_far_marker.tracker.title",
+      "lines": [
+        "First Far Marker"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.ink_and_bearings.title",
+      "key": "quest.cartographers_atlas.ink_and_bearings.title",
+      "lines": [
+        "Ink and Bearings"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.ink_and_bearings.description",
+      "key": "quest.cartographers_atlas.ink_and_bearings.description",
+      "lines": [
+        "Prepare the atlas index and choose whether its first principle favors roads or wonders."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.ink_and_bearings.tracker.title",
+      "key": "quest.cartographers_atlas.ink_and_bearings.tracker.title",
+      "lines": [
+        "Ink and Bearings"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.ink_in_the_dark_roof.title",
+      "key": "quest.cartographers_atlas.ink_in_the_dark_roof.title",
+      "lines": [
+        "Ink in the Dark Roof"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.ink_in_the_dark_roof.description",
+      "key": "quest.cartographers_atlas.ink_in_the_dark_roof.description",
+      "lines": [
+        "Follow the dark roof horizon to a Woodland Mansion and return with its stolen records."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.ink_in_the_dark_roof.tracker.title",
+      "key": "quest.cartographers_atlas.ink_in_the_dark_roof.tracker.title",
+      "lines": [
+        "Ink in the Dark Roof"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.nether_meridian.title",
+      "key": "quest.cartographers_atlas.nether_meridian.title",
+      "lines": [
+        "Nether Meridian"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.nether_meridian.description",
+      "key": "quest.cartographers_atlas.nether_meridian.description",
+      "lines": [
+        "Carry the atlas beyond the Overworld and chart a Nether Fortress bearing."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.nether_meridian.tracker.title",
+      "key": "quest.cartographers_atlas.nether_meridian.tracker.title",
+      "lines": [
+        "Nether Meridian"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.roads_that_remember.title",
+      "key": "quest.cartographers_atlas.roads_that_remember.title",
+      "lines": [
+        "Roads That Remember"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.roads_that_remember.description",
+      "key": "quest.cartographers_atlas.roads_that_remember.description",
+      "lines": [
+        "Record a village defense memory and turn it into a road the atlas can understand."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.roads_that_remember.tracker.title",
+      "key": "quest.cartographers_atlas.roads_that_remember.tracker.title",
+      "lines": [
+        "Roads That Remember"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.the_atlas_test.title",
+      "key": "quest.cartographers_atlas.the_atlas_test.title",
+      "lines": [
+        "The Atlas Test"
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.the_atlas_test.description",
+      "key": "quest.cartographers_atlas.the_atlas_test.description",
+      "lines": [
+        "Choose a safer supply route or a riskier combat route to prove the atlas can guide real decisions."
+      ]
+    },
+    {
+      "id": "quest.cartographers_atlas.the_atlas_test.tracker.title",
+      "key": "quest.cartographers_atlas.the_atlas_test.tracker.title",
+      "lines": [
+        "The Atlas Test"
+      ]
     }
   ]
 }

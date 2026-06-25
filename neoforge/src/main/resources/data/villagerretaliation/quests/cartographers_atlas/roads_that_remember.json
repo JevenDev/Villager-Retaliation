@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:first_far_marker"
+    "parent": "villagerretaliation:first_far_marker",
+    "title_key": "quest.cartographers_atlas.roads_that_remember.title",
+    "description_key": "quest.cartographers_atlas.roads_that_remember.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -362,6 +364,7 @@
     "reputation": 12
   },
   "ui": {
-    "title": "Roads That Remember"
+    "title": "Roads That Remember",
+    "title_key": "quest.cartographers_atlas.roads_that_remember.tracker.title"
   }
 }

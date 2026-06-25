@@ -98,6 +98,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final Style QUEST_COUNT_ACCEPTED_STYLE = Style.EMPTY.withColor(0xE1DAC7);
     private static final Style QUEST_COUNT_COMPLETED_STYLE = Style.EMPTY.withColor(0xB5F45B);
     private static final Style QUEST_COUNT_NEARBY_STYLE = Style.EMPTY.withColor(0x5C96EF);
+    private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.quest_journal.";
 
     private static final JournalNineSlice QUEST_JOURNAL_SCROLLBAR_NINE_SLICE =
             new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLBAR_TEXTURE, 4, 6, 1, 1, 2, 2);
@@ -133,7 +134,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private long animationStartMillis = -1L;
 
     public VillagerQuestJournalScreen() {
-        super(Component.literal("Active Quests"));
+        super(Component.translatable(GUI_KEY_PREFIX + "title"));
     }
 
     @Override
@@ -385,17 +386,17 @@ public final class VillagerQuestJournalScreen extends Screen {
         QuestCountSummary summary = questCountSummary();
         return switch (this.selectedTab) {
             case AVAILABLE -> List.of(
-                    Component.literal("Quest counts").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
-                    Component.literal("Active: " + summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
-                    Component.literal("Accepted: " + summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE),
-                    Component.literal("Nearby: " + summary.nearby()).withStyle(QUEST_COUNT_NEARBY_STYLE));
+                    Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    Component.translatable(GUI_KEY_PREFIX + "count.active", summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
+                    Component.translatable(GUI_KEY_PREFIX + "count.accepted", summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE),
+                    Component.translatable(GUI_KEY_PREFIX + "count.nearby", summary.nearby()).withStyle(QUEST_COUNT_NEARBY_STYLE));
             case ACTIVE -> List.of(
-                    Component.literal("Quest counts").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
-                    Component.literal("Active: " + summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
-                    Component.literal("Accepted: " + summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE));
+                    Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    Component.translatable(GUI_KEY_PREFIX + "count.active", summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
+                    Component.translatable(GUI_KEY_PREFIX + "count.accepted", summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE));
             case COMPLETED -> List.of(
-                    Component.literal("Quest counts").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
-                    Component.literal("Completed: " + summary.completed()).withStyle(QUEST_COUNT_COMPLETED_STYLE));
+                    Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    Component.translatable(GUI_KEY_PREFIX + "count.completed", summary.completed()).withStyle(QUEST_COUNT_COMPLETED_STYLE));
         };
     }
 
@@ -821,7 +822,14 @@ public final class VillagerQuestJournalScreen extends Screen {
         y = addDividerLine(lines, y + 3, 3);
         y = addWrappedDetailLines(lines, statusLine(selected), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 2);
         if (!selected.issuer().isBlank()) {
-            y = addWrappedDetailLines(lines, "Issuer: " + selected.issuer(), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 2);
+            y = addWrappedDetailLines(
+                    lines,
+                    Component.translatable(GUI_KEY_PREFIX + "issuer", selected.issuer()),
+                    wrapWidth,
+                    MUTED_TEXT_COLOR,
+                    y,
+                    lineStep,
+                    2);
         }
         if (!selected.issuerLocation().isBlank()) {
             y = addWrappedDetailLines(lines, selected.issuerLocation(), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 0);
@@ -830,14 +838,14 @@ public final class VillagerQuestJournalScreen extends Screen {
         y = addWrappedDetailLines(lines, descriptionLine(selected), wrapWidth, TEXT_COLOR, y, lineStep, 0);
         if (!selected.prerequisites().isEmpty()) {
             y = addDividerLine(lines, y + 3, 3);
-            y = addCenteredDetailLine(lines, "Prerequisites", TITLE_COLOR, y, lineStep, 0);
+            y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.prerequisites"), TITLE_COLOR, y, lineStep, 0);
             y = addDividerLine(lines, y + 3, 3);
             for (QuestTrackerSyncPayload.Prerequisite prerequisite : selected.prerequisites()) {
                 y = addQuestStepLines(lines, prerequisiteLine(prerequisite), prerequisite.met(), y, lineStep, 2);
             }
         }
         y = addDividerLine(lines, y + 3, 3);
-        y = addCenteredDetailLine(lines, "Objectives", TITLE_COLOR, y, lineStep, 0);
+        y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.objectives"), TITLE_COLOR, y, lineStep, 0);
         y = addDividerLine(lines, y + 3, 3);
         boolean completed = selected.progress() >= 1.0F || QuestJournalEntryState.from(selected) == QuestJournalEntryState.COMPLETED;
         if (!selected.objectiveSteps().isEmpty()) {
@@ -853,7 +861,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
         if (!selected.rewardPreviews().isEmpty()) {
             y = addDividerLine(lines, y + 3, 3);
-            y = addCenteredDetailLine(lines, "Rewards", TITLE_COLOR, y, lineStep, 0);
+            y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.rewards"), TITLE_COLOR, y, lineStep, 0);
             y = addDividerLine(lines, y + 3, 3);
             for (QuestTrackerSyncPayload.RewardPreview reward : selected.rewardPreviews()) {
                 y = addQuestStepLines(lines, rewardPreviewLine(reward), completed, y, lineStep, 2);
@@ -871,6 +879,17 @@ public final class VillagerQuestJournalScreen extends Screen {
             int lineStep,
             int gapAfter) {
         return addWrappedDetailLines(lines, text, wrapWidth, color, top, lineStep, gapAfter, null, false);
+    }
+
+    private int addWrappedDetailLines(
+            List<QuestDetailLine> lines,
+            Component text,
+            int wrapWidth,
+            int color,
+            int top,
+            int lineStep,
+            int gapAfter) {
+        return addWrappedDetailLines(lines, text, wrapWidth, color, top, lineStep, gapAfter, null, false, false);
     }
 
     private int addWrappedDetailLines(
@@ -900,11 +919,31 @@ public final class VillagerQuestJournalScreen extends Screen {
         if (text == null || text.isBlank() || wrapWidth <= 0) {
             return top;
         }
-        int y = top;
-        boolean first = true;
         Component component = strikethrough
                 ? Component.literal(text).withStyle(Style.EMPTY.withStrikethrough(true))
                 : Component.literal(text);
+        return addWrappedDetailLines(lines, component, wrapWidth, color, top, lineStep, gapAfter, firstLineIcon, titleIcon, false);
+    }
+
+    private int addWrappedDetailLines(
+            List<QuestDetailLine> lines,
+            Component component,
+            int wrapWidth,
+            int color,
+            int top,
+            int lineStep,
+            int gapAfter,
+            ResourceLocation firstLineIcon,
+            boolean titleIcon,
+            boolean strikethrough) {
+        if (component == null || wrapWidth <= 0) {
+            return top;
+        }
+        if (strikethrough) {
+            component = component.copy().withStyle(Style.EMPTY.withStrikethrough(true));
+        }
+        int y = top;
+        boolean first = true;
         for (FormattedCharSequence line : this.font.split(component, wrapWidth)) {
             lines.add(new QuestDetailLine(
                     line,
@@ -923,16 +962,16 @@ public final class VillagerQuestJournalScreen extends Screen {
 
     private int addCenteredDetailLine(
             List<QuestDetailLine> lines,
-            String text,
+            Component text,
             int color,
             int top,
             int lineStep,
             int gapAfter) {
-        if (text == null || text.isBlank()) {
+        if (text == null) {
             return top;
         }
         lines.add(new QuestDetailLine(
-                Component.literal(text).getVisualOrderText(),
+                text.getVisualOrderText(),
                 color,
                 top,
                 this.font.lineHeight,
@@ -1478,28 +1517,33 @@ public final class VillagerQuestJournalScreen extends Screen {
     private enum QuestJournalTab {
         AVAILABLE(
                 0,
-                "Available",
+                GUI_KEY_PREFIX + "tab.available",
+                GUI_KEY_PREFIX + "empty.available",
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_RED_TEXTURE,
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_AVAILABLE_TEXTURE),
         ACTIVE(
                 1,
-                "Active",
+                GUI_KEY_PREFIX + "tab.active",
+                GUI_KEY_PREFIX + "empty.active",
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_PURPLE_TEXTURE,
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_ACTIVE_TEXTURE),
         COMPLETED(
                 2,
-                "Completed",
+                GUI_KEY_PREFIX + "tab.completed",
+                GUI_KEY_PREFIX + "empty.completed",
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_TEAL_TEXTURE,
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_COMPLETED_TEXTURE);
 
         private final int index;
-        private final String title;
+        private final String titleKey;
+        private final String emptyMessageKey;
         private final ResourceLocation texture;
         private final ResourceLocation iconTexture;
 
-        QuestJournalTab(int index, String title, ResourceLocation texture, ResourceLocation iconTexture) {
+        QuestJournalTab(int index, String titleKey, String emptyMessageKey, ResourceLocation texture, ResourceLocation iconTexture) {
             this.index = index;
-            this.title = title;
+            this.titleKey = titleKey;
+            this.emptyMessageKey = emptyMessageKey;
             this.texture = texture;
             this.iconTexture = iconTexture;
         }
@@ -1508,16 +1552,12 @@ public final class VillagerQuestJournalScreen extends Screen {
             return this.index;
         }
 
-        String title() {
-            return this.title;
+        Component title() {
+            return Component.translatable(this.titleKey);
         }
 
-        String emptyMessage() {
-            return switch (this) {
-                case AVAILABLE -> "No available quests";
-                case ACTIVE -> "No active quests";
-                case COMPLETED -> "No completed quests";
-            };
+        Component emptyMessage() {
+            return Component.translatable(this.emptyMessageKey);
         }
 
         ResourceLocation texture() {

@@ -8,7 +8,9 @@
     "tags": [
       "group.exploration"
     ],
-    "parent": "villagerretaliation:choose_the_horizon"
+    "parent": "villagerretaliation:choose_the_horizon",
+    "title_key": "quest.cartographers_atlas.ink_in_the_dark_roof.title",
+    "description_key": "quest.cartographers_atlas.ink_in_the_dark_roof.description"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -339,6 +341,7 @@
     "reputation": 17
   },
   "ui": {
-    "title": "Ink in the Dark Roof"
+    "title": "Ink in the Dark Roof",
+    "title_key": "quest.cartographers_atlas.ink_in_the_dark_roof.tracker.title"
   }
 }

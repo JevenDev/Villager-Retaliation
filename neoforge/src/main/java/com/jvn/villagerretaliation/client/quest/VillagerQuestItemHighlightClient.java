@@ -43,7 +43,7 @@ public final class VillagerQuestItemHighlightClient {
             return;
         }
 
-        Component marker = Component.literal("Quest item: " + questEntry.get().title())
+        Component marker = Component.translatable("villagerretaliation.gui.quest_item_marker", questEntry.get().title())
                 .withStyle(ChatFormatting.GOLD);
         if (!event.getToolTip().contains(marker)) {
             event.getToolTip().add(marker);
