@@ -86,7 +86,6 @@ public enum HiredWorkerTaskState {
             case "finding_work", "finding_target" -> SELECTING_TARGET;
             case "depositing_output", "storage_depositing" -> DEPOSITING;
             case "needs_tool", "missing_tool" -> PAUSED_MISSING_TOOL;
-            case "needs_food" -> WAITING_FOR_MATERIALS;
             case "storage_full" -> PAUSED_STORAGE_FULL;
             case "target_unreachable", "unreachable_target" -> FAILED_COOLDOWN;
             case "waiting_for_instruction", "waiting_instruction" -> AWAITING_INSTRUCTION;

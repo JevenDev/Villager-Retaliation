@@ -7,7 +7,7 @@ The Hired Help update turns recruitment into a full hired-worker system with con
 ### Added
 
 - Added hired villager contracts with role and duration selection, reputation/skill-based daily pricing, early-end refunds, recurring payment handling, unpaid/loaded-chunk status tracking, and dedicated hire menus.
-- Added hired roles for Combat, Mining, Logging, Farming, Fishing, Brewing, Builder, Animal Handling, and Nitwit, with profession preferences, skill unlock thresholds, role scoring, optional skill growth, per-role food costs, and configurable efficiency.
+- Added hired roles for Combat, Mining, Logging, Farming, Fishing, Brewing, Builder, Animal Handling, and Nitwit, with profession preferences, skill unlock thresholds, role scoring, optional skill growth, and configurable efficiency.
 - Added hired worker sessions, work plans, focus tracking, bounded work areas, path reservations, blacklisting, stall detection, return-to-area behavior, storage navigation, and batched target scans so jobs can run with bounded server work instead of constant world scans.
 - Added split villager inventory management with Personal and Job views, job equipment slots, protected worker gear, supply and output slots, full-output handling, assigned output storage, and safeguards for preserving or displacing gear without duplication.
 - Added persistent villager wallets, lifetime earnings/spending/deposits, natural worker income, assigned-storage deposits, wallet UI, wallet-capacity tuning, and optional unlimited wallets.

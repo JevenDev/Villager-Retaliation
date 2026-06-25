@@ -250,22 +250,6 @@
       "id": "global.messages.12_work_status.messages.interaction.work.status.tool_inventory_full.014"
     },
     {
-      "key": "interaction.work.status.no_food",
-      "lines": [
-        "No food for hired work. Mood and reputation suffered.",
-        "I am held up for now. No food for hired work. Mood and reputation suffered.",
-        "This is stopping the job for the moment. No food for hired work. Mood and reputation suffered.",
-        "I cannot move on yet. No food for hired work. Mood and reputation suffered.",
-        "I will continue once this is fixed. No food for hired work. Mood and reputation suffered.",
-        "That needs attention before I can keep working. No food for hired work. Mood and reputation suffered.",
-        "I am waiting on a fix. No food for hired work. Mood and reputation suffered.",
-        "The work is paused until this changes. No food for hired work. Mood and reputation suffered.",
-        "This is the problem right now. No food for hired work. Mood and reputation suffered.",
-        "I am stuck here for the moment. No food for hired work. Mood and reputation suffered."
-      ],
-      "id": "global.messages.12_work_status.messages.interaction.work.status.no_food.015"
-    },
-    {
       "key": "interaction.work.status.return_path_lost",
       "lines": [
         "I lost the path back into the work area, so I am finding a better way down.",

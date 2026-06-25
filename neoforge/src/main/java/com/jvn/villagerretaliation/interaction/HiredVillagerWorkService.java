@@ -20,11 +20,9 @@ import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.logging.LoggingWorker;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningWorker;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
-import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
-import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.skill.HiredWorkSkillGrowthService;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -37,7 +35,6 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -46,7 +43,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.level.block.Blocks;
@@ -66,7 +62,6 @@ public final class HiredVillagerWorkService {
     public static final String WAITING_FOR_HIRER_STATUS = "interaction.work.status.waiting_for_hirer";
     private static final String STORAGE_FULL_NOTICE = "interaction.work.status.storage_full";
     private static final String PAUSED_FOR_COMMAND_STATUS = "interaction.work.status.paused_for_command";
-    private static final long DAY_TICKS = 24000L;
     private static final double HIRED_WORK_NOTICE_RADIUS = 32.0D;
     private static final double HIRED_WORK_NOTICE_RADIUS_SQR = HIRED_WORK_NOTICE_RADIUS * HIRED_WORK_NOTICE_RADIUS;
     private static final int MIN_ROUTINE_REPORT_COOLDOWN_SECONDS = 300;
@@ -162,7 +157,6 @@ public final class HiredVillagerWorkService {
             return;
         }
 
-        handleDailyFood(level, villager, hirer, session);
         WorkResult result = session.worker().tick(level, villager, hirer, session.context());
         setStatus(session.state(), result.status(), result.replacements());
         maybeNotifyStorageFull(level, villager, hirer, session.context(), session.state());
@@ -1539,94 +1533,6 @@ public final class HiredVillagerWorkService {
         return VillagerDialogueResources.message(context, key, replacements).orElse(key);
     }
 
-    private static void handleDailyFood(
-            ServerLevel level,
-            Villager villager,
-            ServerPlayer hirer,
-            HiredWorkSession session) {
-        long day = level.getDayTime() / DAY_TICKS;
-        if (!VillagerRetaliationConfig.HIRED_WORK_FOOD_ENABLED.get()
-                || !session.worker().requiresFood()
-                || session.state().getLong("LastFoodCheckDay") == day) {
-            return;
-        }
-        session.state().putLong("LastFoodCheckDay", day);
-        int needed = HiredVillagerRoleSettings.foodCost(session.role());
-        if (needed <= 0 || consumeFood(
-                villager,
-                session.inventory(),
-                needed,
-                session.state().getBoolean("UseAssignedStorageForSupplies"),
-                session.area()) >= needed) {
-            int starvationDays = Math.max(0, session.state().getInt("StarvationDays") - 1);
-            session.state().putInt("StarvationDays", starvationDays);
-            if (starvationDays == 0) {
-                VillagerMoodService.setMood(level, villager, VillagerMood.CONTENT, 14, "hired_work_fed", hirer.getUUID(), hirer.getUUID(), VillagerMoodService.SHORT_DECAY_TICKS);
-            }
-            return;
-        }
-
-        int maxDays = Math.max(0, VillagerRetaliationConfig.HIRED_WORK_MAX_STARVATION_PENALTY_DAYS.get());
-        int starvationDays = Mth.clamp(session.state().getInt("StarvationDays") + 1, 0, maxDays);
-        session.state().putInt("StarvationDays", starvationDays);
-        VillagerMood mood = starvationDays >= Math.max(2, maxDays / 2) ? VillagerMood.ANGRY : VillagerMood.STRESSED;
-        VillagerMoodService.setMood(
-                level,
-                villager,
-                mood,
-                VillagerRetaliationConfig.HIRED_WORK_NO_FOOD_MOOD_INTENSITY.get(),
-                "hired_work_no_food",
-                hirer.getUUID(),
-                hirer.getUUID(),
-                VillagerMoodService.MEDIUM_DECAY_TICKS);
-        VillagerReputationManager.addHiredWorkReputation(
-                level,
-                villager,
-                hirer.getUUID(),
-                VillagerRetaliationConfig.HIRED_WORK_NO_FOOD_REPUTATION_PENALTY.get());
-        maybeNotify(level, villager, hirer, session.state(), "interaction.work.status.no_food", DAY_TICKS);
-    }
-
-    private static int consumeFood(
-            Villager villager,
-            HiredJobInventory inventory,
-            int neededNutrition,
-            boolean assignedSupplies,
-            HiredWorkArea area) {
-        int nutrition = 0;
-        for (int slot : inventory.supplySlots()) {
-            ItemStack stack = inventory.getItem(slot);
-            if (!isFoodItem(stack)) {
-                continue;
-            }
-            while (!stack.isEmpty() && nutrition < neededNutrition) {
-                nutrition += foodNutrition(stack);
-                inventory.consumeSupply(candidate -> candidate == stack, 1);
-            }
-            if (nutrition >= neededNutrition) {
-                return nutrition;
-            }
-        }
-        if (assignedSupplies && nutrition < neededNutrition) {
-            nutrition += AssignedStorageService.consumeItemValue(
-                    villager,
-                    HiredVillagerWorkService::isFoodItem,
-                    HiredVillagerWorkService::foodNutrition,
-                    neededNutrition - nutrition,
-                    area::contains);
-        }
-        return nutrition;
-    }
-
-    private static boolean isFoodItem(ItemStack stack) {
-        return !stack.isEmpty() && stack.get(DataComponents.FOOD) != null;
-    }
-
-    private static int foodNutrition(ItemStack stack) {
-        FoodProperties food = stack.get(DataComponents.FOOD);
-        return food == null ? 0 : Math.max(1, food.nutrition());
-    }
-
     static int efficiencyPercent(ServerLevel level, Villager villager, HiredVillagerRole role, CompoundTag state, HiredJobInventory inventory) {
         int min = Math.max(1, VillagerRetaliationConfig.HIRED_WORK_MINIMUM_EFFICIENCY_PERCENT.get());
         int max = Math.max(min, VillagerRetaliationConfig.HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT.get());
@@ -1644,7 +1550,6 @@ public final class HiredVillagerWorkService {
             case SUSPICIOUS, LONELY -> -8;
             default -> 0;
         };
-        efficiency -= 15 * Math.max(0, state.getInt("StarvationDays"));
         ItemStack tool = inventory.getItem(HiredJobInventory.MAINHAND_SLOT);
         if (!tool.isEmpty()) {
             efficiency += toolTierBonus(tool);

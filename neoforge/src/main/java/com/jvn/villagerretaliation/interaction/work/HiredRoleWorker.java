@@ -27,7 +27,4 @@ public interface HiredRoleWorker {
         pause(level, villager, context);
     }
 
-    default boolean requiresFood() {
-        return true;
-    }
 }
