@@ -24,6 +24,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosit
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
@@ -1175,11 +1176,11 @@ public final class VillagerInteractionService {
 
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
-        VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.TASK_REWARD);
         state.remove("NextWorkGameTime");
         state.remove("ProgressTicks");
         long startedGameTime = level.getGameTime();
         BuilderTaskState.start(state, entry.get(), plan.get(), preview.origin(), preview.rotation(), cost, startedGameTime, preview.jobId());
+        BuilderPaymentEscrowService.escrow(villager, preview.jobId(), cost);
         ConstructionBlueprintItem.updatePlacement(blueprint, level, plan.get(), preview.origin(), preview.rotation());
         ConstructionBlueprintItem.markStarted(blueprint, villager, cost, startedGameTime);
         state.putString("Status", "interaction.work.builder.started");
@@ -1249,12 +1250,21 @@ public final class VillagerInteractionService {
         Optional<UUID> jobId = BuilderTaskState.jobId(state);
         int paid = BuilderTaskState.paidCurrency(state);
         int placed = BuilderTaskState.placedIndex(state);
-        BuilderTaskState.clearTask(state);
+        int refund = 0;
+        if (placed == 0 && paid > 0) {
+            refund = BuilderPaymentEscrowService.refund(player, villager, jobId, paid);
+            if (refund <= 0) {
+                sendVillagerNotice(player, villager, "interaction.work.builder.cancel_refund_unavailable", Map.of("cost", formatCurrency(level, paid)));
+                return;
+            }
+        } else {
+            BuilderPaymentEscrowService.releaseToWallet(villager, jobId);
+        }
         jobId.ifPresent(id -> ConstructionBlueprintItem.expireMatchingBlueprints(player, id));
-        HiredVillagerWorkService.stopWork(level, villager, HiredVillagerRole.BUILDER, "interaction.work.builder.cancelled");
-        if (placed == 0 && paid > 0 && VillagerWalletService.spendCurrency(villager, paid, VillagerWalletService.WalletSource.DEPOSIT_ADJUSTMENT)) {
-            giveCurrency(player, paid);
-            sendVillagerNotice(player, villager, "interaction.work.builder.cancelled_refund", Map.of("cost", formatCurrency(level, paid)));
+        BuilderTaskState.clearTask(state);
+        HiredVillagerWorkService.cancelWork(level, villager, HiredVillagerRole.BUILDER, "interaction.work.builder.cancelled");
+        if (refund > 0) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.cancelled_refund", Map.of("cost", formatCurrency(level, refund)));
         } else {
             sendVillagerNotice(player, villager, "interaction.work.builder.cancelled");
         }

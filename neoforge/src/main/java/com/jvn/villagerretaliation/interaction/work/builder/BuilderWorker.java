@@ -2584,8 +2584,9 @@ public final class BuilderWorker extends AbstractBlockWorker {
         depositLeftoverMaterials(villager, context.inventory(), plan);
         clearActiveBreakingTarget(level, context, villager);
         clearBuildSiteIntermediateNavigation(context);
-        BuilderTaskState.jobId(context.state()).ifPresent(jobId ->
-                ConstructionBlueprintItem.completeMatchingBlueprints(level, jobId));
+        Optional<java.util.UUID> jobId = BuilderTaskState.jobId(context.state());
+        BuilderPaymentEscrowService.releaseToWallet(villager, jobId);
+        jobId.ifPresent(id -> ConstructionBlueprintItem.completeMatchingBlueprints(level, id));
         BuilderTaskState.clearTask(context.state());
         HiredWorkerBrain.clearFailure(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);

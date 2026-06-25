@@ -712,6 +712,17 @@
         "That part is done: {structure} is complete."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.complete.043"
+    },
+    {
+      "key": "interaction.work.builder.cancel_refund_unavailable",
+      "lines": [
+        "I cannot cancel yet because {cost} must be returned first.",
+        "That needs attention before I can cancel. {cost} must be returned first.",
+        "I am holding the job open for now because {cost} still needs to be returned.",
+        "The cancellation is paused until {cost} can be returned.",
+        "I cannot finish cancelling this while the {cost} refund is unavailable."
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.cancel_refund_unavailable.044"
     }
   ]
 }

@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -18,7 +19,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.item.ItemStack;
 
 public final class HiredVillagerContractService {
     private static final String CONTRACT_TAG = "VillagerRetaliationHireContract";
@@ -428,35 +428,26 @@ public final class HiredVillagerContractService {
         Optional<UUID> jobId = BuilderTaskState.jobId(state);
         int paid = BuilderTaskState.paidCurrency(state);
         int placed = BuilderTaskState.placedIndex(state);
+        if (placed == 0 && paid > 0) {
+            refundUnstartedBuilderJob(level, villager, contract, jobId, paid);
+        } else {
+            BuilderPaymentEscrowService.releaseToWallet(villager, jobId);
+        }
         jobId.ifPresent(id -> ConstructionBlueprintItem.expireMatchingBlueprints(level, id));
-        refundUnstartedBuilderJob(level, villager, contract, paid, placed);
     }
 
     private static void refundUnstartedBuilderJob(
             ServerLevel level,
             Villager villager,
             CompoundTag contract,
-            int paid,
-            int placed) {
-        if (placed > 0 || paid <= 0 || !contract.hasUUID(HIRER_TAG)) {
+            Optional<UUID> jobId,
+            int paid) {
+        if (paid <= 0 || !contract.hasUUID(HIRER_TAG)) {
             return;
         }
         ServerPlayer hirer = level.getServer().getPlayerList().getPlayer(contract.getUUID(HIRER_TAG));
-        if (hirer == null || !VillagerWalletService.spendCurrency(villager, paid, VillagerWalletService.WalletSource.DEPOSIT_ADJUSTMENT)) {
-            return;
-        }
-        giveCurrency(hirer, paid);
-    }
-
-    private static void giveCurrency(ServerPlayer player, int count) {
-        int remaining = count;
-        while (remaining > 0) {
-            int chunk = Math.min(VillagerCurrencyResources.maxStackSize(player.serverLevel().getServer()), remaining);
-            ItemStack stack = VillagerCurrencyResources.createStack(player.serverLevel().getServer(), chunk);
-            if (!player.getInventory().add(stack)) {
-                player.drop(stack, false);
-            }
-            remaining -= chunk;
+        if (hirer != null) {
+            BuilderPaymentEscrowService.refund(hirer, villager, jobId, paid);
         }
     }
 

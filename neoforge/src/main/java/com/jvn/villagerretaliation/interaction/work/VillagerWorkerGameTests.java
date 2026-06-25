@@ -13,16 +13,20 @@ import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
+import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.mojang.authlib.GameProfile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -167,6 +171,30 @@ public final class VillagerWorkerGameTests {
                 HiredWorkerBrain.snapshot(state, level.getGameTime()).taskState(),
                 HiredWorkerTaskState.AWAITING_INSTRUCTION,
                 "cancelled builder should return to awaiting instructions");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void builderEscrowRefundDoesNotDependOnVillagerWallet(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerPlayer hirer = fakePlayer(level, "VrBuilderEscrow");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        UUID jobId = UUID.randomUUID();
+        int beforeCurrency = countCurrency(hirer);
+        int walletCurrency = VillagerWalletService.getCurrentEmeralds(villager);
+        VillagerWalletService.spendCurrency(villager, walletCurrency, VillagerWalletService.WalletSource.DEBUG);
+
+        BuilderPaymentEscrowService.escrow(villager, jobId, 23);
+        int refunded = BuilderPaymentEscrowService.refund(hirer, villager, Optional.of(jobId), 23);
+        VillagerWalletService.addCurrency(villager, 50, VillagerWalletService.WalletSource.DEBUG);
+        int refundedAgain = BuilderPaymentEscrowService.refund(hirer, villager, Optional.of(jobId), 23);
+
+        helper.assertValueEqual(refunded, 23, "escrow should refund the paid builder amount");
+        helper.assertValueEqual(refundedAgain, 0, "builder escrow refund should be idempotent");
+        helper.assertValueEqual(countCurrency(hirer) - beforeCurrency, 23, "refund should reach the hirer inventory");
+        helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), 50, "repeated refund should not fall back to wallet funds");
         villager.discard();
         helper.succeed();
     }
@@ -2053,6 +2081,21 @@ public final class VillagerWorkerGameTests {
         CompoundTag state = data.getCompound(WORK_STATE_TAG);
         HiredWorkerBrain.initialize(state);
         return state;
+    }
+
+    private static int countCurrency(ServerPlayer player) {
+        int count = 0;
+        for (ItemStack stack : player.getInventory().items) {
+            if (VillagerCurrencyResources.isCurrency(player.serverLevel().getServer(), stack)) {
+                count += stack.getCount();
+            }
+        }
+        for (ItemStack stack : player.getInventory().offhand) {
+            if (VillagerCurrencyResources.isCurrency(player.serverLevel().getServer(), stack)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
     }
 
     private static void buildFloor(GameTestHelper helper, int minX, int maxX, int minZ, int maxZ, int y) {
