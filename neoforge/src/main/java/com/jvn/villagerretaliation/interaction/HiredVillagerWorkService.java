@@ -62,6 +62,7 @@ public final class HiredVillagerWorkService {
     private static final String STORAGE_FULL_NOTICE_SHOWN_TAG = "StorageFullNoticeShown";
     private static final String STATUS_REPLACEMENTS_TAG = "StatusReplacements";
     private static final String COMPLETED_TASKS_TAG = "CompletedTasks";
+    public static final String WAITING_FOR_HIRER_STATUS = "interaction.work.status.waiting_for_hirer";
     private static final String STORAGE_FULL_NOTICE = "interaction.work.status.storage_full";
     private static final String PAUSED_FOR_COMMAND_STATUS = "interaction.work.status.paused_for_command";
     private static final long DAY_TICKS = 24000L;
@@ -104,7 +105,7 @@ public final class HiredVillagerWorkService {
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
             HiredWorkerBrain.setState(waitingState, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            setStatus(waitingState, "interaction.work.status.waiting_for_hirer");
+            setStatus(waitingState, WAITING_FOR_HIRER_STATUS);
             return;
         }
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, hirer)) {

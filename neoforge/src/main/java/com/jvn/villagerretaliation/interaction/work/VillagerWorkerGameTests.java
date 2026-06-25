@@ -591,6 +591,44 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void autoPaymentDoesNotRenewWhileWaitingForOfflineHirer(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrOfflineRenewal");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        BlockPos paymentRel = new BlockPos(2, 2, 1);
+        BlockPos payment = helper.absolutePos(paymentRel);
+        setBlock(helper, paymentRel, VillagerRetaliationBlocks.OAK_PAYMENT_BOX.get().defaultBlockState());
+        container(level, payment).setItem(0, new ItemStack(Items.EMERALD, 16));
+        AssignedStorageService.removeAssignedContainer(level, payment);
+        AssignedStorageService.AssignSummary paymentAssignment = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), payment)),
+                AssignedStorageService.PAYMENT_PURPOSE);
+        helper.assertValueEqual(paymentAssignment.assigned(), 1, "payment box assignment");
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
+        CompoundTag contract = villager.getPersistentData().getCompound("VillagerRetaliationHireContract");
+        long expiredAt = level.getGameTime();
+        contract.putLong("EndGameTime", expiredAt);
+        CompoundTag workState = new CompoundTag();
+        workState.putString("Status", HiredVillagerWorkService.WAITING_FOR_HIRER_STATUS);
+        villager.getPersistentData().put(WORK_STATE_TAG, workState);
+
+        HiredVillagerContractService.onVillagerTickPost(villager);
+
+        helper.assertValueEqual(countItem(container(level, payment), Items.EMERALD), 16, "offline renewal should not charge");
+        helper.assertValueEqual(contract.getLong("EndGameTime"), expiredAt, "offline renewal should not extend time");
+        helper.assertValueEqual(contract.getString("Status"), "active", "contract should stay active until normal expiry processing");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void assignedStoragePersistsPurposeOwnershipAndOutputPriority(GameTestHelper helper) {
         buildFloor(helper, 0, 7, 0, 5, 1);
         ServerLevel level = helper.getLevel();

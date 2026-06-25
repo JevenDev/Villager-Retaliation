@@ -379,6 +379,9 @@ public final class HiredVillagerContractService {
         if (!tag.getBoolean(AUTO_PAYMENT_TAG)) {
             return;
         }
+        if (!hasOnlineHirerForRenewal(level, villager, tag)) {
+            return;
+        }
         long gameTime = level.getGameTime();
         long remainingTicks = tag.getLong(END_GAME_TIME_TAG) - gameTime;
         if (remainingTicks > 0L) {
@@ -394,7 +397,19 @@ public final class HiredVillagerContractService {
 
     private static boolean canAttemptAutoPaymentRenewal(ServerLevel level, Villager villager, CompoundTag tag) {
         return tag.getBoolean(AUTO_PAYMENT_TAG)
+                && hasOnlineHirerForRenewal(level, villager, tag)
                 && AssignedStorageService.hasAssignedPaymentStorage(level, villager);
+    }
+
+    private static boolean hasOnlineHirerForRenewal(ServerLevel level, Villager villager, CompoundTag tag) {
+        if (HiredVillagerWorkService.WAITING_FOR_HIRER_STATUS.equals(
+                HiredVillagerWorkService.state(villager).getString("Status"))) {
+            return false;
+        }
+        if (!tag.hasUUID(HIRER_TAG)) {
+            return true;
+        }
+        return level.getServer().getPlayerList().getPlayer(tag.getUUID(HIRER_TAG)) != null;
     }
 
     private static void beginAwaitingAutoPayment(ServerLevel level, Villager villager, CompoundTag tag) {
