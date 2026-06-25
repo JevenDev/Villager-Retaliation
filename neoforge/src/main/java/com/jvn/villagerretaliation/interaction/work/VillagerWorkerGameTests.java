@@ -46,6 +46,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
@@ -624,6 +625,37 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(contract.getString("Status"), "active", "contract should stay active until normal expiry processing");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void paymentStorageAssignmentRejectsOtherDimensions(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerLevel nether = level.getServer().getLevel(Level.NETHER);
+        helper.assertTrue(nether != null, "nether level should exist for cross-dimension storage regression");
+        ServerPlayer hirer = fakePlayer(level, "VrCrossDimPayment");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        BlockPos netherPayment = new BlockPos(0, 80, 0);
+        nether.getChunk(netherPayment);
+        nether.setBlock(netherPayment, VillagerRetaliationBlocks.OAK_PAYMENT_BOX.get().defaultBlockState(), Block.UPDATE_ALL);
+        AssignedStorageService.removeAssignedContainer(nether, netherPayment);
+
+        AssignedStorageService.AssignSummary summary = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(nether.dimension(), netherPayment)),
+                AssignedStorageService.PAYMENT_PURPOSE);
+
+        helper.assertValueEqual(summary.assigned(), 0, "cross-dimension payment assignment should not be accepted");
+        helper.assertValueEqual(summary.invalid(), 1, "cross-dimension payment assignment should be reported invalid");
+        helper.assertTrue(
+                AssignedStorageService.assignedPaymentStorage(level, villager).isEmpty(),
+                "cross-dimension payment assignment should not persist");
+
+        AssignedStorageService.removeAssignedContainer(nether, netherPayment);
+        nether.setBlock(netherPayment, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         villager.discard();
         helper.succeed();
     }

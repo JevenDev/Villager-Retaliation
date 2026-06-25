@@ -85,6 +85,10 @@ public final class AssignedStorageService {
         String normalizedPurpose = normalizePurpose(purpose);
         int priorityBase = data.assignedTo(villager.getUUID(), normalizedPurpose).size();
         for (StoragePosition position : positions) {
+            if (!position.dimension().equals(villager.level().dimension())) {
+                invalid++;
+                continue;
+            }
             ServerLevel targetLevel = player.server.getLevel(position.dimension());
             if (targetLevel == null || !isValidContainerForPurpose(targetLevel, position.pos(), normalizedPurpose)) {
                 invalid++;
