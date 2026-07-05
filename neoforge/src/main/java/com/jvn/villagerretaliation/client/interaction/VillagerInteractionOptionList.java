@@ -26,14 +26,19 @@ final class VillagerInteractionOptionList {
         int top = context.optionsTop();
         int viewportHeight = context.optionViewportHeight();
         int viewportBottom = top + viewportHeight;
+        int scissorOffsetY = context.guiScissorOffsetY();
         int hovered = optionAt(context, mouseX, mouseY);
         if (context.usePixelOptionButtons()) {
-            renderPixelOptions(context, graphics, hovered, mouseX, mouseY, left, top, viewportBottom);
+            renderPixelOptions(context, graphics, hovered, mouseX, mouseY, left, top, viewportBottom, scissorOffsetY);
             return;
         }
 
         int scissorInset = context.experimentalUnit(4);
-        graphics.enableScissor(Math.max(0, left - context.optionWidth()), top, context.optionsScrollbarLeft() - scissorInset, viewportBottom);
+        graphics.enableScissor(
+                Math.max(0, left - context.optionWidth()),
+                top + scissorOffsetY,
+                context.optionsScrollbarLeft() - scissorInset,
+                viewportBottom + scissorOffsetY);
         for (int index = 0; index < context.optionCount(); index++) {
             int rowHeight = optionHeight(context, index);
             float y = top + optionOffset(context, index) - context.optionScroll();
@@ -164,12 +169,13 @@ final class VillagerInteractionOptionList {
             int mouseY,
             int left,
             int top,
-            int viewportBottom) {
+            int viewportBottom,
+            int scissorOffsetY) {
         int scissorRight = left + context.optionWidth();
         if (context.pixelOptionSelectionArrowTexture() != null) {
             scissorRight += context.pixelOptionSelectionArrowGap() + context.pixelOptionSelectionArrowWidth();
         }
-        graphics.enableScissor(left, top, scissorRight, viewportBottom);
+        graphics.enableScissor(left, top + scissorOffsetY, scissorRight, viewportBottom + scissorOffsetY);
         for (int index = 0; index < context.optionCount(); index++) {
             int rowHeight = optionHeight(context, index);
             float y = top + optionOffset(context, index) - context.optionScroll();
@@ -602,6 +608,10 @@ final class VillagerInteractionOptionList {
         int optionsScrollbarLeft();
 
         float textAlpha();
+
+        default int guiScissorOffsetY() {
+            return 0;
+        }
 
         default boolean usePixelOptionButtons() {
             return false;

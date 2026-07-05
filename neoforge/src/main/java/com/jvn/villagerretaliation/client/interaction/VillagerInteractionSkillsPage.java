@@ -114,7 +114,12 @@ final class VillagerInteractionSkillsPage {
         int top = Mth.floor(viewportTop + context.optionTextYOffset() - context.skillScroll());
         float scale = context.experimentalTextScale();
         int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - context.experimentalUnit(12), scale);
-        graphics.enableScissor(context.skillInfoScissorLeft(), viewportTop, context.skillInfoScissorRight(), viewportBottom);
+        int scissorOffsetY = context.guiScissorOffsetY();
+        graphics.enableScissor(
+                context.skillInfoScissorLeft(),
+                viewportTop + scissorOffsetY,
+                context.skillInfoScissorRight(),
+                viewportBottom + scissorOffsetY);
         VillagerInteractionUiUtil.drawScaledString(
                 graphics,
                 context.font(),
@@ -341,6 +346,10 @@ final class VillagerInteractionSkillsPage {
         int skillInfoViewportBottom();
 
         float skillInfoEdgeFadeAlpha(float lineY, int viewportTop, int viewportBottom);
+
+        default int guiScissorOffsetY() {
+            return 0;
+        }
 
         VillagerSkill selectedSkillDetails();
 

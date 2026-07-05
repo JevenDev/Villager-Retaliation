@@ -144,6 +144,8 @@ public final class VillagerRetaliationClientAssets {
             VillagerRetaliation.id("experimental_notification");
     public static final ResourceLocation EXPERIMENTAL_SKILLS_SHADER =
             VillagerRetaliation.id("experimental_skills");
+    public static final ResourceLocation DIALOGUE_CINEMATIC_BARS_SHADER =
+            VillagerRetaliation.id("dialogue_cinematic_bars");
 
     public static ResourceLocation reputationIcon(VillagerReputationLevel level) {
         return switch (level) {

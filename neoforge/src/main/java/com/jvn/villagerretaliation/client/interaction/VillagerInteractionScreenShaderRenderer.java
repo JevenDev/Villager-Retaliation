@@ -16,6 +16,7 @@ import org.joml.Matrix4f;
 public final class VillagerInteractionScreenShaderRenderer {
     private static ShaderInstance experimentalNotificationShader;
     private static ShaderInstance experimentalSkillsShader;
+    private static ShaderInstance dialogueCinematicBarsShader;
 
     private VillagerInteractionScreenShaderRenderer() {
     }
@@ -172,9 +173,39 @@ public final class VillagerInteractionScreenShaderRenderer {
                     ),
                     shader -> experimentalSkillsShader = shader
             );
+            event.registerShader(
+                    new ShaderInstance(
+                            event.getResourceProvider(),
+                            VillagerRetaliationClientAssets.DIALOGUE_CINEMATIC_BARS_SHADER,
+                            DefaultVertexFormat.POSITION
+                    ),
+                    shader -> dialogueCinematicBarsShader = shader
+            );
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to register interaction screen shaders", exception);
         }
+    }
+
+    public static boolean renderDialogueCinematicBars(
+            GuiGraphics graphics,
+            int width,
+            int height,
+            float barHeight,
+            float slant,
+            float progress) {
+        if (dialogueCinematicBarsShader == null) {
+            return false;
+        }
+
+        ShaderRect rect = new ShaderRect(0, 0, width, height);
+        setRectUniforms(dialogueCinematicBarsShader, rect);
+        setUniform(dialogueCinematicBarsShader, "BarHeight", barHeight);
+        setUniform(dialogueCinematicBarsShader, "Slant", slant);
+        setUniform(dialogueCinematicBarsShader, "Progress", progress);
+        setUniform(dialogueCinematicBarsShader, "Alpha", 1.0F);
+
+        drawQuad(graphics, dialogueCinematicBarsShader, rect);
+        return true;
     }
 
     public static boolean renderExperimentalNotification(

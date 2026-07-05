@@ -108,6 +108,19 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean enableDialogueCameraFocus = true;
 
+        public boolean enableDialogueCinematicBars = true;
+
+        @RangeConstraint(min = 0, max = 96)
+        public int dialogueCinematicBarHeight = 26;
+
+        @RangeConstraint(min = -64, max = 64)
+        public int dialogueCinematicBarMinSlant = -12;
+
+        @RangeConstraint(min = -64, max = 64)
+        public int dialogueCinematicBarMaxSlant = 12;
+
+        public boolean animateDialogueCinematicBars = true;
+
         public boolean enableForcedDialogue = true;
 
         public boolean enableContainerForcedDialogue = true;

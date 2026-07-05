@@ -1,0 +1,35 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "villagerretaliation:dialogue_cinematic_bars",
+  "fragment": "villagerretaliation:dialogue_cinematic_bars",
+  "attributes": [
+    "Position"
+  ],
+  "samplers": [],
+  "uniforms": [
+    {
+      "name": "ModelViewMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+    },
+    {
+      "name": "ProjMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+    },
+    { "name": "RectLeft", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "RectTop", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "RectRight", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "RectBottom", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "BarHeight", "type": "float", "count": 1, "values": [ 26.0 ] },
+    { "name": "Slant", "type": "float", "count": 1, "values": [ 10.0 ] },
+    { "name": "Progress", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "Alpha", "type": "float", "count": 1, "values": [ 1.0 ] }
+  ]
+}

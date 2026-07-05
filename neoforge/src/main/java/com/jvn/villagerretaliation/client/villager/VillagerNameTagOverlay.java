@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.villager;
 
 import com.jvn.villagerretaliation.client.config.VillagerRetaliationClientPreferences;
 import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
+import com.jvn.villagerretaliation.client.interaction.ClientVillagerConversationState;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -26,6 +27,9 @@ public final class VillagerNameTagOverlay {
 
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.options.hideGui) {
+            return;
+        }
+        if (ClientVillagerConversationState.cameraActive()) {
             return;
         }
         if (minecraft.player.distanceToSqr(event.getEntity()) > MAX_NAME_TAG_DISTANCE * MAX_NAME_TAG_DISTANCE) {

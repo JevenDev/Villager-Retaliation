@@ -27,7 +27,6 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.interactionScreen.renderPositionedHudChat(graphics);
         this.interactionScreen.render(graphics, mouseX, mouseY, partialTick);
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.chatLayerZ());
         super.render(graphics, mouseX, mouseY, partialTick);

@@ -33,6 +33,11 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN = bind("dialogue.shiftRightClickBypassesInteractionScreen", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_DIALOGUE_REPUTATION_EFFECTS = bind("dialogue.enableDialogueReputationEffects", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_DIALOGUE_CAMERA_FOCUS = bind("dialogue.enableDialogueCameraFocus", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_DIALOGUE_CINEMATIC_BARS = bind("dialogue.enableDialogueCinematicBars", Boolean.class);
+    public static final ConfigValue<Integer> DIALOGUE_CINEMATIC_BAR_HEIGHT = bind("dialogue.dialogueCinematicBarHeight", Integer.class);
+    public static final ConfigValue<Integer> DIALOGUE_CINEMATIC_BAR_MIN_SLANT = bind("dialogue.dialogueCinematicBarMinSlant", Integer.class);
+    public static final ConfigValue<Integer> DIALOGUE_CINEMATIC_BAR_MAX_SLANT = bind("dialogue.dialogueCinematicBarMaxSlant", Integer.class);
+    public static final ConfigValue<Boolean> ANIMATE_DIALOGUE_CINEMATIC_BARS = bind("dialogue.animateDialogueCinematicBars", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_FORCED_DIALOGUE = bind("dialogue.enableForcedDialogue", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_CONTAINER_FORCED_DIALOGUE = bind("dialogue.enableContainerForcedDialogue", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_CONTAINER_OPEN_REACTION = bind("dialogue.enableContainerOpenReaction", Boolean.class);

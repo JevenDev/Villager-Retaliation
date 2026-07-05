@@ -132,6 +132,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private boolean closingWithAnimation;
     private boolean openedSoundPlayed;
     private long animationStartMillis = -1L;
+    private final float cinematicBarSlant = VillagerDialogueCinematicBars.sampleSlant();
 
     public VillagerQuestJournalScreen() {
         super(Component.translatable(GUI_KEY_PREFIX + "title"));
@@ -180,6 +181,9 @@ public final class VillagerQuestJournalScreen extends Screen {
         int journalMouseY = mouseY - slideOffset;
 
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.screenLayerZ());
+        if (ClientVillagerConversationState.active()) {
+            VillagerDialogueCinematicBars.render(graphics, this.width, this.height, 1.0F, this.cinematicBarSlant);
+        }
         graphics.pose().pushPose();
         graphics.pose().translate(0.0F, slideOffset, 0.0F);
         renderJournalContainer(graphics);

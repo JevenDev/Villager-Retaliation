@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import net.minecraft.client.Minecraft;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
@@ -8,7 +9,18 @@ public final class VillagerInteractionHudHider {
     private VillagerInteractionHudHider() {
     }
 
+    public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
+        if (Minecraft.getInstance().screen instanceof VillagerInteractionSessionScreen) {
+            event.setCanceled(true);
+        }
+    }
+
     public static void onRenderGuiLayerPre(RenderGuiLayerEvent.Pre event) {
+        if (Minecraft.getInstance().screen instanceof VillagerInteractionSessionScreen) {
+            event.setCanceled(true);
+            return;
+        }
+
         boolean chatLayer = VanillaGuiLayers.CHAT.equals(event.getName());
         boolean exitAnimationRunning = VillagerInteractionExperimentalChrome.exitAnimationRunning();
         if (chatLayer) {

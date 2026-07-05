@@ -93,6 +93,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final float OPTION_SCROLL_STEP = 12.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
     private static final float OPTION_SELECTED_SCALE = 0.02F;
+    private static final float INTERACTION_ANIMATION_DURATION_MILLIS = 280.0F;
     private static final int INFO_VALUE_COLOR = 0xFFF8F6EF;
     private static final int INFO_SECONDARY_COLOR = 0xB8D5D0C6;
     private static final int GIFT_BUTTON_WIDTH = 64;
@@ -229,10 +230,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final List<String> knownDislikedGiftNames = new ArrayList<>();
     private final VillagerFamilyTreeSnapshot familyTree;
     private final VillagerRelationshipSnapshot relationships;
+    private final float cinematicBarSlant;
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
     private final EnumMap<DialoguePage, VillagerInteractionScreenState.OptionListPosition> rememberedPageOptionPositions =
             new EnumMap<>(DialoguePage.class);
     private DialoguePage page = DialoguePage.ROOT;
+    private boolean closingWithAnimation;
     private boolean closingFromServer;
     private boolean replacingFromServer;
     private boolean openingChat;
@@ -254,7 +257,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int selectedInventorySlot = -1;
     private int lastMouseX;
     private int lastMouseY;
+    private int renderSlideOffsetY;
     private boolean keyboardOptionFocusVisible;
+    private long animationStartMillis = -1L;
     private long experimentalSkillsAnimationStartMillis = -1L;
     private long experimentalSkillsExitStartMillis = -1L;
     private Button giftButton;
@@ -342,6 +347,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.walletCurrencyLabel = blankToDefault(walletCurrencyLabel, "Emeralds");
         this.walletCurrencyIconSprite = walletCurrencyIconSprite == null ? DEFAULT_CURRENCY_ICON_SPRITE : walletCurrencyIconSprite;
         this.walletCurrencyTextColor = walletCurrencyTextColor | 0xFF000000;
+        this.cinematicBarSlant = VillagerDialogueCinematicBars.sampleSlant();
         this.availableHiredRoles = availableHiredRoles == null || availableHiredRoles.isEmpty()
                 ? EnumSet.noneOf(HiredVillagerRole.class)
                 : EnumSet.copyOf(availableHiredRoles);
@@ -370,6 +376,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         syncCameraFocusState();
         VillagerInteractionExperimentalChrome.resetAnimation(this.professionUiColors);
+        this.animationStartMillis = Util.getMillis();
     }
 
     @Override
@@ -383,6 +390,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void tick() {
+        if (this.closingWithAnimation && animationElapsedMillis() >= INTERACTION_ANIMATION_DURATION_MILLIS) {
+            finishClosingAnimation();
+            return;
+        }
         syncCameraFocusState();
         ClientVillagerConversationState.tickCameraFocus();
     }
@@ -429,11 +440,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     public void closeFromServer() {
         this.closingFromServer = true;
-        if (Minecraft.getInstance().screen != this) {
-            VillagerInteractionChatVisibility.restoreHiddenVillagerMessages(Minecraft.getInstance());
-            ClientVillagerConversationState.clear();
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen != this) {
+            minecraft.setScreen(this);
         }
-        Minecraft.getInstance().setScreen(null);
+        startClosingAnimation();
     }
 
     @Override
@@ -453,39 +464,52 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        int slideOffset = slideOffsetY();
+        this.renderSlideOffsetY = slideOffset;
+        int interactionMouseY = mouseY - slideOffset;
         this.lastMouseX = mouseX;
-        this.lastMouseY = mouseY;
+        this.lastMouseY = interactionMouseY;
         focusVillagerOnPlayer();
-        updateMouseSelection(mouseX, mouseY);
-        updateOptionScroll();
-        updateSkillScroll();
+        if (!this.closingWithAnimation) {
+            updateMouseSelection(mouseX, interactionMouseY);
+            updateOptionScroll();
+            updateSkillScroll();
+        }
 
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.screenLayerZ());
+        VillagerDialogueCinematicBars.render(graphics, this.width, this.height, screenVisibility(), this.cinematicBarSlant);
+        renderPositionedBackdrop(graphics);
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, slideOffset, 0.0F);
         renderInteractionContainer(graphics);
         if (this.page == DialoguePage.GIFT) {
-            renderGiftPage(graphics, mouseX, mouseY, partialTick);
+            renderGiftPage(graphics, mouseX, interactionMouseY, partialTick);
         } else if (this.page == DialoguePage.PROFILE) {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
             }
-            renderProfilePage(graphics, mouseX, mouseY);
+            renderProfilePage(graphics, mouseX, interactionMouseY);
         } else if (this.page == DialoguePage.SKILLS) {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
             }
-            renderSkillsPage(graphics, mouseX, mouseY);
+            renderSkillsPage(graphics, mouseX, interactionMouseY);
         } else {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
             }
-            renderOptions(graphics, mouseX, mouseY, optionsTop());
+            renderOptions(graphics, mouseX, interactionMouseY, optionsTop());
         }
-        renderInteractionStatTooltips(graphics, mouseX, mouseY);
+        renderInteractionStatTooltips(graphics, mouseX, interactionMouseY);
+        graphics.pose().popPose();
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.closingWithAnimation) {
+            return true;
+        }
         if (tryOpenVanillaChat(keyCode, scanCode)) {
             return true;
         }
@@ -517,22 +541,26 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (this.closingWithAnimation) {
+            return true;
+        }
         if (!isLeftMouseButton(button)) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
-        if (this.page == DialoguePage.GIFT && tryClickGiftPage(mouseX, mouseY)) {
+        double interactionMouseY = interactionMouseY(mouseY);
+        if (this.page == DialoguePage.GIFT && tryClickGiftPage(mouseX, interactionMouseY)) {
             return true;
         }
 
-        if (trySkipDialogueTextAnimation(mouseX, mouseY)) {
+        if (trySkipDialogueTextAnimation(mouseX, interactionMouseY)) {
             return true;
         }
 
-        if (trySelectSkillDetails(mouseX, mouseY)
-                || tryBeginSkillInfoScrollbarDrag(mouseX, mouseY)
-                || tryBeginScrollbarDrag(mouseX, mouseY)
-                || tryActivateHoveredOption(mouseX, mouseY)) {
+        if (trySelectSkillDetails(mouseX, interactionMouseY)
+                || tryBeginSkillInfoScrollbarDrag(mouseX, interactionMouseY)
+                || tryBeginScrollbarDrag(mouseX, interactionMouseY)
+                || tryActivateHoveredOption(mouseX, interactionMouseY)) {
             return true;
         }
 
@@ -541,14 +569,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (this.closingWithAnimation) {
+            return true;
+        }
+        double interactionMouseY = interactionMouseY(mouseY);
         if (this.page == DialoguePage.SKILLS
                 && maxSkillScroll() > 0.0F
-                && isPointInsideSkillsInfoScrollArea(mouseX, mouseY)) {
+                && isPointInsideSkillsInfoScrollArea(mouseX, interactionMouseY)) {
             setTargetSkillScroll(this.targetSkillScroll - (float) scrollY * OPTION_SCROLL_STEP);
             return true;
         }
 
-        if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, mouseY)) {
+        if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, interactionMouseY)) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
@@ -558,11 +590,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (this.closingWithAnimation) {
+            return true;
+        }
+        double interactionMouseY = interactionMouseY(mouseY);
         if (isLeftMouseButton(button) && this.draggingSkillScrollbar) {
-            return dragSkillScrollbar(mouseY);
+            return dragSkillScrollbar(interactionMouseY);
         }
         if (isLeftMouseButton(button) && this.draggingScrollbar) {
-            return dragScrollbar(mouseY);
+            return dragScrollbar(interactionMouseY);
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
@@ -590,6 +626,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         if (!this.replacingFromServer) {
             VillagerInteractionChatVisibility.restoreHiddenVillagerMessages(Minecraft.getInstance());
+            VillagerChatEffectRenderer.startReappearFade();
             ClientVillagerConversationState.clear();
         }
         if (!this.closingFromServer) {
@@ -601,6 +638,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void onClose() {
+        goBackOrLeaveConversation();
     }
 
     private boolean tryOpenVanillaChat(int keyCode, int scanCode) {
@@ -1568,7 +1610,54 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void leaveConversation() {
-        this.minecraft.setScreen(null);
+        startClosingAnimation();
+    }
+
+    private void startClosingAnimation() {
+        if (this.closingWithAnimation) {
+            return;
+        }
+        this.closingWithAnimation = true;
+        this.draggingScrollbar = false;
+        this.draggingSkillScrollbar = false;
+        this.animationStartMillis = Util.getMillis();
+    }
+
+    private void finishClosingAnimation() {
+        if (this.minecraft != null && this.minecraft.screen == this) {
+            this.minecraft.setScreen(null);
+        }
+    }
+
+    private double interactionMouseY(double mouseY) {
+        return mouseY - slideOffsetY();
+    }
+
+    private int slideOffsetY() {
+        float visibility = screenVisibility();
+        int offscreenDistance = this.height + 12;
+        return Math.round((1.0F - visibility) * offscreenDistance);
+    }
+
+    private float screenVisibility() {
+        float progress = Mth.clamp(animationElapsedMillis() / INTERACTION_ANIMATION_DURATION_MILLIS, 0.0F, 1.0F);
+        return this.closingWithAnimation ? 1.0F - easeInCubic(progress) : easeOutCubic(progress);
+    }
+
+    private float animationElapsedMillis() {
+        if (this.animationStartMillis < 0L) {
+            return INTERACTION_ANIMATION_DURATION_MILLIS;
+        }
+        return Util.getMillis() - this.animationStartMillis;
+    }
+
+    private static float easeOutCubic(float value) {
+        float inverse = 1.0F - value;
+        return 1.0F - inverse * inverse * inverse;
+    }
+
+    private static float easeInCubic(float value) {
+        return value * value * value;
     }
 
     private void activateSelected() {
@@ -1985,7 +2074,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         livingEntity.yHeadRotO = livingEntity.getYRot();
 
         float scale = livingEntity.getScale();
-        graphics.enableScissor(portraitLeft, portraitTop, portraitRight, portraitBottom);
+        graphics.enableScissor(
+                portraitLeft,
+                portraitTop + this.renderSlideOffsetY,
+                portraitRight,
+                portraitBottom + this.renderSlideOffsetY);
         try {
             InventoryScreen.renderEntityInInventory(
                     graphics,
@@ -2033,7 +2126,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 Component.literal(displayedDialogue),
                 INTERACTION_DIALOGUE_RIGHT - INTERACTION_DIALOGUE_LEFT
         );
-        graphics.enableScissor(textLeft, textTop, textRight, textBottom);
+        graphics.enableScissor(
+                textLeft,
+                textTop + this.renderSlideOffsetY,
+                textRight,
+                textBottom + this.renderSlideOffsetY);
         for (int index = 0; index < Math.min(maxLines, lines.size()); index++) {
             graphics.drawString(
                     this.font,
@@ -2308,8 +2405,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     void renderPositionedHudChat(GuiGraphics graphics) {
         if (experimentalSkillsBackdropVisible()) {
             VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.hudLayerZ());
-            renderExperimentalSkillsBackdrop(graphics);
+            renderPositionedBackdrop(graphics);
             VillagerClientUiUtil.popGuiLayer(graphics);
+        }
+    }
+
+    private void renderPositionedBackdrop(GuiGraphics graphics) {
+        if (experimentalSkillsBackdropVisible()) {
+            renderExperimentalSkillsBackdrop(graphics);
         }
     }
 
@@ -3350,6 +3453,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public int guiScissorOffsetY() {
+            return VillagerInteractionScreen.this.renderSlideOffsetY;
+        }
+
+        @Override
         public boolean usePixelOptionButtons() {
             return VillagerInteractionScreen.this.usesInteractionOptionStack();
         }
@@ -3829,6 +3937,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public float skillInfoEdgeFadeAlpha(float lineY, int viewportTop, int viewportBottom) {
             return VillagerInteractionScreen.this.skillInfoEdgeFadeAlpha(lineY, viewportTop, viewportBottom);
+        }
+
+        @Override
+        public int guiScissorOffsetY() {
+            return VillagerInteractionScreen.this.renderSlideOffsetY;
         }
 
         @Override
