@@ -94,8 +94,7 @@ public final class VillagerTaskNavigationUtil {
     }
 
     public static void stopNavigationAndClearTargets(Villager villager) {
-        stopHiredNavigation(villager);
-        villager.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearMovement(villager);
     }
 
     public static boolean moveToHiredPath(
@@ -113,28 +112,35 @@ public final class VillagerTaskNavigationUtil {
         if (villager.getNavigation().moveTo(path, speed)) {
             return true;
         }
-        brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+        VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
         return false;
     }
 
     public static void setHiredWalkTarget(Villager villager, BlockPos target, double speed, int closeEnough) {
         if (target == null) {
-            villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+            VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
+            return;
+        }
+        float speedModifier = (float) speed;
+        if (hasMatchingWalkTarget(villager, target, speedModifier, closeEnough)) {
             return;
         }
         villager.getBrain().setMemory(
                 MemoryModuleType.WALK_TARGET,
-                new WalkTarget(new BlockPosTracker(target), (float) speed, closeEnough));
+                new WalkTarget(new BlockPosTracker(target), speedModifier, closeEnough));
     }
 
     public static void stopHiredNavigation(Villager villager) {
-        if (!villager.getNavigation().isDone() || villager.getNavigation().getTargetPos() != null) {
-            villager.getNavigation().stop();
-        }
-        Brain<Villager> brain = villager.getBrain();
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+    }
+
+    private static boolean hasMatchingWalkTarget(Villager villager, BlockPos target, float speedModifier, int closeEnough) {
+        return villager.getBrain()
+                .getMemory(MemoryModuleType.WALK_TARGET)
+                .map(walkTarget -> walkTarget.getTarget().currentBlockPosition().equals(target)
+                        && walkTarget.getCloseEnoughDist() == closeEnough
+                        && Float.compare(walkTarget.getSpeedModifier(), speedModifier) == 0)
+                .orElse(false);
     }
 
     public static void tickPathDoors(ServerLevel level, Villager villager) {
