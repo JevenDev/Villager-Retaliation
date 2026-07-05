@@ -8,6 +8,7 @@
     "BrewingStandBlockEntityAccessor",
     "EntityNameMixin",
     "GiveGiftToHeroMixin",
+    "GoToPotentialJobSiteMixin",
     "HarvestFarmlandMixin",
     "PanicGoalMixin",
     "ReactToBellMixin",
