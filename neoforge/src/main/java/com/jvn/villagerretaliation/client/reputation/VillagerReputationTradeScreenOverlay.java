@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.reputation;
 
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.villager.VillagerTradingTargetFinder;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
@@ -26,6 +27,9 @@ public final class VillagerReputationTradeScreenOverlay {
 
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null || minecraft.options.hideGui) {
+            return;
+        }
+        if (!VillagerRetaliationConfig.SHOW_TRADE_GUI_REPUTATION_ICON.get()) {
             return;
         }
 

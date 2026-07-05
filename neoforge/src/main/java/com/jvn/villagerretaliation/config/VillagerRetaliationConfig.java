@@ -28,6 +28,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> COLLAPSE_REPUTATION_CHANGE_NOTIFICATIONS = bind("general.collapseReputationChangeNotifications", Boolean.class);
     public static final ConfigValue<Boolean> SHOW_VILLAGER_NAME_TAGS = bind("general.showVillagerNameTags", Boolean.class);
     public static final ConfigValue<Boolean> VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD = bind("general.villagerReputationHoverTooltipRequiresEmerald", Boolean.class);
+    public static final ConfigValue<Boolean> SHOW_TRADE_GUI_REPUTATION_ICON = bind("general.showTradeGuiReputationIcon", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_DEATH_MESSAGES = bind("general.enableVillagerDeathMessages", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_INTERACTION_SCREEN = bind("dialogue.enableInteractionScreen", Boolean.class);
     public static final ConfigValue<Boolean> SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN = bind("dialogue.shiftRightClickBypassesInteractionScreen", Boolean.class);

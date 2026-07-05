@@ -96,6 +96,8 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean villagerReputationHoverTooltipRequiresEmerald = true;
 
+        public boolean showTradeGuiReputationIcon = true;
+
         public boolean enableVillagerDeathMessages = true;
     }
 
