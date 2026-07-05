@@ -6,14 +6,17 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 
 public class VanillaVillagerModelAdapter<T extends AbstractVillager> extends BaseVillagerModel<T> {
     private final VillagerModel<T> vanillaModel;
+    private final VillagerDialogueMouthParts dialogueMouthParts;
 
     public VanillaVillagerModelAdapter(ModelPart root) {
         this.vanillaModel = new VillagerModel<>(root);
+        this.dialogueMouthParts = VillagerDialogueMouthParts.find(root);
     }
 
     @Override
     public void setupAnim(T villager, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         this.vanillaModel.setupAnim(villager, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+        this.dialogueMouthParts.apply(villager, ageInTicks);
     }
 
     @Override

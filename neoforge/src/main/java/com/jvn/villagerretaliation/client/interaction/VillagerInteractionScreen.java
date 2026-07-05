@@ -279,6 +279,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final NavigationChromeContext navigationChromeContext = new NavigationChromeContext();
     private final ProfilePageContext profilePageContext = new ProfilePageContext();
     private final SkillsPageContext skillsPageContext = new SkillsPageContext();
+    private boolean dialogueMouthAnimationAppliedSprinting;
+    private boolean dialogueMouthAnimationPreviousSprinting;
 
     public VillagerInteractionScreen(
             int villagerEntityId,
@@ -398,6 +400,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             finishClosingAnimation();
             return;
         }
+        updateDialogueMouthAnimation();
         syncCameraFocusState();
         ClientVillagerConversationState.tickCameraFocus();
     }
@@ -468,6 +471,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.nextDialogueBlipVisibleCharacter = this.dialogueTextAnimationSkipped
                 ? Integer.MAX_VALUE
                 : randomDialogueBlipGap();
+        updateDialogueMouthAnimation();
     }
 
     @Override
@@ -477,6 +481,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int interactionMouseY = mouseY - slideOffset;
         this.lastMouseX = mouseX;
         this.lastMouseY = interactionMouseY;
+        updateDialogueMouthAnimation();
         focusVillagerOnPlayer();
         if (!this.closingWithAnimation) {
             updateMouseSelection(mouseX, interactionMouseY);
@@ -626,6 +631,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void removed() {
+        clearDialogueMouthAnimation();
         if (this.openingChat) {
             this.openingChat = false;
             super.removed();
@@ -668,6 +674,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openVanillaChat(String initialText) {
         this.openingChat = true;
+        clearDialogueMouthAnimation();
         Minecraft.getInstance().setScreen(new VillagerInteractionChatScreen(this, initialText));
     }
 
@@ -1628,6 +1635,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.closingWithAnimation = true;
         this.draggingScrollbar = false;
         this.draggingSkillScrollbar = false;
+        clearDialogueMouthAnimation();
         this.animationStartMillis = Util.getMillis();
     }
 
@@ -2075,11 +2083,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         float previousXRot = livingEntity.getXRot();
         float previousHeadRotO = livingEntity.yHeadRotO;
         float previousHeadRot = livingEntity.yHeadRot;
+        boolean previousSprinting = livingEntity.isSprinting();
         livingEntity.yBodyRot = 180.0F + mouseYaw * 20.0F;
         livingEntity.setYRot(180.0F + mouseYaw * 40.0F);
         livingEntity.setXRot(-mousePitch * 20.0F);
         livingEntity.yHeadRot = livingEntity.getYRot();
         livingEntity.yHeadRotO = livingEntity.getYRot();
+        livingEntity.setSprinting(isDialogueMouthAnimationActive());
 
         float scale = livingEntity.getScale();
         graphics.enableScissor(
@@ -2105,6 +2115,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             livingEntity.setXRot(previousXRot);
             livingEntity.yHeadRotO = previousHeadRotO;
             livingEntity.yHeadRot = previousHeadRot;
+            livingEntity.setSprinting(previousSprinting);
         }
     }
 
@@ -2249,7 +2260,64 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return false;
         }
         this.dialogueTextAnimationSkipped = true;
+        updateDialogueMouthAnimation();
         return true;
+    }
+
+    private void updateDialogueMouthAnimation() {
+        boolean talking = isDialogueMouthAnimationActive();
+        VillagerDialogueMouthAnimation.update(this.villagerEntityId, talking);
+        applyDialogueMouthSprinting(talking);
+    }
+
+    private boolean isDialogueMouthAnimationActive() {
+        return shouldRenderInteractionContainer()
+                && !this.villagerDialogueText.isBlank()
+                && !isDialogueTextAnimationComplete();
+    }
+
+    private void clearDialogueMouthAnimation() {
+        restoreDialogueMouthSprinting();
+        VillagerDialogueMouthAnimation.clear(this.villagerEntityId);
+    }
+
+    private void applyDialogueMouthSprinting(boolean talking) {
+        LivingEntity livingEntity = dialogueMouthLivingEntity();
+        if (livingEntity == null) {
+            return;
+        }
+        if (talking) {
+            if (!this.dialogueMouthAnimationAppliedSprinting) {
+                this.dialogueMouthAnimationPreviousSprinting = livingEntity.isSprinting();
+                this.dialogueMouthAnimationAppliedSprinting = true;
+            }
+            livingEntity.setSprinting(true);
+        } else {
+            restoreDialogueMouthSprinting(livingEntity);
+        }
+    }
+
+    private void restoreDialogueMouthSprinting() {
+        LivingEntity livingEntity = dialogueMouthLivingEntity();
+        if (livingEntity != null) {
+            restoreDialogueMouthSprinting(livingEntity);
+        } else {
+            this.dialogueMouthAnimationAppliedSprinting = false;
+        }
+    }
+
+    private void restoreDialogueMouthSprinting(LivingEntity livingEntity) {
+        if (!this.dialogueMouthAnimationAppliedSprinting) {
+            return;
+        }
+        livingEntity.setSprinting(this.dialogueMouthAnimationPreviousSprinting);
+        this.dialogueMouthAnimationAppliedSprinting = false;
+    }
+
+    private LivingEntity dialogueMouthLivingEntity() {
+        Minecraft minecraft = Minecraft.getInstance();
+        Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(this.villagerEntityId);
+        return entity instanceof LivingEntity livingEntity ? livingEntity : null;
     }
 
     private boolean isPointInsideInteractionDialogue(double mouseX, double mouseY) {

@@ -26,6 +26,7 @@
     "client.MerchantScreenMixin",
     "client.MerchantContainerMixin",
     "client.MerchantResultSlotMixin",
+    "client.ModelPartAccessor",
     "client.QuestItemEntityGlowMixin",
     "client.QuestItemEntityOutlineColorMixin",
     "client.QuestItemHeldGlowMixin"

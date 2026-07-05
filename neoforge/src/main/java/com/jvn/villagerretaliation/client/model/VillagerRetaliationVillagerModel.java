@@ -35,6 +35,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     private final ModelPart rightLeg;
     private final ModelPart leftLeg;
     private final VillagerPoseProvider<T> poseProvider;
+    private final VillagerDialogueMouthParts dialogueMouthParts;
 
     public VillagerRetaliationVillagerModel(ModelPart root) {
         this(root, null);
@@ -53,6 +54,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         this.rightLeg = root.getChild("RightLeg");
         this.leftLeg = root.getChild("LeftLeg");
         this.poseProvider = poseProvider;
+        this.dialogueMouthParts = VillagerDialogueMouthParts.find(root);
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -107,6 +109,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
             this.leftLeg.yRot = (-(float) Math.PI / 10F);
             this.leftLeg.zRot = -0.07853982F;
             this.syncRobe(villager);
+            this.dialogueMouthParts.apply(villager, ageInTicks);
             return;
         }
 
@@ -130,10 +133,12 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         this.setArmLayout(pose != VillagerArmPose.NONE || VillagerRenderEquipmentState.hasArmorEquipped(villager));
         if (pose == VillagerArmPose.NONE) {
             this.syncRobe(villager);
+            this.dialogueMouthParts.apply(villager, ageInTicks);
             return;
         }
         VillagerPoseAnimator.applyPose(pose, villager, this.body, this.head, this.rightArm, this.leftArm, this.attackTime, ageInTicks);
         this.syncRobe(villager);
+        this.dialogueMouthParts.apply(villager, ageInTicks);
     }
 
     @Override
