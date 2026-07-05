@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import java.util.List;
@@ -23,5 +24,5 @@ interface VillagerInteractionSessionScreen {
 
     void closeFromServer();
 
-    void acceptVillagerDialogue(String text);
+    void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments);
 }

@@ -13,6 +13,8 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
@@ -67,6 +69,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
@@ -264,6 +267,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private long experimentalSkillsExitStartMillis = -1L;
     private Button giftButton;
     private String villagerDialogueText = "";
+    private List<DialogueTextSegment> villagerDialogueTextSegments = List.of();
     private long dialogueTextAnimationStartMillis;
     private boolean dialogueTextAnimationSkipped;
     private final Random dialogueBlipRandom = new Random();
@@ -448,11 +452,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     @Override
-    public void acceptVillagerDialogue(String text) {
+    public void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments) {
         if (text == null || text.isBlank()) {
             return;
         }
-        this.villagerDialogueText = text.strip();
+        this.villagerDialogueTextSegments = normalizeDialogueSegments(text, textSegments);
+        this.villagerDialogueText = DialogueTextSegment.plainText(this.villagerDialogueTextSegments);
+        if (this.villagerDialogueText.isBlank()) {
+            return;
+        }
         this.dialogueTextAnimationStartMillis = Util.getMillis();
         this.dialogueTextAnimationSkipped = dialogueTextSpeed().instant();
         this.dialogueBlipPitch = randomDialogueBlipPitch();
@@ -2117,13 +2125,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int textBottom = top + INTERACTION_DIALOGUE_BOTTOM;
         int lineStep = this.font.lineHeight;
         int maxLines = Math.max(1, (textBottom - textTop) / lineStep);
-        String displayedDialogue = displayedDialogueText();
+        List<DialogueTextSegment> displayedSegments = displayedDialogueSegments();
+        String displayedDialogue = DialogueTextSegment.plainText(displayedSegments);
         if (displayedDialogue.isBlank()) {
             return;
         }
         maybePlayDialogueBlip();
+        Component displayedComponent = VillagerStyledTextRenderer.component(
+                displayedSegments,
+                Style.EMPTY,
+                INTERACTION_DIALOGUE_COLOR & 0x00FFFFFF);
         List<FormattedCharSequence> lines = this.font.split(
-                Component.literal(displayedDialogue),
+                displayedComponent,
                 INTERACTION_DIALOGUE_RIGHT - INTERACTION_DIALOGUE_LEFT
         );
         graphics.enableScissor(
@@ -2131,17 +2144,43 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 textTop + this.renderSlideOffsetY,
                 textRight,
                 textBottom + this.renderSlideOffsetY);
+        int segmentCursor = 0;
         for (int index = 0; index < Math.min(maxLines, lines.size()); index++) {
-            graphics.drawString(
+            FormattedCharSequence line = lines.get(index);
+            String lineText = VillagerStyledTextRenderer.plainText(line);
+            int lineStart = findDisplayedLineStart(displayedDialogue, lineText, segmentCursor);
+            int lineEnd = lineStart < 0 ? -1 : Math.min(displayedDialogue.length(), lineStart + lineText.length());
+            List<DialogueTextSegment> lineSegments = lineStart < 0
+                    ? DialogueTextSegment.plain(lineText, DialogueTextEffects.NONE)
+                    : DialogueTextSegment.slice(displayedSegments, lineStart, lineEnd);
+            VillagerStyledTextRenderer.renderLine(
+                    graphics,
                     this.font,
-                    lines.get(index),
+                    line,
+                    lineSegments,
                     textLeft,
                     textTop + index * lineStep,
-                    INTERACTION_DIALOGUE_COLOR,
-                    false
+                    INTERACTION_DIALOGUE_COLOR & 0x00FFFFFF,
+                    255,
+                    Minecraft.getInstance().gui.getGuiTicks()
             );
+            segmentCursor = lineEnd < 0 ? segmentCursor + lineText.length() : lineEnd;
         }
         graphics.disableScissor();
+    }
+
+    private List<DialogueTextSegment> displayedDialogueSegments() {
+        String displayedDialogue = displayedDialogueText();
+        if (displayedDialogue.isBlank()) {
+            return List.of();
+        }
+        if (VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get()) {
+            return DialogueTextSegment.plain(displayedDialogue, DialogueTextEffects.NONE);
+        }
+        if (isDialogueTextAnimationComplete()) {
+            return this.villagerDialogueTextSegments;
+        }
+        return DialogueTextSegment.slice(this.villagerDialogueTextSegments, 0, displayedDialogue.length());
     }
 
     private String displayedDialogueText() {
@@ -2158,6 +2197,51 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 Math.min(visibleCharacters, this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length()))
         );
         return this.villagerDialogueText.substring(0, endIndex);
+    }
+
+    private static List<DialogueTextSegment> normalizeDialogueSegments(String text, List<DialogueTextSegment> textSegments) {
+        List<DialogueTextSegment> sourceSegments;
+        if (textSegments == null || textSegments.isEmpty()) {
+            sourceSegments = DialogueTextSegment.parse(text.strip(), DialogueTextEffects.NONE);
+        } else {
+            sourceSegments = textSegments.stream()
+                    .filter(segment -> segment != null && !segment.text().isEmpty())
+                    .toList();
+        }
+        if (sourceSegments.isEmpty()) {
+            return DialogueTextSegment.plain(text.strip(), DialogueTextEffects.NONE);
+        }
+        return stripDialogueSegments(sourceSegments);
+    }
+
+    private static List<DialogueTextSegment> stripDialogueSegments(List<DialogueTextSegment> segments) {
+        String plainText = DialogueTextSegment.plainText(segments);
+        int start = 0;
+        while (start < plainText.length()) {
+            int codePoint = plainText.codePointAt(start);
+            if (!Character.isWhitespace(codePoint)) {
+                break;
+            }
+            start += Character.charCount(codePoint);
+        }
+
+        int end = plainText.length();
+        while (end > start) {
+            int codePoint = plainText.codePointBefore(end);
+            if (!Character.isWhitespace(codePoint)) {
+                break;
+            }
+            end -= Character.charCount(codePoint);
+        }
+        return start >= end ? List.of() : DialogueTextSegment.slice(segments, start, end);
+    }
+
+    private static int findDisplayedLineStart(String text, String lineText, int cursor) {
+        if (lineText.isEmpty()) {
+            return Math.min(cursor, text.length());
+        }
+        int start = text.indexOf(lineText, Math.min(cursor, text.length()));
+        return start >= 0 ? start : text.indexOf(lineText);
     }
 
     private boolean trySkipDialogueTextAnimation(double mouseX, double mouseY) {

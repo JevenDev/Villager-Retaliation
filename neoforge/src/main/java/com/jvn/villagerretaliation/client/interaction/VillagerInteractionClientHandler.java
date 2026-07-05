@@ -24,6 +24,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -160,7 +161,7 @@ public final class VillagerInteractionClientHandler {
         Minecraft minecraft = Minecraft.getInstance();
         VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
         if (screen != null) {
-            screen.acceptVillagerDialogue(payload.text());
+            screen.acceptVillagerDialogue(payload.text(), payload.textSegments());
             return;
         }
         pushVillagerChatMessage(minecraft, payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
@@ -313,87 +314,8 @@ public final class VillagerInteractionClientHandler {
         List<DialogueTextSegment> safeSegments = textSegments == null || textSegments.isEmpty()
                 ? DialogueTextSegment.plain(text, DialogueTextEffects.NONE)
                 : textSegments;
-        for (DialogueTextSegment segment : safeSegments) {
-            appendStyledSegment(message, segment, color);
-        }
+        message.append(VillagerStyledTextRenderer.component(safeSegments, Style.EMPTY, color));
         return message;
-    }
-
-    private static void appendStyledSegment(MutableComponent message, DialogueTextSegment segment, int fallbackColor) {
-        DialogueTextEffects effects = segment.effects();
-        if (effects.rainbow()) {
-            int index = 0;
-            int length = Math.max(1, segment.text().codePointCount(0, segment.text().length()));
-            for (int offset = 0; offset < segment.text().length(); ) {
-                int codePoint = segment.text().codePointAt(offset);
-                String glyph = new String(Character.toChars(codePoint));
-                int color = rainbowColor(index / (float) length);
-                message.append(styledText(glyph, effects, color));
-                offset += Character.charCount(codePoint);
-                index++;
-            }
-            return;
-        }
-        if (effects.hasGradient()) {
-            int length = Math.max(1, segment.text().codePointCount(0, segment.text().length()) - 1);
-            int index = 0;
-            for (int offset = 0; offset < segment.text().length(); ) {
-                int codePoint = segment.text().codePointAt(offset);
-                String glyph = new String(Character.toChars(codePoint));
-                int color = lerpColor(effects.gradientStartColor(), effects.gradientEndColor(), length == 0 ? 0.0F : index / (float) length);
-                message.append(styledText(glyph, effects, color));
-                offset += Character.charCount(codePoint);
-                index++;
-            }
-            return;
-        }
-        message.append(styledText(segment.text(), effects, effects.color() == null ? fallbackColor : effects.color()));
-    }
-
-    private static Component styledText(String text, DialogueTextEffects effects, int color) {
-        return Component.literal(text).withStyle(style -> style
-                .withColor(VillagerChatEffectRenderer.usesAnimatedRenderer(effects)
-                        ? VillagerChatEffectRenderer.STATIC_EFFECT_TEXT_COLOR
-                        : color)
-                .withItalic(effects.italic())
-                .withBold(effects.bold())
-                .withUnderlined(effects.underlined())
-                .withStrikethrough(effects.strikethrough())
-                .withObfuscated(effects.obfuscated()));
-    }
-
-    private static int lerpColor(int start, int end, float progress) {
-        float clamped = Math.clamp(progress, 0.0F, 1.0F);
-        int red = Math.round(((start >> 16) & 0xFF) + (((end >> 16) & 0xFF) - ((start >> 16) & 0xFF)) * clamped);
-        int green = Math.round(((start >> 8) & 0xFF) + (((end >> 8) & 0xFF) - ((start >> 8) & 0xFF)) * clamped);
-        int blue = Math.round((start & 0xFF) + ((end & 0xFF) - (start & 0xFF)) * clamped);
-        return (red << 16) | (green << 8) | blue;
-    }
-
-    private static int rainbowColor(float progress) {
-        float hue = progress - (float) Math.floor(progress);
-        float scaled = hue * 6.0F;
-        int sector = (int) Math.floor(scaled);
-        float fraction = scaled - sector;
-        float saturation = 0.85F;
-        float value = 1.0F;
-        float p = value * (1.0F - saturation);
-        float q = value * (1.0F - saturation * fraction);
-        float t = value * (1.0F - saturation * (1.0F - fraction));
-        return switch (Math.floorMod(sector, 6)) {
-            case 0 -> rgb(value, t, p);
-            case 1 -> rgb(q, value, p);
-            case 2 -> rgb(p, value, t);
-            case 3 -> rgb(p, q, value);
-            case 4 -> rgb(t, p, value);
-            default -> rgb(value, p, q);
-        };
-    }
-
-    private static int rgb(float red, float green, float blue) {
-        return (Math.round(red * 255.0F) << 16)
-                | (Math.round(green * 255.0F) << 8)
-                | Math.round(blue * 255.0F);
     }
 
     private static List<DialogueTextSegment> displayedChatSegments(

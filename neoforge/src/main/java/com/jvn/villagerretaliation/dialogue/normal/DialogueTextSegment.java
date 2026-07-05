@@ -82,6 +82,33 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
         return builder.toString();
     }
 
+    public static List<DialogueTextSegment> slice(List<DialogueTextSegment> segments, int start, int end) {
+        if (segments == null || segments.isEmpty() || end <= start) {
+            return List.of();
+        }
+
+        int safeStart = Math.max(0, start);
+        int safeEnd = Math.max(safeStart, end);
+        int cursor = 0;
+        List<DialogueTextSegment> sliced = new ArrayList<>();
+        for (DialogueTextSegment segment : segments) {
+            String segmentText = segment.text();
+            int segmentStart = cursor;
+            int segmentEnd = segmentStart + segmentText.length();
+            cursor = segmentEnd;
+            if (segmentEnd <= safeStart || segmentStart >= safeEnd) {
+                continue;
+            }
+
+            int localStart = Math.max(0, safeStart - segmentStart);
+            int localEnd = Math.min(segmentText.length(), safeEnd - segmentStart);
+            if (localStart < localEnd) {
+                sliced.add(new DialogueTextSegment(segmentText.substring(localStart, localEnd), segment.effects()));
+            }
+        }
+        return List.copyOf(sliced);
+    }
+
     public static void writeList(RegistryFriendlyByteBuf buffer, List<DialogueTextSegment> segments) {
         List<DialogueTextSegment> safeSegments = segments == null ? List.of() : segments;
         buffer.writeVarInt(Math.min(safeSegments.size(), MAX_SEGMENTS));

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
@@ -92,8 +93,8 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     }
 
     @Override
-    public void acceptVillagerDialogue(String text) {
-        this.interactionScreen.acceptVillagerDialogue(text);
+    public void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments) {
+        this.interactionScreen.acceptVillagerDialogue(text, textSegments);
     }
 
     private void returnToInteractionScreen() {
