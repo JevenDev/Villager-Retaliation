@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -418,9 +419,7 @@ public final class VillagerRecruitmentService {
 
     private static void suppressFollowerAi(Villager villager) {
         Brain<Villager> brain = villager.getBrain();
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
+        VillagerRetaliationVillagerBrainUtil.clearMovementMemories(villager);
         brain.eraseMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
         VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE);
         VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY);
@@ -453,8 +452,7 @@ public final class VillagerRecruitmentService {
         }
 
         Brain<Villager> brain = villager.getBrain();
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
+        VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
 
         int failedPathFindingPenalty = targetChanged || state == null ? 0 : state.failedPathFindingPenalty();
         long recalculationDelay = FOLLOW_PATH_RECALCULATION_MIN_TICKS
@@ -494,9 +492,7 @@ public final class VillagerRecruitmentService {
 
     private static void stopFollowNavigation(Villager villager) {
         FOLLOW_PATH_STATES.remove(villager.getUUID());
-        if (!villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
-        }
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
     }
 
     private static boolean consumePlayerScanSlot(
@@ -554,7 +550,7 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().remove(STAY_ANCHOR_X_KEY);
         villager.getPersistentData().remove(STAY_ANCHOR_Y_KEY);
         villager.getPersistentData().remove(STAY_ANCHOR_Z_KEY);
-        villager.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
     }
 
     private static void dismountFollower(Villager villager) {

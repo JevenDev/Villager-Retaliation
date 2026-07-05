@@ -152,7 +152,7 @@ public final class WanderingTraderRetaliationHandler {
             VillagerRangedCombatHelper.clearState(trader);
             VillagerRetaliationRetaliationUtil.restoreCombatMovement(trader);
             RETALIATION.restoreTemporaryWeapon(trader);
-            trader.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(trader);
             return;
         }
         if (!VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(trader, target)) {
@@ -181,7 +181,7 @@ public final class WanderingTraderRetaliationHandler {
         boolean canUseMeleeCombat = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(trader);
         boolean canMeleeHit = canUseMeleeCombat && VillagerRetaliationRetaliationUtil.canMeleeHit(trader, target);
         if (canMeleeHit) {
-            trader.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(trader);
             VillagerRetaliationRetaliationUtil.clearPathingState(trader);
         } else {
             VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(trader, target, ACTOR_POLICY.movementSpeed(trader));
@@ -378,7 +378,7 @@ public final class WanderingTraderRetaliationHandler {
         RETALIATION.clearTransientState(trader);
         trader.setAggressive(false);
         trader.setTarget(null);
-        trader.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(trader);
     }
 
     private static void syncMeleeAttackAttributes(WanderingTrader trader) {
@@ -415,6 +415,7 @@ public final class WanderingTraderRetaliationHandler {
 
     private static void suppressVanillaPanic(WanderingTrader trader) {
         VillagerRetaliationVillagerBrainUtil.clearThreatMemories(trader);
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearMovement(trader);
     }
 
     private static void equipCombatWeapon(WanderingTrader trader) {

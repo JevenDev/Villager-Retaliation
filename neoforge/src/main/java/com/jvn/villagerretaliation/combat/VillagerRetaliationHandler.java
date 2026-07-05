@@ -36,10 +36,8 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
@@ -311,7 +309,7 @@ public final class VillagerRetaliationHandler {
             villager.setTarget(null);
             VillagerArmorerCombatTactics.resetState(villager);
             handlePassivePotionState(villager);
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             return;
         }
         if (!VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)) {
@@ -340,7 +338,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             return;
         }
 
@@ -368,7 +366,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (VillagerRetaliationPotionUtil.shouldSuppressCombatWhileUsingPotion(villager)) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             return;
         }
         if (VillagerHostileTierHarass.tryThrow(villager, target, level, gameTime, distanceSqr)) {
@@ -380,7 +378,7 @@ public final class VillagerRetaliationHandler {
         boolean canUseMeleeCombat = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager);
         boolean canMeleeHit = canUseMeleeCombat && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
         if (canMeleeHit) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             VillagerRetaliationRetaliationUtil.clearPathingState(villager);
         } else {
             VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(villager, target, movementSpeed);
@@ -726,7 +724,7 @@ public final class VillagerRetaliationHandler {
         villager.setTarget(null);
         villager.setLastHurtByMob(null);
         if (stopNavigation) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         }
     }
 
@@ -1010,7 +1008,7 @@ public final class VillagerRetaliationHandler {
             if (attacker != null) {
                 VillagerRetaliationVillagerBrainUtil.enterFleeState(nearby, attacker, gameTime);
             } else {
-                nearby.getNavigation().stop();
+                VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(nearby);
             }
         }
     }
@@ -1030,14 +1028,11 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void suppressVanillaPanic(Villager villager) {
-        Brain<Villager> brain = villager.getBrain();
         if (villager.level() instanceof ServerLevel level) {
             VillagerRetaliationVillagerBrainUtil.suppressVanillaFleeState(level, villager);
         } else {
             VillagerRetaliationVillagerBrainUtil.clearFleeMemories(villager);
-            brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-            brain.eraseMemory(MemoryModuleType.PATH);
-            brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearMovement(villager);
         }
     }
 
@@ -1064,7 +1059,7 @@ public final class VillagerRetaliationHandler {
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
         VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
-        villager.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
     }
 
     private static void equipCombatWeapon(Villager villager) {
@@ -1143,7 +1138,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
             return;
         }
@@ -1171,7 +1166,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void suspendCombatForOpenInventory(Villager villager) {
-        villager.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         VillagerArmorerCombatTactics.resetState(villager);
         VillagerRangedCombatHelper.clearState(villager);
         VillagerClericPotionHelper.clearState(villager);

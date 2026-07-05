@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.TickThrottle;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import java.util.HashMap;
 import java.util.Map;
@@ -263,7 +264,7 @@ final class VillagerClericPotionHelper {
             return true;
         }
 
-        villager.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         DRINKING_POTIONS.put(villager.getUUID(), state.withTicksLeft(ticksLeft));
         return true;
     }
@@ -287,7 +288,7 @@ final class VillagerClericPotionHelper {
         }
 
         ItemStack resumeMainHand = villager.getMainHandItem().copy();
-        villager.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         VillagerRetaliationVillagerEquipment.setVisualMainHand(villager, drinkStack);
         villager.startUsingItem(InteractionHand.MAIN_HAND);
         int useDuration = Math.max(2, drinkStack.getUseDuration(villager));

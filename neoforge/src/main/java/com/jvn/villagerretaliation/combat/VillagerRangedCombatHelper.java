@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +46,7 @@ final class VillagerRangedCombatHelper {
 
     static boolean tryAttack(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
         if (VillagerRetaliationPotionUtil.shouldSuppressCombatWhileUsingPotion(villager)) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             return true;
         }
         return tryAttack(villager, target, level, distanceSqr, VillagerCombatRoles.movementSpeed(villager));
@@ -188,7 +189,7 @@ final class VillagerRangedCombatHelper {
             double movementSpeed
     ) {
         if (distanceSqr <= 100.0D && seeTime >= 20) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         } else {
             VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
         }
@@ -263,7 +264,7 @@ final class VillagerRangedCombatHelper {
             return;
         }
 
-        villager.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
         if (target.closerThan(villager, CROSSBOW_BACK_UP_DISTANCE)) {
             villager.getMoveControl().strafe(-CROSSBOW_BACK_UP_STRAFE_SPEED, 0.0F);

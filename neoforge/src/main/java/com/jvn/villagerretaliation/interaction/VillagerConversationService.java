@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -150,7 +151,7 @@ public final class VillagerConversationService {
             return;
         }
         if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get() && !villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         }
     }
 
@@ -200,7 +201,7 @@ public final class VillagerConversationService {
             return;
         }
         if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get() && !villager.getNavigation().isDone()) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         }
     }
 
@@ -208,13 +209,14 @@ public final class VillagerConversationService {
         double distanceSqr = villager.distanceToSqr(player);
         if (distanceSqr <= FORCED_DIALOGUE_APPROACH_STOP_DISTANCE * FORCED_DIALOGUE_APPROACH_STOP_DISTANCE) {
             if (!villager.getNavigation().isDone()) {
-                villager.getNavigation().stop();
+                VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             }
             return false;
         }
         if (distanceSqr <= FORCED_DIALOGUE_APPROACH_START_DISTANCE * FORCED_DIALOGUE_APPROACH_START_DISTANCE) {
             return !villager.getNavigation().isDone();
         }
+        VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
         return villager.getNavigation().moveTo(player, FORCED_DIALOGUE_APPROACH_SPEED);
     }
 }

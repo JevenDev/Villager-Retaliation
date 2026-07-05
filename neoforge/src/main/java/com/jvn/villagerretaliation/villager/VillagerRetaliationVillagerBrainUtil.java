@@ -25,6 +25,31 @@ public final class VillagerRetaliationVillagerBrainUtil {
         VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY);
         VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY_ENTITY);
         VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE);
+        villager.setLastHurtByMob(null);
+    }
+
+    public static void clearPathingMemories(AbstractVillager villager) {
+        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.WALK_TARGET);
+        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.PATH);
+    }
+
+    public static void clearMovementMemories(AbstractVillager villager) {
+        clearPathingMemories(villager);
+        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.LOOK_TARGET);
+    }
+
+    public static void stopNavigationAndClearPathing(AbstractVillager villager) {
+        if (!villager.getNavigation().isDone() || villager.getNavigation().getTargetPos() != null) {
+            villager.getNavigation().stop();
+        }
+        clearPathingMemories(villager);
+    }
+
+    public static void stopNavigationAndClearMovement(AbstractVillager villager) {
+        if (!villager.getNavigation().isDone() || villager.getNavigation().getTargetPos() != null) {
+            villager.getNavigation().stop();
+        }
+        clearMovementMemories(villager);
     }
 
     public static boolean hasThreatMemories(Brain<?> brain) {
@@ -57,9 +82,7 @@ public final class VillagerRetaliationVillagerBrainUtil {
             return;
         }
 
-        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        brain.eraseMemory(MemoryModuleType.PATH);
-        brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
+        stopNavigationAndClearMovement(villager);
         brain.setDefaultActivity(Activity.IDLE);
         brain.setActiveActivityIfPossible(scheduledActivity(level, brain));
         if (isActiveFleeActivity(brain)) {

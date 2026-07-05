@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -21,7 +22,7 @@ public abstract class PanicGoalMixin {
     private void villagerretaliation$suppressTraderPanicStart(CallbackInfoReturnable<Boolean> cir) {
         if (this.mob instanceof WanderingTrader trader
                 && WanderingTraderRetaliationHandler.shouldSuppressVanillaAvoidance(trader)) {
-            trader.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearMovement(trader);
             cir.setReturnValue(false);
         }
     }
@@ -30,7 +31,7 @@ public abstract class PanicGoalMixin {
     private void villagerretaliation$suppressTraderPanicContinue(CallbackInfoReturnable<Boolean> cir) {
         if (this.mob instanceof WanderingTrader trader
                 && WanderingTraderRetaliationHandler.shouldSuppressVanillaAvoidance(trader)) {
-            trader.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearMovement(trader);
             cir.setReturnValue(false);
         }
     }

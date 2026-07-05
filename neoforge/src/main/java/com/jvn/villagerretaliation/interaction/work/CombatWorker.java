@@ -55,7 +55,7 @@ public final class CombatWorker implements HiredRoleWorker {
             if (!villager.getNavigation().isDone()
                     && villager.getNavigation().getTargetPos() != null
                     && !context.isInsideWorkArea(villager.getNavigation().getTargetPos())) {
-                villager.getNavigation().stop();
+                VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             }
         }
     }
@@ -85,7 +85,7 @@ public final class CombatWorker implements HiredRoleWorker {
         HiredRoleWorker.super.stop(level, villager, context);
         context.state().remove(NEXT_PATROL_GAME_TIME_TAG);
         if (villager.getTarget() == null && villager.getLastHurtByMob() == null) {
-            villager.getNavigation().stop();
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             villager.getBrain().setDefaultActivity(Activity.IDLE);
             villager.getBrain().setActiveActivityIfPossible(Activity.IDLE);
         }

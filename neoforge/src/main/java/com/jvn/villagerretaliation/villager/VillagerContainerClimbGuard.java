@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -31,9 +30,7 @@ public final class VillagerContainerClimbGuard {
         if (escape == null) {
             return;
         }
-        villager.getNavigation().stop();
-        villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-        villager.getBrain().eraseMemory(MemoryModuleType.PATH);
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         villager.moveTo(
                 escape.getX() + 0.5D,
                 escape.getY(),

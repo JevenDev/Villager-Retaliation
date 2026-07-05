@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -156,7 +157,7 @@ public final class HiredVillagerFocusService {
                 && !hiredNavigation
                 && (!context.isInsideWorkArea(navigationTarget) || navigationTarget.equals(jobSite));
         if (stopNavigation) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         }
 
         long gameTime = level.getGameTime();
@@ -169,11 +170,8 @@ public final class HiredVillagerFocusService {
                 NEXT_PROFESSION_SUPPRESSION_GAME_TIME_TAG,
                 gameTime + PROFESSION_SUPPRESSION_INTERVAL_TICKS);
 
-        if (!hiredNavigation && brain.getMemory(MemoryModuleType.WALK_TARGET).isPresent()) {
-            brain.eraseMemory(MemoryModuleType.WALK_TARGET);
-        }
-        if (!hiredNavigation && brain.getMemory(MemoryModuleType.PATH).isPresent()) {
-            brain.eraseMemory(MemoryModuleType.PATH);
+        if (!hiredNavigation) {
+            VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
         }
         brain.eraseMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
         brain.eraseMemory(MemoryModuleType.SECONDARY_JOB_SITE);

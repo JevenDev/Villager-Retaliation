@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
@@ -103,6 +104,7 @@ public final class VillagerRetaliationRetaliationUtil {
 
         if (shouldRefreshGroundWeaponPursuit(villager, itemEntity)) {
             villager.getLookControl().setLookAt(itemEntity, 30.0F, 30.0F);
+            VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
             villager.getNavigation().moveTo(itemEntity, movementSpeed);
         }
         return true;
@@ -344,7 +346,7 @@ public final class VillagerRetaliationRetaliationUtil {
 
     public static boolean moveTowardReachableRetaliationTarget(AbstractVillager villager, LivingEntity target, double movementSpeed) {
         if (!isWithinRetaliationPursuitRange(villager, target)) {
-            villager.getNavigation().stop();
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             clearPathingState(villager);
             return false;
         }
@@ -376,6 +378,7 @@ public final class VillagerRetaliationRetaliationUtil {
             ticksUntilNextPathRecalculation += 5;
         }
 
+        VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
         boolean moved = villager.getNavigation().moveTo(target, movementSpeed);
         if (!moved) {
             ticksUntilNextPathRecalculation += 15;

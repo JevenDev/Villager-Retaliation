@@ -121,7 +121,7 @@ public final class VillagerRetaliationVillagerWeapons {
             return;
         }
 
-        villager.getNavigation().stop();
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         ItemStack equippedStack = groundStack.copyWithCount(1);
         ItemStack previousMainHand = villager.getMainHandItem().copy();
         if (!previousMainHand.isEmpty()) {

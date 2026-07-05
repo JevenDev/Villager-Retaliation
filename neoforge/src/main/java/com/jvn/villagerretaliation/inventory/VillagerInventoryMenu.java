@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.mixin.AbstractContainerMenuAccessor;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -12,7 +13,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Inventory;
@@ -383,9 +383,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             this.villager.stopSleeping();
         }
         this.villager.getLookControl().setLookAt(this.player, 30.0F, 30.0F);
-        this.villager.getNavigation().stop();
-        this.villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-        this.villager.getBrain().eraseMemory(MemoryModuleType.PATH);
+        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(this.villager);
     }
 
     private void refreshVillagerInventory() {
