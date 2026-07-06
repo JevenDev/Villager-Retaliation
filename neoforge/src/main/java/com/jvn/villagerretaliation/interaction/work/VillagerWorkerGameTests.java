@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -493,6 +494,16 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(HiredPathMemory.pathSearchRetryCooldownTicks(level, first), 0L, "changed terrain should clear path search backoff");
         HiredPathMemory.clearUnreachableApproach(first, approach);
         HiredPathMemory.clearPathSearchFailures(first);
+        BlockPos chunkInteriorChange = helper.absolutePos(new BlockPos(1, 2, 1)).immutable();
+        BlockPos neighborChunkApproach = new BlockPos(
+                SectionPos.sectionToBlockCoord(SectionPos.blockToSectionCoord(chunkInteriorChange.getX()) + 1),
+                chunkInteriorChange.getY(),
+                chunkInteriorChange.getZ());
+        HiredPathMemory.recordPathSearchFailure(level, first);
+        HiredPathMemory.rememberUnreachableApproach(level, first, neighborChunkApproach);
+        HiredPathMemory.onBlockChanged(level, chunkInteriorChange);
+        helper.assertFalse(HiredPathMemory.isApproachRecentlyUnreachable(level, first, neighborChunkApproach), "chunk-radius terrain changes should retry neighboring chunk approaches");
+        helper.assertValueEqual(HiredPathMemory.pathSearchRetryCooldownTicks(level, first), 0L, "chunk-radius terrain changes should clear neighboring path backoff");
         helper.assertValueEqual(
                 HiredPathMemory.adjustedCandidateLimit(level, first, 64),
                 HiredPathMemory.adjustedCandidateLimit(first, 64),

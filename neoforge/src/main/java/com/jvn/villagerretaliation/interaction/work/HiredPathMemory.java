@@ -171,11 +171,11 @@ public final class HiredPathMemory {
     public static void onBlockChanged(ServerLevel level, BlockPos pos) {
         Map<Long, Long> versions = PATH_CHUNK_VERSIONS.computeIfAbsent(level.dimension(), ignored -> new HashMap<>());
         Set<Long> changedChunks = new HashSet<>();
+        int changedChunkX = SectionPos.blockToSectionCoord(pos.getX());
+        int changedChunkZ = SectionPos.blockToSectionCoord(pos.getZ());
         for (int x = -PATH_CACHE_INVALIDATION_RADIUS; x <= PATH_CACHE_INVALIDATION_RADIUS; x++) {
             for (int z = -PATH_CACHE_INVALIDATION_RADIUS; z <= PATH_CACHE_INVALIDATION_RADIUS; z++) {
-                long chunkKey = ChunkPos.asLong(
-                        SectionPos.blockToSectionCoord(pos.getX() + x),
-                        SectionPos.blockToSectionCoord(pos.getZ() + z));
+                long chunkKey = ChunkPos.asLong(changedChunkX + x, changedChunkZ + z);
                 changedChunks.add(chunkKey);
                 versions.put(chunkKey, versions.getOrDefault(chunkKey, 0L) + 1L);
             }
