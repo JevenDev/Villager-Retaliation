@@ -183,8 +183,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_OPTION_HEIGHT = 23;
     private static final int INTERACTION_OPTION_STRIDE = 23;
     private static final int INTERACTION_OPTION_VISIBLE_ROWS = 5;
-    private static final int INTERACTION_OPTION_BOTTOM_MARGIN = 5;
-    private static final int INTERACTION_OPTION_CONTAINER_GAP = 5;
+    private static final int INTERACTION_OPTION_SCREEN_MARGIN = 5;
     private static final int INTERACTION_OPTION_TEXT_INSET = 8;
     private static final int INTERACTION_OPTION_TEXT_TOP = 8;
     private static final int INTERACTION_OPTION_TEXT_RIGHT_PADDING = INTERACTION_OPTION_TEXT_INSET;
@@ -3428,7 +3427,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private int optionsTop() {
         if (usesInteractionOptionStack()) {
-            return Math.max(0, this.height - interactionOptionViewportHeight() - INTERACTION_OPTION_BOTTOM_MARGIN);
+            return interactionOptionStackTop();
         }
         return experimentalOptionsTop(optionViewportHeight());
     }
@@ -3654,7 +3653,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                                 + INTERACTION_OPTION_TEXT_RIGHT_PADDING);
             }
         }
-        int maxAvailableWidth = Math.max(INTERACTION_OPTION_WIDTH, this.width - interactionOptionStackLeft() - 4);
+        int maxAvailableWidth = Math.max(
+                INTERACTION_OPTION_WIDTH,
+                this.width - INTERACTION_OPTION_SCREEN_MARGIN - interactionOptionStackRightClearance());
         return Math.min(desiredWidth, maxAvailableWidth);
     }
 
@@ -3666,7 +3667,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int interactionOptionStackLeft() {
-        return interactionContainerLeft() + INTERACTION_CONTAINER_WIDTH + INTERACTION_OPTION_CONTAINER_GAP;
+        return Math.max(
+                INTERACTION_OPTION_SCREEN_MARGIN,
+                this.width - interactionOptionStackWidth() - interactionOptionStackRightClearance());
+    }
+
+    private int interactionOptionStackTop() {
+        int viewportHeight = interactionOptionViewportHeight();
+        int centeredTop = (this.height - viewportHeight) / 2;
+        int maxTop = Math.max(
+                INTERACTION_OPTION_SCREEN_MARGIN,
+                this.height - viewportHeight - INTERACTION_OPTION_SCREEN_MARGIN);
+        return Mth.clamp(centeredTop, INTERACTION_OPTION_SCREEN_MARGIN, maxTop);
+    }
+
+    private int interactionOptionStackRightClearance() {
+        return INTERACTION_OPTION_SCREEN_MARGIN
+                + INTERACTION_OPTION_SELECTION_ARROW_GAP
+                + INTERACTION_OPTION_SELECTION_ARROW_WIDTH;
     }
 
     private void ensureSelectedVisible() {
