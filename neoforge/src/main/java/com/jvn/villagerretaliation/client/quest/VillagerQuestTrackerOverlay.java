@@ -26,6 +26,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerQuestTrackerOverlay {
     private static final int FLASH_LIFETIME_TICKS = 180;
+    private static final int HUD_MARGIN = 5;
 
     private static List<QuestTrackerSyncPayload.Entry> entries = List.of();
     private static final Set<String> questUpdateQuestIds = new HashSet<>();
@@ -95,9 +96,11 @@ public final class VillagerQuestTrackerOverlay {
                 notificationAge = 0;
             }
             boolean journalOpen = minecraft.screen instanceof VillagerQuestJournalScreen;
+            boolean journalHidingTracker = minecraft.screen instanceof VillagerQuestJournalScreen journal
+                    && !journal.isClosingWithAnimation();
             boolean hasTrackedEntry = trackedEntry().isPresent();
-            boolean targetTrackerVisible = hasTrackedEntry && (trackerVisible || journalOpen);
-            boolean targetNotificationVisible = hasTrackedEntry && flashTicks > 0 && !targetTrackerVisible;
+            boolean targetTrackerVisible = hasTrackedEntry && trackerVisible && !journalHidingTracker;
+            boolean targetNotificationVisible = hasTrackedEntry && flashTicks > 0 && !targetTrackerVisible && !journalOpen;
             trackerAlpha = approach(trackerAlpha, targetTrackerVisible);
             notificationAlpha = approach(notificationAlpha, targetNotificationVisible);
         }
@@ -127,7 +130,7 @@ public final class VillagerQuestTrackerOverlay {
         if (notificationAlpha > 0.01F && trackedEntry.isPresent()) {
             renderNotification(graphics, font, trackedEntry.get(), screenWidth, screenHeight);
         }
-        if (trackerAlpha <= 0.01F || minecraft.screen instanceof VillagerQuestJournalScreen) {
+        if (trackerAlpha <= 0.01F) {
             VillagerClientUiUtil.popGuiLayer(graphics);
             return;
         }
@@ -237,7 +240,7 @@ public final class VillagerQuestTrackerOverlay {
         int width = VillagerQuestHudRenderer.trackerWidth(screenWidth);
         int count = VillagerQuestHudRenderer.visibleTrackerEntryCount(showRecentQuests, trackerEntries.size());
         int totalHeight = VillagerQuestHudRenderer.trackerHeight(count);
-        int x = VillagerAdaptiveGuiScale.unit(12);
+        int x = hudMargin();
         int y = Math.max(VillagerAdaptiveGuiScale.unit(10), (screenHeight - totalHeight) / 2);
         for (int index = 0; index < count; index++) {
             QuestTrackerSyncPayload.Entry entry = trackerEntries.get(index);
@@ -355,12 +358,16 @@ public final class VillagerQuestTrackerOverlay {
             int screenHeight) {
         int width = VillagerQuestHudRenderer.notificationWidth(font, entry, screenWidth);
         int height = VillagerQuestHudRenderer.notificationHeight(font, entry, width, screenHeight);
-        int margin = VillagerAdaptiveGuiScale.unit(12);
+        int margin = hudMargin();
         int x = margin - Math.round((1.0F - notificationAlpha) * VillagerQuestHudRenderer.slideDistance());
         x = Math.min(x, screenWidth - width - margin);
         int y = Math.max(VillagerAdaptiveGuiScale.unit(10), screenHeight / 2 - height / 2);
         float alpha = notificationAlpha;
 
         VillagerQuestHudRenderer.renderNotification(graphics, font, entry, x, y, width, height, alpha, notificationAge);
+    }
+
+    private static int hudMargin() {
+        return VillagerAdaptiveGuiScale.unit(HUD_MARGIN);
     }
 }

@@ -1,10 +1,9 @@
 package com.jvn.villagerretaliation.client.quest;
 
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer;
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer.ExperimentalNotificationPanel;
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer.ShaderRect;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import com.jvn.villagerretaliation.client.ui.VillagerNineSlice;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
@@ -25,14 +24,21 @@ final class VillagerQuestHudRenderer {
     private static final int TRACKER_SCROLL_TICKS = 96;
     private static final int PRIMARY_HEIGHT = 90;
     private static final int SECONDARY_HEIGHT = 44;
-    private static final int SLIDE_DISTANCE = 8;
+    private static final int SLIDE_DISTANCE = 6;
 
-    private static final int PADDING_X = 10;
-    private static final int PADDING_Y = 7;
+    private static final int PADDING_X = 8;
+    private static final int PADDING_Y = 8;
     private static final int LINE_STEP = 10;
-    private static final float QUEST_PANEL_SLANT = 0.0F;
-    private static final int BACKGROUND_COLOR = 0xC00B0D12;
     private static final int TEXT_Z = 210;
+    private static final VillagerNineSlice OPTIONS_LIST_BACKGROUND_NINE_SLICE =
+            new VillagerNineSlice(
+                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_TEXTURE,
+                    49,
+                    23,
+                    8,
+                    8,
+                    8,
+                    8);
 
     private VillagerQuestHudRenderer() {
     }
@@ -205,7 +211,7 @@ final class VillagerQuestHudRenderer {
             int age) {
         int titleColor = VillagerClientUiUtil.withAlphaRound(primary ? VillagerQuestUi.TITLE_COLOR : VillagerQuestUi.TEXT_COLOR, alpha);
         int textColor = VillagerClientUiUtil.withAlphaRound(primary ? VillagerQuestUi.TEXT_COLOR : VillagerQuestUi.MUTED_TEXT_COLOR, alpha);
-        renderPanelChrome(graphics, x, y, width, height, alpha, primary, age);
+        renderPanelChrome(graphics, x, y, width, height, alpha * (primary ? 1.0F : 0.72F));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         if (primary) {
@@ -223,8 +229,7 @@ final class VillagerQuestHudRenderer {
         if (entry.showProgress()) {
             int barLeft = contentLeft;
             int barRight = x + width - paddingX();
-            int barTop = y + height - VillagerAdaptiveGuiScale.unit(6);
-            VillagerQuestUi.renderProgressBar(graphics, barLeft, barTop, barRight, VillagerAdaptiveGuiScale.unitAtLeast(2, 1), entry.progress(), alpha, age, false, true);
+            VillagerQuestUi.renderProgressBar(graphics, barLeft, progressBarTop(y, height), barRight, progressBarHeight(), entry.progress(), alpha, age, false, true);
         }
     }
 
@@ -242,7 +247,7 @@ final class VillagerQuestHudRenderer {
         int contentWidth = width - paddingX() * 2;
         int lineStep = lineStep(font);
         int barTop = entry.showProgress()
-                ? y + height - VillagerAdaptiveGuiScale.unit(6)
+                ? progressBarTop(y, height)
                 : y + height - paddingY();
         int titleTop = y + paddingY();
         int titleColor = VillagerClientUiUtil.withAlphaRound(VillagerQuestUi.TITLE_COLOR, alpha);
@@ -278,7 +283,7 @@ final class VillagerQuestHudRenderer {
         if (entry.showProgress()) {
             int barLeft = contentLeft;
             int barRight = x + width - paddingX();
-            VillagerQuestUi.renderProgressBar(graphics, barLeft, barTop, barRight, VillagerAdaptiveGuiScale.unitAtLeast(2, 1), entry.progress(), alpha, age, false, true);
+            VillagerQuestUi.renderProgressBar(graphics, barLeft, barTop, barRight, progressBarHeight(), entry.progress(), alpha, age, false, true);
         }
     }
 
@@ -315,18 +320,8 @@ final class VillagerQuestHudRenderer {
             int y,
             int width,
             int height,
-            float alpha,
-            boolean primary,
-            int age) {
-        VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
-                graphics,
-                new ExperimentalNotificationPanel(
-                        new ShaderRect(x, y, x + width, y + height),
-                        VillagerQuestUi.ACCENT_COLOR,
-                        alpha * (primary ? 0.98F : 0.72F),
-                        age,
-                        1.0F,
-                        QUEST_PANEL_SLANT));
+            float alpha) {
+        OPTIONS_LIST_BACKGROUND_NINE_SLICE.render(graphics, x, y, width, height, alpha);
     }
 
     private static void renderWrappedText(
@@ -359,6 +354,14 @@ final class VillagerQuestHudRenderer {
 
     private static int paddingY() {
         return VillagerAdaptiveGuiScale.unit(PADDING_Y);
+    }
+
+    private static int progressBarTop(int y, int height) {
+        return y + height - paddingY() - progressBarHeight();
+    }
+
+    private static int progressBarHeight() {
+        return VillagerAdaptiveGuiScale.unitAtLeast(2, 1);
     }
 
     private static int lineStep(Font font) {

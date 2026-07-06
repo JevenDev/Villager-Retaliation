@@ -298,6 +298,10 @@ public final class VillagerQuestJournalScreen extends Screen {
         return false;
     }
 
+    public boolean isClosingWithAnimation() {
+        return this.closingWithAnimation;
+    }
+
     @Override
     public void onClose() {
         closeJournal();

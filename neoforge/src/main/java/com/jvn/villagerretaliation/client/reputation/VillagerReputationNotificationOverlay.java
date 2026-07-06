@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.reputation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import com.jvn.villagerretaliation.client.ui.VillagerNineSlice;
 import com.jvn.villagerretaliation.config.ReputationChangeDisplayMode;
 import com.jvn.villagerretaliation.config.ReputationChangeHudPosition;
 import com.jvn.villagerretaliation.config.ReputationChangeNotificationStyle;
@@ -17,7 +18,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
@@ -43,12 +43,6 @@ public final class VillagerReputationNotificationOverlay {
     private static final int VILLAGER_FIRED_TEXT_COLOR = 0xFFFFAA55;
     private static final int VILLAGER_DEATH_TEXT_COLOR = 0xFFFF5555;
     private static final int QUEST_TEXT_COLOR = 0xFFFFD166;
-    private static final int OPTIONS_LIST_BACKGROUND_TEXTURE_WIDTH = 49;
-    private static final int OPTIONS_LIST_BACKGROUND_TEXTURE_HEIGHT = 23;
-    private static final int OPTIONS_LIST_BACKGROUND_SLICE_LEFT = 8;
-    private static final int OPTIONS_LIST_BACKGROUND_SLICE_RIGHT = 8;
-    private static final int OPTIONS_LIST_BACKGROUND_SLICE_TOP = 8;
-    private static final int OPTIONS_LIST_BACKGROUND_SLICE_BOTTOM = 8;
     private static final int OPTIONS_LIST_TEXT_INSET = 8;
     private static final int OPTIONS_LIST_TEXT_TOP = 8;
     private static final int OPTIONS_LIST_TEXT_RIGHT_PADDING = OPTIONS_LIST_TEXT_INSET;
@@ -56,6 +50,15 @@ public final class VillagerReputationNotificationOverlay {
     private static final int FADE_IN_TICKS = 8;
     private static final int FADE_OUT_TICKS = 14;
     private static final int SLIDE_DISTANCE = 6;
+    private static final VillagerNineSlice OPTIONS_LIST_BACKGROUND_NINE_SLICE =
+            new VillagerNineSlice(
+                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_TEXTURE,
+                    49,
+                    23,
+                    8,
+                    8,
+                    8,
+                    8);
     private static final ArrayDeque<NotificationEntry> ACTIVE_ENTRIES = new ArrayDeque<>();
     private static final ArrayDeque<PendingNotification> PENDING_NOTIFICATIONS = new ArrayDeque<>();
 
@@ -185,7 +188,7 @@ public final class VillagerReputationNotificationOverlay {
 
     private static int entryWidth(ReputationChangeNotificationStyle style, Font font, String text) {
         int textWidth = VillagerClientUiUtil.scaledTextWidth(font, text, textScale());
-        int minimumWidth = VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_TEXTURE_WIDTH);
+        int minimumWidth = VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_NINE_SLICE.textureWidth());
         return Math.max(minimumWidth, optionsListTextInset() + textWidth + optionsListTextRightPadding());
     }
 
@@ -242,97 +245,7 @@ public final class VillagerReputationNotificationOverlay {
     }
 
     private static void renderOptionsListBackground(GuiGraphics graphics, int x, int y, int width, int height, float alpha) {
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        graphics.setColor(1.0F, 1.0F, 1.0F, alpha);
-        try {
-            blitNineSlicedTexture(
-                    graphics,
-                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_TEXTURE,
-                    x,
-                    y,
-                    width,
-                    height,
-                    OPTIONS_LIST_BACKGROUND_TEXTURE_WIDTH,
-                    OPTIONS_LIST_BACKGROUND_TEXTURE_HEIGHT,
-                    OPTIONS_LIST_BACKGROUND_SLICE_LEFT,
-                    OPTIONS_LIST_BACKGROUND_SLICE_RIGHT,
-                    OPTIONS_LIST_BACKGROUND_SLICE_TOP,
-                    OPTIONS_LIST_BACKGROUND_SLICE_BOTTOM,
-                    VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_SLICE_LEFT),
-                    VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_SLICE_RIGHT),
-                    VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_SLICE_TOP),
-                    VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_SLICE_BOTTOM)
-            );
-        } finally {
-            graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
-        }
-    }
-
-    private static void blitNineSlicedTexture(
-            GuiGraphics graphics,
-            ResourceLocation texture,
-            int left,
-            int top,
-            int width,
-            int height,
-            int textureWidth,
-            int textureHeight,
-            int sliceLeft,
-            int sliceRight,
-            int sliceTop,
-            int sliceBottom,
-            int destSliceLeft,
-            int destSliceRight,
-            int destSliceTop,
-            int destSliceBottom) {
-        int centerSourceWidth = textureWidth - sliceLeft - sliceRight;
-        int centerSourceHeight = textureHeight - sliceTop - sliceBottom;
-        int centerWidth = Math.max(0, width - destSliceLeft - destSliceRight);
-        int centerHeight = Math.max(0, height - destSliceTop - destSliceBottom);
-
-        blitNineSlicedTexturePart(graphics, texture, left, top, destSliceLeft, destSliceTop, 0, 0, sliceLeft, sliceTop, textureWidth, textureHeight);
-        blitNineSlicedTexturePart(graphics, texture, left + destSliceLeft, top, centerWidth, destSliceTop, sliceLeft, 0, centerSourceWidth, sliceTop, textureWidth, textureHeight);
-        blitNineSlicedTexturePart(graphics, texture, left + width - destSliceRight, top, destSliceRight, destSliceTop, textureWidth - sliceRight, 0, sliceRight, sliceTop, textureWidth, textureHeight);
-
-        blitNineSlicedTexturePart(graphics, texture, left, top + destSliceTop, destSliceLeft, centerHeight, 0, sliceTop, sliceLeft, centerSourceHeight, textureWidth, textureHeight);
-        blitNineSlicedTexturePart(graphics, texture, left + destSliceLeft, top + destSliceTop, centerWidth, centerHeight, sliceLeft, sliceTop, centerSourceWidth, centerSourceHeight, textureWidth, textureHeight);
-        blitNineSlicedTexturePart(graphics, texture, left + width - destSliceRight, top + destSliceTop, destSliceRight, centerHeight, textureWidth - sliceRight, sliceTop, sliceRight, centerSourceHeight, textureWidth, textureHeight);
-
-        blitNineSlicedTexturePart(graphics, texture, left, top + height - destSliceBottom, destSliceLeft, destSliceBottom, 0, textureHeight - sliceBottom, sliceLeft, sliceBottom, textureWidth, textureHeight);
-        blitNineSlicedTexturePart(graphics, texture, left + destSliceLeft, top + height - destSliceBottom, centerWidth, destSliceBottom, sliceLeft, textureHeight - sliceBottom, centerSourceWidth, sliceBottom, textureWidth, textureHeight);
-        blitNineSlicedTexturePart(graphics, texture, left + width - destSliceRight, top + height - destSliceBottom, destSliceRight, destSliceBottom, textureWidth - sliceRight, textureHeight - sliceBottom, sliceRight, sliceBottom, textureWidth, textureHeight);
-    }
-
-    private static void blitNineSlicedTexturePart(
-            GuiGraphics graphics,
-            ResourceLocation texture,
-            int destLeft,
-            int destTop,
-            int destWidth,
-            int destHeight,
-            int sourceLeft,
-            int sourceTop,
-            int sourceWidth,
-            int sourceHeight,
-            int textureWidth,
-            int textureHeight) {
-        if (destWidth <= 0 || destHeight <= 0 || sourceWidth <= 0 || sourceHeight <= 0) {
-            return;
-        }
-        graphics.blit(
-                texture,
-                destLeft,
-                destTop,
-                destWidth,
-                destHeight,
-                (float) sourceLeft,
-                (float) sourceTop,
-                sourceWidth,
-                sourceHeight,
-                textureWidth,
-                textureHeight
-        );
+        OPTIONS_LIST_BACKGROUND_NINE_SLICE.render(graphics, x, y, width, height, alpha);
     }
 
     private static int paddingX() {
@@ -360,7 +273,7 @@ public final class VillagerReputationNotificationOverlay {
     }
 
     private static int optionsListTextBottomPadding(Font font) {
-        int textureHeight = VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_TEXTURE_HEIGHT);
+        int textureHeight = VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_NINE_SLICE.textureHeight());
         int lineHeight = VillagerClientUiUtil.scaledLineStep(font, textScale());
         return Math.max(0, textureHeight - optionsListTextTop() - lineHeight);
     }
