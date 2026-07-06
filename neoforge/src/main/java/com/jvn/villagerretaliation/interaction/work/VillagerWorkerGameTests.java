@@ -480,6 +480,11 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(HiredPathMemory.pathSearchRetryCooldownTicks(level, first) > 0L, "path failures should schedule a retry cooldown");
         HiredPathMemory.recordPathSearchFailure(level, first);
         helper.assertTrue(HiredPathMemory.adjustedCandidateLimit(first, 64) < 64, "repeated path failures should reduce candidate cap");
+        helper.assertValueEqual(HiredPathMemory.adjustedCandidateLimitForDistance(64, 47.0D * 47.0D, false), 64, "near workers should keep full path search budget");
+        helper.assertTrue(HiredPathMemory.adjustedCandidateLimitForDistance(64, 49.0D * 49.0D, false) < 64, "far workers should use a smaller path search budget");
+        helper.assertTrue(HiredPathMemory.adjustedCandidateLimitForDistance(64, 97.0D * 97.0D, false) <= 16, "very far workers should use a deep LOD path search budget");
+        helper.assertValueEqual(HiredPathMemory.adjustedCandidateLimitForDistance(64, 97.0D * 97.0D, true), 64, "urgent workers should keep full path search budget");
+        helper.assertValueEqual(HiredPathMemory.adjustedCandidateLimitForDistance(64, Double.MAX_VALUE, false), 64, "worker searches without observers should keep full path search budget");
         BlockPos approach = helper.absolutePos(new BlockPos(3, 2, 3));
         HiredPathMemory.rememberUnreachableApproach(level, first, approach);
         helper.assertTrue(HiredPathMemory.isApproachRecentlyUnreachable(level, first, approach), "failed approach positions should be cached");
@@ -488,6 +493,10 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(HiredPathMemory.pathSearchRetryCooldownTicks(level, first), 0L, "changed terrain should clear path search backoff");
         HiredPathMemory.clearUnreachableApproach(first, approach);
         HiredPathMemory.clearPathSearchFailures(first);
+        helper.assertValueEqual(
+                HiredPathMemory.adjustedCandidateLimit(level, first, 64),
+                HiredPathMemory.adjustedCandidateLimit(first, 64),
+                "unhired direct path probes should ignore player-distance LOD");
 
         HiredPathMemory.clear(first);
         HiredPathMemory.clear(second);

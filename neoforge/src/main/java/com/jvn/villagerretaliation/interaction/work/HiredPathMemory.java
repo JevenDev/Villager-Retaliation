@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -10,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -31,6 +33,10 @@ public final class HiredPathMemory {
     private static final long PATH_BACKOFF_MAX_TICKS = 20L * 8L;
     private static final int PATH_BACKOFF_JITTER_TICKS = 11;
     private static final int MIN_BACKED_OFF_CANDIDATES = 8;
+    private static final double PATH_SEARCH_LOD_DISTANCE_SQR = 48.0D * 48.0D;
+    private static final double PATH_SEARCH_DEEP_LOD_DISTANCE_SQR = 96.0D * 96.0D;
+    private static final int MIN_LOD_CANDIDATES = 8;
+    private static final int MIN_DEEP_LOD_CANDIDATES = 4;
     private static final double RECENT_TARGET_EXTRA_COST = 36.0D;
     private static final int STUCK_CHECK_TICKS = 20;
     private static final int STUCK_LIMIT = 4;
@@ -227,6 +233,49 @@ public final class HiredPathMemory {
         }
         int divisor = 1 << Math.min(3, failures - 1);
         return Math.clamp((int) Math.ceil(safeLimit / (double) divisor), Math.min(MIN_BACKED_OFF_CANDIDATES, safeLimit), safeLimit);
+    }
+
+    public static int adjustedCandidateLimit(ServerLevel level, Villager villager, int requestedLimit) {
+        int failureAdjustedLimit = adjustedCandidateLimit(villager, requestedLimit);
+        if (!HiredVillagerContractService.isHired(level, villager)) {
+            return failureAdjustedLimit;
+        }
+        return adjustedCandidateLimitForDistance(
+                failureAdjustedLimit,
+                nearestPlayerDistanceSqr(level, villager),
+                hasPathSearchUrgency(villager));
+    }
+
+    static int adjustedCandidateLimitForDistance(int requestedLimit, double nearestPlayerDistanceSqr, boolean urgent) {
+        int safeLimit = Math.max(1, requestedLimit);
+        if (urgent
+                || nearestPlayerDistanceSqr == Double.MAX_VALUE
+                || nearestPlayerDistanceSqr <= PATH_SEARCH_LOD_DISTANCE_SQR) {
+            return safeLimit;
+        }
+        boolean deepLod = nearestPlayerDistanceSqr > PATH_SEARCH_DEEP_LOD_DISTANCE_SQR;
+        int divisor = deepLod ? 4 : 2;
+        int minimum = Math.min(deepLod ? MIN_DEEP_LOD_CANDIDATES : MIN_LOD_CANDIDATES, safeLimit);
+        return Math.clamp((int) Math.ceil(safeLimit / (double) divisor), minimum, safeLimit);
+    }
+
+    private static double nearestPlayerDistanceSqr(ServerLevel level, Villager villager) {
+        double nearest = Double.MAX_VALUE;
+        for (var player : level.players()) {
+            if (player.isSpectator()) {
+                continue;
+            }
+            nearest = Math.min(nearest, player.distanceToSqr(villager));
+        }
+        return nearest;
+    }
+
+    private static boolean hasPathSearchUrgency(Villager villager) {
+        return isLiveUrgentTarget(villager.getTarget()) || isLiveUrgentTarget(villager.getLastHurtByMob());
+    }
+
+    private static boolean isLiveUrgentTarget(LivingEntity target) {
+        return target != null && target.isAlive();
     }
 
     public static int pathSearchFailureStreak(Villager villager) {

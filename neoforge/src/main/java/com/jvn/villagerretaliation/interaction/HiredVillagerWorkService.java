@@ -486,7 +486,7 @@ public final class HiredVillagerWorkService {
         BlockPos best = null;
         double bestScore = Double.MAX_VALUE;
         for (ReturnIntermediate candidate : candidates) {
-            if (attempts >= HiredPathMemory.adjustedCandidateLimit(villager, MAX_RETURN_INTERMEDIATE_PATH_ATTEMPTS)) {
+            if (attempts >= HiredPathMemory.adjustedCandidateLimit(level, villager, MAX_RETURN_INTERMEDIATE_PATH_ATTEMPTS)) {
                 break;
             }
             if (HiredPathMemory.isApproachRecentlyUnreachable(level, villager, candidate.pos())) {
@@ -656,7 +656,7 @@ public final class HiredVillagerWorkService {
         ReturnPath best = null;
         double bestScore = Double.MAX_VALUE;
         for (BlockPos candidate : candidates) {
-            if (evaluated >= HiredPathMemory.adjustedCandidateLimit(villager, MAX_RETURN_TARGETS_TO_PATHFIND)) {
+            if (evaluated >= HiredPathMemory.adjustedCandidateLimit(level, villager, MAX_RETURN_TARGETS_TO_PATHFIND)) {
                 break;
             }
             if (!isValidWorkAreaReturnCandidate(level, context, candidate)

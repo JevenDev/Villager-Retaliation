@@ -179,11 +179,15 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         }
         approaches.sort(Comparator.comparingDouble(ApproachCandidate::score));
 
+        int maxApproachesToPathfind = HiredPathMemory.adjustedCandidateLimit(
+                this.level,
+                this.villager,
+                MAX_APPROACHES_TO_PATHFIND);
         int evaluated = 0;
         int reachableApproaches = 0;
         HiredPathResult bestResult = null;
         for (ApproachCandidate approach : approaches) {
-            if (evaluated >= MAX_APPROACHES_TO_PATHFIND) {
+            if (evaluated >= maxApproachesToPathfind) {
                 break;
             }
             if (HiredPathMemory.isApproachRecentlyUnreachable(this.level, this.villager, approach.pos())) {

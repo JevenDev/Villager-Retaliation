@@ -28,7 +28,7 @@ public abstract class HiredPathJob {
         List<BlockPos> candidates = uniqueCandidates();
         candidates.sort(Comparator.comparingDouble(this::candidateScore));
 
-        int maxCandidatesToEvaluate = HiredPathMemory.adjustedCandidateLimit(this.villager, this.maxCandidates);
+        int maxCandidatesToEvaluate = HiredPathMemory.adjustedCandidateLimit(this.level, this.villager, this.maxCandidates);
         int evaluated = 0;
         int reachableResults = 0;
         HiredPathResult bestResult = null;
