@@ -344,6 +344,14 @@ public final class VillagerRetaliationEvents {
         ItemStack interactionStack = player.getItemInHand(event.getHand());
 
         if (event.getTarget() instanceof Villager villager
+                && !(player instanceof ServerPlayer)
+                && VillagerInteractionService.shouldSuppressClientVanillaInteraction(villager, player, event.getHand())) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.CONSUME);
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer
                 && VillagerRetaliationItems.isClipboard(interactionStack)
                 && !HiredStorageClipboardItem.mode(interactionStack).isStorageAssignmentMode()) {

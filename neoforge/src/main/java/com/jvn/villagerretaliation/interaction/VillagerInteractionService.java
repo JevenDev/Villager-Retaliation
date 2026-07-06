@@ -83,6 +83,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Rotation;
@@ -107,6 +108,25 @@ public final class VillagerInteractionService {
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && shouldStayConversable(player, villager);
+    }
+
+    public static boolean shouldSuppressClientVanillaInteraction(Villager villager, Player player, InteractionHand hand) {
+        if (hand != InteractionHand.MAIN_HAND
+                || !VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                || shouldBypassInteractionScreen(player.getItemInHand(hand))
+                || villager.isTrading()
+                || !villager.isAlive()
+                || player.isSpectator()
+                || !player.isAlive()) {
+            return false;
+        }
+        if (!villager.isBaby()
+                && player.isShiftKeyDown()
+                && VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get()) {
+            return false;
+        }
+        double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
+        return player.distanceToSqr(villager) <= maxDistance * maxDistance;
     }
 
     public static boolean shouldHandleSleepingInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
@@ -187,7 +207,7 @@ public final class VillagerInteractionService {
         }
         openInteractionScreen(player, villager);
         focusVillagerOnPlayer(villager, player);
-        return InteractionResult.SUCCESS;
+        return InteractionResult.CONSUME;
     }
 
     public static InteractionResult handleClipboardVillagerRightClick(Villager villager, ServerPlayer player) {
@@ -470,6 +490,7 @@ public final class VillagerInteractionService {
                     VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
                     responseKey = "interaction.follow_stop";
                 } else {
+                    VillagerRecruitmentService.sendMovingFreelyNotice(player, villager);
                     responseKey = "interaction.stay_stop";
                 }
             }

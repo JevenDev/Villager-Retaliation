@@ -129,6 +129,7 @@ public final class VillagerRecruitmentService {
             return;
         }
         beginStayingHere(level, villager, player);
+        sendStayingHereNotice(player, villager);
     }
 
     public static void stopFollowing(Villager villager) {
@@ -245,6 +246,18 @@ public final class VillagerRecruitmentService {
                 "recruitment.follow_stop",
                 replacements(villager),
                 displayName(villager) + " is no longer following you.",
+                VillagerReputationNoticeKind.VILLAGER_DISMISSED
+        );
+    }
+
+    public static void sendMovingFreelyNotice(ServerPlayer player, Villager villager) {
+        VillagerNotifications.sendHud(
+                player,
+                player.serverLevel(),
+                villager,
+                "recruitment.move_freely",
+                replacements(villager),
+                displayName(villager) + " can move freely again.",
                 VillagerReputationNoticeKind.VILLAGER_DISMISSED
         );
     }
@@ -773,6 +786,18 @@ public final class VillagerRecruitmentService {
                 "recruitment.follow_start",
                 replacements(villager),
                 displayName(villager) + " is following you.",
+                VillagerReputationNoticeKind.VILLAGER_FOLLOWING
+        );
+    }
+
+    private static void sendStayingHereNotice(ServerPlayer player, Villager villager) {
+        VillagerNotifications.sendHud(
+                player,
+                player.serverLevel(),
+                villager,
+                "recruitment.stay_here",
+                replacements(villager),
+                displayName(villager) + " will stay here.",
                 VillagerReputationNoticeKind.VILLAGER_FOLLOWING
         );
     }

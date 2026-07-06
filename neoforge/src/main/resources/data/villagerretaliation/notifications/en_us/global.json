@@ -85,6 +85,18 @@
       "color": "#FFD166"
     },
     {
+      "trigger": "recruitment.stay_here",
+      "text": "{villager} will stay here.",
+      "kind": "villager_following",
+      "color": "#55FFAA"
+    },
+    {
+      "trigger": "recruitment.move_freely",
+      "text": "{villager} can move freely again.",
+      "kind": "villager_dismissed",
+      "color": "#FFD166"
+    },
+    {
       "trigger": "recruitment.hired",
       "text": "{villager} hired.",
       "kind": "villager_hired",
