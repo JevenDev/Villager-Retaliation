@@ -1,8 +1,6 @@
 package com.jvn.villagerretaliation.client.reputation;
 
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer;
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer.ExperimentalNotificationPanel;
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer.ShaderRect;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.ReputationChangeDisplayMode;
@@ -19,6 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
@@ -26,21 +25,13 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 public final class VillagerReputationNotificationOverlay {
     private static final int MAX_ENTRIES = 5;
-    private static final int PADDING_X = 10;
-    private static final int PADDING_Y = 10;
-    private static final int ENTRY_HEIGHT = 14;
-    private static final int ENTRY_GAP = 4;
-    private static final int EXPERIMENTAL_ENTRY_HEIGHT = 18;
-    private static final int EXPERIMENTAL_TEXT_PADDING_X = 12;
-    private static final int EXPERIMENTAL_TEXT_PADDING_Y = 5;
-    private static final int EXPERIMENTAL_TEXT_CENTER_BIAS_Y = 2;
-    private static final int TEXT_OFFSET_X = 2;
-    private static final int EXPERIMENTAL_EXTRA_WIDTH = 20;
-    private static final int TEXT_PADDING_X = 8;
-    private static final int TEXT_PADDING_Y = 3;
-    private static final int BACKGROUND_COLOR = 0xA0101010;
-    private static final int STRIPE_COLOR = 0xCCECECEC;
+    private static final int PADDING_X = 5;
+    private static final int PADDING_Y = 5;
+    private static final int ENTRY_HEIGHT = 23;
+    private static final int ENTRY_GAP = 1;
+    private static final int EXPERIMENTAL_ENTRY_HEIGHT = 23;
     private static final int TEXT_COLOR = 0xFFF3F3F3;
+    private static final int TEXT_OUTLINE_COLOR = 0xFF000000;
     private static final int MAP_DISCOVERY_TEXT_COLOR = 0xFF55AAFF;
     private static final int RECEIVED_ITEM_TEXT_COLOR = 0xFF55FFFF;
     private static final int GIFT_LIKED_TEXT_COLOR = 0xFF55FF55;
@@ -52,8 +43,15 @@ public final class VillagerReputationNotificationOverlay {
     private static final int VILLAGER_FIRED_TEXT_COLOR = 0xFFFFAA55;
     private static final int VILLAGER_DEATH_TEXT_COLOR = 0xFFFF5555;
     private static final int QUEST_TEXT_COLOR = 0xFFFFD166;
-    private static final int QUEST_STRIPE_COLOR = 0xFFFFD166;
-    private static final int SHADOW_COLOR = 0xB0000000;
+    private static final int OPTIONS_LIST_BACKGROUND_TEXTURE_WIDTH = 49;
+    private static final int OPTIONS_LIST_BACKGROUND_TEXTURE_HEIGHT = 23;
+    private static final int OPTIONS_LIST_BACKGROUND_SLICE_LEFT = 8;
+    private static final int OPTIONS_LIST_BACKGROUND_SLICE_RIGHT = 8;
+    private static final int OPTIONS_LIST_BACKGROUND_SLICE_TOP = 8;
+    private static final int OPTIONS_LIST_BACKGROUND_SLICE_BOTTOM = 8;
+    private static final int OPTIONS_LIST_TEXT_INSET = 8;
+    private static final int OPTIONS_LIST_TEXT_TOP = 8;
+    private static final int OPTIONS_LIST_TEXT_RIGHT_PADDING = OPTIONS_LIST_TEXT_INSET;
     private static final int ENTRY_LIFETIME_TICKS = 82;
     private static final int FADE_IN_TICKS = 8;
     private static final int FADE_OUT_TICKS = 14;
@@ -178,18 +176,17 @@ public final class VillagerReputationNotificationOverlay {
 
     private static int entryHeight(ReputationChangeNotificationStyle style, Font font) {
         int baseHeight = style.experimental() ? EXPERIMENTAL_ENTRY_HEIGHT : ENTRY_HEIGHT;
-        int textPadding = style.experimental() ? experimentalTextPaddingY() : textPaddingY();
         return Math.max(
                 VillagerAdaptiveGuiScale.unit(baseHeight),
-                VillagerClientUiUtil.scaledLineStep(font, textScale()) + textPadding * 2);
+                optionsListTextTop()
+                        + VillagerClientUiUtil.scaledLineStep(font, textScale())
+                        + optionsListTextBottomPadding(font));
     }
 
     private static int entryWidth(ReputationChangeNotificationStyle style, Font font, String text) {
         int textWidth = VillagerClientUiUtil.scaledTextWidth(font, text, textScale());
-        if (style.experimental()) {
-            return textWidth + experimentalTextPaddingX() * 2 + VillagerAdaptiveGuiScale.unit(EXPERIMENTAL_EXTRA_WIDTH);
-        }
-        return textWidth + textPaddingX() * 2 + VillagerAdaptiveGuiScale.unit(4);
+        int minimumWidth = VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_TEXTURE_WIDTH);
+        return Math.max(minimumWidth, optionsListTextInset() + textWidth + optionsListTextRightPadding());
     }
 
     private static Anchor anchor(ReputationChangeHudPosition position, int screenWidth, int screenHeight, int width, int entryHeight) {
@@ -214,69 +211,128 @@ public final class VillagerReputationNotificationOverlay {
             float alpha,
             float elapsedTicks,
             ReputationChangeHudPosition position) {
-        int accentColor = textColor(entry);
-        float direction = switch (position) {
-            case TOP_RIGHT, MID_RIGHT -> -1.0F;
-            default -> 1.0F;
-        };
-        VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
-                graphics,
-                new ExperimentalNotificationPanel(
-                        new ShaderRect(x, y, x + width, y + height),
-                        accentColor,
-                        alpha,
-                        elapsedTicks,
-                        direction));
-
+        renderOptionsListBackground(graphics, x, y, width, height, alpha);
         int textColor = VillagerClientUiUtil.withAlphaRound(textColor(entry), alpha);
-        int textY = centeredTextTop(y, height, font, VillagerAdaptiveGuiScale.unitAtLeast(EXPERIMENTAL_TEXT_CENTER_BIAS_Y, 1));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        VillagerClientUiUtil.drawScaledStringAtZ(
+        drawOptionsListText(
                 graphics,
                 font,
                 entry.text,
-                x + experimentalTextPaddingX() + textOffsetX(),
-                textY,
+                x + optionsListTextInset(),
+                y + optionsListTextTop(),
                 textColor,
-                true,
-                textScale(),
-                200.0F);
+                alpha);
     }
 
     private static void renderEntry(GuiGraphics graphics, Font font, NotificationEntry entry, int x, int y, int width, int height, float alpha) {
-        int background = VillagerClientUiUtil.withAlphaRound(BACKGROUND_COLOR, alpha);
-        int stripe = VillagerClientUiUtil.withAlphaRound(
-                entry.kind == VillagerReputationNoticeKind.QUEST ? QUEST_STRIPE_COLOR : STRIPE_COLOR,
-                alpha);
-        int shadow = VillagerClientUiUtil.withAlphaRound(SHADOW_COLOR, alpha);
+        renderOptionsListBackground(graphics, x, y, width, height, alpha);
         int textColor = VillagerClientUiUtil.withAlphaRound(textColor(entry), alpha);
 
-        graphics.fill(x, y, x + width, y + height, background);
-        graphics.fill(x, y, x + VillagerAdaptiveGuiScale.unitAtLeast(2, 1), y + height, stripe);
-        if (entry.kind == VillagerReputationNoticeKind.QUEST) {
-            graphics.fill(
-                    x + VillagerAdaptiveGuiScale.unit(4),
-                    y + height - VillagerAdaptiveGuiScale.unitAtLeast(2, 1),
-                    x + width - VillagerAdaptiveGuiScale.unit(4),
-                    y + height - VillagerAdaptiveGuiScale.unitAtLeast(1, 1),
-                    stripe);
-        }
-        graphics.fill(x, y + height, x + width, y + height + VillagerAdaptiveGuiScale.unitAtLeast(1, 1), shadow);
-
-        int textY = centeredTextTop(y, height, font, 0);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        VillagerClientUiUtil.drawScaledStringAtZ(
+        drawOptionsListText(
                 graphics,
                 font,
                 entry.text,
-                x + textPaddingX() + textOffsetX(),
-                textY,
+                x + optionsListTextInset(),
+                y + optionsListTextTop(),
                 textColor,
-                true,
-                textScale(),
-                200.0F);
+                alpha);
+    }
+
+    private static void renderOptionsListBackground(GuiGraphics graphics, int x, int y, int width, int height, float alpha) {
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        graphics.setColor(1.0F, 1.0F, 1.0F, alpha);
+        try {
+            blitNineSlicedTexture(
+                    graphics,
+                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_TEXTURE,
+                    x,
+                    y,
+                    width,
+                    height,
+                    OPTIONS_LIST_BACKGROUND_TEXTURE_WIDTH,
+                    OPTIONS_LIST_BACKGROUND_TEXTURE_HEIGHT,
+                    OPTIONS_LIST_BACKGROUND_SLICE_LEFT,
+                    OPTIONS_LIST_BACKGROUND_SLICE_RIGHT,
+                    OPTIONS_LIST_BACKGROUND_SLICE_TOP,
+                    OPTIONS_LIST_BACKGROUND_SLICE_BOTTOM,
+                    VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_SLICE_LEFT),
+                    VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_SLICE_RIGHT),
+                    VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_SLICE_TOP),
+                    VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_SLICE_BOTTOM)
+            );
+        } finally {
+            graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        }
+    }
+
+    private static void blitNineSlicedTexture(
+            GuiGraphics graphics,
+            ResourceLocation texture,
+            int left,
+            int top,
+            int width,
+            int height,
+            int textureWidth,
+            int textureHeight,
+            int sliceLeft,
+            int sliceRight,
+            int sliceTop,
+            int sliceBottom,
+            int destSliceLeft,
+            int destSliceRight,
+            int destSliceTop,
+            int destSliceBottom) {
+        int centerSourceWidth = textureWidth - sliceLeft - sliceRight;
+        int centerSourceHeight = textureHeight - sliceTop - sliceBottom;
+        int centerWidth = Math.max(0, width - destSliceLeft - destSliceRight);
+        int centerHeight = Math.max(0, height - destSliceTop - destSliceBottom);
+
+        blitNineSlicedTexturePart(graphics, texture, left, top, destSliceLeft, destSliceTop, 0, 0, sliceLeft, sliceTop, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + destSliceLeft, top, centerWidth, destSliceTop, sliceLeft, 0, centerSourceWidth, sliceTop, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + width - destSliceRight, top, destSliceRight, destSliceTop, textureWidth - sliceRight, 0, sliceRight, sliceTop, textureWidth, textureHeight);
+
+        blitNineSlicedTexturePart(graphics, texture, left, top + destSliceTop, destSliceLeft, centerHeight, 0, sliceTop, sliceLeft, centerSourceHeight, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + destSliceLeft, top + destSliceTop, centerWidth, centerHeight, sliceLeft, sliceTop, centerSourceWidth, centerSourceHeight, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + width - destSliceRight, top + destSliceTop, destSliceRight, centerHeight, textureWidth - sliceRight, sliceTop, sliceRight, centerSourceHeight, textureWidth, textureHeight);
+
+        blitNineSlicedTexturePart(graphics, texture, left, top + height - destSliceBottom, destSliceLeft, destSliceBottom, 0, textureHeight - sliceBottom, sliceLeft, sliceBottom, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + destSliceLeft, top + height - destSliceBottom, centerWidth, destSliceBottom, sliceLeft, textureHeight - sliceBottom, centerSourceWidth, sliceBottom, textureWidth, textureHeight);
+        blitNineSlicedTexturePart(graphics, texture, left + width - destSliceRight, top + height - destSliceBottom, destSliceRight, destSliceBottom, textureWidth - sliceRight, textureHeight - sliceBottom, sliceRight, sliceBottom, textureWidth, textureHeight);
+    }
+
+    private static void blitNineSlicedTexturePart(
+            GuiGraphics graphics,
+            ResourceLocation texture,
+            int destLeft,
+            int destTop,
+            int destWidth,
+            int destHeight,
+            int sourceLeft,
+            int sourceTop,
+            int sourceWidth,
+            int sourceHeight,
+            int textureWidth,
+            int textureHeight) {
+        if (destWidth <= 0 || destHeight <= 0 || sourceWidth <= 0 || sourceHeight <= 0) {
+            return;
+        }
+        graphics.blit(
+                texture,
+                destLeft,
+                destTop,
+                destWidth,
+                destHeight,
+                (float) sourceLeft,
+                (float) sourceTop,
+                sourceWidth,
+                sourceHeight,
+                textureWidth,
+                textureHeight
+        );
     }
 
     private static int paddingX() {
@@ -288,32 +344,41 @@ public final class VillagerReputationNotificationOverlay {
     }
 
     private static int entryGap() {
-        return VillagerAdaptiveGuiScale.unitAtLeast(ENTRY_GAP, 1);
+        return ENTRY_GAP;
     }
 
-    private static int experimentalTextPaddingX() {
-        return VillagerAdaptiveGuiScale.unit(EXPERIMENTAL_TEXT_PADDING_X);
+    private static int optionsListTextInset() {
+        return VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_TEXT_INSET);
     }
 
-    private static int experimentalTextPaddingY() {
-        return VillagerAdaptiveGuiScale.unit(EXPERIMENTAL_TEXT_PADDING_Y);
+    private static int optionsListTextTop() {
+        return VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_TEXT_TOP);
     }
 
-    private static int textPaddingX() {
-        return VillagerAdaptiveGuiScale.unit(TEXT_PADDING_X);
+    private static int optionsListTextRightPadding() {
+        return VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_TEXT_RIGHT_PADDING);
     }
 
-    private static int textPaddingY() {
-        return VillagerAdaptiveGuiScale.unit(TEXT_PADDING_Y);
-    }
-
-    private static int textOffsetX() {
-        return VillagerAdaptiveGuiScale.unitAtLeast(TEXT_OFFSET_X, 1);
-    }
-
-    private static int centeredTextTop(int y, int height, Font font, int biasY) {
+    private static int optionsListTextBottomPadding(Font font) {
+        int textureHeight = VillagerAdaptiveGuiScale.unit(OPTIONS_LIST_BACKGROUND_TEXTURE_HEIGHT);
         int lineHeight = VillagerClientUiUtil.scaledLineStep(font, textScale());
-        return y + Math.max(0, (height - lineHeight) / 2) + biasY;
+        return Math.max(0, textureHeight - optionsListTextTop() - lineHeight);
+    }
+
+    private static void drawOptionsListText(GuiGraphics graphics, Font font, String text, int x, int y, int color, float alpha) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        int outlineColor = VillagerClientUiUtil.withAlphaRound(TEXT_OUTLINE_COLOR, alpha);
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 200.0F);
+        graphics.pose().scale(textScale(), textScale(), 1.0F);
+        graphics.drawString(font, text, -1, 0, outlineColor, false);
+        graphics.drawString(font, text, 1, 0, outlineColor, false);
+        graphics.drawString(font, text, 0, -1, outlineColor, false);
+        graphics.drawString(font, text, 0, 1, outlineColor, false);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
     }
 
     private static int slideDistance() {

@@ -193,6 +193,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         renderQuestDetails(graphics, slideOffset);
         graphics.pose().popPose();
         renderQuestCountTooltip(graphics, mouseX, mouseY, slideOffset);
+        renderBookmarkTooltip(graphics, mouseX, mouseY, slideOffset);
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
 
@@ -402,6 +403,14 @@ public final class VillagerQuestJournalScreen extends Screen {
                     Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
                     Component.translatable(GUI_KEY_PREFIX + "count.completed", summary.completed()).withStyle(QUEST_COUNT_COMPLETED_STYLE));
         };
+    }
+
+    private void renderBookmarkTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
+        QuestJournalTab hoveredTab = bookmarkAt(mouseX, mouseY - slideOffset);
+        if (hoveredTab == null) {
+            return;
+        }
+        graphics.renderComponentTooltip(this.font, List.of(hoveredTab.tooltip()), mouseX, mouseY);
     }
 
     private static QuestCountSummary questCountSummary() {
@@ -1522,31 +1531,42 @@ public final class VillagerQuestJournalScreen extends Screen {
         AVAILABLE(
                 0,
                 GUI_KEY_PREFIX + "tab.available",
+                GUI_KEY_PREFIX + "tab.available.tooltip",
                 GUI_KEY_PREFIX + "empty.available",
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_RED_TEXTURE,
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_AVAILABLE_TEXTURE),
         ACTIVE(
                 1,
                 GUI_KEY_PREFIX + "tab.active",
+                GUI_KEY_PREFIX + "tab.active.tooltip",
                 GUI_KEY_PREFIX + "empty.active",
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_PURPLE_TEXTURE,
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_ACTIVE_TEXTURE),
         COMPLETED(
                 2,
                 GUI_KEY_PREFIX + "tab.completed",
+                GUI_KEY_PREFIX + "tab.completed.tooltip",
                 GUI_KEY_PREFIX + "empty.completed",
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_TEAL_TEXTURE,
                 VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_COMPLETED_TEXTURE);
 
         private final int index;
         private final String titleKey;
+        private final String tooltipKey;
         private final String emptyMessageKey;
         private final ResourceLocation texture;
         private final ResourceLocation iconTexture;
 
-        QuestJournalTab(int index, String titleKey, String emptyMessageKey, ResourceLocation texture, ResourceLocation iconTexture) {
+        QuestJournalTab(
+                int index,
+                String titleKey,
+                String tooltipKey,
+                String emptyMessageKey,
+                ResourceLocation texture,
+                ResourceLocation iconTexture) {
             this.index = index;
             this.titleKey = titleKey;
+            this.tooltipKey = tooltipKey;
             this.emptyMessageKey = emptyMessageKey;
             this.texture = texture;
             this.iconTexture = iconTexture;
@@ -1558,6 +1578,18 @@ public final class VillagerQuestJournalScreen extends Screen {
 
         Component title() {
             return Component.translatable(this.titleKey);
+        }
+
+        Component tooltip() {
+            return Component.translatable(this.tooltipKey).withStyle(this.tooltipStyle());
+        }
+
+        private Style tooltipStyle() {
+            return switch (this) {
+                case AVAILABLE -> QUEST_COUNT_NEARBY_STYLE;
+                case ACTIVE -> QUEST_COUNT_ACTIVE_STYLE;
+                case COMPLETED -> QUEST_COUNT_COMPLETED_STYLE;
+            };
         }
 
         Component emptyMessage() {
