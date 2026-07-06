@@ -40,6 +40,20 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/interaction_container_overlay");
     public static final ResourceLocation INTERACTION_CONTAINER_PORTRAIT_ORNAMENT_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container_portrait_ornament");
+    public static final ResourceLocation INTERACTION_CONTAINER_SKILLS_CONTAINER_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_skills_container");
+    public static final ResourceLocation INTERACTION_CONTAINER_SKILLS_DIALOGUE_CONTAINER_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_skills_dialogue_container");
+    public static final ResourceLocation INTERACTION_CONTAINER_SKILLS_DIALOGUE_BUTTON_LEFT_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_skills_dialogue_container_button_left");
+    public static final ResourceLocation INTERACTION_CONTAINER_SKILLS_DIALOGUE_BUTTON_RIGHT_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_skills_dialogue_container_button_right");
+    public static final ResourceLocation INTERACTION_CONTAINER_PROFILE_CONTAINER_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_profile_container");
+    public static final ResourceLocation INTERACTION_CONTAINER_SKILLS_BAR_BASE_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_skills_bar_base");
+    public static final ResourceLocation INTERACTION_CONTAINER_SKILLS_BAR_FILL_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_skills_bar_fill");
     public static final ResourceLocation INTERACTION_REPUTATION_ICON_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_reputation_icon");
     public static final ResourceLocation INTERACTION_LOCKED_ICON_TEXTURE =

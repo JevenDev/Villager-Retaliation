@@ -14,6 +14,7 @@ public final class ClientVillagerConversationState {
     private static int cameraReleaseTicks;
     private static int cameraReleaseTotalTicks = MIN_CAMERA_RELEASE_TICKS;
     private static boolean forceCameraTowardsVillager;
+    private static boolean releaseUsesForcedCameraZoom;
 
     private ClientVillagerConversationState() {
     }
@@ -22,12 +23,14 @@ public final class ClientVillagerConversationState {
         focusedVillagerEntityId = entityId;
         cameraFocusTicks = 0;
         cameraReleaseTicks = 0;
+        releaseUsesForcedCameraZoom = false;
         forceCameraTowardsVillager = forceCamera;
     }
 
     public static void retarget(int entityId, boolean forceCamera) {
         focusedVillagerEntityId = entityId;
         cameraReleaseTicks = 0;
+        releaseUsesForcedCameraZoom = false;
         forceCameraTowardsVillager = forceCamera;
     }
 
@@ -47,6 +50,10 @@ public final class ClientVillagerConversationState {
         return active() && forceCameraTowardsVillager;
     }
 
+    public static boolean usesForcedCameraZoom() {
+        return active() ? forceCameraTowardsVillager : cameraReleaseTicks > 0 && releaseUsesForcedCameraZoom;
+    }
+
     public static void setForceCameraTowardsVillager(boolean forceCamera) {
         forceCameraTowardsVillager = forceCamera;
     }
@@ -60,6 +67,9 @@ public final class ClientVillagerConversationState {
     public static void tickCameraRelease() {
         if (!active() && cameraReleaseTicks > 0) {
             cameraReleaseTicks--;
+            if (cameraReleaseTicks <= 0) {
+                releaseUsesForcedCameraZoom = false;
+            }
         }
     }
 
@@ -97,11 +107,14 @@ public final class ClientVillagerConversationState {
     public static void clear() {
         SPEAKER_LABELS.clear();
         focusedVillagerEntityId = -1;
-        forceCameraTowardsVillager = false;
         if (cameraFocusTicks > 0) {
+            releaseUsesForcedCameraZoom = forceCameraTowardsVillager;
             cameraReleaseTotalTicks = cameraReleaseDurationTicks();
             cameraReleaseTicks = cameraReleaseTotalTicks;
+        } else {
+            releaseUsesForcedCameraZoom = false;
         }
+        forceCameraTowardsVillager = false;
         cameraFocusTicks = 0;
     }
 

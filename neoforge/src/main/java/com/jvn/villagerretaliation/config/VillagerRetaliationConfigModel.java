@@ -162,6 +162,11 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 0.0D, max = 0.25D, decimalPlaces = 2)
         public double dialogueCameraZoomAmount = 0.15D;
 
+        public boolean enableNormalDialogueCameraFocus = true;
+
+        @RangeConstraint(min = 0.0D, max = 0.25D, decimalPlaces = 2)
+        public double normalDialogueCameraZoomAmount = 0.08D;
+
         @RangeConstraint(min = 1, max = 40)
         public int dialogueCameraTransitionTicks = 3;
 

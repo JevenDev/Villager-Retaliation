@@ -63,6 +63,28 @@ final class VillagerInteractionProfilePage {
         graphics.pose().popPose();
     }
 
+    static VillagerSocialAttribute attributeAt(
+            Context context,
+            VillagerProfileClientCache.DisplayEntry profile,
+            double mouseX,
+            double mouseY) {
+        int left = context.optionsLeft() + 6;
+        int top = context.profileChartTopLimit();
+        float scale = context.profileChartTextScale();
+        int chartRadius = resolvedChartRadius(context);
+        int centerX = left + context.optionWidth() / 2 - context.profileChartCenterXOffset();
+        int centerY = resolvedCenterY(context, chartRadius, top);
+        ProfileTransform transform = new ProfileTransform(centerX, centerY, scale);
+        int localMouseX = Mth.floor(transform.localX(mouseX));
+        int localMouseY = Mth.floor(transform.localY(mouseY));
+        return profileChartPointAt(
+                profile,
+                resolvedLocalChartRadius(context, scale),
+                localHitRadius(context, scale),
+                localMouseX,
+                localMouseY);
+    }
+
     private static void renderProfileChart(
             Context context,
             GuiGraphics graphics,

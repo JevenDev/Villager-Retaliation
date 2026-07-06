@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
-import com.jvn.villagerretaliation.skill.VillagerSkill;
 import net.minecraft.client.gui.Font;
 import net.minecraft.util.Mth;
 
@@ -18,7 +17,10 @@ final class VillagerInteractionLayoutMetrics {
     private static final int OPTION_SCROLLBAR_HIT_WIDTH = 10;
     private static final int TOP_BACK_BUTTON_GAP = 8;
     private static final int SCREEN_BOTTOM_MARGIN = 48;
-    private static final int SKILLS_EDGE_MARGIN = 10;
+    private static final int SKILLS_EDGE_MARGIN = 4;
+    private static final int SKILLS_BOTTOM_MARGIN = 5;
+    private static final int SKILLS_CONTAINER_WIDTH = 431;
+    private static final int SKILLS_CONTAINER_HEIGHT = 139;
     private static final int SKILLS_CONTAINER_PADDING_X = 8;
     private static final int SKILLS_CONTAINER_PADDING_Y = 6;
     private static final int PROFILE_SKILL_ROW_HEIGHT = 16;
@@ -86,12 +88,12 @@ final class VillagerInteractionLayoutMetrics {
         return ToucanScrollState.maxScroll(optionContentHeight, optionViewportHeight);
     }
 
+    static int skillsContainerWidth() {
+        return SKILLS_CONTAINER_WIDTH;
+    }
+
     static int skillsPanelHeight(Font font) {
-        int rows = (VillagerSkill.values().length + PROFILE_SKILL_COLUMNS - 1) / PROFILE_SKILL_COLUMNS;
-        int titleHeight = Math.round(font.lineHeight * VillagerAdaptiveGuiScale.scaleFactor());
-        return titleHeight + VillagerAdaptiveGuiScale.unit(4)
-                + rows * profileSkillRowHeight()
-                + Math.max(0, rows - 1) * profileSkillRowGap();
+        return skillsContainerHeight();
     }
 
     static int skillsContainerPaddingX() {
@@ -103,24 +105,32 @@ final class VillagerInteractionLayoutMetrics {
     }
 
     static int skillsContainerHeight(int skillsPanelHeight) {
-        return skillsPanelHeight + skillsContainerPaddingY() * 2;
+        return skillsContainerHeight();
+    }
+
+    static int skillsContainerHeight() {
+        return SKILLS_CONTAINER_HEIGHT;
     }
 
     static int skillsPanelTop(int screenHeight, int skillsContainerHeight) {
-        int edgeMargin = VillagerAdaptiveGuiScale.unit(SKILLS_EDGE_MARGIN);
+        int edgeMargin = SKILLS_EDGE_MARGIN;
+        int bottomMargin = SKILLS_BOTTOM_MARGIN;
         return Mth.clamp(
-                edgeMargin,
+                screenHeight - skillsContainerHeight - bottomMargin,
                 edgeMargin,
                 Math.max(edgeMargin, screenHeight - skillsContainerHeight - edgeMargin));
     }
 
     static int skillsPanelLeft(int screenWidth, int panelWidth, int targetLeft) {
-        int edgeMargin = VillagerAdaptiveGuiScale.unit(SKILLS_EDGE_MARGIN);
-        int paddingX = skillsContainerPaddingX();
+        return skillsPanelLeft(screenWidth, panelWidth);
+    }
+
+    static int skillsPanelLeft(int screenWidth, int panelWidth) {
+        int edgeMargin = SKILLS_EDGE_MARGIN;
         return Mth.clamp(
-                targetLeft,
-                edgeMargin + paddingX,
-                Math.max(edgeMargin + paddingX, screenWidth - panelWidth - edgeMargin));
+                (screenWidth - panelWidth) / 2,
+                edgeMargin,
+                Math.max(edgeMargin, screenWidth - panelWidth - edgeMargin));
     }
 
     static int profileSkillRowHeight() {

@@ -56,6 +56,8 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Double> DIALOGUE_BLIP_MIN_PITCH = bind("dialogue.dialogueBlipMinPitch", Double.class);
     public static final ConfigValue<Double> DIALOGUE_BLIP_MAX_PITCH = bind("dialogue.dialogueBlipMaxPitch", Double.class);
     public static final ConfigValue<Double> DIALOGUE_CAMERA_ZOOM_AMOUNT = bind("dialogue.dialogueCameraZoomAmount", Double.class);
+    public static final ConfigValue<Boolean> ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS = bind("dialogue.enableNormalDialogueCameraFocus", Boolean.class);
+    public static final ConfigValue<Double> NORMAL_DIALOGUE_CAMERA_ZOOM_AMOUNT = bind("dialogue.normalDialogueCameraZoomAmount", Double.class);
     public static final ConfigValue<Integer> DIALOGUE_CAMERA_TRANSITION_TICKS = bind("dialogue.dialogueCameraTransitionTicks", Integer.class);
     public static final ConfigValue<Boolean> FREEZE_VILLAGER_DURING_DIALOGUE = bind("dialogue.freezeVillagerDuringDialogue", Boolean.class);
     public static final ConfigValue<Double> MAX_DIALOGUE_DISTANCE = bind("dialogue.maxDialogueDistance", Double.class);

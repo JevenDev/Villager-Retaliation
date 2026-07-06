@@ -114,11 +114,34 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int PROFILE_CHART_POINT_COLOR = 0xFFFFF3B0;
     private static final int PROFILE_CHART_POINT_HOVER_COLOR = 0xFFFFFFFF;
     private static final int PROFILE_CHART_POINT_HIT_RADIUS = 6;
+    private static final int PROFILE_CONTAINER_CHART_RADIUS = 28;
+    private static final int PROFILE_CONTAINER_CHART_CENTER_X_OFFSET = 6;
+    private static final int PROFILE_CONTAINER_CHART_CENTER_Y_OFFSET = 20;
+    private static final int PROFILE_CONTAINER_CHART_LABEL_X_OFFSET = 17;
+    private static final int PROFILE_CONTAINER_CHART_LABEL_Y_OFFSET = 13;
+    private static final int PROFILE_CONTAINER_CHART_TOP_PADDING = 10;
+    private static final int PROFILE_CONTAINER_CHART_BOTTOM_PADDING = 6;
+    private static final int PROFILE_CONTAINER_CHART_LOADING_Y_OFFSET = 46;
+    private static final int PROFILE_CONTAINER_CHART_POINT_RADIUS = 1;
+    private static final int PROFILE_CONTAINER_CHART_POINT_HOVER_RADIUS = 2;
+    private static final int PROFILE_CONTAINER_CHART_POINT_HIT_RADIUS = 5;
     private static final int PROFILE_SKILL_COLUMNS = 2;
+    private static final long PROFILE_KEEPALIVE_INTERVAL_MILLIS = 20_000L;
     private static final ResourceLocation DEFAULT_CURRENCY_ICON_SPRITE = ResourceLocation.withDefaultNamespace("item/emerald");
     private static final int INTERACTION_CONTAINER_WIDTH = 283;
     private static final int INTERACTION_CONTAINER_HEIGHT = 85;
     private static final int INTERACTION_CONTAINER_HOTBAR_GAP = 5;
+    private static final int SKILLS_DIALOGUE_CONTAINER_WIDTH = 283;
+    private static final int SKILLS_DIALOGUE_CONTAINER_HEIGHT = 64;
+    private static final int SKILLS_DIALOGUE_CONTAINER_GAP = 1;
+    private static final int SKILLS_DIALOGUE_BUTTON_WIDTH = 12;
+    private static final int SKILLS_DIALOGUE_BUTTON_HEIGHT = 46;
+    private static final int SKILLS_DIALOGUE_BUTTON_INSET = 1;
+    private static final int SKILLS_DIALOGUE_BACK_HINT_GAP = 3;
+    private static final int SKILLS_DIALOGUE_BACK_HINT_COLOR = 0x80FFFFFF;
+    private static final String SKILLS_DIALOGUE_BACK_HINT_TEXT = "Esc: Back";
+    private static final int PROFILE_CONTAINER_WIDTH = 168;
+    private static final int PROFILE_CONTAINER_HEIGHT = 120;
     private static final int INTERACTION_BUTTON_SIZE = 28;
     private static final int INTERACTION_BUTTON_GAP = 1;
     private static final int INTERACTION_BUTTON_ROW_LEFT_INSET = 0;
@@ -275,6 +298,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private float skillScroll;
     private float targetSkillScroll;
     private VillagerSkill selectedSkillDetails;
+    private VillagerSocialAttribute selectedProfileAttributeDetails;
+    private SkillsProfilePanel skillsProfilePanel = SkillsProfilePanel.SKILLS;
+    private long lastProfileRequestMillis = -1L;
     private HiredBrewingRecipeCatalog.BrewingPotionChoice selectedBrewingPotionChoice;
     private HiredBrewingRecipeCatalog.BrewingDurationChoice selectedBrewingDurationChoice;
     private HiredBrewingRecipeCatalog.BrewingLevelChoice selectedBrewingLevelChoice;
@@ -435,6 +461,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             finishClosingAnimation();
             return;
         }
+        tickSkillsProfileKeepAlive();
         updateDialogueMouthAnimation();
         syncCameraFocusState();
         ClientVillagerConversationState.tickCameraFocus();
@@ -626,7 +653,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return true;
         }
 
-        if (trySelectSkillDetails(interactionContentMouseX, interactionMouseY)
+        if (tryClickSkillsProfileCycleButton(interactionContentMouseX, interactionMouseY)
+                || trySelectProfileAttributeDetails(interactionContentMouseX, interactionMouseY)
+                || trySelectSkillDetails(interactionContentMouseX, interactionMouseY)
                 || tryBeginSkillInfoScrollbarDrag(interactionContentMouseX, interactionMouseY)
                 || tryBeginScrollbarDrag(interactionContentMouseX, interactionMouseY)
                 || tryActivateHoveredOption(interactionContentMouseX, interactionMouseY)) {
@@ -646,7 +675,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.page == DialoguePage.SKILLS
                 && maxSkillScroll() > 0.0F
                 && isPointInsideSkillsInfoScrollArea(interactionContentMouseX, interactionMouseY)) {
-            setTargetSkillScroll(this.targetSkillScroll - (float) scrollY * OPTION_SCROLL_STEP);
+            int direction = scrollY < 0.0D ? 1 : -1;
+            setTargetSkillScroll(this.targetSkillScroll + direction);
+            this.skillScroll = this.targetSkillScroll;
             return true;
         }
 
@@ -1491,14 +1522,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openProfilePage() {
         this.profileRefreshRequested = false;
+        clearSelectedSkillDetails();
+        clearSelectedProfileAttributeDetails();
+        this.draggingSkillScrollbar = false;
+        this.skillsProfilePanel = SkillsProfilePanel.PROFILE;
         requestProfileRefresh();
-        openPage(DialoguePage.PROFILE);
+        openPage(DialoguePage.SKILLS);
     }
 
     private void openSkillsPage() {
         this.profileRefreshRequested = false;
         clearSelectedSkillDetails();
+        clearSelectedProfileAttributeDetails();
         this.draggingSkillScrollbar = false;
+        this.skillsProfilePanel = SkillsProfilePanel.SKILLS;
         requestProfileRefresh();
         openPage(DialoguePage.SKILLS);
     }
@@ -1605,6 +1642,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         this.profileRefreshRequested = true;
+        sendProfileRequest();
+    }
+
+    private void tickSkillsProfileKeepAlive() {
+        if (this.closingWithAnimation || this.page != DialoguePage.SKILLS) {
+            return;
+        }
+        long now = Util.getMillis();
+        if (this.lastProfileRequestMillis >= 0L
+                && now - this.lastProfileRequestMillis < PROFILE_KEEPALIVE_INTERVAL_MILLIS) {
+            return;
+        }
+        sendProfileRequest();
+    }
+
+    private void sendProfileRequest() {
+        this.lastProfileRequestMillis = Util.getMillis();
         sendToServer(new VillagerProfileRequestPayload(this.villagerEntityId));
     }
 
@@ -1733,6 +1787,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             clearSelectedSkillDetails();
             return;
         }
+        if (this.page == DialoguePage.SKILLS && this.selectedProfileAttributeDetails != null) {
+            clearSelectedProfileAttributeDetails();
+            return;
+        }
         if (canNavigateBack()) {
             navigateBackPage();
         } else {
@@ -1803,7 +1861,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         int depthDirection = interactionPageDepth(nextPage) >= interactionPageDepth(previousPage) ? 1 : -1;
         this.interactionStateTransitionStartOffsetY = previousTop - nextTop;
-        this.interactionStateTransitionStartOffsetX = depthDirection * INTERACTION_STATE_CONTENT_SLIDE_X;
+        this.interactionStateTransitionStartOffsetX = previousPage == DialoguePage.SKILLS || nextPage == DialoguePage.SKILLS
+                ? 0
+                : depthDirection * INTERACTION_STATE_CONTENT_SLIDE_X;
         this.interactionStateTransitionStartMillis = Util.getMillis();
     }
 
@@ -1951,6 +2011,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         resetSkillInfoScroll();
     }
 
+    private void clearSelectedProfileAttributeDetails() {
+        this.selectedProfileAttributeDetails = null;
+        resetSkillInfoScroll();
+    }
+
     private void resetSkillInfoScroll() {
         this.skillScroll = 0.0F;
         this.targetSkillScroll = 0.0F;
@@ -2012,7 +2077,210 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderSkillsPage(GuiGraphics graphics, int mouseX, int mouseY) {
+        renderSkillsDialogueContainer(graphics, mouseX, mouseY);
+        if (this.skillsProfilePanel == SkillsProfilePanel.PROFILE) {
+            renderProfileContainer(graphics, mouseX, mouseY);
+            renderSkillsProfileCycleButtonTooltip(graphics, mouseX, mouseY);
+            return;
+        }
         VillagerInteractionSkillsPage.render(this.skillsPageContext, graphics, mouseX, mouseY);
+        renderSkillsProfileCycleButtonTooltip(graphics, mouseX, mouseY);
+    }
+
+    private void renderSkillsDialogueContainer(GuiGraphics graphics, int mouseX, int mouseY) {
+        int left = skillsDialogueContainerLeft();
+        int top = skillsDialogueContainerTop();
+        renderSkillsProfileCycleButtons(graphics, mouseX, mouseY);
+        graphics.blit(
+                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_SKILLS_DIALOGUE_CONTAINER_TEXTURE,
+                left,
+                top,
+                0,
+                0,
+                SKILLS_DIALOGUE_CONTAINER_WIDTH,
+                SKILLS_DIALOGUE_CONTAINER_HEIGHT,
+                SKILLS_DIALOGUE_CONTAINER_WIDTH,
+                SKILLS_DIALOGUE_CONTAINER_HEIGHT);
+        renderInteractionVillagerPortrait(graphics, left, top);
+        renderSkillsDialogueInfo(graphics, left, top);
+    }
+
+    private void renderSkillsProfileCycleButtons(GuiGraphics graphics, int mouseX, int mouseY) {
+        int top = skillsDialogueButtonTop();
+        int leftButtonLeft = skillsDialogueLeftButtonLeft();
+        int rightButtonLeft = skillsDialogueRightButtonLeft();
+        graphics.blit(
+                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_SKILLS_DIALOGUE_BUTTON_LEFT_TEXTURE,
+                leftButtonLeft,
+                top,
+                0,
+                0,
+                SKILLS_DIALOGUE_BUTTON_WIDTH,
+                SKILLS_DIALOGUE_BUTTON_HEIGHT,
+                SKILLS_DIALOGUE_BUTTON_WIDTH,
+                SKILLS_DIALOGUE_BUTTON_HEIGHT);
+        graphics.blit(
+                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_SKILLS_DIALOGUE_BUTTON_RIGHT_TEXTURE,
+                rightButtonLeft,
+                top,
+                0,
+                0,
+                SKILLS_DIALOGUE_BUTTON_WIDTH,
+                SKILLS_DIALOGUE_BUTTON_HEIGHT,
+                SKILLS_DIALOGUE_BUTTON_WIDTH,
+                SKILLS_DIALOGUE_BUTTON_HEIGHT);
+    }
+
+    private void renderSkillsProfileCycleButtonTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (hoveredSkillsProfileCycleButton(mouseX, mouseY) == null) {
+            return;
+        }
+        String key = nextSkillsProfilePanel() == SkillsProfilePanel.SKILLS
+                ? "profile.cycle.skills"
+                : "profile.cycle.profile";
+        renderInteractionTooltip(graphics, List.of(Component.literal(translate(key))), mouseX, mouseY);
+    }
+
+    private void renderProfileContainer(GuiGraphics graphics, int mouseX, int mouseY) {
+        graphics.blit(
+                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_PROFILE_CONTAINER_TEXTURE,
+                profileContainerLeft(),
+                profileContainerTop(),
+                0,
+                0,
+                PROFILE_CONTAINER_WIDTH,
+                PROFILE_CONTAINER_HEIGHT,
+                PROFILE_CONTAINER_WIDTH,
+                PROFILE_CONTAINER_HEIGHT);
+        VillagerInteractionProfilePage.render(this.profilePageContext, graphics, mouseX, mouseY);
+    }
+
+    private void renderSkillsDialogueInfo(GuiGraphics graphics, int left, int top) {
+        String text = skillsDialogueInfoText();
+        if (text.isBlank()) {
+            return;
+        }
+
+        List<String> lines = wrappedInteractionDialogueLines(text);
+        if (lines.isEmpty()) {
+            return;
+        }
+
+        int visibleLines = interactionDialogueVisibleLineCount();
+        int maxScroll = maxInteractionDialogueLineScroll(lines);
+        int lineScroll = Mth.clamp(Math.round(this.skillScroll), 0, maxScroll);
+        this.skillScroll = lineScroll;
+        this.targetSkillScroll = Mth.clamp(this.targetSkillScroll, 0.0F, maxScroll);
+        int drawLeft = left + INTERACTION_DIALOGUE_LEFT + 1;
+        int drawTop = top + INTERACTION_DIALOGUE_TOP + 1;
+        int lineStep = this.font.lineHeight;
+        int linesToDraw = Math.min(visibleLines, lines.size() - lineScroll);
+        for (int row = 0; row < linesToDraw; row++) {
+            int lineIndex = lineScroll + row;
+            int lineTop = drawTop + row * lineStep;
+            int lineRight = left + (row == visibleLines - 1
+                    ? INTERACTION_DIALOGUE_RIGHT
+                    : INTERACTION_DIALOGUE_EXTENDED_RIGHT);
+            graphics.enableScissor(
+                    left + INTERACTION_DIALOGUE_LEFT,
+                    top + INTERACTION_DIALOGUE_TOP + row * lineStep + this.renderSlideOffsetY,
+                    lineRight,
+                    Math.min(
+                            top + INTERACTION_DIALOGUE_BOTTOM + this.renderSlideOffsetY,
+                            top + INTERACTION_DIALOGUE_TOP + (row + 1) * lineStep + 2 + this.renderSlideOffsetY));
+            drawOutlinedString(graphics, lines.get(lineIndex), drawLeft, lineTop, INTERACTION_DIALOGUE_COLOR);
+            graphics.disableScissor();
+        }
+
+        ResourceLocation scrollIcon = skillsDialogueScrollIcon(lines, lineScroll);
+        if (scrollIcon != null) {
+            int iconLeft = left + INTERACTION_DIALOGUE_SCROLL_ICON_LEFT;
+            int iconTop = top + INTERACTION_DIALOGUE_SCROLL_ICON_BOTTOM - INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT;
+            graphics.blit(
+                    scrollIcon,
+                    iconLeft,
+                    iconTop,
+                    0,
+                    0,
+                    INTERACTION_DIALOGUE_SCROLL_ICON_WIDTH,
+                    INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT,
+                    INTERACTION_DIALOGUE_SCROLL_ICON_WIDTH,
+                    INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT);
+            graphics.drawString(
+                    this.font,
+                    SKILLS_DIALOGUE_BACK_HINT_TEXT,
+                    iconLeft + INTERACTION_DIALOGUE_SCROLL_ICON_WIDTH + SKILLS_DIALOGUE_BACK_HINT_GAP,
+                    iconTop + (INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT - this.font.lineHeight) / 2,
+                    SKILLS_DIALOGUE_BACK_HINT_COLOR,
+                    false);
+        }
+    }
+
+    private String skillsDialogueInfoText() {
+        Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
+        if (this.skillsProfilePanel == SkillsProfilePanel.PROFILE) {
+            return profileDialogueInfoText(entry);
+        }
+        return skillsDialogueInfoText(entry);
+    }
+
+    private String profileDialogueInfoText(Optional<VillagerProfileClientCache.DisplayEntry> entry) {
+        if (this.selectedProfileAttributeDetails != null) {
+            if (entry.isEmpty()) {
+                return localizedAttribute(this.selectedProfileAttributeDetails) + "\n\n" + translate("profile.loading");
+            }
+            VillagerProfileClientCache.DisplayEntry profile = entry.get();
+            return String.join(
+                    "\n",
+                    localizedAttribute(this.selectedProfileAttributeDetails),
+                    "",
+                    translate(
+                            "profile.tooltip.level",
+                            localizedRank(profile.rank(this.selectedProfileAttributeDetails))),
+                    translate("profile.tooltip.score", profile.value(this.selectedProfileAttributeDetails)),
+                    "",
+                    localizedAttributeDescription(this.selectedProfileAttributeDetails));
+        }
+        return String.join(
+                "\n\n",
+                translate("profile.attributes.info.title"),
+                translate("profile.attributes.info.personality"),
+                translate("profile.attributes.info.behavior"),
+                translate("profile.attributes.info.growth"));
+    }
+
+    private String skillsDialogueInfoText(Optional<VillagerProfileClientCache.DisplayEntry> entry) {
+        if (this.selectedSkillDetails != null) {
+            if (entry.isEmpty()) {
+                return localizedSkill(this.selectedSkillDetails) + "\n" + translate("profile.loading");
+            }
+            VillagerProfileClientCache.DisplayEntry profile = entry.get();
+            return String.join(
+                    "\n",
+                    localizedSkill(this.selectedSkillDetails),
+                    "",
+                    translate("profile.tooltip.level", localizedSkillRank(profile.skillRank(this.selectedSkillDetails))),
+                    translate("profile.tooltip.score", profile.skillValue(this.selectedSkillDetails)),
+                    "",
+                    localizedExpandedSkillDescription(this.selectedSkillDetails));
+        }
+        return String.join(
+                "\n\n",
+                translate("profile.skills.info.title"),
+                translate("profile.skills.info.trade"),
+                translate("profile.skills.info.specialty"),
+                translate("profile.skills.info.recruit"));
+    }
+
+    private ResourceLocation skillsDialogueScrollIcon(List<String> lines, int lineScroll) {
+        int maxScroll = maxInteractionDialogueLineScroll(lines);
+        if (maxScroll <= 0) {
+            return null;
+        }
+        if (lineScroll > 0) {
+            return VillagerRetaliationClientAssets.INTERACTION_SCROLL_ICON_UP_TEXTURE;
+        }
+        return VillagerRetaliationClientAssets.INTERACTION_SCROLL_ICON_DOWN_TEXTURE;
     }
 
     private void renderGiftPage(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -3016,8 +3284,64 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int interactionContainerTopForPage(DialoguePage page) {
+        if (page == DialoguePage.SKILLS) {
+            return skillsProfilePanelTop();
+        }
         int buttonRowHeight = usesRootIconMenu(page) ? INTERACTION_BUTTON_GAP + INTERACTION_BUTTON_SIZE : 0;
         return Math.max(4, this.height - INTERACTION_CONTAINER_HEIGHT - buttonRowHeight - INTERACTION_CONTAINER_HOTBAR_GAP);
+    }
+
+    private int skillsDialogueContainerLeft() {
+        return skillsPanelLeft() + (skillsPanelWidth() - SKILLS_DIALOGUE_CONTAINER_WIDTH) / 2;
+    }
+
+    private int skillsDialogueContainerTop() {
+        return Math.max(4, this.height - SKILLS_DIALOGUE_CONTAINER_HEIGHT - INTERACTION_CONTAINER_HOTBAR_GAP);
+    }
+
+    private int skillsDialogueButtonTop() {
+        return skillsDialogueContainerTop() + (SKILLS_DIALOGUE_CONTAINER_HEIGHT - SKILLS_DIALOGUE_BUTTON_HEIGHT) / 2;
+    }
+
+    private int skillsDialogueLeftButtonLeft() {
+        return skillsDialogueContainerLeft() - SKILLS_DIALOGUE_BUTTON_WIDTH + SKILLS_DIALOGUE_BUTTON_INSET;
+    }
+
+    private int skillsDialogueRightButtonLeft() {
+        return skillsDialogueContainerLeft() + SKILLS_DIALOGUE_CONTAINER_WIDTH - SKILLS_DIALOGUE_BUTTON_INSET;
+    }
+
+    private SkillsProfileCycleButton hoveredSkillsProfileCycleButton(double mouseX, double mouseY) {
+        int top = skillsDialogueButtonTop();
+        int bottom = top + SKILLS_DIALOGUE_BUTTON_HEIGHT;
+        if (mouseY < top || mouseY >= bottom) {
+            return null;
+        }
+        int leftButtonLeft = skillsDialogueLeftButtonLeft();
+        if (mouseX >= leftButtonLeft && mouseX < leftButtonLeft + SKILLS_DIALOGUE_BUTTON_WIDTH) {
+            return SkillsProfileCycleButton.LEFT;
+        }
+        int rightButtonLeft = skillsDialogueRightButtonLeft();
+        if (mouseX >= rightButtonLeft && mouseX < rightButtonLeft + SKILLS_DIALOGUE_BUTTON_WIDTH) {
+            return SkillsProfileCycleButton.RIGHT;
+        }
+        return null;
+    }
+
+    private int profileContainerLeft() {
+        return skillsPanelLeft() + (skillsPanelWidth() - PROFILE_CONTAINER_WIDTH) / 2;
+    }
+
+    private int profileContainerTop() {
+        return skillsDialogueContainerTop() - PROFILE_CONTAINER_HEIGHT - SKILLS_DIALOGUE_CONTAINER_GAP;
+    }
+
+    private int skillsProfilePanelTop() {
+        return this.skillsProfilePanel == SkillsProfilePanel.PROFILE ? profileContainerTop() : skillsPanelTop();
+    }
+
+    private boolean isEmbeddedProfilePanelActive() {
+        return this.page == DialoguePage.SKILLS && this.skillsProfilePanel == SkillsProfilePanel.PROFILE;
     }
 
     private int interactionMenuButtonTop() {
@@ -3117,10 +3441,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean experimentalSkillsBackdropVisible() {
-        if (this.page == DialoguePage.SKILLS) {
-            return true;
-        }
-        return this.experimentalSkillsExitStartMillis >= 0L && Util.getMillis() - this.experimentalSkillsExitStartMillis < 860L;
+        return false;
     }
 
     private float experimentalSkillsElapsedMillis() {
@@ -3174,6 +3495,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             clearSelectedSkillDetails();
             return true;
         }
+        if (this.page == DialoguePage.SKILLS && this.selectedProfileAttributeDetails != null) {
+            clearSelectedProfileAttributeDetails();
+            return true;
+        }
 
         navigateBackPage();
         return true;
@@ -3205,8 +3530,60 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return true;
     }
 
-    private boolean trySelectSkillDetails(double mouseX, double mouseY) {
+    private boolean tryClickSkillsProfileCycleButton(double mouseX, double mouseY) {
         if (this.page != DialoguePage.SKILLS) {
+            return false;
+        }
+        if (hoveredSkillsProfileCycleButton(mouseX, mouseY) == null) {
+            return false;
+        }
+        showSkillsProfilePanel(nextSkillsProfilePanel());
+        return true;
+    }
+
+    private SkillsProfilePanel nextSkillsProfilePanel() {
+        return this.skillsProfilePanel == SkillsProfilePanel.SKILLS
+                ? SkillsProfilePanel.PROFILE
+                : SkillsProfilePanel.SKILLS;
+    }
+
+    private void showSkillsProfilePanel(SkillsProfilePanel panel) {
+        if (this.skillsProfilePanel == panel) {
+            return;
+        }
+        this.skillsProfilePanel = panel;
+        clearSelectedSkillDetails();
+        clearSelectedProfileAttributeDetails();
+        this.draggingSkillScrollbar = false;
+        if (panel == SkillsProfilePanel.PROFILE) {
+            requestProfileRefresh();
+        }
+    }
+
+    private boolean trySelectProfileAttributeDetails(double mouseX, double mouseY) {
+        if (this.page != DialoguePage.SKILLS || this.skillsProfilePanel != SkillsProfilePanel.PROFILE) {
+            return false;
+        }
+
+        Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
+        if (entry.isEmpty()) {
+            return false;
+        }
+
+        VillagerSocialAttribute clickedAttribute =
+                VillagerInteractionProfilePage.attributeAt(this.profilePageContext, entry.get(), mouseX, mouseY);
+        if (clickedAttribute == null) {
+            return false;
+        }
+
+        this.selectedProfileAttributeDetails =
+                clickedAttribute == this.selectedProfileAttributeDetails ? null : clickedAttribute;
+        resetSkillInfoScroll();
+        return true;
+    }
+
+    private boolean trySelectSkillDetails(double mouseX, double mouseY) {
+        if (this.page != DialoguePage.SKILLS || this.skillsProfilePanel != SkillsProfilePanel.SKILLS) {
             return false;
         }
 
@@ -3307,12 +3684,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean isPointInsideSkillsInfoScrollArea(double mouseX, double mouseY) {
-        int left = optionsLeft() - experimentalUnit(18);
-        int right = optionsLeft() + optionWidth() + experimentalUnit(4);
-        int top = skillInfoViewportTop();
-        int bottom = skillInfoViewportBottom();
-        int verticalPadding = experimentalUnit(4);
-        return mouseX >= left && mouseX <= right && mouseY >= top - verticalPadding && mouseY <= bottom + verticalPadding;
+        if (this.page != DialoguePage.SKILLS) {
+            return false;
+        }
+        int left = skillsDialogueContainerLeft() + INTERACTION_DIALOGUE_SCROLL_LEFT;
+        int right = skillsDialogueContainerLeft() + INTERACTION_DIALOGUE_SCROLL_RIGHT;
+        int top = skillsDialogueContainerTop() + INTERACTION_DIALOGUE_SCROLL_TOP;
+        int bottom = skillsDialogueContainerTop() + INTERACTION_DIALOGUE_SCROLL_BOTTOM;
+        return mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom;
     }
 
     private static boolean isLeftMouseButton(int button) {
@@ -3350,21 +3729,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private int skillsPanelTop() {
         int containerHeight = skillsContainerHeight();
-        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, containerHeight);
+        return Math.max(4, skillsDialogueContainerTop() - containerHeight - SKILLS_DIALOGUE_CONTAINER_GAP);
     }
 
     private int skillsPanelLeft() {
         int panelWidth = skillsPanelWidth();
-        int targetLeft = scrollbarRight() - panelWidth;
-        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, targetLeft);
+        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth);
     }
 
     private int skillsPanelWidth() {
-        return optionWidth();
+        return VillagerInteractionLayoutMetrics.skillsContainerWidth();
     }
 
     private int skillsContainerHeight() {
-        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight());
+        return VillagerInteractionLayoutMetrics.skillsContainerHeight();
     }
 
     private int skillsPanelHeight() {
@@ -3396,6 +3774,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private float maxSkillScroll() {
+        if (this.page == DialoguePage.SKILLS) {
+            return maxInteractionDialogueLineScroll(wrappedInteractionDialogueLines(skillsDialogueInfoText()));
+        }
         return ToucanScrollState.maxScroll(Mth.floor(optionTextYOffset()) + skillsInfoContentHeight(), skillInfoViewportHeight());
     }
 
@@ -3409,14 +3790,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private int skillInfoViewportTop() {
         if (this.page == DialoguePage.SKILLS) {
-            return experimentalOptionViewportTop();
+            return skillsDialogueContainerTop() + INTERACTION_DIALOGUE_TOP;
         }
         return conversationInfoTop();
     }
 
     private int skillInfoViewportBottom() {
         if (this.page == DialoguePage.SKILLS) {
-            return experimentalOptionViewportBottom();
+            return skillsDialogueContainerTop() + INTERACTION_DIALOGUE_BOTTOM;
         }
         return conversationInfoTop() + rootOptionViewportHeight();
     }
@@ -3861,6 +4242,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private ToucanScrollbarThumb skillInfoScrollbarThumb() {
+        if (this.page == DialoguePage.SKILLS) {
+            return null;
+        }
         float maxScroll = maxSkillScroll();
         int viewportTop = skillInfoViewportTop();
         int viewportHeight = skillInfoViewportHeight();
@@ -4110,6 +4494,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         BREWING_DURATION,
         BREWING_TYPE,
         BREWING_AMOUNT
+    }
+
+    private enum SkillsProfilePanel {
+        SKILLS,
+        PROFILE
+    }
+
+    private enum SkillsProfileCycleButton {
+        LEFT,
+        RIGHT
     }
 
     private record DialogueOption(String label, Runnable action, boolean locked) {
@@ -4585,6 +4979,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int optionsLeft() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return VillagerInteractionScreen.this.profileContainerLeft();
+            }
             return VillagerInteractionScreen.this.experimentalOptionTextLeft() - VillagerInteractionScreen.this.experimentalUnit(6);
         }
 
@@ -4595,6 +4992,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int optionWidth() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_WIDTH;
+            }
             return VillagerInteractionScreen.this.optionWidth();
         }
 
@@ -4605,41 +5005,67 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int profileChartRadius() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_CHART_RADIUS;
+            }
             return VillagerInteractionScreen.this.experimentalUnit(PROFILE_CHART_RADIUS);
         }
 
         @Override
         public int profileChartCenterXOffset() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_CHART_CENTER_X_OFFSET;
+            }
             return VillagerInteractionScreen.this.experimentalUnit(8);
         }
 
         @Override
         public int profileChartCenterYOffset() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_CHART_CENTER_Y_OFFSET;
+            }
             return VillagerInteractionScreen.this.experimentalUnit(16);
         }
 
         @Override
         public int profileChartLabelXOffset() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_CHART_LABEL_X_OFFSET;
+            }
             return VillagerInteractionScreen.this.experimentalUnit(18);
         }
 
         @Override
         public int profileChartLabelYOffset() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_CHART_LABEL_Y_OFFSET;
+            }
             return VillagerInteractionScreen.this.experimentalUnit(14);
         }
 
         @Override
         public int profileChartLoadingYOffset() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_CHART_LOADING_Y_OFFSET;
+            }
             return VillagerInteractionScreen.this.experimentalUnit(32);
         }
 
         @Override
         public int profileChartTopLimit() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return VillagerInteractionScreen.this.profileContainerTop() + PROFILE_CONTAINER_CHART_TOP_PADDING;
+            }
             return VillagerInteractionScreen.this.topBackButtonBounds().bottom() + VillagerInteractionScreen.this.experimentalUnit(7);
         }
 
         @Override
         public int profileChartBottomLimit() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return VillagerInteractionScreen.this.profileContainerTop()
+                        + PROFILE_CONTAINER_HEIGHT
+                        - PROFILE_CONTAINER_CHART_BOTTOM_PADDING;
+            }
             int hintHeight = Math.round(VillagerInteractionScreen.this.font.lineHeight * VillagerInteractionScreen.this.experimentalScaleFactor());
             int screenBottomLimit = VillagerInteractionScreen.this.height - hintHeight - VillagerInteractionScreen.this.experimentalUnit(8);
             int viewportBottomLimit = VillagerInteractionScreen.this.conversationInfoTop()
@@ -4650,6 +5076,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public float profileChartTextScale() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return 1.0F;
+            }
             return VillagerInteractionScreen.this.experimentalScaleFactor();
         }
 
@@ -4680,16 +5109,25 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int profileChartPointRadius() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_CHART_POINT_RADIUS;
+            }
             return VillagerInteractionScreen.this.experimentalUnitAtLeast(1, 1);
         }
 
         @Override
         public int profileChartPointHoverRadius() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_CHART_POINT_HOVER_RADIUS;
+            }
             return VillagerInteractionScreen.this.experimentalUnitAtLeast(2, 1);
         }
 
         @Override
         public int profileChartPointHitRadius() {
+            if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
+                return PROFILE_CONTAINER_CHART_POINT_HIT_RADIUS;
+            }
             return VillagerInteractionScreen.this.experimentalUnitAtLeast(PROFILE_CHART_POINT_HIT_RADIUS, 2);
         }
 

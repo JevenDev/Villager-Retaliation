@@ -1760,6 +1760,12 @@ public final class VillagerInteractionService {
             return;
         }
 
+        if (villager instanceof Villager conversationVillager
+                && VillagerConversationService.isConversing(player)
+                && !VillagerConversationService.validate(player, conversationVillager)) {
+            return;
+        }
+
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(player.serverLevel(), villager);
         VillagerReputationNetworking.sendProfile(player, villager, profile);
     }
