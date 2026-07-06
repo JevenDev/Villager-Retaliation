@@ -440,7 +440,27 @@ public final class VillagerWorkerGameTests {
         ServerLevel level = helper.getLevel();
         Villager first = spawnVillager(helper, new BlockPos(1, 2, 1));
         Villager second = spawnVillager(helper, new BlockPos(2, 2, 1));
+        tickVillager(level, first, 20);
+        tickVillager(level, second, 20);
         BlockPos target = helper.absolutePos(new BlockPos(4, 2, 4));
+
+        net.minecraft.world.level.pathfinder.Path firstPath = HiredPathMemory.createPath(level, first, target, 0);
+        net.minecraft.world.level.pathfinder.Path cachedPath = HiredPathMemory.createPath(level, first, target, 0);
+        helper.assertTrue(firstPath != null && cachedPath != null, "reachable paths should be created and cached");
+        HiredPathMemory.PathCreationDebug pathDebug = HiredPathMemory.pathCreationDebug(level, first);
+        helper.assertValueEqual(pathDebug.totalCount(), 1L, "second identical path should reuse cache");
+        helper.assertValueEqual(pathDebug.cacheHitTotal(), 1L, "cache hit should be tracked");
+        HiredPathMemory.onBlockChanged(level, target);
+        HiredPathMemory.createPath(level, first, target, 0);
+        pathDebug = HiredPathMemory.pathCreationDebug(level, first);
+        helper.assertValueEqual(pathDebug.totalCount(), 2L, "block changes should invalidate cached paths touching the target chunk");
+
+        ServerLevel nether = level.getServer().getLevel(Level.NETHER);
+        helper.assertTrue(nether != null, "nether level should exist for path memory dimension regression");
+        HiredPathMemory.rememberRecent(nether, target);
+        helper.assertValueEqual(HiredPathMemory.recentCost(first, target), 0.0D, "recent targets should not leak across dimensions");
+        HiredPathMemory.rememberRecent(level, target);
+        helper.assertTrue(HiredPathMemory.recentCost(first, target) > 0.0D, "same-dimension recent targets should add candidate cost");
 
         helper.assertFalse(HiredPathMemory.recordFailure(level, first, target), "first path failure should not blacklist");
         helper.assertFalse(HiredPathMemory.recordFailure(level, first, target), "second path failure should not blacklist");
@@ -463,6 +483,9 @@ public final class VillagerWorkerGameTests {
         BlockPos approach = helper.absolutePos(new BlockPos(3, 2, 3));
         HiredPathMemory.rememberUnreachableApproach(level, first, approach);
         helper.assertTrue(HiredPathMemory.isApproachRecentlyUnreachable(level, first, approach), "failed approach positions should be cached");
+        HiredPathMemory.onBlockChanged(level, approach);
+        helper.assertFalse(HiredPathMemory.isApproachRecentlyUnreachable(level, first, approach), "changed terrain should retry failed approaches");
+        helper.assertValueEqual(HiredPathMemory.pathSearchRetryCooldownTicks(level, first), 0L, "changed terrain should clear path search backoff");
         HiredPathMemory.clearUnreachableApproach(first, approach);
         HiredPathMemory.clearPathSearchFailures(first);
 

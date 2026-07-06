@@ -564,6 +564,10 @@ public final class VillagerTaskNavigationUtil {
         villager.setDeltaMovement(0.0D, 0.0D, 0.0D);
         villager.moveTo(targetX, targetY, targetZ, villager.getYRot(), villager.getXRot());
         villager.getMoveControl().setWantedPosition(targetX, targetY, targetZ, 0.0D);
+        villager.getBrain().setMemoryWithExpiry(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(dismount), 0.0F, 0),
+                RECENT_LADDER_DISMOUNT_TICKS);
         villager.setOnGround(true);
         return true;
     }

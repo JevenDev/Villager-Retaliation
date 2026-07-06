@@ -29,6 +29,7 @@ import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
@@ -542,6 +543,7 @@ public final class VillagerRetaliationEvents {
             VillagerInteractionService.handleSleepingVillagerBedBroken(level, serverPlayer, event.getPos());
         }
         if (!event.isCanceled() && event.getLevel() instanceof ServerLevel level) {
+            HiredPathMemory.onBlockChanged(level, event.getPos());
             if (event.getPlayer() instanceof ServerPlayer serverPlayer) {
                 VillagerQuestService.onBlockBroken(level, serverPlayer, event.getPos(), event.getState());
             }
@@ -552,6 +554,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        HiredPathMemory.onBlockPlace(event);
         if (!event.isCanceled()
                 && event.getLevel() instanceof ServerLevel level
                 && event.getEntity() instanceof ServerPlayer serverPlayer) {

@@ -834,6 +834,9 @@ public final class HiredVillagerWorkService {
         lines.add("Pathing: createdThisTick=" + pathDebug.currentTickCount()
                 + ", lastTick=" + pathDebug.lastTickCount()
                 + ", total=" + pathDebug.totalCount()
+                + ", cacheHitsThisTick=" + pathDebug.cacheHitsThisTick()
+                + ", cacheHitsLastTick=" + pathDebug.cacheHitsLastTick()
+                + ", cacheHitTotal=" + pathDebug.cacheHitTotal()
                 + ", failureStreak=" + pathDebug.failureStreak()
                 + ", pathRetryCooldown=" + pathDebug.retryCooldownTicks()
                 + ", cachedApproaches=" + pathDebug.unreachableApproaches());

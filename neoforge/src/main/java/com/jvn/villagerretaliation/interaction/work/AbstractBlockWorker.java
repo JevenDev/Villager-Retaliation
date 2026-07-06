@@ -110,6 +110,7 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, target.hitPos(), state, ignored -> {
         });
         level.destroyBlock(target.blockPos(), false, villager);
+        HiredPathMemory.onBlockChanged(level, target.blockPos());
         level.destroyBlockProgress(villager.getId(), target.blockPos(), -1);
         damageTool(context, villager, tool, level, state, target.blockPos());
         HiredPathMemory.rememberRecent(level, target.blockPos());

@@ -1343,7 +1343,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         if (target == null) {
             return false;
         }
-        Path path = villager.getNavigation().createPath(target, 0);
+        Path path = HiredPathMemory.createPath(level, villager, target, 0);
         if (path == null
                 || !path.canReach()
                 || !VillagerTaskNavigationUtil.moveToHiredPath(
@@ -1396,7 +1396,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             if (attempts++ >= MAX_BUILD_SITE_INTERMEDIATE_PATH_ATTEMPTS) {
                 break;
             }
-            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
             if (path != null && path.canReach()) {
                 double score = candidate.score() + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
                 if (score < bestScore) {
@@ -1459,7 +1459,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 break;
             }
             evaluated++;
-            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
             if (path == null
                     || !path.canReach()
                     || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, movementFilter)) {
@@ -1701,7 +1701,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return MovementResult.MOVING;
         }
 
-        Path path = villager.getNavigation().createPath(currentTarget.approachPos(), 0);
+        Path path = HiredPathMemory.createPath(level, villager, currentTarget.approachPos(), 0);
         if (path == null
                 || !path.canReach()
                 || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, movementFilter)) {
@@ -1873,6 +1873,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, target.hitPos(), state, ignored -> {
         });
         level.destroyBlock(pos, false, villager);
+        HiredPathMemory.onBlockChanged(level, pos);
         level.destroyBlockProgress(villager.getId(), pos, -1);
         damageTool(context, villager, tool, level, state, pos);
         HiredPathMemory.rememberRecent(level, pos);
@@ -1920,7 +1921,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             }
             return MovementResult.MOVING;
         }
-        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        Path path = HiredPathMemory.createPath(level, villager, target.approachPos(), 0);
         if (path != null
                 && path.canReach()
                 && HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, movementFilter)
@@ -2396,7 +2397,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         candidates.sort(Comparator.comparingDouble(ClearSpotCandidate::distanceSqr));
 
         for (ClearSpotCandidate candidate : candidates) {
-            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
             if (path == null
                     || !path.canReach()
                     || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(level, path, movementFilter)) {
@@ -2544,11 +2545,13 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 if (!placedSource) {
                     return false;
                 }
+                HiredPathMemory.onBlockChanged(level, worldPos);
             }
             boolean placed = level.setBlock(worldPos, block.state(), Block.UPDATE_ALL);
             if (!placed) {
                 return false;
             }
+            HiredPathMemory.onBlockChanged(level, worldPos);
             if (block.requiresToolAction()) {
                 damageTool(context, villager, actionTool);
             }

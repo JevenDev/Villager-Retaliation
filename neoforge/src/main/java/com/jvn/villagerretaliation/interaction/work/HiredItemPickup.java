@@ -157,7 +157,7 @@ public final class HiredItemPickup {
             worker.stopWorkNavigation(villager);
             return false;
         }
-        Path path = villager.getNavigation().createPath(targetPos, 0);
+        Path path = HiredPathMemory.createPath(level, villager, targetPos, 0);
         if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
             villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
             boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, targetPos, speed, 0);

@@ -382,6 +382,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         } else {
             level.destroyBlock(target, false, villager);
         }
+        HiredPathMemory.onBlockChanged(level, target);
         HiredPathMemory.rememberRecent(level, target);
         return FarmHarvestResult.COMPLETED;
     }
@@ -434,7 +435,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return true;
         }
 
-        Path path = villager.getNavigation().createPath(approach, 0);
+        Path path = HiredPathMemory.createPath(level, villager, approach, 0);
         if (path != null
                 && path.canReach()
                 && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, pos -> canUseFarmMovementPosition(context, pos))) {
@@ -464,7 +465,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
                     || candidate.getCenter().distanceToSqr(target.getCenter()) > HiredMoveToBlockFaceJob.MAX_REACH_SQR) {
                 continue;
             }
-            Path path = villager.getNavigation().createPath(candidate, 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
             if (path == null || !path.canReach() || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, pos -> canUseFarmMovementPosition(context, pos))) {
                 continue;
             }
@@ -512,6 +513,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         faceBlock(villager, target);
         swingWorkTool(villager);
         level.destroyBlock(target, false, villager);
+        HiredPathMemory.onBlockChanged(level, target);
         clearBreakProgress(level, villager, target);
         HiredPathMemory.rememberRecent(level, target);
         return FarmHarvestResult.COMPLETED;
@@ -576,7 +578,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return true;
         }
 
-        Path path = villager.getNavigation().createPath(approach, 0);
+        Path path = HiredPathMemory.createPath(level, villager, approach, 0);
         if (path != null
                 && path.canReach()
                 && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, pos -> canUseFarmMovementPosition(context, pos))) {

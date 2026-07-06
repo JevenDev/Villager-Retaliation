@@ -147,7 +147,7 @@ public final class CombatWorker implements HiredRoleWorker {
             return;
         }
 
-        BlockPos patrolTarget = selectPatrolTarget(villager, context);
+        BlockPos patrolTarget = selectPatrolTarget(level, villager, context);
         context.state().putLong(
                 NEXT_PATROL_GAME_TIME_TAG,
                 gameTime + MIN_PATROL_DELAY_TICKS + villager.getRandom().nextInt(RANDOM_PATROL_DELAY_TICKS + 1));
@@ -156,7 +156,7 @@ public final class CombatWorker implements HiredRoleWorker {
             return;
         }
 
-        Path path = villager.getNavigation().createPath(patrolTarget, 0);
+        Path path = HiredPathMemory.createPath(level, villager, patrolTarget, 0);
         if (path != null
                 && path.canReach()
                 && VillagerTaskNavigationUtil.moveToHiredPath(villager, path, patrolTarget, PATROL_SPEED, 0)) {
@@ -166,7 +166,7 @@ public final class CombatWorker implements HiredRoleWorker {
         }
     }
 
-    private static BlockPos selectPatrolTarget(Villager villager, HiredWorkContext context) {
+    private static BlockPos selectPatrolTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
         BlockPos fallback = context.workCenter();
         for (int attempt = 0; attempt < PATROL_TARGET_ATTEMPTS; attempt++) {
             int x = randomBetween(villager, context.workMin().getX(), context.workMax().getX());
@@ -176,7 +176,7 @@ public final class CombatWorker implements HiredRoleWorker {
             if (!context.isInsideWorkArea(candidate)) {
                 continue;
             }
-            Path path = villager.getNavigation().createPath(candidate, 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
             if (path != null && path.canReach()) {
                 return candidate;
             }

@@ -428,7 +428,7 @@ public final class FishingWorker extends AbstractBlockWorker {
                     || !hasCastLine(level, candidate, water)) {
                 continue;
             }
-            Path path = villager.getNavigation().createPath(candidate, 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
             if (path == null || !path.canReach() || !pathStaysDryAndInside(level, path, context)) {
                 continue;
             }
@@ -485,7 +485,7 @@ public final class FishingWorker extends AbstractBlockWorker {
             stopWorkNavigation(villager);
             return true;
         }
-        Path path = villager.getNavigation().createPath(approach, 0);
+        Path path = HiredPathMemory.createPath(level, villager, approach, 0);
         if (path == null || !path.canReach() || !pathStaysDryAndInside(level, path, context)) {
             HiredPathMemory.clearNavigationProgress(villager);
             return false;

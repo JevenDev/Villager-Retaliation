@@ -1006,7 +1006,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return true;
         }
 
-        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        Path path = HiredPathMemory.createPath(level, villager, target.approachPos(), 0);
         if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
             villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target.blockPos()));
             boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target.approachPos(), speed, 0);
@@ -1242,7 +1242,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return true;
         }
 
-        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        Path path = HiredPathMemory.createPath(level, villager, target.approachPos(), 0);
         if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, pos -> canUseSaplingPathPosition(level, villager, context, pos))) {
             villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target.blockPos()));
             boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target.approachPos(), speed, 0);
@@ -1653,6 +1653,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             EnchantmentHelper.onHitBlock(level, axe, villager, villager, EquipmentSlot.MAINHAND, log.getCenter(), harvestState, ignored -> {
             });
             level.destroyBlock(log, false, villager);
+            HiredPathMemory.onBlockChanged(level, log);
             level.destroyBlockProgress(villager.getId(), log, -1);
             damageTool(context, villager, axe, level, harvestState, log);
             if (stripped && !axe.isEmpty()) {
@@ -1713,7 +1714,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (stripped == null || stripped.equals(state)) {
             return state;
         }
-        return level.setBlock(pos, stripped, Block.UPDATE_ALL) ? stripped : state;
+        if (!level.setBlock(pos, stripped, Block.UPDATE_ALL)) {
+            return state;
+        }
+        HiredPathMemory.onBlockChanged(level, pos);
+        return stripped;
     }
 
     private static BlockPos firstBlockingLeaf(ServerLevel level, Villager villager, HiredPathTarget target) {
@@ -1772,6 +1777,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         boolean removed = level.destroyBlock(leaf, false, villager);
         level.destroyBlockProgress(villager.getId(), leaf, -1);
         if (removed || !isNaturalLeaf(level.getBlockState(leaf))) {
+            HiredPathMemory.onBlockChanged(level, leaf);
             damageTool(context, villager, leafTool, level, state, leaf);
             HiredPathMemory.rememberRecent(level, leaf);
         }
@@ -2138,6 +2144,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             facePlacedSapling(villager, pos);
             villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
             level.setBlock(pos, saplingState, Block.UPDATE_ALL);
+            HiredPathMemory.onBlockChanged(level, pos);
             HiredPathMemory.rememberRecent(level, pos);
             planted.add(pos.immutable());
         }

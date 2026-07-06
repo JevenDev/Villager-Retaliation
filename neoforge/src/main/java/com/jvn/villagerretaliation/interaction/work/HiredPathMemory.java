@@ -1,17 +1,27 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.pathfinder.Path;
+import net.neoforged.neoforge.event.level.BlockEvent;
 
 public final class HiredPathMemory {
     private static final int PATH_FAILURE_LIMIT = 3;
+    private static final int PATH_CACHE_MAX_SIZE = 256;
+    private static final long PATH_CACHE_TICKS = 20L * 3L;
+    private static final int PATH_CACHE_INVALIDATION_RADIUS = 1;
     private static final long TARGET_BLACKLIST_TICKS = 20L * 30L;
     private static final long RECENT_TARGET_TICKS = 20L * 45L;
     private static final long TARGET_RESERVATION_TICKS = 20L * 20L;
@@ -31,10 +41,18 @@ public final class HiredPathMemory {
     private static final Map<UUID, Map<Long, Long>> UNREACHABLE_APPROACHES = new HashMap<>();
     private static final Map<UUID, PathSearchBackoff> PATH_SEARCH_BACKOFFS = new HashMap<>();
     private static final Map<UUID, PathCreationCounter> PATH_CREATION_COUNTERS = new HashMap<>();
-    private static final Map<Long, RecentTarget> RECENT_TARGETS = new HashMap<>();
+    private static final Map<UUID, PathCacheHitCounter> PATH_CACHE_HIT_COUNTERS = new HashMap<>();
+    private static final Map<RecentTargetKey, RecentTarget> RECENT_TARGETS = new HashMap<>();
     private static final Map<UUID, NavigationProgress> NAVIGATION_PROGRESS = new HashMap<>();
     private static final Map<ResourceKey<Level>, Map<Long, TargetReservation>> TARGET_RESERVATIONS = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Map<Long, Long>> PATH_CHUNK_VERSIONS = new HashMap<>();
     private static final Map<ResourceKey<Level>, Long> LAST_EXPIRE_GAME_TIME = new HashMap<>();
+    private static final Map<PathCacheKey, CachedPath> PATH_CACHE = new LinkedHashMap<>(PATH_CACHE_MAX_SIZE, 0.75F, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<PathCacheKey, CachedPath> eldest) {
+            return size() > PATH_CACHE_MAX_SIZE;
+        }
+    };
 
     private HiredPathMemory() {
     }
@@ -45,10 +63,13 @@ public final class HiredPathMemory {
         UNREACHABLE_APPROACHES.clear();
         PATH_SEARCH_BACKOFFS.clear();
         PATH_CREATION_COUNTERS.clear();
+        PATH_CACHE_HIT_COUNTERS.clear();
         RECENT_TARGETS.clear();
         NAVIGATION_PROGRESS.clear();
         TARGET_RESERVATIONS.clear();
+        PATH_CHUNK_VERSIONS.clear();
         LAST_EXPIRE_GAME_TIME.clear();
+        PATH_CACHE.clear();
     }
 
     public static void clear(Villager villager) {
@@ -58,9 +79,11 @@ public final class HiredPathMemory {
         UNREACHABLE_APPROACHES.remove(villagerId);
         PATH_SEARCH_BACKOFFS.remove(villagerId);
         PATH_CREATION_COUNTERS.remove(villagerId);
+        PATH_CACHE_HIT_COUNTERS.remove(villagerId);
         NAVIGATION_PROGRESS.remove(villagerId);
         TARGET_RESERVATIONS.values().forEach(targets -> targets.entrySet().removeIf(entry -> entry.getValue().villagerId().equals(villagerId)));
         TARGET_RESERVATIONS.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        PATH_CACHE.entrySet().removeIf(entry -> entry.getKey().villagerId().equals(villagerId));
     }
 
     public static void expire(ServerLevel level) {
@@ -82,6 +105,8 @@ public final class HiredPathMemory {
         NAVIGATION_PROGRESS.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() <= now);
         TARGET_RESERVATIONS.values().forEach(targets -> targets.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() <= now));
         TARGET_RESERVATIONS.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        PATH_CACHE.entrySet().removeIf(entry -> entry.getKey().dimension().equals(dimension)
+                && entry.getValue().expiresGameTime() <= now);
     }
 
     public static boolean recordFailure(ServerLevel level, Villager villager, BlockPos pos) {
@@ -120,8 +145,56 @@ public final class HiredPathMemory {
     }
 
     public static Path createPath(ServerLevel level, Villager villager, BlockPos pos, int closeEnoughDistance) {
+        PathCacheKey key = new PathCacheKey(
+                villager.getUUID(),
+                level.dimension(),
+                villager.blockPosition().asLong(),
+                pos.asLong(),
+                closeEnoughDistance);
+        Path cachedPath = cachedPath(level, key);
+        if (cachedPath != null) {
+            recordPathCacheHit(level, villager);
+            return cachedPath;
+        }
         recordPathCreated(level, villager);
-        return villager.getNavigation().createPath(pos, closeEnoughDistance);
+        Path path = villager.getNavigation().createPath(pos, closeEnoughDistance);
+        rememberPath(level, key, path);
+        return path;
+    }
+
+    public static void onBlockChanged(ServerLevel level, BlockPos pos) {
+        Map<Long, Long> versions = PATH_CHUNK_VERSIONS.computeIfAbsent(level.dimension(), ignored -> new HashMap<>());
+        Set<Long> changedChunks = new HashSet<>();
+        for (int x = -PATH_CACHE_INVALIDATION_RADIUS; x <= PATH_CACHE_INVALIDATION_RADIUS; x++) {
+            for (int z = -PATH_CACHE_INVALIDATION_RADIUS; z <= PATH_CACHE_INVALIDATION_RADIUS; z++) {
+                long chunkKey = ChunkPos.asLong(
+                        SectionPos.blockToSectionCoord(pos.getX() + x),
+                        SectionPos.blockToSectionCoord(pos.getZ() + z));
+                changedChunks.add(chunkKey);
+                versions.put(chunkKey, versions.getOrDefault(chunkKey, 0L) + 1L);
+            }
+        }
+        invalidateChangedPathMemory(level, changedChunks);
+    }
+
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (!event.isCanceled() && event.getLevel() instanceof ServerLevel level) {
+            onBlockChanged(level, event.getPos());
+        }
+    }
+
+    public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        onBlockChanged(event.getLevel(), event.getPos());
+    }
+
+    public static void onFluidPlaceBlock(BlockEvent.FluidPlaceBlockEvent event) {
+        onBlockChanged(event.getLevel(), event.getPos());
+    }
+
+    private static void onBlockChanged(LevelAccessor levelAccessor, BlockPos pos) {
+        if (levelAccessor instanceof ServerLevel level) {
+            onBlockChanged(level, pos);
+        }
     }
 
     public static boolean shouldDelayPathSearch(ServerLevel level, Villager villager) {
@@ -214,8 +287,20 @@ public final class HiredPathMemory {
 
     public static PathCreationDebug pathCreationDebug(ServerLevel level, Villager villager) {
         PathCreationCounter counter = PATH_CREATION_COUNTERS.get(villager.getUUID());
+        PathCacheHitCounter hitCounter = PATH_CACHE_HIT_COUNTERS.get(villager.getUUID());
+        PathCacheHitDebug cacheHitDebug = pathCacheHitDebug(level, hitCounter);
         if (counter == null) {
-            return new PathCreationDebug(0, 0, 0L, 0L, 0, 0, 0L);
+            return new PathCreationDebug(
+                    0,
+                    0,
+                    0L,
+                    0L,
+                    cacheHitDebug.currentTickCount(),
+                    cacheHitDebug.lastTickCount(),
+                    cacheHitDebug.totalCount(),
+                    0,
+                    0,
+                    0L);
         }
         long now = level.getGameTime();
         int currentTickCount = counter.currentGameTime() == now ? counter.currentTickCount() : 0;
@@ -226,6 +311,9 @@ public final class HiredPathMemory {
                 lastTickCount,
                 counter.totalCount(),
                 lastGameTime,
+                cacheHitDebug.currentTickCount(),
+                cacheHitDebug.lastTickCount(),
+                cacheHitDebug.totalCount(),
                 pathSearchFailureStreak(villager),
                 recentlyUnreachableApproachCount(villager),
                 pathSearchRetryCooldownTicks(level, villager));
@@ -287,7 +375,7 @@ public final class HiredPathMemory {
     }
 
     public static void rememberRecent(ServerLevel level, BlockPos pos) {
-        RECENT_TARGETS.put(pos.asLong(), new RecentTarget(
+        RECENT_TARGETS.put(new RecentTargetKey(level.dimension(), pos.asLong()), new RecentTarget(
                 pos.immutable(),
                 level.getGameTime() + RECENT_TARGET_TICKS,
                 RECENT_TARGET_EXTRA_COST));
@@ -296,7 +384,12 @@ public final class HiredPathMemory {
     public static double recentCost(Villager villager, BlockPos target) {
         long now = villager.level().getGameTime();
         double cost = 0.0D;
-        for (RecentTarget recent : RECENT_TARGETS.values()) {
+        ResourceKey<Level> dimension = villager.level().dimension();
+        for (Map.Entry<RecentTargetKey, RecentTarget> entry : RECENT_TARGETS.entrySet()) {
+            if (!entry.getKey().dimension().equals(dimension)) {
+                continue;
+            }
+            RecentTarget recent = entry.getValue();
             if (recent.expiresGameTime() <= now) {
                 continue;
             }
@@ -308,6 +401,87 @@ public final class HiredPathMemory {
             }
         }
         return cost;
+    }
+
+    private static Path cachedPath(ServerLevel level, PathCacheKey key) {
+        CachedPath cached = PATH_CACHE.get(key);
+        if (cached == null) {
+            return null;
+        }
+        if (cached.expiresGameTime() <= level.getGameTime() || !hasCurrentChunkVersions(level, cached.chunkVersions())) {
+            PATH_CACHE.remove(key);
+            return null;
+        }
+        return cached.path().copy();
+    }
+
+    private static void rememberPath(ServerLevel level, PathCacheKey key, Path path) {
+        if (path == null || !path.canReach() || path.getNodeCount() <= 0) {
+            return;
+        }
+        PATH_CACHE.put(key, new CachedPath(
+                path.copy(),
+                level.getGameTime() + PATH_CACHE_TICKS,
+                currentChunkVersions(level, key, path)));
+    }
+
+    private static Map<Long, Long> currentChunkVersions(ServerLevel level, PathCacheKey key, Path path) {
+        Map<Long, Long> chunkVersions = new HashMap<>();
+        Map<Long, Long> dimensionVersions = PATH_CHUNK_VERSIONS.get(level.dimension());
+        rememberChunkVersion(chunkVersions, dimensionVersions, ChunkPos.asLong(BlockPos.of(key.origin())));
+        rememberChunkVersion(chunkVersions, dimensionVersions, ChunkPos.asLong(BlockPos.of(key.target())));
+        for (int i = 0; i < path.getNodeCount(); i++) {
+            rememberChunkVersion(chunkVersions, dimensionVersions, ChunkPos.asLong(path.getNode(i).asBlockPos()));
+        }
+        return chunkVersions;
+    }
+
+    private static void rememberChunkVersion(
+            Map<Long, Long> chunkVersions,
+            Map<Long, Long> dimensionVersions,
+            long chunkKey) {
+        chunkVersions.put(chunkKey, dimensionVersions == null ? 0L : dimensionVersions.getOrDefault(chunkKey, 0L));
+    }
+
+    private static boolean hasCurrentChunkVersions(ServerLevel level, Map<Long, Long> cachedVersions) {
+        Map<Long, Long> dimensionVersions = PATH_CHUNK_VERSIONS.get(level.dimension());
+        for (Map.Entry<Long, Long> entry : cachedVersions.entrySet()) {
+            long currentVersion = dimensionVersions == null ? 0L : dimensionVersions.getOrDefault(entry.getKey(), 0L);
+            if (currentVersion != entry.getValue()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void invalidateChangedPathMemory(ServerLevel level, Set<Long> changedChunks) {
+        if (changedChunks.isEmpty()) {
+            return;
+        }
+
+        PATH_CACHE.entrySet().removeIf(entry -> entry.getKey().dimension().equals(level.dimension())
+                && entry.getValue().chunkVersions().keySet().stream().anyMatch(changedChunks::contains));
+
+        Set<UUID> changedVillagers = new HashSet<>();
+        removeEntriesInChangedChunks(PATH_FAILURES, changedChunks, changedVillagers);
+        removeEntriesInChangedChunks(AVOIDED_TARGETS, changedChunks, changedVillagers);
+        removeEntriesInChangedChunks(UNREACHABLE_APPROACHES, changedChunks, changedVillagers);
+        changedVillagers.forEach(PATH_SEARCH_BACKOFFS::remove);
+    }
+
+    private static <T> void removeEntriesInChangedChunks(
+            Map<UUID, Map<Long, T>> positionsByVillager,
+            Set<Long> changedChunks,
+            Set<UUID> changedVillagers) {
+        for (Map.Entry<UUID, Map<Long, T>> entry : positionsByVillager.entrySet()) {
+            boolean removed = entry.getValue()
+                    .keySet()
+                    .removeIf(packedPos -> changedChunks.contains(ChunkPos.asLong(BlockPos.of(packedPos))));
+            if (removed) {
+                changedVillagers.add(entry.getKey());
+            }
+        }
+        positionsByVillager.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
     public static boolean isNavigationBlocked(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {
@@ -382,6 +556,41 @@ public final class HiredPathMemory {
                 previous.totalCount() + 1L));
     }
 
+    private static void recordPathCacheHit(ServerLevel level, Villager villager) {
+        UUID villagerId = villager.getUUID();
+        long now = level.getGameTime();
+        PathCacheHitCounter previous = PATH_CACHE_HIT_COUNTERS.get(villagerId);
+        if (previous == null) {
+            PATH_CACHE_HIT_COUNTERS.put(villagerId, new PathCacheHitCounter(now, 1, 0L, 0, 1L));
+            return;
+        }
+        if (previous.currentGameTime() == now) {
+            PATH_CACHE_HIT_COUNTERS.put(villagerId, new PathCacheHitCounter(
+                    now,
+                    previous.currentTickCount() + 1,
+                    previous.lastGameTime(),
+                    previous.lastTickCount(),
+                    previous.totalCount() + 1L));
+            return;
+        }
+        PATH_CACHE_HIT_COUNTERS.put(villagerId, new PathCacheHitCounter(
+                now,
+                1,
+                previous.currentGameTime(),
+                previous.currentTickCount(),
+                previous.totalCount() + 1L));
+    }
+
+    private static PathCacheHitDebug pathCacheHitDebug(ServerLevel level, PathCacheHitCounter counter) {
+        if (counter == null) {
+            return new PathCacheHitDebug(0, 0, 0L);
+        }
+        long now = level.getGameTime();
+        int currentTickCount = counter.currentGameTime() == now ? counter.currentTickCount() : 0;
+        int lastTickCount = counter.currentGameTime() == now ? counter.lastTickCount() : counter.currentTickCount();
+        return new PathCacheHitDebug(currentTickCount, lastTickCount, counter.totalCount());
+    }
+
     private static long pathBackoffDelayTicks(Villager villager, int failures) {
         long exponential = PATH_BACKOFF_BASE_TICKS << Math.min(4, Math.max(0, failures - 1));
         return Math.min(PATH_BACKOFF_MAX_TICKS, exponential) + jitterTicks(villager, failures);
@@ -392,6 +601,9 @@ public final class HiredPathMemory {
                 ^ Long.rotateLeft(villager.getUUID().getMostSignificantBits(), failures & 31)
                 ^ (long) failures * 0x9E3779B97F4A7C15L;
         return (int) Math.floorMod(mixed, PATH_BACKOFF_JITTER_TICKS + 1L);
+    }
+
+    private record RecentTargetKey(ResourceKey<Level> dimension, long pos) {
     }
 
     private record RecentTarget(BlockPos pos, long expiresGameTime, double extraCost) {
@@ -408,11 +620,25 @@ public final class HiredPathMemory {
             long totalCount) {
     }
 
+    private record PathCacheHitCounter(
+            long currentGameTime,
+            int currentTickCount,
+            long lastGameTime,
+            int lastTickCount,
+            long totalCount) {
+    }
+
+    private record PathCacheHitDebug(int currentTickCount, int lastTickCount, long totalCount) {
+    }
+
     public record PathCreationDebug(
             int currentTickCount,
             int lastTickCount,
             long totalCount,
             long lastGameTime,
+            int cacheHitsThisTick,
+            int cacheHitsLastTick,
+            long cacheHitTotal,
             int failureStreak,
             int unreachableApproaches,
             long retryCooldownTicks) {
@@ -427,5 +653,16 @@ public final class HiredPathMemory {
             long lastCheckGameTime,
             int stuckChecks,
             long expiresGameTime) {
+    }
+
+    private record PathCacheKey(
+            UUID villagerId,
+            ResourceKey<Level> dimension,
+            long origin,
+            long target,
+            int closeEnoughDistance) {
+    }
+
+    private record CachedPath(Path path, long expiresGameTime, Map<Long, Long> chunkVersions) {
     }
 }

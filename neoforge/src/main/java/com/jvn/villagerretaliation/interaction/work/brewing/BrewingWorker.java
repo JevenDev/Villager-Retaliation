@@ -299,7 +299,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             return true;
         }
 
-        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        Path path = HiredPathMemory.createPath(level, villager, target.approachPos(), 0);
         if (path != null
                 && path.canReach()
                 && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)
@@ -330,7 +330,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             BlockPos stand,
             double speed) {
-        Path path = villager.getNavigation().createPath(stand, 2);
+        Path path = HiredPathMemory.createPath(level, villager, stand, 2);
         return path != null
                 && path.canReach()
                 && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)
@@ -620,7 +620,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
                     || candidate.distSqr(water) > 4) {
                 continue;
             }
-            Path path = villager.getNavigation().createPath(candidate, 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
             if (path == null
                     || !path.canReach()
                     || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
@@ -671,7 +671,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             if (!canUseBrewingStandFrom(level, candidate, eye, stand, hit)) {
                 continue;
             }
-            Path path = villager.getNavigation().createPath(candidate, 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
             if (path == null
                     || !path.canReach()
                     || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
@@ -766,7 +766,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             }
             return true;
         }
-        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        Path path = HiredPathMemory.createPath(level, villager, target.approachPos(), 0);
         if (path != null
                 && path.canReach()
                 && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)

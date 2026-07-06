@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
 import com.jvn.villagerretaliation.item.VillagerRetaliationCreativeTabs;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
@@ -81,6 +82,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onBlockPlace)
                 .listener(HiredOreBlockTracker::onBlockPlace)
                 .listener(HiredOreBlockTracker::onFluidPlaceBlock)
+                .listener(HiredPathMemory::onFluidPlaceBlock)
                 .listener(HiredOreBlockTracker::onChunkUnload)
                 .listener(VillagerReputationEvents::onTradeWithVillager)
                 .listener(ForcedDialogueService::onContainerOpen)

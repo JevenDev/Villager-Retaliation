@@ -167,7 +167,7 @@ public final class HiredStorageNavigationGoal {
                     || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)) {
                 continue;
             }
-            Path path = villager.getNavigation().createPath(candidate, 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
             if (path != null
                     && path.canReach()
                     && VillagerTaskNavigationUtil.moveToHiredPath(
@@ -227,7 +227,7 @@ public final class HiredStorageNavigationGoal {
             if (!context.isLoaded(level, storage)) {
                 continue;
             }
-            Path path = villager.getNavigation().createPath(storage, STORAGE_WALK_TARGET_CLOSE_ENOUGH);
+            Path path = HiredPathMemory.createPath(level, villager, storage, STORAGE_WALK_TARGET_CLOSE_ENOUGH);
             if (path == null || !path.canReach()) {
                 continue;
             }
@@ -288,7 +288,7 @@ public final class HiredStorageNavigationGoal {
         if (target == null) {
             return false;
         }
-        Path path = villager.getNavigation().createPath(target, 0);
+        Path path = HiredPathMemory.createPath(level, villager, target, 0);
         if (path == null
                 || !path.canReach()
                 || !VillagerTaskNavigationUtil.moveToHiredPath(
@@ -341,7 +341,7 @@ public final class HiredStorageNavigationGoal {
             if (attempts++ >= MAX_STORAGE_INTERMEDIATE_PATH_ATTEMPTS) {
                 break;
             }
-            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
             if (path != null && path.canReach()) {
                 double score = candidate.score() + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
                 if (score < bestScore) {
@@ -412,7 +412,7 @@ public final class HiredStorageNavigationGoal {
             if (attempts++ >= MAX_APPROACH_PATH_ATTEMPTS) {
                 break;
             }
-            Path path = villager.getNavigation().createPath(candidate, 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
             if (path != null && path.canReach()) {
                 double score = storageApproachScore(level, villager, candidate, storagePositions)
                         + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
@@ -458,7 +458,7 @@ public final class HiredStorageNavigationGoal {
             BlockPos approach,
             double speed,
             double distanceSqr) {
-        Path path = villager.getNavigation().createPath(approach, STORAGE_APPROACH_CLOSE_ENOUGH);
+        Path path = HiredPathMemory.createPath(level, villager, approach, STORAGE_APPROACH_CLOSE_ENOUGH);
         if (path == null || !path.canReach()) {
             return false;
         }

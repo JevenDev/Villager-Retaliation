@@ -143,7 +143,7 @@ public final class MiningExcavationSupport {
                 fallback = candidate.pos();
                 fallbackScore = candidate.score();
             }
-            Path path = villager.getNavigation().createPath(candidate.pos(), 0);
+            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
             if (path != null && path.canReach()) {
                 return candidate.pos();
             }
@@ -267,18 +267,31 @@ public final class MiningExcavationSupport {
             return blockOnFullSupportInventory(level, context);
         }
         int supportFloorY = supportFloorY(level, context, currentLayerY);
+        SupportBackingNeed backingNeed = pendingSupportBackingNeed(level, villager, context, supportFloorY, currentLayerY);
+        boolean needsBacking = !needsLadders
+                && backingNeed != null
+                && !hasInventorySupportBacking(level, context, backingNeed)
+                && hasStoredSupportBacking(level, villager, backingNeed);
+        if (needsBacking && !context.hasOutputSpace()) {
+            return blockOnFullSupportInventory(level, context);
+        }
         boolean wantsTorches = context.inventory().findSupply(SupportType.TORCH::matchesSupply).isEmpty()
                 && canAcceptSupportSupply(context, SupportType.TORCH)
                 && hasPendingTorchSupportPlacement(level, villager, context, supportFloorY)
                 && AssignedStorageService.countItems(villager, SupportType.TORCH::matchesSupply) > 0;
-        if (!needsLadders && !wantsTorches) {
+        if (!needsLadders && !needsBacking && !wantsTorches) {
             return null;
         }
 
-        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(
+        BlockPos storage = needsBacking
+                ? AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
                 level,
                 villager,
-                needsLadders ? SupportType.LADDER::matchesSupply : SupportType.TORCH::matchesSupply);
+                stack -> canUseOutputAsSupportBacking(level, backingNeed.backingPos(), backingNeed.supportFace(), stack))
+                : AssignedStorageService.nearestAssignedStoragePosContaining(
+                        level,
+                        villager,
+                        needsLadders ? SupportType.LADDER::matchesSupply : SupportType.TORCH::matchesSupply);
         if (storage == null) {
             return null;
         }
@@ -313,8 +326,15 @@ public final class MiningExcavationSupport {
                     SupportType.LADDER::matchesSupply,
                     64,
                     context.inventory()::insertSupplyFromStorage);
+        } else if (needsBacking) {
+            moved += AssignedStorageService.transferItemsAtAssignedNonPaymentStorage(
+                    villager,
+                    storage,
+                    stack -> canUseOutputAsSupportBacking(level, backingNeed.backingPos(), backingNeed.supportFace(), stack),
+                    1,
+                    context.inventory()::insertOutput);
         }
-        if (wantsTorches) {
+        if (!needsBacking && wantsTorches) {
             moved += AssignedStorageService.transferItemsAtAssignedStorage(
                     villager,
                     storage,
@@ -516,7 +536,9 @@ public final class MiningExcavationSupport {
             }
             BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, shaft.facing());
             if (hasInventorySupportSupply(context, SupportType.LADDER)
-                    && (canPlaceSupportBlock(level, pos, ladder) || canPrepareSupportBacking(level, context, pos, ladder))) {
+                    && (canPlaceSupportBlock(level, pos, ladder)
+                    || canPrepareSupportBacking(level, context, pos, ladder)
+                    || canRequestSupportBacking(level, villager, context, pos, ladder))) {
                 return new SupportPlacement(pos, ladder, SupportType.LADDER);
             }
         }
@@ -846,7 +868,7 @@ public final class MiningExcavationSupport {
             }
             return false;
         }
-        Path path = villager.getNavigation().createPath(target.approachPos(), 0);
+        Path path = HiredPathMemory.createPath(level, villager, target.approachPos(), 0);
         if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
             if (VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target.approachPos(), speed, 0)) {
                 HiredPathMemory.rememberNavigationProgress(
@@ -980,7 +1002,7 @@ public final class MiningExcavationSupport {
                 bestFallbackScore = score;
                 bestFallbackApproach = approach;
             }
-            Path path = villager.getNavigation().createPath(approach, 0);
+            Path path = HiredPathMemory.createPath(level, villager, approach, 0);
             if (path == null || !path.canReach() || !HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
                 continue;
             }
@@ -1010,6 +1032,7 @@ public final class MiningExcavationSupport {
             return false;
         }
         level.setBlock(placement.pos(), placement.state(), Block.UPDATE_ALL);
+        HiredPathMemory.onBlockChanged(level, placement.pos());
         MiningWorkerState.clearExcavationLayerCache(context);
         return true;
     }
@@ -1055,22 +1078,70 @@ public final class MiningExcavationSupport {
             return false;
         }
         level.setBlock(backingPos, blockItem.getBlock().defaultBlockState(), Block.UPDATE_ALL);
+        HiredPathMemory.onBlockChanged(level, backingPos);
         MiningWorkerState.clearExcavationLayerCache(context);
         return canPlaceSupportBlock(level, pos, state);
     }
 
     private static boolean canPrepareSupportBacking(ServerLevel level, HiredWorkContext context, BlockPos pos, BlockState state) {
+        SupportBackingNeed need = supportBackingNeed(level, context, pos, state);
+        return need != null && hasInventorySupportBacking(level, context, need);
+    }
+
+    private static boolean canRequestSupportBacking(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos pos,
+            BlockState state) {
+        SupportBackingNeed need = supportBackingNeed(level, context, pos, state);
+        return need != null
+                && (hasInventorySupportBacking(level, context, need)
+                || hasStoredSupportBacking(level, villager, need));
+    }
+
+    private static SupportBackingNeed pendingSupportBackingNeed(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            int supportFloorY,
+            int currentLayerY) {
+        SupportPlacement placement = nextSupportPlacement(level, villager, context, supportFloorY, currentLayerY);
+        if (placement == null || canPlaceSupportBlock(level, placement.pos(), placement.state())) {
+            return null;
+        }
+        return supportBackingNeed(level, context, placement.pos(), placement.state());
+    }
+
+    private static SupportBackingNeed supportBackingNeed(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos pos,
+            BlockState state) {
         if (!level.hasChunkAt(pos) || !level.getBlockState(pos).isAir()) {
-            return false;
+            return null;
         }
         BlockPos backingPos = supportBackingPos(pos, state);
         Direction supportFace = supportFace(state);
-        return backingPos != null
-                && supportFace != null
-                && isAdjacentOutsideWorkArea(context, backingPos)
-                && level.hasChunkAt(backingPos)
-                && level.getBlockState(backingPos).isAir()
-                && context.inventory().hasOutput(stack -> canUseOutputAsSupportBacking(level, backingPos, supportFace, stack));
+        if (backingPos == null
+                || supportFace == null
+                || !isAdjacentOutsideWorkArea(context, backingPos)
+                || !level.hasChunkAt(backingPos)
+                || !level.getBlockState(backingPos).isAir()) {
+            return null;
+        }
+        return new SupportBackingNeed(backingPos, supportFace);
+    }
+
+    private static boolean hasInventorySupportBacking(ServerLevel level, HiredWorkContext context, SupportBackingNeed need) {
+        return context.inventory().hasOutput(stack -> canUseOutputAsSupportBacking(level, need.backingPos(), need.supportFace(), stack));
+    }
+
+    private static boolean hasStoredSupportBacking(ServerLevel level, Villager villager, SupportBackingNeed need) {
+        return villager != null
+                && AssignedStorageService.countItemsInNonPaymentStorage(
+                villager,
+                stack -> canUseOutputAsSupportBacking(level, need.backingPos(), need.supportFace(), stack)) > 0;
     }
 
     private static boolean canUseOutputAsSupportBacking(ServerLevel level, BlockPos pos, Direction supportFace, ItemStack stack) {
@@ -1118,6 +1189,9 @@ public final class MiningExcavationSupport {
     }
 
     private record SupportPlacement(BlockPos pos, BlockState state, SupportType type) {
+    }
+
+    private record SupportBackingNeed(BlockPos backingPos, Direction supportFace) {
     }
 
     private record SurfaceEntryCandidate(BlockPos pos, double score) {
