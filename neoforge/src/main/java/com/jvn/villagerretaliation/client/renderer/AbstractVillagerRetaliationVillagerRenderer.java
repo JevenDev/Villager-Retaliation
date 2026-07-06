@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationEntityModelLoader;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.jvn.villagerretaliation.client.model.VanillaVillagerModelAdapter;
+import com.jvn.villagerretaliation.client.interaction.VillagerDialogueMouthAnimation;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
 import com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache;
 import com.jvn.villagerretaliation.client.renderer.layer.CombatItemInHandLayer;
@@ -84,7 +85,18 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     public void render(T villager, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         this.refreshModels();
         this.model = shouldUseCombatTextureAndModel(villager, this.getAttackAnim(villager, partialTick)) ? this.combatModel : this.nonCombatModel;
-        super.render(villager, entityYaw, partialTick, poseStack, buffer, packedLight);
+        boolean previousSprinting = villager.isSprinting();
+        boolean talking = VillagerDialogueMouthAnimation.isTalking(villager);
+        if (talking) {
+            villager.setSprinting(true);
+        }
+        try {
+            super.render(villager, entityYaw, partialTick, poseStack, buffer, packedLight);
+        } finally {
+            if (talking) {
+                villager.setSprinting(previousSprinting);
+            }
+        }
     }
 
     @Override

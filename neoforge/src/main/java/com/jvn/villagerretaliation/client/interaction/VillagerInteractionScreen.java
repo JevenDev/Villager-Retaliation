@@ -103,6 +103,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final float INTERACTION_ANIMATION_DURATION_MILLIS = 280.0F;
     private static final float INTERACTION_STATE_TRANSITION_DURATION_MILLIS = INTERACTION_ANIMATION_DURATION_MILLIS;
     private static final int INTERACTION_STATE_CONTENT_SLIDE_X = 12;
+    private static final int INTERACTION_STATE_BOTTOM_ENTRANCE_PADDING = 12;
     private static final int INFO_VALUE_COLOR = 0xFFF8F6EF;
     private static final int INFO_SECONDARY_COLOR = 0xB8D5D0C6;
     private static final int GIFT_BUTTON_WIDTH = 64;
@@ -1860,11 +1861,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         int depthDirection = interactionPageDepth(nextPage) >= interactionPageDepth(previousPage) ? 1 : -1;
-        this.interactionStateTransitionStartOffsetY = previousTop - nextTop;
+        this.interactionStateTransitionStartOffsetY = isReturningFromProfileOrSkills(previousPage, nextPage)
+                ? this.height + INTERACTION_STATE_BOTTOM_ENTRANCE_PADDING - nextTop
+                : previousTop - nextTop;
         this.interactionStateTransitionStartOffsetX = previousPage == DialoguePage.SKILLS || nextPage == DialoguePage.SKILLS
                 ? 0
                 : depthDirection * INTERACTION_STATE_CONTENT_SLIDE_X;
         this.interactionStateTransitionStartMillis = Util.getMillis();
+    }
+
+    private static boolean isReturningFromProfileOrSkills(DialoguePage previousPage, DialoguePage nextPage) {
+        return nextPage == DialoguePage.ROOT
+                && (previousPage == DialoguePage.PROFILE || previousPage == DialoguePage.SKILLS);
     }
 
     private int interactionStateTransitionOffsetY() {
@@ -2277,7 +2285,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (maxScroll <= 0) {
             return null;
         }
-        if (lineScroll > 0) {
+        if (lineScroll >= maxScroll) {
             return VillagerRetaliationClientAssets.INTERACTION_SCROLL_ICON_UP_TEXTURE;
         }
         return VillagerRetaliationClientAssets.INTERACTION_SCROLL_ICON_DOWN_TEXTURE;
@@ -2685,11 +2693,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         float previousXRot = livingEntity.getXRot();
         float previousHeadRotO = livingEntity.yHeadRotO;
         float previousHeadRot = livingEntity.yHeadRot;
+        boolean previousSprinting = livingEntity.isSprinting();
         livingEntity.yBodyRot = 180.0F + mouseYaw * 20.0F;
         livingEntity.setYRot(180.0F + mouseYaw * 40.0F);
         livingEntity.setXRot(-mousePitch * 20.0F);
         livingEntity.yHeadRot = livingEntity.getYRot();
         livingEntity.yHeadRotO = livingEntity.getYRot();
+        livingEntity.setSprinting(isDialogueMouthAnimationActive());
 
         float scale = livingEntity.getScale();
         graphics.enableScissor(
@@ -2715,6 +2725,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             livingEntity.setXRot(previousXRot);
             livingEntity.yHeadRotO = previousHeadRotO;
             livingEntity.yHeadRot = previousHeadRot;
+            livingEntity.setSprinting(previousSprinting);
         }
     }
 
@@ -2859,10 +2870,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private ResourceLocation interactionDialogueScrollIcon(List<String> lines) {
         int maxScroll = maxInteractionDialogueLineScroll(lines);
-        if (maxScroll <= 0) {
+        if (maxScroll <= 0 || !isDialogueTextAnimationComplete()) {
             return null;
         }
-        if (this.dialogueLineScroll > 0) {
+        if (this.dialogueLineScroll >= maxScroll) {
             return VillagerRetaliationClientAssets.INTERACTION_SCROLL_ICON_UP_TEXTURE;
         }
         return VillagerRetaliationClientAssets.INTERACTION_SCROLL_ICON_DOWN_TEXTURE;
