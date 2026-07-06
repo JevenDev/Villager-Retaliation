@@ -9,23 +9,12 @@ final class VillagerInteractionTextLayout {
     static Nameplate nameplate(
             Font font,
             String villagerName,
-            int maxNameCodePoints,
             int minTextureWidth,
-            int nameOffsetX,
-            int rightPadding) {
-        String displayName = truncateByCodePoint(villagerName, maxNameCodePoints);
-        int width = Math.max(minTextureWidth, nameOffsetX + font.width(displayName) + rightPadding);
+            int horizontalPadding) {
+        String displayName = villagerName == null ? "" : villagerName;
+        int safeHorizontalPadding = Math.max(0, horizontalPadding);
+        int width = Math.max(minTextureWidth, font.width(displayName) + safeHorizontalPadding * 2);
         return new Nameplate(displayName, width);
-    }
-
-    private static String truncateByCodePoint(String value, int maxCodePoints) {
-        if (value == null || value.isEmpty() || maxCodePoints <= 0) {
-            return "";
-        }
-        if (value.codePointCount(0, value.length()) <= maxCodePoints) {
-            return value;
-        }
-        return value.substring(0, value.offsetByCodePoints(0, maxCodePoints));
     }
 
     record Nameplate(String displayName, int width) {
