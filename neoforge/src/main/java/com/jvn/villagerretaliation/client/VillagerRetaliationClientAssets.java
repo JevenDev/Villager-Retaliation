@@ -26,6 +26,10 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/villager_inventory");
     public static final ResourceLocation INTERACTION_CONTAINER_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container");
+    public static final ResourceLocation INTERACTION_BUTTON_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_button");
+    public static final ResourceLocation INTERACTION_CONTAINER_OPTION_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_option");
     public static final ResourceLocation INTERACTION_CONTAINER_ORNAMENT_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container_ornament");
     public static final ResourceLocation INTERACTION_CONTAINER_NAMEPLATE_TEXTURE =
@@ -40,6 +44,34 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/icons/interaction_reputation_icon");
     public static final ResourceLocation INTERACTION_LOCKED_ICON_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_locked_icon");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_TALK_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_talk");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_TRADE_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_trade");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_adventures");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_PROFILE_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_profile");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_HIRE_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_hire");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_INVENTORY_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_inventory");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_START_FOLLOW_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_start_follow");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_STOP_FOLLOW_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_stop_follow");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_STAY_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_stay");
+    public static final ResourceLocation INTERACTION_SCROLL_ICON_DOWN_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/scroll_icon_down");
+    public static final ResourceLocation INTERACTION_SCROLL_ICON_UP_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/scroll_icon_up");
+    public static final ResourceLocation INTERACTION_CONTAINER_OPTION_SCROLL_UP_ICON_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_container_option_scroll_up_icon");
+    public static final ResourceLocation INTERACTION_CONTAINER_OPTION_ACTIVE_ICON_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_container_option_active_icon");
+    public static final ResourceLocation INTERACTION_CONTAINER_OPTION_SCROLL_DOWN_ICON_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_container_option_scroll_down_icon");
     public static final ResourceLocation INTERACTION_OPTION_BUTTON_TEXTURE =
             texture("gui/villager_interaction_screen/option_button/interaction_option_button");
     public static final ResourceLocation INTERACTION_OPTION_HOVER_TEXTURE =

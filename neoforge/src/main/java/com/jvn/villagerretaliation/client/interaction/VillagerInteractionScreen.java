@@ -97,6 +97,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final float OPTION_HOVER_SCALE = 0.055F;
     private static final float OPTION_SELECTED_SCALE = 0.02F;
     private static final float INTERACTION_ANIMATION_DURATION_MILLIS = 280.0F;
+    private static final float INTERACTION_STATE_TRANSITION_DURATION_MILLIS = INTERACTION_ANIMATION_DURATION_MILLIS;
+    private static final int INTERACTION_STATE_CONTENT_SLIDE_X = 12;
     private static final int INFO_VALUE_COLOR = 0xFFF8F6EF;
     private static final int INFO_SECONDARY_COLOR = 0xB8D5D0C6;
     private static final int GIFT_BUTTON_WIDTH = 64;
@@ -110,9 +112,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int PROFILE_CHART_POINT_HIT_RADIUS = 6;
     private static final int PROFILE_SKILL_COLUMNS = 2;
     private static final ResourceLocation DEFAULT_CURRENCY_ICON_SPRITE = ResourceLocation.withDefaultNamespace("item/emerald");
-    private static final int INTERACTION_CONTAINER_WIDTH = 282;
-    private static final int INTERACTION_CONTAINER_HEIGHT = 113;
-    private static final int INTERACTION_CONTAINER_HOTBAR_GAP = 24;
+    private static final int INTERACTION_CONTAINER_WIDTH = 283;
+    private static final int INTERACTION_CONTAINER_HEIGHT = 85;
+    private static final int INTERACTION_CONTAINER_HOTBAR_GAP = 5;
+    private static final int INTERACTION_BUTTON_SIZE = 28;
+    private static final int INTERACTION_BUTTON_GAP = 1;
+    private static final int INTERACTION_BUTTON_ROW_LEFT_INSET = 0;
+    private static final int INTERACTION_MENU_BUTTON_COUNT = 8;
     private static final int INTERACTION_CONTAINER_ORNAMENT_WIDTH = 288;
     private static final int INTERACTION_CONTAINER_ORNAMENT_HEIGHT = 104;
     private static final int INTERACTION_CONTAINER_ORNAMENT_Y = -3;
@@ -135,16 +141,25 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_NAMEPLATE_ORNAMENT_SLICE_TOP = 7;
     private static final int INTERACTION_NAMEPLATE_ORNAMENT_SLICE_BOTTOM = 7;
     private static final int INTERACTION_NAMEPLATE_ORNAMENT_MARGIN = 3;
-    private static final int INTERACTION_DIALOGUE_LEFT = 69;
-    private static final int INTERACTION_DIALOGUE_TOP = 26;
-    private static final int INTERACTION_DIALOGUE_RIGHT = 270;
-    private static final int INTERACTION_DIALOGUE_BOTTOM = 68;
-    private static final int INTERACTION_PORTRAIT_LEFT = 6;
-    private static final int INTERACTION_PORTRAIT_TOP = 20;
-    private static final int INTERACTION_PORTRAIT_RIGHT = 60;
-    private static final int INTERACTION_PORTRAIT_BOTTOM = 74;
-    private static final int INTERACTION_PORTRAIT_SCALE = 62;
-    private static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 2;
+    private static final int INTERACTION_DIALOGUE_LEFT = 62;
+    private static final int INTERACTION_DIALOGUE_TOP = 7;
+    private static final int INTERACTION_DIALOGUE_RIGHT = 263;
+    private static final int INTERACTION_DIALOGUE_EXTENDED_RIGHT = 275;
+    private static final int INTERACTION_DIALOGUE_BOTTOM = 47;
+    private static final int INTERACTION_DIALOGUE_SCROLL_LEFT = 59;
+    private static final int INTERACTION_DIALOGUE_SCROLL_TOP = 4;
+    private static final int INTERACTION_DIALOGUE_SCROLL_RIGHT = 287;
+    private static final int INTERACTION_DIALOGUE_SCROLL_BOTTOM = 59;
+    private static final int INTERACTION_DIALOGUE_SCROLL_ICON_LEFT = 62;
+    private static final int INTERACTION_DIALOGUE_SCROLL_ICON_BOTTOM = 56;
+    private static final int INTERACTION_DIALOGUE_SCROLL_ICON_WIDTH = 7;
+    private static final int INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT = 5;
+    private static final int INTERACTION_PORTRAIT_LEFT = 4;
+    private static final int INTERACTION_PORTRAIT_TOP = 4;
+    private static final int INTERACTION_PORTRAIT_RIGHT = 55;
+    private static final int INTERACTION_PORTRAIT_BOTTOM = 60;
+    private static final int INTERACTION_PORTRAIT_SCALE = 54;
+    private static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 1;
     private static final int INTERACTION_PORTRAIT_ORNAMENT_WIDTH = 65;
     private static final int INTERACTION_PORTRAIT_ORNAMENT_HEIGHT = 65;
     private static final int INTERACTION_PORTRAIT_ORNAMENT_X_OFFSET = 1;
@@ -155,15 +170,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_CONTAINER_OVERLAY_WIDTH = 59;
     private static final int INTERACTION_CONTAINER_OVERLAY_HEIGHT = 45;
     private static final float INTERACTION_CONTAINER_OVERLAY_Z = 120.0F;
-    private static final int INTERACTION_STATS_ANCHOR_X = 276;
-    private static final int INTERACTION_STATS_BASELINE_Y = 93;
-    private static final int INTERACTION_STATS_TEXT_RAISE = 2;
+    private static final int INTERACTION_MOOD_BASELINE_LEFT = 65;
+    private static final int INTERACTION_INFO_BASELINE_RIGHT = 274;
+    private static final int INTERACTION_INFO_BASELINE_Y = 79;
+    private static final int INTERACTION_INFO_TEXT_Y_OFFSET = -1;
+    private static final int INTERACTION_INFO_ICON_Y_OFFSET = 1;
+    private static final int INTERACTION_INFO_ICON_X_OFFSET = -1;
+    private static final int INTERACTION_CURRENCY_ICON_GAP = 2;
+    private static final int INTERACTION_REPUTATION_GAP = 4;
     private static final int INTERACTION_OPTION_WIDTH = 64;
-    private static final int INTERACTION_OPTION_HEIGHT = 17;
-    private static final int INTERACTION_OPTION_STRIDE = 16;
+    private static final int INTERACTION_OPTION_HEIGHT = 23;
+    private static final int INTERACTION_OPTION_STRIDE = 23;
+    private static final int INTERACTION_OPTION_VISIBLE_ROWS = 5;
+    private static final int INTERACTION_OPTION_BOTTOM_MARGIN = 5;
     private static final int INTERACTION_OPTION_CONTAINER_GAP = 5;
-    private static final int INTERACTION_OPTION_TEXT_INSET = 5;
-    private static final int INTERACTION_OPTION_TEXT_TOP = 5;
+    private static final int INTERACTION_OPTION_TEXT_INSET = 9;
+    private static final int INTERACTION_OPTION_TEXT_TOP = 9;
     private static final int INTERACTION_OPTION_TEXT_RIGHT_PADDING = INTERACTION_OPTION_TEXT_INSET;
     private static final int INTERACTION_OPTION_ARROW_WIDTH = 9;
     private static final int INTERACTION_OPTION_ARROW_HEIGHT = 6;
@@ -183,7 +205,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int DIALOGUE_BLIP_MIN_VISIBLE_CHARACTERS = 1;
     private static final int DIALOGUE_BLIP_MAX_VISIBLE_CHARACTERS = 3;
     private static final int INTERACTION_NAME_COLOR = 0xFFF3CA55;
-    private static final int INTERACTION_DIALOGUE_COLOR = 0xFF35291C;
+    private static final int INTERACTION_DIALOGUE_COLOR = 0xFFFFFFFF;
+    private static final int INTERACTION_MOOD_COLOR = 0xFF5FCDE4;
+    private static final int INTERACTION_OPTION_TEXT_COLOR = 0xFFFFFFFF;
     private static final int INTERACTION_REPUTATION_TEXT_COLOR = 0xFFFFFF55;
     private static final int TEXT_OUTLINE_COLOR = 0xFF000000;
     private static final Runnable NO_ACTION = () -> {
@@ -258,16 +282,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private String selectedBuilderCategory;
     private BuilderStructureCatalog.Entry selectedBuilderStructure;
     private int selectedInventorySlot = -1;
+    private float[] pixelOptionEdgeScaleBlends = new float[0];
+    private boolean[] pixelOptionEdgeScaleBlendInitialized = new boolean[0];
     private int lastMouseX;
     private int lastMouseY;
     private int renderSlideOffsetY;
+    private int renderContentOffsetX;
     private boolean keyboardOptionFocusVisible;
     private long animationStartMillis = -1L;
+    private long interactionStateTransitionStartMillis = -1L;
+    private int interactionStateTransitionStartOffsetY;
+    private int interactionStateTransitionStartOffsetX;
     private long experimentalSkillsAnimationStartMillis = -1L;
     private long experimentalSkillsExitStartMillis = -1L;
     private Button giftButton;
     private String villagerDialogueText = "";
     private List<DialogueTextSegment> villagerDialogueTextSegments = List.of();
+    private int dialogueLineScroll;
     private long dialogueTextAnimationStartMillis;
     private boolean dialogueTextAnimationSkipped;
     private final Random dialogueBlipRandom = new Random();
@@ -464,6 +495,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.villagerDialogueText.isBlank()) {
             return;
         }
+        this.dialogueLineScroll = 0;
         this.dialogueTextAnimationStartMillis = Util.getMillis();
         this.dialogueTextAnimationSkipped = dialogueTextSpeed().instant();
         this.dialogueBlipPitch = randomDialogueBlipPitch();
@@ -477,14 +509,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int slideOffset = slideOffsetY();
-        this.renderSlideOffsetY = slideOffset;
-        int interactionMouseY = mouseY - slideOffset;
+        int stateOffsetY = interactionStateTransitionOffsetY();
+        int contentOffsetX = interactionStateTransitionContentOffsetX();
+        int totalOffsetY = slideOffset + stateOffsetY;
+        this.renderSlideOffsetY = totalOffsetY;
+        this.renderContentOffsetX = contentOffsetX;
+        int interactionMouseY = mouseY - totalOffsetY;
+        int interactionContentMouseX = mouseX - contentOffsetX;
         this.lastMouseX = mouseX;
         this.lastMouseY = interactionMouseY;
         updateDialogueMouthAnimation();
         focusVillagerOnPlayer();
         if (!this.closingWithAnimation) {
-            updateMouseSelection(mouseX, interactionMouseY);
+            updateMouseSelection(interactionContentMouseX, interactionMouseY);
             updateOptionScroll();
             updateSkillScroll();
         }
@@ -493,27 +530,34 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         VillagerDialogueCinematicBars.render(graphics, this.width, this.height, screenVisibility(), this.cinematicBarSlant);
         renderPositionedBackdrop(graphics);
         graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, slideOffset, 0.0F);
+        graphics.pose().translate(0.0F, totalOffsetY, 0.0F);
         renderInteractionContainer(graphics);
-        if (this.page == DialoguePage.GIFT) {
-            renderGiftPage(graphics, mouseX, interactionMouseY, partialTick);
+        graphics.pose().pushPose();
+        graphics.pose().translate(contentOffsetX, 0.0F, 0.0F);
+        if (usesRootIconMenu()) {
+            if (this.giftButton != null) {
+                this.giftButton.visible = false;
+            }
+            renderInteractionMenuButtons(graphics, interactionContentMouseX, interactionMouseY);
+        } else if (this.page == DialoguePage.GIFT) {
+            renderGiftPage(graphics, interactionContentMouseX, interactionMouseY, partialTick);
         } else if (this.page == DialoguePage.PROFILE) {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
             }
-            renderProfilePage(graphics, mouseX, interactionMouseY);
+            renderProfilePage(graphics, interactionContentMouseX, interactionMouseY);
         } else if (this.page == DialoguePage.SKILLS) {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
             }
-            renderSkillsPage(graphics, mouseX, interactionMouseY);
+            renderSkillsPage(graphics, interactionContentMouseX, interactionMouseY);
         } else {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
             }
-            renderOptions(graphics, mouseX, interactionMouseY, optionsTop());
+            renderOptions(graphics, interactionContentMouseX, interactionMouseY, optionsTop());
         }
-        renderInteractionStatTooltips(graphics, mouseX, interactionMouseY);
+        graphics.pose().popPose();
         graphics.pose().popPose();
         VillagerClientUiUtil.popGuiLayer(graphics);
     }
@@ -562,7 +606,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         double interactionMouseY = interactionMouseY(mouseY);
-        if (this.page == DialoguePage.GIFT && tryClickGiftPage(mouseX, interactionMouseY)) {
+        double interactionContentMouseX = interactionContentMouseX(mouseX);
+        if (this.page == DialoguePage.GIFT && tryClickGiftPage(interactionContentMouseX, interactionMouseY)) {
+            return true;
+        }
+
+        if (tryActivateInteractionMenuButton(interactionContentMouseX, interactionMouseY)) {
             return true;
         }
 
@@ -570,10 +619,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return true;
         }
 
-        if (trySelectSkillDetails(mouseX, interactionMouseY)
-                || tryBeginSkillInfoScrollbarDrag(mouseX, interactionMouseY)
-                || tryBeginScrollbarDrag(mouseX, interactionMouseY)
-                || tryActivateHoveredOption(mouseX, interactionMouseY)) {
+        if (trySelectSkillDetails(interactionContentMouseX, interactionMouseY)
+                || tryBeginSkillInfoScrollbarDrag(interactionContentMouseX, interactionMouseY)
+                || tryBeginScrollbarDrag(interactionContentMouseX, interactionMouseY)
+                || tryActivateHoveredOption(interactionContentMouseX, interactionMouseY)) {
             return true;
         }
 
@@ -586,14 +635,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return true;
         }
         double interactionMouseY = interactionMouseY(mouseY);
+        double interactionContentMouseX = interactionContentMouseX(mouseX);
         if (this.page == DialoguePage.SKILLS
                 && maxSkillScroll() > 0.0F
-                && isPointInsideSkillsInfoScrollArea(mouseX, interactionMouseY)) {
+                && isPointInsideSkillsInfoScrollArea(interactionContentMouseX, interactionMouseY)) {
             setTargetSkillScroll(this.targetSkillScroll - (float) scrollY * OPTION_SCROLL_STEP);
             return true;
         }
 
-        if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, interactionMouseY)) {
+        if (tryScrollInteractionDialogue(mouseX, interactionMouseY, scrollY)) {
+            return true;
+        }
+
+        if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(interactionContentMouseX, interactionMouseY)) {
+            return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        }
+        if (usesRootIconMenu()) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
@@ -750,6 +807,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
         }
         this.state.resetOptions(!this.options.isEmpty());
+        resetPixelOptionEdgeScaleBlends();
         this.keyboardOptionFocusVisible = false;
         ensureSelectedVisible();
     }
@@ -1646,7 +1704,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private double interactionMouseY(double mouseY) {
-        return mouseY - slideOffsetY();
+        return mouseY - slideOffsetY() - interactionStateTransitionOffsetY();
+    }
+
+    private double interactionContentMouseX(double mouseX) {
+        return mouseX - interactionStateTransitionContentOffsetX();
     }
 
     private int slideOffsetY() {
@@ -1676,7 +1738,39 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return value * value * value;
     }
 
+    private void startInteractionStateTransition(DialoguePage previousPage, DialoguePage nextPage, int previousTop, int nextTop) {
+        if (previousPage == nextPage) {
+            return;
+        }
+
+        int depthDirection = interactionPageDepth(nextPage) >= interactionPageDepth(previousPage) ? 1 : -1;
+        this.interactionStateTransitionStartOffsetY = previousTop - nextTop;
+        this.interactionStateTransitionStartOffsetX = depthDirection * INTERACTION_STATE_CONTENT_SLIDE_X;
+        this.interactionStateTransitionStartMillis = Util.getMillis();
+    }
+
+    private int interactionStateTransitionOffsetY() {
+        return Math.round(this.interactionStateTransitionStartOffsetY * interactionStateTransitionRemaining());
+    }
+
+    private int interactionStateTransitionContentOffsetX() {
+        return Math.round(this.interactionStateTransitionStartOffsetX * interactionStateTransitionRemaining());
+    }
+
+    private float interactionStateTransitionRemaining() {
+        if (this.interactionStateTransitionStartMillis < 0L) {
+            return 0.0F;
+        }
+
+        float elapsedMillis = Util.getMillis() - this.interactionStateTransitionStartMillis;
+        float progress = Mth.clamp(elapsedMillis / INTERACTION_STATE_TRANSITION_DURATION_MILLIS, 0.0F, 1.0F);
+        return 1.0F - easeOutCubic(progress);
+    }
+
     private void activateSelected() {
+        if (usesRootIconMenu()) {
+            return;
+        }
         if (this.state.selectedOption() < 0 || this.state.selectedOption() >= this.options.size()) {
             return;
         }
@@ -1779,6 +1873,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openPage(DialoguePage page) {
         DialoguePage previousPage = this.page;
+        int previousInteractionTop = interactionContainerTopForPage(previousPage) + interactionStateTransitionOffsetY();
         rememberCurrentPageOptionListPosition();
         this.page = page;
         if (page == DialoguePage.SKILLS && previousPage != DialoguePage.SKILLS) {
@@ -1789,6 +1884,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         rebuildOptions();
         restoreRememberedPageOptionListPosition(page);
+        startInteractionStateTransition(previousPage, page, previousInteractionTop, interactionContainerTopForPage(page));
     }
 
     private void clearSelectedSkillDetails() {
@@ -1802,6 +1898,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void moveSelection(int direction) {
+        if (usesRootIconMenu()) {
+            return;
+        }
         if (this.options.isEmpty()) {
             return;
         }
@@ -1857,8 +1956,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         int left = interactionContainerLeft();
         int top = interactionContainerTop();
-        VillagerInteractionTextLayout.Nameplate nameplate = interactionNameplate();
-        String displayedName = nameplate.displayName();
         graphics.blit(
                 VillagerRetaliationClientAssets.INTERACTION_CONTAINER_TEXTURE,
                 left,
@@ -1871,20 +1968,137 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 INTERACTION_CONTAINER_HEIGHT
         );
         renderInteractionVillagerPortrait(graphics, left, top);
-        renderInteractionPortraitOrnament(graphics, left, top);
-        renderInteractionContainerOverlay(graphics, left, top);
         renderInteractionDialogue(graphics, left, top);
-        renderInteractionStats(graphics, left, top);
-        renderInteractionContainerOrnament(graphics, left, top);
-        renderInteractionNameplate(graphics, left, top, nameplate);
-        graphics.drawString(
-                this.font,
-                displayedName,
-                left + INTERACTION_CONTAINER_NAME_X,
-                top + INTERACTION_CONTAINER_NAME_Y,
-                INTERACTION_NAME_COLOR,
-                false
+        renderInteractionInfoRow(graphics, left, top);
+    }
+
+    private void renderInteractionMenuButtons(GuiGraphics graphics, int mouseX, int mouseY) {
+        List<InteractionMenuButton> buttons = interactionMenuButtons();
+        int hovered = interactionMenuButtonAt(mouseX, mouseY);
+        int top = interactionMenuButtonTop();
+        for (int index = 0; index < buttons.size(); index++) {
+            InteractionMenuButton button = buttons.get(index);
+            int left = interactionMenuButtonLeft(index);
+            graphics.blit(
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_TEXTURE,
+                    left,
+                    top,
+                    0,
+                    0,
+                    INTERACTION_BUTTON_SIZE,
+                    INTERACTION_BUTTON_SIZE,
+                    INTERACTION_BUTTON_SIZE,
+                    INTERACTION_BUTTON_SIZE
+            );
+            graphics.blit(
+                    button.icon(),
+                    left,
+                    top,
+                    0,
+                    0,
+                    INTERACTION_BUTTON_SIZE,
+                    INTERACTION_BUTTON_SIZE,
+                    INTERACTION_BUTTON_SIZE,
+                    INTERACTION_BUTTON_SIZE
+            );
+        }
+
+        if (hovered >= 0 && hovered < buttons.size()) {
+            InteractionMenuButton button = buttons.get(hovered);
+            ChatFormatting titleColor = button.active() ? ChatFormatting.YELLOW : ChatFormatting.GRAY;
+            renderInteractionTooltip(
+                    graphics,
+                    List.of(
+                            Component.literal(button.title()).withStyle(titleColor),
+                            Component.literal(button.description()).withStyle(ChatFormatting.GRAY)),
+                    mouseX,
+                    mouseY);
+        }
+    }
+
+    private List<InteractionMenuButton> interactionMenuButtons() {
+        boolean inventoryAvailable = canRequestVillagerInventory();
+        boolean stayAvailable = this.stayingHere || canCommandStayHere();
+        return List.of(
+                new InteractionMenuButton(
+                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TALK_TEXTURE,
+                        translate("root.talk"),
+                        translate("interaction_button.talk.description"),
+                        this::openTalkPage,
+                        true),
+                new InteractionMenuButton(
+                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TRADE_TEXTURE,
+                        translate("root.trade"),
+                        translate("interaction_button.trade.description"),
+                        this::requestTrade,
+                        true),
+                new InteractionMenuButton(
+                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
+                        translate("root.adventures"),
+                        translate("interaction_button.adventures.description"),
+                        this::openAdventuresPage,
+                        true),
+                new InteractionMenuButton(
+                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_PROFILE_TEXTURE,
+                        translate("root.profile"),
+                        translate("interaction_button.profile.description"),
+                        this::openProfilePage,
+                        true),
+                new InteractionMenuButton(
+                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_HIRE_TEXTURE,
+                        translate(this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "interaction_button.hire_job"),
+                        translate(this.hiredByPlayer || this.hiredByOtherPlayer
+                                ? "interaction_button.job.description"
+                                : "interaction_button.hire_job.description"),
+                        this::openRecruitPage,
+                        true),
+                new InteractionMenuButton(
+                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_INVENTORY_TEXTURE,
+                        translate("root.inventory"),
+                        translate(inventoryAvailable
+                                ? "interaction_button.inventory.description"
+                                : "interaction_button.inventory.locked_description"),
+                        this::requestInventory,
+                        inventoryAvailable),
+                followInteractionButton(),
+                stayInteractionButton(stayAvailable)
         );
+    }
+
+    private InteractionMenuButton followInteractionButton() {
+        if (this.followingPlayer) {
+            return new InteractionMenuButton(
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STOP_FOLLOW_TEXTURE,
+                    translate("recruit.stop_following"),
+                    translate("interaction_button.stop_following.description"),
+                    () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING),
+                    true);
+        }
+        return new InteractionMenuButton(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_START_FOLLOW_TEXTURE,
+                translate("recruit.follow_me"),
+                translate("interaction_button.follow_me.description"),
+                () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW),
+                true);
+    }
+
+    private InteractionMenuButton stayInteractionButton(boolean active) {
+        if (this.stayingHere) {
+            return new InteractionMenuButton(
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STAY_TEXTURE,
+                    translate("interaction_button.move_freely"),
+                    translate("interaction_button.move_freely.description"),
+                    () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE),
+                    true);
+        }
+        return new InteractionMenuButton(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STAY_TEXTURE,
+                translate("recruit.stay_here"),
+                translate(active
+                        ? "interaction_button.stay_here.description"
+                        : "interaction_button.stay_here.locked_description"),
+                () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE),
+                active);
     }
 
     private VillagerInteractionTextLayout.Nameplate interactionNameplate() {
@@ -2130,54 +2344,143 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
 
-        int textLeft = left + INTERACTION_DIALOGUE_LEFT;
-        int textTop = top + INTERACTION_DIALOGUE_TOP;
-        int textRight = left + INTERACTION_DIALOGUE_RIGHT;
-        int textBottom = top + INTERACTION_DIALOGUE_BOTTOM;
-        int lineStep = this.font.lineHeight;
-        int maxLines = Math.max(1, (textBottom - textTop) / lineStep);
-        List<DialogueTextSegment> displayedSegments = displayedDialogueSegments();
-        String displayedDialogue = DialogueTextSegment.plainText(displayedSegments);
+        String displayedDialogue = displayedDialogueText();
         if (displayedDialogue.isBlank()) {
             return;
         }
         maybePlayDialogueBlip();
-        Component displayedComponent = VillagerStyledTextRenderer.component(
-                displayedSegments,
-                Style.EMPTY,
-                INTERACTION_DIALOGUE_COLOR & 0x00FFFFFF);
-        List<FormattedCharSequence> lines = this.font.split(
-                displayedComponent,
-                INTERACTION_DIALOGUE_RIGHT - INTERACTION_DIALOGUE_LEFT
-        );
-        graphics.enableScissor(
-                textLeft,
-                textTop + this.renderSlideOffsetY,
-                textRight,
-                textBottom + this.renderSlideOffsetY);
-        int segmentCursor = 0;
-        for (int index = 0; index < Math.min(maxLines, lines.size()); index++) {
-            FormattedCharSequence line = lines.get(index);
-            String lineText = VillagerStyledTextRenderer.plainText(line);
-            int lineStart = findDisplayedLineStart(displayedDialogue, lineText, segmentCursor);
-            int lineEnd = lineStart < 0 ? -1 : Math.min(displayedDialogue.length(), lineStart + lineText.length());
-            List<DialogueTextSegment> lineSegments = lineStart < 0
-                    ? DialogueTextSegment.plain(lineText, DialogueTextEffects.NONE)
-                    : DialogueTextSegment.slice(displayedSegments, lineStart, lineEnd);
-            VillagerStyledTextRenderer.renderLine(
-                    graphics,
-                    this.font,
-                    line,
-                    lineSegments,
-                    textLeft,
-                    textTop + index * lineStep,
-                    INTERACTION_DIALOGUE_COLOR & 0x00FFFFFF,
-                    255,
-                    Minecraft.getInstance().gui.getGuiTicks()
-            );
-            segmentCursor = lineEnd < 0 ? segmentCursor + lineText.length() : lineEnd;
+
+        List<String> lines = wrappedInteractionDialogueLines(displayedDialogue);
+        if (lines.isEmpty()) {
+            return;
         }
-        graphics.disableScissor();
+
+        int visibleLines = interactionDialogueVisibleLineCount();
+        int maxScroll = maxInteractionDialogueLineScroll(lines);
+        this.dialogueLineScroll = Mth.clamp(this.dialogueLineScroll, 0, maxScroll);
+        int drawLeft = left + INTERACTION_DIALOGUE_LEFT + 1;
+        int drawTop = top + INTERACTION_DIALOGUE_TOP + 1;
+        int lineStep = this.font.lineHeight;
+        int linesToDraw = Math.min(visibleLines, lines.size() - this.dialogueLineScroll);
+        for (int row = 0; row < linesToDraw; row++) {
+            int lineIndex = this.dialogueLineScroll + row;
+            int lineTop = drawTop + row * lineStep;
+            int lineRight = left + (row == visibleLines - 1
+                    ? INTERACTION_DIALOGUE_RIGHT
+                    : INTERACTION_DIALOGUE_EXTENDED_RIGHT);
+            graphics.enableScissor(
+                    left + INTERACTION_DIALOGUE_LEFT,
+                    top + INTERACTION_DIALOGUE_TOP + row * lineStep + this.renderSlideOffsetY,
+                    lineRight,
+                    Math.min(
+                            top + INTERACTION_DIALOGUE_BOTTOM + this.renderSlideOffsetY,
+                            top + INTERACTION_DIALOGUE_TOP + (row + 1) * lineStep + 2 + this.renderSlideOffsetY));
+            drawOutlinedString(
+                    graphics,
+                    lines.get(lineIndex),
+                    drawLeft,
+                    lineTop,
+                    INTERACTION_DIALOGUE_COLOR
+            );
+            graphics.disableScissor();
+        }
+
+        ResourceLocation scrollIcon = interactionDialogueScrollIcon(lines);
+        if (scrollIcon != null) {
+            graphics.blit(
+                    scrollIcon,
+                    left + INTERACTION_DIALOGUE_SCROLL_ICON_LEFT,
+                    top + INTERACTION_DIALOGUE_SCROLL_ICON_BOTTOM - INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT,
+                    0,
+                    0,
+                    INTERACTION_DIALOGUE_SCROLL_ICON_WIDTH,
+                    INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT,
+                    INTERACTION_DIALOGUE_SCROLL_ICON_WIDTH,
+                    INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT
+            );
+        }
+    }
+
+    private List<String> wrappedInteractionDialogueLines(String dialogue) {
+        if (dialogue == null || dialogue.isBlank()) {
+            return List.of();
+        }
+
+        List<String> lines = new ArrayList<>();
+        for (String paragraph : dialogue.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1)) {
+            appendWrappedInteractionDialogueParagraph(lines, paragraph);
+        }
+        return lines;
+    }
+
+    private void appendWrappedInteractionDialogueParagraph(List<String> lines, String paragraph) {
+        if (paragraph == null || paragraph.isBlank()) {
+            lines.add("");
+            return;
+        }
+
+        String remaining = paragraph.stripLeading();
+        while (!remaining.isEmpty()) {
+            int wrapWidth = interactionDialogueLineWidth(lines.size());
+            String line = this.font.plainSubstrByWidth(remaining, wrapWidth);
+            if (line.isEmpty()) {
+                int nextCodePointEnd = remaining.offsetByCodePoints(0, 1);
+                lines.add(remaining.substring(0, nextCodePointEnd));
+                remaining = remaining.substring(nextCodePointEnd).stripLeading();
+                continue;
+            }
+
+            if (line.length() < remaining.length()) {
+                int breakIndex = lastWhitespaceBreak(line);
+                if (breakIndex > 0) {
+                    line = remaining.substring(0, breakIndex);
+                    remaining = remaining.substring(breakIndex).stripLeading();
+                } else {
+                    remaining = remaining.substring(line.length()).stripLeading();
+                }
+            } else {
+                remaining = "";
+            }
+            lines.add(line.stripTrailing());
+        }
+    }
+
+    private int interactionDialogueLineWidth(int lineIndex) {
+        int visibleLines = interactionDialogueVisibleLineCount();
+        boolean bottomRow = visibleLines > 0 && Math.floorMod(lineIndex, visibleLines) == visibleLines - 1;
+        int right = bottomRow ? INTERACTION_DIALOGUE_RIGHT : INTERACTION_DIALOGUE_EXTENDED_RIGHT;
+        return Math.max(1, right - INTERACTION_DIALOGUE_LEFT - 2);
+    }
+
+    private static int lastWhitespaceBreak(String text) {
+        for (int index = text.length(); index > 0; ) {
+            int codePoint = text.codePointBefore(index);
+            index -= Character.charCount(codePoint);
+            if (Character.isWhitespace(codePoint)) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private int interactionDialogueVisibleLineCount() {
+        int strokedHeight = Math.max(1, INTERACTION_DIALOGUE_BOTTOM - INTERACTION_DIALOGUE_TOP - 2);
+        return Math.max(1, strokedHeight / Math.max(1, this.font.lineHeight));
+    }
+
+    private int maxInteractionDialogueLineScroll(List<String> lines) {
+        return Math.max(0, lines.size() - interactionDialogueVisibleLineCount());
+    }
+
+    private ResourceLocation interactionDialogueScrollIcon(List<String> lines) {
+        int maxScroll = maxInteractionDialogueLineScroll(lines);
+        if (maxScroll <= 0) {
+            return null;
+        }
+        if (this.dialogueLineScroll > 0) {
+            return VillagerRetaliationClientAssets.INTERACTION_SCROLL_ICON_UP_TEXTURE;
+        }
+        return VillagerRetaliationClientAssets.INTERACTION_SCROLL_ICON_DOWN_TEXTURE;
     }
 
     private List<DialogueTextSegment> displayedDialogueSegments() {
@@ -2320,6 +2623,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return entity instanceof LivingEntity livingEntity ? livingEntity : null;
     }
 
+    private boolean tryScrollInteractionDialogue(double mouseX, double mouseY, double scrollY) {
+        if (!isPointInsideInteractionDialogueScrollArea(mouseX, mouseY) || scrollY == 0.0D) {
+            return false;
+        }
+
+        List<String> lines = wrappedInteractionDialogueLines(displayedDialogueText());
+        int maxScroll = maxInteractionDialogueLineScroll(lines);
+        if (maxScroll <= 0) {
+            return true;
+        }
+
+        int direction = scrollY < 0.0D ? 1 : -1;
+        this.dialogueLineScroll = Mth.clamp(this.dialogueLineScroll + direction, 0, maxScroll);
+        return true;
+    }
+
     private boolean isPointInsideInteractionDialogue(double mouseX, double mouseY) {
         if (!shouldRenderInteractionContainer() || this.villagerDialogueText.isBlank()) {
             return false;
@@ -2331,6 +2650,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 && mouseX < left + INTERACTION_DIALOGUE_RIGHT
                 && mouseY >= top + INTERACTION_DIALOGUE_TOP
                 && mouseY < top + INTERACTION_DIALOGUE_BOTTOM;
+    }
+
+    private boolean isPointInsideInteractionDialogueScrollArea(double mouseX, double mouseY) {
+        if (!shouldRenderInteractionContainer() || this.villagerDialogueText.isBlank()) {
+            return false;
+        }
+
+        int left = interactionContainerLeft();
+        int top = interactionContainerTop();
+        return mouseX >= left + INTERACTION_DIALOGUE_SCROLL_LEFT
+                && mouseX < left + INTERACTION_DIALOGUE_SCROLL_RIGHT
+                && mouseY >= top + INTERACTION_DIALOGUE_SCROLL_TOP
+                && mouseY < top + INTERACTION_DIALOGUE_SCROLL_BOTTOM;
     }
 
     private boolean isDialogueTextAnimationComplete() {
@@ -2423,8 +2755,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return speed == null ? DialogueTextSpeed.MEDIUM : speed;
     }
 
-    private void renderInteractionStats(GuiGraphics graphics, int left, int top) {
+    private void renderInteractionInfoRow(GuiGraphics graphics, int left, int top) {
         InteractionStatLayout stats = interactionStatLayout(left, top);
+        int textTop = textTopFromBottomBaseline(top + INTERACTION_INFO_BASELINE_Y + INTERACTION_INFO_TEXT_Y_OFFSET);
+        drawOutlinedString(
+                graphics,
+                moodName(this.primaryMood),
+                left + INTERACTION_MOOD_BASELINE_LEFT,
+                textTop,
+                INTERACTION_MOOD_COLOR
+        );
+
         graphics.blit(
                 VillagerRetaliationClientAssets.INTERACTION_REPUTATION_ICON_TEXTURE,
                 stats.reputationIconLeft(),
@@ -2454,6 +2795,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 stats.textTop(),
                 this.walletCurrencyTextColor
         );
+    }
+
+    private int textTopFromBottomBaseline(int baselineY) {
+        return baselineY - this.font.lineHeight;
     }
 
     private void drawOutlinedString(GuiGraphics graphics, String text, int x, int y, int color) {
@@ -2509,17 +2854,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private InteractionStatLayout interactionStatLayout(int left, int top) {
-        int textTop = top + INTERACTION_STATS_BASELINE_Y - this.font.lineHeight - INTERACTION_STATS_TEXT_RAISE;
-        int iconTop = top + INTERACTION_STATS_BASELINE_Y - INTERACTION_ICON_SIZE;
-        String currencyText = walletText();
+        int textTop = textTopFromBottomBaseline(top + INTERACTION_INFO_BASELINE_Y + INTERACTION_INFO_TEXT_Y_OFFSET);
+        int iconTop = top + INTERACTION_INFO_BASELINE_Y - INTERACTION_ICON_SIZE + INTERACTION_INFO_ICON_Y_OFFSET;
+        String currencyText = walletAmountText();
         String reputationText = Integer.toString(this.reputation);
 
-        int currencyTextRight = left + INTERACTION_STATS_ANCHOR_X;
+        int currencyTextRight = left + INTERACTION_INFO_BASELINE_RIGHT;
         int currencyTextLeft = currencyTextRight - this.font.width(currencyText);
-        int currencyIconLeft = currencyTextLeft - INTERACTION_ICON_TEXT_GAP - INTERACTION_ICON_SIZE;
-        int reputationTextRight = currencyIconLeft - INTERACTION_ICON_TEXT_GAP;
+        int currencyIconLeft = currencyTextLeft - INTERACTION_CURRENCY_ICON_GAP - INTERACTION_ICON_SIZE;
+        int reputationTextRight = currencyIconLeft - INTERACTION_REPUTATION_GAP;
         int reputationTextLeft = reputationTextRight - this.font.width(reputationText);
-        int reputationIconLeft = reputationTextLeft - INTERACTION_ICON_TEXT_GAP - INTERACTION_ICON_SIZE;
+        int reputationIconLeft = reputationTextLeft - INTERACTION_CURRENCY_ICON_GAP - INTERACTION_ICON_SIZE;
+        currencyIconLeft += INTERACTION_INFO_ICON_X_OFFSET;
+        reputationIconLeft += INTERACTION_INFO_ICON_X_OFFSET;
         int hitTop = Math.min(textTop, iconTop);
         int hitBottom = Math.max(textTop + this.font.lineHeight, iconTop + INTERACTION_ICON_SIZE);
         return new InteractionStatLayout(
@@ -2543,7 +2890,55 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int interactionContainerTop() {
-        return Math.max(4, this.height - INTERACTION_CONTAINER_HEIGHT - INTERACTION_CONTAINER_HOTBAR_GAP);
+        return interactionContainerTopForPage(this.page);
+    }
+
+    private int interactionContainerTopForPage(DialoguePage page) {
+        int buttonRowHeight = usesRootIconMenu(page) ? INTERACTION_BUTTON_GAP + INTERACTION_BUTTON_SIZE : 0;
+        return Math.max(4, this.height - INTERACTION_CONTAINER_HEIGHT - buttonRowHeight - INTERACTION_CONTAINER_HOTBAR_GAP);
+    }
+
+    private int interactionMenuButtonTop() {
+        return interactionContainerTop() + INTERACTION_CONTAINER_HEIGHT + INTERACTION_BUTTON_GAP;
+    }
+
+    private int interactionMenuButtonLeft(int index) {
+        return interactionContainerLeft() + INTERACTION_BUTTON_ROW_LEFT_INSET + index * (INTERACTION_BUTTON_SIZE + INTERACTION_BUTTON_GAP);
+    }
+
+    private int interactionMenuButtonAt(double mouseX, double mouseY) {
+        if (!usesRootIconMenu()) {
+            return -1;
+        }
+        int top = interactionMenuButtonTop();
+        int bottom = top + INTERACTION_BUTTON_SIZE;
+        if (mouseY < top || mouseY >= bottom) {
+            return -1;
+        }
+        for (int index = 0; index < INTERACTION_MENU_BUTTON_COUNT; index++) {
+            int left = interactionMenuButtonLeft(index);
+            int right = left + INTERACTION_BUTTON_SIZE;
+            if (mouseX >= left && mouseX < right) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private boolean tryActivateInteractionMenuButton(double mouseX, double mouseY) {
+        int hovered = interactionMenuButtonAt(mouseX, mouseY);
+        if (hovered < 0) {
+            return false;
+        }
+        List<InteractionMenuButton> buttons = interactionMenuButtons();
+        if (hovered >= buttons.size()) {
+            return true;
+        }
+        InteractionMenuButton button = buttons.get(hovered);
+        if (button.active()) {
+            button.action().run();
+        }
+        return true;
     }
 
     private void renderTopBackButton(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -2623,6 +3018,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void updateMouseSelection(int mouseX, int mouseY) {
+        if (usesRootIconMenu()) {
+            return;
+        }
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0) {
             this.state.setSelectedOption(hovered);
@@ -2715,6 +3113,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean tryActivateHoveredOption(double mouseX, double mouseY) {
+        if (usesRootIconMenu()) {
+            return false;
+        }
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered < 0) {
             return false;
@@ -2889,7 +3290,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private int optionsTop() {
         if (usesInteractionOptionStack()) {
-            return interactionContainerTop();
+            return Math.max(0, this.height - interactionOptionViewportHeight() - INTERACTION_OPTION_BOTTOM_MARGIN);
         }
         return experimentalOptionsTop(optionViewportHeight());
     }
@@ -2944,6 +3345,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return translate("info.wallet", this.walletCurrencyLabel, this.walletEmeralds, this.maxWalletEmeralds);
     }
 
+    private String walletAmountText() {
+        return this.walletEmeralds + " / " + this.maxWalletEmeralds;
+    }
+
     private String walletTooltipTitle() {
         return translate("info.wallet.tooltip.title", this.walletCurrencyLabel);
     }
@@ -2966,7 +3371,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean canRequestVillagerInventory() {
-        return this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
+        return this.reputationLevel != null
+                && this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
     }
 
     private ItemStack clipboardStack() {
@@ -3041,9 +3447,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private int optionViewportHeight() {
         if (usesInteractionOptionStack()) {
-            return INTERACTION_CONTAINER_HEIGHT;
+            return interactionOptionViewportHeight();
         }
         return VillagerInteractionLayoutMetrics.optionViewportHeight(this.options.size());
+    }
+
+    private int interactionOptionViewportHeight() {
+        return INTERACTION_OPTION_VISIBLE_ROWS * INTERACTION_OPTION_STRIDE;
     }
 
     private int experimentalFullOptionViewportHeight() {
@@ -3073,6 +3483,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return shouldRenderInteractionContainer();
     }
 
+    private boolean usesRootIconMenu() {
+        return usesRootIconMenu(this.page);
+    }
+
+    private boolean usesRootIconMenu(DialoguePage page) {
+        return !this.forcedDialogue && !this.clipboardMenu && page == DialoguePage.ROOT;
+    }
+
     private int interactionOptionStackWidth() {
         int desiredWidth = INTERACTION_OPTION_WIDTH;
         for (int index = 0; index < this.options.size(); index++) {
@@ -3096,7 +3514,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (index < 0 || index >= this.options.size()) {
             return "";
         }
-        return (index + 1) + ". " + this.options.get(index).label();
+        return this.options.get(index).label();
     }
 
     private int interactionOptionStackLeft() {
@@ -3112,7 +3530,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         float optionBottom = optionTop + VillagerInteractionOptionList.optionHeight(this.optionListContext, this.state.selectedOption());
         float viewportTop = this.state.targetOptionScroll();
         float viewportBottom = viewportTop + optionViewportHeight();
-        int padding = 6;
+        int padding = usesInteractionOptionStack() ? 0 : 6;
         if (optionTop < viewportTop + padding) {
             setTargetOptionScroll(optionTop - padding);
         } else if (optionBottom > viewportBottom - padding) {
@@ -3123,7 +3541,63 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void setTargetOptionScroll(float scroll) {
-        this.state.setTargetOptionScroll(scroll, maxOptionScroll());
+        float maxScroll = maxOptionScroll();
+        if (usesInteractionOptionStack()) {
+            this.state.setTargetOptionScroll(snapInteractionOptionScroll(scroll, maxScroll), maxScroll);
+            this.state.jumpOptionScrollToTarget();
+            return;
+        }
+
+        this.state.setTargetOptionScroll(scroll, maxScroll);
+    }
+
+    private float snapInteractionOptionScroll(float scroll, float maxScroll) {
+        if (!usesInteractionOptionStack() || maxScroll <= 0.0F || this.options.isEmpty()) {
+            return 0.0F;
+        }
+
+        float clamped = Mth.clamp(scroll, 0.0F, maxScroll);
+        float best = 0.0F;
+        float bestDistance = Math.abs(clamped);
+        for (int index = 0; index < this.options.size(); index++) {
+            float offset = Math.min(maxScroll, VillagerInteractionOptionList.optionOffset(this.optionListContext, index));
+            float distance = Math.abs(clamped - offset);
+            if (distance < bestDistance) {
+                best = offset;
+                bestDistance = distance;
+            }
+        }
+        float maxDistance = Math.abs(clamped - maxScroll);
+        return maxDistance < bestDistance ? maxScroll : best;
+    }
+
+    private void resetPixelOptionEdgeScaleBlends() {
+        this.pixelOptionEdgeScaleBlends = new float[this.options.size()];
+        this.pixelOptionEdgeScaleBlendInitialized = new boolean[this.options.size()];
+    }
+
+    private float pixelOptionEdgeScaleBlend(int index, boolean edgeRow) {
+        if (!usesInteractionOptionStack() || index < 0 || index >= this.options.size()) {
+            return edgeRow ? 1.0F : 0.0F;
+        }
+        if (this.pixelOptionEdgeScaleBlends.length != this.options.size()
+                || this.pixelOptionEdgeScaleBlendInitialized.length != this.options.size()) {
+            resetPixelOptionEdgeScaleBlends();
+        }
+
+        float target = edgeRow ? 1.0F : 0.0F;
+        if (!this.pixelOptionEdgeScaleBlendInitialized[index]) {
+            this.pixelOptionEdgeScaleBlends[index] = target;
+            this.pixelOptionEdgeScaleBlendInitialized[index] = true;
+            return target;
+        }
+
+        float blend = Mth.lerp(OPTION_SCROLL_LERP, this.pixelOptionEdgeScaleBlends[index], target);
+        if (Math.abs(blend - target) < 0.01F) {
+            blend = target;
+        }
+        this.pixelOptionEdgeScaleBlends[index] = blend;
+        return blend;
     }
 
     private float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
@@ -3379,6 +3853,26 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return I18n.get(GUI_KEY_PREFIX + key, args);
     }
 
+    private static int interactionPageDepth(DialoguePage page) {
+        return switch (page) {
+            case ROOT -> 0;
+            case TALK, ADVENTURES, PROFILE, SKILLS, GIFT, FAMILY, RELATIONSHIPS, RECRUIT -> 1;
+            case ANCESTRY, DESCENDANTS, STORAGE, PAYMENT, HIRE, CONTRACT, ROLE, WORK -> 2;
+            case END_CONTRACT_CONFIRMATION,
+                    CONTRACT_EXTENSION,
+                    ROLE_CHANGE,
+                    LOGGING_FILTERS,
+                    ANIMAL_BREEDING_TARGETS,
+                    BUILDER_STRUCTURES,
+                    BREWING_POTION -> 3;
+            case BUILDER_STRUCTURE_CATEGORY,
+                    BREWING_LEVEL,
+                    BREWING_DURATION,
+                    BREWING_TYPE -> 4;
+            case BUILDER_CONFIRM, BREWING_AMOUNT -> 5;
+        };
+    }
+
     private enum DialoguePage {
         ROOT,
         TALK,
@@ -3420,6 +3914,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         static DialogueOption enabled(String label, Runnable action, boolean locked) {
             return new DialogueOption(label, action, locked);
         }
+    }
+
+    private record InteractionMenuButton(ResourceLocation icon, String title, String description, Runnable action, boolean active) {
     }
 
     private record TopBackButtonBounds(int left, int right, int top, int bottom) {
@@ -3541,6 +4038,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public float optionScroll() {
+            if (VillagerInteractionScreen.this.usesInteractionOptionStack()) {
+                return VillagerInteractionScreen.this.snapInteractionOptionScroll(
+                        VillagerInteractionScreen.this.state.optionScroll(),
+                        VillagerInteractionScreen.this.maxOptionScroll());
+            }
             return VillagerInteractionScreen.this.state.optionScroll();
         }
 
@@ -3610,15 +4112,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public int guiScissorOffsetX() {
+            return VillagerInteractionScreen.this.renderContentOffsetX;
+        }
+
+        @Override
         public boolean usePixelOptionButtons() {
             return VillagerInteractionScreen.this.usesInteractionOptionStack();
         }
 
         @Override
         public ResourceLocation pixelOptionTexture(boolean selected, boolean hovered) {
-            return selected || hovered
-                    ? VillagerRetaliationClientAssets.INTERACTION_OPTION_HOVER_TEXTURE
-                    : VillagerRetaliationClientAssets.INTERACTION_OPTION_BUTTON_TEXTURE;
+            return VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_TEXTURE;
         }
 
         @Override
@@ -3652,6 +4157,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public int pixelOptionTextColor(boolean selected, boolean hovered) {
+            return INTERACTION_OPTION_TEXT_COLOR;
+        }
+
+        @Override
         public ResourceLocation pixelOptionIconTexture(int index) {
             return VillagerInteractionScreen.this.options.get(index).locked()
                     ? VillagerRetaliationClientAssets.INTERACTION_LOCKED_ICON_TEXTURE
@@ -3680,13 +4190,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public float pixelOptionEdgeScaleBlend(int index, boolean edgeRow) {
+            return VillagerInteractionScreen.this.pixelOptionEdgeScaleBlend(index, edgeRow);
+        }
+
+        @Override
         public ResourceLocation pixelOptionArrowUpTexture() {
-            return VillagerRetaliationClientAssets.INTERACTION_OPTION_ARROW_UP_TEXTURE;
+            return VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_SCROLL_UP_ICON_TEXTURE;
         }
 
         @Override
         public ResourceLocation pixelOptionArrowDownTexture() {
-            return VillagerRetaliationClientAssets.INTERACTION_OPTION_ARROW_DOWN_TEXTURE;
+            return VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_SCROLL_DOWN_ICON_TEXTURE;
         }
 
         @Override
@@ -3701,7 +4216,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public ResourceLocation pixelOptionSelectionArrowTexture() {
-            return VillagerRetaliationClientAssets.INTERACTION_OPTION_SELECTION_ARROW_HOVER_TEXTURE;
+            return VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_ACTIVE_ICON_TEXTURE;
         }
 
         @Override
@@ -4094,6 +4609,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public int guiScissorOffsetY() {
             return VillagerInteractionScreen.this.renderSlideOffsetY;
+        }
+
+        @Override
+        public int guiScissorOffsetX() {
+            return VillagerInteractionScreen.this.renderContentOffsetX;
         }
 
         @Override
