@@ -7,19 +7,30 @@ import com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.block.ModelBlockRenderer;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.lighting.LevelLightEngine;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -77,38 +88,67 @@ public final class ConstructionBlueprintPreviewRenderer {
             PreviewData preview) {
         BlockRenderDispatcher dispatcher = minecraft.getBlockRenderer();
         GhostBufferSource ghostBufferSource = new GhostBufferSource(bufferSource);
+        PreviewBlockAndTintGetter previewLevel = new PreviewBlockAndTintGetter(minecraft.level);
         VertexConsumer fillConsumer = bufferSource.getBuffer(RenderType.debugFilledBox());
         List<RenderablePreviewBlock> renderableBlocks = new ArrayList<>();
+        for (PreviewBlock block : preview.blocks()) {
+            BlockPos worldPos = previewWorldPos(minecraft.level, preview, block);
+            if (worldPos != null) {
+                previewLevel.put(worldPos, block.state());
+            }
+        }
         for (PreviewBlock block : preview.blocks()) {
             BlockPos worldPos = renderableWorldPos(minecraft.level, preview, block);
             if (worldPos == null) {
                 continue;
             }
             renderableBlocks.add(new RenderablePreviewBlock(worldPos, block.state()));
-            renderSoftFill(poseStack, fillConsumer, worldPos);
+            if (shouldRenderSoftFill(block.state())) {
+                renderSoftFill(poseStack, fillConsumer, worldPos);
+            }
         }
         bufferSource.endBatch(RenderType.debugFilledBox());
 
-        for (RenderablePreviewBlock block : renderableBlocks) {
-            BlockState state = block.state();
-            if (state.getRenderShape() != RenderShape.MODEL) {
-                continue;
+        RandomSource random = RandomSource.create();
+        ModelBlockRenderer.enableCaching();
+        try {
+            for (RenderablePreviewBlock block : renderableBlocks) {
+                BlockState state = block.state();
+                if (state.getRenderShape() != RenderShape.MODEL) {
+                    continue;
+                }
+                BakedModel model = dispatcher.getBlockModel(state);
+                ModelData modelData = model.getModelData(previewLevel, block.worldPos(), state, ModelData.EMPTY);
+                long seed = state.getSeed(block.worldPos());
+                random.setSeed(seed);
+                for (RenderType renderType : model.getRenderTypes(state, random, modelData)) {
+                    random.setSeed(seed);
+                    poseStack.pushPose();
+                    poseStack.translate(block.worldPos().getX(), block.worldPos().getY(), block.worldPos().getZ());
+                    dispatcher.renderBatched(
+                            state,
+                            block.worldPos(),
+                            previewLevel,
+                            poseStack,
+                            ghostBufferSource.getBuffer(renderType),
+                            true,
+                            random,
+                            modelData,
+                            renderType);
+                    poseStack.popPose();
+                }
             }
-            poseStack.pushPose();
-            poseStack.translate(block.worldPos().getX(), block.worldPos().getY(), block.worldPos().getZ());
-            dispatcher.renderSingleBlock(
-                    state,
-                    poseStack,
-                    ghostBufferSource,
-                    15728880,
-                    OverlayTexture.NO_OVERLAY,
-                    ModelData.EMPTY,
-                    RenderType.translucent());
-            poseStack.popPose();
+        } finally {
+            ModelBlockRenderer.clearCache();
         }
     }
 
     private record RenderablePreviewBlock(BlockPos worldPos, BlockState state) {
+    }
+
+    private static BlockPos previewWorldPos(Level level, PreviewData preview, PreviewBlock block) {
+        BlockPos worldPos = block.worldPos(preview.origin());
+        return level.hasChunkAt(worldPos) ? worldPos : null;
     }
 
     private static BlockPos renderableWorldPos(Level level, PreviewData preview, PreviewBlock block) {
@@ -118,6 +158,10 @@ public final class ConstructionBlueprintPreviewRenderer {
             return null;
         }
         return worldPos;
+    }
+
+    private static boolean shouldRenderSoftFill(BlockState state) {
+        return state.getRenderShape() == RenderShape.MODEL && state.canOcclude();
     }
 
     private static void renderSoftFill(PoseStack poseStack, VertexConsumer consumer, BlockPos pos) {
@@ -220,6 +264,68 @@ public final class ConstructionBlueprintPreviewRenderer {
 
         private static int tint(int channel, int tintChannel) {
             return (channel + tintChannel + tintChannel) / 3;
+        }
+    }
+
+    private static final class PreviewBlockAndTintGetter implements BlockAndTintGetter {
+        private final Level delegate;
+        private final Map<BlockPos, BlockState> previewStates = new LinkedHashMap<>();
+
+        private PreviewBlockAndTintGetter(Level delegate) {
+            this.delegate = delegate;
+        }
+
+        private void put(BlockPos pos, BlockState state) {
+            this.previewStates.put(pos.immutable(), state);
+        }
+
+        @Override
+        public BlockEntity getBlockEntity(BlockPos pos) {
+            return this.previewStates.containsKey(pos) ? null : this.delegate.getBlockEntity(pos);
+        }
+
+        @Override
+        public BlockState getBlockState(BlockPos pos) {
+            BlockState previewState = this.previewStates.get(pos);
+            if (previewState != null) {
+                return previewState;
+            }
+            return this.delegate.hasChunkAt(pos) ? this.delegate.getBlockState(pos) : Blocks.AIR.defaultBlockState();
+        }
+
+        @Override
+        public FluidState getFluidState(BlockPos pos) {
+            return getBlockState(pos).getFluidState();
+        }
+
+        @Override
+        public int getHeight() {
+            return this.delegate.getHeight();
+        }
+
+        @Override
+        public int getMinBuildHeight() {
+            return this.delegate.getMinBuildHeight();
+        }
+
+        @Override
+        public float getShade(Direction direction, boolean shade) {
+            return this.delegate.getShade(direction, shade);
+        }
+
+        @Override
+        public LevelLightEngine getLightEngine() {
+            return this.delegate.getLightEngine();
+        }
+
+        @Override
+        public int getBlockTint(BlockPos blockPos, ColorResolver colorResolver) {
+            return this.delegate.getBlockTint(blockPos, colorResolver);
+        }
+
+        @Override
+        public ModelData getModelData(BlockPos pos) {
+            return this.previewStates.containsKey(pos) ? ModelData.EMPTY : this.delegate.getModelData(pos);
         }
     }
 }
