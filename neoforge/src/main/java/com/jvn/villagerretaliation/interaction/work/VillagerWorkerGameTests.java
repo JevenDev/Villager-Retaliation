@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
@@ -326,6 +327,56 @@ public final class VillagerWorkerGameTests {
                 candidates -> candidates.isEmpty() ? null : candidates.getFirst(),
                 messages);
         helper.assertValueEqual(scanned, context.workMin(), "search should rebuild from filtered scan candidates");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void fishingWorkerRejectsWaterloggedSlabWater(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrFishingSlab");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(6, 3, 3), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.FISHING_ROD));
+        setBlock(
+                helper,
+                new BlockPos(5, 2, 2),
+                Blocks.OAK_SLAB.defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, true));
+
+        WorkResult result = new FishingWorker().tick(level, villager, hirer, context);
+
+        helper.assertFalse(
+                "interaction.work.fishing.cast".equals(result.status()),
+                "waterlogged slab should not count as an open fishing cast target");
+        helper.assertTrue(
+                level.getEntitiesOfClass(VillagerFishingHook.class, villager.getBoundingBox().inflate(16.0D)).isEmpty(),
+                "fisherman should not spawn a hook through a waterlogged slab");
+        helper.assertFalse(state.contains("FishingWaterPos"), "blocked water should not be remembered as a fishing target");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void fishingWorkerAimsPastVeryCloseShoreWater(GameTestHelper helper) {
+        buildFloor(helper, 0, 11, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(6, 2, 2));
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(0, 2, 1), new BlockPos(11, 3, 3), true);
+        for (int x = 2; x <= 5; x++) {
+            setBlock(helper, new BlockPos(x, 2, 2), Blocks.WATER.defaultBlockState());
+        }
+
+        Vec3 target = FishingWorker.castTarget(level, context, villager, helper.absolutePos(new BlockPos(5, 2, 2)));
+        BlockPos targetBlock = helper.relativePos(BlockPos.containing(target.x, target.y, target.z));
+
+        helper.assertTrue(targetBlock.getX() <= 3, "near-shore cast should aim farther into connected open water");
+        helper.assertTrue(
+                horizontalDistance(new BlockPos(6, 2, 2), targetBlock) >= 3.0D,
+                "extended cast target should avoid a stubby fishing line");
         villager.discard();
         helper.succeed();
     }
@@ -2367,6 +2418,12 @@ public final class VillagerWorkerGameTests {
                 100,
                 true,
                 true);
+    }
+
+    private static double horizontalDistance(BlockPos first, BlockPos second) {
+        double dx = first.getX() + 0.5D - (second.getX() + 0.5D);
+        double dz = first.getZ() + 0.5D - (second.getZ() + 0.5D);
+        return Math.sqrt(dx * dx + dz * dz);
     }
 
     private static UUID seedBuilderTask(CompoundTag state, int paidCurrency, int placedIndex) {
